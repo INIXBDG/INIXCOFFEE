@@ -128,7 +128,7 @@
             No. {{ $certificate->nomor_sertifikat }}
         </div>
 
-       @php
+        @php
             $namaPeserta = $certificate->nama_peserta;
             $fontSize = 52;
             if (mb_strlen($namaPeserta) > 20) {

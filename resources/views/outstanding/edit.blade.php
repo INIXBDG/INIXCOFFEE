@@ -91,7 +91,47 @@
                         <div class="row mb-3" id="jumlah_pembayaran_row" style="display: none;">
                             <label for="jumlah_pembayaran" class="col-md-4 col-form-label text-md-start">{{ __('Jumlah Pembayaran') }}</label>
                             <div class="col-md-6">
-                                <input type="text" name="jumlah_pembayaran" id="jumlah_pembayaran" class="form-control" placeholder="Masukkan Jumlah Pembayaran">
+                                <input type="text" value="{{ old('jumlah_pembayaran', number_format($outstanding->jumlah_pembayaran, 0, ',', '.')) }}" name="jumlah_pembayaran" id="jumlah_pembayaran" class="form-control" placeholder="Masukkan Jumlah Pembayaran">
+                            </div>
+                        </div>
+
+                        <div id="potongan_section" class="row mb-3" style="display:none;">
+                            <label class="col-md-4 col-form-label">{{ __('Potongan') }}</label>
+                            <div class="col-md-6" id="potongan_container">
+                                
+                                <div class="row mb-2 potongan-item">
+                                    <div class="col-5">
+                                        <input type="text" name="jenis_potongan[]" class="form-control" value="Admin Transfer" readonly>
+                                    </div>
+                                    <div class="col-7">
+                                        <input type="text" name="jumlah_potongan[]" class="form-control jumlah-potongan" 
+                                            placeholder="Jumlah Admin Transfer" 
+                                            value="{{ old('jumlah_potongan.0', isset($potongan[0]) ? number_format($potongan[0]['jumlah'], 0, ',', '.') : '') }}">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-2 potongan-item">
+                                    <div class="col-5">
+                                        <input type="text" name="jenis_potongan[]" class="form-control" value="Nominal PPH23" readonly>
+                                    </div>
+                                    <div class="col-7">
+                                        <input type="text" name="jumlah_potongan[]" class="form-control jumlah-potongan" 
+                                            placeholder="Jumlah PPH23" 
+                                            value="{{ old('jumlah_potongan.1', isset($potongan[1]) ? number_format($potongan[1]['jumlah'], 0, ',', '.') : '') }}">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-2 potongan-item">
+                                    <div class="col-5">
+                                        <input type="text" name="jenis_potongan[]" class="form-control" value="Nominal PPN" readonly>
+                                    </div>
+                                    <div class="col-7">
+                                        <input type="text" name="jumlah_potongan[]" class="form-control jumlah-potongan" 
+                                            placeholder="Jumlah PPN" 
+                                            value="{{ old('jumlah_potongan.2', isset($potongan[2]) ? number_format($potongan[2]['jumlah'], 0, ',', '.') : '') }}">
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
 
@@ -224,12 +264,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
+        // Submit Handler
         $('#btnsubmit').on('click', function () {
             const net_sales = parseFloat(removeRupiahFormat($('#net_sales').val())) || 0;
+            const jumlah_pembayaran = parseFloat(removeRupiahFormat($('#jumlah_pembayaran').val())) || 0;
+            
+            // Hapus format rupiah sebelum submit untuk semua input potongan
+            $('.jumlah-potongan').each(function() {
+                let rawVal = removeRupiahFormat($(this).val());
+                $(this).val(rawVal);
+            });
+
             $('#net_sales').val(net_sales);
+            $('#jumlah_pembayaran').val(jumlah_pembayaran);
+            
             $('#btnsubmit').prop('disabled', true);
             $('#formOutstanding').submit();
         });
+
         $('#status_tracking').on('change', statusTracking);
         statusTracking();
 
@@ -237,8 +289,18 @@
             let inputVal = $(this).val().replace(/[^,\d]/g, '');
             $(this).val(formatRupiah(inputVal));
         });
-        optionDisabled();
 
+        $('#jumlah_pembayaran').on('input', function () {
+            let inputVal = $(this).val().replace(/[^,\d]/g, '');
+            $(this).val(formatRupiah(inputVal));
+        });
+
+        $('#potongan_container').on('input', '.jumlah-potongan', function () {
+            let inputVal = $(this).val().replace(/[^,\d]/g, '');
+            $(this).val(formatRupiah(inputVal));
+        });
+
+        optionDisabled();
         toggleJumlahPembayaran();
 
         $('input[name="status_pembayaran"]').on('change', toggleJumlahPembayaran);
@@ -247,65 +309,68 @@
             const status = $('input[name="status_pembayaran"]:checked').val();
             if (status === '1') { // Sudah
                 $('#jumlah_pembayaran_row').show();
+                togglePotongan(); 
             } else {
                 $('#jumlah_pembayaran_row').hide();
-                $('#jumlah_pembayaran').val(''); // reset nilai
+                $('#jumlah_pembayaran').val(''); 
+                $('#potongan_section').hide(); 
             }
+        }
+
+        function togglePotongan() {
+            const netSales = parseFloat(removeRupiahFormat($('#net_sales').val())) || 0;
+            const jumlahBayar = parseFloat(removeRupiahFormat($('#jumlah_pembayaran').val())) || 0;
+
+            if (jumlahBayar > 0 && jumlahBayar < netSales) {
+                $('#potongan_section').show();
+            } else {
+                $('#potongan_section').hide();
+            }
+        }
+
+        $('#jumlah_pembayaran, #net_sales').on('input', togglePotongan);
+
+        const existingPotongan = @json($potongan ?? []);
+        if (existingPotongan.length > 0) {
+             toggleJumlahPembayaran(); 
         }
     });
     
     function optionDisabled() {  
-        // Mengubah data menjadi objek JavaScript  
         var trackingOutstanding = @json($tracking_outstanding);  
-          
         const optionsToDisable = [    
-            "invoice",    
-            "faktur_pajak",    
-            "dokumen_tambahan",    
-            "konfir_cs",    
-            "no_resi",    
-            "tracking_dokumen",    
-            "konfir_pic",    
-            "pembayaran"    
+            "invoice", "faktur_pajak", "dokumen_tambahan", "konfir_cs",    
+            "no_resi", "tracking_dokumen", "konfir_pic", "pembayaran"    
         ];    
   
         optionsToDisable.forEach(function(optionValue) {    
-            // Jika nilai dari trackingOutstanding sesuai dengan opsi, nonaktifkan opsi tersebut    
             if (trackingOutstanding[optionValue] === "1") {    
                 $(`#status_tracking option[value="${optionValue}"]`).prop('disabled', true);    
             }    
         });    
     }  
+
     function statusTracking() {
         const selectedValue = $('#status_tracking').val();
-        console.log(selectedValue);
-        if (selectedValue === "faktur_pajak") {
-                $('#faktur_pajak_row').show();
-                $('#dokumen_tambahan_row').hide(); 
-                $('#pembayaran').hide(); 
-            } else if (selectedValue === "dokumen_tambahan") {
-                $('#dokumen_tambahan_row').show();
-                $('#faktur_pajak_row').hide(); 
-                $('#pembayaran').hide(); 
-            } else if (selectedValue === "pembayaran") {
-                $('#pembayaran').show();
-                $('#dokumen_tambahan_row').hide();
-                $('#faktur_pajak_row').hide(); 
-            } else {
-                $('#faktur_pajak_row').hide();
-                $('#pembayaran').hide();
-                $('#dokumen_tambahan_row').hide();
-            }
+        
+        // Reset visibility dulu
+        $('#faktur_pajak_row, #dokumen_tambahan_row, #pembayaran').hide();
+        $('#no_resi').closest('.row').hide();
 
-        if (selectedValue === "no_resi") {
-            $('#no_resi').closest('.row').show(); // Tampilkan elemen no_resi
-        } else {
-            $('#no_resi').closest('.row').hide(); // Sembunyikan elemen no_resi
+        if (selectedValue === "faktur_pajak") {
+            $('#faktur_pajak_row').show();
+        } else if (selectedValue === "dokumen_tambahan") {
+            $('#dokumen_tambahan_row').show();
+        } else if (selectedValue === "pembayaran") {
+            $('#pembayaran').show();
+        } else if (selectedValue === "no_resi") {
+            $('#no_resi').closest('.row').show();
         }
     }
+
     function formatRupiah(value) {
-        const isNegative = value.startsWith('-'); // Cek apakah nilai negatif
-        value = value.replace(/[^,\d]/g, '').toString(); // Hapus karakter non-numerik kecuali koma
+        const isNegative = value.startsWith('-');
+        value = value.replace(/[^,\d]/g, '').toString();
         const split = value.split(',');
         let rupiah = split[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         rupiah = (split[1] !== undefined) ? rupiah + ',' + split[1] : rupiah;
@@ -315,7 +380,6 @@
     function removeRupiahFormat(angka) {
         return angka.replace(/[Rp.\s]/g, '').replace(/,/g, '.');
     }
-
     
 </script>
 @endsection
