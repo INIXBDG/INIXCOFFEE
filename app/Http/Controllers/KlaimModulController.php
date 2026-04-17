@@ -10,8 +10,12 @@ use App\Models\Module;
 use App\Models\PengajuanBarang;
 use App\Models\PengajuanKlaimModul;
 use App\Models\User;
+use App\Notifications\KlaimModulNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\PengajuanbarangNotification;
+use App\Notifications\ApprovalbarangNotification;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class KlaimModulController extends Controller
 {
@@ -54,40 +58,32 @@ class KlaimModulController extends Controller
 
         if ($jabatan == 'Finance & Accounting' || $jabatan == 'GM') {
             $klaimModul = $baseQuery->get();
-
         } elseif ($jabatan == 'Education Manager') {
             $klaimModul = $baseQuery->whereHas('module', function ($query) use ($karyawan) {
                 $query->where(function ($q) use ($karyawan) {
-                    // Modul dari divisi Education
                     $q->whereIn('kode_karyawan', function ($sub) {
                         $sub->select('kode_karyawan')
                             ->from('karyawans')
                             ->where('divisi', 'Education');
                     })
-                        // ATAU Education Manager adalah instruktur di modul ini
                         ->orWhereHas('instructors', function ($q2) use ($karyawan) {
                             $q2->where('users.karyawan_id', $karyawan->id);
                         });
                 });
             })->get();
-
         } else {
-            // Instruktur biasa
             $klaimModul = $baseQuery->whereHas('module', function ($query) use ($karyawan, $divisi) {
                 $query->where(function ($q) use ($karyawan, $divisi) {
                     if ($divisi == 'Education') {
-                        // Instruktur Education: lihat SEMUA modul dari divisi Education
                         $q->whereIn('kode_karyawan', function ($sub) {
                             $sub->select('kode_karyawan')
                                 ->from('karyawans')
                                 ->where('divisi', 'Education');
                         })
-                            // ATAU modul dimana dia adalah instructor
                             ->orWhereHas('instructors', function ($q2) use ($karyawan) {
                                 $q2->where('users.karyawan_id', $karyawan->id);
                             });
                     } else {
-                        // Instruktur non-Education: hanya lihat modul sendiri atau dimana dia instructor
                         $q->where('kode_karyawan', $karyawan->kode_karyawan)
                             ->orWhereHas('instructors', function ($q2) use ($karyawan) {
                                 $q2->where('users.karyawan_id', $karyawan->id);
@@ -103,6 +99,7 @@ class KlaimModulController extends Controller
             'data' => $klaimModul,
         ]);
     }
+
     public function create()
     {
         $user = auth()->user();
@@ -137,13 +134,77 @@ class KlaimModulController extends Controller
 
             $module->instructors()->attach($request->instructors);
 
-            PengajuanKlaimModul::create([
+            $klaimModul = PengajuanKlaimModul::create([
                 'module_id' => $module->id,
                 'status' => 'Diajukan dan Sedang Ditinjau oleh Education Manager',
             ]);
 
             DB::commit();
+
+            $karyawan = auth()->user()->karyawan;
+            $divisi = $karyawan->divisi;
+            $jabatan = $karyawan->jabatan;
+
+            $Eduman = Karyawan::where('jabatan', 'Education Manager')->first();
+            $GM = Karyawan::where('jabatan', 'GM')->first();
+            $users = [];
+
+            switch ($jabatan) {
+                case 'SPV Sales':
+                case 'Office Manager':
+                case 'Education Manager':
+                case 'Koordinator Office':
+                case 'Koordinator ITSM':
+                    if ($GM)
+                        $users[] = $GM->kode_karyawan;
+                    break;
+                default:
+                    switch ($divisi) {
+                        case 'Education':
+                            if ($Eduman)
+                                $users[] = $Eduman->kode_karyawan;
+                            if ($GM)
+                                $users[] = $GM->kode_karyawan;
+                            break;
+                        case 'Sales & Marketing':
+                            if ($GM)
+                                $users[] = $GM->kode_karyawan;
+                            break;
+                        case 'Office':
+                            if ($GM)
+                                $users[] = $GM->kode_karyawan;
+                            break;
+                        case 'IT Service Management':
+                            if ($GM)
+                                $users[] = $GM->kode_karyawan;
+                            break;
+                    }
+                    break;
+            }
+
+            $users = User::whereHas('karyawan', function ($query) use ($users) {
+                $query->whereIn('kode_karyawan', array_filter($users));
+            })->get();
+
+            $data = [
+                'id_karyawan' => $karyawan->kode_karyawan,
+                'tipe' => 'Klaim Modul',
+                'judul_modul' => $module->title,
+                'kategori' => $module->category,
+                'tanggal_pengajuan' => now(),
+                'id_pengajuan' => $klaimModul->id,
+                'harga' => 0,
+            ];
+            $type = 'Mengajukan Klaim Modul'; // Pastikan ini persis sama
+            $path = '/pengajuanklaimmodul';
+
+            foreach ($users as $user) {
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new KlaimModulNotification($data, $path, $type, $receiverId));
+            }
+
             return redirect()->route('pengajuanklaimmodul.index')->with('success', 'Klaim Modul berhasil diajukan.');
+
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -260,9 +321,30 @@ class KlaimModulController extends Controller
 
                     $pengajuanBarang->update(['id_tracking' => $tracking->id]);
 
-                    $financeUser = User::whereHas('karyawan', function($q) {
-                        $q->where('jabatan', 'Finance & Accounting');
-                    })->first();
+                    $financeUser = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+                    if ($financeUser) {
+                        $users = [$financeUser->kode_karyawan, $karyawanPembuat->kode_karyawan];
+                        $userObjs = User::whereHas('karyawan', function ($query) use ($users) {
+                            $query->whereIn('kode_karyawan', array_filter($users));
+                        })->get();
+
+                        $to = $karyawanPembuat->nama_lengkap;
+                        $path = '/pengajuanbarang';
+                        $type = 'Klaim Modul Disetujui - Masuk Pengajuan Barang';
+                        $notifData = [
+                            'tanggal' => now(),
+                            'status' => 'Ditolak: ' . ($request->alasan ?? 'Tanpa alasan'),
+                            'judul_modul' => $klaimModul->module->title,
+                            'kategori' => $klaimModul->module->category,
+                        ];
+                        $type = 'Menolak Klaim Modul';
+                        $path = '/pengajuanklaimmodul';
+
+                        foreach ($userObjs as $user) {
+                            $receiverId = $user->id;
+                            NotificationFacade::send($user, new KlaimModulNotification($notifData, $path, $type, $receiverId));
+                        }
+                    }
                 }
 
             } else {
@@ -270,6 +352,33 @@ class KlaimModulController extends Controller
                     'status' => 'Ditolak: ' . ($request->alasan ?? 'Tanpa alasan'),
                     'approved_at' => null,
                 ]);
+
+                $karyawanPembuat = $klaimModul->module->karyawan;
+                $userPembuat = User::where('karyawan_id', $karyawanPembuat->id)->first();
+
+                if ($userPembuat) {
+                    $users = [$karyawanPembuat->kode_karyawan];
+                    $userObjs = User::whereHas('karyawan', function ($query) use ($users) {
+                        $query->whereIn('kode_karyawan', array_filter($users));
+                    })->get();
+
+                    $to = $karyawanPembuat->nama_lengkap;
+                    $path = '/pengajuanklaimmodul';
+                    $type = 'Menolak Klaim Modul';
+                    $notifData = [
+                        'tanggal' => now(),
+                        'status' => 'Ditolak: ' . ($request->alasan ?? 'Tanpa alasan'),
+                        'judul_modul' => $klaimModul->module->title,
+                        'kategori' => $klaimModul->module->category,
+                    ];
+                    $type = 'Menolak Klaim Modul';
+                    $path = '/pengajuanklaimmodul';
+
+                    foreach ($userObjs as $user) {
+                        $receiverId = $user->id;
+                        NotificationFacade::send($user, new KlaimModulNotification($notifData, $path, $type, $receiverId));
+                    }
+                }
             }
 
             DB::commit();
