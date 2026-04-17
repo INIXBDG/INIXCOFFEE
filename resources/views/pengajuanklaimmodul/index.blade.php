@@ -38,7 +38,8 @@
 
                             <div class="mt-3" id="priceInput">
                                 <label for="price" class="form-label">Harga Modul (Rp)</label>
-                                <input type="number" class="form-control" id="price" name="price" step="0.01" min="0">
+                                <input type="text" class="form-control format-currency" id="price" name="price"
+                                    inputmode="numeric" autocomplete="off">
                             </div>
 
                             <div class="mt-3" id="alasanInput" style="display: none;">
@@ -134,39 +135,113 @@
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
         <script>
-            $(document).ready(function () { loadData(); });
+            $(document).ready(function () {
+                loadData();
 
+                // Format input Rupiah saat mengetik
+                $('#price').on('input', function () {
+                    let angka = $(this).val().replace(/[^0-9]/g, '');
+                    $(this).val(angka ? 'Rp. ' + formatRupiah(angka) : '');
+                });
+
+                // Submit approve form
+                $('#approveForm').on('submit', function (e) {
+                    e.preventDefault();
+
+                    let form = $(this);
+                    let actionUrl = form.attr('action');
+
+                    let formData = form.serializeArray();
+
+                    // Bersihkan format rupiah
+                    formData.forEach(function (field) {
+                        if (field.name === 'price') {
+                            field.value = field.value.replace(/[^0-9]/g, '');
+                        }
+                    });
+
+                    $('#loadingModal').modal('show');
+
+                    $.ajax({
+                        url: actionUrl,
+                        type: 'POST',
+                        data: $.param(formData),
+
+                        success: function () {
+                            $('#loadingModal').modal('hide');
+                            $('#approveModal').modal('hide');
+
+                            loadData();
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: 'Klaim Modul berhasil diproses'
+                            });
+                        },
+
+                        error: function () {
+                            $('#loadingModal').modal('hide');
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: 'Gagal menyimpan data.'
+                            });
+                        }
+                    });
+                });
+            });
+
+            // Format angka ke ribuan
             function formatRupiah(angka) {
-                let number_string = angka.toString(), sisa = number_string.length % 3,
-                    rupiah = number_string.substr(0, sisa), ribuan = number_string.substr(sisa).match(/\d{3}/g);
-                if (ribuan) { let separator = sisa ? '.' : ''; rupiah += separator + ribuan.join('.'); }
-                return rupiah;
+                return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             }
 
+            // Load DataTable
             function loadData() {
                 var tahun = $('#tahun').val() || new Date().getFullYear();
                 var bulan = $('#bulan').val() || 'All';
-                if ($.fn.DataTable.isDataTable('#klaimModulTable')) { $('#klaimModulTable').DataTable().destroy(); }
+
+                if ($.fn.DataTable.isDataTable('#klaimModulTable')) {
+                    $('#klaimModulTable').DataTable().destroy();
+                }
 
                 $('#klaimModulTable').DataTable({
                     destroy: true,
                     autoWidth: false,
+
                     ajax: {
                         url: "{{ route('pengajuanklaimmodul.data', ['month' => ':month', 'year' => ':year']) }}"
-                            .replace(':month', bulan).replace(':year', tahun),
+                            .replace(':month', bulan)
+                            .replace(':year', tahun),
+
                         type: "GET",
                         dataSrc: "data",
-                        error: function (xhr, status, error) {
+
+                        error: function () {
                             $('#loadingModal').modal('hide');
-                            Swal.fire({ icon: 'error', title: 'Gagal Memuat Data', text: 'Terjadi kesalahan.' });
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Memuat Data',
+                                text: 'Terjadi kesalahan.'
+                            });
                         }
                     },
+
                     columns: [
-                        { data: "created_at", render: function (data) { moment.locale('id'); return moment(data).format('dddd, DD MMMM YYYY'); } },
+                        {
+                            data: "created_at",
+                            render: function (data) {
+                                moment.locale('id');
+                                return moment(data).format('dddd, DD MMMM YYYY');
+                            }
+                        },
                         { data: "module.title" },
                         { data: "module.category" },
                         { data: "module.karyawan.nama_lengkap" },
-                        // Kolom Instruktur
+
                         {
                             data: "module.instructors",
                             defaultContent: "-",
@@ -182,76 +257,130 @@
                                 return '-';
                             }
                         },
+
                         { data: "status" },
-                        // Kolom Harga
+
                         {
-                            data: "price", render: function (data) {
-                                if (data !== null && data !== undefined) return 'Rp ' + formatRupiah(parseFloat(data).toFixed(0));
+                            data: "price",
+                            render: function (data) {
+                                if (data !== null && data !== undefined) {
+                                    return 'Rp. ' + formatRupiah(parseInt(data));
+                                }
                                 return '-';
                             }
                         },
-                        // Kolom Aksi
+
                         {
                             data: null,
                             orderable: false,
                             searchable: false,
+
                             render: function (data, type, row) {
-                                let actions = '<div class="dropdown"><button class="btn btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">Action</button><div class="dropdown-menu">';
+                                let actions = `
+                                <div class="dropdown">
+                                    <button class="btn btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Action
+                                    </button>
+                                    <div class="dropdown-menu">
+                            `;
+
                                 let jabatan = '{{ auth()->user()->karyawan->jabatan }}';
                                 let kodeKaryawan = '{{ auth()->user()->karyawan->kode_karyawan }}';
                                 let moduleKode = row.module?.karyawan?.kode_karyawan ?? '';
                                 let status = row.status ?? '';
 
-                                if (jabatan === 'Education Manager' && status === 'Diajukan dan Sedang Ditinjau oleh Education Manager') {
-                                    actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ')"><img src="{{ asset("icon/check-circle.svg") }}" width="16"> Approve</button>';
+                                if (
+                                    jabatan === 'Education Manager' &&
+                                    status === 'Diajukan dan Sedang Ditinjau oleh Education Manager'
+                                ) {
+                                    actions += `
+                                    <button type="button" class="dropdown-item"
+                                        onclick="openApproveModal(${row.id})">
+                                        <img src="{{ asset('icon/check-circle.svg') }}" width="16">
+                                        Approve
+                                    </button>
+                                `;
                                 }
-                                actions += '<a href="{{ url("/pengajuanklaimmodul") }}/' + row.id + '" class="dropdown-item"><img src="{{ asset("icon/clipboard-primary.svg") }}" width="16"> Detail</a>';
-                                if (kodeKaryawan == moduleKode && !status.includes('Disetujui') && !status.includes('Ditolak')) {
-                                    actions += '<a href="{{ url("/pengajuanklaimmodul") }}/' + row.id + '/edit" class="dropdown-item"><img src="{{ asset("icon/edit.svg") }}" width="16"> Edit</a>';
+
+                                actions += `
+                                <a href="{{ url('/pengajuanklaimmodul') }}/${row.id}" class="dropdown-item">
+                                    <img src="{{ asset('icon/clipboard-primary.svg') }}" width="16">
+                                    Detail
+                                </a>
+                            `;
+
+                                if (
+                                    kodeKaryawan == moduleKode &&
+                                    !status.includes('Disetujui') &&
+                                    !status.includes('Ditolak')
+                                ) {
+                                    actions += `
+                                    <a href="{{ url('/pengajuanklaimmodul') }}/${row.id}/edit"
+                                       class="dropdown-item">
+                                        <img src="{{ asset('icon/edit.svg') }}" width="16">
+                                        Edit
+                                    </a>
+                                `;
                                 }
-                                if (kodeKaryawan == moduleKode || jabatan == 'Education Manager' || jabatan == 'GM') {
-                                    actions += '<form method="POST" action="{{ url("/pengajuanklaimmodul") }}/' + row.id + '" onsubmit="return confirm(\'Yakin hapus?\')">';
-                                    actions += '@csrf @method("DELETE")';
-                                    actions += '<button type="submit" class="dropdown-item"><img src="{{ asset("icon/trash-danger.svg") }}" width="16"> Hapus</button></form>';
+
+                                if (
+                                    kodeKaryawan == moduleKode ||
+                                    jabatan == 'Education Manager' ||
+                                    jabatan == 'GM'
+                                ) {
+                                    actions += `
+                                    <form method="POST"
+                                          action="{{ url('/pengajuanklaimmodul') }}/${row.id}"
+                                          onsubmit="return confirm('Yakin hapus?')">
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button type="submit" class="dropdown-item">
+                                            <img src="{{ asset('icon/trash-danger.svg') }}" width="16">
+                                            Hapus
+                                        </button>
+                                    </form>
+                                `;
                                 }
-                                actions += '</div></div>';
+
+                                actions += `</div></div>`;
                                 return actions;
                             }
                         }
                     ],
+
                     order: [[0, 'desc']],
-                    drawCallback: function () { $('#loadingModal').modal('hide'); }
-                });
-            }
 
-            function openApproveModal(id) {
-                $('#approveForm').attr('action', "{{ url('/pengajuanklaimmodul') }}/" + id + "/approve");
-                $('#approveModal').modal('show'); togglePriceField(true);
-            }
-
-            function togglePriceField(show) {
-                document.getElementById('priceInput').style.display = show ? 'block' : 'none';
-                document.getElementById('alasanInput').style.display = show ? 'none' : 'block';
-                if (show) document.getElementById('price').setAttribute('required', 'required');
-                else document.getElementById('price').removeAttribute('required');
-            }
-
-            $('#approveForm').on('submit', function (e) {
-                e.preventDefault();
-                $('#loadingModal').modal('show');
-                $.ajax({
-                    url: $(this).attr('action'), type: 'POST', data: $(this).serialize(),
-                    success: function () {
-                        $('#loadingModal').modal('hide'); $('#approveModal').modal('hide');
-                        loadData();
-                        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Klaim Modul berhasil diproses' });
-                    },
-                    error: function () {
+                    drawCallback: function () {
                         $('#loadingModal').modal('hide');
-                        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan data.' });
                     }
                 });
-            });
+            }
+
+            // Buka modal approve
+            function openApproveModal(id) {
+                $('#approveForm').attr(
+                    'action',
+                    "{{ url('/pengajuanklaimmodul') }}/" + id + "/approve"
+                );
+
+                $('#approveModal').modal('show');
+                togglePriceField(true);
+            }
+
+            // Toggle field approve / reject
+            function togglePriceField(show) {
+                $('#priceInput').toggle(show);
+                $('#alasanInput').toggle(!show);
+
+                if (show) {
+                    $('#price').attr('required', true);
+                    $('#alasan').removeAttr('required');
+                } else {
+                    $('#price').removeAttr('required');
+                    $('#alasan').attr('required', true);
+                }
+            }
         </script>
     @endpush
 @endsection

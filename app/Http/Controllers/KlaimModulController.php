@@ -290,7 +290,7 @@ class KlaimModulController extends Controller
         try {
             if ($request->approval == '1') {
                 $klaimModul->update([
-                    'price' => $request->price,
+                    'price' => (float) str_replace('.', '', $request->price),
                     'status' => 'Disetujui oleh Education Manager',
                     'approved_at' => now(),
                 ]);
