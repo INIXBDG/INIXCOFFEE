@@ -10,10 +10,12 @@
                     {{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong> untuk izin
                 {{ $notification->data['message']['durasi'] ?? '-' }} jam, Mulai Jam
                 {{ \Carbon\Carbon::parse($notification->data['message']['jam_mulai'] ?? now())->format('H:i') }} s/d Jam
-                {{ \Carbon\Carbon::parse($notification->data['message']['jam_selesai'] ?? now())->format('H:i') }}</p>
+                {{ \Carbon\Carbon::parse($notification->data['message']['jam_selesai'] ?? now())->format('H:i') }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
-                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat Selengkapnya</a>
+                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
+                    style="margin-right:8px;">Lihat Selengkapnya</a>
                 <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
@@ -32,8 +34,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -66,8 +67,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -86,8 +86,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -108,8 +107,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -130,8 +128,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -153,8 +150,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -167,13 +163,13 @@
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah menambahkan
                 {{ $notification->data['message']['tipe'] ?? '-' }} "{{ $notification->data['message']['content'] ?? '-' }}" di
-                {{ $notification->data['message']['materi_key'] ?? '-' }}</p>
+                {{ $notification->data['message']['materi_key'] ?? '-' }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Komentar</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -184,13 +180,14 @@
 
     @if ($tipePesan == 'Penilaian 360')
         <div class="notification mb-3">
-            <p>Mohon untuk <strong style="text-transform: capitalize;">{{ $notification->data['message']['content'] ?? '-' }}</strong>. terima kasih</p>
+            <p>Mohon untuk <strong
+                    style="text-transform: capitalize;">{{ $notification->data['message']['content'] ?? '-' }}</strong>. terima
+                kasih</p>
             <p>Dibuat Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Nilai Sekarang</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -205,13 +202,13 @@
                 menambahkan
                 {{ $notification->data['message']['tipe'] ?? '-' }} dengan judul
                 "{{ $notification->data['message']['nama_materi'] ?? '-' }}" dengan peserta dari
-                {{ $notification->data['message']['nama_perusahaan'] ?? '-' }}</p>
+                {{ $notification->data['message']['nama_perusahaan'] ?? '-' }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat RKM</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -235,8 +232,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat RKM</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -247,13 +243,16 @@
 
     @if ($tipePesan == 'Assign Kelas')
         <div class="notification mb-3">
-            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah menambahkan anda sebagai {{ $notification->data['message']['role'] ?? '-' }} di kelas "{{ $notification->data['message']['nama_materi'] ?? '-' }}" dengan peserta dari {{ $notification->data['message']['nama_perusahaan'] ?? '-' }}</p>
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah menambahkan
+                anda sebagai {{ $notification->data['message']['role'] ?? '-' }} di kelas
+                "{{ $notification->data['message']['nama_materi'] ?? '-' }}" dengan peserta dari
+                {{ $notification->data['message']['nama_perusahaan'] ?? '-' }}
+            </p>
             <p>Di assign pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat RKM</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -267,13 +266,13 @@
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah
                 {{ $notification->data['message']['tipe'] ?? '-' }} dengan judul
                 "{{ $notification->data['message']['nama_materi'] ?? '-' }}" dengan peserta dari
-                {{ $notification->data['message']['nama_perusahaan'] ?? '-' }}</p>
+                {{ $notification->data['message']['nama_perusahaan'] ?? '-' }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Exam</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -288,13 +287,13 @@
                 {{ $notification->data['message']['tipe'] ?? '-' }} yang diajukan pada tanggal
                 {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_pengajuan'] ?? now())->format('d M Y') }}
                 dengan judul "{{ $notification->data['message']['materi'] ?? '-' }}" dengan peserta dari
-                {{ $notification->data['message']['perusahaan'] ?? '-' }}</p>
+                {{ $notification->data['message']['perusahaan'] ?? '-' }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Exam</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -316,8 +315,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -339,8 +337,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -356,13 +353,13 @@
                 {{ $notification->data['message']['nama_lengkap'] ?? '-' }} dengan durasi
                 {{ $notification->data['message']['durasi'] ?? '-' }} hari Pada Tanggal
                 {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_awal'] ?? now())->format('d M Y') }} s/d
-                {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_akhir'] ?? now())->format('d M Y') }}</p>
+                {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_akhir'] ?? now())->format('d M Y') }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -384,8 +381,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -400,13 +396,13 @@
                 {{ $notification->data['message']['tipe'] ?? '-' }} {{ $notification->data['message']['nama_lengkap'] ?? '-' }}
                 dengan durasi {{ $notification->data['message']['durasi'] ?? '-' }} hari Pada Tanggal
                 {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_berangkat'] ?? now())->format('d M Y') }} s/d
-                {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_pulang'] ?? now())->format('d M Y') }}</p>
+                {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_pulang'] ?? now())->format('d M Y') }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -428,8 +424,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -454,11 +449,11 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
-                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Sudah Melakukan Checkout</button>
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Sudah Melakukan
+                        Checkout</button>
                 </form>
             </div>
         </div>
@@ -481,11 +476,11 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
-                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Sudah Melakukan Pembayaran</button>
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Sudah Melakukan
+                        Pembayaran</button>
                 </form>
             </div>
         </div>
@@ -502,8 +497,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -550,8 +544,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -570,8 +563,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -585,13 +577,13 @@
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah
                 {{ $notification->data['message']['tipe'] ?? '-' }} {{ $notification->data['message']['nama_lengkap'] ?? '-' }}
                 dengan Alasan "{{ $notification->data['message']['status'] ?? '-' }}" Pada Tanggal
-                {{ \Carbon\Carbon::parse($notification->data['message']['tanggal'] ?? now())->format('d M Y') }}</p>
+                {{ \Carbon\Carbon::parse($notification->data['message']['tanggal'] ?? now())->format('d M Y') }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -612,8 +604,7 @@
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -628,13 +619,13 @@
                 {{ $notification->data['message']['tipe'] ?? '-' }} Pada <strong>Hari
                     {{ $notification->data['message']['waktu_lembur'] ?? '-' }}</strong> Tanggal
                 {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_lembur'] ?? now())->format('d M Y') }} dengan
-                tugas "{{ $notification->data['message']['uraian_tugas'] ?? '-' }}"</p>
+                tugas "{{ $notification->data['message']['uraian_tugas'] ?? '-' }}"
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -649,13 +640,13 @@
                 {{ $notification->data['message']['tipe'] ?? '-' }} Pada <strong>Hari
                     {{ $notification->data['message']['waktu_lembur'] ?? '-' }}</strong> Tanggal
                 {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_lembur'] ?? now())->format('d M Y') }} dengan
-                tugas "{{ $notification->data['message']['uraian_tugas'] ?? '-' }}"</p>
+                tugas "{{ $notification->data['message']['uraian_tugas'] ?? '-' }}"
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -670,13 +661,13 @@
                 {{ $notification->data['message']['tipe'] ?? '-' }} {{ $notification->data['message']['id_karyawan'] ?? '-' }}
                 Pada <strong>Hari {{ $notification->data['message']['waktu_lembur'] ?? '-' }}</strong> Tanggal
                 {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_lembur'] ?? now())->format('d M Y') }} Selamat
-                Berlembur Ria!</p>
+                Berlembur Ria!
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -689,13 +680,13 @@
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah
                 {{ $notification->data['message']['tipe'] ?? '-' }} {{ $notification->data['message']['nama_karyawan'] ?? '-' }}
-                dengan alasan {{ $notification->data['message']['alasan'] ?? '-' }}</p>
+                dengan alasan {{ $notification->data['message']['alasan'] ?? '-' }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -709,13 +700,13 @@
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah
                 {{ $notification->data['message']['status'] ?? '-' }} {{ $notification->data['message']['tipe'] ?? '-' }}
                 {{ $notification->data['message']['nama_karyawan'] ?? '-' }} dengan alasan
-                {{ $notification->data['message']['alasan'] ?? '-' }}</p>
+                {{ $notification->data['message']['alasan'] ?? '-' }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -745,11 +736,11 @@
                 <div class="d-flex">
                     <a href="https://inixindobdg.co.id/login" class="btn btn-primary btn-sm me-2"
                         style="font-size: 0.85rem;">Lihat Selengkapnya</a>
-                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                        class="d-inline">
+                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                         @csrf
                         @method('PUT')
-                        <button type="submit" class="btn btn-danger btn-sm" style="font-size: 0.85rem;">Tandai sebagai Dibaca</button>
+                        <button type="submit" class="btn btn-danger btn-sm" style="font-size: 0.85rem;">Tandai sebagai
+                            Dibaca</button>
                     </form>
                 </div>
             </div>
@@ -778,9 +769,10 @@
             <br>
 
             @if (
-                !empty($notification->data['message']['cartItems']) &&
+                    !empty($notification->data['message']['cartItems']) &&
                     is_array($notification->data['message']['cartItems']) &&
-                    count($notification->data['message']['cartItems']) > 0)
+                    count($notification->data['message']['cartItems']) > 0
+                )
                 <p>Items dalam keranjang:</p>
                 <ul>
                     @foreach ($notification->data['message']['cartItems'] as $item)
@@ -795,8 +787,7 @@
                 <a href="https://inixindobdg.co.id/admin" class="btn btn-primary btn-sm" style="margin-right:8px;">
                     Lihat Selengkapnya
                 </a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">
@@ -826,8 +817,7 @@
                 <a href="https://inixindobdg.co.id/admin" class="btn btn-primary btn-sm" style="margin-right:8px;">
                     Lihat Selengkapnya
                 </a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">
@@ -844,13 +834,13 @@
                 {{ $notification->data['message']['divisi'] ?? '-' }} telah membuat
                 {{ $notification->data['message']['tipe'] ?? '-' }} dengan keperluan
                 {{ $notification->data['message']['keperluan'] ?? '-' }} di kategori
-                {{ $notification->data['message']['kategori'] ?? '-' }}</p>
+                {{ $notification->data['message']['kategori'] ?? '-' }}
+            </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -871,45 +861,45 @@
                 Data ini milik <strong>{{ $notification->data['message']['milik'] ?? '-' }}</strong>.
             </p>
 
-                @if (!empty($notification->data['message']['perubahan']))
-                    <div class="mt-2">
-                        <strong>Detail perubahan:</strong>
-                        <ul class="mt-1 mb-0">
-                            @php
-                                $perubahanData = $notification->data['message']['perubahan'];
-                                if (is_string($perubahanData)) {
-                                    $perubahanData = json_decode($perubahanData, true) ?? [];
-                                }
-                            @endphp
+            @if (!empty($notification->data['message']['perubahan']))
+                <div class="mt-2">
+                    <strong>Detail perubahan:</strong>
+                    <ul class="mt-1 mb-0">
+                        @php
+                            $perubahanData = $notification->data['message']['perubahan'];
+                            if (is_string($perubahanData)) {
+                                $perubahanData = json_decode($perubahanData, true) ?? [];
+                            }
+                        @endphp
 
-                            @if(is_array($perubahanData))
-                                @foreach ($perubahanData as $field => $values)
-                                    <li>
-                                        <strong>{{ ucfirst(str_replace('_', ' ', $field)) }}</strong>:
+                        @if(is_array($perubahanData))
+                            @foreach ($perubahanData as $field => $values)
+                                <li>
+                                    <strong>{{ ucfirst(str_replace('_', ' ', $field)) }}</strong>:
 
-                                        <span class="text-danger">
-                                            @if(isset($values['before']) && is_numeric($values['before']))
-                                                {{ number_format((float)$values['before'], 0, ',', '.') }}
-                                            @else
-                                                {{ $values['before'] ?? '-' }}
-                                            @endif
-                                        </span>
+                                    <span class="text-danger">
+                                        @if(isset($values['before']) && is_numeric($values['before']))
+                                            {{ number_format((float) $values['before'], 0, ',', '.') }}
+                                        @else
+                                            {{ $values['before'] ?? '-' }}
+                                        @endif
+                                    </span>
 
-                                        →
+                                    →
 
-                                        <span class="text-success">
-                                            @if(isset($values['after']) && is_numeric($values['after']))
-                                                {{ number_format((float)$values['after'], 0, ',', '.') }}
-                                            @else
-                                                {{ $values['after'] ?? '-' }}
-                                            @endif
-                                        </span>
-                                    </li>
-                                @endforeach
-                            @endif
-                        </ul>
-                    </div>
-                @endif
+                                    <span class="text-success">
+                                        @if(isset($values['after']) && is_numeric($values['after']))
+                                            {{ number_format((float) $values['after'], 0, ',', '.') }}
+                                        @else
+                                            {{ $values['after'] ?? '-' }}
+                                        @endif
+                                    </span>
+                                </li>
+                            @endforeach
+                        @endif
+                    </ul>
+                </div>
+            @endif
 
             <small class="text-muted">
                 Pada
@@ -920,8 +910,7 @@
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm me-2">
                     Lihat Detail
                 </a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -933,13 +922,15 @@
     @endif
 
     @if ($tipePesan == 'Pembayaran Outstanding Selesai')
-        <div class="alert alert-success d-flex justify-content-between align-items-start shadow-sm p-3 mb-3 border-start border-4 border-success">
+        <div
+            class="alert alert-success d-flex justify-content-between align-items-start shadow-sm p-3 mb-3 border-start border-4 border-success">
             <div>
                 <h6 class="fw-bold mb-2 text-success">
                     <i class="bi bi-check-circle-fill me-2"></i>Pembayaran Outstanding Selesai
                 </h6>
                 <p class="mb-1">
-                    <strong>{{ $notification->data['message']['perusahaan'] ?? '-' }}</strong> telah menyelesaikan pembayaran untuk
+                    <strong>{{ $notification->data['message']['perusahaan'] ?? '-' }}</strong> telah menyelesaikan pembayaran
+                    untuk
                     <strong>{{ $notification->data['message']['materi'] ?? '-' }}</strong>
                     <span class="text-primary">({{ $notification->data['message']['periode'] ?? '-' }})</span>.
                 </p>
@@ -948,12 +939,13 @@
                     Tanggal Bayar:
                     <strong>
                         {{ !empty($notification->data['message']['tgl_bayar'])
-                            ? \Carbon\Carbon::parse($notification->data['message']['tgl_bayar'])->locale('id')->translatedFormat('d F Y')
-                            : '-' }}
+                    ? \Carbon\Carbon::parse($notification->data['message']['tgl_bayar'])->locale('id')->translatedFormat('d F Y')
+                    : '-' }}
                     </strong>
                 </p>
                 <small class="text-muted">
-                    Dikirim: {{ \Carbon\Carbon::parse($notification->created_at)->locale('id')->translatedFormat('d F Y H:i') }} WIB
+                    Dikirim: {{ \Carbon\Carbon::parse($notification->created_at)->locale('id')->translatedFormat('d F Y H:i') }}
+                    WIB
                 </small>
 
                 <div class="mt-2">
@@ -1037,8 +1029,7 @@
                     </p>
 
                     <div class="mt-2 mb-2">
-                        <small class="text-muted d-block text-uppercase"
-                            style="font-size: 0.7rem; font-weight: bold;">
+                        <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem; font-weight: bold;">
                             Diberikan Kepada:
                         </small>
                         <div class="d-flex align-items-center">
@@ -1056,8 +1047,7 @@
 
                     @if (!empty($notification->data['message']['detail_barang']) && is_array($notification->data['message']['detail_barang']))
                         <div class="p-2 bg-white border rounded mb-2">
-                            <small class="text-muted d-block text-uppercase mb-1"
-                                style="font-size: 0.7rem; font-weight: bold;">
+                            <small class="text-muted d-block text-uppercase mb-1" style="font-size: 0.7rem; font-weight: bold;">
                                 Detail Item:
                             </small>
                             <ul class="list-unstyled mb-0" style="font-size: 0.9rem;">
@@ -1078,8 +1068,7 @@
 
                     @if (!empty($notification->data['message']['nama_rkm']))
                         <div class="mt-2 p-2 bg-white border rounded">
-                            <small class="text-muted d-block text-uppercase"
-                                style="font-size: 0.7rem; font-weight: bold;">
+                            <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem; font-weight: bold;">
                                 Kegiatan / Materi:
                             </small>
                             <span class="text-dark fw-bold">
@@ -1133,8 +1122,7 @@
                     </p>
 
                     <div class="mt-2 p-2 bg-white border rounded">
-                        <small class="text-muted d-block text-uppercase"
-                            style="font-size: 0.7rem; font-weight: bold;">
+                        <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem; font-weight: bold;">
                             Pemilik / Peserta:
                         </small>
                         <div class="mb-2">
@@ -1165,7 +1153,8 @@
 
                     <small class="text-muted mt-2 d-block">
                         <i class="bi bi-clock"></i> Diproses pada:
-                        {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_tukar'] ?? now())->translatedFormat('d F Y H:i') }} WIB
+                        {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_tukar'] ?? now())->translatedFormat('d F Y H:i') }}
+                        WIB
                     </small>
                 </div>
             </div>
@@ -1374,7 +1363,8 @@
                 @elseif ($msg['tipe'] == 'Pengembangan Diri Disetujui')
                     telah <strong>menyetujui</strong>. <br>
                     <span class="text-success fst-italic">
-                        "Telah disetujui Education Manager dan Sudah menjadi pengajuan barang dengan kategori Sertifikasi dan Pelatihan"
+                        "Telah disetujui Education Manager dan Sudah menjadi pengajuan barang dengan kategori Sertifikasi dan
+                        Pelatihan"
                     </span> <br>
                     untuk data
                 @elseif ($msg['tipe'] == 'Pengembangan Diri Ditolak')
@@ -1384,7 +1374,7 @@
                 <strong>{{ $kategori }}</strong>: "{{ $namaItem }}"
 
                 @if($namaSertifTambahan)
-                     dan <strong>Sertifikasi</strong>: "{{ $namaSertifTambahan }}"
+                    dan <strong>Sertifikasi</strong>: "{{ $namaSertifTambahan }}"
                 @endif
                 .
             </p>
@@ -1396,7 +1386,7 @@
                             <i class="bi bi-calendar-event text-primary"></i>
                             Tgl Ujian: <strong>{{ \Carbon\Carbon::parse($tglUjian)->translatedFormat('d M Y') }}</strong>
                         </div>
-                         <div class="col-12 mb-1">
+                        <div class="col-12 mb-1">
                             <i class="bi bi-clock-history text-warning"></i>
                             Berlaku:
                             {{ $tglBerlakuDari ? \Carbon\Carbon::parse($tglBerlakuDari)->translatedFormat('d M Y') : '-' }}
@@ -1409,7 +1399,8 @@
                         <i class="bi bi-calendar-check text-primary"></i>
                         Pelaksanaan:
                         @if($tglMulai)
-                            <strong>{{ \Carbon\Carbon::parse($tglMulai)->translatedFormat('d M Y') }}</strong> s/d <strong>{{ \Carbon\Carbon::parse($tglSelesai)->translatedFormat('d M Y') }}</strong>
+                            <strong>{{ \Carbon\Carbon::parse($tglMulai)->translatedFormat('d M Y') }}</strong> s/d
+                            <strong>{{ \Carbon\Carbon::parse($tglSelesai)->translatedFormat('d M Y') }}</strong>
                         @else
                             <strong>{{ \Carbon\Carbon::parse($tglPelatihanLama)->translatedFormat('d F Y') }}</strong>
                         @endif
@@ -1429,7 +1420,8 @@
                     <i class="bi bi-info-circle"></i> {{ $msg['status'] }}<br>
                 @endif
                 @if($tglPengajuan)
-                    <small><i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($tglPengajuan)->translatedFormat('d F Y H:i') }}</small>
+                    <small><i class="bi bi-clock"></i>
+                        {{ \Carbon\Carbon::parse($tglPengajuan)->translatedFormat('d F Y H:i') }}</small>
                 @endif
             </p>
 
@@ -1513,7 +1505,8 @@
                 </div>
                 <div class="alert alert-success py-2 px-3 mb-3" style="font-size: 0.85rem;">
                     <i class="bi bi-check-circle me-1"></i>
-                    Status kegiatan telah berubah menjadi <strong>Approved</strong>. Silakan lanjutkan proses selanjutnya dibagian Finance.
+                    Status kegiatan telah berubah menjadi <strong>Approved</strong>. Silakan lanjutkan proses selanjutnya
+                    dibagian Finance.
                 </div>
                 <small class="text-muted d-block">
                     <i class="bi bi-clock"></i> Dibuat pada: {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
@@ -1544,7 +1537,8 @@
                 </div>
                 <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.85rem;">
                     <i class="bi bi-cash-coin me-1"></i>
-                    Dana kegiatan telah <strong>dicairkan</strong> oleh Finance. Silakan lanjutkan pelaksanaan kegiatan dan selesaikan.
+                    Dana kegiatan telah <strong>dicairkan</strong> oleh Finance. Silakan lanjutkan pelaksanaan kegiatan dan
+                    selesaikan.
                 </div>
                 <small class="text-muted d-block">
                     <i class="bi bi-clock"></i> Dibuat pada: {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
@@ -1632,13 +1626,13 @@
     @if ($tipePesan == 'Mengajukan Update Exam')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah
-                {{ $notification->data['message']['tipe'] ?? '-' }} </p> {{ $notification->data['message']['nama_exam'] ?? '-' }}
+                {{ $notification->data['message']['tipe'] ?? '-' }}
+            </p> {{ $notification->data['message']['nama_exam'] ?? '-' }}
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
                     style="margin-right:8px;">Lihat Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
@@ -1684,7 +1678,7 @@
         </div>
     @endif
 
-        @if (in_array($tipePesan, ['Mengajukan Lab', 'Mengajukan Subscription']))
+    @if (in_array($tipePesan, ['Mengajukan Lab', 'Mengajukan Subscription']))
         <div class="notification mb-3 p-3 border rounded bg-light">
             <p class="mb-2">
                 <strong class="text-capitalize">{{ $notification->data['user'] ?? '-' }}</strong>
@@ -1728,8 +1722,7 @@
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-sm btn-primary me-2">
                     Lihat Selengkapnya
                 </a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -1765,8 +1758,7 @@
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm me-2">
                     Lihat Detail Pengajuan
                 </a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -1802,12 +1794,86 @@
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm me-2">
                     Lihat Detail Pengajuan
                 </a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-outline-danger btn-sm">
                         Tandai sebagai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+    @if (in_array($tipePesan, ['Mengajukan Klaim Modul', 'Klaim Modul Disetujui - Masuk Pengajuan Barang', 'Menolak Klaim Modul']))
+        @php
+            // Debug structure
+            // dd($notification->data);
+
+            $msg = $notification->data['message'] ?? [];
+            $user = $notification->data['user'] ?? 'User';
+            $judul = $msg['judul_modul'] ?? ($msg['nama_item'] ?? '-');
+            $kategori = $msg['kategori'] ?? '-';
+            $harga = $msg['harga'] ?? 0;
+            $tgl = $msg['tanggal_pengajuan'] ?? ($msg['tanggal'] ?? null);
+            $status = $msg['status'] ?? '-';
+            $path = $notification->data['path'] ?? '#';
+        @endphp
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            <div class="d-flex justify-content-between align-items-start">
+                <div style="width: 100%;">
+                    <p class="mb-1">
+                        <strong class="text-capitalize text-primary">{{ $user }}</strong>
+                        @if ($tipePesan == 'Mengajukan Klaim Modul')
+                            telah <strong>membuat pengajuan baru</strong> untuk Klaim Modul
+                        @elseif ($tipePesan == 'Klaim Modul Disetujui - Masuk Pengajuan Barang')
+                            telah <strong>menyetujui</strong> Klaim Modul
+                        @elseif ($tipePesan == 'Menolak Klaim Modul')
+                            telah <strong>menolak</strong> pengajuan Klaim Modul
+                        @endif
+                        <strong>"{{ $judul }}"</strong>.
+                    </p>
+
+                    @if($kategori != '-' || $harga > 0 || $status != '-')
+                        <div class="alert alert-light border py-2 px-3 mb-2 mt-2" style="font-size: 0.9rem;">
+                            @if($kategori != '-')
+                                <small class="text-muted d-block">Kategori: <strong>{{ $kategori }}</strong></small>
+                            @endif
+
+                            @if($status != '-' && $tipePesan != 'Mengajukan Klaim Modul')
+                                <div class="mt-1 border-top pt-1">
+                                    <small class="text-muted"><i class="bi bi-info-circle"></i> {{ $status }}</small>
+                                </div>
+                            @endif
+
+                            @if($harga > 0)
+                                <div class="text-end mt-1">
+                                    <small class="text-muted">Estimasi Biaya:</small><br>
+                                    <strong class="text-success">Rp {{ number_format($harga, 0, ',', '.') }}</strong>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
+                    <small class="text-muted d-block">
+                        <i class="bi bi-clock"></i> Diinput pada:
+                        @if($tgl)
+                            {{ \Carbon\Carbon::parse($tgl)->translatedFormat('d F Y H:i') }}
+                        @else
+                            {{ $notification->created_at->translatedFormat('d F Y H:i') }}
+                        @endif
+                    </small>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $path }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i> Lihat Detail
+                </a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
                     </button>
                 </form>
             </div>
