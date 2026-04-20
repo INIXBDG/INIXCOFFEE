@@ -260,20 +260,20 @@ class ModulController extends Controller
             'akhir_training' => 'required|date|after_or_equal:awal_training',
         ]);
 
-        $materi = Materi::where('id', $request->modul)->first();
+        // $materi = Materi::where('id', $request->modul)->first();
         $modul = NomorModul::where('id', $request->no_modul)->first();
         $jumlah = Modul::where('no_modul', $modul->id)->first();
         if (PesertaModul::where('no_modul', $modul->id)->count() >= $jumlah->jumlah) {
             return back()->with('error', 'Peserta sudah mencapat batas, silahkan periksa kembali.');
         }
 
-        if (!$materi) {
-            return back()->with('error', 'Materi tidak ditemukan. Silakan pilih modul yang valid.');
-        }
+        // if (!$materi) {
+        //     return back()->with('error', 'Materi tidak ditemukan. Silakan pilih modul yang valid.');
+        // }
 
         PesertaModul::create([
             'no_modul'       => $request->no_modul,
-            'modul'          => $materi->id,
+            'modul'          => $request->modul,
             'nama_peserta'   => $request->nama_peserta,
             'email'          => $request->email_peserta,
             'perusahaan_id'  => $request->perusahaan_id,
