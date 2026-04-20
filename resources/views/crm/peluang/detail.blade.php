@@ -66,6 +66,9 @@
                         <div class="card-body">
                             <dl class="row">
                                 <input type="text" hidden disabled value="{{ $peluang->id_contact }}" name="id_contact">
+                                <dt class="col-sm-4">ID RKM</dt>
+                                <dd class="col-sm-8">{{ $peluang->id_rkm ?? '-' }}</dd>
+
                                 <dt class="col-sm-4">Materi</dt>
                                 <dd class="col-sm-8">{{ $peluang->materiRelation->nama_materi ?? '-' }}</dd>
 

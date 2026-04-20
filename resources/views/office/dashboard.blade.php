@@ -365,6 +365,238 @@
                 </div>
             </div>
         </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-12">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <!-- Card Header -->
+                    <div class="card-header border-bottom-0 py-4 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                            <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
+                            Data Outstanding
+                        </h5>
+                    </div>
+
+                    <div class="px-4 py-3 border-bottom">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                            <div class="w-md-25">
+                                <input type="text" id="searchOutstanding" class="form-control"
+                                    placeholder="Cari data outstanding..." autocomplete="off">
+                            </div>
+
+                            <div id="paginationInfo" class="text-muted small"></div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Perusahaan</th>
+                                    <th scope="col">Kelas</th>
+                                    <th scope="col">Sales</th>
+                                    <th scope="col">Tanggal</th>
+                                    <th scope="col">Tagihan</th>
+                                    <th scope="col">Tenggat Waktu</th>
+                                    <th scope="col">Tanggal Bayar</th>
+                                    <th scope="col">Nominal Pembayaran</th>
+                                    <th scope="col">Admin Transfer</th>
+                                    <th scope="col">Nominal Pph23</th>
+                                    <th scope="col">Nominal PPN</th>
+                                    <th scope="col">Uang Diterima</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Info</th>
+                                </tr>
+                            </thead>
+                            <tbody id="outstandingTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-footer py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                        <div id="paginationInfo" class="text-muted small"></div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" id="prevPage" disabled>Sebelumnya</button>
+                            <span id="pageInfo" class="align-self-center"></span>
+                            <button class="btn btn-sm btn-outline-secondary" id="nextPage">Selanjutnya</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden mb-6 glass-force">
+            <div class="card-header border-bottom-0 pb-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                        <i class="bx bx-line-chart text-primary me-2" style="font-size: 1.5rem;"></i>
+                        Grafik Outstanding
+                    </h5>
+
+                    <!-- Filter Tahun -->
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="filterTahun" class="form-label mb-0 text-secondary fw-medium">Tahun :</label>
+                        <select id="filterTahun" class="form-select w-auto">
+                            @for ($i = 0; $i < 6; $i++)
+                                <option value="{{ now()->year - $i }}" 
+                                        {{ (now()->year - $i) == now()->year ? 'selected' : '' }}>
+                                    {{ now()->year - $i }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row h-100">
+
+                    <!-- CHART -->
+                    <div class="col-lg-8">
+                        <div class="chart-wrapper position-relative" style="height: 380px;">
+                            <canvas id="grafikOutstanding"></canvas>
+
+                            <div id="outstandingEmpty"
+                                class="d-none position-absolute top-50 start-50 translate-middle
+                                d-flex flex-column align-items-center text-center w-100">
+                                <i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i>
+                                <p class="text-muted mt-2 mb-0">
+                                    Tidak ada data Outstanding
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 d-flex flex-column gap-3 mt-4 mt-lg-0">
+
+                        <div class="p-3 rounded-3 shadow-sm">
+                            <h6 class="fw-semibold mb-3 text-dark">KPI Summary</h6>
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Target</span>
+                                <b>100%</b>
+                            </div>
+
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Progress</span>
+                                <b id="kpiProgress">0%</b>
+                            </div>
+
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Total Client</span>
+                                <b id="totalClient">0</b>
+                            </div>
+                        </div>
+
+                        <div class="p-3 border rounded-3 shadow-sm">
+
+                            <h6 class="fw-semibold mb-3 text-dark">Detail Data</h6>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Belum Bayar</span>
+                                <span id="lblBelumBayar" class="fw-bold">0</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Tepat Waktu</span>
+                                <span id="lblTepatWaktu" class="fw-bold">0</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Terlambat</span>
+                                <span id="lblTerlambat" class="fw-bold">0</span>
+                            </div>
+
+                        </div>
+
+                        <div class="p-3 border rounded-3 shadow-sm">
+                            <h6 class="fw-semibold mb-2 text-dark">Analisis</h6>
+                            <p id="kpiAnalysis" class="mb-0 text-muted small">
+                                -
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden mb-6 glass-force">
+            <div class="card-header border-bottom-0 pb-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                        <i class="bx bx-time-five text-info me-2" style="font-size: 1.5rem;"></i>
+                        Ketepatan Pencatatan Transaksi Masuk
+                    </h5>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="filterTahunKetepatan" class="form-label mb-0 text-secondary fw-medium">Tahun :</label>
+                        <select id="filterTahunKetepatan" class="form-select w-auto">
+                            @for ($i = 0; $i < 6; $i++)
+                                <option value="{{ now()->year - $i }}"
+                                        {{ (now()->year - $i) == now()->year ? 'selected' : '' }}>
+                                    {{ now()->year - $i }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row h-100">
+                    <div class="col-lg-8">
+                        <div class="chart-wrapper position-relative" style="height: 380px;">
+                            <canvas id="grafikKetepatanWaktu"></canvas>
+                            <div id="ketepatanWaktuEmpty"
+                                class="d-none position-absolute top-50 start-50 translate-middle
+                                d-flex flex-column align-items-center text-center w-100">
+                                <i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i>
+                                <p class="text-muted mt-2 mb-0">
+                                    Tidak ada data
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 d-flex flex-column gap-3 mt-4 mt-lg-0">
+                        <div class="p-3 rounded-3 shadow-sm">
+                            <h6 class="fw-semibold mb-3 text-dark">KPI Summary</h6>
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Target</span>
+                                <b>100%</b>
+                            </div>
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Progress</span>
+                                <b id="kpiProgressKetepatan">0%</b>
+                            </div>
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Total Data</span>
+                                <b id="totalDataKetepatan">0</b>
+                            </div>
+                        </div>
+
+                        <div class="p-3  border rounded-3 shadow-sm">
+                            <h6 class="fw-semibold mb-3 text-dark">Detail Data</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Sesuai</span>
+                                <span id="lblSesuaiKetepatan" class="fw-bold">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Tidak Sesuai</span>
+                                <span id="lblTidakSesuaiKetepatan" class="fw-bold">0</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 border rounded-3 shadow-sm">
+                            <h6 class="fw-semibold mb-2 text-dark">Analisis</h6>
+                            <p id="kpiAnalysisKetepatan" class="mb-0 text-muted small">
+                                -
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         @endif
 
         @if (Auth::user()->jabatan === 'HRD')
@@ -2178,6 +2410,363 @@
                 });
             };
 
+            let currentPage = 1;
+            let lastPage = 1;
+            let currentSearch = '';
+
+            function loadOutstanding(page = 1, search = '') {
+                $.ajax({
+                    url: "{{ route('office.table.outstanding') }}",
+                    type: "GET",
+                    data: {
+                        page: page,
+                        search: search
+                    },
+                    success: function(res) {
+                        let rows = '';
+
+                        currentPage = res.current_page;
+                        lastPage = res.last_page;
+
+                        if (res.data.length === 0) {
+                            rows = `<tr><td colspan="12" class="text-center">Tidak ada data</td></tr>`;
+                        } else {
+                            res.data.forEach((item, index) => {
+                                const safeFormat = (val) => {
+                                    if (val === '-' || val === null || val === undefined || val === '' || Number(val) === 0) {
+                                        return '-';
+                                    }
+                                    return 'Rp ' + formatRupiah(val);
+                                };
+
+                                rows += `
+                                    <tr>
+                                        <td>${(currentPage - 1) * 10 + index + 1}</td>
+                                        <td>${item.perusahaan || '-'}</td>
+                                        <td>${item.kelas || '-'}</td>
+                                        <td>${item.sales || '-'}</td>
+                                        <td>${formatDate(item.tanggal)}</td>
+                                        
+                                        <!-- Gunakan helper safeFormat -->
+                                        <td>${safeFormat(item.tagihan)}</td>
+                                        
+                                        <td>${formatDate(item.tenggat_waktu)}</td>
+                                        <td>${formatDate(item.tanggal_bayar)}</td>
+                                        <td>${safeFormat(item.nominal_pembayaran)}</td>
+                                        <td>${safeFormat(item.admin_transfer)}</td>
+                                        <td>${safeFormat(item.nominal_pph23)}</td>
+                                        <td>${safeFormat(item.nominal_ppn)}</td>
+                                        <td>${safeFormat(item.uang_diterima)}</td>
+                                        
+                                        <td>${renderStatus(item.status)}</td>
+                                        <td>${item.info || '-'}</td>
+                                    </tr>
+                                `;
+                            });
+                        }
+
+                        $('#outstandingTableBody').html(rows);
+
+                        // update info
+                        $('#pageInfo').text(`Page ${currentPage} / ${lastPage}`);
+                        $('#paginationInfo').text(`Total data: ${res.total}`);
+
+                        // disable button
+                        $('#prevPage').prop('disabled', currentPage === 1);
+                        $('#nextPage').prop('disabled', currentPage === lastPage);
+                    }
+                });
+            }
+
+            $('#nextPage').click(function() {
+                if (currentPage < lastPage) {
+                    loadOutstanding(currentPage + 1, currentSearch);
+                }
+            });
+
+            $('#prevPage').click(function() {
+                if (currentPage > 1) {
+                    loadOutstanding(currentPage - 1, currentSearch);
+                }
+            });
+
+
+            let debounceTimer;
+            $('#searchOutstanding').on('keyup', function() {
+                clearTimeout(debounceTimer);
+                let value = $(this).val();
+                
+                currentSearch = value; 
+
+                debounceTimer = setTimeout(() => {
+                    loadOutstanding(1, currentSearch); 
+                }, 400);
+            });
+
+            function formatRupiah(angka) {
+                if (!angka || angka === '-' || isNaN(Number(angka))) {
+                    return '-';
+                }
+                
+                const num = Number(angka);
+                const clean = Math.round(num);
+                return clean.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+
+            function formatDate(date) {
+                if (!date || date === '-') return '-';
+
+                let d = new Date(date);
+                return d.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            }
+
+            function renderPotongan(jenis, jumlah) {
+                if (!jenis || jenis === '-' || !jumlah || jumlah === '-') {
+                    return '-';
+                }
+
+                let jenisArr = jenis.split(',');
+                let jumlahArr = jumlah.split(',');
+
+                let result = '';
+
+                jenisArr.forEach((item, index) => {
+                    let nominal = jumlahArr[index] ? formatRupiah(jumlahArr[index].trim()) : '0';
+
+                    result += `
+                        <div style="font-size: 12px;">
+                            ${item.trim()} (Rp ${nominal}),
+                        </div>
+                    `;
+                });
+
+                return result;
+            }
+
+            function renderStatus(status) {
+                let color = 'secondary';
+
+                if (status === 'Belum Bayar') color = 'warning';
+                else if (status === 'Tepat Waktu') color = 'success';
+                else if (status === 'Terlambat') color = 'danger';
+
+                return `<span class="badge bg-${color}">${status}</span>`;
+            }
+
+            let chartInstanceOutstanding;
+
+            function loadChartOutstanding(year) {
+
+                fetch(`/office/grafik/outstanding?year=${year}`)
+                    .then(res => res.json())
+                    .then(data => {
+
+                        const ctx = document.getElementById('grafikOutstanding');
+
+                        if (chartInstanceOutstanding) {
+                            chartInstanceOutstanding.destroy();
+                        }
+
+                        const total = data.total || 0;
+                        const tepatWaktu = data.data[1] || 0;
+
+                        const progress = total === 0 ? 0 : Math.round((tepatWaktu / total) * 100);
+
+                        document.getElementById('kpiProgress').innerText = `${progress}%`;
+                        document.getElementById('totalClient').innerText = total;
+
+                        let analysis = "";
+
+                        if (progress >= 90) {
+                            analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${progress}% dari target 100%.`;
+                        }
+                        else if (progress >= 70) {
+                            analysis = `Kinerja cukup baik. Anda mencapai KPI ${progress}% dari target 100%, masih ada ruang peningkatan.`;
+                        }
+                        else if (progress >= 50) {
+                            analysis = `Kinerja sedang. Baru mencapai KPI ${progress}% dari target 100%, perlu perbaikan.`;
+                        }
+                        else {
+                            analysis = `Kinerja rendah. Baru ${progress}% dari target 100%, perlu tindakan segera.`;
+                        }
+
+                        document.getElementById('kpiAnalysis').innerText = analysis;
+
+                        const hasData = data.data.some(val => val > 0);
+
+                        if (!hasData || total === 0) {
+                            document.getElementById('outstandingEmpty').classList.remove('d-none');
+
+                            document.getElementById('lblBelumBayar').innerText = "0% (0)";
+                            document.getElementById('lblTepatWaktu').innerText = "0% (0)";
+                            document.getElementById('lblTerlambat').innerText = "0% (0)";
+                            return;
+                        } else {
+                            document.getElementById('outstandingEmpty').classList.add('d-none');
+                        }
+
+                        const belumBayarPercent = Math.round((data.data[0] / total) * 100);
+                        const tepatWaktuPercent = Math.round((data.data[1] / total) * 100);
+                        const terlambatPercent  = Math.round((data.data[2] / total) * 100);
+
+                        document.getElementById('lblBelumBayar').innerText =
+                            `${belumBayarPercent}% (${data.data[0]})`;
+
+                        document.getElementById('lblTepatWaktu').innerText =
+                            `${tepatWaktuPercent}% (${data.data[1]})`;
+
+                        document.getElementById('lblTerlambat').innerText =
+                            `${terlambatPercent}% (${data.data[2]})`;
+
+                        // CHART
+                        chartInstanceOutstanding = new Chart(ctx, {
+                            type: 'pie',
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    data: data.data,
+                                    backgroundColor: [
+                                        '#dc3545',
+                                        '#198754',
+                                        '#fd7e14'
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+
+                                            label: function(context) {
+
+                                                const value = context.raw;
+                                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                const percent = ((value / total) * 100).toFixed(1);
+
+                                                return `${context.label}: ${percent}% (${value})`;
+                                            }
+
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                    });
+            }
+
+            loadChartOutstanding(new Date().getFullYear());
+
+            document.getElementById('filterTahun').addEventListener('change', function () {
+                loadChartOutstanding(this.value);
+            });
+
+            let chartInstanceKetepatan;
+
+            function loadChartKetepatan(year) {
+
+                fetch(`/office/grafik/ketepatan-waktu?year=${year}`)
+                    .then(res => res.json())
+                    .then(data => {
+
+                        const ctx = document.getElementById('grafikKetepatanWaktu');
+
+                        if (chartInstanceKetepatan) {
+                            chartInstanceKetepatan.destroy();
+                        }
+
+                        const total = data.data.reduce((acc, val) => acc + val, 0); 
+                        const sesuai = data.data[0] || 0; 
+                        const persen = data.persen || 0; 
+
+                        // Update elemen KPI
+                        document.getElementById('kpiProgressKetepatan').innerText = `${persen}%`;
+                        document.getElementById('totalDataKetepatan').innerText = total;
+                        document.getElementById('lblSesuaiKetepatan').innerText = `${sesuai}`;
+                        document.getElementById('lblTidakSesuaiKetepatan').innerText = `${data.data[1] || 0}`;
+
+
+                        let analysis = "";
+                        if (persen >= 90) {
+                            analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${persen}% dari target 100%.`;
+                        }
+                        else if (persen >= 70) {
+                            analysis = `Kinerja cukup baik. Anda mencapai KPI ${persen}% dari target 100%, masih ada ruang peningkatan.`;
+                        }
+                        else if (persen >= 50) {
+                            analysis = `Kinerja sedang. Baru mencapai KPI ${persen}% dari target 100%, perlu perbaikan.`;
+                        }
+                        else {
+                            analysis = `Kinerja rendah. Baru ${persen}% dari target 100%, perlu tindakan segera.`;
+                        }
+                        document.getElementById('kpiAnalysisKetepatan').innerText = analysis;
+
+                        const hasData = total > 0;
+
+                        if (!hasData) {
+                            document.getElementById('ketepatanWaktuEmpty').classList.remove('d-none');
+                            return;
+                        } else {
+                            document.getElementById('ketepatanWaktuEmpty').classList.add('d-none');
+                        }
+
+                        chartInstanceKetepatan = new Chart(ctx, {
+                            type: 'pie',
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    data: data.data,
+                                    backgroundColor: [
+                                        '#198754', // Hijau untuk Sesuai
+                                        '#dc3545'  // Merah untuk Tidak Sesuai
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const value = context.raw;
+                                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                const percent = ((value / total) * 100).toFixed(1);
+
+                                                return `${context.label}: ${percent}% (${value})`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                    })
+                    .catch(error => {
+                        console.error('Error loading chart:', error);
+                    });
+            }
+
+
+            loadChartKetepatan(new Date().getFullYear());
+
+            document.getElementById('filterTahunKetepatan').addEventListener('change', function () {
+                loadChartKetepatan(this.value);
+            });
+            
+
             // reset filter per tahun
             $('#filterMengajarPerTahun').change(function () {
                 $('#filterMengajarPerBulan, #filterMengajarPerTriwulan').val('default');
@@ -2234,6 +2823,7 @@
             $(document).ready(function () {
                 loadDataCuti('bulan', new Date().getMonth() + 1);
                 loadDataMengajar('bulan', new Date().getMonth() + 1);
+                loadOutstanding();
             });
 
             // Script Chart Feedback

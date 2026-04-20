@@ -953,10 +953,15 @@ class RKMController extends Controller
         }
 
         // Query RKM
-        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
+        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten', 'peluang'])
             ->where('materi_key', $materi_key)
             ->where('metode_kelas', $kelas)
             ->whereBetween('tanggal_awal', [$tanggal_awal, $tanggal_akhir])
+            ->where(function ($query) {
+                $query->whereHas('peluang', function ($query) {
+                    $query->where('tahap', 'merah');
+                });
+            })
             ->firstOrFail(); // ✅ sudah jaminan dapat data
 
         $comments = $rkm->comments;

@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 use function Symfony\Component\VarDumper\Dumper\esc;
 
@@ -214,40 +215,59 @@ class PicController extends Controller
         }
     }
 
+
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'id_perusahaan' => 'required|exists:perusahaans,id',
-            'nama'          => 'required|string',
-            'email'         => 'nullable|email|unique:contacts,email',
-            'cp'            => 'nullable|string',
-            'divisi'        => 'nullable|string',
-            'sales_key'     => 'nullable|string'
-        ]);
+        try {
+            $validated = $request->validate([
+                'id_perusahaan' => 'required',
+                'nama'          => 'required|string',
+                'email'         => [
+                    'nullable',
+                    'email',
+                    Rule::unique('contacts')->where(function ($query) use ($request) {
+                        return $query->where('email', $request->email);
+                    }),
+                    function ($attribute, $value, $fail) {
+                        $existsInPeserta = DB::table('pesertas')
+                            ->where('email', $value)
+                            ->exists();
+                    },
+                ],
+                'cp'            => 'nullable|string',
+                'divisi'        => 'nullable|string',
+                'sales_key'     => 'nullable|string'
+            ]);
 
-        $user = Auth::user();
+            $user = Auth::user();
 
-        if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales']) && $request->filled('sales_key')) {
-            $validated['sales_key'] = $request->input('sales_key');
-        } else {
-            $validated['sales_key'] = $user->id_sales ?? null;
+            if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales']) && $request->filled('sales_key')) {
+                $validated['sales_key'] = $request->input('sales_key');
+            } else {
+                $validated['sales_key'] = $user->id_sales ?? null;
+            }
+
+            $validated['status'] = '1';
+
+            $contact = Contact::create($validated);
+
+            Aktivitas::create([
+                'id_sales'        => $validated['sales_key'],
+                'id_contact'      => $contact->id,
+                'aktivitas'       => 'Contact',
+                'deskripsi'       => 'Contact baru berhasil ditambahkan',
+                'waktu_aktivitas' => Carbon::now(),
+            ]);
+
+            return redirect()->back()->with('success', 'Contact berhasil ditambahkan.');
+
+        } catch (\Exception $e) {
+            Log::error('Error saat menambahkan contact: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat menambahkan contact.')
+                ->with('open_modal', true);
         }
-
-        $validated['status'] = '1';
-
-        // 🔹 Simpan kontak baru
-        $contact = Contact::create($validated);
-
-        // 🔹 Simpan log aktivitas
-        Aktivitas::create([
-            'id_sales'        => $validated['sales_key'],
-            'id_contact'      => $contact->id,
-            'aktivitas'       => 'Contact',
-            'deskripsi'       => 'Contact baru berhasil ditambahkan',
-            'waktu_aktivitas' => Carbon::now(),
-        ]);
-
-        return redirect()->route('index.pic')->with('success', 'Contact berhasil ditambahkan.');
     }
 
 
