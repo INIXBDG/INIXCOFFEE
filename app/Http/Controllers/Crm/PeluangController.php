@@ -57,7 +57,7 @@ class PeluangController extends Controller
             if ($user->jabatan === 'Sales') {
                 $idSales = $user->id_sales;
                 $data = Peluang::where('id_sales', $idSales)
-                    ->with('materiRelation')
+                    ->with('materiRelation', 'rkm')
                     ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
                     ->orderBy('created_at', 'desc')
                     ->get()
@@ -78,7 +78,7 @@ class PeluangController extends Controller
                     });
             } elseif (in_array($user->jabatan, $allowedJabatan)) {
                 $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
-                    ->with('materiRelation')
+                    ->with('materiRelation', 'rkm')
                     ->orderBy('created_at', 'desc')
                     ->get()
                     ->map(function ($item) {
@@ -127,8 +127,6 @@ class PeluangController extends Controller
 
         // Normalisasi data RKM
         if ($peluang->rkm) {
-            $peluang->rkm->metode_kelas = $peluang->rkm->metode_kelas === 'Offline' ? 'off' : ($peluang->rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($peluang->rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir'));
-
             $peluang->rkm->tanggal_awal_day = $peluang->rkm->tanggal_awal ? date('d', strtotime($peluang->rkm->tanggal_awal)) : null;
             $peluang->rkm->tanggal_awal_month = $peluang->rkm->tanggal_awal ? date('n', strtotime($peluang->rkm->tanggal_awal)) : null;
             $peluang->rkm->tanggal_awal_year = $peluang->rkm->tanggal_awal ? date('Y', strtotime($peluang->rkm->tanggal_awal)) : null;
@@ -495,6 +493,10 @@ class PeluangController extends Controller
             $rkm->tanggal_akhir = $request->periode_selesai;
             $rkm->pax = $request->pax;
             $rkm->isi_pax = $request->pax;
+            $rkm->exam = $request->exam;
+            $rkm->authorize = $request->authorize;
+            $rkm->event = $request->event;
+            $rkm->metode_kelas = $request->metode_kelas;
             $rkm->save();
             
             $final = $validated['final'] - ($validated['final'] * 11 / 100);
