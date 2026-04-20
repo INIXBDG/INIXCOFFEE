@@ -199,7 +199,10 @@
                             </div>
 
                             <!-- Submit -->
-                            <div class="mt-4">
+                            <div class="mt-4 justify-content-between">
+                                <a class="btn btn-secondary" href="{{ route('office.tagihanPerusahaan.index') }}">
+                                    Kembali
+                                </a>
                                 <button type="submit" class="btn btn-primary">
                                     Simpan Perubahan
                                 </button>

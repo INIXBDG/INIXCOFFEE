@@ -32,10 +32,10 @@ class updateAdministrasiKaryawan extends Command
         $administrasi = AdministrasiKaryawan::all();
 
         foreach ($administrasi as $a) {
-            $dateline = Carbon::parse($a->dateline);
-            $tanggalSelesai = Carbon::parse($a->tanggal_selesai); 
+            $dateline = Carbon::parse($a->dateline)->endOfDay();
+            $tanggalSelesai = Carbon::parse($a->tanggal_selesai)->endOfDay(); 
 
-            if ($dateline->day < $now->day && $tanggalSelesai !== null && !in_array($a->status, ['selesai', 'pending'])) {
+            if ($dateline < $now && $tanggalSelesai !== null && !in_array($a->status, ['selesai', 'pending', 'terlambat'])) {
                 $a->status = 'terlambat';
                 $a->save();
 
