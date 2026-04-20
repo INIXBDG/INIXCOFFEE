@@ -887,11 +887,13 @@ Route::prefix('office')->group(function () {
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
     Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan']);
+
     Route::post('/store-hari-libur', [OfficeController::class, 'storeHariLibur'])->name('storeHariLibur');
     Route::get('/data-hari-libur/{year}', [OfficeController::class, 'dataHariLibur']);
     Route::get('/data-hari-libur/edit/{id}', [OfficeController::class, 'editHariLibur'])->name('editHariLibur');
     Route::post('/data-hari-libur/update/{id}', [OfficeController::class, 'updateHariLibur'])->name('updateHariLibur');
     Route::post('/data-hari-libur/delete/{id}', [OfficeController::class, 'deleteHariLibur'])->name('deleteHariLibur');
+    
     Route::get('/table/outstanding/', [OfficeController::class, 'TableOutstanding'])->name('office.table.outstanding');
     Route::get('/grafik/outstanding/', [OfficeController::class, 'GrafikOutstanding'])->name('office.grafik.outstanding');
     Route::get('/grafik/ketepatan-waktu/', [OfficeController::class, 'GrafikKetepatanWaktu'])->name('office.grafik.ketepatan.waktu');
@@ -914,6 +916,7 @@ Route::prefix('office')->group(function () {
     Route::get('administrasi-karyawan/{id}', [AdministrasiKaryawanController::class, 'edit'])->name('administrasi.karyawan.edit');
     Route::post('administrasi-karyawan/update/{id}', [AdministrasiKaryawanController::class, 'update'])->name('administrasi.karyawan.update');
     Route::delete('administrasi-karyawan/destroy/{id}', [AdministrasiKaryawanController::class, 'destroy'])->name('administrasi.karyawan.destroy');
+    Route::post('administrasi-karyawan/eksport', [AdministrasiKaryawanController::class, 'eksport'])->name('administrasi.karyawan.eksport');
 
     Route::get('analysis', [AnalysisReportController::class, 'index'])->name('index.analysis');
     Route::post('analysis/store', [AnalysisReportController::class, 'store'])->name('store.analysis');

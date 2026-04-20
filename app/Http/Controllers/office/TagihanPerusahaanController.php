@@ -12,7 +12,7 @@ class TagihanPerusahaanController extends Controller
 {
     public function index()
     {
-        $trackingTagihanPerusahaans = trackingTagihanPerusahaan::orderBy('tanggal_perkiraan_mulai', 'desc')->get();
+        $trackingTagihanPerusahaans = trackingTagihanPerusahaan::orderBy('tanggal_perkiraan_mulai', 'desc')->paginate(10);
 
         return view('office.tagihanPerusahaan.index', compact('trackingTagihanPerusahaans'));
     }
@@ -103,13 +103,10 @@ class TagihanPerusahaanController extends Controller
             $dueDate = Carbon::parse($tracking->tanggal_perkiraan_mulai);
         }
 
-        if ($request->tanggal_selesai !== null && $dueDate < $request->tanggal_selesai && !in_array($request->status, ['selesai', 'pending']) && !in_array($tracking->status, ['selesai', 'pending'])) {
+        if ($request->tanggal_selesai !== null && $dueDate < $request->tanggal_selesai && !in_array($request->status, ['selesai', 'pending'])) {
             $tracking->status = 'telat';
             $tracking->save();
-        } else if ($request->tanggal_selesai !== null && $dueDate >= $request->tanggal_selesai && $tracking->status !== 'telat') {
-            $tracking->status = 'selesai';
-            $tracking->save();
-        } else if ($request->tanggal_selesai !== null && in_array($tracking->status, ['selesai', 'pending'])) {
+        } else if ($request->tanggal_selesai !== null && $dueDate >= $request->tanggal_selesai && $tracking->status) {
             $tracking->status = 'selesai';
             $tracking->save();
         }
