@@ -847,6 +847,7 @@ class RKMController extends Controller
 
         return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Dihapus!']);
     }
+    
     public function absensiPeserta(string $id)
     {
         $rkm = RKM::with('perusahaan', 'materi', 'registrasi.peserta', 'instruktur')->findOrFail($id);

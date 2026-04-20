@@ -38,7 +38,10 @@ class RKM extends Model
         'deleted_at',
         'deleted_by',
     ];
-    protected $dates = ['tanggal_awal', 'tanggal_akhir'];
+    protected $casts = [
+        'tanggal_awal' => 'date',
+        'tanggal_akhir' => 'date',
+    ];
 
     public function perhitunganNetSales()
     {

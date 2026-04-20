@@ -50,14 +50,6 @@
             <div class="table-responsive">
                 <table class="invoice-table">
                     <tbody>
-                        {{-- Tombol Aksi --}}
-                        <tr class="no-print">
-                            <td colspan="5" class="text-end border-0 pb-2">
-                                <button type="button" class="btn btn-dark" onclick="window.print()">
-                                    <i class="bi bi-printer"></i> Print
-                                </button>
-                            </td>
-                        </tr>
 
                         {{-- Nomor Kwitansi --}}
                         <tr>

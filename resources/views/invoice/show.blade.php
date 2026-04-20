@@ -177,7 +177,9 @@
                             <td style="border:none; padding: 2px 6px;"><strong>Peserta</strong></td>
                             <td style="border:none; padding: 2px 6px;">:</td>
                             <td style="border:none; padding: 2px 6px;">
-                                {{ optional($invoice->rkm)->pax ?? '-' }} orang
+                                @foreach ($invoice->rkm->registrasi as $item)
+                                    {{$loop->iteration}}. {{ $item->peserta->nama }}<br>
+                                @endforeach
                             </td>
                         </tr>
                     </table>
@@ -267,15 +269,20 @@
                 <td style="width: 100%; text-align: center; vertical-align: top;">
                     <div style="height: 60px;"></div>
                     <p style="margin: 0;"><u>{{ $karyawan->nama_lengkap ?? 'Nama Penanggung Jawab Kanan' }}</u></p>
-                    <small>{{ $karyawan->jabatan ?? 'Accounting & Finance' }}</small>
+                    <small>Accounting Finance</small>
                 </td>
             </tr>
         </table>
     </div>
 
-    <!-- TOMBOL PRINT -->
+@php
+    $peserta = $invoice->rkm->registrasi
+        ->pluck('peserta.nama')
+        ->toArray();
+@endphp
+
     <div class="no-print text-center" style="margin-top:40px;">
-        <a href="{{ route('download.pdf', $invoice->id) }}" class="btn btn-primary">
+        <a href="{{ route('download.pdf', ['id' => $invoice->id, 'peserta[]' => $peserta]) }}" class="btn btn-primary">
             <i class="bi bi-printer"></i> Pdf
         </a>
     </div>

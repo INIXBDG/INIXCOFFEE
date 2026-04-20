@@ -13,14 +13,15 @@
         }
 
         @page {
-            margin: 40px;
+            margin: 40px; 
             size: A4;
         }
 
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 12px;
+            font-size: 11px; 
             margin: 0;
+            line-height: 1.3; 
         }
 
         @media print {
@@ -33,13 +34,13 @@
             border: 1px solid #000;
             border-collapse: collapse;
             width: 100%;
-            page-break-inside: avoid;
+            page-break-inside: avoid; 
         }
 
         .table-invoice th,
         .table-invoice td {
             border: 1px solid #000;
-            padding: 6px 8px;
+            padding: 4px 6px;
             vertical-align: top;
         }
 
@@ -60,24 +61,65 @@
             text-align: center;
         }
 
-        /* Pastikan tabel float tidak overflow */
-        div[style*="overflow: hidden"] table {
-            display: inline-table;
-            width: 40% !important;
-            page-break-inside: avoid;
-        }
-
-        /* Pastikan nested table tidak bermasalah */
         table table {
             width: 100%;
             border-collapse: collapse;
         }
+
+        .header-customer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px; 
+        }
+
+        .customer-info-box {
+            border: 1px solid #000;
+            padding: 8px; 
+            margin-top: 5px; 
+        }
+
+        .invoice-details-table {
+            font-size: 12px; 
+            margin-top: 5px;
+            margin-bottom: 10px; 
+        }
+
+        .footer-bank-table {
+            width: 100%;
+            margin-top: 15px;
+            border-collapse: collapse;
+            border: 1px solid #000;
+        }
+
+        .footer-bank-content {
+            text-align: center;
+            vertical-align: top;
+            padding: 8px; 
+        }
+
+        .footer-signature-table {
+            width: 100%;
+            margin-top: 25px; 
+            border-collapse: collapse;
+        }
+
+        .signature-cell {
+            text-align: center;
+            vertical-align: top;
+            width: 50%; 
+        }
+
+        .signature-space {
+            height: 60px; 
+            margin-bottom: 5px; 
+        }
+
+        .table-invoice tr, .table-invoice td, .table-invoice tbody { page-break-inside: avoid; }
     </style>
 </head>
 
 <body>
-    <!-- HEADER -->
-    <table style="width:100%; margin-bottom:10px; border-collapse:collapse;">
+    <table class="header-customer-table">
         <tr>
             <td style="width:60%; vertical-align:top;">
                 <img src="{{ public_path('icon/logoo.png') }}" alt="Logo" style="width:150px;"><br>
@@ -85,60 +127,55 @@
                 <p style="margin:0;">Jl. Cipaganti No.95, Bandung 40161</p>
                 <p style="margin:0;">Ph. (022) 2032831 / Fax. (022) 2032831</p>
             </td>
-        <tr class="no-print">
+            <td style="width:40%; vertical-align:top; text-align:center;">
+                <h2 style="margin:0; font-weight:bold; margin-top: 90px;">INVOICE</h2>
+                <hr style="border:1px solid #000; margin:2px 0;">
+            </td>
         </tr>
-        <table style="width:100%; border-collapse:collapse;">
-            <tr>
-                <td style="width:60%; vertical-align:top; padding-right:10px;">
-                    <table style="width:100%; border-collapse:collapse; border:1px solid #000; margin-top:40px;">
-                        <tr>
-                            <td style="background:#ddd; font-weight:bold; padding:6px; border-bottom:1px solid #000;">
-                                Bill To
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding:10px; height:100px; ">
+        <tr>
+            <td colspan="2" style="vertical-align:top; padding:0;">
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <td style="width:60%; vertical-align:top; padding-right:10px;">
+                            <div class="customer-info-box">
+                                <strong>Bill To</strong><br>
                                 {{ $invoice->rkm->perusahaan->nama_perusahaan ?? 'Bank Indonesia' }}
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-                <td style="width:40%; vertical-align:top; text-align:center;">
-                    <h2 style="margin:0; font-weight:bold;">INVOICE</h2>
-                    <hr style="border:1px solid #000; margin:2px 0;">
-                    <table style="width:100%; border-collapse:collapse; font-size:14px; margin-top:5px; margin-bottom:20px;">
-                        <tr>
-                            <td style="border:1px solid #000; padding:6px; font-weight:bold; width:50%;">Invoice Date</td>
-                            <td style="border:1px solid #000; padding:6px; font-weight:bold; width:50%;">Invoice No</td>
-                        </tr>
-                        <tr>
-                            <td style="border:1px solid #000; padding:6px;">
-                                {{ \Carbon\Carbon::parse($invoice->tanggal_invoice)->translatedFormat('l, d F Y') }}
-                            </td>
-                            <td style="border:1px solid #000; padding:6px;">
-                                {{ $invoice->invoice_number }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="border:1px solid #000; padding:6px; font-weight:bold;">Purchase Order No.</td>
-                            <td style="border:1px solid #000; padding:6px; font-weight:bold;">Due Date</td>
-                        </tr>
-                        <tr>
-                            <td style="border:1px solid #000; padding:6px;">
-                                {{ $invoice->purchase_order ?? '-' }}
-                            </td>
-                            <td style="border:1px solid #000; padding:6px;">
-                                {{ $invoice->due_date ? \Carbon\Carbon::parse($invoice->due_date)->translatedFormat('l, d F Y') : '-' }}
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
+                            </div>
+                        </td>
+                        <td style="width:40%; vertical-align:top; text-align:center;">
+                            <table class="invoice-details-table">
+                                <tr>
+                                    <td style="border:1px solid #000; padding:6px; font-weight:bold; width:50%;">Invoice Date</td>
+                                    <td style="border:1px solid #000; padding:6px; font-weight:bold; width:50%;">Invoice No</td>
+                                </tr>
+                                <tr>
+                                    <td style="border:1px solid #000; padding:6px;">
+                                        {{ \Carbon\Carbon::parse($invoice->tanggal_invoice)->translatedFormat('l, d F Y') }}
+                                    </td>
+                                    <td style="border:1px solid #000; padding:6px;">
+                                        {{ $invoice->invoice_number }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border:1px solid #000; padding:6px; font-weight:bold;">Purchase Order No.</td>
+                                    <td style="border:1px solid #000; padding:6px; font-weight:bold;">Due Date</td>
+                                </tr>
+                                <tr>
+                                    <td style="border:1px solid #000; padding:6px;">
+                                        {{ $invoice->purchase_order ?? '-' }}
+                                    </td>
+                                    <td style="border:1px solid #000; padding:6px;">
+                                        {{ $invoice->due_date ? \Carbon\Carbon::parse($invoice->due_date)->translatedFormat('l, d F Y') : '-' }}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
         </tr>
     </table>
 
-    <!-- DETAIL BIAYA -->
     <table class="table-invoice">
         <thead>
             <tr>
@@ -174,10 +211,15 @@
                             <td style="border:none; padding: 2px 6px;"><strong>Peserta</strong></td>
                             <td style="border:none; padding: 2px 6px;">:</td>
                             <td style="border:none; padding: 2px 6px;">
-                            @if(!empty($pesertaList) && is_array($pesertaList))
-                                @foreach($pesertaList as $index => $namaPeserta)
-                                    {{ $loop->iteration }}. {{ e($namaPeserta) }}<br>
-                                @endforeach
+
+                            @if ($isPeserta)
+                                @if(!empty($pesertaList) && is_array($pesertaList))
+                                    @foreach($pesertaList as $index => $namaPeserta)
+                                        {{ $loop->iteration }}. {{ e($namaPeserta) }}<br>
+                                    @endforeach
+                                @else
+                                    {{ $invoice->rkm->pax ? $invoice->rkm->pax . ' orang' : '-' }}
+                                @endif
                             @else
                                 {{ $invoice->rkm->pax ? $invoice->rkm->pax . ' orang' : '-' }}
                             @endif
@@ -185,8 +227,6 @@
                         </tr>
                     </table>
                 </td>
-
-
                 <td class="text-center">{{ $invoice->rkm->pax ?? '-' }}</td>
                 <td class="text-end">Rp {{ number_format($invoice->rkm->harga_jual ?? 0, 0, ',', '.') }}</td>
                 <td class="text-end">Rp {{ number_format(($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0), 0, ',', '.') }}</td>
@@ -223,11 +263,9 @@
         </tbody>
     </table>
 
-    <!-- FOOTER -->
-    <!-- FOOTER -->
-    <table style="width:100%; margin-top:40px; border-collapse:collapse; border: 1px solid #000;">
+    <table class="footer-bank-table">
         <tr>
-            <td style="width:100%; text-align:center; vertical-align:top; border: 1px solid #000;">
+            <td class="footer-bank-content">
                 <p style="margin:0;">Pembayaran dapat dilakukan melalui transfer ke :</p>
                 <p style="margin:0; font-weight:bold;">{{ $invoice->bank_name ?? 'BANK MANDIRI KK BANDUNG CIHAMPELAS' }}</p>
                 <p style="margin:0; font-weight:bold;">No. Rek : {{ $invoice->account_number ?? '131-00-0734797-6' }}</p>
@@ -235,39 +273,39 @@
                 @php
                 $accountName = 'PT. INIXINDO AMIETE MANDIRI';
                 if (($invoice->bank_name ?? '') === 'BANK BCA KK BANDUNG ABDUL RIVAI') {
-                $accountName = 'RAY GUTAFSON MANURUNG';
+                    $accountName = 'RAY GUTAFSON MANURUNG';
                 }
                 @endphp
 
                 <p style="margin:0; font-weight:bold;">a/n {{ $accountName }}</p>
 
                 @if($invoice->catatan_pembayaran)
-                <p style="margin:0;">{{ $invoice->catatan_pembayaran }}</p>
+                    <p style="margin:0;">{{ $invoice->catatan_pembayaran }}</p>
                 @else
-                <p style="margin:0;">Note : Mohon nomor invoice dan nama perusahaan dicantumkan</p>
+                    <p style="margin:0;">Note : Mohon nomor invoice dan nama perusahaan dicantumkan</p>
                 @endif
             </td>
         </tr>
     </table>
-    </table>
 
-    <table style="width:100%; margin-top:40px; border-collapse:collapse;">
+    <table class="footer-signature-table">
         <tr>
-            <td style="width:50%; text-align:center; vertical-align:top;">
-                <p><b>Recieved by,</b></p>
-                <div style="height:60px;"></div>
-                <p style="margin:0;">
-                    <u>{{ $invoice->rkm->perusahaan->nama_perusahaan ?? 'Customer Stamp & Signature' }}</u>
-                </p>
-                <small>Customer Stamp & Signature</small>
-            </td>
-
-            <td style="width:50%; text-align:center; vertical-align:top;">
-                <div style="height:60px; margin-top: 35px;"></div>
+            <td class="signature-cell">
+                    @if ($isTtd)
+                        <p><b>Recieved by,</b></p>
+                        <div class="signature-space"></div> 
+                        <p style="margin:0;">
+                            <u>{{ $invoice->rkm->perusahaan->nama_perusahaan ?? 'Customer Stamp & Signature' }}</u>
+                        </p>
+                        <small>Customer Stamp & Signature</small>
+                    @endif
+                </td>
+            <td class="signature-cell">
+                <div class="signature-space" style="margin-top: 32px"></div> 
                 <p style="margin:0;">
                     <u>{{ $karyawan->nama_lengkap ?? 'Nama Penanggung Jawab Kanan' }}</u>
                 </p>
-                <small>{{ $karyawan->jabatan ?? 'Accounting & Finance' }}</small>
+                <small>Accounting Finance</small>
             </td>
         </tr>
     </table>
