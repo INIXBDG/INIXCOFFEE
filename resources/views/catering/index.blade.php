@@ -587,7 +587,6 @@
             function setupDateValidation() {
                 const today = new Date();
                 const nextWeek = new Date();
-                nextWeek.setDate(today.getDate() + 7);
 
                 $('#tanggalPembelian').attr('min', nextWeek.toISOString().split('T')[0]);
 
@@ -596,11 +595,6 @@
 
                     const today = new Date();
                     today.setHours(0, 0, 0, 0); 
-
-                    if (selected < today) {
-                        Swal.fire('Error', 'Tanggal tidak boleh sebelum hari ini', 'error');
-                        $(this).val('');
-                    }
                 });
             }
 
