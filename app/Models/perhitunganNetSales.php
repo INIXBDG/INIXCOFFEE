@@ -44,4 +44,9 @@ class perhitunganNetSales extends Model
     {
         return $this->belongsTo(Peserta::class, 'id_peserta');
     }
+
+    public function jurnalAkuntansi()
+    {
+        return $this->hasOne(JurnalAkuntansi::class, 'id_perhitungan_net_sales', 'id');
+    }
 }

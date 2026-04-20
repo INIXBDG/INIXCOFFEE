@@ -614,6 +614,7 @@ Route::post('/paymantAdvance/data/get/', [netSalesController::class, 'dataEdit']
 Route::put('/paymantAdvance/data/update', [netSalesController::class, 'updateNetSales'])->name('netSales.update');
 Route::get('/download/pdf/netsales/{year}/{month}', [netSalesController::class, 'DownloadPDF'])->name('netSales.download');
 Route::get('/download/pdf/netsales/{id}', [netSalesController::class, 'pdfSendiri'])->name('netSales.download.pdfSendiri');
+Route::get('/netsales/{id}/detail', [netSalesController::class, 'detailNetSales']);
 
 // Inventaris Route
 Route::get('/inventaris/index', [InventarisController::class, 'index'])->name('IndexInventaris');
@@ -1307,6 +1308,9 @@ Route::get('/jurnalakuntansi/{id}/edit', [JurnalAkuntansiController::class, 'edi
 Route::put('/jurnalakuntansi/{id}', [JurnalAkuntansiController::class, 'update'])->name('jurnalakuntansi.update');
 Route::post('/jurnalakuntansi/petty-cash', [JurnalAkuntansiController::class, 'storePettyCash'])->name('jurnalakuntansi.storePettyCash');
 Route::post('/jurnalakuntansi/import-excel', [App\Http\Controllers\JurnalAkuntansiController::class, 'importExcel'])->name('jurnalakuntansi.importExcel');
+Route::get('/jurnalakuntansi/belum-jurnal-netsales', [JurnalAkuntansiController::class, 'getBelumJurnalNetSales'])->name('jurnalakuntansi.belumJurnalNetSales');
+Route::post('/jurnalakuntansi/store-manual-netsales/{id}', [JurnalAkuntansiController::class, 'storeManualNetSales']);
+Route::get('/jurnalakuntansi/export', [App\Http\Controllers\JurnalAkuntansiController::class, 'export'])->name('jurnalakuntansi.export');
 
 Route::middleware(['auth'])->group(function () {
     // Route Administrasi Project

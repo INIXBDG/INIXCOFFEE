@@ -85,10 +85,11 @@
                     <img src="{{ asset('icon/plus.svg') }}" width="30px"> Ajukan Barang
                 </a>
             @endif
+			@if ($jabatan == 'Finance & Accounting')
                 <a href="/jurnalakuntansi" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Barang">
                     <img src="{{ asset('icon/archive-white.svg') }}" width="30px"> Jurnal Akutansi
                 </a>
-
+			@endif
             </div>
             @php
                 $jabatan = auth()->user()->jabatan;
