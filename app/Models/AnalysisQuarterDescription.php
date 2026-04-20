@@ -15,10 +15,12 @@ class AnalysisQuarterDescription extends Model
         'year',
         'quarter',
         'description',
-        'file_paths', // Penambahan kolom file
+        'format_nilai',
+        'nilai',
+        'file_paths',
     ];
 
     protected $casts = [
-        'file_paths' => 'array', // Konversi otomatis ke array
+        'file_paths' => 'array',
     ];
 }
