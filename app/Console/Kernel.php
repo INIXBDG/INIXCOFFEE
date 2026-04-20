@@ -49,12 +49,11 @@ class Kernel extends ConsoleKernel
                 $rkm = RKM::where('id', $outstanding->id_rkm)->with('perusahaan', 'materi')->first();
 
                 if ($rkm && $rkm->perusahaan && $rkm->materi) {
-                    // Tandai notifikasi terkait sebagai dibaca (set read_at)
                     DB::table('notifications')
                         ->where('type', 'App\Notifications\OutstandingNotification')
-                        ->whereJsonContains('data->message->nama_perusahaan', $rkm->perusahaan->nama_perusahaan) // Sesuaikan dengan struktur data Anda
-                        ->whereJsonContains('data->message->nama_materi', $rkm->materi->nama_materi) // Sesuaikan dengan struktur data Anda
-                        ->whereJsonContains('data->message->due_date', $outstanding->due_date) // Sesuaikan dengan struktur data Anda
+                        ->whereJsonContains('data->message->nama_perusahaan', $rkm->perusahaan->nama_perusahaan) 
+                        ->whereJsonContains('data->message->nama_materi', $rkm->materi->nama_materi) 
+                        ->whereJsonContains('data->message->due_date', $outstanding->due_date) 
                         ->update(['read_at' => Carbon::now()]);
                 }
             }
@@ -225,6 +224,9 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('uptime:check')->everySecond();
 
+        $schedule->command('assign:shift2')->dailyAt('17.30');
+
+
         // Di dalam method schedule(Schedule $schedule)
         $schedule->call(function () {
             // Tentukan tanggal akhir minggu yang harus dikunci (e.g., dua minggu yang lalu)
@@ -245,6 +247,9 @@ class Kernel extends ConsoleKernel
 
         // update tagihan Perusahaan
         $schedule->command('app:tagihan-perusahaan-command')->daily();
+
+        // update administrasi karyawan
+        $schedule->command('app:update-administrasi-karyawan')->daily();
 
         // update libur nasional
         $schedule->command('app:generate-libur-nasional')->daily();

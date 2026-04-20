@@ -9,7 +9,7 @@ class perhitunganNetSales extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_rkm', 'transportasi', 'jenis_transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'keterangan_akomodasi_tim', 'fresh_money', 'entertaint', 'keterangan_entertaint', 'souvenir', 'cashback',  'sewa_laptop', 'tgl_pa', 'tipe_pembayaran', 'deskripsi_tambahan', 'id_tracking'];
+    protected $fillable = ['id_rkm', 'transportasi', 'jenis_transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'keterangan_akomodasi_tim', 'fresh_money', 'entertaint', 'keterangan_entertaint', 'souvenir', 'cashback',  'sewa_laptop', 'tgl_pa', 'tipe_pembayaran', 'deskripsi_tambahan', 'id_tracking', 'deleted_at', 'deleted_by'];
     protected $casts = [
         'transportasi' => 'integer',
         'akomodasi_peserta' => 'integer',

@@ -258,18 +258,18 @@
                             actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
 
                             if (userRole == 'GM') {
-    // GM hanya bisa approve jika divisi Office atau id = 4,14,29
-    if (data.karyawan.divisi === 'Office' || [4, 14, 29].includes(Number(data.karyawan.id))) {
-        if (data.approval_manager === '1') {
-            actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-        } else {
-            actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-        }
-    } else {
-        actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-    }
-}
- else if (userRole !== requesterRole) {
+                                // GM hanya bisa approve jika divisi Office atau id = 4,14,29
+                                if (data.karyawan.divisi === 'Office' || [4, 13, 14, 29].includes(Number(data.karyawan.id))) {
+                                    if (data.approval_manager === '1') {
+                                        actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                                    } else {
+                                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                                    }
+                                } else {
+                                    actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                                }
+                            }
+                            else if (userRole !== requesterRole) {
                                 // Other allowed roles can approve subordinate's requests, but not their own
                                 if (data.approval_manager === '1') {
                                     actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';

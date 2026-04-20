@@ -21,16 +21,18 @@ class DaftarTugasReportExport implements FromCollection, WithHeadings, WithMappi
     protected $startDate;
     protected $endDate;
     protected $filterTipe;
+    protected $filterTipeTurunan;
     protected $filterStatus;
     protected $filterKaryawan;
     protected $reportType;
 
-    public function __construct($reportType = 'tugas', $startDate = null, $endDate = null, $tipe = null, $status = null, $karyawan = null)
+    public function __construct($reportType = 'tugas', $startDate = null, $endDate = null, $tipe = null, $tipeTurunan = null, $status = null, $karyawan = null)
     {
         $this->reportType = $reportType;
         $this->startDate = $startDate;
         $this->endDate = $endDate;
         $this->filterTipe = $tipe;
+        $this->filterTipeTurunan = $tipeTurunan;
         $this->filterStatus = $status;
         $this->filterKaryawan = $karyawan;
     }
@@ -46,6 +48,9 @@ class DaftarTugasReportExport implements FromCollection, WithHeadings, WithMappi
             if ($this->filterTipe && $this->filterTipe !== 'all') {
                 $query->where('Tipe', $this->filterTipe);
             }
+            if ($this->filterTipeTurunan && $this->filterTipeTurunan !== 'all') {
+                $query->where('tipe_turunan', $this->filterTipeTurunan);
+            }
             
             if (Auth::user()->jabatan !== 'HRD') {
                 $query->where('id_user', Auth::id());
@@ -57,15 +62,18 @@ class DaftarTugasReportExport implements FromCollection, WithHeadings, WithMappi
         $query = KontrolTugas::with(['kategoriDaftarTugas', 'karyawan']);
         
         if ($this->startDate) {
-            $query->whereDate('created_at', '>=', $this->startDate);
+            $query->whereDate('Deadline_Date', '>=', $this->startDate);
         }
         if ($this->endDate) {
-            $query->whereDate('created_at', '<=', $this->endDate);
+            $query->whereDate('Deadline_Date', '<=', $this->endDate);
         }
         if ($this->filterTipe && $this->filterTipe !== 'all') {
             $query->whereHas('kategoriDaftarTugas', fn($q) => $q->where('Tipe', $this->filterTipe));
         }
-        if ($this->filterStatus !== null) {
+        if ($this->filterTipeTurunan && $this->filterTipeTurunan !== 'all') {
+            $query->whereHas('kategoriDaftarTugas', fn($q) => $q->where('tipe_turunan', $this->filterTipeTurunan));
+        }
+        if ($this->filterStatus !== null && $this->filterStatus !== '') {
             $query->where('status', $this->filterStatus);
         }
         if ($this->filterKaryawan) {
@@ -87,20 +95,23 @@ class DaftarTugasReportExport implements FromCollection, WithHeadings, WithMappi
                 ['Oleh: ' . (Auth::user()->karyawan->nama_lengkap ?? Auth::user()->username)],
                 [],
                 [
-                    'No', 'Nama Tugas', 'Tipe Frekuensi', 'Penanggung Jawab', 
-                    'Jabatan Pembuat', 'Tanggal Dibuat', 'Total Instance'
+                    'No', 'Nama Tugas', 'Tipe Frekuensi', 'Shift',
+                    'Tanggal Dibuat', 'Total Instance'
                 ]
             ];
         }
 
+        $startDateText = $this->startDate ? Carbon::parse($this->startDate)->format('d M Y') : 'Awal';
+        $endDateText = $this->endDate ? Carbon::parse($this->endDate)->format('d M Y') : 'Sekarang';
+
         return [
             ['LAPORAN PELAKSANAAN TUGAS OFFICE BOY'],
-            ['Periode: ' . ($this->startDate ? Carbon::parse($this->startDate)->format('d M Y') : 'Awal') . ' s/d ' . ($this->endDate ? Carbon::parse($endDate)->format('d M Y') : 'Sekarang')],
+            ['Periode: ' . $startDateText . ' s/d ' . $endDateText],
             ['Diexport pada: ' . Carbon::now()->format('d M Y H:i:s')],
             ['Oleh: ' . (Auth::user()->karyawan->nama_lengkap ?? Auth::user()->username)],
             [],
             [
-                'No', 'Tanggal Assign', 'Nama Tugas', 'Tipe', 'Office Boy', 
+                'No', 'Tanggal Assign', 'Nama Tugas', 'Tipe', 'Shift', 'Office Boy', 
                 'Deadline', 'Status', 'Bukti', 'Tanggal Selesai'
             ]
         ];
@@ -115,8 +126,7 @@ class DaftarTugasReportExport implements FromCollection, WithHeadings, WithMappi
                 '',
                 $item->judul_kategori,
                 $item->Tipe,
-                $item->karyawan?->nama_lengkap ?? '-',
-                $item->jabatan_pembuat ?? '-',
+                $item->tipe_turunan ?? '-',
                 Carbon::parse($item->created_at)->format('d M Y'),
                 $totalInstance
             ];
@@ -133,6 +143,7 @@ class DaftarTugasReportExport implements FromCollection, WithHeadings, WithMappi
             Carbon::parse($item->created_at)->format('d M Y'),
             $item->kategoriDaftarTugas?->judul_kategori ?? '-',
             $item->kategoriDaftarTugas?->Tipe ?? '-',
+            $item->kategoriDaftarTugas?->tipe_turunan ?? '-',
             $item->karyawan?->nama_lengkap ?? '-',
             Carbon::parse($item->Deadline_Date)->format('d M Y'),
             $statusText,
@@ -171,11 +182,6 @@ class DaftarTugasReportExport implements FromCollection, WithHeadings, WithMappi
                 if ($this->reportType !== 'kategori') {
                     $totalData = KontrolTugas::where('status', 1)->count();
                     $totalPending = KontrolTugas::where('status', 0)->count();
-                    
-                    $sheet->setCellValue('A' . ($lastRow + 2), 'RINGKASAN:');
-                    $sheet->setCellValue('A' . ($lastRow + 3), 'Total Tugas Selesai: ' . $totalData);
-                    $sheet->setCellValue('A' . ($lastRow + 4), 'Total Tugas Pending: ' . $totalPending);
-                    $sheet->setCellValue('A' . ($lastRow + 5), 'Persentase Completion: ' . ($totalData + $totalPending > 0 ? round(($totalData / ($totalData + $totalPending)) * 100, 1) . '%' : '0%'));
                     
                     $sheet->getStyle('A' . ($lastRow + 2) . ':A' . ($lastRow + 5))->getFont()->setBold(true);
                 }

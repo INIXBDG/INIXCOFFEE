@@ -27,6 +27,9 @@ class PengajuanBarang extends Model
         'id_tracking',
         'tipe',
         'invoice',
+        'no_kk',
+        'tanggal_pencairan',
+        'tanggal_terima_finance',
 
     ];
 
@@ -46,6 +49,12 @@ class PengajuanBarang extends Model
     {
         return $this->belongsTo(karyawan::class, 'id_karyawan', 'id');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(user::class, 'id_karyawan', 'id');
+    }
+
     public function tracking()
     {
         return $this->belongsTo(tracking_pengajuan_barang::class, 'id_tracking', 'id');
@@ -74,5 +83,4 @@ class PengajuanBarang extends Model
     {
         return $this->hasOne(perbaikanKendaraan::class, 'pengajuanbarangs_id');
     }
-
 }

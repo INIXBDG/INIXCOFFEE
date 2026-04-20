@@ -372,13 +372,61 @@ class PeluangController extends Controller
     public function delete($id)
     {
         try {
-            $peluang = Peluang::with('rkm')->findOrFail($id);
+            $peluang = Peluang::with(
+                'rkm',
+                'rkm.perhitunganNetSales',
+                'rkm.exam',
+                'rkm.outstanding',
+                'rkm.registrasi',
+                'rkm.analisisrkm'
+            )->findOrFail($id);
 
             $deletedBy = Auth::user()->karyawan->kode_karyawan ?? null;
             $now = Carbon::now();
 
             if ($peluang->rkm) {
-                $peluang->rkm->update([
+                $rkm = $peluang->rkm;
+
+                if ($rkm->perhitunganNetSales && $rkm->perhitunganNetSales->isNotEmpty()) {
+                    foreach ($rkm->perhitunganNetSales as $item) {
+                        $item->update([
+                            'deleted_at' => $now,
+                            'deleted_by' => $deletedBy,
+                        ]);
+                    }
+                }
+
+                if ($rkm->registrasi && $rkm->registrasi->isNotEmpty()) {
+                    foreach ($rkm->registrasi as $item) {
+                        $item->update([
+                            'deleted_at' => $now,
+                            'deleted_by' => $deletedBy,
+                        ]);
+                    }
+                }
+
+                if (!empty($rkm->exam)) {
+                    $rkm->exam->update([
+                        'deleted_at' => $now,
+                        'deleted_by' => $deletedBy,
+                    ]);
+                }
+
+                if (!empty($rkm->outstanding)) {
+                    $rkm->outstanding->update([
+                        'deleted_at' => $now,
+                        'deleted_by' => $deletedBy,
+                    ]);
+                }
+
+                if (!empty($rkm->analisisrkm)) {
+                    $rkm->analisisrkm->update([
+                        'deleted_at' => $now,
+                        'deleted_by' => $deletedBy,
+                    ]);
+                }
+
+                $rkm->update([
                     'deleted_at' => $now,
                     'deleted_by' => $deletedBy,
                 ]);
@@ -399,12 +447,13 @@ class PeluangController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Peluang dan aktivitas terkait berhasil dihapus.'
+                'message' => 'Peluang dan semua relasi berhasil di-soft delete.'
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus peluang atau aktivitas terkait.',
+                'message' => 'Gagal menghapus peluang atau relasi.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -497,24 +546,26 @@ class PeluangController extends Controller
     
     public function updateTahap($id, Request $request)
     {
-        // Ambil peluang beserta relasi RKM jika ada (pastikan relation 'rkm' didefinisikan di model Peluang)
-        $peluang = Peluang::with('rkm')->where('id', $id)->firstOrFail();
+        $peluang = Peluang::with(
+            'rkm',
+            'rkm.perhitunganNetSales',
+            'rkm.exam',
+            'rkm.outstanding',
+            'rkm.registrasi',
+            'rkm.analisirkm'
+        )->where('id', $id)->firstOrFail();
 
         DB::transaction(function () use ($peluang, $request) {
             $now = Carbon::now();
             $deletedBy = Auth::user()->karyawan->kode_karyawan ?? null;
-
-            // Reset kolom-kolom waktu yang relevan apabila perlu (optional)
-            // $peluang->biru = null; $peluang->merah = null; $peluang->lost = null;
 
             if ($request->tahap === 'biru') {
                 $peluang->tahap = 'biru';
                 $peluang->biru = $now;
                 $peluang->desc_lost = null;
 
-                // Update status RKM jika ada relasi
                 if ($peluang->rkm) {
-                    $peluang->rkm->status = '1'; // biru -> status '1'
+                    $peluang->rkm->status = '1';
                     $peluang->rkm->save();
                 }
             }
@@ -525,11 +576,51 @@ class PeluangController extends Controller
                 $peluang->desc_lost = $request->input('desc_lost');
 
                 if ($peluang->rkm) {
-                    $peluang->rkm->status = '2'; // lost -> status '2'
+                    $rkm = $peluang->rkm;
 
-                    $peluang->rkm->deleted_at = $now;
-                    $peluang->rkm->deleted_by = $deletedBy;
-                    $peluang->rkm->save();
+                    if ($rkm->perhitunganNetSales && $rkm->perhitunganNetSales->isNotEmpty()) {
+                        foreach ($rkm->perhitunganNetSales as $item) {
+                            $item->update([
+                                'deleted_at' => $now,
+                                'deleted_by' => $deletedBy,
+                            ]);
+                        }
+                    }
+
+                    if ($rkm->registrasi && $rkm->registrasi->isNotEmpty()) {
+                        foreach ($rkm->registrasi as $item) {
+                            $item->update([
+                                'deleted_at' => $now,
+                                'deleted_by' => $deletedBy,
+                            ]);
+                        }
+                    }
+
+                    if (!empty($rkm->exam)) {
+                        $rkm->exam->update([
+                            'deleted_at' => $now,
+                            'deleted_by' => $deletedBy,
+                        ]);
+                    }
+
+                    if (!empty($rkm->outstanding)) {
+                        $rkm->outstanding->update([
+                            'deleted_at' => $now,
+                            'deleted_by' => $deletedBy,
+                        ]);
+                    }
+
+                    if (!empty($rkm->analisisrkm)) {
+                        $rkm->analisisrkm->update([
+                            'deleted_at' => $now,
+                            'deleted_by' => $deletedBy,
+                        ]);
+                    }
+
+                    $rkm->update([
+                        'deleted_at' => $now,
+                        'deleted_by' => $deletedBy,
+                    ]);
                 }
             }
 
@@ -540,7 +631,6 @@ class PeluangController extends Controller
                 $final = $inputFinal - ($inputFinal * 11 / 100);
 
                 $peluang->final = $final;
-
                 $peluang->netsales = $final;
 
                 $peluang->merah = $now;

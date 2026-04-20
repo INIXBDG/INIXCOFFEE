@@ -1167,13 +1167,6 @@
     <main class="container-fluid" style="height: 92vh" id="bgsvg">
         {{-- {{auth()->user()->hashids}} --}}
         <div class="tab-content" id="pills-tabContent">
-            @if (auth()->user()->jabatan === "HRD" || auth()->user()->jabatan === "Customer Care" || auth()->user()->jabatan === "Driver")
-            <div id="subscribe-floating">
-                <button id="toggle-subscribe-btn" onclick="toggleSubscription()">
-                    Aktifkan Notifikasi
-                </button>
-            </div>
-            @endif
             <div class="tab-pane fade" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
                 <div class="row justify-content-between">
                     <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">

@@ -64,6 +64,18 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
 
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                {{ session('success') }}
+                            </div>
+                        @endif
+
+                        @if(session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                {{ session('error') }}
+                            </div>
+                        @endif
+
                         <form id="clientForm" action="{{ route('store.pic') }}" method="POST">
                             @csrf
                             <div class="modal-body">
@@ -219,6 +231,13 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script>
         const isRestricted = @json(in_array(auth()->user()->jabatan, $allowedUser));
+
+        @if(session('open_modal'))
+            $(document).ready(function() {
+                $('#clientModal').modal('show');
+            });
+        @endif
+
         $(document).ready(function() {
             var table = $('#picTable').DataTable({
                 processing: true,

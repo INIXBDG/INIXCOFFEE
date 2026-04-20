@@ -11,7 +11,7 @@
         <!-- Total Karyawan Card -->
         <div class="row mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden glass-force">
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center">
                             <div class="flex-shrink-0">
@@ -33,7 +33,7 @@
         <div class="row mb-5 g-4">
             @foreach ($divisiStats as $index => $divisi)
                 <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100 hover-card rounded-3 overflow-hidden" data-bs-toggle="modal"
+                    <div class="card border-0 shadow-sm h-100 hover-card rounded-3 overflow-hidden glass-force" data-bs-toggle="modal"
                         data-bs-target="#modalDivisi{{ $index }}" role="button" tabindex="0">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
@@ -55,10 +55,162 @@
         </div>
 
         @if (Auth::user()->jabatan === 'Finance & Accounting')
+         <!-- Modal Tambah -->
+        <div class="modal fade" id="modalTambahTagihan" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Tagihan Perusahaan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form method="post" action="{{ route('storeTagihanPerusahaan') }}"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Kegiatan <span class="text-danger">*</span></label>
+                                <input type="text" name="kegiatan" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Tipe <span class="text-danger">*</span></label>
+                                <select name="tipe" id="tipe" class="form-select">
+                                    <option value="tahunan">
+                                        Tahunan
+                                    </option>
+                                    <option value="bulanan">
+                                        Bulanan
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Perkiraan Tanggal <span class="text-danger">*</span></label>
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <label for="tanggal_perkiraan_mulai">Mulai</label>
+                                        <input type="date" name="tanggal_perkiraan_mulai" class="form-control col-md-6 mb-2">
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label for="tanggal_perkiraan_selesai">Selesai</label>
+                                        <input type="date" name="tanggal_perkiraan_selesai" class="form-control col-md-6 mb-2">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Nominal <span class="text-danger">*</span></label>
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text">Rp.</span>
+                                    <input type="text" name="nominal" id="nominal" class="form-control format-rupiah">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">  
+                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
+                                <textarea class="form-control" name="keterangan"></textarea>  
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <!-- Modal Edit -->
+        <div class="modal fade" id="modalEditTagihan" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Edit Tagihan Perusahaan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
+                        <form method="post"
+                            class="mt-5"
+                            id="formEditTagihan"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3 row">
+                                {{-- Status --}}
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small text-uppercase">
+                                        Status
+                                    </label>
+
+                                    <select name="status" id="status" class="form-select">
+                                        <option value="pending">
+                                            Pending
+                                        </option>
+                                        <option value="proses">
+                                            Proses
+                                        </option>
+                                        <option value="selesai" disabled hidden>
+                                            Selesai
+                                        </option>
+                                        <option value="telat" disabled hidden>
+                                            Terlambat
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <!-- Tanggal Perkiraan -->
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small text-uppercase">
+                                        Tracking
+                                    </label>
+
+                                    <select name="tracking" id="tracking" class="form-select">
+                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                        <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                        <option value="Diajukan dan Sedang Ditinjau oleh Finance">Diajukan dan Sedang Ditinjau oleh Finance</option>
+                                        <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                        <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                        <option value="Selesai">Selesai</option>
+                                    </select>
+                                </div>
+
+                                <!-- Tanggal Selesai -->
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small text-uppercase">
+                                        Tanggal Realisasi
+                                    </label>
+                                    <div>
+                                        <input type="date" name="tanggal_selesai" class="form-control col-md-6">
+                                    </div>
+                                </div>
+
+                                {{-- Keterangan --}}
+                                <div class="mb-3">  
+                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
+                                    <textarea class="form-control" name="keterangan"></textarea>  
+                                </div>
+                                
+                            </div>
+
+                            <div class="modal-footer mt-4">
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="row g-4 mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden  glass-force">
+                    <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
                             Tagihan Perusahaan 
@@ -72,148 +224,6 @@
                     @endif
                     <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
 
-                        <!-- Modal Tambah -->
-                        <div class="modal fade" id="modalTambahTagihan" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Tambah Tagihan Perusahaan</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post" action="{{ route('storeTagihanPerusahaan') }}"
-                                            enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Kegiatan <span class="text-danger">*</span></label>
-                                                <input type="text" name="kegiatan" class="form-control">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Tipe <span class="text-danger">*</span></label>
-                                                <select name="tipe" id="tipe" class="form-select">
-                                                    <option value="tahunan">
-                                                        Tahunan
-                                                    </option>
-                                                    <option value="bulanan">
-                                                        Bulanan
-                                                    </option>
-                                                </select>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Perkiraan Tanggal <span class="text-danger">*</span></label>
-                                                <div class="row">
-                                                    <div class="col-md-5">
-                                                        <label for="tanggal_perkiraan_mulai">Mulai</label>
-                                                        <input type="date" name="tanggal_perkiraan_mulai" class="form-control col-md-6 mb-2">
-                                                    </div>
-                                                    <div class="col-md-5">
-                                                        <label for="tanggal_perkiraan_selesai">Selesai</label>
-                                                        <input type="date" name="tanggal_perkiraan_selesai" class="form-control col-md-6 mb-2">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Nominal <span class="text-danger">*</span></label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text">Rp.</span>
-                                                    <input type="text" name="nominal" id="nominal" class="form-control format-rupiah">
-                                                </div>
-                                            </div>
-
-                                            <div class="mb-3">  
-                                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
-                                                <textarea class="form-control" name="keterangan"></textarea>  
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">Simpan</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        
-                        <!-- Modal Edit -->
-                        <div class="modal fade" id="modalEditTagihan" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Edit Tagihan Perusahaan</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post"
-                                            id="formEditTagihan"
-                                            enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3 row">
-                                                {{-- Status --}}
-                                                <div class="col-md-4">
-                                                    <label class="form-label text-muted small text-uppercase">
-                                                        Status
-                                                    </label>
-
-                                                    <select name="status" id="status" class="form-select">
-                                                        <option value="pending">
-                                                            Pending
-                                                        </option>
-                                                        <option value="proses">
-                                                            Proses
-                                                        </option>
-                                                        <option value="selesai">
-                                                            Selesai
-                                                        </option>
-                                                        <option value="telat">
-                                                            Telat
-                                                        </option>
-                                                    </select>
-                                                </div>
-
-                                                <!-- Tanggal Perkiraan -->
-                                                <div class="col-md-4">
-                                                    <label class="form-label text-muted small text-uppercase">
-                                                        Tracking
-                                                    </label>
-
-                                                    <select name="tracking" id="tracking" class="form-select">
-                                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
-                                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
-                                                        <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
-                                                        <option value="Diajukan dan Sedang Ditinjau oleh Finance">Diajukan dan Sedang Ditinjau oleh Finance</option>
-                                                        <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
-                                                        <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
-                                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
-                                                        <option value="Selesai">Selesai</option>
-                                                    </select>
-                                                </div>
-
-                                                <!-- Tanggal Selesai -->
-                                                <div class="col-md-4">
-                                                    <label class="form-label text-muted small text-uppercase">
-                                                        Tanggal Selesai
-                                                    </label>
-                                                    <div>
-                                                        <input type="date" name="tanggal_selesai" class="form-control col-md-6">
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="modal-footer mt-4">
-                                                <button type="submit" class="btn btn-primary">Simpan</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         {{-- Table Tagihan --}}
                         <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
@@ -221,7 +231,7 @@
                                 <thead class="table-light sticky-top">
                                     <tr>
                                         <th class="border-0 ps-4"></th>
-                                        <th class="border-0" style="min-width: 160px;">Tanggal Perkiraan</th>
+                                        <th class="border-0" style="min-width: 160px;">Due Date</th>
                                         <th class="border-0" style="min-width: 180px;">Kegiatan</th>
                                         <th class="border-0" style="min-width: 150px;">Nominal</th>
                                         <th class="border-0" style="min-width: 120px;">Tracking</th>
@@ -230,7 +240,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($trackingTagihanPerusahaans as $tagihan)   
+                                    @forelse($trackingTagihanPerusahaans as $tagihan)
                                         <tr class="border-bottom ">
                                             @if ($tagihan->status === 'selesai')
                                                 <td class="text-center ps-4"><input class="custom-check" type="checkbox" checked disabled></td>
@@ -246,14 +256,14 @@
                                                     </div>
                                                 @else
                                                     <div class="small">
-                                                        {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_mulai)->format('d M') }} - {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_selesai)->format('d M') }}
+                                                        {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_selesai)->format('d M') }}
                                                     </div>
                                                 @endif
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="text-truncate" style="max-width: 150px;">
-                                                        {{ $tagihan->tagihanPerusahaan->kegiatan }}
+                                                        {{ $tagihan->tagihanPerusahaan->kegiatan ?? $tagihan->kegiatan }}
                                                     </div>
                                                 </div>
                                             </td>
@@ -355,13 +365,314 @@
                 </div>
             </div>
         </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-12">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <!-- Card Header -->
+                    <div class="card-header border-bottom-0 py-4 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                            <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
+                            Data Outstanding
+                        </h5>
+                    </div>
+
+                    <div class="px-4 py-3 border-bottom">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                            <div class="w-md-25">
+                                <input type="text" id="searchOutstanding" class="form-control"
+                                    placeholder="Cari data outstanding..." autocomplete="off">
+                            </div>
+
+                            <div id="paginationInfo" class="text-muted small"></div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Perusahaan</th>
+                                    <th scope="col">Kelas</th>
+                                    <th scope="col">Sales</th>
+                                    <th scope="col">Tanggal</th>
+                                    <th scope="col">Tagihan</th>
+                                    <th scope="col">Tenggat Waktu</th>
+                                    <th scope="col">Tanggal Bayar</th>
+                                    <th scope="col">Nominal Pembayaran</th>
+                                    <th scope="col">Admin Transfer</th>
+                                    <th scope="col">Nominal Pph23</th>
+                                    <th scope="col">Nominal PPN</th>
+                                    <th scope="col">Uang Diterima</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Info</th>
+                                </tr>
+                            </thead>
+                            <tbody id="outstandingTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-footer py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                        <div id="paginationInfo" class="text-muted small"></div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" id="prevPage" disabled>Sebelumnya</button>
+                            <span id="pageInfo" class="align-self-center"></span>
+                            <button class="btn btn-sm btn-outline-secondary" id="nextPage">Selanjutnya</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden mb-6 glass-force">
+            <div class="card-header border-bottom-0 pb-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                        <i class="bx bx-line-chart text-primary me-2" style="font-size: 1.5rem;"></i>
+                        Grafik Outstanding
+                    </h5>
+
+                    <!-- Filter Tahun -->
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="filterTahun" class="form-label mb-0 text-secondary fw-medium">Tahun :</label>
+                        <select id="filterTahun" class="form-select w-auto">
+                            @for ($i = 0; $i < 6; $i++)
+                                <option value="{{ now()->year - $i }}" 
+                                        {{ (now()->year - $i) == now()->year ? 'selected' : '' }}>
+                                    {{ now()->year - $i }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row h-100">
+
+                    <!-- CHART -->
+                    <div class="col-lg-8">
+                        <div class="chart-wrapper position-relative" style="height: 380px;">
+                            <canvas id="grafikOutstanding"></canvas>
+
+                            <div id="outstandingEmpty"
+                                class="d-none position-absolute top-50 start-50 translate-middle
+                                d-flex flex-column align-items-center text-center w-100">
+                                <i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i>
+                                <p class="text-muted mt-2 mb-0">
+                                    Tidak ada data Outstanding
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 d-flex flex-column gap-3 mt-4 mt-lg-0">
+
+                        <div class="p-3 rounded-3 shadow-sm">
+                            <h6 class="fw-semibold mb-3 text-dark">KPI Summary</h6>
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Target</span>
+                                <b>100%</b>
+                            </div>
+
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Progress</span>
+                                <b id="kpiProgress">0%</b>
+                            </div>
+
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Total Client</span>
+                                <b id="totalClient">0</b>
+                            </div>
+                        </div>
+
+                        <div class="p-3 border rounded-3 shadow-sm">
+
+                            <h6 class="fw-semibold mb-3 text-dark">Detail Data</h6>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Belum Bayar</span>
+                                <span id="lblBelumBayar" class="fw-bold">0</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Tepat Waktu</span>
+                                <span id="lblTepatWaktu" class="fw-bold">0</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Terlambat</span>
+                                <span id="lblTerlambat" class="fw-bold">0</span>
+                            </div>
+
+                        </div>
+
+                        <div class="p-3 border rounded-3 shadow-sm">
+                            <h6 class="fw-semibold mb-2 text-dark">Analisis</h6>
+                            <p id="kpiAnalysis" class="mb-0 text-muted small">
+                                -
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden mb-6 glass-force">
+            <div class="card-header border-bottom-0 pb-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                        <i class="bx bx-time-five text-info me-2" style="font-size: 1.5rem;"></i>
+                        Ketepatan Pencatatan Transaksi Masuk
+                    </h5>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="filterTahunKetepatan" class="form-label mb-0 text-secondary fw-medium">Tahun :</label>
+                        <select id="filterTahunKetepatan" class="form-select w-auto">
+                            @for ($i = 0; $i < 6; $i++)
+                                <option value="{{ now()->year - $i }}"
+                                        {{ (now()->year - $i) == now()->year ? 'selected' : '' }}>
+                                    {{ now()->year - $i }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row h-100">
+                    <div class="col-lg-8">
+                        <div class="chart-wrapper position-relative" style="height: 380px;">
+                            <canvas id="grafikKetepatanWaktu"></canvas>
+                            <div id="ketepatanWaktuEmpty"
+                                class="d-none position-absolute top-50 start-50 translate-middle
+                                d-flex flex-column align-items-center text-center w-100">
+                                <i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i>
+                                <p class="text-muted mt-2 mb-0">
+                                    Tidak ada data
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 d-flex flex-column gap-3 mt-4 mt-lg-0">
+                        <div class="p-3 rounded-3 shadow-sm">
+                            <h6 class="fw-semibold mb-3 text-dark">KPI Summary</h6>
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Target</span>
+                                <b>100%</b>
+                            </div>
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Progress</span>
+                                <b id="kpiProgressKetepatan">0%</b>
+                            </div>
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Total Data</span>
+                                <b id="totalDataKetepatan">0</b>
+                            </div>
+                        </div>
+
+                        <div class="p-3  border rounded-3 shadow-sm">
+                            <h6 class="fw-semibold mb-3 text-dark">Detail Data</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Sesuai</span>
+                                <span id="lblSesuaiKetepatan" class="fw-bold">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Tidak Sesuai</span>
+                                <span id="lblTidakSesuaiKetepatan" class="fw-bold">0</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 border rounded-3 shadow-sm">
+                            <h6 class="fw-semibold mb-2 text-dark">Analisis</h6>
+                            <p id="kpiAnalysisKetepatan" class="mb-0 text-muted small">
+                                -
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         @endif
 
         @if (Auth::user()->jabatan === 'HRD')
+        <!-- Modal Tambah -->
+        <div class="modal fade" id="modalTambahHariLibur" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Hari Libur</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form method="post" action="{{ route('storeHariLibur') }}"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Nama Hari Libur <span class="text-danger">*</span></label>
+                                <input type="text" name="nama" class="form-control" autocomplete="off">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Tanggal <span class="text-danger">*</span></label>
+                                <input type="date" name="tanggal" class="form-control">
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Edit -->
+        <div class="modal fade" id="modalEditHariLibur" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Edit Hari Libur</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form id="formEditHariLibur" method="POST" enctype="multipart/form-data">
+                            @csrf
+
+                            <input type="hidden" id="id">
+
+                            <div class="mb-3">
+                                <label class="form-label">Nama Hari Libur <span class="text-danger">*</span></label>
+                                <input type="text" id="nama" name="nama" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal <span class="text-danger">*</span></label>
+                                <input type="date" id="tanggal" name="tanggal" class="form-control">
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Update</button>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    
         <div class="row g-4 mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-calendar text-primary me-2" style="font-size: 1.5rem;"></i>
                             Hari Libur 
@@ -369,75 +680,6 @@
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahHariLibur">
                             Tambah Hari Libur
                         </button>
-
-                        <!-- Modal Tambah -->
-                        <div class="modal fade" id="modalTambahHariLibur" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Tambah Hari Libur</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post" action="{{ route('storeHariLibur') }}"
-                                            enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Nama Hari Libur <span class="text-danger">*</span></label>
-                                                <input type="text" name="nama" class="form-control" autocomplete="off">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Tanggal <span class="text-danger">*</span></label>
-                                                <input type="date" name="tanggal" class="form-control">
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">Simpan</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Modal Edit -->
-                        <div class="modal fade" id="modalEditHariLibur" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Edit Hari Libur</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form id="formEditHariLibur" method="POST" enctype="multipart/form-data">
-                                            @csrf
-
-                                            <input type="hidden" id="id">
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Nama Hari Libur <span class="text-danger">*</span></label>
-                                                <input type="text" id="nama" name="nama" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Tanggal <span class="text-danger">*</span></label>
-                                                <input type="date" id="tanggal" name="tanggal" class="form-control">
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">Update</button>
-                                            </div>
-                                        </form>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     @if (session('success_libur'))
@@ -457,7 +699,7 @@
                         <!-- Detail & List Hari Libur -->
                         <div class="col-xl-4">
                             <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden d-flex flex-column">
-                                <div class="card-header bg-white border-bottom-0 pb-0">
+                                <div class="card-header border-bottom-0 pb-0">
                                     <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                                         <i class="bx bx-calendar-check text-success me-2" style="font-size: 1.5rem;"></i>
                                         Hari Libur Bulan Ini
@@ -489,10 +731,113 @@
         </div>
 
 
+        {{-- Administrasi Karyawan --}}
+        <!-- Modal Tambah -->
+        <div class="modal fade" id="modalTambahAdministrasiKaryawan" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form method="post" action="{{ route('administrasi.karyawan.store') }}"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Nama Administrasi <span class="text-danger">*</span></label>
+                                <input type="text" name="nama_administrasi" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Dateline</label>
+                                <input type="date" name="dateline" class="form-control col-md-6 mb-2">
+                            </div>
+
+                            <div class="mb-3">  
+                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
+                                <textarea class="form-control" name="keterangan"></textarea>  
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal Edit -->
+        <div class="modal fade" id="modalEditAdministrasi" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form method="post" id="formEditAdministrasi" enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label">Nama Administrasi <span class="text-danger">*</span></label>
+                                <input type="text" name="nama_administrasi" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Dateline</label>
+                                <input type="date" name="dateline" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="pending">Pending</option>
+                                    <option value="proses">Proses</option>
+                                    <option value="selesai" disabled hidden>Selesai</option>
+                                    <option value="terlambat" disabled hidden>Terlambat</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Bukti Transfer</label>
+                                <small id="pathBuktiTransfer" class="text-muted"></small>
+                                <input type="file" name="bukti_transfer" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal Selesai</label>
+                                <input type="date" name="tanggal_selesai" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Keterangan</label>
+                                <textarea class="form-control" name="keterangan"></textarea>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">
+                                    Simpan
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="row g-4 mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
                             Administrasi Karyawan 
@@ -504,109 +849,7 @@
                     @if (session('success_administrasi'))
                         <div class="alert alert-success">{{ session('success_administrasi') }}</div>
                     @endif
-                    <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
-
-                        <!-- Modal Tambah -->
-                        <div class="modal fade" id="modalTambahAdministrasiKaryawan" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post" action="{{ route('administrasi.karyawan.store') }}"
-                                            enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Nama Administrasi <span class="text-danger">*</span></label>
-                                                <input type="text" name="nama_administrasi" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Dateline</label>
-                                                <input type="date" name="dateline" class="form-control col-md-6 mb-2">
-                                            </div>
-
-                                            <div class="mb-3">  
-                                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
-                                                <textarea class="form-control" name="keterangan"></textarea>  
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">Simpan</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                       
-                        <!-- Modal Edit -->
-                        <div class="modal fade" id="modalEditAdministrasi" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post" id="formEditAdministrasi" enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Nama Administrasi <span class="text-danger">*</span></label>
-                                                <input type="text" name="nama_administrasi" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Dateline</label>
-                                                <input type="date" name="dateline" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Status</label>
-                                                <select name="status" class="form-select">
-                                                    <option value="pending">Pending</option>
-                                                    <option value="proses">Proses</option>
-                                                    <option value="selesai">Selesai</option>
-                                                    <option value="terlambat">Terlambat</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label">Bukti Transfer</label>
-                                                <small id="pathBuktiTransfer" class="text-muted"></small>
-                                                <input type="file" name="bukti_transfer" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Tanggal Selesai</label>
-                                                <input type="date" name="tanggal_selesai" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Keterangan</label>
-                                                <textarea class="form-control" name="keterangan"></textarea>
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">
-                                                    Simpan
-                                                </button>
-                                            </div>
-
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
+                    <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">                        
 
                         {{-- Table administrasi --}}
                         <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
@@ -747,8 +990,8 @@
         <div class="row g-4">
             <!-- Chart Kehadiran -->
             <div class="col-xl-8">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-line-chart text-primary me-2" style="font-size: 1.5rem;"></i>
                             Grafik Kehadiran 7 Hari Terakhir
@@ -772,8 +1015,8 @@
 
             <!-- Karyawan Tidak Hadir Hari Ini -->
             <div class="col-xl-4">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-user-x text-danger me-2" style="font-size: 1.5rem;"></i>
                             Tidak Hadir Hari Ini
@@ -821,8 +1064,8 @@
 
             <!-- Chart Cuti -->
             <div class="col-xl-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-pie-chart-alt text-primary me-2" style="font-size: 1.5rem;"></i>
                             Grafik Cuti<span class="ms-2" id="rentangWaktu"></span>
@@ -888,8 +1131,8 @@
 
             {{-- Total Mengajar Instruktur --}}
             <div class="col-xl-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-archive text-primary me-2" style="font-size: 1.5rem;"></i>
                             Total Mengajar Instruktur <span class="ms-2" id="rentangWaktuMengajar"></span>
@@ -962,8 +1205,8 @@
             {{-- End Total Mengajar Instrukrur --}}
 
             <!-- Chart nilai Feedback -->
-            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                     <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                         <i class="bx bx-line-chart text-primary me-2" style="font-size: 1.5rem;"></i>
                         Grafik Feedback
@@ -1033,96 +1276,272 @@
             </div>
             {{-- End Chart nilai Feedback --}}
 
-            {{-- RKM Berjalan Minggu Ini --}}
             <div class="row g-3 mb-4">
-                <div class="col-12">
-                    <div class="card h-100 shadow-sm border-0 rounded-3">
-                        <div class="card-header bg-white border-bottom py-3">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <span class="badge bg-primary-subtle text-primary px-3 py-2">
-                                    {{ count($rkm) }} RKM
-                                </span>
+                {{-- RKM Berjalan Minggu Ini --}}
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm border-0 rounded-3 glass-force">
+                            <div class="card-header border-bottom py-3">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <h5 class="card-title mb-0 fw-semibold">
+                                        <i class="bx bx-calendar text-primary me-2"></i>
+                                        Rencana Kelas Mingguan
+                                    </h5>
 
-                                <span class="badge bg-success-subtle text-success px-3 py-2">
-                                    {{ number_format($jumlahPeserta, 0, ',', '.') }} Peserta
-                                </span>
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge bg-primary-subtle text-primary px-3 py-2">
+                                            {{ count($rkms) }} RKM
+                                        </span>
 
-                                <span class="badge bg-success-subtle text-success px-3 py-2">
-                                    {{ number_format($jumlahInstruktur, 0, ',', '.') }} Instruktur
-                                </span>
+                                        <span class="badge bg-success-subtle text-success px-3 py-2">
+                                            {{ number_format($jumlahPeserta, 0, ',', '.') }} Peserta
+                                        </span>
+
+                                        <span class="badge bg-success-subtle text-success px-3 py-2">
+                                            {{ number_format($jumlahInstruktur, 0, ',', '.') }} Instruktur
+                                        </span>
+                                    </div>
+                                </div>
+                                
                             </div>
-
+                            
                             <div class="card-body p-0">
-                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                    <table class="table table-hover align-middle mb-0">
+                                <div class="table-responsive" style="max-height: 1000px; overflow-y: auto;">
+                                    <table class="table table-hover align-middle mb-0" style="table-layout: auto;">
                                         <thead class="table-light sticky-top">
                                             <tr>
-                                                <th class="border-0 ps-4" style="min-width: 70px;">Sales</th>
-                                                <th class="border-0" style="min-width: 250px;">Materi</th>
-                                                <th class="border-0" style="min-width: 120px;">Harga</th>
-                                                <th class="border-0" style="min-width: 200px;">Periode</th>
-                                                <th class="border-0 text-center" style="min-width: 80px;">Pax</th>
-                                                <th class="border-0 text-center pe-4" style="min-width: 100px;">Exam</th>
+                                                <th scope="col" rowspan="2" class="border-0 ps-4" style="min-width: 50px;">No</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 250px;">Materi</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Harga</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">Tanggal Training</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">Perusahaan</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Kode Sales</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Instruktur</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Ruang</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Pax</th>
+                                                <th scope="col" rowspan="2" class="border-0" class="border-0 text-center pe-4" style="min-width: 100px;">Exam</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 120px;">Makanan</th>
+                                                {{-- CheckList --}}
+                                                <th scope="col" colspan="7" class="border-bottom border-dark text-center" style="min-width: 300px;">Checklist</th>
+
+                                                <th scope="col" rowspan="2" class="border-0">Eksport</th>
+                                            </tr>
+                                            <tr class="text-center">
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Tanggal Keperluan</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Materi</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Kelas</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Coffe Break</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Makan Siang</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Keperluan Kelas</th>
+                                                <th scope="col" class="border-0 text-center pe-4" style="min-width: 120px;">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @forelse($rkm as $index => $item)
-                                                <tr class="border-bottom">
-                                                    <td class="ps-4">
-                                                        <div class="d-flex align-items-center">
-                                                            <span class="fw-medium">{{ $item->sales_key }}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="text-truncate" style="max-width: 250px;"
-                                                            data-bs-toggle="tooltip"
-                                                            title="{{ $item->materi->nama_materi }}">
-                                                            {{ $item->materi->nama_materi }}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <span class="text-success fw-semibold">
-                                                            Rp {{ number_format($item->harga_jual, 0, ',', '.') }}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <div class="d-flex flex-column small">
-                                                            <span class="text-muted">
-                                                                {{ \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y') }}
+                                            @forelse ($rkms as $detail_rkm)
+                                                @php
+                                                    $checklists = $detail_rkm->checklists ?? [];
+                                                    $rowspan = count($checklists) > 0 ? count($checklists) : 1;
+                                                @endphp
+                                                @if(count($checklists) > 0)
+                                                    @foreach ($checklists as $tanggal => $item)
+                                                        <tr class="border-bottom">
+
+                                                            @if ($loop->first)
+                                                                <td class="ps-4" rowspan="{{ $rowspan }}">{{ $loop->parent->iteration }}</td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    {{ $detail_rkm->materi->nama_materi }}
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    <span class="text-success fw-semibold">
+                                                                        Rp {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
+                                                                    </span>
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @if ($detail_rkm->tanggal_awal == $detail_rkm->tanggal_akhir)
+                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
+                                                                    @else
+                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
+                                                                        -
+                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_akhir)->translatedFormat('d M Y') }}
+                                                                    @endif
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @foreach ($detail_rkm->perusahaan as $perusahaan)
+                                                                        {{ $perusahaan->nama_perusahaan }},
+                                                                    @endforeach
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->sales_all }}</td>
+                                                                <td rowspan="{{ $rowspan }}"> {{ implode(', ', array_filter([$detail_rkm->instruktur_key, $detail_rkm->instruktur_key2, $detail_rkm->asisten_key])) }}</td>
+                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}</td>
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    <span class="badge bg-info-subtle text-info px-3 py-2">
+                                                                        {{ number_format($detail_rkm->pax, 0, ',', '.') }}
+                                                                    </span>
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @if ($detail_rkm->exam == '1')
+                                                                        <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                                            Ya
+                                                                        </span>
+                                                                    @else
+                                                                        <span
+                                                                            class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                                                            Tidak
+                                                                        </span>
+                                                                    @endif
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @php
+                                                                        $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
+                                                                        $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
+                                                                    @endphp
+
+                                                                    @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
+                                                                        Tidak Ada
+                                                                    @elseif ($makananValue == '1' || $makananValue == 'Nasi Box')
+                                                                        Nasi Box
+                                                                    @elseif ($makananValue == '2' || $makananValue == 'Prasmanan')
+                                                                        Prasmanan
+                                                                    @else
+                                                                        Belum Ditentukan
+                                                                    @endif
+                                                                </td>
+                                                            @endif
+
+                                                            <td class="text-center">
+                                                                {{ \Carbon\Carbon::parse($tanggal)->format('d M') }}
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <input type="checkbox" class="custom-check" {{ $item->materi ? 'checked' : '' }} disabled>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                @if ($detail_rkm->metode_kelas === 'Offline')
+                                                                    <input type="checkbox" class="custom-check" {{ $item->kelas ? 'checked' : '' }} disabled>
+                                                                @else
+                                                                -
+                                                                @endif
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <input type="checkbox" class="custom-check" {{ $item->cb ? 'checked' : '' }} disabled>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <input type="checkbox" class="custom-check" {{ $item->maksi ? 'checked' : '' }} disabled>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                @if ($detail_rkm->metode_kelas === 'Offline')
+                                                                    <input type="checkbox" class="custom-check" {{ $item->keperluan_kelas ? 'checked' : '' }} disabled>
+                                                                @else
+                                                                -
+                                                                @endif
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                {{ $item->progress ?? 0 }}%
+                                                            </td>
+                                                            @if ($loop->first)
+                                                                <td rowspan="{{ $rowspan }}" class="text-center align-middle">
+                                                                    <a href="{{ route('export.pdf.checklist', $detail_rkm->id) }}" id="exportPdfRkm" class="btn btn-outline-danger btn-sm mb-1">
+                                                                        PDF
+                                                                    </a>
+                                                                    <a href="{{ route('export.excel.checklist', $detail_rkm->id) }}" id="exportExcelRkm" class="btn btn-outline-success btn-sm">
+                                                                        Excel
+                                                                    </a>
+                                                                </td>
+                                                            @endif
+                                                        </tr>
+                                                    @endforeach
+                                                @else
+                                                    <tr class="border-bottom">
+                                                        <td class="ps-4">{{ $loop->iteration }}</td>
+
+                                                        <td>
+                                                            {{ $detail_rkm->materi->nama_materi }}
+                                                        </td>
+
+                                                        <td>
+                                                            <span class="text-success fw-semibold">
+                                                                Rp {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
                                                             </span>
-                                                            <span class="text-muted">
-                                                                <i class="bx bx-right-arrow-alt me-1"></i>
-                                                                {{ \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y') }}
+                                                        </td>
+
+                                                        <td>
+                                                            @if ($detail_rkm->tanggal_awal == $detail_rkm->tanggal_akhir)
+                                                                {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
+                                                            @else
+                                                                {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
+                                                                -
+                                                                {{ \Carbon\Carbon::parse($detail_rkm->tanggal_akhir)->translatedFormat('d M Y') }}
+                                                            @endif
+                                                        </td>
+
+                                                        <td>
+                                                            @foreach ($detail_rkm->perusahaan as $perusahaan)
+                                                                {{ $perusahaan->nama_perusahaan }},
+                                                            @endforeach
+                                                        </td>
+
+                                                        <td>{{ $detail_rkm->sales_all }}</td>
+                                                        <td> {{ implode(', ', array_filter([$detail_rkm->instruktur_key, $detail_rkm->instruktur_key2, $detail_rkm->asisten_key])) }}</td>
+                                                        <td>{{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}</td>
+                                                        <td>
+                                                            <span class="badge bg-info-subtle text-info px-3 py-2">
+                                                                {{ number_format($detail_rkm->pax, 0, ',', '.') }}
                                                             </span>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <span class="badge bg-info-subtle text-info px-3 py-2">
-                                                            {{ number_format($item->pax, 0, ',', '.') }}
-                                                        </span>
-                                                    </td>
-                                                    <td class="text-center pe-4">
-                                                        @if ($item->exam == '1')
-                                                            <span class="badge bg-success-subtle text-success px-3 py-2">
-                                                                Ya
-                                                            </span>
-                                                        @else
-                                                            <span
-                                                                class="badge bg-secondary-subtle text-secondary px-3 py-2">
-                                                                Tidak
-                                                            </span>
-                                                        @endif
-                                                    </td>
-                                                </tr>
+                                                        </td>
+
+                                                        <td>
+                                                            @if ($detail_rkm->exam == '1')
+                                                                <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                                    Ya
+                                                                </span>
+                                                            @else
+                                                                <span
+                                                                    class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                                                    Tidak
+                                                                </span>
+                                                            @endif
+                                                        </td>
+
+                                                        <td>
+                                                            @php
+                                                                $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
+                                                                $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
+                                                            @endphp
+
+                                                            @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
+                                                                Tidak Ada
+                                                            @elseif ($makananValue == '1' || $makananValue == 'Nasi Box')
+                                                                Nasi Box
+                                                            @elseif ($makananValue == '2' || $makananValue == 'Prasmanan')
+                                                                Prasmanan
+                                                            @else
+                                                                Belum Ditentukan
+                                                            @endif
+                                                        </td>
+
+                                                        {{-- Kolom checklist kosong --}}
+                                                        <td colspan="8" class="text-center text-muted">
+                                                            Tidak ada checklist
+                                                        </td>
+                                                    </tr>
+                                                    @endif
+
                                             @empty
                                                 <tr>
-                                                    <td colspan="7" class="text-center py-5">
-                                                        <div class="d-flex flex-column align-items-center">
-                                                            <i class="bx bx-calendar-x text-muted"
-                                                                style="font-size: 3rem;"></i>
-                                                            <p class="text-muted mt-3 mb-0">Tidak ada data RKM minggu ini
-                                                            </p>
-                                                        </div>
+                                                    <td colspan="12" class="text-center py-5">
+                                                        Tidak ada data
                                                     </td>
                                                 </tr>
                                             @endforelse
@@ -1137,8 +1556,8 @@
                 {{-- Daftar Ticketing --}}
                 <div class="row g-3 mb-4">
                     <div class="col-12">
-                        <div class="card h-100 shadow-sm border-0 rounded-3">
-                            <div class="card-header bg-white border-bottom py-3">
+                        <div class="card h-100 shadow-sm border-0 rounded-3 glass-force">
+                            <div class="card-header border-bottom py-3">
                                 <div class="d-flex align-items-center justify-content-between">
                                     <h5 class="card-title mb-0 fw-semibold">
                                         <i class="bx bx-support text-primary me-2"></i>
@@ -1265,175 +1684,6 @@
                     </div>
                 </div>
 
-                {{-- Daftar RKM --}}
-                <div class="row g-3 mb-4">
-                    <div class="col-12">
-                        <div class="card h-100 shadow-sm border-0 rounded-3">
-                            <div class="card-header bg-white border-bottom py-3">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <h5 class="card-title mb-0 fw-semibold">
-                                        <i class="bx bx-calendar text-primary me-2"></i>
-                                        Rencana Kelas Mingguan
-                                    </h5>
-                                </div>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive" style="max-height: 1000px; overflow-y: auto;">
-                                    <table class="table table-hover align-middle mb-0" style="table-layout: auto;">
-                                        <thead class="table-light sticky-top">
-                                            <tr>
-                                                <th scope="col" rowspan="2" class="border-0 ps-4" style="min-width: 50px;">No</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 250px;">Materi</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">Tanggal Training</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">Perusahaan</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Kode Sales</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Instruktur</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Ruang</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Pax</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 120px;">Makanan</th>
-                                                {{-- CheckList --}}
-                                                <th scope="col" colspan="7" class="border-bottom border-dark text-center" style="min-width: 300px;">Checklist</th>
-
-                                                <th scope="col" rowspan="2" class="border-0">Eksport</th>
-                                            </tr>
-                                            <tr class="text-center">
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Tanggal Keperluan</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Materi</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Kelas</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Coffe Break</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Makan Siang</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Keperluan Kelas</th>
-                                                <th scope="col" class="border-0 text-center pe-4" style="min-width: 120px;">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @forelse ($rkms as $detail_rkm)
-                                                @php
-                                                    $checklists = $detail_rkm->checklists ?? [];
-                                                    $rowspan = count($checklists) > 0 ? count($checklists) : 1;
-                                                @endphp
-                                                @if(count($checklists) > 0)
-                                                    @foreach ($checklists as $tanggal => $item)
-                                                        <tr class="border-bottom">
-
-                                                            @if ($loop->first)
-                                                                <td class="ps-4" rowspan="{{ $rowspan }}">{{ $loop->parent->iteration }}</td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    {{ $detail_rkm->materi->nama_materi }}
-                                                                </td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    @if ($detail_rkm->tanggal_awal == $detail_rkm->tanggal_akhir)
-                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
-                                                                    @else
-                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
-                                                                        -
-                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_akhir)->translatedFormat('d M Y') }}
-                                                                    @endif
-                                                                </td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    @foreach ($detail_rkm->perusahaan as $perusahaan)
-                                                                        {{ $perusahaan->nama_perusahaan }},
-                                                                    @endforeach
-                                                                </td>
-
-                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->sales_all }}</td>
-                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->instruktur_all }}</td>
-                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}</td>
-                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->total_pax }}</td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    @php
-                                                                        $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
-                                                                        $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
-                                                                    @endphp
-
-                                                                    @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
-                                                                        Tidak Ada
-                                                                    @elseif ($makananValue == '1' || $makananValue == 'Nasi Box')
-                                                                        Nasi Box
-                                                                    @elseif ($makananValue == '2' || $makananValue == 'Prasmanan')
-                                                                        Prasmanan
-                                                                    @else
-                                                                        Belum Ditentukan
-                                                                    @endif
-                                                                </td>
-                                                            @endif
-
-                                                            <td class="text-center">
-                                                                {{ \Carbon\Carbon::parse($tanggal)->format('d M') }}
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                <input type="checkbox" class="custom-check" {{ $item->materi ? 'checked' : '' }} disabled>
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                @if ($detail_rkm->metode_kelas === 'Offline')
-                                                                    <input type="checkbox" class="custom-check" {{ $item->kelas ? 'checked' : '' }} disabled>
-                                                                @else
-                                                                -
-                                                                @endif
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                <input type="checkbox" class="custom-check" {{ $item->cb ? 'checked' : '' }} disabled>
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                <input type="checkbox" class="custom-check" {{ $item->maksi ? 'checked' : '' }} disabled>
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                @if ($detail_rkm->metode_kelas === 'Offline')
-                                                                    <input type="checkbox" class="custom-check" {{ $item->keperluan_kelas ? 'checked' : '' }} disabled>
-                                                                @else
-                                                                -
-                                                                @endif
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                {{ $item->progress ?? 0 }}%
-                                                            </td>
-                                                            @if ($loop->first)
-                                                                <td rowspan="{{ $rowspan }}" class="text-center align-middle">
-                                                                    <a href="{{ route('export.pdf.checklist', $detail_rkm->id) }}" id="exportPdfRkm" class="btn btn-outline-danger btn-sm mb-1">
-                                                                        PDF
-                                                                    </a>
-                                                                    <a href="{{ route('export.excel.checklist', $detail_rkm->id) }}" id="exportExcelRkm" class="btn btn-outline-success btn-sm">
-                                                                        Excel
-                                                                    </a>
-                                                                </td>
-                                                            @endif
-                                                        </tr>
-                                                    @endforeach
-                                                @else
-                                                    <tr>
-                                                        <td class="ps-4">{{ $loop->iteration }}</td>
-                                                        <td>{{ $detail_rkm->materi->nama_materi }}</td>
-                                                        <td colspan="10" class="text-center text-muted">
-                                                            Tidak ada checklist
-                                                        </td>
-                                                    </tr>
-
-                                                @endif
-
-                                            @empty
-                                                <tr>
-                                                    <td colspan="12" class="text-center py-5">
-                                                        Tidak ada data
-                                                    </td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -1513,256 +1763,6 @@
         @endforeach
 
     @auth
-        <div class="web-push-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
-            <button id="webpush-btn" class="btn btn-primary btn-sm shadow-sm"
-                style="border-radius: 20px; padding: 6px 16px;">
-                <i class="fas fa-bell"></i> Aktifkan Notifikasi
-            </button>
-        </div>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', async function() {
-                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                    document.getElementById('webpush-btn')?.remove();
-                    return;
-                }
-
-                const btn = document.getElementById('webpush-btn');
-                if (!btn) return;
-
-                let isSubscribed = false;
-                let vapidPublicKey = null;
-
-                try {
-                    const registration = await registerServiceWorker();
-                    if (!registration) {
-                        btn.style.display = 'none';
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch('{{ route('webpush.vapid-key') }}', {
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        const data = await response.json();
-                        vapidPublicKey = data.publicKey;
-                    } catch (error) {
-                        console.error('Error getting VAPID key:', error);
-                        showToast('Gagal memuat konfigurasi notifikasi', 'error');
-                        btn.disabled = true;
-                        return;
-                    }
-
-                    // Check subscription status
-                    await checkSubscriptionStatus();
-
-                } catch (error) {
-                    console.error('Service Worker registration failed:', error);
-                    btn.style.display = 'none';
-                }
-
-                function updateButtonState() {
-                    if (isSubscribed) {
-                        btn.className = 'btn btn-success btn-sm shadow-sm';
-                        btn.innerHTML = '<i class="fas fa-bell"></i> Notifikasi Aktif';
-                    } else {
-                        btn.className = 'btn btn-primary btn-sm shadow-sm';
-                        btn.innerHTML = '<i class="fas fa-bell"></i> Aktifkan Notifikasi';
-                    }
-                    btn.disabled = false;
-                }
-
-                btn.addEventListener('click', function() {
-                    if (isSubscribed) {
-                        unsubscribe();
-                    } else {
-                        subscribe();
-                    }
-                });
-
-                async function registerServiceWorker() {
-                    try {
-                        const registration = await navigator.serviceWorker.register('/service-worker.js', {
-                            scope: '/',
-                            updateViaCache: 'none'
-                        });
-                        console.log('[SW] Registered successfully:', registration.scope);
-                        return registration;
-                    } catch (error) {
-                        console.error('[SW] Registration failed:', error);
-                        showToast('Gagal registrasi Service Worker', 'error');
-                        return null;
-                    }
-                }
-
-                async function checkSubscriptionStatus() {
-                    try {
-                        const registration = await navigator.serviceWorker.ready;
-                        const subscription = await registration.pushManager.getSubscription();
-                        isSubscribed = !!subscription;
-                        updateButtonState();
-                    } catch (error) {
-                        console.error('Check subscription error:', error);
-                    }
-                }
-
-                async function subscribe() {
-                    if (!vapidPublicKey) {
-                        showToast('Konfigurasi tidak lengkap', 'error');
-                        return;
-                    }
-
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengaktifkan...';
-
-                    try {
-                        // Check permission first
-                        const permission = await Notification.requestPermission();
-                        if (permission !== 'granted') {
-                            throw new Error('Izin notifikasi ditolak');
-                        }
-
-                        const registration = await navigator.serviceWorker.ready;
-                        const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-
-                        const subscription = await registration.pushManager.subscribe({
-                            userVisibleOnly: true,
-                            applicationServerKey: convertedVapidKey
-                        });
-
-                        const response = await fetch('{{ route('webpush.subscribe') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify(subscription)
-                        });
-
-                        const data = await response.json();
-
-                        if (data.success) {
-                            isSubscribed = true;
-                            updateButtonState();
-                            showToast('✅ Notifikasi berhasil diaktifkan!', 'success');
-                        } else {
-                            throw new Error(data.message || 'Gagal subscribe ke server');
-                        }
-
-                    } catch (error) {
-                        console.error('Subscribe error:', error);
-                        showToast('❌ ' + getErrorMessage(error), 'error');
-                        btn.disabled = false;
-                        updateButtonState();
-                    }
-                }
-
-                async function unsubscribe() {
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mematikan...';
-
-                    try {
-                        const registration = await navigator.serviceWorker.ready;
-                        const subscription = await registration.pushManager.getSubscription();
-
-                        if (subscription) {
-                            await subscription.unsubscribe();
-
-                            await fetch('{{ route('webpush.unsubscribe') }}', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    endpoint: subscription.endpoint
-                                })
-                            });
-
-                            isSubscribed = false;
-                            updateButtonState();
-                            showToast('ℹ️ Notifikasi berhasil dimatikan', 'info');
-                        }
-                    } catch (error) {
-                        console.error('Unsubscribe error:', error);
-                        showToast('❌ Gagal mematikan notifikasi', 'error');
-                        btn.disabled = false;
-                        updateButtonState();
-                    }
-                }
-
-                function getErrorMessage(error) {
-                    if (error.name === 'NotAllowedError') {
-                        return 'Izin notifikasi ditolak. Buka pengaturan browser untuk mengaktifkan.';
-                    } else if (error.name === 'InvalidStateError') {
-                        return 'Service Worker error. Silakan refresh halaman.';
-                    } else if (error.name === 'AbortError') {
-                        return 'Operasi dibatalkan.';
-                    } else if (error.message.includes('NetworkError')) {
-                        return 'Koneksi internet bermasalah.';
-                    }
-                    return error.message || 'Terjadi kesalahan';
-                }
-
-                function urlBase64ToUint8Array(base64String) {
-                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-                    const base64 = (base64String + padding)
-                        .replace(/-/g, '+')
-                        .replace(/_/g, '/');
-                    const rawData = window.atob(base64);
-                    const outputArray = new Uint8Array(rawData.length);
-                    for (let i = 0; i < rawData.length; ++i) {
-                        outputArray[i] = rawData.charCodeAt(i);
-                    }
-                    return outputArray;
-                }
-
-                function showToast(message, type = 'info') {
-                    const colors = {
-                        success: '#28a745',
-                        error: '#dc3545',
-                        warning: '#ffc107',
-                        info: '#17a2b8'
-                    };
-
-                    const icons = {
-                        success: 'check-circle',
-                        error: 'exclamation-circle',
-                        warning: 'exclamation-triangle',
-                        info: 'info-circle'
-                    };
-
-                    const toast = document.createElement('div');
-                    toast.style.cssText = `
-                                position: fixed;
-                                top: 20px;
-                                right: 20px;
-                                background: ${colors[type] || colors.info};
-                                color: white;
-                                padding: 12px 20px;
-                                border-radius: 6px;
-                                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                                z-index: 99999;
-                                animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards;
-                                font-weight: 500;
-                                display: flex;
-                                align-items: center;
-                                gap: 10px;
-                                max-width: 350px;
-                            `;
-                    toast.innerHTML = `<i class="fas fa-${icons[type] || icons.info}"></i> ${message}`;
-                    document.body.appendChild(toast);
-
-                    setTimeout(() => toast.remove(), 3000);
-                }
-            });
-        </script>
-
         <style>
             @keyframes slideIn {
                 from {
@@ -2410,6 +2410,363 @@
                 });
             };
 
+            let currentPage = 1;
+            let lastPage = 1;
+            let currentSearch = '';
+
+            function loadOutstanding(page = 1, search = '') {
+                $.ajax({
+                    url: "{{ route('office.table.outstanding') }}",
+                    type: "GET",
+                    data: {
+                        page: page,
+                        search: search
+                    },
+                    success: function(res) {
+                        let rows = '';
+
+                        currentPage = res.current_page;
+                        lastPage = res.last_page;
+
+                        if (res.data.length === 0) {
+                            rows = `<tr><td colspan="12" class="text-center">Tidak ada data</td></tr>`;
+                        } else {
+                            res.data.forEach((item, index) => {
+                                const safeFormat = (val) => {
+                                    if (val === '-' || val === null || val === undefined || val === '' || Number(val) === 0) {
+                                        return '-';
+                                    }
+                                    return 'Rp ' + formatRupiah(val);
+                                };
+
+                                rows += `
+                                    <tr>
+                                        <td>${(currentPage - 1) * 10 + index + 1}</td>
+                                        <td>${item.perusahaan || '-'}</td>
+                                        <td>${item.kelas || '-'}</td>
+                                        <td>${item.sales || '-'}</td>
+                                        <td>${formatDate(item.tanggal)}</td>
+                                        
+                                        <!-- Gunakan helper safeFormat -->
+                                        <td>${safeFormat(item.tagihan)}</td>
+                                        
+                                        <td>${formatDate(item.tenggat_waktu)}</td>
+                                        <td>${formatDate(item.tanggal_bayar)}</td>
+                                        <td>${safeFormat(item.nominal_pembayaran)}</td>
+                                        <td>${safeFormat(item.admin_transfer)}</td>
+                                        <td>${safeFormat(item.nominal_pph23)}</td>
+                                        <td>${safeFormat(item.nominal_ppn)}</td>
+                                        <td>${safeFormat(item.uang_diterima)}</td>
+                                        
+                                        <td>${renderStatus(item.status)}</td>
+                                        <td>${item.info || '-'}</td>
+                                    </tr>
+                                `;
+                            });
+                        }
+
+                        $('#outstandingTableBody').html(rows);
+
+                        // update info
+                        $('#pageInfo').text(`Page ${currentPage} / ${lastPage}`);
+                        $('#paginationInfo').text(`Total data: ${res.total}`);
+
+                        // disable button
+                        $('#prevPage').prop('disabled', currentPage === 1);
+                        $('#nextPage').prop('disabled', currentPage === lastPage);
+                    }
+                });
+            }
+
+            $('#nextPage').click(function() {
+                if (currentPage < lastPage) {
+                    loadOutstanding(currentPage + 1, currentSearch);
+                }
+            });
+
+            $('#prevPage').click(function() {
+                if (currentPage > 1) {
+                    loadOutstanding(currentPage - 1, currentSearch);
+                }
+            });
+
+
+            let debounceTimer;
+            $('#searchOutstanding').on('keyup', function() {
+                clearTimeout(debounceTimer);
+                let value = $(this).val();
+                
+                currentSearch = value; 
+
+                debounceTimer = setTimeout(() => {
+                    loadOutstanding(1, currentSearch); 
+                }, 400);
+            });
+
+            function formatRupiah(angka) {
+                if (!angka || angka === '-' || isNaN(Number(angka))) {
+                    return '-';
+                }
+                
+                const num = Number(angka);
+                const clean = Math.round(num);
+                return clean.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+
+            function formatDate(date) {
+                if (!date || date === '-') return '-';
+
+                let d = new Date(date);
+                return d.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            }
+
+            function renderPotongan(jenis, jumlah) {
+                if (!jenis || jenis === '-' || !jumlah || jumlah === '-') {
+                    return '-';
+                }
+
+                let jenisArr = jenis.split(',');
+                let jumlahArr = jumlah.split(',');
+
+                let result = '';
+
+                jenisArr.forEach((item, index) => {
+                    let nominal = jumlahArr[index] ? formatRupiah(jumlahArr[index].trim()) : '0';
+
+                    result += `
+                        <div style="font-size: 12px;">
+                            ${item.trim()} (Rp ${nominal}),
+                        </div>
+                    `;
+                });
+
+                return result;
+            }
+
+            function renderStatus(status) {
+                let color = 'secondary';
+
+                if (status === 'Belum Bayar') color = 'warning';
+                else if (status === 'Tepat Waktu') color = 'success';
+                else if (status === 'Terlambat') color = 'danger';
+
+                return `<span class="badge bg-${color}">${status}</span>`;
+            }
+
+            let chartInstanceOutstanding;
+
+            function loadChartOutstanding(year) {
+
+                fetch(`/office/grafik/outstanding?year=${year}`)
+                    .then(res => res.json())
+                    .then(data => {
+
+                        const ctx = document.getElementById('grafikOutstanding');
+
+                        if (chartInstanceOutstanding) {
+                            chartInstanceOutstanding.destroy();
+                        }
+
+                        const total = data.total || 0;
+                        const tepatWaktu = data.data[1] || 0;
+
+                        const progress = total === 0 ? 0 : Math.round((tepatWaktu / total) * 100);
+
+                        document.getElementById('kpiProgress').innerText = `${progress}%`;
+                        document.getElementById('totalClient').innerText = total;
+
+                        let analysis = "";
+
+                        if (progress >= 90) {
+                            analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${progress}% dari target 100%.`;
+                        }
+                        else if (progress >= 70) {
+                            analysis = `Kinerja cukup baik. Anda mencapai KPI ${progress}% dari target 100%, masih ada ruang peningkatan.`;
+                        }
+                        else if (progress >= 50) {
+                            analysis = `Kinerja sedang. Baru mencapai KPI ${progress}% dari target 100%, perlu perbaikan.`;
+                        }
+                        else {
+                            analysis = `Kinerja rendah. Baru ${progress}% dari target 100%, perlu tindakan segera.`;
+                        }
+
+                        document.getElementById('kpiAnalysis').innerText = analysis;
+
+                        const hasData = data.data.some(val => val > 0);
+
+                        if (!hasData || total === 0) {
+                            document.getElementById('outstandingEmpty').classList.remove('d-none');
+
+                            document.getElementById('lblBelumBayar').innerText = "0% (0)";
+                            document.getElementById('lblTepatWaktu').innerText = "0% (0)";
+                            document.getElementById('lblTerlambat').innerText = "0% (0)";
+                            return;
+                        } else {
+                            document.getElementById('outstandingEmpty').classList.add('d-none');
+                        }
+
+                        const belumBayarPercent = Math.round((data.data[0] / total) * 100);
+                        const tepatWaktuPercent = Math.round((data.data[1] / total) * 100);
+                        const terlambatPercent  = Math.round((data.data[2] / total) * 100);
+
+                        document.getElementById('lblBelumBayar').innerText =
+                            `${belumBayarPercent}% (${data.data[0]})`;
+
+                        document.getElementById('lblTepatWaktu').innerText =
+                            `${tepatWaktuPercent}% (${data.data[1]})`;
+
+                        document.getElementById('lblTerlambat').innerText =
+                            `${terlambatPercent}% (${data.data[2]})`;
+
+                        // CHART
+                        chartInstanceOutstanding = new Chart(ctx, {
+                            type: 'pie',
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    data: data.data,
+                                    backgroundColor: [
+                                        '#dc3545',
+                                        '#198754',
+                                        '#fd7e14'
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+
+                                            label: function(context) {
+
+                                                const value = context.raw;
+                                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                const percent = ((value / total) * 100).toFixed(1);
+
+                                                return `${context.label}: ${percent}% (${value})`;
+                                            }
+
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                    });
+            }
+
+            loadChartOutstanding(new Date().getFullYear());
+
+            document.getElementById('filterTahun').addEventListener('change', function () {
+                loadChartOutstanding(this.value);
+            });
+
+            let chartInstanceKetepatan;
+
+            function loadChartKetepatan(year) {
+
+                fetch(`/office/grafik/ketepatan-waktu?year=${year}`)
+                    .then(res => res.json())
+                    .then(data => {
+
+                        const ctx = document.getElementById('grafikKetepatanWaktu');
+
+                        if (chartInstanceKetepatan) {
+                            chartInstanceKetepatan.destroy();
+                        }
+
+                        const total = data.data.reduce((acc, val) => acc + val, 0); 
+                        const sesuai = data.data[0] || 0; 
+                        const persen = data.persen || 0; 
+
+                        // Update elemen KPI
+                        document.getElementById('kpiProgressKetepatan').innerText = `${persen}%`;
+                        document.getElementById('totalDataKetepatan').innerText = total;
+                        document.getElementById('lblSesuaiKetepatan').innerText = `${sesuai}`;
+                        document.getElementById('lblTidakSesuaiKetepatan').innerText = `${data.data[1] || 0}`;
+
+
+                        let analysis = "";
+                        if (persen >= 90) {
+                            analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${persen}% dari target 100%.`;
+                        }
+                        else if (persen >= 70) {
+                            analysis = `Kinerja cukup baik. Anda mencapai KPI ${persen}% dari target 100%, masih ada ruang peningkatan.`;
+                        }
+                        else if (persen >= 50) {
+                            analysis = `Kinerja sedang. Baru mencapai KPI ${persen}% dari target 100%, perlu perbaikan.`;
+                        }
+                        else {
+                            analysis = `Kinerja rendah. Baru ${persen}% dari target 100%, perlu tindakan segera.`;
+                        }
+                        document.getElementById('kpiAnalysisKetepatan').innerText = analysis;
+
+                        const hasData = total > 0;
+
+                        if (!hasData) {
+                            document.getElementById('ketepatanWaktuEmpty').classList.remove('d-none');
+                            return;
+                        } else {
+                            document.getElementById('ketepatanWaktuEmpty').classList.add('d-none');
+                        }
+
+                        chartInstanceKetepatan = new Chart(ctx, {
+                            type: 'pie',
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    data: data.data,
+                                    backgroundColor: [
+                                        '#198754', // Hijau untuk Sesuai
+                                        '#dc3545'  // Merah untuk Tidak Sesuai
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const value = context.raw;
+                                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                const percent = ((value / total) * 100).toFixed(1);
+
+                                                return `${context.label}: ${percent}% (${value})`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                    })
+                    .catch(error => {
+                        console.error('Error loading chart:', error);
+                    });
+            }
+
+
+            loadChartKetepatan(new Date().getFullYear());
+
+            document.getElementById('filterTahunKetepatan').addEventListener('change', function () {
+                loadChartKetepatan(this.value);
+            });
+            
+
             // reset filter per tahun
             $('#filterMengajarPerTahun').change(function () {
                 $('#filterMengajarPerBulan, #filterMengajarPerTriwulan').val('default');
@@ -2466,6 +2823,7 @@
             $(document).ready(function () {
                 loadDataCuti('bulan', new Date().getMonth() + 1);
                 loadDataMengajar('bulan', new Date().getMonth() + 1);
+                loadOutstanding();
             });
 
             // Script Chart Feedback
@@ -2664,6 +3022,13 @@
                         $('#modalEditTagihan select[name="status"]').val(res.data.status);
                         $('#modalEditTagihan select[name="tracking"]').val(res.data.tracking);
                         $('#modalEditTagihan input[name="tanggal_selesai"]').val(res.data.tanggal_selesai);
+                        $('#modalEditTagihan textarea[name="keterangan"]').val(res.data.keterangan);
+
+                        if (res.data.status === 'selesai' || res.data.status === 'telat') {
+                            $('#modalEditTagihan select[name="status"]').attr('disabled', 'disabled');
+                        }
+
+
 
                         // format rupiah jika ada function
                         $('.format-rupiah').trigger('keyup');
@@ -2693,10 +3058,14 @@
 
                         // isi input
                         $('#modalEditAdministrasi input[name="nama_administrasi"]').val(res.nama_administrasi);
-                        $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline);
+                        $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline).attr("disabled", "disabled");
                         $('#modalEditAdministrasi select[name="status"]').val(res.status);
                         $('#modalEditAdministrasi input[name="tanggal_selesai"]').val(res.tanggal_selesai);
                         $('#modalEditAdministrasi textarea[name="keterangan"]').val(res.keterangan);
+
+                        if (res.status === 'selesai' || res.status === 'terlambat' ) {
+                            $('#modalEditAdministrasi select[name="status"]').attr("disabled", "disabled");
+                        }
 
                         if(res.bukti_transfer){
                             $('#pathBuktiTransfer').html(

@@ -58,7 +58,7 @@
                                     onsubmit="return confirm('Yakin ingin menghapus peluang ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                                    <button type="submit" class="btn btn-sm btn-danger" @if($peluang->tahap === 'merah') disabled @endif>Hapus</button>
                                 </form>
                             </div>
                         </div>
@@ -66,6 +66,9 @@
                         <div class="card-body">
                             <dl class="row">
                                 <input type="text" hidden disabled value="{{ $peluang->id_contact }}" name="id_contact">
+                                <dt class="col-sm-4">ID RKM</dt>
+                                <dd class="col-sm-8">{{ $peluang->id_rkm ?? '-' }}</dd>
+
                                 <dt class="col-sm-4">Materi</dt>
                                 <dd class="col-sm-8">{{ $peluang->materiRelation->nama_materi ?? '-' }}</dd>
 

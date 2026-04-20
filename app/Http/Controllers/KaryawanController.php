@@ -29,7 +29,8 @@ class KaryawanController extends Controller
     public function edit($id)
     {
         $decoded = Hashids::decode($id);
-        if (empty($decoded)) abort(404);
+        if (empty($decoded))
+            abort(404);
 
         $realId = $decoded[0];
         $users = Karyawan::with('educations')->findOrFail($realId);
@@ -47,11 +48,11 @@ class KaryawanController extends Controller
     public function updateData(Request $request, $id)
     {
         $decoded = Hashids::decode($id);
-        if (empty($decoded[0])) abort(404);
+        if (empty($decoded[0]))
+            abort(404);
 
         $realId = $decoded[0];
 
-        // Load Karyawan
         $karyawan = Karyawan::findOrFail($realId);
         $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
 
@@ -60,70 +61,71 @@ class KaryawanController extends Controller
             abort(403);
         }
 
-        // 1. Validasi Input
-        $data = $request->validate([
-            // --- Data Existing ---
-            'nama_lengkap'      => ['required'],
-            'nip'               => ['nullable', 'numeric'],
-            'kode_karyawan'     => ['nullable'],
-            'jabatan'           => ['nullable'],
-            'divisi'            => ['nullable'],
-            'status_aktif'      => ['required'],
-            'rekening_maybank'  => ['nullable'],
-            'rekening_bca'      => ['nullable'],
-            'telepon'           => ['nullable'],
-            'whatsapp'          => ['nullable'],
-            'email'             => ['nullable', 'email'],
-            'awal_probation'    => ['nullable', 'date'],
-            'akhir_probation'   => ['nullable', 'date'],
-            'awal_kontrak'      => ['nullable', 'date'],
-            'akhir_kontrak'     => ['nullable', 'date'],
-            'awal_tetap'        => ['nullable', 'date'],
-            'akhir_tetap'       => ['nullable', 'date'],
-            'keterangan'        => ['nullable'],
-            'cuti'              => ['nullable', 'numeric'],
+        $contactRules = ['nullable'];
 
-            // --- Data Baru (Profil Tambahan) ---
-            'alamat_lengkap'    => ['nullable', 'string'],
-            'gender'            => ['nullable', 'in:Laki-laki,Perempuan'], // Sesuaikan opsi jika perlu
-            'tempat_lahir'      => ['nullable', 'string'],
-            'tanggal_lahir'     => ['nullable', 'date'],
-            'religion'          => ['nullable', 'string'],
-            'provinsi'          => ['nullable', 'string'],
-            'kota'              => ['nullable', 'string'],
+        if (in_array($request->jabatan, ['Instruktur', 'Education Manager'])) {
+            $contactRules = ['required'];
+        } else {
+            $contactRules = ['nullable'];
+        }
 
-            // --- Data Educational Background (Array) ---
-            'educations'        => ['nullable', 'array'],
-            'educations.*.name' => ['required', 'string'], // Validasi nama sekolah per baris
-        ]);
+            $data = $request->validate([
+                'nama_lengkap' => ['required'],
+                'nip' => ['nullable', 'numeric'],
+                'kode_karyawan' => ['nullable'],
+                'jabatan' => ['nullable'],
+                'divisi' => ['nullable'],
+                'status_aktif' => ['required'],
+                'rekening_maybank' => ['nullable'],
+                'rekening_bca' => ['nullable'],
+                'telepon' => $contactRules,
+                'whatsapp' => $contactRules,
+                'email' => array_merge($contactRules, ['email']),
 
-        // 2. Update Data Karyawan (Exclude educations dari array update)
+                'awal_probation' => ['nullable', 'date'],
+                'akhir_probation' => ['nullable', 'date'],
+                'awal_kontrak' => ['nullable', 'date'],
+                'akhir_kontrak' => ['nullable', 'date'],
+                'awal_tetap' => ['nullable', 'date'],
+                'akhir_tetap' => ['nullable', 'date'],
+
+                'keterangan' => ['nullable'],
+                'cuti' => ['nullable', 'numeric'],
+
+                'alamat_lengkap' => ['nullable', 'string'],
+                'gender' => ['nullable', 'in:Laki-laki,Perempuan'],
+                'tempat_lahir' => ['nullable', 'string'],
+                'tanggal_lahir' => ['nullable', 'date'],
+                'religion' => ['nullable', 'string'],
+                'provinsi' => ['nullable', 'string'],
+                'kota' => ['nullable', 'string'],
+
+                // --- Educational Background ---
+                'educations' => ['nullable', 'array'],
+                'educations.*.name' => $contactRules, ['string']
+            ]);
+
         $karyawanData = collect($data)->except(['educations'])->toArray();
         $karyawan->update($karyawanData);
 
-        // 3. Proses Educational Background
-        // Menggunakan kode_karyawan dari object $karyawan yang baru saja diupdate (Target User)
         $targetKodeKaryawan = $karyawan->kode_karyawan;
 
         if ($targetKodeKaryawan) {
-            // A. Hapus data pendidikan lama milik karyawan ini (Reset)
             EducationalBackground::where('kode_karyawan', $targetKodeKaryawan)->delete();
 
-            // B. Insert data pendidikan baru dari input array
             if ($request->has('educations') && is_array($request->educations)) {
                 foreach ($request->educations as $edu) {
                     // Pastikan nama sekolah tidak kosong
                     if (!empty($edu['name'])) {
                         EducationalBackground::create([
                             'kode_karyawan' => $targetKodeKaryawan, // Ambil otomatis dari user yang diedit
-                            'name'          => $edu['name'],
+                            'name' => $edu['name'],
                         ]);
                     }
                 }
             }
         }
 
-        // 4. Update Data User (Login Info)
         $id_instruktur = null;
         $id_sales = null;
 
@@ -152,7 +154,7 @@ class KaryawanController extends Controller
     {
         $this->validate($request, [
             'foto' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-            'ttd'  => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'ttd' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
 
         $post = Karyawan::findOrFail($id);

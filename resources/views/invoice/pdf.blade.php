@@ -174,7 +174,13 @@
                             <td style="border:none; padding: 2px 6px;"><strong>Peserta</strong></td>
                             <td style="border:none; padding: 2px 6px;">:</td>
                             <td style="border:none; padding: 2px 6px;">
-                                {{ optional($invoice->rkm)->pax ?? '-' }} orang
+                            @if(!empty($pesertaList) && is_array($pesertaList))
+                                @foreach($pesertaList as $index => $namaPeserta)
+                                    {{ $loop->iteration }}. {{ e($namaPeserta) }}<br>
+                                @endforeach
+                            @else
+                                {{ $invoice->rkm->pax ? $invoice->rkm->pax . ' orang' : '-' }}
+                            @endif
                             </td>
                         </tr>
                     </table>
