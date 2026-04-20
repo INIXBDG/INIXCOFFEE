@@ -369,9 +369,9 @@
         <div id="sectionOutstanding">
         <div class="row g-4 mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
                     <!-- Card Header -->
-                    <div class="card-header bg-white border-bottom-0 py-4 d-flex justify-content-between align-items-center">
+                    <div class="card-header border-bottom-0 py-4 d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
                             Data Outstanding
@@ -415,7 +415,7 @@
                         </table>
                     </div>
 
-                    <div class="card-footer bg-white py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                    <div class="card-footer py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                         <div id="paginationInfo" class="text-muted small"></div>
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-secondary" id="prevPage" disabled>Sebelumnya</button>
@@ -427,8 +427,8 @@
             </div>
         </div>
         
-        <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden mb-6">
-            <div class="card-header bg-white border-bottom-0 pb-3">
+        <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden mb-6 glass-force">
+            <div class="card-header border-bottom-0 pb-3">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                         <i class="bx bx-line-chart text-primary me-2" style="font-size: 1.5rem;"></i>
@@ -489,7 +489,7 @@
                             </div>
                         </div>
 
-                        <div class="p-3 bg-white border rounded-3 shadow-sm">
+                        <div class="p-3 border rounded-3 shadow-sm">
 
                             <h6 class="fw-semibold mb-3 text-dark">Detail Data</h6>
 
@@ -510,7 +510,7 @@
 
                         </div>
 
-                        <div class="p-3 bg-white border rounded-3 shadow-sm">
+                        <div class="p-3 border rounded-3 shadow-sm">
                             <h6 class="fw-semibold mb-2 text-dark">Analisis</h6>
                             <p id="kpiAnalysis" class="mb-0 text-muted small">
                                 -
@@ -521,12 +521,12 @@
             </div>
         </div>
 
-        <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden mb-6">
-            <div class="card-header bg-white border-bottom-0 pb-3">
+        <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden mb-6 glass-force">
+            <div class="card-header border-bottom-0 pb-3">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                         <i class="bx bx-time-five text-info me-2" style="font-size: 1.5rem;"></i>
-                        Grafik Ketepatan Waktu
+                        Ketepatan Pencatatan Transaksi Masuk
                     </h5>
 
                     <div class="d-flex align-items-center gap-2">
@@ -576,7 +576,7 @@
                             </div>
                         </div>
 
-                        <div class="p-3 bg-white border rounded-3 shadow-sm">
+                        <div class="p-3  border rounded-3 shadow-sm">
                             <h6 class="fw-semibold mb-3 text-dark">Detail Data</h6>
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Sesuai</span>
@@ -588,7 +588,7 @@
                             </div>
                         </div>
 
-                        <div class="p-3 bg-white border rounded-3 shadow-sm">
+                        <div class="p-3 border rounded-3 shadow-sm">
                             <h6 class="fw-semibold mb-2 text-dark">Analisis</h6>
                             <p id="kpiAnalysisKetepatan" class="mb-0 text-muted small">
                                 -

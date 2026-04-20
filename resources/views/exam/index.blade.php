@@ -12,8 +12,8 @@
                 </div>
             </div>
         </div>
-        <div class="modal fade" id="uploadInvoiceModal" tabindex="-1" aria-labelledby="uploadInvoiceModalLabel"
-            aria-hidden="true">
+
+        <div class="modal fade" id="uploadInvoiceModal" tabindex="-1" aria-labelledby="uploadInvoiceModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -24,10 +24,8 @@
                         @csrf
                         <div class="modal-body">
                             <div class="form-group mb-3">
-                                <label for="file_invoice" class="form-label">Pilih File Invoice (Bisa pilih 1 atau banyak
-                                    file sekaligus. Max 10MB/file)</label>
-                                <input type="file" class="form-control" id="file_invoice" name="file_invoice[]" required
-                                    accept=".pdf,.jpg,.jpeg,.png" multiple>
+                                <label for="file_invoice" class="form-label">Pilih File Invoice (Bisa pilih 1 atau banyak file sekaligus. Max 10MB/file)</label>
+                                <input type="file" class="form-control" id="file_invoice" name="file_invoice[]" required accept=".pdf,.jpg,.jpeg,.png" multiple>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -38,6 +36,35 @@
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="updateTanggalModal" tabindex="-1" aria-labelledby="updateTanggalModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="updateTanggalModalLabel">Set Tanggal Pelaksanaan Exam</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="formUpdateTanggal" method="POST">
+                        @csrf
+                        <div class="modal-body">
+                            <div class="form-group mb-3">
+                                <label for="tanggal_mulai" class="form-label">Tanggal Mulai Exam <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="tanggal_mulai" name="tanggal_mulai" required>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="tanggal_selesai" class="form-label">Tanggal Selesai Exam <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary">Simpan Tanggal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <div class="row justify-content-center">
             <div class="col-md-12 d-flex my-2 justify-content-end">
                 @can('Create Exam')
@@ -50,6 +77,7 @@
                     data-placement="top" title="Tambah Perusahaan"><img src="{{ asset('icon/plus.svg') }}" class=""
                         width="30px"> Rekap Exam</a>
                 {{-- @endcan --}}
+
                 <div class="card m-4">
                     <div class="card-body table-responsive">
                         <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Exam') }}</h3>
@@ -67,12 +95,11 @@
                                     <th scope="col">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
-
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
+
                 <div class="card m-4">
                     <div class="card-body table-responsive">
                         <h3 class="card-title text-center my-1">{{ __('Data Histori Exam') }}</h3>
@@ -90,15 +117,14 @@
                                     <th scope="col">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
-
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
     <style>
         .loader {
             position: relative;
@@ -116,15 +142,11 @@
         }
 
         @keyframes spin {
-            to {
-                -webkit-transform: rotate(360deg);
-            }
+            to { -webkit-transform: rotate(360deg); }
         }
 
         @-webkit-keyframes spin {
-            to {
-                -webkit-transform: rotate(360deg);
-            }
+            to { -webkit-transform: rotate(360deg); }
         }
 
         .modal-content {
@@ -137,17 +159,10 @@
         }
 
         .loader-txt {
-            p {
-                font-size: 13px;
-                color: #666;
-
-                small {
-                    font-size: 11.5px;
-                    color: #999;
-                }
-            }
+            p { font-size: 13px; color: #666; small { font-size: 11.5px; color: #999; } }
         }
     </style>
+
     @push('js')
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
@@ -163,21 +178,17 @@
                 var userRole = '{{ auth()->user()->jabatan}}';
                 var idInstruktur = "{{ auth()->user()->id_instruktur }}";
                 var idSales = "{{ auth()->user()->id_sales }}";
-                if (idInstruktur == 'AD') {
-                    var idInstruktur = "";
-                }
-                if (idSales == 'AM') {
-                    var idSales = "";
-                }
-                if (userRole == "Technical Support") {
-                    var idInstruktur = "";
-                }
+
+                if (idInstruktur == 'AD') { var idInstruktur = ""; }
+                if (idSales == 'AM') { var idSales = ""; }
+                if (userRole == "Technical Support") { var idInstruktur = ""; }
+
                 var tableIndex1 = 1;
                 var tableIndex2 = 1;
 
                 $('#examtable').DataTable({
                     "ajax": {
-                        "url": "{{ route('getExam') }}", // URL API untuk mengambil data
+                        "url": "{{ route('getExam') }}",
                         "type": "GET",
                         "beforeSend": function () {
                             $('#loadingModal').modal('show');
@@ -195,20 +206,13 @@
                         }
                     },
                     "columns": [
-                        {
-                            "data": null,
-                            "render": function (data) {
-                                return tableIndex1++;
-                            }
-                        },
+                        { "data": null, "render": function (data) { return tableIndex1++; } },
                         { "data": "materi.nama_materi" },
                         {
                             "data": null,
                             "render": function (data, type, row) {
                                 if (data.tanggal_awal && data.tanggal_akhir) {
-                                    var tanggalAwal = moment(data.tanggal_awal).format('LL'); // Format Tanggal dalam Bahasa Indonesia
-                                    var tanggalAkhir = moment(data.tanggal_akhir).format('LL'); // Format Tanggal dalam Bahasa Indonesia
-                                    return tanggalAwal + " s/d " + tanggalAkhir;
+                                    return moment(data.tanggal_awal).format('LL') + " s/d " + moment(data.tanggal_akhir).format('LL');
                                 } else {
                                     return "";
                                 }
@@ -216,19 +220,12 @@
                         },
                         { "data": "perusahaan.nama_perusahaan" },
                         { "data": "pax" },
-                        {
-                            "data": "sales_key",
-                            "visible": false
-                        },
-                        {
-                            "data": "instruktur_key",
-                            "visible": false
-                        },
+                        { "data": "sales_key", "visible": false },
+                        { "data": "instruktur_key", "visible": false },
                         {
                             "data": null,
                             "render": function (data, type, row) {
-                                var created_at = moment(data.created_at).format('LL'); // Format Tanggal dalam Bahasa Indonesia
-                                return created_at;
+                                return moment(data.created_at).format('LL');
                             },
                             "visible": false
                         },
@@ -248,24 +245,23 @@
                             }
                         },
                         {
-                            "data": null, // Kolom tidak terlihat untuk menyimpan tanggal dalam format ISO
+                            "data": null,
                             "render": function (data, type, row) {
                                 return data.tanggal_akhir ? moment(data.tanggal_akhir).format('YYYY-MM-DD') : "";
                             },
                             "visible": false
                         }
                     ],
-                    "order": [[9, 'desc']], // Urutkan berdasarkan kolom tanggal akhir dalam format ISO
+                    "order": [[9, 'desc']],
                     "initComplete": function () {
                         this.api().columns(6).search(idInstruktur).draw();
                         this.api().columns(5).search(idSales).draw();
                     }
                 });
 
-
                 $('#examhistoritable').DataTable({
                     "ajax": {
-                        "url": "{{ route('getHistoriExam') }}", // URL API untuk mengambil data
+                        "url": "{{ route('getHistoriExam') }}",
                         "type": "GET",
                         "beforeSend": function () {
                             $('#loadingModal').modal('show');
@@ -283,38 +279,26 @@
                         }
                     },
                     "columns": [
+                        { "data": null, "render": function (data) { return tableIndex2++; } },
                         {
                             "data": null,
-                            "render": function (data) {
-                                return tableIndex2++;
-                            }
+                            "render": function (data) { return data.materi?.nama_materi ?? data.rkm?.materi?.nama_materi ?? '-'; }
                         },
-                        {   // Nama Materi
+                        {
                             "data": null,
-                            "render": function (data) {
-                                return data.materi?.nama_materi ?? data.rkm?.materi?.nama_materi ?? '-';
-                            }
+                            "render": function (data) { return data.tanggal_pengajuan ? moment(data.tanggal_pengajuan).format('LL') : '-'; }
                         },
-                        {   // Tanggal
+                        {
                             "data": null,
-                            "render": function (data) {
-                                return data.tanggal_pengajuan ? moment(data.tanggal_pengajuan).format('LL') : '-';
-                            }
-                        },
-                        {   // Nama Perusahaan
-                            "data": null,
-                            "render": function (data) {
-                                return data.perusahaan?.nama_perusahaan ?? data.rkm?.perusahaan?.nama_perusahaan ?? '-';
-                            }
+                            "render": function (data) { return data.perusahaan?.nama_perusahaan ?? data.rkm?.perusahaan?.nama_perusahaan ?? '-'; }
                         },
                         { "data": "pax" },
-                        {   // Status dengan badge
+                        {
                             "data": null,
                             "render": function (data) {
                                 var statusBadge = '';
                                 if (data.status == '3') {
                                     statusBadge = '<span class="badge bg-info">Exam Only</span>';
-                                    // Check if room assigned
                                     if (data.rkm && data.rkm.ruang && data.rkm.ruang !== 'Exam') {
                                         statusBadge += ' <span class="badge bg-success">Room Assigned</span>';
                                     }
@@ -325,18 +309,12 @@
                             }
                         },
                         {
-                            "data": null,
-                            "visible": true,
-                            "render": function (data) {
-                                return data.rkm?.sales_key ?? '-';
-                            }
+                            "data": null, "visible": true,
+                            "render": function (data) { return data.rkm?.sales_key ?? '-'; }
                         },
                         {
-                            "data": null,
-                            "visible": false,
-                            "render": function (data) {
-                                return data.rkm?.instruktur_key ?? '';
-                            }
+                            "data": null, "visible": false,
+                            "render": function (data) { return data.rkm?.instruktur_key ?? ''; }
                         },
                         {
                             "data": null,
@@ -346,6 +324,11 @@
                                 actions += '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
                                 actions += '<div class="dropdown-menu">';
                                 actions += '<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '">Detail</a>';
+
+                                var tglMulai = row.tanggal_mulai ? row.tanggal_mulai : '';
+                                var tglSelesai = row.tanggal_selesai ? row.tanggal_selesai : '';
+                                actions += '<a class="dropdown-item text-primary" href="javascript:void(0)" onclick="openTanggalModal(' + row.id + ', \'' + tglMulai + '\', \'' + tglSelesai + '\')"><i class="fas fa-calendar-alt"></i> Set Tanggal Exam</a>';
+                                actions += '<div class="dropdown-divider"></div>';
 
                                 if (row.approvalexam && row.approvalexam.spv_sales == 1) {
                                     var files = row.file_invoice;
@@ -396,20 +379,30 @@
                             }
                         }
                     ],
-
-                    "order": [[0, 'asc']], // Ubah urutan menjadi descending untuk kolom ke-6
-                    // "columnDefs" : [{"targets":[2], "type":"date"}],
+                    "order": [[0, 'asc']],
                     "initComplete": function () {
                         this.api().columns(7).search(idInstruktur).draw();
                         this.api().columns(6).search(idSales).draw();
                     }
                 });
             });
+
             function openUploadModal(id) {
                 var form = document.getElementById('formUploadInvoice');
                 form.action = '/exam/' + id + '/upload-invoice';
                 var uploadModal = new bootstrap.Modal(document.getElementById('uploadInvoiceModal'));
                 uploadModal.show();
+            }
+
+            function openTanggalModal(id, tanggalMulai, tanggalSelesai) {
+                var form = document.getElementById('formUpdateTanggal');
+                form.action = '/exam/' + id + '/update-tanggal';
+
+                document.getElementById('tanggal_mulai').value = tanggalMulai;
+                document.getElementById('tanggal_selesai').value = tanggalSelesai;
+
+                var tanggalModal = new bootstrap.Modal(document.getElementById('updateTanggalModal'));
+                tanggalModal.show();
             }
         </script>
     @endpush

@@ -23,23 +23,16 @@ class KomplainPesertaController extends Controller
             ->leftJoin('r_k_m_s', 'nilaifeedbacks.id_rkm', '=', 'r_k_m_s.id')
             ->leftJoin('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
             ->leftJoin('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
-            ->select(
-                'komplain_pesertas.nilaifeedback_id',
-                DB::raw("GROUP_CONCAT(komplain_pesertas.komplain SEPARATOR '||') as komplain"),
-                DB::raw("GROUP_CONCAT(komplain_pesertas.kategori_feedback SEPARATOR '||') as kategori"),
-                DB::raw("GROUP_CONCAT(komplain_pesertas.tanggal_selesai SEPARATOR '||') as tanggal_selesai"),
-                DB::raw("GROUP_CONCAT(komplain_pesertas.status SEPARATOR '||') as status"),
-                DB::raw("MIN(komplain_pesertas.created_at) as created_at"),
-                DB::raw("CONCAT(perusahaans.nama_perusahaan, ' || ', materis.nama_materi, ' || ', r_k_m_s.tanggal_akhir) AS detail_feedback")
-            )
+            ->select('komplain_pesertas.nilaifeedback_id', DB::raw("GROUP_CONCAT(komplain_pesertas.komplain SEPARATOR '||') as komplain"), DB::raw("GROUP_CONCAT(komplain_pesertas.kategori_feedback SEPARATOR '||') as kategori"), DB::raw("GROUP_CONCAT(komplain_pesertas.tanggal_selesai SEPARATOR '||') as tanggal_selesai"), DB::raw("GROUP_CONCAT(komplain_pesertas.status SEPARATOR '||') as status"), DB::raw('MIN(komplain_pesertas.created_at) as created_at'), DB::raw("CONCAT(perusahaans.nama_perusahaan, ' || ', materis.nama_materi, ' || ', r_k_m_s.tanggal_akhir) AS detail_feedback"))
             ->groupBy(
                 'komplain_pesertas.nilaifeedback_id',
                 'perusahaans.nama_perusahaan',
-                'materis.nama_materi'
+                'materis.nama_materi',
+                'r_k_m_s.tanggal_akhir',
             )
             ->orderBy('created_at', 'desc')
             ->get();
-
+            
         $data = $komplains->map(function ($item) {
             return [
                 'id' => $item->nilaifeedback_id,
@@ -53,10 +46,9 @@ class KomplainPesertaController extends Controller
         });
 
         return response()->json([
-            'data' => $data
+            'data' => $data,
         ]);
     }
-
 
     public function create()
     {
@@ -70,12 +62,7 @@ class KomplainPesertaController extends Controller
             // ->whereDate('r_k_m_s.tanggal_akhir', '>=', $satuMingguLalu)
             // ->whereDate('r_k_m_s.tanggal_akhir', '<=', $tanggalSekarang)
             ->orderBy('perusahaans.nama_perusahaan', 'asc')
-            ->select(
-                'nilaifeedbacks.id as nilaifeedback_id',
-                'materis.nama_materi',
-                'perusahaans.nama_perusahaan',
-                'r_k_m_s.tanggal_akhir'            
-                )
+            ->select('nilaifeedbacks.id as nilaifeedback_id', 'materis.nama_materi', 'perusahaans.nama_perusahaan', 'r_k_m_s.tanggal_akhir')
             ->get();
 
         return view('komplain_peserta.create', compact('feedbacks'));
@@ -90,7 +77,6 @@ class KomplainPesertaController extends Controller
         ]);
 
         foreach ($request->kategori as $index => $kategori) {
-
             $kategoriFinal = $kategori;
 
             if ($kategori === 'lainnya') {
@@ -110,43 +96,26 @@ class KomplainPesertaController extends Controller
             ]);
         }
 
-        return redirect()
-            ->route('komplain-peserta')
-            ->with('success', 'Komplain Berhasil Dibuat');
+        return redirect()->route('komplain-peserta')->with('success', 'Komplain Berhasil Dibuat');
     }
 
-    public function show(string $id)
-    {
-
-    }
-
+    public function show(string $id) {}
 
     public function edit($nilaifeedback_id)
     {
         $komplains = KomplainPeserta::where('nilaifeedback_id', $nilaifeedback_id)->get();
 
-        $feedback = DB::table('nilaifeedbacks')
-            ->join('r_k_m_s', 'nilaifeedbacks.id_rkm', '=', 'r_k_m_s.id')
-            ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-            ->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
-            ->where('nilaifeedbacks.id', $nilaifeedback_id)
-            ->select(
-                'nilaifeedbacks.id as nilaifeedback_id',
-                'materis.nama_materi',
-                'perusahaans.nama_perusahaan'
-            )
-            ->first();
+        $feedback = DB::table('nilaifeedbacks')->join('r_k_m_s', 'nilaifeedbacks.id_rkm', '=', 'r_k_m_s.id')->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')->where('nilaifeedbacks.id', $nilaifeedback_id)->select('nilaifeedbacks.id as nilaifeedback_id', 'materis.nama_materi', 'perusahaans.nama_perusahaan')->first();
 
         return view('komplain_peserta.edit', compact('komplains', 'feedback'));
     }
-
 
     public function update(Request $request, $nilaifeedback_id)
     {
         $request->validate([
             'komplain.*' => 'required',
             'status.*' => 'required',
-            'tanggal_selesai.*' => 'nullable|date'
+            'tanggal_selesai.*' => 'nullable|date',
         ]);
 
         foreach ($request->komplain as $id => $isiKomplain) {
@@ -157,12 +126,8 @@ class KomplainPesertaController extends Controller
             ]);
         }
 
-        return redirect()
-            ->route('komplain-peserta')
-            ->with('success', 'Komplain berhasil diperbarui');
+        return redirect()->route('komplain-peserta')->with('success', 'Komplain berhasil diperbarui');
     }
-
-
 
     public function destroy(string $id)
     {
@@ -171,7 +136,8 @@ class KomplainPesertaController extends Controller
         return redirect()->route('komplain-peserta')->with('success', 'Komplain Berhasil Dihapus!');
     }
 
-    public function dataNilaiPenilaian($id) {
+    public function dataNilaiPenilaian($id)
+    {
         $feedback = Nilaifeedback::findOrFail($id);
 
         return response()->json([
