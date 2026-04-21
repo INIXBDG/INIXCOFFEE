@@ -17,6 +17,7 @@ class AnalysisReport extends Model
         'file_paths',
         'year',
         'month',
+        'nilai'
     ];
 
     /**
