@@ -82,7 +82,6 @@ use App\Models\Inventaris;
 use App\Models\izinTigaJam;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\office\AnalysisReportController;
 use App\Http\Controllers\KlaimModulController;
 
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;

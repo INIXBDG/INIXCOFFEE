@@ -41,15 +41,18 @@
                                         <label for="current_stage" class="form-label">{{ __('Pilih Tahap Dokumen') }}</label>
                                         <select class="form-select" id="current_stage" name="current_stage">
                                             <option value="kak">KAK</option>
-                                            <option value="penganggaran">Budget/Penganggaran</option>
-                                            <option value="legal">Legal</option>
+                                            <option value="proposal">Proposal</option>
+                                            <option value="penganggaran">RAB</option>
+                                            <option value="surat_pekerjaan_dimulai">Surat Pekerjaan Dimulai/Kontrak</option>
                                             <option value="dokumen_klien">Dokumen Klien</option>
+                                            <option value="bast">Berita Acara (BAST)</option>
+                                            <option value="final_report">Laporan Akhir</option>
                                             <option value="pembayaran">Pembayaran</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">
                                         <label for="file" class="form-label">{{ __('Unggah Dokumen (PDF/DOCX/JPG/PNG)') }}</label>
-                                        <input class="form-control" type="file" id="file" name="file">
+                                        <input class="form-control" type="file" id="file" name="file" multiple>
                                     </div>
                                 </div>
 
@@ -120,9 +123,11 @@
                                 <th scope="col">Nama Perusahaan</th>
                                 <th scope="col">Deskripsi</th>
                                 <th scope="col">KAK</th>
+                                <th scope="col">Proposal</th>
                                 <th scope="col">Budget</th>
-                                <th scope="col">Legal</th>
                                 <th scope="col">Dokumen Klien</th>
+                                <th scope="col">BAST</th>
+                                <th scope="col">Final Report</th>
                                 <th scope="col">Pembayaran</th>
                                 <th scope="col">Status Pengerjaan</th>
                                 <th scope="col">Aksi</th>
@@ -239,21 +244,38 @@
                     }
                 },
                 {
+                    "data": "proposal_file",
+                    "render": function(data, type, row) {
+                        return data ? '<span class="text-success fw-bold">&#10004;</span>' : '<span class="text-danger fw-bold">&#10008;</span>';
+                    }
+                },
+                {
                     "data": "budget_file",
                     "render": function(data, type, row) {
                         return data ? '<span class="text-success fw-bold">&#10004;</span>' : '<span class="text-danger fw-bold">&#10008;</span>';
                     }
                 },
                 {
-                    "data": "legal_file",
-                    "render": function(data, type, row) {
-                        return data ? '<span class="text-success fw-bold">&#10004;</span>' : '<span class="text-danger fw-bold">&#10008;</span>';
+                    "data": "client_doc_file",
+                    "render": function(data) {
+                        if (data && data.length > 0) {
+                            return data.length + ' file';
+                        }
+                        return '<span class="text-danger fw-bold">&#10008;</span>';
                     }
                 },
                 {
-                    "data": "client_doc_file",
-                    "render": function(data, type, row) {
-                        return data ? '<span class="text-success fw-bold">&#10004;</span>' : '<span class="text-danger fw-bold">&#10008;</span>';
+                    "data": "project_handover.bast_file",
+                    "render": function(data) {
+                        return data ? '<span class="text-success fw-bold">&#10004;</span>' 
+                                    : '<span class="text-danger fw-bold">&#10008;</span>';
+                    }
+                },
+                {
+                    "data": "project_handover.final_report_file",
+                    "render": function(data) {
+                        return data ? '<span class="text-success fw-bold">&#10004;</span>' 
+                                    : '<span class="text-danger fw-bold">&#10008;</span>';
                     }
                 },
                 {
@@ -278,8 +300,10 @@
                     "render": function(data, type, row) {
                         var actions = "";
                         // Logika pengecekan kelengkapan dokumen
-                        var isComplete = row.kak_file && row.budget_file && row.legal_file && row.client_doc_file && row.payment_doc_file;
-                        
+                        var isComplete = row.kak_file 
+                            && row.proposal_file
+                            && row.budget_file 
+                            && row.client_doc_file;
                         if (row.dataproject.phase === 'teknis') {
                             actions += '<span class="badge bg-success">Fase Teknis Aktif</span>';
                         } else if (row.dataproject.phase === 'gagal') {

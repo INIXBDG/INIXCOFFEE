@@ -18,7 +18,7 @@ class ProjectAdministrationController extends Controller
     public function getAdministrasi(Request $request): JsonResponse
     {
         // if ($request->ajax()) {
-            $data = ProjectAdministration::with('dataproject', 'dataproject.tasks', 'dataproject.client')->get();
+            $data = ProjectAdministration::with('dataproject', 'dataproject.tasks', 'dataproject.client', 'project_handover')->get();
 
             return response()->json([
                 'data' => $data
@@ -107,21 +107,34 @@ class ProjectAdministrationController extends Controller
         }
 
         // ✅ Validasi upload
-        $request->validate([
-            'current_stage' => 'required|in:kak,penganggaran,legal,dokumen_klien,pembayaran',
-            'file' => 'required|file|mimes:pdf,doc,docx,jpg,png|max:5120',
-        ]);
+       
 
         $columnMap = [
             'kak' => 'kak_file',
+            'proposal' => 'proposal_file',
             'penganggaran' => 'budget_file',
-            'legal' => 'legal_file',
+            'surat_pekerjaan_dimulai' => 'surat_pekerjaan_dimulai_file',
             'dokumen_klien' => 'client_doc_file',
             'pembayaran' => 'payment_doc_file',
+
+            // ✅ TAMBAHAN HANDOVER
+            'bast' => 'bast_file',
+            'final_report' => 'final_report_file',
         ];
 
         $stage = $request->current_stage;
-
+        if ($stage === 'dokumen_klien') {
+            $request->validate([
+                'file' => 'required|array',
+                'file.*' => 'file|mimes:pdf,doc,docx,jpg,png|max:5120',
+            ]);
+        } else {
+            $request->validate([
+                'current_stage' => 'required|in:kak,penganggaran,legal,dokumen_klien,pembayaran',
+                'file' => 'required|file|mimes:pdf,doc,docx,jpg,png|max:5120',
+            ]);
+        }
+        
         // ❗ Tambahkan validasi file benar-benar ada
         if (!$request->hasFile('file')) {
             return response()->json([
@@ -138,16 +151,63 @@ class ProjectAdministrationController extends Controller
         }
 
         try {
-            // Hapus file lama
-            if ($administration->{$columnMap[$stage]}) {
-                \Storage::disk('public')->delete($administration->{$columnMap[$stage]});
+            if ($stage === 'dokumen_klien') {
+
+                $files = $request->file('file');
+                $paths = [];
+
+                // ambil file lama (kalau ada)
+                $existingFiles = $administration->client_doc_file 
+                    ? json_decode($administration->client_doc_file, true) 
+                    : [];
+
+                foreach ($files as $file) {
+                    $paths[] = $file->store('administrasi_projects/client_docs', 'public');
+                }
+
+                // gabungkan file lama + baru (optional, bisa juga replace total)
+                $allFiles = array_merge($existingFiles, $paths);
+
+                $administration->client_doc_file = json_encode($allFiles);
+                $administration->save();
+
             }
+            if (in_array($stage, ['bast', 'final_report'])) {
 
-            // Simpan file baru
-            $filePath = $request->file('file')->store('administrasi_projects', 'public');
+                $handover = $administration->project_handover;
 
-            $administration->{$columnMap[$stage]} = $filePath;
-            $administration->save();
+                // Kalau belum ada, buat dulu
+                if (!$handover) {
+                    $handover = \App\Models\ProjectHandover::create([
+                        'project_id' => $project->id,
+                    ]);
+
+                    $administration->update([
+                        'project_handover_id' => $handover->id
+                    ]);
+                }
+
+                // Hapus file lama kalau ada
+                if ($handover->{$columnMap[$stage]}) {
+                    \Storage::disk('public')->delete($handover->{$columnMap[$stage]});
+                }
+
+                $filePath = $request->file('file')->store('handover_projects', 'public');
+
+                $handover->{$columnMap[$stage]} = $filePath;
+                $handover->save();
+
+            } else {
+                // existing logic (administrasi)
+                if ($administration->{$columnMap[$stage]}) {
+                    \Storage::disk('public')->delete($administration->{$columnMap[$stage]});
+                }
+
+                $filePath = $request->file('file')->store('administrasi_projects', 'public');
+
+                $administration->{$columnMap[$stage]} = $filePath;
+                $administration->save();
+            }
 
             return response()->json([
                 'success' => true,
