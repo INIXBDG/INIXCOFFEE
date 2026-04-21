@@ -40,9 +40,26 @@ class LaporanPenjualanController extends Controller
 
         // Filter Status
         if ($status !== null) {
-            $query->where('status', $status);
+            $status = (string) $status; 
+            if ($status === '2') { 
+                $query->where('status', $status)
+                      ->whereHas('peluang', function ($q) {
+                          $q->where('tahap', 'lost');
+                      });
+            } else { 
+                $query->where('status', $status);
+            }
         } else {
-            $query->whereIn('status', ['0', '2']);
+            $query->where(function ($q) {
+                $q->where('status', '0');
+
+                $q->orWhere(function ($subQ) {
+                    $subQ->where('status', '2')
+                         ->whereHas('peluang', function ($pelQ) {
+                             $pelQ->where('tahap', 'lost');
+                         });
+                });
+            });
         }
 
         // Filter Sales & Materi
