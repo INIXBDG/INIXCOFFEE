@@ -400,6 +400,40 @@
         </div>
     </div>
 
+    <div style="page-break-before: always;"></div>
+
+    <div class="header">
+        <h1>DETAIL FEEDBACK INSTRUKTUR</h1>
+        <h2>{{ $rentangWaktu }}</h2>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:5%">No</th>
+                <th style="width:28%">Nama Instruktur</th>
+                <th style="width:18%">Bulan</th>
+                <th style="width:34%">Nama Materi</th>
+                <th style="width:15%" class="text-center">Feedback</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($detailFeedback as $item)
+                <tr>
+                    <td class="text-center">{{ $loop->iteration }}</td>
+                    <td>{{ $item['nama'] }}</td>
+                    <td>{{ $item['bulan'] }}</td>
+                    <td>{{ $item['materi'] }}</td>
+                    <td class="text-center">{{ $item['feedback'] }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="text-center">Tidak ada data</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
     <div class="footer">
         Dicetak pada: {{ \Carbon\Carbon::now()->translatedFormat('d F Y, H:i') }} WIB
     </div>
