@@ -61,6 +61,7 @@ use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\PenukaranSouvenirController;
+use App\Http\Controllers\PerpindahanDBController;
 use App\Http\Controllers\ProjectAdministrationController;
 use App\Http\Controllers\ProjectHandoverController;
 use App\Http\Controllers\ProjectKanbanController;
@@ -437,14 +438,14 @@ Route::prefix('kpi-data/')
             ->name('overview.')
             ->middleware(['auth'])
             ->group(function () {
-                route::get('/index', [TargetKPIController::class, 'kpiOverview'])->name('index');
-                route::get('/get', [TargetKPIController::class, 'getDataOverview'])->name('get');
-                route::get('/index/personal/{id?}', [TargetKPIController::class, 'personalIndex'])->name('indexPersonal');
-                route::get('/kpi/personal/data', [TargetKPIController::class, 'getDataOverviewPersonal'])->name('dataPersonal');
+            route::get('/index', [TargetKPIController::class, 'kpiOverview'])->name('index');
+            route::get('/get', [TargetKPIController::class, 'getDataOverview'])->name('get');
+            route::get('/index/personal/{id?}', [TargetKPIController::class, 'personalIndex'])->name('indexPersonal');
+            route::get('/kpi/personal/data', [TargetKPIController::class, 'getDataOverviewPersonal'])->name('dataPersonal');
 
-                //yang hilang
-                route::post('/update-target-per-sales', [TargetKPIController::class, 'updateTargetPerSales'])->name('updateTargetPerSales');
-            });
+            //yang hilang
+            route::post('/update-target-per-sales', [TargetKPIController::class, 'updateTargetPerSales'])->name('updateTargetPerSales');
+        });
 
         //Target Departement
         route::get('/table-data', [TargetKPIController::class, 'kpiIndex'])->name('index');
@@ -744,6 +745,17 @@ Route::prefix('crm')->group(function () {
     Route::post('todo-administrasi/store', [TodoAdministrasiController::class, 'store'])->name('todo-administrasi.store');
     Route::put('todo-administrasi/update/{id}', [TodoAdministrasiController::class, 'update'])->name('todo-administrasi.update');
     Route::delete('todo-administrasi/delete/{id}', [TodoAdministrasiController::class, 'destroy'])->name('todo-administrasi.delete');
+
+    // perpindahan database
+    // Fitur perpindahan database - authorization di dalam controller
+    // Route::middleware(['auth'])->prefix('crm')->name('crm.')->group(function () {
+    Route::prefix('perpindahandb')->name('perpindahan-db.')->group(function () {
+        Route::get('/', [PerpindahanDBController::class, 'index'])->name('index');
+        Route::get('/data', [PerpindahanDBController::class, 'getData'])->name('data');
+        Route::get('/sales', [PerpindahanDBController::class, 'getSalesList'])->name('sales');
+        Route::post('/transfer', [PerpindahanDBController::class, 'transfer'])->name('transfer');
+        Route::get('/history/{id}', [PerpindahanDBController::class, 'exportHistory'])->name('history');
+    });
 });
 
 //INVOICE
@@ -942,20 +954,20 @@ Route::prefix('office')
         Route::prefix('pickup-driver')
             ->name('pickupDriver.')
             ->group(function () {
-                Route::get('/index', [pickupDriverController::class, 'index'])->name('index');
-                Route::get('/create', [pickupDriverController::class, 'create'])->name('create');
-                Route::get('/get', [pickupDriverController::class, 'get'])->name('get');
-                Route::post('/store', [pickupDriverController::class, 'store'])->name('store');
-                Route::post('/update-kepulangan', [pickupDriverController::class, 'updateKepulangan'])->name('updateKepulangan');
-                Route::post('/update-status/{id}', [pickupDriverController::class, 'updateStatus']);
-                Route::delete('/delete/{id}', [pickupDriverController::class, 'delete'])->name('delete');
-                Route::post('/update-koordinasi', [pickupDriverController::class, 'updateKoordinasi'])->name('updateKoordinasi');
-                Route::get('/get-onlineStatus', [pickupDriverController::class, 'getDriverStatus'])->name('getDriverStatus');
-                Route::get('/export/excel', [pickupDriverController::class, 'exportExcel'])->name('export.excel');
-                Route::get('/export/pdf', [pickupDriverController::class, 'exportPdf'])->name('export.pdf');
-                Route::get('action/terima/{id}', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
-                Route::get('action/selesaikan/{id}', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])->name('action.selesaikan');
-            });
+            Route::get('/index', [pickupDriverController::class, 'index'])->name('index');
+            Route::get('/create', [pickupDriverController::class, 'create'])->name('create');
+            Route::get('/get', [pickupDriverController::class, 'get'])->name('get');
+            Route::post('/store', [pickupDriverController::class, 'store'])->name('store');
+            Route::post('/update-kepulangan', [pickupDriverController::class, 'updateKepulangan'])->name('updateKepulangan');
+            Route::post('/update-status/{id}', [pickupDriverController::class, 'updateStatus']);
+            Route::delete('/delete/{id}', [pickupDriverController::class, 'delete'])->name('delete');
+            Route::post('/update-koordinasi', [pickupDriverController::class, 'updateKoordinasi'])->name('updateKoordinasi');
+            Route::get('/get-onlineStatus', [pickupDriverController::class, 'getDriverStatus'])->name('getDriverStatus');
+            Route::get('/export/excel', [pickupDriverController::class, 'exportExcel'])->name('export.excel');
+            Route::get('/export/pdf', [pickupDriverController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('action/terima/{id}', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
+            Route::get('action/selesaikan/{id}', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])->name('action.selesaikan');
+        });
 
         Route::prefix('biaya-transportasi')
             ->name('biayaTransportasi.')
@@ -1099,31 +1111,31 @@ Route::prefix('office')
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
         });
 
-Route::prefix('/rekomendasi-lanjutan')
-    ->name('rekomendasiLanjutan.')
-    ->group(function () {
-        Route::get('/index', [RekomendasiLanjutanController::class, 'index'])->name('index');
-        Route::get('/get/{year}/{month}', [RekomendasiLanjutanController::class, 'showMonth']);
-        Route::post('/store', [RekomendasiLanjutanController::class, 'store'])->name('store');
-    });
-    Route::get(
-        '/feedbackinstrukturpdf',
-        [OfficeController::class, 'exportPdf']
-    )->name('feedbackinstrukturpdf');
+        Route::prefix('/rekomendasi-lanjutan')
+            ->name('rekomendasiLanjutan.')
+            ->group(function () {
+                Route::get('/index', [RekomendasiLanjutanController::class, 'index'])->name('index');
+                Route::get('/get/{year}/{month}', [RekomendasiLanjutanController::class, 'showMonth']);
+                Route::post('/store', [RekomendasiLanjutanController::class, 'store'])->name('store');
+            });
+        Route::get(
+            '/feedbackinstrukturpdf',
+            [OfficeController::class, 'exportPdf']
+        )->name('feedbackinstrukturpdf');
 
 
-    // Certificate Routes
-    Route::prefix('certificate')->name('certificate.')->group(function () {
-        Route::get('/', [CertificateController::class, 'index'])->name('index');
-        Route::get('/data', [CertificateController::class, 'getData'])->name('getData');
-        Route::get('/detail/{rkm_id}', [CertificateController::class, 'detail'])->name('detail');
-        Route::get('/create/{rkm_id}/{peserta_id}', [CertificateController::class, 'create'])->name('create');
-        Route::post('/store', [CertificateController::class, 'store'])->name('store');
-        Route::get('/show/{id}', [CertificateController::class, 'show'])->name('show');
-        Route::get('/download/{id}', [CertificateController::class, 'download'])->name('download');
-        Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
-        Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
-    });
+        // Certificate Routes
+        Route::prefix('certificate')->name('certificate.')->group(function () {
+            Route::get('/', [CertificateController::class, 'index'])->name('index');
+            Route::get('/data', [CertificateController::class, 'getData'])->name('getData');
+            Route::get('/detail/{rkm_id}', [CertificateController::class, 'detail'])->name('detail');
+            Route::get('/create/{rkm_id}/{peserta_id}', [CertificateController::class, 'create'])->name('create');
+            Route::post('/store', [CertificateController::class, 'store'])->name('store');
+            Route::get('/show/{id}', [CertificateController::class, 'show'])->name('show');
+            Route::get('/download/{id}', [CertificateController::class, 'download'])->name('download');
+            Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
+            Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
+        });
 
 
         // Certificate Routes

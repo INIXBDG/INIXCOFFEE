@@ -42,8 +42,23 @@ class Perusahaan extends Model
         return $this->hasMany(Contact::class, 'id_perusahaan', 'id');
     }
 
-    public function peluang(){
+    public function peluang()
+    {
         return $this->hasMany(Peluang::class, 'id_contact', 'id');
     }
 
+    public function scopeForSales($query, $salesKey)
+    {
+        return $query->where('sales_key', $salesKey);
+    }
+
+    public function getHistorySalesArrayAttribute()
+    {
+        return json_decode($this->history_sales ?? '[]', true);
+    }
+
+    public function canBeTransferred()
+    {
+        return !empty($this->sales_key) && $this->status !== 'nonaktif';
+    }
 }
