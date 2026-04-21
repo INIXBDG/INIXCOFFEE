@@ -139,11 +139,18 @@
             {{ $namaPeserta }}
         </div>
 
+        @php
+            $namaMateri = $certificate->nama_materi;
+            $fontSizeMateri = 30;
+            if (mb_strlen($namaMateri) > 20) {
+                $fontSizeMateri = 22;
+            }
+        @endphp
 
-        <div class="course-name">
+        <div class="course-name" style="font-size: {{ $fontSizeMateri }}px;">
             {{ $certificate->nama_materi }}
         </div>
-
+        
         <div class="period-section" style="margin-top: 4%">
             Period :
             @php
