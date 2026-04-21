@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Notifications\ApprovalExamNotification;
 use App\Notifications\BayarExamNotification;
 use App\Notifications\PengajuanexamNotification;
+use App\Notifications\TicketNotification;
 use App\Notifications\updateExamNotification;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,6 +25,9 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Models\Tickets;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class examController extends Controller
 {
@@ -981,19 +985,79 @@ class examController extends Controller
 
     public function pengajuanUpdateExam(Request $request, $id)
     {
-        $technical_support = user::where('jabatan', 'Technical Support')->get();
-        $path = "/listexams/{$id}/edit";
+        // 1. Ambil data exam spesifik
         $exam = listexam::findOrFail($id);
 
-        $data = [
+        // 2. Buat instansi tiket baru
+        $ticket = Tickets::create([
+            'nama_karyawan'  => Auth::user()->karyawan->nama_lengkap ?? 'Sistem',
+            'divisi'         => Auth::user()->karyawan->divisi ?? '-',
+            'kategori'       => 'Exam',
+            'keperluan'      => 'Technical Support',
+            'detail_kendala' => 'Permintaan update harga terbaru dari ' . $exam->nama_exam,
+            'timestamp'      => now()
+        ]);
+
+        // 3. Hasilkan ID Tiket terstruktur (Identik dengan metode store)
+        $todayCount = Tickets::whereDate('created_at', today())->count();
+        $char = chr(96 + $todayCount);
+        $ticketId = 'NIX' . now()->format('ymd') . $char;
+        $ticket->ticket_id = $ticketId;
+        $ticket->save();
+
+        // 4. Ekstraksi entitas User divisi IT Service Management untuk TicketNotification
+        $itsm = karyawan::where('divisi', 'IT Service Management')->get();
+        $kodeKaryawanList = $itsm->pluck('kode_karyawan')->toArray();
+
+        // Filter nilai '-' menjadi null
+        $usersITSM = array_map(function ($user) {
+            return $user === '-' ? null : $user;
+        }, $kodeKaryawanList);
+
+        // Ambil data User terkait kode_karyawan yang valid
+        $users = User::whereHas('karyawan', function ($query) use ($usersITSM) {
+            $query->whereIn('kode_karyawan', array_filter($usersITSM));
+        })->get();
+
+        $pathTicket = '/tickets';
+        $statusTicket = "Ticketing Baru";
+
+        // 5. Transmisi Notifikasi 1: Ticketing (ke IT Service Management)
+        foreach ($users as $user) {
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new TicketNotification($ticket, $pathTicket, $statusTicket, $receiverId));
+        }
+
+        // 6. Transmisi Notifikasi 2: Update Exam (ke Technical Support)
+        $technical_support = User::where('jabatan', 'Technical Support')->get();
+        $pathExam = "/listexams/{$id}/edit";
+        $dataExam = [
             'nama_exam' => $exam->nama_exam,
         ];
 
         foreach ($technical_support as $user) {
             $receiverId = $user->id;
-            NotificationFacade::send($user, new updateExamNotification($data, $path, $receiverId));
+            NotificationFacade::send($user, new updateExamNotification($dataExam, $pathExam, $receiverId));
         }
 
-        return redirect()->back()->with(['success' => 'Pengajuan Berhasil Dibuat!']);
+        // 7. Transmisi muatan data (payload) ke endpoint Webhook eksternal
+        try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+                'X-Webhook-Secret' => 'RAHASIA_KITA'
+            ])->post('https://inixindobdg.co.id/api/new-ticket-notification', [
+                'ticket_id'      => $ticket->ticket_id,
+                'nama_karyawan'  => $ticket->nama_karyawan,
+                'divisi'         => $ticket->divisi,
+                'kategori'       => $ticket->kategori,
+                'keperluan'      => $ticket->keperluan,
+                'detail_kendala' => $ticket->detail_kendala,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Gagal mengirim webhook: " . $e->getMessage());
+        }
+
+        return redirect()->back()->with(['success' => 'Pengajuan berhasil dibuat, alur tiket dan notifikasi ganda telah dijalankan.']);
     }
 }
