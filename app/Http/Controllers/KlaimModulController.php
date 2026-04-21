@@ -283,7 +283,7 @@ class KlaimModulController extends Controller
         $klaimModul = PengajuanKlaimModul::with(['module.karyawan'])->findOrFail($id);
         $request->validate([
             'approval' => 'required|in:1,2',
-            'price' => 'required_if:approval,1|numeric|min:0',
+            'price' => 'nullable|required_if:approval,1|numeric|min:0',
         ]);
 
         DB::beginTransaction();
@@ -337,8 +337,6 @@ class KlaimModulController extends Controller
                             'judul_modul' => $klaimModul->module->title,
                             'kategori' => $klaimModul->module->category,
                         ];
-                        $type = 'Menolak Klaim Modul';
-                        $path = '/pengajuanklaimmodul';
 
                         foreach ($userObjs as $user) {
                             $receiverId = $user->id;
