@@ -7,6 +7,8 @@ use App\Models\AbsensiKaryawan;
 use App\Models\ActivityInstruktur;
 use App\Models\activityLog;
 use App\Models\Aktivitas;
+use App\Models\AnalysisQuarterDescription;
+use App\Models\AnalysisReport;
 use App\Models\BiayaTransportasiDriver;
 use App\Models\ChecklistKeperluan;
 use App\Models\checklistRKM;
@@ -1060,26 +1062,32 @@ class TargetKPIController extends Controller
 
         $labaKotor = $this->calculatePemasukanKotor($item, $personId);
 
+        $nilaiTarget = (float) $detail->nilai_target;
+        $tahun = (int) $detail->detail_jangka;
+
         if ($labaKotor == 0) {
             return 0;
         }
 
-        if (is_null($detail) || is_null($detail->manual_value)) {
+        $dataAnalisis = AnalysisReport::where('year', $tahun)->get();
+
+        $nominal = $dataAnalisis->sum('nilai');
+
+        if ($nominal === 0) {
             return 0;
         }
 
         $progress = 0;
-        $manualValue = (float) $detail->manual_value;
 
-        if ($labaKotor < $manualValue) {
+        if ($labaKotor < $nominal) {
             return 0;
         }
 
-        if ($manualValue > 0) {
-            $progress = ($manualValue / $labaKotor) * 100;
+        if ($nominal > 0) {
+            $progress = ($nominal / $labaKotor) * 100;
         }
 
-        return round($progress, 1);
+        return round($progress, 2);
     }
 
     private function calculateRasioBiayaOperasionalTerhadapRevenue($item, $personId)
@@ -1413,14 +1421,22 @@ class TargetKPIController extends Controller
 
         $nilaiTarget = (float) $detail->nilai_target;
 
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return 0;
+        }
+
+        $analisisData = AnalysisReport::where('year', $tahun)->count();
+
         $progress = 0;
 
-        if (!is_null($detail->manual_value)) {
-            $manualValue = (float) $detail->manual_value;
+        if ($analisisData == 0) {
+            return 0;
+        }
 
-            if ($manualValue > 0) {
-                $progress = ($manualValue / $nilaiTarget) * 100;
-            }
+        if ($analisisData > 0) {
+            $progress = ($analisisData / $nilaiTarget) * 100;
         }
 
         $progress = round($progress, 1);
@@ -4880,37 +4896,37 @@ class TargetKPIController extends Controller
             ];
         }
 
-        // --- AWAL LOGIKA QUARTER SEBELUMNYA ---
-        // 1. Menentukan kuartal berjalan berdasarkan bulan saat ini
         $currentMonth = now()->month;
         $currentQuarter = ceil($currentMonth / 3);
 
-        // 2. Kalkulasi kuartal dan tahun sebelumnya
         $prevQuarter = $currentQuarter - 1;
         $prevYear = $tahun;
 
-        // Jika kuartal saat ini adalah Q1 (1), maka sebelumnya adalah Q4 (4) di tahun sebelumnya
         if ($prevQuarter < 1) {
             $prevQuarter = 4;
             $prevYear--;
         }
 
-        $previousQuarterData = \App\Models\AnalysisQuarterDescription::where('year', $prevYear)
-            ->where('quarter', $prevQuarter)
-            ->first();
+        $previousQuarterData = AnalysisReport::where('year', $prevYear)
+            ->get();
+
+        $getDataAnalisis = AnalysisReport::where('year', $tahun);
+        $above = $getDataAnalisis->count();
+        $bellow = $above - 4;
+        $dataAnalisis = $getDataAnalisis->get();
+        $nominal = $dataAnalisis->sum('nilai');
 
         $progress = 0;
 
-        if (!is_null($detail->manual_value)) {
-
-            $manualValue = (float) $detail->manual_value;
-
-            if ($manualValue > 0 && $labaKotor >= $manualValue) {
-                $progress = ($manualValue / $labaKotor) * 100;
-            }
+        if ($nominal === 0) {
+            return 0;
         }
 
-        $progress = round($progress, 1);
+        if ($nominal > 0 && $labaKotor >= $nominal) {
+            $progress = ($nominal / $labaKotor) * 100;
+        }
+
+        $progress = round($progress, 2);
 
         if ($progress < $nilaiTarget) {
             $gapRaw = $progress - $nilaiTarget;
@@ -4925,12 +4941,11 @@ class TargetKPIController extends Controller
             'dataManual' => [
                 'manual_document' => $detail->manual_document,
             ],
-            'pie_chart' => ['above' => 0, 'below' => 0],
+            'pie_chart' => ['above' => $above, 'below' => $bellow],
             'monthly_data' => [],
             'daily_breakdown_per_month' => [],
             'previous_quarter' => [
                 'year'    => $prevYear,
-                'quarter' => $prevQuarter,
                 'data'    => $previousQuarterData
             ]
         ];
@@ -5757,11 +5772,21 @@ class TargetKPIController extends Controller
                 'pie_chart' => ['above' => 0, 'below' => 0],
                 'monthly_data' => [],
                 'daily_breakdown_per_month' => [],
+                'analisa_data' => [],
             ];
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
+
+        $GetanalisisData = AnalysisReport::where('year', $tahun);
+
+        $analisisData = $GetanalisisData->count();
+
+        $above = $analisisData;
+        $bellow = $nilaiTarget - $analisisData;
+
+        $analisaData = $GetanalisisData->get();
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
             return [
@@ -5770,21 +5795,22 @@ class TargetKPIController extends Controller
                 'pie_chart' => ['above' => 0, 'below' => 0],
                 'monthly_data' => [],
                 'daily_breakdown_per_month' => [],
+                'analisa_data' => [],
             ];
         }
 
         $progress = 0;
 
-        if (!is_null($detail->manual_value)) {
-            $manualValue = (float) $detail->manual_value;
+        if ($analisisData == 0) {
+            return 0;
+        }
 
-            if ($manualValue > 0) {
-                $progress = ($manualValue / $nilaiTarget) * 100;
-            }
+        if ($analisisData > 0) {
+            $progress = ($analisisData / $nilaiTarget) * 100;
         }
 
         $progress = round($progress, 1);
-        $gapRaw = $progress - $nilaiTarget;
+        $gapRaw = $analisisData - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         return [
@@ -5793,9 +5819,10 @@ class TargetKPIController extends Controller
             'dataManual' => [
                 'manual_document' => $detail->manual_document,
             ],
-            'pie_chart' => ['above' => 0, 'below' => 0],
+            'pie_chart' => ['above' => $above, 'below' => $bellow],
             'monthly_data' => [],
             'daily_breakdown_per_month' => [],
+            'analisa_data' => $analisaData,
         ];
     }
 
