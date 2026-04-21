@@ -117,7 +117,7 @@ class Kernel extends ConsoleKernel
                     'logout',
                     'Absen Masuk',
                     'Absen Keluar',
-                    'UpTime'
+                    'visit'
                 ])->delete();
 
                 Log::info("Data activityLog dengan status 'visit' berhasil dihapus oleh scheduler.");
@@ -222,7 +222,10 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('app:update-status')->dailyAt('23:00');
 
-        $schedule->command('uptime:check')->everySecond();
+        $schedule->command('uptime:check')->everySixHours();
+
+        $schedule->command('assign:shift2')->dailyAt('17.30');
+
 
         $schedule->command('assign:shift2')->dailyAt('17.30');
 

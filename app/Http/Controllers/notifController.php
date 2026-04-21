@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\HariLibur;
 use App\Models\notif;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -31,7 +32,7 @@ class notifController extends Controller
      * @param  mixed $request
      * @return RedirectResponse
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         // dd($request->all());
         $this->validate($request, [
@@ -39,6 +40,24 @@ class notifController extends Controller
             'tipe_notifikasi' => 'nullable',
             'isi_notifikasi' => 'nullable',
         ]);
+        
+        if ($request->ajax()){
+            $data = HariLibur::where('id', $request->id)->first();
+
+            notif::create([
+                'id_user' => auth()->user()->username,
+                'tipe_notifikasi' => 'Libur',
+                'isi_notifikasi' => 'Libur '.$data->nama,
+                'tanggal_awal' => $data->tanggal,
+                'tanggal_akhir' => $data->tanggal,
+            ]);
+
+            session()->flash('success_libur', 'Notifikasi Libur berhasil dibuat');
+            return response()->json([
+                'status' => 'success_libur',
+                'message' => 'Notifikasi Libur berhasil dibuat'
+            ]);
+        } 
 
         notif::create([
             'id_user' => auth()->user()->username,

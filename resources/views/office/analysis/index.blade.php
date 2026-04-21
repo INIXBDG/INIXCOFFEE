@@ -248,12 +248,31 @@
                                                     data-year="{{ $year }}"
                                                     data-quarter="{{ $qKey }}"
                                                     data-desc="{{ $qData->description ?? '' }}"
+                                                    data-format="{{ $qData->format_nilai ?? '' }}"
+                                                    data-nilai="{{ $qData->nilai ?? '' }}"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#quarterDescModal">
                                                     Update Data
                                                 </button>
                                             </div>
                                             <div class="card-body p-4 bg-white rounded-bottom-4">
+
+                                                {{-- Menampilkan Nilai jika tersedia --}}
+                                                @if(!empty($qData->nilai))
+                                                    <div class="mb-3 p-3 bg-light rounded-3 border-start border-4 border-info shadow-sm d-flex justify-content-between align-items-center">
+                                                        <span class="fw-semibold text-muted small text-uppercase">Capaian Nilai</span>
+                                                        <span class="fs-5 fw-bold text-dark">
+                                                            @if($qData->format_nilai == 'Rupiah')
+                                                                Rp {{ number_format($qData->nilai, 2, ',', '.') }}
+                                                            @elseif($qData->format_nilai == 'Persentase')
+                                                                {{ floatval($qData->nilai) }} %
+                                                            @else
+                                                                {{ floatval($qData->nilai) }}
+                                                            @endif
+                                                        </span>
+                                                    </div>
+                                                @endif
+
                                                 @if(!empty($qData->description))
                                                     <p class="text-dark mb-3">{!! nl2br(e($qData->description)) !!}</p>
                                                 @else
@@ -459,13 +478,31 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Tahun</label>
-                            <input type="number" id="desc_quarter_year" name="year" class="form-control" readonly required>
+                            <input type="number" id="desc_quarter_year" name="year" class="form-control bg-light" readonly required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-semibold">Triwulan</label>
-                            <input type="number" id="desc_quarter_val" name="quarter" class="form-control" readonly required>
+                            <input type="number" id="desc_quarter_val" name="quarter" class="form-control bg-light" readonly required>
                         </div>
                     </div>
+
+                    {{-- Penambahan Input Format dan Nilai --}}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Format Nilai (Opsional)</label>
+                            <select id="desc_quarter_format" name="format_nilai" class="form-select">
+                                <option value="">Pilih Format</option>
+                                <option value="Angka">Angka Biasa</option>
+                                <option value="Persentase">Persentase (%)</option>
+                                <option value="Rupiah">Rupiah (Rp)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Nilai (Opsional)</label>
+                            <input type="number" step="0.01" id="desc_quarter_nilai" name="nilai" class="form-control" placeholder="Contoh: 85.50">
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Deskripsi Triwulan</label>
                         <textarea id="desc_quarter_text" name="description" class="form-control" rows="8"></textarea>
@@ -548,10 +585,14 @@
                 const year = $(this).data('year');
                 const quarter = $(this).data('quarter');
                 const desc = $(this).data('desc');
+                const format = $(this).data('format');
+                const nilai = $(this).data('nilai');
 
                 $('#desc_quarter_year').val(year);
                 $('#desc_quarter_val').val(quarter);
                 $('#desc_quarter_text').val(desc);
+                $('#desc_quarter_format').val(format);
+                $('#desc_quarter_nilai').val(nilai);
             });
 
             $('.editAnnualBtn').on('click', function() {

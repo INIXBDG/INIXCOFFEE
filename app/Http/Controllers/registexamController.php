@@ -561,7 +561,7 @@ class registexamController extends Controller
             'materi'   => $materi,
             'tgl_exam' => $tgl_exam
         ])
-            ->setPaper('a4', 'portrait')
+            ->setPaper('a4', 'landscape')
             ->setWarnings(false);
 
         $filename = 'sertifikat-exam-' . Str::slug($materi->nama_materi) . '-' . now()->format('Ymd-His') . '.pdf';

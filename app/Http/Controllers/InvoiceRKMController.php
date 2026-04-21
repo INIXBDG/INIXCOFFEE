@@ -144,58 +144,62 @@ public function createKwitansi($invoiceId)
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-public function store(Request $request)
-{
-    $request->validate([
-        'invoice_number' => 'required|string|max:255|unique:invoices',
-        'tanggal_invoice' => 'required|date',
-        'due_date' => 'nullable|date|after or equal:tanggal_invoice',
-        'purchase_order' => 'nullable|string|max:255',
-        'id_rkm' => 'required|exists:r_k_m_s,id',
-        'amount' => 'required|numeric',
-        'unit_price' => 'nullable|numeric',
-        'pax' => 'nullable|integer',
-        'bank_name' => 'nullable|string|max:255',
-        'account_number' => 'nullable|string|max:50',
-        'terbilang' => 'nullable|string',
-        'peserta' => 'nullable|array',
-        'peserta.*' => 'nullable|string|max:255',
-    ]);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'invoice_number' => 'required|string|max:255|unique:invoices',
+            'tanggal_invoice' => 'required|date',
+            'due_date' => 'nullable|date',
+            'purchase_order' => 'nullable|string|max:255',
+            'id_rkm' => 'required|exists:r_k_m_s,id',
+            'amount' => 'required|numeric',
+            'unit_price' => 'nullable|numeric',
+            'pax' => 'nullable|integer',
+            'bank_name' => 'nullable|string|max:255',
+            'account_number' => 'nullable|string|max:50',
+            'terbilang' => 'nullable|string',
+            'peserta' => 'nullable|array',
+            'peserta.*' => 'nullable|string|max:255',
+            'is_peserta' => 'required|in:true,false',
+            'is_ttd' => 'required|in:true,false',
+        ]);
 
-    $pesertaList = $request->input('peserta', []);
-    $rkm = RKM::where('id', $request->id_rkm)->first();
-    $tanggal_akhir = $rkm->tanggal_akhir;
-    $duedate = $tanggal_akhir->addMonth(6)->toDateString();
+        $pesertaList = $request->input('peserta', []);
 
-    $invoice = Invoice::create([
-        'invoice_number' => $request->input('invoice_number'),
-        'tanggal_invoice' => $request->input('tanggal_invoice'),
-        'due_date' => $duedate, 
-        'purchase_order' => $request->input('purchase_order'), 
-        'id_rkm' => $request->input('id_rkm'),
-        'amount' => $request->input('amount'),
-        'unit_price' => $request->input('unit_price'), // Opsional, dari form
-        'pax' => $request->input('pax'), // Opsional, dari form
-        'bank_name' => $request->input('bank_name'),
-        'account_number' => $request->input('account_number'),
-        'terbilang' => $request->input('terbilang'), // Simpan terbilang
-    ]);
+        $isPeserta = $request->input('is_peserta') === 'true';
+        $isTtd = $request->input('is_ttd') === 'true';
 
-    $outstanding = Outstanding::where('id_rkm', $request->input('id_rkm'))->first();
+        $rkm = RKM::where('id', $request->id_rkm)->firstOrFail();
+        $duedate = $rkm->tanggal_akhir->addMonths(6)->toDateString();
 
+        $invoice = Invoice::create([
+            'invoice_number' => $request->input('invoice_number'),
+            'tanggal_invoice' => $request->input('tanggal_invoice'),
+            'due_date' => $duedate,
+            'purchase_order' => $request->input('purchase_order'),
+            'id_rkm' => $request->input('id_rkm'),
+            'amount' => $request->input('amount'),
+            'unit_price' => $request->input('unit_price'),
+            'pax' => $request->input('pax'),
+            'bank_name' => $request->input('bank_name'),
+            'account_number' => $request->input('account_number'),
+            'terbilang' => $request->input('terbilang'),
+        ]);
 
-    if ($outstanding) {
-        trackingOutstanding::where('id_outstanding', $outstanding->id)
-            ->update(['invoice' => 1]);
+        $outstanding = Outstanding::where('id_rkm', $request->input('id_rkm'))->first();
 
-        $outstanding->no_invoice = $request->input('invoice_number');
-        $outstanding->update();
+        if ($outstanding) {
+            trackingOutstanding::where('id_outstanding', $outstanding->id)
+                ->update(['invoice' => 1]);
+
+            $outstanding->no_invoice = $request->input('invoice_number');
+            $outstanding->update();
+        }
+
+        return $this->downloadPdf($invoice->id, $pesertaList, $isPeserta, $isTtd);
+
+        // return redirect()->route('invoice.index')->with(['success' => 'Invoice berhasil dibuat!']);
     }
-
-    return $this->downloadPdf($invoice->id, $pesertaList);
-
-    // return redirect()->route('invoice.index')->with(['success' => 'Invoice berhasil dibuat!']);
-}
 
 public function storeKwitansi(Request $request)
 {
@@ -245,7 +249,7 @@ public function storeKwitansi(Request $request)
 public function show(string $id): View
 {
     // Mengambil data Invoice dan memuat relasi RKM, Perusahaan, dan Materi
-    $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi'])->findOrFail($id);
+    $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta'])->findOrFail($id);
     
     // Menghitung total terbilang dan mengirimkannya ke view
     $terbilang = format_terbilang($invoice->amount);
@@ -469,52 +473,52 @@ public function exportExcel($id)
     }, $fileName);
 }
 
-public function downloadPdf($id, $pesertaList = [])
-{
-    $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi'])
-        ->findOrFail($id);
+    public function downloadPdf($id, $pesertaList = [], $isPeserta = false, $isTtd = false)
+    {
+        $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta'])
+            ->findOrFail($id);
 
-    $terbilang = $this->formatTerbilang($invoice->amount);
-    $karyawan = Karyawan::find(22);
+        $terbilang = $this->formatTerbilang($invoice->amount);
+        $karyawan = Karyawan::findOrFail(22);
 
-    $fileName = preg_replace('/[\/\\\\]/', '-', $invoice->invoice_number) . '.pdf';
-    $filePath = 'invoice/' . $fileName;
+        $fileName = preg_replace('/[\/\\\\]/', '-', $invoice->invoice_number) . '.pdf';
+        $filePath = 'invoice/' . $fileName;
 
-    if (!empty($invoice->file_path) &&
-        Storage::disk('local')->exists($invoice->file_path)) {
+        if (!empty($invoice->file_path) &&
+            Storage::disk('local')->exists($invoice->file_path)) {
+
+            return response()->download(
+                storage_path('app/' . $invoice->file_path)
+            );
+        }
+
+        $pdf = Pdf::loadView('invoice.pdf', compact('invoice', 'terbilang', 'karyawan', 'pesertaList', 'isPeserta', 'isTtd'))
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'isRemoteEnabled' => true,
+                'isHtml5ParserEnabled' => true,
+                'enable_css_float' => true,
+                'enable_html5' => true,
+                'debugCss' => false,
+                'debugLayout' => false,
+                'chroot' => public_path(),
+                'dpi' => 96,
+            ]);
+
+        Storage::disk('local')->put($filePath, $pdf->output());
+
+        $invoice->file_path = $filePath;
+        $invoice->save();
 
         return response()->download(
-            storage_path('app/' . $invoice->file_path)
+            storage_path('app/' . $filePath)
         );
     }
-    
 
-    $pdf = Pdf::loadView('invoice.pdf', compact('invoice', 'terbilang', 'karyawan', 'pesertaList'))
-        ->setPaper('a4', 'portrait')
-        ->setOptions([
-            'isRemoteEnabled' => true,
-            'isHtml5ParserEnabled' => true,
-            'enable_css_float' => true,
-            'enable_html5' => true,    
-            'debugCss' => false,    
-            'debugLayout' => false,
-            'chroot' => public_path(),
-            'dpi' => 96,
-        ]);
-
-    Storage::disk('local')->put($filePath, $pdf->output());
-
-    $invoice->file_path = $filePath;
-    $invoice->save();
-
-    return response()->download(
-        storage_path('app/' . $filePath)
-    );
-}
 
 public function downloadPdfKwitansi($id)
 {
-    $kwitansi = Kwitansi::with('invoice.rkm.perusahaan', 'invoice.rkm.materi', 'karyawan')->findOrFail($id);
+    $kwitansi = Kwitansi::with('invoice.rkm.perusahaan', 'invoice.rkm.materi', 'karyawan', 'invoice.rkm')->findOrFail($id);
     $terbilang = format_terbilang($kwitansi->invoice->amount);
     $karyawan = karyawan::find(22); 
 

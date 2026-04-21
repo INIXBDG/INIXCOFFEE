@@ -84,6 +84,31 @@
                                 <dt class="col-sm-4">Jumlah Peserta (Pax)</dt>
                                 <dd class="col-sm-8">{{ $peluang->pax }}</dd>
 
+                                <dt class="col-sm-4">Exam</dt>
+                                <dd class="col-sm-8">
+                                    {{ optional($peluang->rkm)->exam == 1 ? 'Ya' : 'Tidak' }}
+                                </dd>
+
+                                <dt class="col-sm-4">Authorize</dt>
+                                <dd class="col-sm-8">
+                                    {{ optional($peluang->rkm)->authorize == 1 ? 'Ya' : 'Tidak' }}
+                                </dd>
+
+                                <dt class="col-sm-4">Event</dt>
+                                <dd class="col-sm-8">
+                                    {{ optional($peluang->rkm)->event ?? '-' }}
+                                </dd>
+
+                                <dt class="col-sm-4">Metode Kelas</dt>
+                                <dd class="col-sm-8">
+                                    {{ optional($peluang->rkm)->metode_kelas ?? '-' }}
+                                </dd>
+
+                                <dt class="col-sm-4">Ruang</dt>
+                                <dd class="col-sm-8">
+                                    {{ optional($peluang->rkm)->ruang ?? '-' }}
+                                </dd>
+
                                 @if ($peluang->tentatif == true)
                                     <dt class="col-sm-4">Status</dt>
                                     <dd class="col-sm-8"><strong>Tentatif</strong></dd>
@@ -455,14 +480,86 @@
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="metode_kelas">Metode Kelas</label>
+                                <select class="form-select @error('metode_kelas') is-invalid @enderror"
+                                    name="metode_kelas" required autocomplete="metode_kelas">
+
+                                    <option value="Inhouse Bandung"
+                                        {{ old('metode_kelas', $peluang->rkm?->metode_kelas) == 'Inhouse Bandung' ? 'selected' : '' }}>
+                                        Inhouse Bandung
+                                    </option>
+
+                                    <option value="Inhouse Luar Bandung"
+                                        {{ old('metode_kelas', $peluang->rkm?->metode_kelas) == 'Inhouse Luar Bandung' ? 'selected' : '' }}>
+                                        Inhouse Luar Bandung
+                                    </option>
+
+                                    <option value="Offline"
+                                        {{ old('metode_kelas', $peluang->rkm?->metode_kelas) == 'Offline' ? 'selected' : '' }}>
+                                        Offline
+                                    </option>
+
+                                    <option value="Virtual"
+                                        {{ old('metode_kelas', $peluang->rkm?->metode_kelas) == 'Virtual' ? 'selected' : '' }}>
+                                        Virtual
+                                    </option>
+                                </select>
+                                <div class="invalid-feedback">Pilih metode kelas.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="event">Event</label>
+                                <select class="form-select @error('event') is-invalid @enderror"
+                                    name="event" required autocomplete="event">
+
+                                    <option value="Kelas"
+                                        {{ old('event', $peluang->rkm?->event) == 'Kelas' ? 'selected' : '' }}>
+                                        Kelas
+                                    </option>
+
+                                    <option value="Workshop"
+                                        {{ old('event', $peluang->rkm?->event) == 'Workshop' ? 'selected' : '' }}>
+                                        Workshop
+                                    </option>
+
+                                    <option value="Webinar"
+                                        {{ old('event', $peluang->rkm?->event) == 'Webinar' ? 'selected' : '' }}>
+                                        Webinar
+                                    </option>
+
+                                    <option value="Narasumber"
+                                        {{ old('event', $peluang->rkm?->event) == 'Narasumber' ? 'selected' : '' }}>
+                                        Narasumber
+                                    </option>
+                                </select>
+                                <div class="invalid-feedback">Pilih event.</div>
+                            </div>
 
                             <input type="hidden" name="tentatif" value="0">
                             <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" role="switch" id="tentatifSwitch"
-                                    name="tentatif" value="1" {{ old('tentatif', $peluang->tentatif) ? 'checked' : '' }}>
+                                    name="tentatif" value="1"
+                                    {{ old('tentatif', $peluang->tentatif) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="tentatifSwitch">Tentatif</label>
                             </div>
 
+                            <input type="hidden" name="exam" value="0">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="examToggle"
+                                    name="exam" value="1"
+                                    {{ old('exam', $peluang->rkm?->exam ?? 0) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="examToggle">Exam</label>
+                            </div>
+
+                            <input type="hidden" name="authorize" value="0">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="authorizeToggle"
+                                    name="authorize" value="1"
+                                    {{ old('authorize', $peluang->rkm?->authorize ?? 0) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="authorizeToggle">Authorize</label>
+                            </div>
+                            
                             <!-- Related Activities -->
                             <div class="mb-3">
                                 <h6 class="fw-bold">Aktivitas Terkait</h6>

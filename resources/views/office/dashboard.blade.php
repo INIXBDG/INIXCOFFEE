@@ -102,7 +102,7 @@
                                 <label class="form-label col-form-label">Nominal <span class="text-danger">*</span></label>
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" name="nominal" id="nominal" class="form-control format-rupiah">
+                                    <input type="text" name="nominal" id="nominal" class="form-control format-rupiah" autocomplete="off">
                                 </div>
                             </div>
 
@@ -366,6 +366,7 @@
             </div>
         </div>
 
+        <div id="sectionOutstanding">
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
@@ -597,6 +598,8 @@
                 </div>
             </div>
         </div>
+        </div>
+
         @endif
 
         @if (Auth::user()->jabatan === 'HRD')
@@ -689,8 +692,8 @@
                     <div class="card-body p-4 mb-4 h-100 row g-4">
                         <!-- Kalender -->
                         <div class="col-xl-8">
-                            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                                <div class="card-body p-4" style="background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);">
+                            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                                <div class="card-body p-4">
                                     <div id="calendar" class="fc-custom"></div>
                                 </div>
                             </div>
@@ -698,7 +701,7 @@
 
                         <!-- Detail & List Hari Libur -->
                         <div class="col-xl-4">
-                            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden d-flex flex-column">
+                            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden d-flex flex-column glass-force">
                                 <div class="card-header border-bottom-0 pb-0">
                                     <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                                         <i class="bx bx-calendar-check text-success me-2" style="font-size: 1.5rem;"></i>
@@ -777,7 +780,7 @@
                 <div class="modal-content">
 
                     <div class="modal-header">
-                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
+                        <h1 class="modal-title fs-5">Edit Administrasi Karyawan</h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
@@ -834,6 +837,95 @@
             </div>
         </div>
         
+        <!-- Modal Eksport -->
+        <div class="modal fade" id="modalEksportAdministrasi" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-semibold">
+                            <i class="bi bi-download me-2"></i> Eksport Data Administrasi
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body pt-3">
+                        <form method="post" id="formEksportAdministrasi"
+                            action="{{ route('administrasi.karyawan.eksport') }}">
+                            @csrf
+
+                            <div class="mb-4">
+                                <h6 class="text-muted mb-3">Berdasarkan Periode</h6>
+
+                                <div class="row g-3">
+
+                                    <div class="col-md-4">
+                                        <label class="form-label small">Tahun</label>
+                                        <select name="tahun" id="eksportTahunanAdminis" class="form-select">
+                                            <option value="" selected>Pilih Tahun</option>
+                                            @php
+                                                $tahun_sekarang = now()->year;
+                                                for ($tahun = 2023; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                                    echo "<option value=\"$tahun\">$tahun</option>";
+                                                }
+                                            @endphp
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label small">Bulan</label>
+                                        <select name="bulan" id="eksportBulananAdminis" class="form-select">
+                                            <option value="" selected>Pilih Bulan</option>
+                                            @php
+                                                $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                                for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                                    echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
+                                                }
+                                            @endphp
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label small">Triwulan</label>
+                                        <select name="quartal" id="eksportQuartalAdminis" class="form-select">
+                                            <option value="" selected>Pilih Triwulan</option>
+                                            <option value="1">Q1 (Jan - Mar)</option>
+                                            <option value="2">Q2 (Apr - Jun)</option>
+                                            <option value="3">Q3 (Jul - Sep)</option>
+                                            <option value="4">Q4 (Okt - Des)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-3">Berdasarkan Rentang Tanggal</h6>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Dari Tanggal</label>
+                                        <input type="date" name="start_date" class="form-control">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Sampai Tanggal</label>
+                                        <input type="date" name="end_date" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer border-0 pt-3">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="bi bi-download me-1"></i> Eksport
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
@@ -842,10 +934,19 @@
                             <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
                             Administrasi Karyawan 
                         </h5>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahAdministrasiKaryawan">
-                            Tambah Administrasi Karyawan
-                        </button>
+                        <div class="d-flex gap-4">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahAdministrasiKaryawan">
+                                Tambah Administrasi Karyawan
+                            </button>
+                            <div class="d-flex gap-4 align-items-center">
+                                <h6 class="mb-0">Export : </h6>
+                                <button type="button" data-bs-toggle="modal" data-bs-target="#modalEksportAdministrasi" class="btn btn-outline-secondary btn-sm pdfBtn">
+                                PDF
+                                </button>
+                            </div>
+                        </div>
                     </div>
+                    
                     @if (session('success_administrasi'))
                         <div class="alert alert-success">{{ session('success_administrasi') }}</div>
                     @endif
@@ -859,8 +960,9 @@
                                         <th class="border-0 ps-4"></th>
                                         <th class="border-0" style="min-width: 160px;">Administrasi Karyawan</th>
                                         <th class="border-0" style="min-width: 180px;">Tanggal Dateline</th>
-                                        <th class="border-0 text-center pe-4" style="min-width: 120px;">Status</th>
                                         <th class="border-0" style="min-width: 150px;">Tanggal Selesai</th>
+                                        <th class="border-0 text-center pe-4" style="min-width: 120px;">Status</th>
+                                        <th class="border-0" style="min-width: 120px;">Progress</th>
                                         <th class="border-0 text-center pe-4" style="min-width: 120px;">Aksi</th>
                                     </tr>
                                 </thead>
@@ -879,6 +981,9 @@
                                             </td>
                                             <td>
                                                 {{ \Carbon\Carbon::parse($administrasi->dateline)->format('l, d F Y') }}
+                                            </td>
+                                            <td>
+                                                {{ $administrasi->tanggal_selesai ? \Carbon\Carbon::parse($administrasi->tanggal_selesai)->format('l, d F Y') : '-'}}
                                             </td>
                                             <td class="text-center pe-4">
                                                 @php
@@ -911,8 +1016,34 @@
                                                     {{ $administrasi->status }}
                                                 </span>
                                             </td>
-                                            <td>
-                                                {{ $administrasi->tanggal_selesai ? \Carbon\Carbon::parse($administrasi->tanggal_selesai)->format('l, d F Y') : '-'}}
+                                            <td class="text-center pe-4">
+                                                @php
+                                                    if ($administrasi->tanggal_selesai) {
+                                                        $diff = \Carbon\Carbon::parse($administrasi->dateline)
+                                                            ->diffInDays(\Carbon\Carbon::parse($administrasi->tanggal_selesai), false);
+
+                                                        if ($diff <= 0 || $administrasi->status === 'selesai') {
+                                                            $progress = 100;
+                                                            $color = 'success';
+                                                        } elseif ($diff <= 3) {
+                                                            $progress = 80;
+                                                            $color = 'warning';
+                                                        } elseif ($diff <= 7) {
+                                                            $progress = 60;
+                                                            $color = 'warning';
+                                                        } else {
+                                                            $progress = 0;
+                                                            $color = 'danger';
+                                                        }
+                                                    } else {
+                                                        $progress = 0;
+                                                        $color = 'danger';
+                                                    }
+                                                @endphp
+
+                                                <span class="badge bg-{{ $color }}-subtle text-{{ $color }}">
+                                                    {{ $progress }}%
+                                                </span>
                                             </td>
                                             <td class="text-center pe-4 position-relative">
                                                 <div class="dropdown">
@@ -2410,362 +2541,365 @@
                 });
             };
 
-            let currentPage = 1;
-            let lastPage = 1;
-            let currentSearch = '';
+            if ($('#sectionOutstanding').length) {
 
-            function loadOutstanding(page = 1, search = '') {
-                $.ajax({
-                    url: "{{ route('office.table.outstanding') }}",
-                    type: "GET",
-                    data: {
-                        page: page,
-                        search: search
-                    },
-                    success: function(res) {
-                        let rows = '';
+                let currentPage = 1;
+                let lastPage = 1;
+                let currentSearch = '';
 
-                        currentPage = res.current_page;
-                        lastPage = res.last_page;
+                function loadOutstanding(page = 1, search = '') {
+                    $.ajax({
+                        url: "{{ route('office.table.outstanding') }}",
+                        type: "GET",
+                        data: {
+                            page: page,
+                            search: search
+                        },
+                        success: function(res) {
+                            let rows = '';
 
-                        if (res.data.length === 0) {
-                            rows = `<tr><td colspan="12" class="text-center">Tidak ada data</td></tr>`;
-                        } else {
-                            res.data.forEach((item, index) => {
-                                const safeFormat = (val) => {
-                                    if (val === '-' || val === null || val === undefined || val === '' || Number(val) === 0) {
-                                        return '-';
-                                    }
-                                    return 'Rp ' + formatRupiah(val);
-                                };
+                            currentPage = res.current_page;
+                            lastPage = res.last_page;
 
-                                rows += `
-                                    <tr>
-                                        <td>${(currentPage - 1) * 10 + index + 1}</td>
-                                        <td>${item.perusahaan || '-'}</td>
-                                        <td>${item.kelas || '-'}</td>
-                                        <td>${item.sales || '-'}</td>
-                                        <td>${formatDate(item.tanggal)}</td>
-                                        
-                                        <!-- Gunakan helper safeFormat -->
-                                        <td>${safeFormat(item.tagihan)}</td>
-                                        
-                                        <td>${formatDate(item.tenggat_waktu)}</td>
-                                        <td>${formatDate(item.tanggal_bayar)}</td>
-                                        <td>${safeFormat(item.nominal_pembayaran)}</td>
-                                        <td>${safeFormat(item.admin_transfer)}</td>
-                                        <td>${safeFormat(item.nominal_pph23)}</td>
-                                        <td>${safeFormat(item.nominal_ppn)}</td>
-                                        <td>${safeFormat(item.uang_diterima)}</td>
-                                        
-                                        <td>${renderStatus(item.status)}</td>
-                                        <td>${item.info || '-'}</td>
-                                    </tr>
-                                `;
-                            });
+                            if (res.data.length === 0) {
+                                rows = `<tr><td colspan="12" class="text-center">Tidak ada data</td></tr>`;
+                            } else {
+                                res.data.forEach((item, index) => {
+                                    const safeFormat = (val) => {
+                                        if (val === '-' || val === null || val === undefined || val === '' || Number(val) === 0) {
+                                            return '-';
+                                        }
+                                        return 'Rp ' + formatRupiah(val);
+                                    };
+
+                                    rows += `
+                                        <tr>
+                                            <td>${(currentPage - 1) * 10 + index + 1}</td>
+                                            <td>${item.perusahaan || '-'}</td>
+                                            <td>${item.kelas || '-'}</td>
+                                            <td>${item.sales || '-'}</td>
+                                            <td>${formatDate(item.tanggal)}</td>
+                                            
+                                            <!-- Gunakan helper safeFormat -->
+                                            <td>${safeFormat(item.tagihan)}</td>
+                                            
+                                            <td>${formatDate(item.tenggat_waktu)}</td>
+                                            <td>${formatDate(item.tanggal_bayar)}</td>
+                                            <td>${safeFormat(item.nominal_pembayaran)}</td>
+                                            <td>${safeFormat(item.admin_transfer)}</td>
+                                            <td>${safeFormat(item.nominal_pph23)}</td>
+                                            <td>${safeFormat(item.nominal_ppn)}</td>
+                                            <td>${safeFormat(item.uang_diterima)}</td>
+                                            
+                                            <td>${renderStatus(item.status)}</td>
+                                            <td>${item.info || '-'}</td>
+                                        </tr>
+                                    `;
+                                });
+                            }
+
+                            $('#outstandingTableBody').html(rows);
+
+                            // update info
+                            $('#pageInfo').text(`Page ${currentPage} / ${lastPage}`);
+                            $('#paginationInfo').text(`Total data: ${res.total}`);
+
+                            // disable button
+                            $('#prevPage').prop('disabled', currentPage === 1);
+                            $('#nextPage').prop('disabled', currentPage === lastPage);
                         }
+                    });
+                }
 
-                        $('#outstandingTableBody').html(rows);
-
-                        // update info
-                        $('#pageInfo').text(`Page ${currentPage} / ${lastPage}`);
-                        $('#paginationInfo').text(`Total data: ${res.total}`);
-
-                        // disable button
-                        $('#prevPage').prop('disabled', currentPage === 1);
-                        $('#nextPage').prop('disabled', currentPage === lastPage);
+                $('#nextPage').click(function() {
+                    if (currentPage < lastPage) {
+                        loadOutstanding(currentPage + 1, currentSearch);
                     }
                 });
-            }
 
-            $('#nextPage').click(function() {
-                if (currentPage < lastPage) {
-                    loadOutstanding(currentPage + 1, currentSearch);
-                }
-            });
-
-            $('#prevPage').click(function() {
-                if (currentPage > 1) {
-                    loadOutstanding(currentPage - 1, currentSearch);
-                }
-            });
-
-
-            let debounceTimer;
-            $('#searchOutstanding').on('keyup', function() {
-                clearTimeout(debounceTimer);
-                let value = $(this).val();
-                
-                currentSearch = value; 
-
-                debounceTimer = setTimeout(() => {
-                    loadOutstanding(1, currentSearch); 
-                }, 400);
-            });
-
-            function formatRupiah(angka) {
-                if (!angka || angka === '-' || isNaN(Number(angka))) {
-                    return '-';
-                }
-                
-                const num = Number(angka);
-                const clean = Math.round(num);
-                return clean.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-            }
-
-            function formatDate(date) {
-                if (!date || date === '-') return '-';
-
-                let d = new Date(date);
-                return d.toLocaleDateString('id-ID', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric'
-                });
-            }
-
-            function renderPotongan(jenis, jumlah) {
-                if (!jenis || jenis === '-' || !jumlah || jumlah === '-') {
-                    return '-';
-                }
-
-                let jenisArr = jenis.split(',');
-                let jumlahArr = jumlah.split(',');
-
-                let result = '';
-
-                jenisArr.forEach((item, index) => {
-                    let nominal = jumlahArr[index] ? formatRupiah(jumlahArr[index].trim()) : '0';
-
-                    result += `
-                        <div style="font-size: 12px;">
-                            ${item.trim()} (Rp ${nominal}),
-                        </div>
-                    `;
+                $('#prevPage').click(function() {
+                    if (currentPage > 1) {
+                        loadOutstanding(currentPage - 1, currentSearch);
+                    }
                 });
 
-                return result;
-            }
 
-            function renderStatus(status) {
-                let color = 'secondary';
+                let debounceTimer;
+                $('#searchOutstanding').on('keyup', function() {
+                    clearTimeout(debounceTimer);
+                    let value = $(this).val();
+                    
+                    currentSearch = value; 
 
-                if (status === 'Belum Bayar') color = 'warning';
-                else if (status === 'Tepat Waktu') color = 'success';
-                else if (status === 'Terlambat') color = 'danger';
+                    debounceTimer = setTimeout(() => {
+                        loadOutstanding(1, currentSearch); 
+                    }, 400);
+                });
 
-                return `<span class="badge bg-${color}">${status}</span>`;
-            }
+                function formatRupiah(angka) {
+                    if (!angka || angka === '-' || isNaN(Number(angka))) {
+                        return '-';
+                    }
+                    
+                    const num = Number(angka);
+                    const clean = Math.round(num);
+                    return clean.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                }
 
-            let chartInstanceOutstanding;
+                function formatDate(date) {
+                    if (!date || date === '-') return '-';
 
-            function loadChartOutstanding(year) {
-
-                fetch(`/office/grafik/outstanding?year=${year}`)
-                    .then(res => res.json())
-                    .then(data => {
-
-                        const ctx = document.getElementById('grafikOutstanding');
-
-                        if (chartInstanceOutstanding) {
-                            chartInstanceOutstanding.destroy();
-                        }
-
-                        const total = data.total || 0;
-                        const tepatWaktu = data.data[1] || 0;
-
-                        const progress = total === 0 ? 0 : Math.round((tepatWaktu / total) * 100);
-
-                        document.getElementById('kpiProgress').innerText = `${progress}%`;
-                        document.getElementById('totalClient').innerText = total;
-
-                        let analysis = "";
-
-                        if (progress >= 90) {
-                            analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${progress}% dari target 100%.`;
-                        }
-                        else if (progress >= 70) {
-                            analysis = `Kinerja cukup baik. Anda mencapai KPI ${progress}% dari target 100%, masih ada ruang peningkatan.`;
-                        }
-                        else if (progress >= 50) {
-                            analysis = `Kinerja sedang. Baru mencapai KPI ${progress}% dari target 100%, perlu perbaikan.`;
-                        }
-                        else {
-                            analysis = `Kinerja rendah. Baru ${progress}% dari target 100%, perlu tindakan segera.`;
-                        }
-
-                        document.getElementById('kpiAnalysis').innerText = analysis;
-
-                        const hasData = data.data.some(val => val > 0);
-
-                        if (!hasData || total === 0) {
-                            document.getElementById('outstandingEmpty').classList.remove('d-none');
-
-                            document.getElementById('lblBelumBayar').innerText = "0% (0)";
-                            document.getElementById('lblTepatWaktu').innerText = "0% (0)";
-                            document.getElementById('lblTerlambat').innerText = "0% (0)";
-                            return;
-                        } else {
-                            document.getElementById('outstandingEmpty').classList.add('d-none');
-                        }
-
-                        const belumBayarPercent = Math.round((data.data[0] / total) * 100);
-                        const tepatWaktuPercent = Math.round((data.data[1] / total) * 100);
-                        const terlambatPercent  = Math.round((data.data[2] / total) * 100);
-
-                        document.getElementById('lblBelumBayar').innerText =
-                            `${belumBayarPercent}% (${data.data[0]})`;
-
-                        document.getElementById('lblTepatWaktu').innerText =
-                            `${tepatWaktuPercent}% (${data.data[1]})`;
-
-                        document.getElementById('lblTerlambat').innerText =
-                            `${terlambatPercent}% (${data.data[2]})`;
-
-                        // CHART
-                        chartInstanceOutstanding = new Chart(ctx, {
-                            type: 'pie',
-                            data: {
-                                labels: data.labels,
-                                datasets: [{
-                                    data: data.data,
-                                    backgroundColor: [
-                                        '#dc3545',
-                                        '#198754',
-                                        '#fd7e14'
-                                    ]
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'bottom'
-                                    },
-                                    tooltip: {
-                                        callbacks: {
-
-                                            label: function(context) {
-
-                                                const value = context.raw;
-                                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                                const percent = ((value / total) * 100).toFixed(1);
-
-                                                return `${context.label}: ${percent}% (${value})`;
-                                            }
-
-                                        }
-                                    }
-                                }
-                            }
-                        });
-
+                    let d = new Date(date);
+                    return d.toLocaleDateString('id-ID', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
                     });
-            }
+                }
 
-            loadChartOutstanding(new Date().getFullYear());
+                function renderPotongan(jenis, jumlah) {
+                    if (!jenis || jenis === '-' || !jumlah || jumlah === '-') {
+                        return '-';
+                    }
 
-            document.getElementById('filterTahun').addEventListener('change', function () {
-                loadChartOutstanding(this.value);
-            });
+                    let jenisArr = jenis.split(',');
+                    let jumlahArr = jumlah.split(',');
 
-            let chartInstanceKetepatan;
+                    let result = '';
 
-            function loadChartKetepatan(year) {
+                    jenisArr.forEach((item, index) => {
+                        let nominal = jumlahArr[index] ? formatRupiah(jumlahArr[index].trim()) : '0';
 
-                fetch(`/office/grafik/ketepatan-waktu?year=${year}`)
-                    .then(res => res.json())
-                    .then(data => {
+                        result += `
+                            <div style="font-size: 12px;">
+                                ${item.trim()} (Rp ${nominal}),
+                            </div>
+                        `;
+                    });
 
-                        const ctx = document.getElementById('grafikKetepatanWaktu');
+                    return result;
+                }
 
-                        if (chartInstanceKetepatan) {
-                            chartInstanceKetepatan.destroy();
-                        }
+                function renderStatus(status) {
+                    let color = 'secondary';
 
-                        const total = data.data.reduce((acc, val) => acc + val, 0); 
-                        const sesuai = data.data[0] || 0; 
-                        const persen = data.persen || 0; 
+                    if (status === 'Belum Bayar') color = 'warning';
+                    else if (status === 'Tepat Waktu') color = 'success';
+                    else if (status === 'Terlambat') color = 'danger';
 
-                        // Update elemen KPI
-                        document.getElementById('kpiProgressKetepatan').innerText = `${persen}%`;
-                        document.getElementById('totalDataKetepatan').innerText = total;
-                        document.getElementById('lblSesuaiKetepatan').innerText = `${sesuai}`;
-                        document.getElementById('lblTidakSesuaiKetepatan').innerText = `${data.data[1] || 0}`;
+                    return `<span class="badge bg-${color}">${status}</span>`;
+                }
 
+                let chartInstanceOutstanding;
 
-                        let analysis = "";
-                        if (persen >= 90) {
-                            analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${persen}% dari target 100%.`;
-                        }
-                        else if (persen >= 70) {
-                            analysis = `Kinerja cukup baik. Anda mencapai KPI ${persen}% dari target 100%, masih ada ruang peningkatan.`;
-                        }
-                        else if (persen >= 50) {
-                            analysis = `Kinerja sedang. Baru mencapai KPI ${persen}% dari target 100%, perlu perbaikan.`;
-                        }
-                        else {
-                            analysis = `Kinerja rendah. Baru ${persen}% dari target 100%, perlu tindakan segera.`;
-                        }
-                        document.getElementById('kpiAnalysisKetepatan').innerText = analysis;
+                function loadChartOutstanding(year) {
 
-                        const hasData = total > 0;
+                    fetch(`/office/grafik/outstanding?year=${year}`)
+                        .then(res => res.json())
+                        .then(data => {
 
-                        if (!hasData) {
-                            document.getElementById('ketepatanWaktuEmpty').classList.remove('d-none');
-                            return;
-                        } else {
-                            document.getElementById('ketepatanWaktuEmpty').classList.add('d-none');
-                        }
+                            const ctx = document.getElementById('grafikOutstanding');
 
-                        chartInstanceKetepatan = new Chart(ctx, {
-                            type: 'pie',
-                            data: {
-                                labels: data.labels,
-                                datasets: [{
-                                    data: data.data,
-                                    backgroundColor: [
-                                        '#198754', // Hijau untuk Sesuai
-                                        '#dc3545'  // Merah untuk Tidak Sesuai
-                                    ]
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'bottom'
-                                    },
-                                    tooltip: {
-                                        callbacks: {
-                                            label: function(context) {
-                                                const value = context.raw;
-                                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                                const percent = ((value / total) * 100).toFixed(1);
+                            if (chartInstanceOutstanding) {
+                                chartInstanceOutstanding.destroy();
+                            }
 
-                                                return `${context.label}: ${percent}% (${value})`;
+                            const total = data.total || 0;
+                            const tepatWaktu = data.data[1] || 0;
+
+                            const progress = total === 0 ? 0 : Math.round((tepatWaktu / total) * 100);
+
+                            document.getElementById('kpiProgress').innerText = `${progress}%`;
+                            document.getElementById('totalClient').innerText = total;
+
+                            let analysis = "";
+
+                            if (progress >= 90) {
+                                analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${progress}% dari target 100%.`;
+                            }
+                            else if (progress >= 70) {
+                                analysis = `Kinerja cukup baik. Anda mencapai KPI ${progress}% dari target 100%, masih ada ruang peningkatan.`;
+                            }
+                            else if (progress >= 50) {
+                                analysis = `Kinerja sedang. Baru mencapai KPI ${progress}% dari target 100%, perlu perbaikan.`;
+                            }
+                            else {
+                                analysis = `Kinerja rendah. Baru ${progress}% dari target 100%, perlu tindakan segera.`;
+                            }
+
+                            document.getElementById('kpiAnalysis').innerText = analysis;
+
+                            const hasData = data.data.some(val => val > 0);
+
+                            if (!hasData || total === 0) {
+                                document.getElementById('outstandingEmpty').classList.remove('d-none');
+
+                                document.getElementById('lblBelumBayar').innerText = "0% (0)";
+                                document.getElementById('lblTepatWaktu').innerText = "0% (0)";
+                                document.getElementById('lblTerlambat').innerText = "0% (0)";
+                                return;
+                            } else {
+                                document.getElementById('outstandingEmpty').classList.add('d-none');
+                            }
+
+                            const belumBayarPercent = Math.round((data.data[0] / total) * 100);
+                            const tepatWaktuPercent = Math.round((data.data[1] / total) * 100);
+                            const terlambatPercent  = Math.round((data.data[2] / total) * 100);
+
+                            document.getElementById('lblBelumBayar').innerText =
+                                `${belumBayarPercent}% (${data.data[0]})`;
+
+                            document.getElementById('lblTepatWaktu').innerText =
+                                `${tepatWaktuPercent}% (${data.data[1]})`;
+
+                            document.getElementById('lblTerlambat').innerText =
+                                `${terlambatPercent}% (${data.data[2]})`;
+
+                            // CHART
+                            chartInstanceOutstanding = new Chart(ctx, {
+                                type: 'pie',
+                                data: {
+                                    labels: data.labels,
+                                    datasets: [{
+                                        data: data.data,
+                                        backgroundColor: [
+                                            '#dc3545',
+                                            '#198754',
+                                            '#fd7e14'
+                                        ]
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom'
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+
+                                                label: function(context) {
+
+                                                    const value = context.raw;
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    const percent = ((value / total) * 100).toFixed(1);
+
+                                                    return `${context.label}: ${percent}% (${value})`;
+                                                }
+
                                             }
                                         }
                                     }
                                 }
-                            }
+                            });
+
                         });
+                }
 
-                    })
-                    .catch(error => {
-                        console.error('Error loading chart:', error);
-                    });
-            }
+                loadChartOutstanding(new Date().getFullYear());
+
+                document.getElementById('filterTahun').addEventListener('change', function () {
+                    loadChartOutstanding(this.value);
+                });
+
+                let chartInstanceKetepatan;
+
+                function loadChartKetepatan(year) {
+
+                    fetch(`/office/grafik/ketepatan-waktu?year=${year}`)
+                        .then(res => res.json())
+                        .then(data => {
+
+                            const ctx = document.getElementById('grafikKetepatanWaktu');
+
+                            if (chartInstanceKetepatan) {
+                                chartInstanceKetepatan.destroy();
+                            }
+
+                            const total = data.data.reduce((acc, val) => acc + val, 0); 
+                            const sesuai = data.data[0] || 0; 
+                            const persen = data.persen || 0; 
+
+                            // Update elemen KPI
+                            document.getElementById('kpiProgressKetepatan').innerText = `${persen}%`;
+                            document.getElementById('totalDataKetepatan').innerText = total;
+                            document.getElementById('lblSesuaiKetepatan').innerText = `${sesuai}`;
+                            document.getElementById('lblTidakSesuaiKetepatan').innerText = `${data.data[1] || 0}`;
 
 
-            loadChartKetepatan(new Date().getFullYear());
+                            let analysis = "";
+                            if (persen >= 90) {
+                                analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${persen}% dari target 100%.`;
+                            }
+                            else if (persen >= 70) {
+                                analysis = `Kinerja cukup baik. Anda mencapai KPI ${persen}% dari target 100%, masih ada ruang peningkatan.`;
+                            }
+                            else if (persen >= 50) {
+                                analysis = `Kinerja sedang. Baru mencapai KPI ${persen}% dari target 100%, perlu perbaikan.`;
+                            }
+                            else {
+                                analysis = `Kinerja rendah. Baru ${persen}% dari target 100%, perlu tindakan segera.`;
+                            }
+                            document.getElementById('kpiAnalysisKetepatan').innerText = analysis;
 
-            document.getElementById('filterTahunKetepatan').addEventListener('change', function () {
-                loadChartKetepatan(this.value);
-            });
+                            const hasData = total > 0;
+
+                            if (!hasData) {
+                                document.getElementById('ketepatanWaktuEmpty').classList.remove('d-none');
+                                return;
+                            } else {
+                                document.getElementById('ketepatanWaktuEmpty').classList.add('d-none');
+                            }
+
+                            chartInstanceKetepatan = new Chart(ctx, {
+                                type: 'pie',
+                                data: {
+                                    labels: data.labels,
+                                    datasets: [{
+                                        data: data.data,
+                                        backgroundColor: [
+                                            '#198754', // Hijau untuk Sesuai
+                                            '#dc3545'  // Merah untuk Tidak Sesuai
+                                        ]
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom'
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const value = context.raw;
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    const percent = ((value / total) * 100).toFixed(1);
+
+                                                    return `${context.label}: ${percent}% (${value})`;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+
+                        })
+                        .catch(error => {
+                            console.error('Error loading chart:', error);
+                        });
+                }
+
+
+                loadChartKetepatan(new Date().getFullYear());
+
+                document.getElementById('filterTahunKetepatan').addEventListener('change', function () {
+                    loadChartKetepatan(this.value);
+                });
             
+            }
 
             // reset filter per tahun
             $('#filterMengajarPerTahun').change(function () {
@@ -2952,30 +3086,42 @@
             });
             // End Script Chart Feedback
 
-            // Format Rupiah
             function formatRupiah(angka) {
                 if (!angka) return '';
+
                 let number = angka.toString().replace(/\D/g, '');
+                if (number === '') return '';
+
                 return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             }
 
             function unformatRupiah(angka) {
-                return angka.toString().replace(/\D/g, '');
+                return (angka || '').toString().replace(/\D/g, '');
             }
 
-            // Format saat ngetik
-            $(document).on('keyup', '.format-rupiah', function() {
-                this.value = formatRupiah(this.value);
+            // Format saat ngetik (fix cursor & bug 5 digit)
+            $(document).on('input', '.format-rupiah', function(e) {
+                let cursorPos = this.selectionStart;
+                let value = this.value;
+
+                let raw = unformatRupiah(value);
+                let formatted = formatRupiah(raw);
+
+                this.value = formatted;
+
+                // Perbaiki posisi cursor
+                let diff = formatted.length - value.length;
+                this.setSelectionRange(cursorPos + diff, cursorPos + diff);
             });
 
-            // Hitung total (hidden)
+            // Hitung total
             function hitungTotal(jumlahEl, hargaEl, totalHidden) {
                 let jml = parseInt(unformatRupiah(jumlahEl.val())) || 0;
                 let hrg = parseInt(unformatRupiah(hargaEl.val())) || 0;
                 totalHidden.val(jml * hrg);
             }
 
-            // Sebelum submit → bersihkan format titik
+            // Bersihkan sebelum submit
             function bersihkanFormat(form) {
                 form.find('.format-rupiah').each(function() {
                     this.value = unformatRupiah(this.value);
@@ -2986,7 +3132,7 @@
                 bersihkanFormat($(this));
             });
 
-            // reset semua form yang tertutup
+            // Reset modal
             $(document).on('hidden.bs.modal', '.modal', function () {
                 const form = $(this).find('form');
 
@@ -3026,9 +3172,9 @@
 
                         if (res.data.status === 'selesai' || res.data.status === 'telat') {
                             $('#modalEditTagihan select[name="status"]').attr('disabled', 'disabled');
+                        } else if (res.data.status === 'pending' || res.data.status === 'proses') {
+                            $('#modalEditTagihan select[name="status"]').attr('disabled', false);
                         }
-
-
 
                         // format rupiah jika ada function
                         $('.format-rupiah').trigger('keyup');
@@ -3066,7 +3212,7 @@
                         if (res.status === 'selesai' || res.status === 'terlambat' ) {
                             $('#modalEditAdministrasi select[name="status"]').attr("disabled", "disabled");
                         }
-
+                        
                         if(res.bukti_transfer){
                             $('#pathBuktiTransfer').html(
                                 `<a href="/storage/${res.bukti_transfer}" target="_blank">
@@ -3229,6 +3375,9 @@
                                         <small class="text-muted">${dayName} ${isWeekend ? '<i class="bx bx-sm bx-info-circle"></i>' : ''}</small>
                                     </div>
                                     <div class="dropdown">
+                                        <button class="btn btn-sm btn-light border-0 notifikasiLibur" data-id="${holiday.id}">
+                                            <i class="bx bx-bell"></i>
+                                        </button>
                                         <button class="btn btn-sm btn-light border-0 ${isDisabled ? 'disabled' : ''}" data-bs-toggle="dropdown" ${isDisabled ? 'disabled' : ''}>
                                             <i class="bx bx-dots-vertical-rounded"></i>
                                         </button>
@@ -3299,6 +3448,27 @@
                         });
                     });
 
+                    $(document).on('click', '.notifikasiLibur', function(e) {
+                        e.preventDefault();
+
+                        const id = $(this).data('id');
+
+                        $.ajax({
+                            url: `{{ route('notif.store') }}`,
+                            type: 'POST',
+                            data: {
+                                _token: $('meta[name="csrf-token"]').attr('content'),
+                                id: id
+                            },
+                            success: function(res) {
+                                 location.reload();
+                            },
+                            error: function(error) {
+                                console.log(error)
+                            },
+                        })
+                    });
+
                     calendar.render();
                     updateHolidayList();
                 },
@@ -3307,6 +3477,70 @@
                     $('#holiday-list').html('<p class="text-danger small">Gagal memuat data libur</p>');
                 }
             });
+
+            // Filter eksport administrasi
+            function resetAll() {
+                $('#eksportTahunanAdminis, #eksportBulananAdminis, #eksportQuartalAdminis')
+                    .prop('disabled', false);
+                $('input[name="start_date"], input[name="end_date"]')
+                    .prop('disabled', false);
+            }
+
+            function disablePeriode() {
+                $('#eksportTahunanAdminis, #eksportBulananAdminis, #eksportQuartalAdminis')
+                    .prop('disabled', true);
+            }
+
+            function disableTanggal() {
+                $('input[name="start_date"], input[name="end_date"]')
+                    .prop('disabled', true);
+            }
+
+            function handleFilter() {
+                let tahun = $('#eksportTahunanAdminis').val();
+                let bulan = $('#eksportBulananAdminis').val();
+                let quartal = $('#eksportQuartalAdminis').val();
+                let start = $('input[name="start_date"]').val();
+                let end = $('input[name="end_date"]').val();
+
+                resetAll();
+
+                if (start || end) {
+                    disablePeriode();
+                    return;
+                }
+
+                if (bulan && !tahun) {
+                    $('#eksportTahunanAdminis').val(new Date().getFullYear());
+                    tahun = $('#eksportTahunanAdminis').val();
+                }
+
+                if (quartal && !tahun) {
+                    $('#eksportTahunanAdminis').val(new Date().getFullYear());
+                    tahun = $('#eksportTahunanAdminis').val();
+                }
+
+                if (tahun && bulan) {
+                    $('#eksportQuartalAdminis').prop('disabled', true);
+                    disableTanggal();
+                }
+
+                if (tahun && quartal) {
+                    $('#eksportBulananAdminis').prop('disabled', true);
+                    disableTanggal();
+                }
+
+            }
+
+            $('#eksportTahunanAdminis, #eksportBulananAdminis, #eksportQuartalAdminis').on('change', function () {
+                handleFilter();
+            });
+
+            $('input[name="start_date"], input[name="end_date"]').on('change', function () {
+                handleFilter();
+            });
+
+            // end filter eksport administrasi
         });
     </script>
 @endsection

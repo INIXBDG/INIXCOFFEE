@@ -48,10 +48,13 @@
                                                 <div class="row">
                                                     <div class="col-md-12 col-sm-12 col-xs-12 d-flex my-2">
                                                         @can('RegistrasiForm RKM')
-                                                        <div class="col-md-5 col-sm-5 col-xs-5">
+                                                        <div class="col-md-3 col-sm-5 col-xs-5">
                                                             <a class="btn click-primary mx-1" href="{{ route('createRegistForm', $post->id) }}">Upload Registrasi Form</a>
                                                         </div>
                                                         @endcan
+                                                        <div class="col-md-2 col-sm-5 col-xs-5">
+                                                            <a class="btn click-primary mx-1" href="{{ route('detail.peluang', $post->peluang->id) }}" target="_blank">CRM</a>
+                                                        </div>
                                                         @if ($kode_karyawan == $post->sales_key || auth()->user()->jabatan == 'SPV Sales' || auth()->user()->jabatan == 'Customer Care')
                                                         @can('Edit RKM')
                                                         <a class="btn click-primary mx-1" href="{{ route('rkm.edit', $post->id) }}">

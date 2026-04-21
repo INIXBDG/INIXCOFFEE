@@ -8,6 +8,9 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Detail Administrasi Karyawan</h5>
         </div>
+         @if (session('success_administrasi'))
+            <div class="alert alert-success">{{ session('success_administrasi') }}</div>
+        @endif
 
         @if ($errors->any())
             <div class="alert alert-danger mt-3 mx-3">
@@ -28,7 +31,7 @@
 
             <form method="POST" action="{{ route('administrasi.karyawan.update', $administrasi->id) }}" enctype="multipart/form-data">
                 @csrf
-                @method('PUT')
+                @method('POST')
 
                 <div class="row g-3"> 
 
@@ -70,14 +73,14 @@
                     </div>
 
                     <div class="col-6">
-                        <label class="form-label text-uppercase">Catatan</label>
-                        <textarea name="catatan" class="form-control" rows="3">{{ $administrasi->catatan }}</textarea>
+                        <label class="form-label text-uppercase">Keterangan</label>
+                        <textarea name="keterangan" class="form-control" rows="3">{{ $administrasi->keterangan }}</textarea>
                     </div>
 
                 </div>
 
                 <div class="mt-4 d-flex justify-content-end gap-2">
-                    <a href="{{ url()->previous() }}" class="btn btn-secondary">Kembali</a>
+                    <a href="{{ route('administrasi.karyawan') }}" class="btn btn-secondary">Kembali</a>
                     <button type="submit" class="btn btn-primary">Simpan</button>
                 </div>
 

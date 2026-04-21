@@ -326,7 +326,7 @@
                                         </div>
                                     </div>
                                     <div class="col-12 col-md-4">
-                                        <label class="form-label small">Bukti (Max 2MB)</label>
+                                        <label class="form-label small">Bukti</label>
                                         <input type="file" name="biaya[${idx}][bukti]" class="form-control"
                                             accept="image/*" required>
                                     </div>
@@ -344,6 +344,27 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary">Ajukan Reimburst</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalInvoice" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formInvoice">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Invoice</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="invoice_pengajuan_id">
+                        <input type="file" name="invoice" class="form-control" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary">Upload</button>
                     </div>
                 </form>
             </div>
@@ -455,6 +476,7 @@
                     items.forEach((d, idx) => {
                         const showAction = idx === 0;
                         const showBukti = idx === 0;
+                        const isSelesai = (d.pengajuan_barang?.tracking?.tracking || '').toLowerCase().includes('selesai');
 
                         const row = `
                         <tr>
@@ -462,26 +484,31 @@
                             <td>${d.tipe ?? '-'}</td>
                             <td class="text-end">${currencyFormat.format(Number(d.harga) || 0)}</td>
                             ${showBukti ? `<td rowspan="${rowspan}" class="text-center">
-                                                            <button class="btn btn-secondary btn-sm lihat-bukti" data-images='${JSON.stringify(images)}'>
-                                                                <i class="fas fa-image"></i> Lihat
-                                                            </button>
-                                                        </td>` : ''}
+                                                                    <button class="btn btn-secondary btn-sm lihat-bukti" data-images='${JSON.stringify(images)}'>
+                                                                        <i class="fas fa-image"></i> Lihat
+                                                                    </button>
+                                                                </td>` : ''}
                             <td>${d.pengajuan_barang?.tracking?.tracking ?? d.status ?? 'Menunggu'}</td>
                             ${showAction ? `
-                                                        <td rowspan="${rowspan}">${dateFormat(d.created_at)}</td>
-                                                        <td rowspan="${rowspan}" class="text-center" style="font-size: 20px">
-                                                            <div class="btn-group btn-group-sm" role="group">
-                                                                <button class="btn btn-info btn-detail" data-pickup="${pickup}">
-                                                                    <i class="fas fa-info-circle"></i> Detail
-                                                                </button>
-                                                                <button class="btn btn-primary btn-edit" data-pickup="${pickup}">
-                                                                    <i class="fas fa-edit"></i> Edit
-                                                                </button>
-                                                                <button class="btn btn-danger btn-delete" data-pickup="${pickup}">
-                                                                    <i class="fas fa-trash"></i> Hapus
-                                                                </button>
-                                                            </div>
-                                                        </td>` : ''}
+                                                                <td rowspan="${rowspan}">${dateFormat(d.created_at)}</td>
+                                                                <td rowspan="${rowspan}" class="text-center" style="font-size: 20px">
+                                                                    <div class="btn-group btn-group-sm" role="group">
+                                                                        <button class="btn btn-info btn-detail" data-pickup="${pickup}">
+                                                                            <i class="fas fa-info-circle"></i> Detail
+                                                                        </button>
+                                                                        <button class="btn btn-primary btn-edit" data-pickup="${pickup}">
+                                                                            <i class="fas fa-edit"></i> Edit
+                                                                        </button>
+                                                                        <button class="btn btn-danger btn-delete" data-pickup="${pickup}">
+                                                                            <i class="fas fa-trash"></i> Hapus
+                                                                        </button>
+                                                                        ${isSelesai ? `
+                                                                        <button class="btn btn-warning btn-upload-invoice" data-id="${d.id_pengajuan_barang}">
+                                                                            <i class="fas fa-file-upload"></i> invoice
+                                                                        </button>
+                                                                        ` : ''}
+                                                                    </div>
+                                                                </td>` : ''}
                         </tr>`;
                         tbody.append(row);
                     });
@@ -538,6 +565,35 @@
                 formatRupiah(this);
             });
         }
+
+        $(document).on('click', '.btn-upload-invoice', function() {
+            const id = $(this).data('id');
+            $('#invoice_pengajuan_id').val(id);
+            new bootstrap.Modal(document.getElementById('modalInvoice')).show();
+        });
+
+        $('#formInvoice').submit(function(e) {
+            e.preventDefault();
+
+            const id = $('#invoice_pengajuan_id').val();
+            const formData = new FormData(this);
+
+            $.ajax({
+                url: `/office/biaya-transportasi/upload-invoice/${id}`,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function() {
+                    Swal.fire('Sukses', 'Invoice berhasil diupload', 'success');
+                    $('#modalInvoice').modal('hide');
+                    loadData();
+                },
+                error: function(xhr) {
+                    Swal.fire('Gagal', xhr.responseJSON?.message || 'Error', 'error');
+                }
+            });
+        });
 
         function addEditItem() {
             const idx = $('.edit-item-row').length;

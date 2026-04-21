@@ -64,32 +64,53 @@ class PickupDriverReportExport implements FromCollection, WithHeadings, WithMapp
         return [['LAPORAN KOORDINASI DRIVER & BIAYA TRANSPORTASI'], ["Periode: {$periodeStart} s/d {$periodeEnd}"], ["Diexport pada: {$exportedAt}"], [], ['No', 'Tanggal Koordinasi', 'Driver', 'Pembuat', 'Kendaraan', 'Tipe Perjalanan', 'Budget', 'Total Biaya', 'Sisa Budget', 'Kilometer Awal', 'Kilometer Akhir', 'Status', 'Detail Rute', 'Waktu Kepulangan', 'Tracking Terakhir']];
     }
 
+    protected $runningBudget = [];
+
     public function map($pickup): array
     {
+        $kendaraan = $pickup->kendaraan ?? 'UNKNOWN';
+
+        $startOfWeek = Carbon::parse($pickup->created_at)->startOfWeek();
+        $weekKey = $kendaraan . '_' . $startOfWeek->format('Y-m-d');
+
+        if (!isset($this->runningBudget[$weekKey])) {
+            $this->runningBudget[$weekKey] = 1000000;
+        }
+
         $totalBiaya = $pickup->biayaTransportasi->sum('harga');
-        $sisaBudget = $pickup->budget ? $pickup->budget - $totalBiaya : null;
 
-        $detailRute = $pickup->detailPickupDriver
-            ->map(function ($detail) {
-                $tanggal = $detail->tanggal_keberangkatan ?? '';
-                $waktu = $detail->waktu_keberangkatan ?? '';
-                return "{$detail->tipe}: {$detail->lokasi} ({$tanggal} {$waktu})";
-            })
-            ->implode("\n");
+        if ($pickup->tipe_perjalanan === 'Operasional Kantor') {
+            $budgetAwal = $this->runningBudget[$weekKey];
+            $this->runningBudget[$weekKey] -= $totalBiaya;
+            $sisaBudget = $this->runningBudget[$weekKey];
+        } else {
+            $budgetAwal = null;
+            $sisaBudget = null;
+        }
 
-        $trackingTerakhir = $pickup->Tracking->sortByDesc('created_at')->first();
+        $detailRute = $pickup->detailPickupDriver->map(fn($d) => "{$d->tipe}: {$d->lokasi}")->implode("\n");
 
-        $statusText = match ($pickup->status_apply) {
-            0 => 'Menunggu',
-            1 => 'Diterima',
-            2 => 'Selesai',
-            default => 'Unknown',
-        };
-
-        $createdAt = $pickup->created_at ? Carbon::parse($pickup->created_at)->format('d M Y') : '-';
-        $waktuKepulangan = $pickup->waktu_kepulangan ? Carbon::parse($pickup->waktu_kepulangan)->format('d M Y H:i') : '-';
-
-        return ['', $createdAt, $pickup->karyawan?->nama_lengkap ?? '-', $pickup->pembuat?->karyawan?->nama_lengkap ?? ($pickup->pembuat?->username ?? '-'), $pickup->kendaraan ?? '-', $pickup->tipe_perjalanan ?? '-', $pickup->budget ? 'Rp ' . number_format($pickup->budget, 0, ',', '.') : '-', 'Rp ' . number_format($totalBiaya, 0, ',', '.'), $sisaBudget !== null ? 'Rp ' . number_format($sisaBudget, 0, ',', '.') : '-', $pickup->KM_awal ?? '-', $pickup->KM_akhir ?? '-', $statusText, $detailRute, $waktuKepulangan, $trackingTerakhir?->status ?? '-'];
+        return [
+            '',
+            Carbon::parse($pickup->created_at)->format('d M Y'),
+            $pickup->karyawan?->nama_lengkap ?? '-',
+            $pickup->pembuat?->karyawan?->nama_lengkap ?? '-',
+            $kendaraan,
+            $pickup->tipe_perjalanan ?? '-',
+            $budgetAwal ? 'Rp ' . number_format($budgetAwal, 0, ',', '.') : '-',
+            'Rp ' . number_format($totalBiaya, 0, ',', '.'),
+            $sisaBudget !== null ? 'Rp ' . number_format($sisaBudget, 0, ',', '.') : '-',
+            $pickup->KM_awal ?? '-',
+            $pickup->KM_akhir ?? '-',
+            match ($pickup->status_apply) {
+                0 => 'Menunggu',
+                1 => 'Diterima',
+                2 => 'Selesai',
+            },
+            $detailRute,
+            $pickup->waktu_kepulangan ? Carbon::parse($pickup->waktu_kepulangan)->format('d M Y H:i') : '-',
+            $pickup->Tracking->sortByDesc('created_at')->first()?->status ?? '-',
+        ];
     }
 
     public function styles(Worksheet $sheet)

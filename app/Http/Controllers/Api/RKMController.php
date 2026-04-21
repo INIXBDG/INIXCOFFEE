@@ -152,6 +152,7 @@ class RKMController extends Controller
                 $rows = RKM::with(['materi', 'peluang', 'exam', 'exam.approvalexam'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
+                    ->where('r_k_m_s.status', '0')
                     ->whereDoesntHave('peluang', function ($query) {
                         $query->where('tentatif', 1);
                     })->where(function ($query) {

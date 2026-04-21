@@ -6,34 +6,55 @@
     <div class="container-fluid py-4">
 
         <div class="modal fade" id="detailModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content shadow">
 
-                    <div class="modal-header">
-                        <h5 class="modal-title">Detail Vendor</h5>
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-semibold">Detail Vendor</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
-                    <div class="modal-body">
+                    <div class="modal-body pt-2">
 
-                        <div class="text-center mb-3">
-                            <img id="detailFoto" class="img-fluid rounded shadow-sm"
+                        <div id="fotoWrapper" class="text-center mb-3 d-none">
+                            <img id="detailFoto" class="img-fluid rounded-3 shadow-sm"
                                 style="max-height:250px; object-fit:cover;">
                         </div>
 
                         <h4 id="detailNama" class="fw-bold text-center mb-3"></h4>
 
-                        <div class="border rounded p-3"
+                        <div id="keteranganWrapper" class="border rounded-3 p-3 mb-3 bg-light"
                             style="white-space: pre-line; overflow-wrap: break-word; max-height:250px; overflow-y:auto;">
-                            <p id="detailKeterangan"></p>
+                            <p id="detailKeterangan" class="mb-0"></p>
                         </div>
 
-                        <div id="extraDetail" class="mt-3"></div>
+                        <div id="extraDetailWrapper" class="d-none">
+                            <div class="border rounded-3 p-3 bg-light">
+                                <div class="row g-2">
+
+                                    <div class="col-md-6" id="nohpWrapper">
+                                        <small class="text-muted">No HP</small>
+                                        <div class="fw-semibold" id="detailNohp"></div>
+                                    </div>
+
+                                    <div class="col-md-6" id="rekeningWrapper">
+                                        <small class="text-muted">No Rekening</small>
+                                        <div class="fw-semibold" id="detailRekening"></div>
+                                    </div>
+
+                                    <div class="col-12" id="alamatWrapper">
+                                        <small class="text-muted">Alamat</small>
+                                        <div class="fw-semibold" id="detailAlamat"></div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
 
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <div class="modal-footer border-0 pt-0">
+                        <button class="btn btn-secondary px-4" data-bs-dismiss="modal">Close</button>
                     </div>
 
                 </div>
@@ -58,11 +79,13 @@
                                 <label class="form-label">Nama</label>
                                 <input type="text" name="nama" class="form-control">
                             </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Foto</label>
-                                <input type="file" name="foto" class="form-control">
-                            </div>
+                            @if ($itemValue == 'bengkel')
+                            @else
+                                <div class="mb-3">
+                                    <label class="form-label">Foto</label>
+                                    <input type="file" name="foto" class="form-control">
+                                </div>
+                            @endif
 
                             <div class="mb-3">
                                 <label class="form-label">Keterangan</label>
@@ -176,9 +199,13 @@
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
                             Tambah Vendor {{ $itemValue }}
                         </button>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModalAjukan">
-                            Ajukan {{ $itemValue }}
-                        </button>
+                        @if ($itemValue == 'bengkel')
+                        @else
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModalAjukan">
+                                Ajukan {{ $itemValue }}
+                            </button>
+                        @endif
+
                     </div>
                     <span class="badge bg-primary-subtle text-primary">{{ $data->total() }} Data</span>
                 </div>
@@ -191,7 +218,10 @@
                             <tr>
                                 <th>No</th>
                                 <th>Nama Vendor</th>
-                                <th>Foto</th>
+                                @if ($itemValue == 'bengkel')
+                                @else
+                                    <th>Foto</th>
+                                @endif
                                 <th>Keterangan</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center pe-4">Action</th>
@@ -201,7 +231,7 @@
                         <tbody>
 
                             @forelse($data as $index => $item)
-                                <tr class="vendor-row" data-nama="{{ $item->nama }}"
+                                <tr class="vendor-row" data-nama="{{ $item->nama }}" data-type="{{ $itemValue }}"
                                     data-foto="{{ $item->foto ? asset('storage/' . $item->foto) : '' }}"
                                     data-keterangan="{{ $item->keterangan }}" data-nohp="{{ $item->no_hp ?? '' }}"
                                     data-rekening="{{ $item->no_rekening ?? '' }}"
@@ -212,15 +242,17 @@
                                     <td>
                                         <span class="truncate-text">{{ Str::limit($item->nama, 20) }}</span>
                                     </td>
-
-                                    <td>
-                                        @if ($item->foto)
-                                            <img src="{{ asset('storage/' . $item->foto) }}"
-                                                style="width:50px; height:50px; object-fit:cover; border-radius:8px;">
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
+                                    @if ($itemValue == 'bengkel')
+                                    @else
+                                        <td>
+                                            @if ($item->foto)
+                                                <img src="{{ asset('storage/' . $item->foto) }}"
+                                                    style="width:50px; height:50px; object-fit:cover; border-radius:8px;">
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                    @endif
 
                                     <td>
                                         <span class="truncate-text">{{ Str::limit($item->keterangan, 25, '...') }}</span>
@@ -304,40 +336,62 @@
                 let rekening = this.dataset.rekening;
                 let alamat = this.dataset.alamat;
 
-                document.getElementById('detailNama').innerText = nama;
+                let type = this.dataset.type;
 
-                document.getElementById('detailFoto').src = foto ? foto :
-                    'https://via.placeholder.com/300x200?text=No+Image';
+                let fotoWrapper = document.getElementById('fotoWrapper');
+                let fotoEl = document.getElementById('detailFoto');
 
-                document.getElementById('detailKeterangan').innerText = keterangan;
+                if (fotoWrapper && fotoEl) {
 
-                let extraHtml = '';
+                    if (type === 'bengkel' || !foto) {
+                        fotoWrapper.classList.add('d-none');
+                    } else {
+                        fotoEl.src = foto;
+                        fotoWrapper.classList.remove('d-none');
+                    }
 
-                if (nohp || rekening || alamat) {
-                    extraHtml = `
-                        <hr>
-                        <div style="border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:#f9fafb;">
-                            
-                            <div style="margin-bottom:8px;">
-                                <strong>No HP:</strong><br>
-                                <span>${nohp || '-'}</span>
-                            </div>
-
-                            <div style="margin-bottom:8px;">
-                                <strong>No Rekening:</strong><br>
-                                <span>${rekening || '-'}</span>
-                            </div>
-
-                            <div>
-                                <strong>Alamat:</strong><br>
-                                <span>${alamat || '-'}</span>
-                            </div>
-
-                        </div>
-                    `;
                 }
 
-                document.getElementById('extraDetail').innerHTML = extraHtml;
+                document.getElementById('detailNama').innerText = nama || '-';
+                document.getElementById('detailKeterangan').innerText = keterangan || '-';
+                
+                let extraWrapper = document.getElementById('extraDetailWrapper');
+
+                let nohpWrap = document.getElementById('nohpWrapper');
+                let rekeningWrap = document.getElementById('rekeningWrapper');
+                let alamatWrap = document.getElementById('alamatWrapper');
+
+                let hasExtra = false;
+
+                if (nohp) {
+                    document.getElementById('detailNohp').innerText = nohp;
+                    nohpWrap.classList.remove('d-none');
+                    hasExtra = true;
+                } else {
+                    nohpWrap.classList.add('d-none');
+                }
+
+                if (rekening) {
+                    document.getElementById('detailRekening').innerText = rekening;
+                    rekeningWrap.classList.remove('d-none');
+                    hasExtra = true;
+                } else {
+                    rekeningWrap.classList.add('d-none');
+                }
+
+                if (alamat) {
+                    document.getElementById('detailAlamat').innerText = alamat;
+                    alamatWrap.classList.remove('d-none');
+                    hasExtra = true;
+                } else {
+                    alamatWrap.classList.add('d-none');
+                }
+
+                if (hasExtra) {
+                    extraWrapper.classList.remove('d-none');
+                } else {
+                    extraWrapper.classList.add('d-none');
+                }
 
                 var modal = new bootstrap.Modal(document.getElementById('detailModal'));
                 modal.show();

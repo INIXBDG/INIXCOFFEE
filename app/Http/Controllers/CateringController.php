@@ -115,10 +115,6 @@ class CateringController extends Controller
             $tanggalPembelian = Carbon::parse($request->tanggal_pembelian);
             $startOfWeek = Carbon::now()->startOfWeek();
             $endOfWeek = Carbon::now()->endOfWeek();
-
-            if ($tanggalPembelian->between($startOfWeek, $endOfWeek) || $tanggalPembelian->isPast()) {
-                return response()->json(['error' => 'Tanggal pembelian tidak boleh di minggu ini atau di hari yang telah dilewati'], 422);
-            }
         }
 
         $catering = Catering::create([

@@ -627,4 +627,23 @@ class netSalesController extends Controller
 
         return $pdf->download("RKM_{$id}.pdf");
     }
+
+    public function detailNetSales($id)
+    {
+        $data = perhitunganNetSales::with([
+            'rkm.materi',
+            'rkm.perusahaan',
+            'karyawan'
+        ])->findOrFail($id);
+
+        $total = $data->transportasi + $data->akomodasi_peserta + $data->akomodasi_tim +
+                $data->fresh_money + $data->entertaint + $data->souvenir +
+                $data->cashback + $data->sewa_laptop;
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'total' => $total
+        ]);
+    }
 }

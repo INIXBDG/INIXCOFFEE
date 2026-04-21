@@ -26,10 +26,12 @@
                                     <th style="text-align:center;">No</th>
                                     <th style="text-align: center;">Materi</th>
                                     <th style="text-align: center;">Client</th>
+                                    <th style="text-align: center;">Event</th>
                                     <th style="text-align: center;">Harga (Rp)</th>
                                     <th style="text-align: center;">Net Sales</th>
                                     <th style="text-align: center;">Pax</th>
                                     <th style="text-align: center;">Periode</th>
+                                    <th style="text-align: center;">Exam</th>
                                     <th style="text-align: center;">Tahap</th>
                                     <th style="text-align: center;">Sales</th>
                                     <th style="text-align: center;">Prospek Terbuat</th>
@@ -236,6 +238,15 @@
                         }
                     },
                     {
+                        data: null,
+                        render: function(data, type, row) {
+                            if (row.rkm?.event == null) {
+                                return '-';
+                            }
+                        return row.rkm.event.charAt(0).toUpperCase() + row.rkm.event.slice(1);
+                        }
+                    },
+                    {
                         data: 'harga',
                         render: function(data, type, row) {
                             return data ? 'Rp ' + parseInt(data).toLocaleString('id-ID') : 'Rp 0';
@@ -254,6 +265,15 @@
                             const startDate = data.periode_mulai ? moment(data.periode_mulai).format('DD-MM-YYYY') : '';
                             const endDate = data.periode_selesai ? moment(data.periode_selesai).format('DD-MM-YYYY') : '';
                             return startDate && endDate ? `${startDate} s/d ${endDate}` : 'Tentatif';
+                        }
+                    },
+                    {
+                        data: 'Exam',
+                        render: function(data, type, row) {
+                            if (row.rkm?.exam == null) {
+                                return '-';
+                            }
+                            return row.rkm.exam == 1 ? 'Ya' : 'Tidak';
                         }
                     },
                     {
