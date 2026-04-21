@@ -139,7 +139,7 @@
                         <td style="width:60%; vertical-align:top; padding-right:10px;">
                             <div class="customer-info-box">
                                 <strong>Bill To</strong><br>
-                                {{ $invoice->rkm->perusahaan->nama_perusahaan ?? 'Bank Indonesia' }}
+                                <b>{{$nama_perusahaan ?? '-'}}</b>
                             </div>
                         </td>
                         <td style="width:40%; vertical-align:top; text-align:center;">
@@ -202,9 +202,11 @@
                             <td style="border:none; padding: 2px 6px;"><strong>Tanggal</strong></td>
                             <td style="border:none; padding: 2px 6px;">:</td>
                             <td style="border:none; padding: 2px 6px;">
-                                {{ optional($invoice->rkm)->tanggal_awal ? \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y') : '-' }}
+                                {{ $tanggal_awal ? \Carbon\Carbon::parse($tanggal_awal)->translatedFormat('d F Y') : '-' }}
+                                {{-- {{ optional($invoice->rkm)->tanggal_awal ? \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y') : '-' }} --}}
                                 s/d
-                                {{ optional($invoice->rkm)->tanggal_akhir ? \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y') : '-' }}
+                                {{ $tanggal_akhir ? \Carbon\Carbon::parse($tanggal_akhir)->translatedFormat('d F Y') : '-' }}
+                                {{-- {{ optional($invoice->rkm)->tanggal_akhir ? \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y') : '-' }} --}}
                             </td>
                         </tr>
                         <tr>

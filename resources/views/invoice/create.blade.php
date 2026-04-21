@@ -110,7 +110,8 @@
                         <tr>
                             <td colspan="3">Perusahaan:</td>
                             <td colspan="2">
-                                <b>{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</b>
+                                <input type="text" class="form-control" name="perusahaan" value="{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}">
+                                {{-- <b>{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</b> --}}
                             </td>
                         </tr>
                         <tr>
