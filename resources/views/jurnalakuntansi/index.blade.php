@@ -12,6 +12,32 @@
             </div>
         </div>
     </div> --}}
+    <div class="modal fade" id="detailNetSalesModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Detail Net Sales</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailNetSalesContent">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="detailPengajuanModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Detail Pengajuan Barang</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailPengajuanContent">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal fade" id="editJurnalModal" tabindex="-1" aria-labelledby="editJurnalModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -33,6 +59,11 @@
                         <div class="mb-3">
                             <label for="edit_keterangan" class="form-label">Keterangan</label>
                             <textarea class="form-control" id="edit_keterangan" name="keterangan" rows="3" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="no_akun" class="form-label">No Akun</label>
+                            <input type="text" class="form-control" id="no_akun" name="no_akun">
                         </div>
                         
                         <div id="form-pengajuan-group" style="display: none;">
@@ -86,6 +117,11 @@
                             <label for="pettycash_keterangan" class="form-label">Keterangan</label>
                             <textarea class="form-control" id="pettycash_keterangan" name="keterangan" rows="3" placeholder="Contoh: Pembelian galon air minum" required></textarea>
                         </div>
+
+                        <div class="mb-3">
+                            <label for="no_akun" class="form-label">No Akun</label>
+                            <input type="text" class="form-control" id="no_akun" name="no_akun">
+                        </div>
                         
                         <div class="mb-3">
                             <label for="pettycash_tipe" class="form-label">Tipe Transaksi</label>
@@ -109,11 +145,90 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importExcelModalLabel">Import Data Jurnal (Excel)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="importExcelForm" enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="file_excel" class="form-label">Pilih File Excel (.xlsx, .xls, .csv)</label>
+                            <input class="form-control" type="file" id="file_excel" name="file" accept=".xlsx, .xls, .csv" required>
+                            <div class="form-text text-muted mt-2">
+                                <b>Format Kolom Wajib (Kiri ke Kanan):</b><br>
+                                1. No (Kosongkan untuk Auto-Generate)<br>
+                                2. Tanggal Transaksi<br>
+                                3. Keterangan<br>
+                                4. Cat. (No Akun)<br>
+                                5. Debit (Rp)<br>
+                                6. Kredit (Rp)<br>
+                                <i>*Baris pertama pada file akan diabaikan (sebagai Header).</i>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success" id="btn-submit-import">Mulai Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportModalLabel">Export Data Jurnal Akuntansi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('jurnalakuntansi.export') }}" method="GET" target="_blank">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="tipe_periode" class="form-label">Tipe Periode</label>
+                            <select class="form-select" id="tipe_periode" name="tipe_periode" required>
+                                <option value="harian">Per Hari</option>
+                                <option value="mingguan">Per Minggu</option>
+                                <option value="bulanan" selected>Per Bulan</option>
+                                <option value="triwulan">Per Triwulan</option>
+                                <option value="tahunan">Per Tahun</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tanggal_acuan" class="form-label">Tanggal Acuan</label>
+                            <input type="date" class="form-control" id="tanggal_acuan" name="tanggal_acuan" value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" required>
+                            <small class="text-muted">Sistem akan otomatis menghitung rentang awal dan akhir periode berdasarkan tanggal acuan ini.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="format_export" class="form-label">Format File</label>
+                            <select class="form-select" id="format_export" name="format_export" required>
+                                <option value="excel">Microsoft Excel (.xlsx)</option>
+                                <option value="pdf">Dokumen PDF (.pdf)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary" onclick="$('#exportModal').modal('hide');">Download Laporan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end mb-3 ">
                 <button type="button" class="btn click-primary" id="btn-tambah-pettycash">
                     + Tambah Kas Kecil
+                </button>
+                <button type="button" class="btn btn-success ms-2" id="btn-import-excel">
+                    Import Excel
+                </button>
+                <button type="button" class="btn btn-secondary ms-2" data-bs-toggle="modal" data-bs-target="#exportModal">
+                    <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export Laporan
                 </button>
             </div>
             <div class="card m-4">
@@ -141,8 +256,9 @@
                                 <thead>
                                     <tr>
                                         <th scope="col">No</th>
-                                        <th scope="col">Tanggal Transaksi</th>
+                                        <th scope="col">Tanggal</th>
                                         <th scope="col">Keterangan</th>
+                                        <th scope="col">Cat.</th>
                                         <th scope="col">Debit (Rp)</th>
                                         <th scope="col">Kredit (Rp)</th>
                                         <th scope="col">Aksi</th>
@@ -152,7 +268,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <th colspan="3" style="text-align:right">Total:</th>
+                                        <th colspan="4" style="text-align:right">Total:</th>
                                         <th id="total-debit">0</th>
                                         <th id="total-kredit">0</th>
                                         <th></th>
@@ -174,6 +290,29 @@
                                     {{-- <th scope="col">ID Pengajuan</th> --}}
                                     <th scope="col">Tanggal Pengajuan</th>
                                     <th scope="col">Nama Karyawan</th>
+                                    <th scope="col">Tipe</th>
+                                    <th scope="col">Total (Rp)</th>
+                                    <th scope="col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card m-4">
+                <div class="card-body">
+                    <h3 class="card-title text-center my-1 text-warning">{{ __('Net Sales Belum Dijurnal') }}</h3>
+                    <p class="text-center text-muted">Daftar Perhitungan Net Sales dengan status Selesai yang belum tercatat pada Jurnal Akuntansi.</p>
+                    <hr>
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="NSbelumjurnaltable" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Tanggal Pengajuan</th>
+                                    <th scope="col">Nama Materi</th>
+                                    <th scope="col">Nama Perusahaan</th>
                                     <th scope="col">Tipe</th>
                                     <th scope="col">Total (Rp)</th>
                                     <th scope="col">Aksi</th>
@@ -234,6 +373,22 @@
         font-size: 11.5px;
         color: #999;
     }
+
+    #NSbelumjurnaltable tbody tr {
+        cursor: pointer;
+    }
+
+    #NSbelumjurnaltable tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    #belumjurnaltable tbody tr {
+        cursor: pointer;
+    }
+
+    #belumjurnaltable tbody tr:hover {
+        background-color: #f5f5f5;
+    }
 </style>
 
 @push('js')
@@ -268,9 +423,9 @@
             },
             "columns": [
                 {
-                    "data": null,
+                    "data": "nomor_kk",
                     "render": function (data, type, row, meta) {
-                        return meta.row + meta.settings._iDisplayStart + 1;
+                        return data ? data : '-'; // Menampilkan '-' jika data lama belum ada nomor_kk nya
                     }
                 },
                 {
@@ -281,6 +436,7 @@
                     }
                 },
                 {"data": "keterangan"},
+                {"data": "no_akun"},
                 {
                     "data": "debit",
                     "render": function(data, type, row) {
@@ -314,7 +470,7 @@
 
                 // Kalkulasi total Debit dari seluruh data yang difilter
                 var debitTotal = api
-                    .column(3, { search: 'applied' })
+                    .column(4, { search: 'applied' })
                     .data()
                     .reduce(function (a, b) {
                         return intVal(a) + intVal(b);
@@ -322,15 +478,15 @@
 
                 // Kalkulasi total Kredit dari seluruh data yang difilter
                 var kreditTotal = api
-                    .column(4, { search: 'applied' })
+                    .column(5, { search: 'applied' })
                     .data()
                     .reduce(function (a, b) {
                         return intVal(a) + intVal(b);
                     }, 0);
 
                 // Menampilkan hasil kalkulasi pada elemen footer dengan fungsi formatRupiah
-                $(api.column(3).footer()).html(formatRupiah(debitTotal));
-                $(api.column(4).footer()).html(formatRupiah(kreditTotal));
+                $(api.column(4).footer()).html(formatRupiah(debitTotal));
+                $(api.column(5).footer()).html(formatRupiah(kreditTotal));
             }
         });
 
@@ -366,6 +522,76 @@
             ],
             order: [[0, 'desc']],
         columnDefs: [{ targets: [0], type: "date" }]
+        });
+
+        // Inisialisasi DataTables untuk Net Sales Belum Dijurnal
+        var tableBelumJurnalNS = $('#NSbelumjurnaltable').DataTable({
+            "ajax": {
+                "url": "{{ route('jurnalakuntansi.belumJurnalNetSales') }}",
+                "type": "GET"
+            },
+            "columns": [
+                {
+                    "data": "tanggal",
+                    "render": function(data) {
+                        var date = new Date(data);
+                        return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+                    }
+                },
+                { "data": "nama_materi" },
+                { "data": "nama_perusahaan" },
+                { "data": "tipe" },
+                {
+                    "data": "total",
+                    "render": function(data) {
+                        return formatRupiah(data);
+                    }
+                },
+                {
+                    "data": null,
+                    "render": function(data, type, row) {
+                        return '<button class="btn btn-sm btn-success btn-create-jurnal-ns" data-id="' + row.id + '">Tambahkan ke Jurnal</button>';
+                    }
+                }
+            ],
+            order: [[0, 'desc']],
+            columnDefs: [{ targets: [0], type: "date" }]
+        });
+
+        // Event listener untuk tombol Create Jurnal (Net Sales)
+        $('#NSbelumjurnaltable tbody').on('click', '.btn-create-jurnal-ns', function() {
+            var idNetSales = $(this).data('id');
+            var url = "{{ url('/jurnalakuntansi/store-manual-netsales') }}/" + idNetSales;
+
+            if (confirm('Apakah Anda yakin ingin membuat jurnal akuntansi untuk ID Net Sales: ' + idNetSales + '?')) {
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    beforeSend: function() {
+                        $('#loadingModal').modal('show');
+                        $('#loadingModal').removeAttr('inert');
+                    },
+                    success: function(response) {
+                        $('#loadingModal').modal('hide');
+                        $('#loadingModal').attr('inert', true);
+                        if (response.success) {
+                            alert(response.message);
+                            tableBelumJurnalNS.ajax.reload(null, false);
+                            table.ajax.reload(null, false); // Reload tabel jurnal utama
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#loadingModal').modal('hide');
+                        $('#loadingModal').attr('inert', true);
+                        alert('Terjadi kesalahan sistem saat membuat jurnal Net Sales.');
+                    }
+                });
+            }
         });
 
         // Event listener untuk tombol Create Jurnal
@@ -550,6 +776,7 @@
                 }
             });
         });
+
         function formatRupiah(angka) {
             // Memastikan angka dikonversi menjadi integer untuk menghindari bug pada nilai desimal
             let parsedAngka = Math.round(parseFloat(angka));
@@ -567,6 +794,166 @@
 
             return rupiah;
         }
+
+        // Event listener untuk membuka Modal Import Excel
+        $('#btn-import-excel').click(function() {
+            $('#importExcelForm')[0].reset();
+            $('#importExcelModal').modal('show');
+        });
+
+        // Event listener untuk eksekusi proses Import via AJAX
+        $('#btn-submit-import').click(function() {
+            var formElement = document.getElementById('importExcelForm');
+            var formData = new FormData(formElement);
+            var urlImport = "{{ route('jurnalakuntansi.importExcel') }}";
+
+            // Validasi file kosong
+            if ($('#file_excel').val() === '') {
+                alert('Pilih file Excel terlebih dahulu.');
+                return;
+            }
+
+            $.ajax({
+                url: urlImport,
+                type: 'POST',
+                data: formData,
+                contentType: false, // Wajib false untuk upload file
+                processData: false, // Wajib false untuk upload file
+                beforeSend: function() {
+                    $('#importExcelModal').modal('hide');
+                    $('#loadingModal').modal('show');
+                    $('#loadingModal').removeAttr('inert');
+                },
+                success: function(response) {
+                    $('#loadingModal').modal('hide');
+                    $('#loadingModal').attr('inert', true);
+                    
+                    if (response.success) {
+                        alert(response.message);
+                        table.ajax.reload(null, false); // Reload tabel tanpa reset pagination
+                    } else {
+                        alert('Kegagalan sistem saat impor data.');
+                    }
+                },
+                error: function(xhr) {
+                    $('#loadingModal').modal('hide');
+                    $('#loadingModal').attr('inert', true);
+                    
+                    var errorMsg = 'Terjadi kesalahan sistem saat mengimpor file.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    alert(errorMsg);
+                }
+            });
+        });
+
+        $('#NSbelumjurnaltable tbody').on('click', 'tr', function (e) {
+
+            // biar tombol tidak ikut trigger
+            if ($(e.target).closest('button').length) return;
+
+            var data = tableBelumJurnalNS.row(this).data();
+            var id = data.id;
+
+            $.ajax({
+                url: "/netsales/" + id + "/detail",
+                type: "GET",
+                success: function (res) {
+                    if (res.success) {
+                        let d = res.data;
+
+                        let html = `
+                            <table class="table table-bordered">
+                                <tr><th>Materi</th><td>${d.rkm?.materi?.nama_materi ?? '-'}</td></tr>
+                                <tr><th>Perusahaan</th><td>${d.rkm?.perusahaan?.nama_perusahaan ?? '-'}</td></tr>
+                                <tr><th>Transportasi</th><td>${formatRupiah(d.transportasi)}</td></tr>
+                                <tr><th>Akomodasi Peserta</th><td>${formatRupiah(d.akomodasi_peserta)}</td></tr>
+                                <tr><th>Akomodasi Tim</th><td>${formatRupiah(d.akomodasi_tim)}</td></tr>
+                                <tr><th>Fresh Money</th><td>${formatRupiah(d.fresh_money)}</td></tr>
+                                <tr><th>Entertain</th><td>${formatRupiah(d.entertaint)}</td></tr>
+                                <tr><th>Souvenir</th><td>${formatRupiah(d.souvenir)}</td></tr>
+                                <tr><th>Cashback</th><td>${formatRupiah(d.cashback)}</td></tr>
+                                <tr><th>Sewa Laptop</th><td>${formatRupiah(d.sewa_laptop)}</td></tr>
+                                <tr class="table-primary">
+                                    <th>Total</th>
+                                    <th>${formatRupiah(res.total)}</th>
+                                </tr>
+                            </table>
+                        `;
+
+                        $('#detailNetSalesContent').html(html);
+                        $('#detailNetSalesModal').modal('show');
+                    }
+                }
+            });
+        });
+    
+        $('#belumjurnaltable tbody').on('click', 'tr', function (e) {
+
+            // biar tombol "Tambahkan ke Jurnal" tidak ikut trigger
+            if ($(e.target).closest('button').length) return;
+
+            var data = tableBelumJurnal.row(this).data();
+            var details = data.detail_pengajuan_barang;
+
+            let html = `
+                <table class="table table-bordered">
+                    <tr>
+                        <th>Nama Karyawan</th>
+                        <td>${data.nama_karyawan}</td>
+                    </tr>
+                    <tr>
+                        <th>Tipe</th>
+                        <td>${data.tipe}</td>
+                    </tr>
+                </table>
+
+                <h6 class="mt-3">Detail Barang</h6>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nama Barang</th>
+                            <th>Qty</th>
+                            <th>Harga</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            let total = 0;
+
+            details.forEach(function(item){
+                let qty = parseInt(item.qty);
+                let harga = parseFloat(item.harga.split('.')[0]);
+                let subtotal = qty * harga;
+                total += subtotal;
+
+                html += `
+                    <tr>
+                        <td>${item.nama_barang ?? '-'}</td>
+                        <td>${qty}</td>
+                        <td>${formatRupiah(harga)}</td>
+                        <td>${formatRupiah(subtotal)}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-primary">
+                            <th colspan="3">Total</th>
+                            <th>${formatRupiah(total)}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+
+            $('#detailPengajuanContent').html(html);
+            $('#detailPengajuanModal').modal('show');
+        });
     });
 </script>
 @endpush

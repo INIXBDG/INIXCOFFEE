@@ -43,8 +43,9 @@
                             $jabatan = auth()->user()->jabatan;
                         @endphp
                         @if ($jabatan == 'Finance & Accounting')
-                            <div class="row my-2">
-                                <select name="status" id="status" class="form-select">
+                            <div class="row my-0 mx-0">
+                                    <label for="status" class="form-label">Status</label>
+                                <select name="status" id="status" class="form-select" onchange="toggleFinanceInputs(this.value)">
                                     <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
                                     <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
                                     <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
@@ -54,6 +55,12 @@
                                     <option value="Selesai">Selesai</option>
                                     {{-- <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option> --}}
                                 </select>
+                            </div>
+                            <div id="finance_extra_inputs" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="no_kk" class="form-label">No KK</label>
+                                    <input type="text" class="form-control" name="no_kk" id="no_kk">
+                                </div>
                             </div>
                         @endif
                 </div>
@@ -78,12 +85,15 @@
                     <img src="{{ asset('icon/plus.svg') }}" width="30px"> Ajukan Barang
                 </a>
             @endif
-
+			@if ($jabatan == 'Finance & Accounting')
+                <a href="/jurnalakuntansi" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Barang">
+                    <img src="{{ asset('icon/archive-white.svg') }}" width="30px"> Jurnal Akutansi
+                </a>
+			@endif
             </div>
             @php
                 $jabatan = auth()->user()->jabatan;
             @endphp
-            @if ($jabatan == 'Finance & Accounting')
             <div class="card" style="width: 100%">
                 <div class="card-body d-flex justify-content-center">
                     <div class="col-md-4 mx-1">
@@ -117,90 +127,101 @@
                     </div>
 
                     <div class="col-md-4 mx-1">
-                        <button type="submit" onclick="tableFinance()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+                        @if ($jabatan == 'Finance & Accounting')
+                            <button type="submit" onclick="tableFinance()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+                            <button type="button" onclick="exportAllToExcel()" class="btn btn-success" style="margin-top: 37px">
+                                <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export All to Excel
+                            </button>
+                        @else
+                        <button type="submit" onclick="tableKaryawan()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+                        @endif
                     </div>
                 </div>
             </div>
-            <div class="card m-4">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Hold)') }}</h3>
-                    <table class="table table-striped" id="databelum">
-                        <thead>
-                            <tr>
-                                <th scope="col">Tanggal Pengajuan</th>
-                                <th scope="col">Nama Karyawan</th>
-                                <th scope="col">Divisi</th>
-                                <th scope="col">Jabatan</th>
-                                <th scope="col">Tipe</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Nama Barang</th>
-                                <th scope="col">Total Item</th>
-                                <th scope="col">Total Pengajuan</th>
-                                <th scope="col">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            @if ($jabatan == 'Finance & Accounting')
+                <div class="card m-4">
+                    <div class="card-body table-responsive">
+                        <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Hold)') }}</h3>
+                        <table class="table table-striped" id="databelum">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Tanggal Pengajuan</th>
+                                    <th scope="col">Nama Karyawan</th>
+                                    <th scope="col">Divisi</th>
+                                    <th scope="col">Jabatan</th>
+                                    <th scope="col">Tipe</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Nama Barang</th>
+                                    <th scope="col">Total Item</th>
+                                    <th scope="col">Total Pengajuan</th>
+                                    <th scope="col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
 
-                        </tbody>
-                        <tfoot>
+                            </tbody>
+                            <tfoot>
 
-                        </tfoot>
-                    </table>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <div class="card m-4">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Has Invoice)') }}</h3>
-                    <table class="table table-striped" id="datasudahinv">
-                        <thead>
-                            <tr>
-                                <th scope="col">Tanggal Pengajuan</th>
-                                <th scope="col">Nama Karyawan</th>
-                                <th scope="col">Divisi</th>
-                                <th scope="col">Jabatan</th>
-                                <th scope="col">Tipe</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Nama Barang</th>
-                                <th scope="col">Total Item</th>
-                                <th scope="col">Total Pengajuan</th>
-                                <th scope="col">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div class="card m-4">
+                    <div class="card-body table-responsive">
+                        <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Has Invoice)') }}</h3>
+                        <table class="table table-striped" id="datasudahinv">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Tanggal Pengajuan</th>
+                                    <th scope="col">Nama Karyawan</th>
+                                    <th scope="col">Divisi</th>
+                                    <th scope="col">Jabatan</th>
+                                    <th scope="col">Tipe</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Nama Barang</th>
+                                    <th scope="col">Total Item</th>
+                                    <th scope="col">Total Pengajuan</th>
+                                    <th scope="col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
 
-                        </tbody>
-                        <tfoot>
+                            </tbody>
+                            <tfoot>
 
-                        </tfoot>
-                    </table>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <div class="card m-4">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Selesai)') }}</h3>
-                    <table class="table table-striped" id="datasudah">
-                        <thead>
-                                <th scope="col">Tanggal Pengajuan</th>
-                                <th scope="col">Nama Karyawan</th>
-                                <th scope="col">Divisi</th>
-                                <th scope="col">Jabatan</th>
-                                <th scope="col">Tipe</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Nama Barang</th>
-                                <th scope="col">Total Item</th>
-                                <th scope="col">Total Pengajuan</th>
-                                <th scope="col">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div class="card m-4">
+                    <div class="card-body table-responsive">
+                        <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Selesai)') }}</h3>
+                        <table class="table table-striped" id="datasudah">
+                            <thead>
+                                    <th scope="col">Tanggal Pengajuan</th>
+                                    <th scope="col">Nama Karyawan</th>
+                                    <th scope="col">Divisi</th>
+                                    <th scope="col">Jabatan</th>
+                                    <th scope="col">Tipe</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Nama Barang</th>
+                                    <th scope="col">Total Item</th>
+                                    <th scope="col">Total Pengajuan</th>
+                                    <th scope="col">No KK</th>
+                                    <th scope="col">Tanggal Pencairan</th>
+                                    <th scope="col">SLA</th>
+                                    <th scope="col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
 
-                        </tbody>
-                        <tfoot>
+                            </tbody>
+                            <tfoot>
 
-                        </tfoot>
-                    </table>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
-            </div>
             @else
             <div class="card m-4">
                 <div class="card-body table-responsive">
@@ -280,26 +301,30 @@
     .dataTables_processing {
     font-size: 16px;
     font-weight: bold;
-}
+    }
 
-.dataTables_processing:before {
-    content: "Mohon tunggu...";
-    font-weight: bold;
-    display: block;
-}
-.dataTables_processing {
-    visibility: hidden;
-}
-.dataTables_processing:before {
-    visibility: visible;
-}
+    .dataTables_processing:before {
+        content: "Mohon tunggu...";
+        font-weight: bold;
+        display: block;
+    }
+    .dataTables_processing {
+        visibility: hidden;
+    }
+    .dataTables_processing:before {
+        visibility: visible;
+    }
 
     }
 </style>
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
@@ -326,10 +351,15 @@
     }else{
         tableKaryawan();
     }
+
+    
 });
+
+
 
 function tableKaryawan() {
     var tahun = $('#tahun').val();
+    var bulan = $('#bulan').val();
 
     // Jika DataTable sudah ada → destroy dulu
     if ($.fn.DataTable.isDataTable('#barangTable')) {
@@ -345,7 +375,7 @@ function tableKaryawan() {
         autoWidth: false,
         ajax: {
             url: "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}"
-                .replace(':month', 'All')
+                .replace(':month', bulan)
                 .replace(':year', tahun),
             type: "GET",
             beforeSend: function () {
@@ -544,17 +574,17 @@ function tableFinance(){
         success: function(data) {
             $('#loadingModal').modal('hide');
             console.log(data.data);
-var dataSelesai = data.data.filter(item =>
-    item.tracking.tracking === 'Selesai' || item.tracking.tracking.includes("tolak")
-);
+            var dataSelesai = data.data.filter(item =>
+                item.tracking.tracking === 'Selesai' || item.tracking.tracking.includes("tolak")
+            );
 
-var dataHasInvoice = data.data.filter(item =>
-    item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
-);
+            var dataHasInvoice = data.data.filter(item =>
+                item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
+            );
 
-var dataBelum = data.data.filter(item =>
-    !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
-);
+            var dataBelum = data.data.filter(item =>
+                !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
+            );
 
             let totalItemsSelesai = dataSelesai.length;
             let totalHargaSelesai = 0;
@@ -579,6 +609,18 @@ var dataBelum = data.data.filter(item =>
             // Initialize datasudah table
             var datasudahTable = $('#datasudah').DataTable({
                 data: dataSelesai,
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Export Excel',
+                        className: 'btn btn-success btn-sm mb-3',
+                        title: 'Data_Pengajuan_Selesai_' + bulan + '_' + tahun,
+                        exportOptions: {
+                            columns: ':visible:not(:last-child)'
+                        }
+                    }
+                ],
                 columns: [
                     {
                         "data": "created_at",
@@ -633,6 +675,35 @@ var dataBelum = data.data.filter(item =>
                         }
                     },
                     {
+                        "data": "no_kk",
+                        "render": function(data) { return data ? data : '-'; }
+                    },
+                    // KOLOM BARU: TANGGAL PENCAIRAN
+                    {
+                        "data": "tanggal_pencairan",
+                        "render": function(data) {
+                            return data ? moment(data).format('DD-MM-YYYY') : '-';
+                        }
+                    },
+                    // KOLOM BARU: SLA (LOGIKA HITUNG 7 HARI)
+                    {
+                        "data": null,
+                        "render": function(data, type, row) {
+                            if (row.tanggal_pencairan && row.tanggal_terima_finance) {
+                                let tglFinance = moment(row.tanggal_terima_finance);
+                                let tglCair = moment(row.tanggal_pencairan);
+                                let selisihHari = tglCair.diff(tglFinance, 'days');
+
+                                if (selisihHari <= 7) {
+                                    return `<span class="badge bg-success">Berhasil (${selisihHari} Hari)</span>`;
+                                } else {
+                                    return `<span class="badge bg-danger">Gagal (${selisihHari} Hari)</span>`;
+                                }
+                            }
+                            return '<span class="badge bg-secondary">Data Tidak Lengkap</span>';
+                        }
+                    },
+                    {
                         "data": null,
                         "render": function(data, type, row) {
                             var actions = "";
@@ -677,6 +748,18 @@ var dataBelum = data.data.filter(item =>
             // Initialize databelum table
             var databelumTable = $('#databelum').DataTable({
                 data: dataBelum,
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Export Excel',
+                        className: 'btn btn-success btn-sm mb-3',
+                        title: 'Data_Pengajuan_Hold_' + bulan + '_' + tahun,
+                        exportOptions: {
+                            columns: ':visible:not(:last-child)'
+                        }
+                    }
+                ],
                 "columns": [
                     {
                         "data": "created_at",
@@ -808,84 +891,93 @@ var dataBelum = data.data.filter(item =>
                 }
             });
             // ================= HAS INVOICE
-var datasudahinvTable = $('#datasudahinv').DataTable({
-    data: dataHasInvoice,
-    columns: [
-        {
-            "data": "created_at",
-            "render": function(data) {
-                moment.locale('id');
-                return moment(data).format('dddd, DD MMMM YYYY');
+            var datasudahinvTable = $('#datasudahinv').DataTable({
+                data: dataHasInvoice,
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Export Excel',
+                        className: 'btn btn-success btn-sm mb-3',
+                        title: 'Data_Pengajuan_HasInvoice_' + bulan + '_' + tahun,
+                        exportOptions: {
+                            columns: ':visible:not(:last-child)'
+                        }
+                    }
+                ],
+                columns: [
+                    {
+                        "data": "created_at",
+                        "render": function(data) {
+                            moment.locale('id');
+                            return moment(data).format('dddd, DD MMMM YYYY');
+                        }
+                    },
+                    {"data": "karyawan.nama_lengkap"},
+                    {"data": "karyawan.divisi"},
+                    {"data": "karyawan.jabatan"},
+                    {"data": "tipe"},
+                    {"data": "tracking.tracking"},
+                    {
+                        "data": "detail",
+                        "render": function (data) {
+                            if (data && Array.isArray(data)) {
+                                return data.map(item => item.nama_barang).join('<hr>');
+                            }
+                            return '-';
+                        }
+                    },
+                    {
+                        "data": "detail",
+                        "render": function (data) {
+                            if (data && Array.isArray(data)) {
+                                return data.map(item => item.qty).join('<hr>');
+                            }
+                            return '-';
+                        }
+                    },
+                    {
+                        "data": "detail",
+                        "render": function (data) {
+                            if (data && Array.isArray(data)) {
+                                const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+                                return new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(total);
+                            }
+                            return '-';
+                        }
+                    },
+                    {
+                        "data": null,
+            "render": function(data, type, row) {
+                let actions = `
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="/pengajuanbarang/${row.id}">
+                                <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
+                            </a>
+                            ${row.invoice ? `
+                            <a class="dropdown-item" href="/storage/${row.invoice}" target="_blank">
+                                <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
+                            </a>` : ``}
+                            <form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>
+                                </form>
+                        </div>
+                    </div>
+                `;
+                return actions;
             }
-        },
-        {"data": "karyawan.nama_lengkap"},
-        {"data": "karyawan.divisi"},
-        {"data": "karyawan.jabatan"},
-        {"data": "tipe"},
-        {"data": "tracking.tracking"},
-        {
-            "data": "detail",
-            "render": function (data) {
-                if (data && Array.isArray(data)) {
-                    return data.map(item => item.nama_barang).join('<hr>');
-                }
-                return '-';
-            }
-        },
-        {
-            "data": "detail",
-            "render": function (data) {
-                if (data && Array.isArray(data)) {
-                    return data.map(item => item.qty).join('<hr>');
-                }
-                return '-';
-            }
-        },
-        {
-            "data": "detail",
-            "render": function (data) {
-                if (data && Array.isArray(data)) {
-                    const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-                    return new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR'
-                    }).format(total);
-                }
-                return '-';
-            }
-        },
-        {
-            "data": null,
-"render": function(data, type, row) {
-    let actions = `
-        <div class="dropdown">
-            <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
-            <div class="dropdown-menu">
-                <a class="dropdown-item" href="/pengajuanbarang/${row.id}">
-                    <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
-                </a>
-                ${row.invoice ? `
-                <a class="dropdown-item" href="/storage/${row.invoice}" target="_blank">
-                    <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
-                </a>` : ``}
-				<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">
-					@csrf
-					@method('DELETE')
-					<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>
-					</form>
-			</div>
-        </div>
-    `;
-    return actions;
-}
 
-        }
-    ],
-    order: [[0, 'desc']]
-});
-
-
-            
+                    }
+                ],
+                order: [[0, 'desc']]
+            });
 
             // Set page for databelum table
             if (currentPageBelum > 0) {
@@ -895,10 +987,100 @@ var datasudahinvTable = $('#datasudahinv').DataTable({
     });
 }
 
+function exportAllToExcel() {
+    const tables = [
+        { id: '#databelum', title: 'DATA PENGAJUAN BARANG (HOLD)' },
+        { id: '#datasudahinv', title: 'DATA PENGAJUAN BARANG (HAS INVOICE)' },
+        { id: '#datasudah', title: 'DATA PENGAJUAN BARANG (SELESAI)' }
+    ];
+
+    let allData = [];
+    let bulan = $('#bulan option:selected').text();
+    let tahun = $('#tahun').val();
+
+    // Judul Utama File
+    allData.push([`LAPORAN REKAP PENGAJUAN BARANG - ${bulan} ${tahun}`]);
+    allData.push([]); // Baris Kosong
+
+    tables.forEach(table => {
+        if ($.fn.DataTable.isDataTable(table.id)) {
+            const dt = $(table.id).DataTable();
+            const data = dt.rows({ search: 'applied' }).data().toArray();
+
+            // 1. Tambahkan Judul Tabel sebagai Pemisah
+            allData.push([table.title]);
+
+            // 2. Tambahkan Header Kolom
+            allData.push([
+                "Tanggal Pengajuan",
+                "Nama Karyawan",
+                "Divisi",
+                "Tipe",
+                "Status",
+                "Nama Barang",
+                "Total Item",
+                "Total Pengajuan"
+            ]);
+
+            // 3. Tambahkan Data
+            if (data.length > 0) {
+                data.forEach(row => {
+                    let namaBarang = row.detail.map(d => d.nama_barang).join('; ');
+                    let totalQty = row.detail.reduce((sum, d) => sum + parseInt(d.qty), 0);
+                    let totalHarga = row.detail.reduce((sum, d) => sum + (d.harga * d.qty), 0);
+
+                    allData.push([
+                        moment(row.created_at).format('DD-MM-YYYY'),
+                        row.karyawan.nama_lengkap,
+                        row.karyawan.divisi,
+                        row.tipe,
+                        row.tracking.tracking,
+                        namaBarang,
+                        totalQty,
+                        totalHarga
+                    ]);
+                });
+            } else {
+                allData.push(["Tidak ada data"]);
+            }
+
+            // 4. Tambahkan Baris Kosong untuk Jeda Antar Tabel
+            allData.push([]);
+            allData.push([]);
+        }
+    });
+
+    // Proses Konversi ke CSV (agar kompatibel langsung dengan Excel)
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // \uFEFF untuk support karakter spesial/simbol
+    allData.forEach(rowArray => {
+        // Membersihkan data dari koma agar tidak merusak struktur CSV
+        let row = rowArray.map(val => {
+            if (typeof val === 'string') return `"${val.replace(/"/g, '""')}"`;
+            return val;
+        }).join(",");
+        csvContent += row + "\r\n";
+    });
+
+    // Eksekusi Download
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Rekap_Semua_Tabel_${bulan}_${tahun}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 function openApproveModal(id, jabatan) {
     var approveUrl = "{{ url('/pengajuanbarang') }}/" + id;
     $('#approveForm').attr('action', approveUrl);
     $('#approveModal').modal('show');
+
+    // trigger toggle saat modal dibuka
+    const status = document.getElementById('status');
+    if (status) {
+        toggleFinanceInputs(status.value);
+    }
 }
 
 function toggleAlasanManager(show) {
@@ -910,6 +1092,15 @@ function toggleAlasanManager(show) {
         document.getElementById('alasan_manager').value = '';
     }
 }
+
+function toggleFinanceInputs(status) {
+        const extraInputs = document.getElementById('finance_extra_inputs');
+        if (status !== 'Selesai') {
+            extraInputs.style.display = 'block';
+        } else {
+            extraInputs.style.display = 'none';
+        }
+    }
 
  $('#approveForm').on('submit', function(e) {
         e.preventDefault();
@@ -928,7 +1119,7 @@ function toggleAlasanManager(show) {
                 if ($.fn.DataTable.isDataTable('#barangTable')) {
                     $('#barangTable').DataTable().ajax.reload(null, false);
                 }
-                tableFinance(); 
+                tableFinance();
                 tableKaryawan();
 
                 if ('{{ auth()->user()->jabatan }}' == 'Finance & Accounting') {

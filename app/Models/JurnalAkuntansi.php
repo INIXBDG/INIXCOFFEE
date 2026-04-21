@@ -22,9 +22,12 @@ class JurnalAkuntansi extends Model
      * @var array
      */
     protected $fillable = [
+        'nomor_kk',
         'id_pengajuan_barang',
+        'id_perhitungan_net_sales',
         'tanggal_transaksi',
         'keterangan',
+        'no_akun',
         'debit',
         'kredit',
     ];
@@ -36,4 +39,11 @@ class JurnalAkuntansi extends Model
     {
         return $this->belongsTo(PengajuanBarang::class, 'id_pengajuan_barang', 'id');
     }
+
+    public function netSales()
+    {
+        return $this->belongsTo(perhitunganNetSales::class, 'id_perhitungan_net_sales', 'id');
+    }
+
+
 }

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 
 <head>
     <title>Kwitansi {{ $kwitansi->invoice->invoice_number }}</title>
@@ -180,50 +181,57 @@
         </tr>
         <tr>
             <td>tanggal</td>
-            <td> : {{ optional($kwitansi->invoice->rkm)->tanggal_awal ? \Carbon\Carbon::parse($kwitansi->invoice->rkm->tanggal_awal)->format('d F') : '-' }}
+            <td> :
+                {{ optional($kwitansi->invoice->rkm)->tanggal_awal ? \Carbon\Carbon::parse($kwitansi->invoice->rkm->tanggal_awal)->format('d F') : '-' }}
                 -
                 {{ optional($kwitansi->invoice->rkm)->tanggal_akhir ? \Carbon\Carbon::parse($kwitansi->invoice->rkm->tanggal_akhir)->format('d F Y') : '-' }}
             </td>
         </tr>
+        <tr>
+            <td>Sebanyak</td>
+            <td> : {{ $kwitansi->invoice->rkm->pax ?? 0 }} Peserta</td>
+        </tr>
     </table>
-
-
-
-<table style="width:100%; margin-top:40px; border-collapse:collapse; border: 1px solid #000;">
-    <tr>
-        <td style="width:100%; text-align:center; vertical-align:top; border: 1px solid #000;">
-            <p style="margin:0;">Pembayaran dapat dilakukan melalui transfer ke :</p>
-            <p style="margin:0; font-weight:bold;">{{ $kwitansi->invoice->bank_name ?? 'BANK MANDIRI KK BANDUNG CIHAMPELAS' }}</p>
-            <p style="margin:0; font-weight:bold;">No. Rek : {{ $kwitansi->invoice->account_number ?? '131-00-0734797-6' }}</p>
-
-            @php
-                $accountName = 'PT. INIXINDO AMIETE MANDIRI';
-                if (($kwitansi->invoice->bank_name ?? '') === 'BANK BCA KK BANDUNG ABDUL RIVAI') {
-                    $accountName = 'RAY GUTAFSON MANURUNG';
-                }
-            @endphp
-
-            <p style="margin:0; font-weight:bold;">a/n {{ $accountName }}</p>
-
-            @if($kwitansi->invoice->catatan_pembayaran)
-                <p style="margin:0;">{{ $kwitansi->invoice->catatan_pembayaran }}</p>
-            @else
-                <p style="margin:0;">Note : Mohon nomor invoice dan nama perusahaan dicantumkan</p>
-            @endif
-        </td>
-    </tr>
-</table>
 
     <table class="signature">
         <tr>
             <td style="width: 60%;"></td>
             <td style="width: 40%; text-align: center; vertical-align: top;">
-                <p style="margin: 0;">{{ $kota ?? 'Bandung, ' }} {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</p>
-                <div style="height: 60px;"></div>
+                <p style="margin: 0;">{{ $kota ?? 'Bandung, ' }} {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
+                </p>
+                <div style="height: 90px;"></div>
                 <p style="margin: 0;"><u>{{ $karyawan->nama_lengkap ?? 'Nama Penanggung Jawab Kanan' }}</u></p>
-                <small>{{ $karyawan->jabatan ?? 'Accounting Finance' }}</small>
+                <small>Accounting Finance</small>
+            </td>
+        </tr>
+    </table>
+
+    <table style="width:100%; margin-top:40px; border-collapse:collapse; border: 1px solid #000;">
+        <tr>
+            <td style="width:100%; text-align:center; vertical-align:top; border: 1px solid #000;">
+                <p style="margin:0;">Pembayaran dapat dilakukan melalui transfer ke :</p>
+                <p style="margin:0; font-weight:bold;">
+                    {{ $kwitansi->invoice->bank_name ?? 'BANK MANDIRI KK BANDUNG CIHAMPELAS' }}</p>
+                <p style="margin:0; font-weight:bold;">No. Rek :
+                    {{ $kwitansi->invoice->account_number ?? '131-00-0734797-6' }}</p>
+
+                @php
+                    $accountName = 'PT. INIXINDO AMIETE MANDIRI';
+                    if (($kwitansi->invoice->bank_name ?? '') === 'BANK BCA KK BANDUNG ABDUL RIVAI') {
+                        $accountName = 'RAY GUTAFSON MANURUNG';
+                    }
+                @endphp
+
+                <p style="margin:0; font-weight:bold;">a/n {{ $accountName }}</p>
+
+                @if ($kwitansi->invoice->catatan_pembayaran)
+                    <p style="margin:0;">{{ $kwitansi->invoice->catatan_pembayaran }}</p>
+                @else
+                    <p style="margin:0;">Note : Mohon nomor invoice dan nama perusahaan dicantumkan</p>
+                @endif
             </td>
         </tr>
     </table>
 </body>
+
 </html>

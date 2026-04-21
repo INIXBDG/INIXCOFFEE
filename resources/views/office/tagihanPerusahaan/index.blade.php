@@ -13,7 +13,7 @@
 
         <div class="row g-4 mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
                     <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
                         {{-- Table Tagihan --}}
                         <div class="table-responsive mb-4" style="max-height: 500px; overflow-y: auto;">
@@ -21,7 +21,7 @@
                                 <thead class="table-light sticky-top">
                                     <tr>
                                         <th class="border-0 ps-4"></th>
-                                        <th class="border-0" style="min-width: 160px;">Tanggal Perkiraan</th>
+                                        <th class="border-0" style="min-width: 160px;">Due Date</th>
                                         <th class="border-0" style="min-width: 150px;">Kegiatan</th>
                                         <th class="border-0" style="min-width: 100px;">Tipe</th>
                                         <th class="border-0" style="min-width: 200px;">Nominal</th>
@@ -36,8 +36,10 @@
                                         <tr class="border-bottom ">
                                             @if ($tagihan->status === 'selesai')
                                                 <td class="text-center ps-4"><input class="custom-check" type="checkbox" checked disabled></td>
+                                            @elseif ($tagihan->status === 'telat')
+                                                <td class="text-center ps-4"><input class="custom-fail" type="checkbox" checked disabled></td>
                                             @else
-                                                <td class="text-center ps-4"><input class="custom-check" type="checkbox" disabled></td>
+                                                <td class="text-center ps-4"><input class="check-blue" data-id="{{ $tagihan->id }}" type="checkbox" id="edit-tagihan"></td>
                                             @endif
                                             <td>
                                                 @if ($tagihan->tanggal_perkiraan_mulai === $tagihan->tanggal_perkiraan_selesai || $tagihan->tanggal_perkiraan_selesai === null )
@@ -53,13 +55,13 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="text-truncate" style="max-width: 150px;">
-                                                        {{ $tagihan->tagihanPerusahaan->kegiatan }}
+                                                        {{ $tagihan->tagihanPerusahaan->kegiatan ?? $tagihan->kegiatan }}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div class="text-truncate" style="max-width: 150px;">
-                                                    {{ $tagihan->tagihanPerusahaan->tipe ?? '-' }} 
+                                                    {{ $tagihan->tagihanPerusahaan->tipe ?? $tagihan->kegiatan }} 
                                                 </div>
                                             </td>
                                             <td>
@@ -155,6 +157,9 @@
                                     @endforelse
                                 </tbody>
                             </table>
+                            <div class="mb-0 d-flex justify-content-center">
+                                {{ $trackingTagihanPerusahaans->links() }}
+                            </div>
                         </div>
                     </div>
                 </div>

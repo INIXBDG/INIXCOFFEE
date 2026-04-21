@@ -58,7 +58,7 @@
                                     onsubmit="return confirm('Yakin ingin menghapus peluang ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                                    <button type="submit" class="btn btn-sm btn-danger" @if($peluang->tahap === 'merah') disabled @endif>Hapus</button>
                                 </form>
                             </div>
                         </div>
@@ -66,6 +66,9 @@
                         <div class="card-body">
                             <dl class="row">
                                 <input type="text" hidden disabled value="{{ $peluang->id_contact }}" name="id_contact">
+                                <dt class="col-sm-4">ID RKM</dt>
+                                <dd class="col-sm-8">{{ $peluang->id_rkm ?? '-' }}</dd>
+
                                 <dt class="col-sm-4">Materi</dt>
                                 <dd class="col-sm-8">{{ $peluang->materiRelation->nama_materi ?? '-' }}</dd>
 
@@ -80,6 +83,31 @@
 
                                 <dt class="col-sm-4">Jumlah Peserta (Pax)</dt>
                                 <dd class="col-sm-8">{{ $peluang->pax }}</dd>
+
+                                <dt class="col-sm-4">Exam</dt>
+                                <dd class="col-sm-8">
+                                    {{ optional($peluang->rkm)->exam == 1 ? 'Ya' : 'Tidak' }}
+                                </dd>
+
+                                <dt class="col-sm-4">Authorize</dt>
+                                <dd class="col-sm-8">
+                                    {{ optional($peluang->rkm)->authorize == 1 ? 'Ya' : 'Tidak' }}
+                                </dd>
+
+                                <dt class="col-sm-4">Event</dt>
+                                <dd class="col-sm-8">
+                                    {{ optional($peluang->rkm)->event ?? '-' }}
+                                </dd>
+
+                                <dt class="col-sm-4">Metode Kelas</dt>
+                                <dd class="col-sm-8">
+                                    {{ optional($peluang->rkm)->metode_kelas ?? '-' }}
+                                </dd>
+
+                                <dt class="col-sm-4">Ruang</dt>
+                                <dd class="col-sm-8">
+                                    {{ optional($peluang->rkm)->ruang ?? '-' }}
+                                </dd>
 
                                 @if ($peluang->tentatif == true)
                                     <dt class="col-sm-4">Status</dt>
@@ -135,33 +163,25 @@
                                     </li>
 
                                     <div class="d-flex gap-2 flex-wrap mb-3">
-                                        {{-- Hanya tampil kalau biru sudah ada & belum merah --}}
-                                        @if (!$peluang->merah)
-                                            <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}" target="_blank"
-                                                class="btn btn-sm btn-info">
-                                                <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
-                                            </a>
-
-                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                                data-bs-target="#uploadPdfModal">
-                                                <i class="bi bi-upload"></i> Upload PDF
-                                            </button>
-                                        @endif
-
                                         @if ($regis)
                                             <a href="{{ asset('storage/' . $regis->path) }}" target="_blank"
                                                 class="btn btn-sm btn-success">
                                                 <i class="bi bi-file-earmark-pdf"></i> Lihat Regis Form
                                             </a>
+                                            @endif
                                             <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}" target="_blank"
                                                 class="btn btn-sm btn-info">
                                                 <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
                                             </a>
                                             <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                                 data-bs-target="#uploadPdfModal">
-                                                <i class="bi bi-upload"></i> Edit PDF
+                                                <i class="bi bi-upload"></i>
+                                                @if ($regis)
+                                                    Edit PDF
+                                                @else
+                                                    Upload PDF                                                
+                                                @endif
                                             </button>
-                                        @endif
                                     </div>
                                 @endif
 
@@ -225,7 +245,7 @@
                     <h5 class="card-title mb-0">Aktivitas Terkait</h5>
                 </div>
                 <div class="card-body">
-                    @if ($aktivitass->isEmpty())
+                    @if ($peluang->aktivitas->isEmpty())
                         <p class="text-muted">Belum ada aktivitas yang tercatat.</p>
                     @else
                         <div class="table-responsive">
@@ -235,14 +255,13 @@
                                         <th scope="col" class="px-3 py-2 text-center">ID Sales</th>
                                         <th scope="col" class="px-3 py-2">Contact (PIC)</th>
                                         <th scope="col" class="px-3 py-2">Aktivitas</th>
-                                        <th scope="col" class="px-3 py-2">Subject</th>
                                         <th scope="col" class="px-3 py-2">Deskripsi</th>
                                         <th scope="col" class="px-3 py-2">Waktu Aktivitas</th>
                                         <th scope="col" class="px-3 py-2 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($aktivitass as $item)
+                                    @foreach ($peluang->aktivitas as $item)
                                         <tr>
                                             <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
                                             <td class="px-3 py-2">
@@ -251,11 +270,14 @@
                                             <td class="px-3 py-2">
                                                 @if ($item->aktivitas === 'Incharge')
                                                     Incharge Inhouse
+                                                @elseif ($item->aktivitas === 'Form_Keluar')
+                                                    Regis Form Keluar
+                                                @elseif ($item->aktivitas === 'Form_Masuk')
+                                                    Regis Form Masuk
                                                 @else
                                                     {{ $item->aktivitas }}
                                                 @endif
                                             </td>
-                                            <td class="px-3 py-2">{{ $item->subject }}</td>
                                             <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
                                             <td class="px-3 py-2">
                                                 {{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}
@@ -458,14 +480,86 @@
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="metode_kelas">Metode Kelas</label>
+                                <select class="form-select @error('metode_kelas') is-invalid @enderror"
+                                    name="metode_kelas" required autocomplete="metode_kelas">
+
+                                    <option value="Inhouse Bandung"
+                                        {{ old('metode_kelas', $peluang->rkm?->metode_kelas) == 'Inhouse Bandung' ? 'selected' : '' }}>
+                                        Inhouse Bandung
+                                    </option>
+
+                                    <option value="Inhouse Luar Bandung"
+                                        {{ old('metode_kelas', $peluang->rkm?->metode_kelas) == 'Inhouse Luar Bandung' ? 'selected' : '' }}>
+                                        Inhouse Luar Bandung
+                                    </option>
+
+                                    <option value="Offline"
+                                        {{ old('metode_kelas', $peluang->rkm?->metode_kelas) == 'Offline' ? 'selected' : '' }}>
+                                        Offline
+                                    </option>
+
+                                    <option value="Virtual"
+                                        {{ old('metode_kelas', $peluang->rkm?->metode_kelas) == 'Virtual' ? 'selected' : '' }}>
+                                        Virtual
+                                    </option>
+                                </select>
+                                <div class="invalid-feedback">Pilih metode kelas.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="event">Event</label>
+                                <select class="form-select @error('event') is-invalid @enderror"
+                                    name="event" required autocomplete="event">
+
+                                    <option value="Kelas"
+                                        {{ old('event', $peluang->rkm?->event) == 'Kelas' ? 'selected' : '' }}>
+                                        Kelas
+                                    </option>
+
+                                    <option value="Workshop"
+                                        {{ old('event', $peluang->rkm?->event) == 'Workshop' ? 'selected' : '' }}>
+                                        Workshop
+                                    </option>
+
+                                    <option value="Webinar"
+                                        {{ old('event', $peluang->rkm?->event) == 'Webinar' ? 'selected' : '' }}>
+                                        Webinar
+                                    </option>
+
+                                    <option value="Narasumber"
+                                        {{ old('event', $peluang->rkm?->event) == 'Narasumber' ? 'selected' : '' }}>
+                                        Narasumber
+                                    </option>
+                                </select>
+                                <div class="invalid-feedback">Pilih event.</div>
+                            </div>
 
                             <input type="hidden" name="tentatif" value="0">
                             <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" role="switch" id="tentatifSwitch"
-                                    name="tentatif" value="1" {{ old('tentatif', $peluang->tentatif) ? 'checked' : '' }}>
+                                    name="tentatif" value="1"
+                                    {{ old('tentatif', $peluang->tentatif) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="tentatifSwitch">Tentatif</label>
                             </div>
 
+                            <input type="hidden" name="exam" value="0">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="examToggle"
+                                    name="exam" value="1"
+                                    {{ old('exam', $peluang->rkm?->exam ?? 0) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="examToggle">Exam</label>
+                            </div>
+
+                            <input type="hidden" name="authorize" value="0">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="authorizeToggle"
+                                    name="authorize" value="1"
+                                    {{ old('authorize', $peluang->rkm?->authorize ?? 0) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="authorizeToggle">Authorize</label>
+                            </div>
+                            
                             <!-- Related Activities -->
                             <div class="mb-3">
                                 <h6 class="fw-bold">Aktivitas Terkait</h6>

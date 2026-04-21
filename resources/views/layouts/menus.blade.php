@@ -1036,7 +1036,6 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Absensi</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    <!-- Tombol X -->
                 </div>
                 <div class="modal-body d-flex flex-column align-items-center justify-content-center">
                     <div id="camera"
@@ -1168,13 +1167,6 @@
     <main class="container-fluid" style="height: 92vh" id="bgsvg">
         {{-- {{auth()->user()->hashids}} --}}
         <div class="tab-content" id="pills-tabContent">
-            @if (auth()->user()->jabatan === "HRD" || auth()->user()->jabatan === "Customer Care" || auth()->user()->jabatan === "Driver")
-            <div id="subscribe-floating">
-                <button id="toggle-subscribe-btn" onclick="toggleSubscription()">
-                    Aktifkan Notifikasi
-                </button>
-            </div>
-            @endif
             <div class="tab-pane fade" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
                 <div class="row justify-content-between">
                     <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">
@@ -2233,6 +2225,24 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <img src="{{ asset('icon/feather.svg') }}"
+                                                                                class="img-responsive" width="30px">
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="/pengajuanklaimmodul"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title"> Klaim Modul
+                                                                                </h5>
+                                                                            </a>
+                                                                            <p class="card-text">Klaim pembuatan/pengajuan modul.</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         @endcan
                                                         @can('View Rekomendasi Peserta')
                                                             <div class="col-sm-6 mt-2">
@@ -2452,6 +2462,76 @@
                                         </div>
                                     </div>
                                 @endcan
+                                {{-- @can('Fitur Project') --}}
+                                    <div class="row">
+                                        <div class="col-md-12 mt-1">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h5 class="text-center card-title">Project</h5>
+                                                    <div class="row">
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/layout.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="/projects/administrasi"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Administrasi
+                                                                            </h5>
+                                                                        </a>
+                                                                        <p class="card-text">Fitur Administrasi Projek yang akan dilakukan.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/calendar.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="/projects/kanban"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Kanban
+                                                                            </h5>
+                                                                        </a>
+                                                                        <p class="card-text">Kanban Teknis untuk Project.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/layout.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="/projects/handovers" class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Handovers
+                                                                            </h5>
+                                                                        </a>
+                                                                        <p class="card-text">Manajemen handover project.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {{-- @endcan --}}
 
                             </div>
                         </div>
@@ -2560,7 +2640,7 @@
                                                         width="30px">
                                                 </div>
                                                 <div class="col-md-10" style="margin-left: 10px">
-                                                    <a href="https://inixindo.sentry.io/issues/"
+                                                    <a href="https://webinix.sentry.io/issues/"
                                                         class="link stretched-link text-decoration-none">
                                                         <h5 class="card-title">Sentry Dashboard</h5>
                                                     </a>
@@ -3019,37 +3099,37 @@
             };
 
 
-            loadUptimePercentage();
+            // loadUptimePercentage();
 
-            function loadUptimePercentage() {
-                const $content = $('#uptime-content');
-                const $loading = $('#uptime-loading');
+            // function loadUptimePercentage() {
+            //     const $content = $('#uptime-content');
+            //     const $loading = $('#uptime-loading');
 
-                $loading.removeClass('d-none');
-                $content.addClass('d-none');
+            //     $loading.removeClass('d-none');
+            //     $content.addClass('d-none');
 
-                $.ajax({
-                    url: "/activity-log/data",
-                    method: "GET",
-                    dataType: "json",
-                    success: function(response) {
-                        if (!response || typeof response !== 'object') {
-                            showError("Respons dari server tidak valid.");
-                            return;
-                        }
+            //     $.ajax({
+            //         url: "/activity-log/data",
+            //         method: "GET",
+            //         dataType: "json",
+            //         success: function(response) {
+            //             if (!response || typeof response !== 'object') {
+            //                 showError("Respons dari server tidak valid.");
+            //                 return;
+            //             }
 
-                        processService('coffee', response[services.coffee] || null);
+            //             processService('coffee', response[services.coffee] || null);
 
-                        processService('latte', response[services.latte] || null);
+            //             processService('latte', response[services.latte] || null);
 
-                        $loading.addClass('d-none');
-                        $content.removeClass('d-none');
-                    },
-                    error: function(xhr) {
-                        showError(`Koneksi gagal: Error ${xhr.status}`);
-                    }
-                });
-            }
+            //             $loading.addClass('d-none');
+            //             $content.removeClass('d-none');
+            //         },
+            //         error: function(xhr) {
+            //             showError(`Koneksi gagal: Error ${xhr.status}`);
+            //         }
+            //     });
+            // }
 
             function processService(type, data) {
                 // Prefix ID untuk elemen (coffee atau latte)

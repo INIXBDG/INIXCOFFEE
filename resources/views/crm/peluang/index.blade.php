@@ -26,10 +26,12 @@
                                     <th style="text-align:center;">No</th>
                                     <th style="text-align: center;">Materi</th>
                                     <th style="text-align: center;">Client</th>
+                                    <th style="text-align: center;">Event</th>
                                     <th style="text-align: center;">Harga (Rp)</th>
                                     <th style="text-align: center;">Net Sales</th>
                                     <th style="text-align: center;">Pax</th>
                                     <th style="text-align: center;">Periode</th>
+                                    <th style="text-align: center;">Exam</th>
                                     <th style="text-align: center;">Tahap</th>
                                     <th style="text-align: center;">Sales</th>
                                     <th style="text-align: center;">Prospek Terbuat</th>
@@ -236,6 +238,15 @@
                         }
                     },
                     {
+                        data: null,
+                        render: function(data, type, row) {
+                            if (row.rkm?.event == null) {
+                                return '-';
+                            }
+                        return row.rkm.event.charAt(0).toUpperCase() + row.rkm.event.slice(1);
+                        }
+                    },
+                    {
                         data: 'harga',
                         render: function(data, type, row) {
                             return data ? 'Rp ' + parseInt(data).toLocaleString('id-ID') : 'Rp 0';
@@ -257,6 +268,15 @@
                         }
                     },
                     {
+                        data: 'Exam',
+                        render: function(data, type, row) {
+                            if (row.rkm?.exam == null) {
+                                return '-';
+                            }
+                            return row.rkm.exam == 1 ? 'Ya' : 'Tidak';
+                        }
+                    },
+                    {
                         data: 'tahap',
                         render: function(data, type, row) {
                             return data ? data.charAt(0).toUpperCase() + data.slice(1) : '-';
@@ -269,27 +289,32 @@
                             return data ? moment(data).format('DD-MM-YYYY') : '-';
                         }
                     },
-                    { data: 'id', render: function(id, type, data) {
-                        const rkm = data.rkm_formatted;
-                        const isLost = data.tahap?.toLowerCase() === 'lost';
-                        let rkmButton = '';
+                    {
+                        data: 'id',
+                        render: function(id, type, data) {
+                            const rkm = data.rkm_formatted;
+                            const isLost = data.tahap?.toLowerCase() === 'lost';
+                            const isMerah = data.tahap === 'merah';
 
-                        if (isLost || !rkm) {
-                            rkmButton = `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`;
-                        } else {
-                            rkmButton = `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+                            let rkmButton = '';
+                            let lostDisabled = isMerah ? 'disabled' : '';
+
+                            if (isLost || !rkm) {
+                                rkmButton = `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`;
+                            } else {
+                                rkmButton = `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+                            }
+
+                            return `
+                                <div class="d-flex flex-column gap-2" style="min-width: 80px;">
+                                    <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
+                                    ${rkmButton}
+                                    <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100" ${lostDisabled}>LOST</button>
+                                </div>
+                            `;
                         }
-
-                        return `
-                            <div class="d-flex flex-column gap-2" style="min-width: 80px;">
-                                <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
-                                ${rkmButton}
-                                <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100">Hapus</button>
-                            </div>
-                        `;
-                    }}
+                    }
                 ],
-                order: [[7, 'desc']]
             });
 
             // 🔹 Callback untuk nomor urut tetap mengikuti tampilan
@@ -424,7 +449,7 @@
             if (!confirm("Yakin ingin menghapus peluang ini?")) return;
 
             fetch(`/crm/peluang/delete/${id}`, {
-                    method: 'DELETE',
+                    method: 'put',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         'Accept': 'application/json',
@@ -435,16 +460,16 @@
                     if (response.ok) {
                         return response.json(); // Parse JSON response
                     } else {
-                        throw new Error('Gagal menghapus data.');
+                        throw new Error('Gagal mengubah status.');
                     }
                 })
                 .then(data => {
-                    alert(data.message || 'Peluang berhasil dihapus.'); // Show success message
+                    alert(data.message || 'Peluang berhasil diubah statusnya.'); // Show success message
                     $('#peluangTable').DataTable().ajax.reload(); // Refresh DataTable
                 })
                 .catch(error => {
                     console.error("Error:", error);
-                    alert(error.message || 'Terjadi kesalahan saat menghapus data.');
+                    alert(error.message || 'Terjadi kesalahan saat mengubah status data.');
                 });
         }
 

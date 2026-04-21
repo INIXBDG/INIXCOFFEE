@@ -27,13 +27,17 @@
             min-width: 180px;
         }
 
-        /* Pastikan modal berada di atas semua elemen (termasuk sidebar & navbar) */
         .modal {
             z-index: 1070 !important;
         }
 
         .modal-backdrop {
             z-index: 1060 !important;
+        }
+
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
         }
 
         .form-select,
@@ -62,7 +66,6 @@
             background-image: none !important;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 767.98px) {
             .modal-dialog {
                 margin: 0.5rem;
@@ -115,17 +118,73 @@
         }
     </style>
 
-    <!-- BUTTON AJUKAN -->
     <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4">
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalTambah">
             <i class="fas fa-plus me-1"></i> Ajukan Biaya
         </button>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalExportFilter">
+            <i class="fas fa-file-export me-1"></i> Export
+        </button>
+
+        {{-- Modal Filter Export --}}
+        <div class="modal fade" id="modalExportFilter" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Filter Export</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="formExportFilter">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal Mulai</label>
+                                <input type="date" name="start_date" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal Akhir</label>
+                                <input type="date" name="end_date" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Tipe Biaya</label>
+                                <select name="tipe" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="BBM">BBM</option>
+                                    <option value="TOL">TOL</option>
+                                    <option value="Parkir">Parkir</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                    <option value="Budget Lebih">Budget Lebih</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="Menunggu">Menunggu</option>
+                                    <option value="Diajukan dan Sedang Ditinjau">Diajukan dan Sedang Ditinjau</option>
+                                    <option value="Disetujui">Disetujui</option>
+                                    <option value="Ditolak">Ditolak</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-primary" onclick="exportData('excel')">
+                                <i class="fas fa-file-excel me-1"></i> Export Excel
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="exportData('pdf')">
+                                <i class="fas fa-file-pdf me-1"></i> Export PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="container-fluid px-0 px-md-3">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 glass-force">
             <div
-                class="card-header bg-white d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 py-3">
+                class="card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 py-3">
                 <h5 class="mb-0 fw-semibold">Biaya Transportasi Driver</h5>
                 <span id="dataCountBadge" class="badge bg-primary rounded-pill px-3 py-2">0 data</span>
             </div>
@@ -232,10 +291,11 @@
                             <label class="form-label fw-bold">Pilih Koordinasi Pickup</label>
                             <select name="id_pickup_driver" class="form-select" required>
                                 <option value="">-- Pilih Pickup --</option>
+                                <option value="999999999">Diluar Koordinasi Driver</option>
                                 @foreach ($dataPickup ?? [] as $pickup)
                                     <option value="{{ $pickup->id }}">
-                                        {{ $pickup->karyawan->nama_lengkap }} -
-                                        {{ $pickup->detailPickupDriver->first()->lokasi ?? '-' }}
+                                        {{ $pickup->karyawan->nama_lengkap ?? ($pickup->driver_name ?? '-') }} -
+                                        {{ $pickup->detailPickupDriver->first()->lokasi ?? ($pickup->lokasi ?? '-') }}
                                     </option>
                                 @endforeach
                             </select>
@@ -253,6 +313,8 @@
                                             <option value="BBM">BBM</option>
                                             <option value="TOL">TOL</option>
                                             <option value="Parkir">Parkir</option>
+                                            <option value="Lainnya">Lainnya</option>
+                                            <option value="Budget Lebih">Budget Lebih</option>
                                         </select>
                                     </div>
                                     <div class="col-12 col-md-4">
@@ -264,7 +326,7 @@
                                         </div>
                                     </div>
                                     <div class="col-12 col-md-4">
-                                        <label class="form-label small">Bukti (Max 2MB)</label>
+                                        <label class="form-label small">Bukti</label>
                                         <input type="file" name="biaya[${idx}][bukti]" class="form-control"
                                             accept="image/*" required>
                                     </div>
@@ -288,6 +350,27 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalInvoice" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formInvoice">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Invoice</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="invoice_pengajuan_id">
+                        <input type="file" name="invoice" class="form-control" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -302,59 +385,141 @@
             minimumFractionDigits: 0
         });
         const dateFormat = d => moment(d).format('DD MMM YYYY');
+        const OUTSIDE_OPS_ID = '999999999';
+
+        function isOutsideOps(pickupId) {
+            return String(pickupId) === OUTSIDE_OPS_ID;
+        }
+
+        function getKoordinasiLabel(item) {
+            if (isOutsideOps(item.id_pickup_driver)) {
+                return 'Diluar Koordinasi Driver';
+            }
+
+            let namaDriver = '-';
+            let lokasi = '-';
+
+            if (item.karyawan?.nama_lengkap) {
+                namaDriver = item.karyawan.nama_lengkap;
+            } else if (item.driver_name) {
+                namaDriver = item.driver_name;
+            } else if (item.pickupDriver?.karyawan?.nama_lengkap) {
+                namaDriver = item.pickupDriver.karyawan.nama_lengkap;
+            } else if (item.pickup_driver?.karyawan?.nama_lengkap) {
+                namaDriver = item.pickup_driver.karyawan.nama_lengkap;
+            } else if (item.pickupDriver?.nama_driver) {
+                namaDriver = item.pickupDriver.nama_driver;
+            } else if (item.pickup_driver?.nama_driver) {
+                namaDriver = item.pickup_driver.nama_driver;
+            }
+
+            if (item.detailPickupDriver?.[0]?.lokasi) {
+                lokasi = item.detailPickupDriver[0].lokasi;
+            } else if (item.detail_pickup_driver?.[0]?.lokasi) {
+                lokasi = item.detail_pickup_driver[0].lokasi;
+            } else if (item.lokasi) {
+                lokasi = item.lokasi;
+            } else if (item.pickupDriver?.detailPickupDriver?.[0]?.lokasi) {
+                lokasi = item.pickupDriver.detailPickupDriver[0].lokasi;
+            } else if (item.pickupDriver?.detail_pickup_driver?.[0]?.lokasi) {
+                lokasi = item.pickupDriver.detail_pickup_driver[0].lokasi;
+            } else if (item.pickup_driver?.detailPickupDriver?.[0]?.lokasi) {
+                lokasi = item.pickup_driver.detailPickupDriver[0].lokasi;
+            } else if (item.pickup_driver?.detail_pickup_driver?.[0]?.lokasi) {
+                lokasi = item.pickup_driver.detail_pickup_driver[0].lokasi;
+            }
+
+            return `${namaDriver} | ${lokasi}`;
+        }
+
+        function exportData(type) {
+            const formData = new FormData(document.getElementById('formExportFilter'));
+            const params = new URLSearchParams(formData);
+
+            let url = '';
+            if (type === 'excel') {
+                url = "{{ route('office.biayaTransportasi.exportExcel') }}?" + params.toString();
+            } else {
+                url = "{{ route('office.biayaTransportasi.exportPdf') }}?" + params.toString();
+            }
+
+            window.open(url, '_blank');
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalExportFilter'));
+            modal.hide();
+        }
 
         function loadData() {
-            $.get("{{ route('office.biayaTransportasi.get') }}", res => {
+            $.get("{{ route('office.biayaTransportasi.get') }}", function(res) {
+                const items = Array.isArray(res) ? res : (res.data || []);
+
                 const tbody = $("#content_body").empty();
                 const grouped = {};
-                res.data.forEach(d => {
-                    if (!grouped[d.id_pickup_driver]) grouped[d.id_pickup_driver] = [];
-                    grouped[d.id_pickup_driver].push(d);
+
+                items.forEach(d => {
+                    const key = String(d.id_pickup_driver);
+                    if (!grouped[key]) grouped[key] = [];
+                    grouped[key].push(d);
                 });
 
                 let no = 1;
                 Object.entries(grouped).forEach(([pickup, items]) => {
                     const rowspan = items.length;
-                    const images = items.map(i => i.bukti ? `{{ asset('storage') }}/${i.bukti}` : null)
+                    const first = items[0];
+
+                    const koordinasi = getKoordinasiLabel(first);
+
+                    const images = items
+                        .map(i => i.bukti ? `{{ asset('storage') }}/${i.bukti}` : null)
                         .filter(Boolean);
-                    const koordinasi =
-                        `${items[0].pickup_driver.karyawan.nama_lengkap} | ${items[0].pickup_driver.detail_pickup_driver?.[0]?.lokasi ?? '-'}`;
 
                     items.forEach((d, idx) => {
+                        const showAction = idx === 0;
+                        const showBukti = idx === 0;
+                        const isSelesai = (d.pengajuan_barang?.tracking?.tracking || '').toLowerCase().includes('selesai');
+
                         const row = `
-                    <tr>
-                        ${idx===0 ? `<td rowspan="${rowspan}" class="text-center">${no++}</td><td rowspan="${rowspan}">${koordinasi}</td>` : ''}
-                        <td>${d.tipe}</td>
-                        <td class="text-end">${currencyFormat.format(d.harga)}</td>
-                        ${idx===0 ? `<td rowspan="${rowspan}" class="text-center">
-                                                    <button class="btn btn-secondary btn-sm lihat-bukti" data-images='${JSON.stringify(images)}'>
-                                                        <i class="fas fa-image"></i> Lihat
-                                                    </button>
-                                                </td>` : ''}
-                        <td>${d.pengajuan_barang?.tracking?.tracking ?? 'Menunggu'}</td>
-                        ${idx===0 ? `
-                                                    <td rowspan="${rowspan}">${dateFormat(d.created_at)}</td>
-                                                    <td rowspan="${rowspan}" class="text-center" style="font-size: 20px">
-                                                        <div class="btn-group btn-group-sm" role="group">
-                                                            <button class="btn btn-info btn-detail" data-pickup="${pickup}">
-                                                                <i class="fas fa-info-circle"></i> Detail
-                                                            </button>
-                                                            <button class="btn btn-primary btn-edit" data-pickup="${pickup}">
-                                                                <i class="fas fa-edit"></i> Edit
-                                                            </button>
-                                                            <button class="btn btn-danger btn-delete" data-pickup="${pickup}">
-                                                                <i class="fas fa-trash"></i> Hapus
-                                                            </button>
-                                                        </div>
-                                                    </td>` : ''}
-                    </tr>`;
+                        <tr>
+                            ${showAction ? `<td rowspan="${rowspan}" class="text-center">${no++}</td><td rowspan="${rowspan}">${koordinasi}</td>` : ''}
+                            <td>${d.tipe ?? '-'}</td>
+                            <td class="text-end">${currencyFormat.format(Number(d.harga) || 0)}</td>
+                            ${showBukti ? `<td rowspan="${rowspan}" class="text-center">
+                                                                    <button class="btn btn-secondary btn-sm lihat-bukti" data-images='${JSON.stringify(images)}'>
+                                                                        <i class="fas fa-image"></i> Lihat
+                                                                    </button>
+                                                                </td>` : ''}
+                            <td>${d.pengajuan_barang?.tracking?.tracking ?? d.status ?? 'Menunggu'}</td>
+                            ${showAction ? `
+                                                                <td rowspan="${rowspan}">${dateFormat(d.created_at)}</td>
+                                                                <td rowspan="${rowspan}" class="text-center" style="font-size: 20px">
+                                                                    <div class="btn-group btn-group-sm" role="group">
+                                                                        <button class="btn btn-info btn-detail" data-pickup="${pickup}">
+                                                                            <i class="fas fa-info-circle"></i> Detail
+                                                                        </button>
+                                                                        <button class="btn btn-primary btn-edit" data-pickup="${pickup}">
+                                                                            <i class="fas fa-edit"></i> Edit
+                                                                        </button>
+                                                                        <button class="btn btn-danger btn-delete" data-pickup="${pickup}">
+                                                                            <i class="fas fa-trash"></i> Hapus
+                                                                        </button>
+                                                                        ${isSelesai ? `
+                                                                        <button class="btn btn-warning btn-upload-invoice" data-id="${d.id_pengajuan_barang}">
+                                                                            <i class="fas fa-file-upload"></i> invoice
+                                                                        </button>
+                                                                        ` : ''}
+                                                                    </div>
+                                                                </td>` : ''}
+                        </tr>`;
                         tbody.append(row);
                     });
                 });
 
                 $("#dataCountBadge").text(Object.keys(grouped).length + " data");
                 window.groupedData = grouped;
-            }).fail(() => Swal.fire('Error', 'Gagal memuat data', 'error'));
+            }).fail(function(xhr) {
+                console.error('Error loading ', xhr);
+                Swal.fire('Error', 'Gagal memuat  ' + (xhr.responseText || 'Unknown error'), 'error');
+            });
         }
 
         function formatRupiah(el) {
@@ -375,6 +540,8 @@
                                 <option value="BBM">BBM</option>
                                 <option value="TOL">TOL</option>
                                 <option value="Parkir">Parkir</option>
+                                <option value="Lainnya">Lainnya</option>
+                                <option value="Budget Lebih">Budget Lebih</option>
                             </select>
                         </div>
                         <div class="col-12 col-md-4">
@@ -399,12 +566,41 @@
             });
         }
 
+        $(document).on('click', '.btn-upload-invoice', function() {
+            const id = $(this).data('id');
+            $('#invoice_pengajuan_id').val(id);
+            new bootstrap.Modal(document.getElementById('modalInvoice')).show();
+        });
+
+        $('#formInvoice').submit(function(e) {
+            e.preventDefault();
+
+            const id = $('#invoice_pengajuan_id').val();
+            const formData = new FormData(this);
+
+            $.ajax({
+                url: `/office/biaya-transportasi/upload-invoice/${id}`,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function() {
+                    Swal.fire('Sukses', 'Invoice berhasil diupload', 'success');
+                    $('#modalInvoice').modal('hide');
+                    loadData();
+                },
+                error: function(xhr) {
+                    Swal.fire('Gagal', xhr.responseJSON?.message || 'Error', 'error');
+                }
+            });
+        });
+
         function addEditItem() {
             const idx = $('.edit-item-row').length;
 
             const html = `
                 <div class="edit-item-row border rounded p-3 mb-3 position-relative" data-idx="${idx}">
-                    <button type="button" class="btn btn-danger btn-sm btn-remove-item mb-">
+                    <button type="button" class="btn btn-danger btn-sm btn-remove-item">
                         <i class="fas fa-trash"></i> Hapus
                     </button>
 
@@ -415,6 +611,8 @@
                                 <option value="BBM">BBM</option>
                                 <option value="TOL">TOL</option>
                                 <option value="Parkir">Parkir</option>
+                                <option value="Lainnya">Lainnya</option>
+                                <option value="Budget Lebih">Budget Lebih</option>
                             </select>
                         </div>
 
@@ -480,7 +678,6 @@
                 reindexEditItems();
             });
 
-            // ----------------- CREATE -----------------
             $('#formCreate').submit(function(e) {
                 e.preventDefault();
                 let valid = true;
@@ -508,7 +705,9 @@
                     processData: false,
                     contentType: false,
                     success: () => {
-                        bootstrap.Modal.getInstance($('#ModalTambah')[0])?.hide();
+                        const modalEl = document.getElementById('ModalTambah');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
                         $('#formCreate')[0].reset();
                         $('#biayaItemsContainer').empty();
                         loadData();
@@ -532,15 +731,16 @@
                 $.ajax({
                     url: `/office/biaya-transportasi/update/${pickupId}`,
                     type: 'POST',
-                    data: formData,
+                    formData,
                     processData: false,
                     contentType: false,
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(res) {
-                        bootstrap.Modal.getInstance(document.getElementById('ModalEdit'))
-                    .hide();
+                        const modalEl = document.getElementById('ModalEdit');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
                         location.reload();
                     },
                     error: function(err) {
@@ -549,7 +749,6 @@
                 });
             });
 
-            // ----------------- LIHAT BUKTI -----------------
             $(document).on('click', '.lihat-bukti', function() {
                 const images = $(this).data('images') || [];
                 let html = '<div class="row g-3 justify-content-center">';
@@ -562,7 +761,6 @@
                 new bootstrap.Modal(document.getElementById('modalBukti')).show();
             });
 
-            // ----------------- DETAIL -----------------
             $(document).on('click', '.btn-detail', function() {
                 const pickup = $(this).data('pickup');
                 const items = window.groupedData[pickup] || [];
@@ -571,35 +769,35 @@
                     tracking = 'Menunggu';
 
                 items.forEach(i => {
-                    total += Number(i.harga);
+                    total += Number(i.harga) || 0;
                     const bukti = i.bukti ?
                         `<a href="{{ asset('storage') }}/${i.bukti}" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> Lihat</a>` :
                         '-';
                     rows += `<tr>
-                <td>${i.pengajuan_barang?.tipe ?? '-'}</td>
-                <td>${i.tipe}</td>
-                <td class="text-end">${currencyFormat.format(i.harga)}</td>
-                <td>${i.keterangan ?? '-'}</td>
-                <td class="text-center">${bukti}</td>
-                <td>${moment(i.created_at).format('DD MMM YYYY HH:mm')}</td>
-            </tr>`;
+                            <td>${i.pengajuan_barang?.tipe ?? i.tipe_pengajuan ?? '-'}</td>
+                            <td>${i.tipe}</td>
+                            <td class="text-end">${currencyFormat.format(Number(i.harga) || 0)}</td>
+                            <td>${i.keterangan ?? '-'}</td>
+                            <td class="text-center">${bukti}</td>
+                            <td>${moment(i.created_at).format('DD MMM YYYY HH:mm')}</td>
+                        </tr>`;
                     if (i.pengajuan_barang?.tracking?.tracking) tracking = i.pengajuan_barang
                         .tracking.tracking;
                 });
 
                 $('#detailContent').html(`
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered">
-                    <thead class="table-light">
-                        <tr><th>Jenis Pengajuan</th><th>Tipe</th><th>Harga</th><th>Keterangan</th><th>Bukti</th><th>Tanggal</th></tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                    <tfoot><tr><th colspan="5" class="text-end">Total</th><th class="text-end">${currencyFormat.format(total)}</th></tr></tfoot>
-                </table>
-            </div>
-            <p class="mt-4 mb-2 fw-bold">Status Tracking</p>
-            <div class="alert alert-secondary">${tracking}</div>
-        `);
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered">
+                            <thead class="table-light">
+                                <tr><th>Jenis Pengajuan</th><th>Tipe</th><th>Harga</th><th>Keterangan</th><th>Bukti</th><th>Tanggal</th></tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                            <tfoot><tr><th colspan="5" class="text-end">Total</th><th class="text-end">${currencyFormat.format(total)}</th></tr></tfoot>
+                        </table>
+                    </div>
+                    <p class="mt-4 mb-2 fw-bold">Status Tracking</p>
+                    <div class="alert alert-secondary">${tracking}</div>
+                `);
 
                 new bootstrap.Modal(document.getElementById('detailModal')).show();
             });
@@ -610,58 +808,93 @@
                 const first = items[0] || {};
 
                 $('#edit_pickup').val(pickup);
-                $('#edit_pickup_label').val(
-                    `${first.pickup_driver?.karyawan?.nama_lengkap ?? ''} | ${first.pickup_driver?.detail_pickup_driver?.[0]?.lokasi ?? '-'}`
-                );
+
+                if (isOutsideOps(pickup)) {
+                    $('#edit_pickup_label').val('Diluar Koordinasi Driver');
+                } else {
+                    let namaDriver = '-';
+                    let lokasi = '-';
+
+                    if (first.karyawan?.nama_lengkap) {
+                        namaDriver = first.karyawan.nama_lengkap;
+                    } else if (first.driver_name) {
+                        namaDriver = first.driver_name;
+                    } else if (first.pickupDriver?.karyawan?.nama_lengkap) {
+                        namaDriver = first.pickupDriver.karyawan.nama_lengkap;
+                    } else if (first.pickup_driver?.karyawan?.nama_lengkap) {
+                        namaDriver = first.pickup_driver.karyawan.nama_lengkap;
+                    }
+
+                    if (first.detailPickupDriver?.[0]?.lokasi) {
+                        lokasi = first.detailPickupDriver[0].lokasi;
+                    } else if (first.detail_pickup_driver?.[0]?.lokasi) {
+                        lokasi = first.detail_pickup_driver[0].lokasi;
+                    } else if (first.lokasi) {
+                        lokasi = first.lokasi;
+                    } else if (first.pickupDriver?.detailPickupDriver?.[0]?.lokasi) {
+                        lokasi = first.pickupDriver.detailPickupDriver[0].lokasi;
+                    } else if (first.pickupDriver?.detail_pickup_driver?.[0]?.lokasi) {
+                        lokasi = first.pickupDriver.detail_pickup_driver[0].lokasi;
+                    } else if (first.pickup_driver?.detailPickupDriver?.[0]?.lokasi) {
+                        lokasi = first.pickup_driver.detailPickupDriver[0].lokasi;
+                    } else if (first.pickup_driver?.detail_pickup_driver?.[0]?.lokasi) {
+                        lokasi = first.pickup_driver.detail_pickup_driver[0].lokasi;
+                    }
+
+                    $('#edit_pickup_label').val(`${namaDriver} | ${lokasi}`);
+                }
 
                 $('#editItemsContainer').empty();
 
                 items.forEach((item, idx) => {
                     const row = `
-        <div class="edit-item-row border rounded p-3 mb-3 position-relative" data-idx="${idx}">
-            <input type="hidden" name="items[${idx}][id]" value="${item.id}">
+                        <div class="edit-item-row border rounded p-3 mb-3 position-relative" data-idx="${idx}">
+                            <input type="hidden" name="items[${idx}][id]" value="${item.id}">
 
-            <button type="button" class="btn btn-danger btn-sm btn-remove-item">
-                <i class="fas fa-trash"></i> Hapus
-            </button>
+                            <button type="button" class="btn btn-danger btn-sm btn-remove-item">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
 
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Tipe Biaya</label>
-                    <select class="form-select" name="items[${idx}][tipe]" required>
-                        <option value="BBM" ${item.tipe==='BBM'?'selected':''}>BBM</option>
-                        <option value="TOL" ${item.tipe==='TOL'?'selected':''}>TOL</option>
-                        <option value="Parkir" ${item.tipe==='Parkir'?'selected':''}>Parkir</option>
-                    </select>
-                </div>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Tipe Biaya</label>
+                                    <select class="form-select" name="items[${idx}][tipe]" required>
+                                        <option value="BBM" ${item.tipe==='BBM'?'selected':''}>BBM</option>
+                                        <option value="TOL" ${item.tipe==='TOL'?'selected':''}>TOL</option>
+                                        <option value="Parkir" ${item.tipe==='Parkir'?'selected':''}>Parkir</option>
+                                        <option value="Lainnya" ${item.tipe==='Lainnya'?'selected':''}>Lainnya</option>
+                                        <option value="Budget Lebih" ${item.tipe==='Budget Lebih'?'selected':''}>Budget Lebih</option>
+                                    </select>
+                                </div>
 
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Harga</label>
-                    <input type="number" class="form-control" name="items[${idx}][harga]" value="${item.harga}" min="500" required>
-                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Harga</label>
+                                    <input type="number" class="form-control" name="items[${idx}][harga]" value="${item.harga}" min="500" required>
+                                </div>
 
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Keterangan</label>
-                    <input type="text" class="form-control" name="items[${idx}][keterangan]" value="${item.keterangan ?? ''}">
-                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Keterangan</label>
+                                    <input type="text" class="form-control" name="items[${idx}][keterangan]" value="${item.keterangan ?? ''}">
+                                </div>
 
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Bukti</label>
-                    <input type="file" class="form-control" name="items[${idx}][bukti]" accept="image/*">
-                </div>
-            </div>
-        </div>`;
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Bukti</label>
+                                    <input type="file" class="form-control" name="items[${idx}][bukti]" accept="image/*">
+                                </div>
+                            </div>
+                        </div>`;
 
                     $('#editItemsContainer').append(row);
                 });
 
                 new bootstrap.Modal(document.getElementById('ModalEdit')).show();
             });
-            // ----------------- DELETE -----------------
+
             $(document).on('click', '.btn-delete', function() {
                 const pickup = $(this).data('pickup');
                 const items = window.groupedData[pickup] || [];
-                let list = items.map(i => `<li>${i.tipe}: ${currencyFormat.format(i.harga)}</li>`).join('');
+                let list = items.map(i =>
+                    `<li>${i.tipe}: ${currencyFormat.format(Number(i.harga) || 0)}</li>`).join('');
 
                 Swal.fire({
                     title: 'Hapus semua biaya ini?',
@@ -689,14 +922,14 @@
                 });
             });
 
-            // Cleanup modal backdrop
             $('.modal').on('hidden.bs.modal', function() {
                 $('.modal-backdrop').remove();
                 $('body').removeClass('modal-open').css('padding-right', '');
             });
 
-            $('#ModalTambah').on('shown.bs.modal', function() {
-                $(this).find('select[name="id_pickup_driver"]').focus();
+            $('#ModalTambah, #ModalEdit').on('shown.bs.modal', function() {
+                $(this).find('.modal-body').css('max-height', '70vh').css('overflow-y', 'auto');
+                $(this).find('select[name="id_pickup_driver"], select[name^="items["]').first().focus();
             });
         });
     </script>

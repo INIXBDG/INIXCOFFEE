@@ -4,199 +4,164 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <a href="{{ url()->previous() }}" class="btn btn-primary mb-3">
-                        <img src="{{ asset('icon/arrow-left.svg') }}" width="20"> Back
+            <div class="card">
+                <div class="card-body" id="card">
+                    <a href="{{ url()->previous() }}" class="btn click-primary my-2">
+                        <img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back
                     </a>
+                    <h5 class="card-title text-center mb-4">{{ __('Edit Data Teknis Lab') }}</h5>
 
-                    <h5 class="mb-4">Edit {{ $data->id_subs ? 'Subscription' : 'Lab' }}</h5>
-
-                    {{-- ✅ Form dengan ID dinamis agar JS bisa mendeteksi --}}
-                    <form id="{{ $data->subs ? 'form_subs' : 'form_lab' }}"
-                          action="{{ route('pengajuanlabsdansubs.updatelabsubs', $data->id) }}"
-                          method="POST">
+                    <form id="labForm" method="POST" action="{{ route('pengajuanlabsdansubs.updatelabsubs', $data->id) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
-                        {{-- ======================== FORM SUBS ======================== --}}
-                        @if ($data->subs)
-                            <div class="mb-3">
-                                <label class="form-label">Nama Subscription</label>
-                                <input type="text" name="nama_subs" class="form-control" value="{{ old('nama_subs', $data->subs->nama_subs) }}">
+                        {{-- 1. INFORMASI UMUM --}}
+                        <div class="row mb-3">
+                            <label for="nama_labs" class="col-md-4 col-form-label text-md-start">{{ __('Nama Lab / Software') }}</label>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control @error('nama_labs') is-invalid @enderror"
+                                       name="nama_labs" id="nama_labs" value="{{ old('nama_labs', $data->lab->nama_labs) }}" required>
+                                @error('nama_labs')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Merk</label>
-                                <input type="text" name="merk" class="form-control" value="{{ old('merk', $data->subs->merk) }}">
+                        <div class="row mb-3">
+                            <label for="merk" class="col-md-4 col-form-label text-md-start">{{ __('Vendor / Merk') }}</label>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control @error('merk') is-invalid @enderror"
+                                       name="merk" id="merk" value="{{ old('merk', $data->lab->merk) }}" placeholder="Contoh: Adobe, AWS">
+                                @error('merk')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Deskripsi</label>
-                                <textarea name="desc" class="form-control" rows="2">{{ old('desc', $data->subs->desc) }}</textarea>
+                        <div class="row mb-3">
+                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Tipe Aset') }}</label>
+                            <div class="col-md-6">
+                                <select name="tipe" id="tipe" class="form-select @error('tipe') is-invalid @enderror" required>
+                                    <option value="subscription" {{ $data->lab->tipe == 'subscription' ? 'selected' : '' }}>Subscription (Berlangganan)</option>
+                                    <option value="one-time" {{ $data->lab->tipe == 'one-time' ? 'selected' : '' }}>One-Time (Sekali Beli)</option>
+                                </select>
+                                @error('tipe')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">URL</label>
-                                <input type="text" name="subs_url" class="form-control" value="{{ old('subs_url', $data->subs->subs_url) }}">
+                        {{-- TAMBAHAN: FIELD DURASI (Tersembunyi jika tipe != one-time) --}}
+                        <div class="row mb-3" id="row_duration" style="display: none;">
+                            <label for="duration_minutes" class="col-md-4 col-form-label text-md-start">{{ __('Durasi (Menit)') }}</label>
+                            <div class="col-md-6">
+                                <input type="number" class="form-control @error('duration_minutes') is-invalid @enderror"
+                                       name="duration_minutes" id="duration_minutes" value="{{ old('duration_minutes', $data->lab->duration_minutes) }}">
+                                @error('duration_minutes')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Access Code</label>
-                                <input type="text" name="access_code" class="form-control" value="{{ old('access_code', $data->subs->access_code) }}">
+                        <div class="row mb-3">
+                            <label for="status" class="col-md-4 col-form-label text-md-start">{{ __('Status') }}</label>
+                            <div class="col-md-6">
+                                <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
+                                    <option value="pending" {{ $data->lab->status == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="active" {{ $data->lab->status == 'active' ? 'selected' : '' }}>Active</option>
+                                    <option value="expired" {{ $data->lab->status == 'expired' ? 'selected' : '' }}>Expired</option>
+                                </select>
+                                @error('status')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
                             </div>
+                        </div>
 
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Mata Uang</label>
-                                    <select name="mata_uang" id="mata_uang_subs" class="form-select">
-                                        <option value="">Pilih Mata Uang</option>
-                                        @foreach (['Rupiah', 'Dollar', 'Poundsterling', 'Euro', 'Franc Swiss'] as $currency)
-                                            <option value="{{ $currency }}" {{ $data->subs->mata_uang == $currency ? 'selected' : '' }}>
-                                                {{ $currency }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" id="harga_label_subs">
-                                        Harga {{ $data->subs->mata_uang ?: '' }}
-                                    </label>
-                                    <input type="number" id="harga_subs" name="harga" class="form-control"
-                                           value="{{ old('harga', $data->subs->harga) }}">
-                                </div>
+                        <div class="row mb-3">
+                            <label for="desc" class="col-md-4 col-form-label text-md-start">{{ __('Deskripsi') }}</label>
+                            <div class="col-md-6">
+                                <textarea name="desc" id="desc" class="form-control" rows="2">{{ old('desc', $data->lab->desc) }}</textarea>
                             </div>
+                        </div>
 
-                            <div class="row mb-3" id="kurs_group_subs">
-                                <div class="col-md-6">
-                                    <label class="form-label">Kurs</label>
-                                    <input type="number" id="kurs_subs" step="0.01" name="kurs" class="form-control"
-                                           value="{{ old('kurs', $data->subs->kurs ?? '') }}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Harga Rupiah</label>
-                                    <input type="text" id="harga_rupiah_subs" name="harga_rupiah" class="form-control"
-                                           value="{{ old('harga_rupiah', $data->subs->harga_rupiah ?? '') }}">
-                                </div>
+                        {{-- 2. DETAIL AKSES --}}
+                        <div class="row mb-3">
+                            <label for="lab_url" class="col-md-4 col-form-label text-md-start">{{ __('URL Lab') }}</label>
+                            <div class="col-md-6">
+                                <input type="url" class="form-control" name="lab_url" id="lab_url" value="{{ old('lab_url', $data->lab->lab_url) }}">
                             </div>
+                        </div>
 
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="start_date">Tanggal Mulai</label>
-                                    <input type="date" class="form-control" id="start_date" name="start_date"
-                                        value="{{ old('start_date', $data->subs->start_date ? \Carbon\Carbon::parse($data->subs->start_date)->format('Y-m-d') : '') }}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="end_date">Tanggal Berakhir</label>
-                                    <input type="date" class="form-control" id="end_date" name="end_date"
-                                        value="{{ old('end_date', $data->subs->end_date ? \Carbon\Carbon::parse($data->subs->end_date)->format('Y-m-d') : '') }}">
-                                </div>
+                        <div class="row mb-3">
+                            <label for="access_code" class="col-md-4 col-form-label text-md-start">{{ __('Kode Akses / Key') }}</label>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="access_code" id="access_code" value="{{ old('access_code', $data->lab->access_code) }}">
                             </div>
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Status</label>
-                                <select name="status" class="form-select">
-                                    <option value="{{ $data->subs->status }}" selected>{{ ucfirst($data->subs->status) }}</option>
-                                    @foreach (['Active', 'Expired', 'Pending'] as $status)
-                                        @if ($status !== $data->subs->status)
-                                            <option value="{{ $status }}">{{ $status }}</option>
-                                        @endif
+                        <div class="row mb-3">
+                            <label for="start_date" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Mulai') }}</label>
+                            <div class="col-md-6">
+                                <input type="date" class="form-control" name="start_date" id="start_date"
+                                       value="{{ $data->lab->start_date ? \Carbon\Carbon::parse($data->lab->start_date)->format('Y-m-d') : '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <label for="end_date" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Berakhir') }}</label>
+                            <div class="col-md-6">
+                                <input type="date" class="form-control" name="end_date" id="end_date"
+                                       value="{{ $data->lab->end_date ? \Carbon\Carbon::parse($data->lab->end_date)->format('Y-m-d') : '' }}">
+                            </div>
+                        </div>
+
+                        {{-- 3. KEUANGAN --}}
+                        <div class="row mb-3">
+                            <label for="mata_uang" class="col-md-4 col-form-label text-md-start">{{ __('Mata Uang') }}</label>
+                            <div class="col-md-6">
+                                <select name="mata_uang" id="mata_uang" class="form-select" required>
+                                    @foreach (['Rupiah', 'Dollar', 'Euro', 'Poundsterling'] as $currency)
+                                        <option value="{{ $currency }}" {{ $data->lab->mata_uang == $currency ? 'selected' : '' }}>
+                                            {{ $currency }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
+                        </div>
 
-                        {{-- ======================== FORM LAB ======================== --}}
-                        @elseif ($data->lab)
-                            <div class="mb-3">
-                                <label class="form-label">Nama Lab</label>
-                                <input type="text" name="nama_labs" class="form-control" value="{{ old('nama_labs', $data->lab->nama_labs) }}">
+                        <div class="row mb-3">
+                            <label for="harga" class="col-md-4 col-form-label text-md-start">{{ __('Nominal Harga Asli') }}</label>
+                            <div class="col-md-6">
+                                <input type="number" step="0.01" class="form-control" name="harga" id="harga"
+                                       value="{{ old('harga', $data->lab->harga) }}" required>
                             </div>
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Deskripsi</label>
-                                <textarea name="desc" class="form-control" rows="2">{{ old('desc', $data->lab->desc) }}</textarea>
+                        <div class="row mb-3" id="row_kurs">
+                            <label for="kurs" class="col-md-4 col-form-label text-md-start">{{ __('Kurs (Rate)') }}</label>
+                            <div class="col-md-6">
+                                <input type="number" step="0.01" class="form-control" name="kurs" id="kurs"
+                                       value="{{ old('kurs', $data->lab->kurs ?? 1) }}">
                             </div>
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">URL</label>
-                                <input type="text" name="lab_url" class="form-control" value="{{ old('lab_url', $data->lab->lab_url) }}">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Access Code</label>
-                                <input type="text" name="access_code" class="form-control" value="{{ old('access_code', $data->lab->access_code) }}">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Durasi (menit)</label>
-                                <input type="number" name="duration_minutes" class="form-control"
-                                       value="{{ old('duration_minutes', $data->lab->duration_minutes) }}">
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Mata Uang</label>
-                                    <select name="mata_uang" id="mata_uang_lab" class="form-select">
-                                        <option value="">Pilih Mata Uang</option>
-                                        @foreach (['Rupiah', 'Dollar', 'Poundsterling', 'Euro', 'Franc Swiss'] as $currency)
-                                            <option value="{{ $currency }}" {{ $data->lab->mata_uang == $currency ? 'selected' : '' }}>
-                                                {{ $currency }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" id="harga_label_lab">
-                                        Harga {{ $data->lab->mata_uang ?: '' }}
-                                    </label>
-                                    <input type="number" id="harga_lab" name="harga" class="form-control"
-                                           value="{{ old('harga', $data->lab->harga) }}">
+                        <div class="row mb-3">
+                            <label for="harga_rupiah" class="col-md-4 col-form-label text-md-start">{{ __('Estimasi Rupiah') }}</label>
+                            <div class="col-md-6">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text">Rp.</span>
+                                    <input type="text" class="form-control" name="harga_rupiah" id="harga_rupiah"
+                                           value="{{ old('harga_rupiah', $data->lab->harga_rupiah ? number_format($data->lab->harga_rupiah, 0, ',', '.') : '') }}" readonly>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="row mb-3" id="kurs_group_lab">
-                                <div class="col-md-6">
-                                    <label class="form-label">Kurs</label>
-                                    <input type="number" id="kurs_lab" step="0.01" name="kurs" class="form-control"
-                                           value="{{ old('kurs', $data->lab->kurs ?? '') }}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Harga Rupiah</label>
-                                    <input type="text" id="harga_rupiah_lab" name="harga_rupiah" class="form-control"
-                                           value="{{ old('harga_rupiah', $data->lab->harga_rupiah ?? '') }}">
-                                </div>
+                        <div class="row mb-0">
+                            <div class="col-md-6 offset-md-4">
+                                <button type="submit" class="btn click-primary">
+                                    {{ __('Simpan Perubahan') }}
+                                </button>
                             </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="start_date">Tanggal Mulai</label>
-                                    <input type="date" class="form-control" id="start_date" name="start_date"
-                                        value="{{ old('start_date', $data->lab->start_date ? \Carbon\Carbon::parse($data->lab->start_date)->format('Y-m-d') : '') }}">
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label for="end_date">Tanggal Berakhir</label>
-                                    <input type="date" class="form-control" id="end_date" name="end_date"
-                                        value="{{ old('end_date', $data->lab->end_date ? \Carbon\Carbon::parse($data->lab->end_date)->format('Y-m-d') : '') }}">
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Status</label>
-                                <select name="status" class="form-select">
-                                    <option value="{{ $data->lab->status }}" selected>{{ ucfirst($data->lab->status) }}</option>
-                                    @foreach (['Active', 'Expired', 'Pending'] as $status)
-                                        @if ($status !== $data->lab->status)
-                                            <option value="{{ $status }}">{{ $status }}</option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
-
-                        <div class="text-end">
-                            <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                         </div>
                     </form>
                 </div>
@@ -205,83 +170,63 @@
     </div>
 </div>
 
-{{-- ====================== SCRIPT ====================== --}}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    function formatRupiah(angka, prefix) {
+        var number_string = angka.replace(/[^,\d]/g, '').toString(),
+            split = number_string.split(','),
+            sisa = split[0].length % 3,
+            rupiah = split[0].substr(0, sisa),
+            ribuan = split[0].substr(sisa).match(/\d{3}/gi);
 
-        // 🔹 Fungsi untuk format angka ke Rupiah
-        function formatRupiah(angka) {
-            if (!angka && angka !== 0) return '';
-            angka = Math.floor(angka); // buang desimal, hanya tampil integer dalam rupiah
-            const number_string = angka.toString().replace(/[^,\d]/g, '');
-            const split = number_string.split(',');
-            const sisa = split[0].length % 3;
-            let rupiah = split[0].substr(0, sisa);
-            const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-            if (ribuan) rupiah += (sisa ? '.' : '') + ribuan.join('.');
-            return 'Rp ' + rupiah;
+        if (ribuan) {
+            separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
         }
 
-        // 🔹 Fungsi utama untuk meng-handle kurs & harga
-        function initCurrencyHandler(selectId, labelId, kursInputId, hargaInputId, hargaRupiahId) {
-            const mataUang = document.getElementById(selectId);
-            const hargaLabel = document.getElementById(labelId);
-            const kursInput = document.getElementById(kursInputId);
-            const hargaInput = document.getElementById(hargaInputId);
-            const hargaRupiah = document.getElementById(hargaRupiahId);
+        rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+        return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+    }
 
-            if (!mataUang) return;
+    $(document).ready(function () {
 
-            // ✅ Perhitungan otomatis harga rupiah
-            function updateHargaRupiah() {
-                const val = mataUang.value;
+        function calculateTotal() {
+            var currency = $('#mata_uang').val();
+            var harga = parseFloat($('#harga').val()) || 0;
+            var kurs = parseFloat($('#kurs').val()) || 1;
 
-                // pastikan angka koma tetap dihitung
-                const harga = parseFloat(hargaInput.value.replace(',', '.')) || 0;
-                const kurs = parseFloat(kursInput.value.replace(',', '.')) || 0;
-
-                let total = 0;
-                if (val === 'Rupiah') {
-                    total = harga;
-                } else {
-                    total = harga * kurs;
-                }
-
-                // format ke rupiah tanpa desimal
-                hargaRupiah.value = total ? formatRupiah(total) : '';
+            if (currency === 'Rupiah') {
+                $('#kurs').val(1).prop('readonly', true);
+                kurs = 1;
+            } else {
+                $('#kurs').prop('readonly', false);
             }
-
-            // ✅ Menyembunyikan atau menampilkan kolom kurs sesuai mata uang
-            function toggleKurs() {
-                const val = mataUang.value;
-                const kursCol = kursInput.closest('.col-md-6');
-                const hargaRupiahCol = hargaRupiah.closest('.col-md-6');
-                hargaLabel.textContent = val ? `Harga ${val}` : 'Harga';
-
-                if (val === 'Rupiah') {
-                    kursCol.style.display = 'none';
-                    hargaRupiahCol.style.display = 'block';
-                    hargaRupiah.readOnly = true;
-                    hargaRupiah.value = formatRupiah(parseFloat(hargaInput.value.replace(',', '.')) || 0);
-                } else {
-                    kursCol.style.display = 'block';
-                    hargaRupiahCol.style.display = 'block';
-                    hargaRupiah.readOnly = true;
-                    updateHargaRupiah();
-                }
-            }
-
-            // event listener
-            mataUang.addEventListener('change', toggleKurs);
-            hargaInput.addEventListener('input', updateHargaRupiah);
-            kursInput.addEventListener('input', updateHargaRupiah);
-
-            toggleKurs();
+            var total = harga * kurs;
+            $('#harga_rupiah').val(formatRupiah(Math.floor(total).toString()));
         }
 
-        // Jalankan handler untuk SUBS & LAB
-        initCurrencyHandler('mata_uang_subs', 'harga_label_subs', 'kurs_subs', 'harga_subs', 'harga_rupiah_subs');
-        initCurrencyHandler('mata_uang_lab', 'harga_label_lab', 'kurs_lab', 'harga_lab', 'harga_rupiah_lab');
+        // --- TAMBAHAN: FUNGSI TOGGLE DURASI ---
+        function toggleDuration() {
+            if ($('#tipe').val() === 'one-time') {
+                $('#row_duration').slideDown();
+            } else {
+                $('#row_duration').slideUp();
+                $('#duration_minutes').val(''); // Bersihkan nilai jika bukan one-time
+            }
+        }
+
+        // Listener
+        $('#mata_uang').on('change', calculateTotal);
+        $('#harga, #kurs').on('input', calculateTotal);
+        $('#tipe').on('change', toggleDuration); // Panggil saat tipe diubah
+
+        // Initialization on Load
+        calculateTotal();
+        toggleDuration(); // Cek status tipe saat halaman dimuat
+
+        $('#labForm').on('submit', function () {
+            $('#harga_rupiah').val($('#harga_rupiah').val().replace(/\./g, ''));
+        });
     });
 </script>
 @endsection

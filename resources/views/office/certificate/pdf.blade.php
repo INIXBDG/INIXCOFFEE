@@ -128,14 +128,29 @@
             No. {{ $certificate->nomor_sertifikat }}
         </div>
 
-        <div class="participant-name">
-            {{ $certificate->nama_peserta }}
+        @php
+            $namaPeserta = $certificate->nama_peserta;
+            $fontSize = 52;
+            if (mb_strlen($namaPeserta) > 20) {
+                $fontSize = 36;
+            }
+        @endphp
+        <div class="participant-name" style="font-size: {{ $fontSize }}px;">
+            {{ $namaPeserta }}
         </div>
 
-        <div class="course-name">
+        @php
+            $namaMateri = $certificate->nama_materi;
+            $fontSizeMateri = 30;
+            if (mb_strlen($namaMateri) > 20) {
+                $fontSizeMateri = 22;
+            }
+        @endphp
+
+        <div class="course-name" style="font-size: {{ $fontSizeMateri }}px;">
             {{ $certificate->nama_materi }}
         </div>
-
+        
         <div class="period-section" style="margin-top: 4%">
             Period :
             @php

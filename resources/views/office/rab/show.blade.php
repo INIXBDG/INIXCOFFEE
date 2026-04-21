@@ -1,6 +1,7 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <div class="container-fluid py-4">
 
         {{-- Notifikasi --}}
@@ -12,9 +13,9 @@
             </div>
         @endif
 
-        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden glass-force">
             {{-- Header Kartu --}}
-            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <div class="card-header border-bottom py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold text-primary">
                     {{ $kegiatan->nama_kegiatan }}
                 </h5>
@@ -24,7 +25,7 @@
                 </span>
             </div>
 
-            <div class="card-body p-4">
+            <div class="card-body p-4 glass-force">
                 <div class="row g-4">
 
                     @if ($kegiatan->tipe != 'pembelian')
@@ -87,7 +88,7 @@
 
                     @if ($kegiatan)
                         <div class="col border-start-md">
-                            <div class="card h-100 shadow-sm cursor-pointer" role="button" data-bs-toggle="modal"
+                            <div class="card h-100 glass-force cursor-pointer" role="button" data-bs-toggle="modal"
                                 data-bs-target="#RealisasiKegiatan">
 
                                 <div class="card-body">
@@ -109,7 +110,7 @@
                 </div>
             </div>
 
-            <div class="card-body p-4 border-top">
+            <div class="card-body p-4 border-top glass-force">
                 <div class="d-flex align-items-center mb-3">
                     <h6 class="mb-0 fw-bold text-dark">Tracking Status Kegiatan</h6>
                 </div>
@@ -171,6 +172,10 @@
             <div>
                 <h4 class="mb-1 fw-bold text-dark">Detail Kebutuhan Kegiatan</h4>
             </div>
+            <button class="btn btn-warning px-4 shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal"
+                data-bs-target="#linkPengajuanModal">
+                <i class="fas fa-link"></i> Link Pengajuan
+            </button>
             @if (!$kegiatan->selesai)
                 {{-- HRD --}}
                 @if (Auth::user()->jabatan === 'HRD')
@@ -282,8 +287,8 @@
 
         </div> --}}
 
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mt-4">
-            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mt-4 glass-force">
+            <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-semibold">Data Pengajuan Barang</h5>
                 <button onclick="loadPengajuanTable()" class="btn btn-sm btn-light-primary">
                     <i class="fas fa-sync-alt me-1"></i> Refresh
@@ -306,6 +311,90 @@
                         </thead>
                         <tbody></tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+            <div>
+                <h4 class="mb-1 fw-bold text-dark">Presentase Realisasi</h4>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mt-4 glass-force">
+            <div class="card-header border-0 py-3">
+                <h5 class="mb-0 fw-semibold">Analisa Budget vs Realisasi</h5>
+            </div>
+            <div class="card-body">
+                @php
+                    $linkedPengajuan = \App\Models\PengajuanBarang::with('detail')
+                        ->where('id_kegiatan', $kegiatan->id)
+                        ->get();
+
+                    $totalBudget = $linkedPengajuan->sum(function ($pb) {
+                        return $pb->detail->sum(fn($d) => $d->harga * $d->qty);
+                    });
+
+                    $totalRealisasi = $kegiatan->realisasi ?? 0;
+                    $percentage = $totalBudget > 0 ? min(($totalRealisasi / $totalBudget) * 100, 100) : 0;
+                    $isOverload = $totalRealisasi > $totalBudget;
+                    $statusLabel = $isOverload ? 'Overload' : 'On Track';
+                    $statusColor = $isOverload ? 'danger' : 'success';
+                    $statusIcon = $isOverload ? 'fa-triangle-exclamation' : 'fa-check-circle';
+                @endphp
+
+                <div class="row g-4 align-items-center">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="text-center">
+                            <small class="text-muted fw-bold text-uppercase d-block mb-2" style="font-size: 0.7rem;">Total
+                                Budget</small>
+                            <h3 class="mb-0 fw-bold text-primary">Rp {{ number_format($totalBudget, 0, ',', '.') }}</h3>
+                            <small class="text-muted">{{ $linkedPengajuan->count() }} pengajuan terhubung</small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4">
+                        <div class="text-center">
+                            <small class="text-muted fw-bold text-uppercase d-block mb-2" style="font-size: 0.7rem;">Total
+                                Realisasi</small>
+                            <h3 class="mb-0 fw-bold text-{{ $statusColor }}">Rp
+                                {{ number_format($totalRealisasi, 0, ',', '.') }}</h3>
+                            <span
+                                class="badge bg-{{ $statusColor }} bg-opacity-10 text-{{ $statusColor }} px-3 py-1 rounded-pill">
+                                <i class="fas {{ $statusIcon }} me-1"></i>{{ $statusLabel }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 col-lg-4">
+                        <canvas id="realisasiChart" height="120"></canvas>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <small class="text-muted fw-medium">Progress Realisasi</small>
+                        <small class="fw-bold text-dark">{{ number_format($percentage, 1) }}%</small>
+                    </div>
+                    <div class="progress" style="height: 12px; border-radius: 6px;">
+                        <div class="progress-bar bg-{{ $isOverload ? 'danger' : 'success' }}" role="progressbar"
+                            style="width: {{ $percentage }}%; border-radius: 6px;" aria-valuenow="{{ $percentage }}"
+                            aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    @if ($isOverload)
+                        <small class="text-danger d-block mt-2">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            Realisasi melebihi budget sebesar Rp
+                            {{ number_format($totalRealisasi - $totalBudget, 0, ',', '.') }}
+                        </small>
+                    @else
+                        <small class="text-success d-block mt-2">
+                            <i class="fas fa-check-circle me-1"></i>
+                            Sisa budget: Rp {{ number_format($totalBudget - $totalRealisasi, 0, ',', '.') }}
+                        </small>
+                    @endif
                 </div>
             </div>
         </div>
@@ -384,6 +473,34 @@
                     <button type="submit" class="btn btn-primary px-4">Simpan Semua</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="linkPengajuanModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content shadow-lg border-0 rounded-4">
+                <form action="" method="POST" id="linkPengajuanForm">
+                    @csrf
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold">Link Pengajuan Barang</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body pt-3">
+                        <div class="alert alert-info small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Menampilkan pengajuan barang Anda yang dibuat antara
+                            <strong id="rangeStart"></strong> s.d. <strong id="rangeEnd"></strong>
+                        </div>
+                        <div id="pengajuanList" class="list-group"></div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary px-4" id="btnLinkSubmit">
+                            <i class="fas fa-link me-1"></i> Hubungkan
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -705,8 +822,10 @@
                             @if ($kegiatan)
                                 <input type="hidden" name="id" value="{{ $kegiatan->id }}">
                                 <label for="realisasi_display" class="form-label">Jumlah Realisasi</label>
-                                <input type="text" class="form-control" value="{{ $kegiatan->realisasi ?? '0' }}" id="realisasi_display">
-                                <input type="hidden" name="realisasi" value="{{ $kegiatan->realisasi ?? '0' }}" id="realisasi">
+                                <input type="text" class="form-control" value="{{ $kegiatan->realisasi ?? '0' }}"
+                                    id="realisasi_display">
+                                <input type="hidden" name="realisasi" value="{{ $kegiatan->realisasi ?? '0' }}"
+                                    id="realisasi">
                                 <div id="realisasiHelp" class="form-text">masukan data realisasi kegiatan yang telah
                                     dilakukan.</div>
                             @endif
@@ -753,6 +872,176 @@
                     this.value = '';
                 }
             });
+        });
+
+        // Chart Realisasi vs Budget
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('realisasiChart');
+            if (ctx) {
+                const budget = {{ $totalBudget }};
+                const realisasi = {{ $totalRealisasi }};
+                const isOverload = {{ $isOverload ? 'true' : 'false' }};
+
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Terealisasi', 'Sisa Budget'],
+                        datasets: [{
+                            data: isOverload ? [realisasi, 0] : [realisasi, budget - realisasi],
+                            backgroundColor: [
+                                isOverload ? '#dc3545' : '#198754',
+                                '#e9ecef'
+                            ],
+                            borderWidth: 0,
+                            cutout: '75%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const value = context.parsed;
+                                        return new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR',
+                                            minimumFractionDigits: 0
+                                        }).format(value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const linkModal = document.getElementById('linkPengajuanModal');
+            const pengajuanList = document.getElementById('pengajuanList');
+            const linkForm = document.getElementById('linkPengajuanForm');
+
+            if (linkModal) {
+                linkModal.addEventListener('show.bs.modal', async function(event) {
+                    const kegiatanId = '{{ $kegiatan->id }}';
+
+                    linkForm.action = `/office/kegiatan/${kegiatanId}/link-pengajuan`;
+                    pengajuanList.innerHTML =
+                        `<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mb-0 mt-2 text-muted">Memuat pengajuan barang...</p></div>`;
+
+                    try {
+                        const response = await fetch(
+                            `/office/kegiatan/${kegiatanId}/available-pengajuan`);
+                        const result = await response.json();
+
+                        if (result.success && result.data.length > 0) {
+                            document.getElementById('rangeStart').textContent = result.range.start;
+                            document.getElementById('rangeEnd').textContent = result.range.end;
+
+                            let html = '';
+                            result.data.forEach(item => {
+                                const total = item.detail?.reduce((sum, d) => sum + (d.harga * d
+                                    .qty), 0) || 0;
+                                const detailHtml = item.detail?.map(d => `
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <div>
+                                    <span class="fw-medium text-dark">${d.nama_barang || d.rincian}</span>
+                                    ${d.keterangan ? `<br><small class="text-muted">${d.keterangan}</small>` : ''}
+                                </div>
+                                <div class="text-end">
+                                    <div>${d.qty} × Rp ${parseInt(d.harga).toLocaleString('id-ID')}</div>
+                                    <small class="text-primary fw-medium">Rp ${parseInt(d.harga * d.qty).toLocaleString('id-ID')}</small>
+                                </div>
+                            </div>
+                        `).join('') || '<p class="text-muted small mb-0">Tidak ada detail item</p>';
+
+                                html += `
+                        <div class="list-group-item border-0 py-3">
+                            <label class="d-flex gap-3 cursor-pointer">
+                                <input class="form-check-input flex-shrink-0 mt-1" type="checkbox" name="pengajuan_ids[]" value="${item.id}" style="width: 1.3em; height: 1.3em;">
+                                <div class="d-flex flex-column w-100">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <span class="fw-semibold text-dark">${item.tipe?.toUpperCase() || '-'}</span>
+                                            <small class="text-muted d-block">ID: #${item.id} • ${new Date(item.created_at).toLocaleDateString('id-ID')}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold text-primary">Rp ${total.toLocaleString('id-ID')}</div>
+                                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 mt-1 toggle-detail" data-target="detail-${item.id}">
+                                                Lihat Detail <i class="fas fa-chevron-down ms-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="detail-${item.id}" class="detail-content mt-3 d-none">
+                                        <div class="bg-light rounded-3 p-3">
+                                            ${detailHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>`;
+                            });
+                            pengajuanList.innerHTML = html;
+
+                            // Tambahkan event listener untuk toggle detail
+                            document.querySelectorAll('.toggle-detail').forEach(btn => {
+                                btn.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                    const targetId = this.getAttribute('data-target');
+                                    const detailEl = document.getElementById(targetId);
+                                    const icon = this.querySelector('i');
+
+                                    if (detailEl.classList.contains('d-none')) {
+                                        detailEl.classList.remove('d-none');
+                                        icon.classList.replace('fa-chevron-down',
+                                            'fa-chevron-up');
+                                        this.innerHTML =
+                                            `Sembunyikan Detail <i class="fas fa-chevron-up ms-1"></i>`;
+                                    } else {
+                                        detailEl.classList.add('d-none');
+                                        icon.classList.replace('fa-chevron-up',
+                                            'fa-chevron-down');
+                                        this.innerHTML =
+                                            `Lihat Detail <i class="fas fa-chevron-down ms-1"></i>`;
+                                    }
+                                });
+                            });
+
+                        } else {
+                            pengajuanList.innerHTML =
+                                `<div class="text-center py-4"><i class="fas fa-search text-muted fs-1"></i><p class="mt-2 mb-0 text-muted">Tidak ada pengajuan barang yang tersedia untuk periode ini.</p><small class="text-muted d-block mt-1">Periode: ${result.range?.start || '-'} s.d. ${result.range?.end || '-'}</small></div>`;
+                            document.getElementById('btnLinkSubmit').disabled = true;
+                            return;
+                        }
+                        document.getElementById('btnLinkSubmit').disabled = false;
+                    } catch (error) {
+                        console.error('Error:', error);
+                        pengajuanList.innerHTML =
+                            `<div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-1"></i>Gagal memuat data. Silakan coba lagi.</div>`;
+                        document.getElementById('btnLinkSubmit').disabled = true;
+                    }
+                });
+
+                linkModal.addEventListener('hidden.bs.modal', function() {
+                    document.getElementById('btnLinkSubmit').disabled = false;
+                    pengajuanList.innerHTML = '';
+                });
+            }
+
+            if (linkForm) {
+                linkForm.addEventListener('submit', function(e) {
+                    const checkboxes = linkForm.querySelectorAll('input[name="pengajuan_ids[]"]:checked');
+                    if (checkboxes.length === 0) {
+                        e.preventDefault();
+                        alert('Pilih minimal satu pengajuan barang untuk dihubungkan.');
+                    }
+                });
+            }
         });
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('items-container');

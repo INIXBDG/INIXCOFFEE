@@ -17,7 +17,7 @@
             </div>
         @endif
 
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 mb-4 glass-force">
             <div class="card-body p-4">
                 <div
                     class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-4">
@@ -80,7 +80,7 @@
             </form>
         @endif
 
-        <div class="card">
+        <div class="card glass-force">
             <div class="card-body">
                 <h5 class="mb-2">Daftar Modul</h5>
                 <table class="table table-bordered table-striped table-hover">
@@ -356,7 +356,7 @@
 
                             <div class="mb-3">
                                 <label>Instansi Peserta</label>
-                                <select name="perusahaan_id" class="form-select select2">
+                                <select name="perusahaan_id" id="peserta_perusahaan" class="form-select select2">
                                     <option value="">-- Tanpa Instansi --</option>
                                     @foreach ($perusahaan as $item)
                                         <option value="{{ $item->id }}">{{ $item->nama_perusahaan }} |
@@ -533,9 +533,11 @@
         rel="stylesheet" />
 
     {{-- Script Select2 & Logic --}}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-    <script defer>
+
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
 
             // Format Rupiah
@@ -603,12 +605,20 @@
                 });
             });
 
-            // Select2 Tambah Peserta
-            $('#modalPeserta').on('shown.bs.modal', function() {
-                if ($('#peserta_perusahaan').hasClass('select2-hidden-accessible')) {
-                    $('#peserta_perusahaan').select2('destroy');
+            $('#modalPeserta').on('shown.bs.modal', function () {
+                const $select = $('#peserta_perusahaan');
+
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    $select.select2('destroy');
                 }
-                $('#peserta_perusahaan').select2({
+
+                $select.html(
+                    $select.find('option').sort(function (a, b) {
+                        return $(a).text().localeCompare($(b).text());
+                    })
+                );
+
+                $select.select2({
                     placeholder: "Pilih perusahaan...",
                     allowClear: true,
                     width: '100%',
@@ -616,7 +626,7 @@
                     theme: 'bootstrap-5'
                 });
             });
-
+            
             // Tombol Edit → isi modal
             $(document).on('click', '.btnEdit', function() {
                 const tr = $(this).closest('tr');

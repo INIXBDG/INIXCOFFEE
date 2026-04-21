@@ -229,7 +229,11 @@
         <div class="stretch-card">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title"><i class="fas fa-bullseye card-icon me-2"></i> Buat Target Baru</h4>
+                    <h4 class="card-title"><i class="fas fa-bullseye card-icon me-2"></i> Buat Target Baru</h4> 
+                    {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalImport">
+                        Import Target
+                    </button> --}}
+
                     <div class="d-flex flex-wrap gap-3 mt-3" id="targetContainer">
                         <button type="button" class="target-card add-card d-flex align-items-center justify-content-center"
                             data-bs-toggle="modal" data-bs-target="#modalBuatTarget" style="width: 280px; flex: 0 0 auto;">
@@ -239,6 +243,35 @@
                         <div id="content_target" class="d-flex flex-wrap gap-3"></div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="ModalImport" tabindex="-1" role="dialog" aria-labelledby="ModalImportLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form action="{{ route('kpi.importTarget') }}" method="post">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="ModalImportLabel">Modal title</h5>
+                        <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="file">File Import</label>
+                            <input type="file" class="form-control" id="file" placeholder="pilih file xlsx,xls,csv">
+                        </div>
+                        <div class="form-group text-center">     
+                            <small id="emailHelp" class="form-text text-muted">jika belum memiliki file template, silahkan di download.</small>
+                            <a href="{{ asset('template_KPI/template_import_kpi.xlsx') }}" class="btn btn-success" download>Download Template</a>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keluar</button>
+                        <button type="submit" class="btn btn-primary">Import</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -525,6 +558,8 @@
         }
 
         $(document).ready(function() {
+            loadContentForm();
+
             initInputFormatting();
 
             $('#modalFormManual').on('show.bs.modal', function() {
@@ -682,10 +717,6 @@
                     }
                 }
             });
-        });
-
-        $(document).ready(function() {
-            loadContentForm();
         });
 
         $('#targetForm').on('submit', function(e) {
@@ -1012,11 +1043,42 @@
                                     item.nilai_target) {
                                     statusText = 'Gagal';
                                     badgeClass = 'bg-danger';
-                                } else if (progressNumeric >= 100) {
-                                    statusText = 'Selesai';
-                                    badgeClass = 'bg-success';
+                                } else if (nowTime < item.tenggat_waktu && progressNumeric > item.nilai_target) {
+                                    if (item.tipe_target === 'angka') {
+                                        if (item.manual_value >= item.nilai_target) {
+                                            statusText = 'Dalam Progress';
+                                            badgeClass = 'bg-warning text-dark';
+                                        }
+                                    } else if (item.tipe_target === 'rupiah') {
+                                        if (progressNumeric >= item.nilai_target) {
+                                            statusText = 'Dalam Progress';
+                                            badgeClass = 'bg-warning text-dark';
+                                        }
+                                    } else if (item.tipe_target === 'persen') {
+                                        if (progressNumeric >= item.nilai_target) {
+                                            statusText = 'Dalam Progress';
+                                            badgeClass = 'bg-warning text-dark';
+                                        }
+                                    }
+                                } else if (nowTime > item.tenggat_waktu && progressNumeric > item.nilai_target) {
+                                    if (item.tipe_target === 'angka') {
+                                        if (item.manual_value >= item.nilai_target) {
+                                            statusText = 'Selesai';
+                                            badgeClass = 'bg-success';
+                                        }
+                                    } else if (item.tipe_target === 'rupiah') {
+                                        if (progressNumeric >= item.nilai_target) {
+                                            statusText = 'Selesai';
+                                            badgeClass = 'bg-success';
+                                        }
+                                    } else if (item.tipe_target === 'persen') {
+                                        if (progressNumeric >= item.nilai_target) {
+                                            statusText = 'Selesai';
+                                            badgeClass = 'bg-success';
+                                        }
+                                    }
                                 } else {
-                                    statusText = 'Dalam Proses';
+                                    statusText = 'Dalam Progress';
                                     badgeClass = 'bg-warning text-dark';
                                 }
 
@@ -1100,8 +1162,8 @@
                                                     <div class="progress rounded-pill" style="height: 12px; background-color: #e9ecef; position: relative;">
                                                         <div class="progress-bar rounded-pill"
                                                             style="width: ${lengthProgress}%; background: ${badgeClass === 'bg-success' ? '#28a745' :
-                                        badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
-                                    }"></div>
+                                                                    badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
+                                                                }"></div>
                                                         <span class="position-absolute top-50 start-50 translate-middle" style="font-size: 0.7rem; color: black;">
                                                             ${progressValueDisplay}
                                                         </span>
@@ -1428,12 +1490,330 @@
 
                         const allowedAssistantRoutesForRupiah = [
                             'Pemasukan Kotor',
-                            'meningkatkan revenue perusahaan'
+                            'meningkatkan revenue perusahaan',
+                            'target penjualan tahunan'
                         ];
 
                         const allowedAssistantRoutesForPresentaseGapKompetensi = [
                             'persentase gap kompetensi tim terhadap standar skill'
                         ]
+
+                        const allowedAssistantRoutesForTargetPenjualanTahunan = [
+                            'target penjualan tahunan',
+                            'Pemasukan Kotor'
+                        ]
+
+                        const allowedAssistantRoutesForPeningkatanKontribusiPelatihan = [
+                            'peningkatan kontribusi pelatihan',
+                        ]
+                        
+                        let ContentTrafikSales = '';
+
+                        if (allowedAssistantRoutesForTargetPenjualanTahunan.includes(data.condition)) {
+                            const salesPerf = data.data_detail?.sales_performance;
+                            
+                            if (salesPerf && salesPerf.data) {
+                                const formatRupiah = (num) => {
+                                    return 'Rp ' + Number(num).toLocaleString('id-ID');
+                                };
+
+                                if (salesPerf.type === 'individual') {
+                                    const s = salesPerf.data;
+                                    const statusClass = s.status === 'achieved' ? 'badge-success' : 'badge-warning';
+                                    const progressColor = s.status === 'achieved' ? '#28a745' : '#ffc107';
+                                    const progressWidth = Math.min(s.percentage, 100);
+
+                                    ContentTrafikSales = `
+                                        <div class="card shadow-sm mb-4 mt-2    ">
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p class="mb-2"><strong>Sales:</strong> ${s.nama}</p>
+                                                        <p class="mb-2"><strong>Revenue:</strong> ${formatRupiah(s.revenue)}</p>
+                                                        <p class="mb-3"><strong>Target:</strong> ${formatRupiah(s.presentase_kemampuan)}</p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="mb-2">
+                                                            <div class="d-flex justify-content-between">
+                                                                <span>Progress</span>
+                                                                <span>${s.percentage}%</span>
+                                                            </div>
+                                                            <div class="progress" style="height: 10px;">
+                                                                <div class="progress-bar" role="progressbar" 
+                                                                    style="width: ${progressWidth}%; background-color: ${progressColor};"
+                                                                    aria-valuenow="${s.percentage}" aria-valuemin="0" aria-valuemax="100">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <span class="badge ${statusClass} p-2">${s.status.toUpperCase()}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                                
+                                else if (salesPerf.type === 'all') {
+                                    let rows = '';
+                                    
+                                    salesPerf.data.forEach((sales, index) => {
+                                        const statusClass = sales.status === 'achieved' ? 'badge-success' : 'badge-warning';
+                                        const textClass = sales.status === 'achieved' ? 'text-success' : 'text-warning';
+                                        
+                                        const targetValue = Number(sales.presentase_kemampuan).toLocaleString('id-ID', { useGrouping: false });
+                                        
+                                        rows += `
+                                            <tr id="row-${sales.kode_karyawan}">
+                                                <td class="text-center">${index + 1}</td>
+                                                <td><strong>${sales.nama}</strong></td>
+                                                <td class="text-right">${formatRupiah(sales.revenue)}</td>
+                                                <td class="text-center">
+                                                    <div class="input-group input-group-sm" style="max-width: 150px; float: right;">
+                                                        <input type="text" 
+                                                            class="form-control text-right target-input ${sales.id_detailPerson ? '' : 'is-invalid'}" 
+                                                            value="${targetValue}" 
+                                                            data-id-detail="${sales.id_detailPerson || ''}"
+                                                            data-kode-karyawan="${sales.kode_karyawan}"
+                                                            placeholder="Target"
+                                                            ${!sales.id_detailPerson ? 'disabled' : ''}
+                                                        >
+                                                    </div>
+                                                    <div class="loading-spinner" style="display: none; float: right; margin-right: 10px;">
+                                                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                                    </div>
+                                                    <div class="update-feedback" style="display: none; float: right; margin-right: 10px; margin-top: 5px;">
+                                                        <i class="fas fa-check-circle text-success"></i>
+                                                    </div>
+                                                    <div class="clearfix"></div>
+                                                </td>
+                                                <td class="text-center ${textClass}"><strong>${sales.percentage}%</strong></td>
+                                                <td class="text-center">
+                                                    <span class="badge ${statusClass}">${sales.status.toUpperCase()}</span>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    });
+
+                                    let htmlTargetTahunanSales = '';
+
+                                    Object.entries(data.data_detail.triwulan_data).forEach(([label, value]) => {
+                                        htmlTargetTahunanSales += `
+                                            <div class="col-md-6">
+                                                <div class="card h-100 shadow-sm border-0">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title">${label.replace('_', ' ')}</h5>
+                                                        <p class="card-text">Rp ${value.toLocaleString('id-ID')}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    });
+
+                                    ContentTrafikSales = `
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="card shadow-sm mt-3">
+                                                    <div class="card-body p-0">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-hover mb-0">
+                                                                <thead class="thead-light">
+                                                                    <tr>
+                                                                        <th class="text-center" width="5%">No</th>
+                                                                        <th>Sales</th>
+                                                                        <th class="text-right" width="20%">Revenue</th>
+                                                                        <th class="text-right" width="20%">Target (Editable)</th>
+                                                                        <th class="text-center" width="15%">Persentase</th>
+                                                                        <th class="text-center" width="15%">Status</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    ${rows}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                                <div class="col">
+                                                    <div class="card shadow-sm border-0 mt-3">
+                                                        <div class="card-body">
+                                                            <div class="row g-3">
+                                                                ${htmlTargetTahunanSales}
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="mb-2 text-center">
+                                                            <hr>
+                                                            <p>Data Triwulan diambil dari tahun ${data.detail_jangka}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                        </div>
+                                    `;
+
+                                    setTimeout(() => {
+                                        document.querySelectorAll('.target-input').forEach(input => {
+                                            let timeout = null;
+                                            
+                                            input.addEventListener('input', function() {
+                                                const el = this;
+                                                const row = el.closest('tr');
+                                                const spinner = row.querySelector('.loading-spinner');
+                                                const feedback = row.querySelector('.update-feedback');
+                                                
+                                                clearTimeout(timeout);
+                                                
+                                                feedback.style.display = 'none';
+                                                
+                                                timeout = setTimeout(() => {
+                                                    const idDetailPerson = el.dataset.idDetail;
+                                                    const kodeKaryawan = el.dataset.kodeKaryawan;
+                                                    const newTarget = el.value.replace(/\./g, ''); 
+                                                    
+                                                    if (!idDetailPerson) {
+                                                        el.classList.add('is-invalid');
+                                                        return;
+                                                    }
+                                                    
+                                                    spinner.style.display = 'inline-block';
+                                                    el.disabled = true;
+                                                    
+                                                    $.ajax({
+                                                        url: "{{ route('kpi.overview.updateTargetPerSales') }}", 
+                                                        method: 'POST',
+                                                        data: {
+                                                            _token: '{{ csrf_token() }}',
+                                                            id_detailPerson: idDetailPerson,
+                                                            kode_karyawan: kodeKaryawan,
+                                                            presentase_kemampuan: newTarget
+                                                        },
+                                                        success: function(response) {
+                                                            spinner.style.display = 'none';
+                                                            el.disabled = false;
+                                                            
+                                                            feedback.style.display = 'inline-block';
+                                                            el.classList.remove('is-invalid');
+                                                            el.classList.add('is-valid');
+                                                            
+                                                            if (response.data) {
+                                                                const percentageCell = row.querySelector('td:nth-child(5)');
+                                                                const statusCell = row.querySelector('td:nth-child(6)');
+                                                                
+                                                                if (response.data.percentage) {
+                                                                    percentageCell.innerHTML = `<strong class="${response.data.status === 'achieved' ? 'text-success' : 'text-warning'}">${response.data.percentage}%</strong>`;
+                                                                }
+                                                                
+                                                                if (response.data.status) {
+                                                                    const statusClass = response.data.status === 'achieved' ? 'badge-success' : 'badge-warning';
+                                                                    statusCell.innerHTML = `<span class="badge ${statusClass}">${response.data.status.toUpperCase()}</span>`;
+                                                                }
+                                                            }
+                                                            
+                                                            setTimeout(() => {
+                                                                feedback.style.display = 'none';
+                                                                el.classList.remove('is-valid');
+                                                            }, 2000);
+                                                        },
+                                                        error: function(xhr) {
+                                                            spinner.style.display = 'none';
+                                                            el.disabled = false;
+                                                            
+                                                            el.classList.add('is-invalid');
+                                                            
+                                                            console.error('Update failed:', xhr.responseText);
+                                                        }
+                                                    });
+                                                }, 1000); 
+                                            });
+                                            
+                                            input.addEventListener('blur', function() {
+                                                const value = this.value.replace(/\./g, '');
+                                                if (value) {
+                                                    this.value = Number(value).toLocaleString('id-ID');
+                                                }
+                                            });
+                                            
+                                            input.addEventListener('focus', function() {
+                                                const value = this.value.replace(/\./g, '');
+                                                if (value) {
+                                                    this.value = value;
+                                                }
+                                            });
+                                        });
+                                    }, 100);
+                                }
+                            }
+                        } else if (allowedAssistantRoutesForPeningkatanKontribusiPelatihan.includes(data.condition)) {
+                            ContentTrafikSales = `
+                            <div class="card mt-4 border-0 rounded-4" style="background:#f8fafc;">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-end mb-4">
+                                        <div>
+                                            <div class="text-muted small">Total Kelas</div>
+                                            <div class="fs-2 fw-semibold text-dark">
+                                                ${data.data_detail.class_breakdown.total}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-3 bg-white border h-100">
+                                                <div class="text-muted small mb-2">Kelas Inixindo</div>
+                                                <div class="fs-4 fw-semibold text-dark">
+                                                    ${data.data_detail.class_breakdown.kelas_od}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-3 bg-white border h-100">
+                                                <div class="text-muted small mb-2">Kelas Orang Luar</div>
+                                                <div class="fs-4 fw-semibold text-dark">
+                                                    ${data.data_detail.class_breakdown.kelas_ol}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-3 bg-white border h-100">
+                                                <div class="text-muted small mb-2">Kelas Offline</div>
+                                                <div class="fs-4 fw-semibold text-dark">
+                                                    ${data.data_detail.class_breakdown.kelas_offline}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-3 bg-white border h-100">
+                                                <div class="text-muted small mb-2">Kelas Online</div>
+                                                <div class="fs-4 fw-semibold text-dark">
+                                                    ${data.data_detail.class_breakdown.kelas_online}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 rounded-3 bg-white border">
+                                        <div class="fw-semibold mb-3">Kelas Inhouse</div>
+                                        <div class="d-flex justify-content-between py-2 border-bottom">
+                                            <span class="text-muted small">Bandung</span>
+                                            <span class="fw-semibold text-dark">
+                                                ${data.data_detail.class_breakdown.Inhouse.kelas_inhouse}
+                                            </span>
+                                        </div>
+                                        <div class="d-flex justify-content-between py-2">
+                                            <span class="text-muted small">Luar Bandung</span>
+                                            <span class="fw-semibold text-dark">
+                                                ${data.data_detail.class_breakdown.Inhouse.kelas_inhouse_luar}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        } else {
+                            ContentTrafikSales = '';
+                        }
 
                         let contentPieChart = '';
 
@@ -1514,40 +1894,73 @@
                                 `;
                         } else if (allowedAssistantRoutesForRupiah.includes(data.condition)) {
                             contentPieChart = `
+                                <div class="p-2">
+
                                     <div class="mb-4">
-                                        <h6 class="fw-semibold text-primary mb-1">
-                                            <i class="fa-solid fa-wallet me-2"></i>${data.judul}
-                                        </h6>
                                         <small class="text-muted">Ringkasan performa</small>
                                     </div>
 
-                                    <div class="mb-4 p-3 rounded bg-light">
-                                        <div class="text-muted small mb-1">Bulan Terakhir</div>
-                                        <div class="fw-semibold">${labelBulanTerakhir}</div>
-                                        <div class="fw-bold fs-6 text-dark">
-                                            ${formatRupiah(nilaiBulanTerakhirRupiah)}
+                                    <div class="mb-4 p-3 rounded-3 border bg-white shadow-sm">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="text-muted small">Bulan Terakhir</div>
+                                                <div class="fw-semibold">${labelBulanTerakhir}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-bold fs-5 text-dark">
+                                                    ${formatRupiah(nilaiBulanTerakhirRupiah)}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <div class="text-muted small mb-2">Top Hari Tertinggi</div>
+                                        <div class="text-muted small mb-2 fw-semibold">
+                                            Top Hari Tertinggi
+                                        </div>
 
                                         ${top3HariTertinggi.map(([tanggal, nilai], index) => `
-                                                                <div class="d-flex justify-content-between mb-1 ${index > 0 ? 'text-muted' : ''}">
-                                                                    <span>${formatTanggalSingkat(tanggal)}</span>
-                                                                    <span class="fw-semibold">${formatRupiah(nilai)}</span>
-                                                                </div>
-                                                            `).join('')}
+                                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded 
+                                                ${index === 0 ? 'bg-success-subtle' : 'bg-light'}">
+
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="badge ${index === 0 ? 'bg-success' : 'bg-secondary'}">
+                                                        #${index + 1}
+                                                    </span>
+                                                    <span class="${index === 0 ? 'fw-semibold text-dark' : 'text-muted'}">
+                                                        ${formatTanggalSingkat(tanggal)}
+                                                    </span>
+                                                </div>
+
+                                                <span class="fw-semibold ${index === 0 ? 'text-success' : 'text-dark'}">
+                                                    ${formatRupiah(nilai)}
+                                                </span>
+                                            </div>
+                                        `).join('')}
                                     </div>
 
                                     <hr class="my-3">
 
-                                    <div class="d-flex align-items-center gap-2 text-muted small">
-                                        <i class="bi bi-person-circle fs-5"></i>
-                                        <span class="fw-semibold text-dark">${karyawanTerkaitRupiah?.nama_lengkap ?? '-'}</span>
-                                        <span>• ${karyawanTerkaitRupiah?.jabatan ?? '-'}</span>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-person-circle fs-4 text-secondary"></i>
+                                            <div>
+                                                <div class="fw-semibold text-dark">
+                                                    ${karyawanTerkaitRupiah?.nama_lengkap ?? '-'}
+                                                </div>
+                                                <small class="text-muted">
+                                                    ${karyawanTerkaitRupiah?.jabatan ?? '-'}
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <span class="badge bg-light text-dark border">
+                                            Karyawan
+                                        </span>
                                     </div>
-                                    `;
+
+                                </div>
+                            `;
 
                         } else {
                             contentPieChart = `
@@ -1812,6 +2225,8 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    ${ContentTrafikSales}
 
                                     ${contentStatisticChart}
                                 </div>
@@ -2321,6 +2736,7 @@
                             <option value="pengembangan kurikulum pelatihan">Pengembangan Kurikulum & Modul Pelatihan</option>
                             <option value="peningkatan knowledge sharing">Peningkatan Knowledge Sharing</option>
                             <option value="peningkatan kontribusi pelatihan">Peningkatan Kontribusi Pelatihan</option>
+                            <option value="evaluasi kinerja instruktur">Evaluasi Kinerja Instruktur</option>
                         `;
                 }
 
@@ -2338,7 +2754,7 @@
                     options += `
                         <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option>
                         <option value="customer acquisition cost">Customer Acquisition Cost</option>
-                        <option value="biaya akuisisi client">Biaya Akuisisi Client</option>
+                        <option value="evaluasi kinerja sales">Evaluasi Kinerja Sales</option>
                     `;
                 }
 
@@ -2396,82 +2812,115 @@
             const routeLower = selectedRoute.toLowerCase();
 
             const persenRoutes = [
+                // ================= GM =================
                 'pemasukan bersih',
                 'kepuasan pelanggan',
                 'rasio biaya operasional terhadap revenue',
-                'customer acquisition cost',
-                'biaya akuisisi perclient',
-
                 'performa kpi departemen',
+
+                // ================= CS =================
                 'peserta puas dengan pelayanan dan fasilitas training',
                 'penanganan komplain peserta',
                 'report persiapan kelas',
 
-                'banyak tagihan client yang belum lunas',
+                // ================= Finance =================
+                'outstanding',
+                'penyelesaian tagihan perusahaan',
+                'akurasi pencatatan masuk',
+                'pencairan biaya operasional',
 
+                // ================= HRD =================
                 'pelaksanaan kegiatan karyawan',
                 'pengeluaran biaya karyawan',
                 'administrasi karyawan',
 
+                // ================= Driver =================
                 'perbaikan kendaraan',
                 'report kondisi kendaraan',
                 'kontrol pengeluaran transportasi',
+                'feedback kenyamanan berkendaran',
 
+                // ================= OB =================
                 'feedback kebersihan dan kenyamanan',
                 'penyelesaian tugas harian',
 
+                // ================= ITSM =================
                 'kepuasan client itsm',
                 'meningkatkan kepuasan dan loyalitas peserta/client',
-
                 'availability sistem internal kritis',
+
+                // ================= Programmer =================
                 'ketepatan waktu penyelesaian fitur',
                 'mengukur kualitas aplikasi agar minim bug',
 
+                // ================= Digital =================
                 'konsistensi campaign digital',
+
+                // ================= TS =================
                 'keberhasilan support memenuhi sla',
                 'kualitas layanan exam',
 
+                // ================= Instruktur =================
+                'presentase kinerja instruktur',
                 'kepuasan peserta pelatihan',
                 'upseling lanjutan materi',
-                'outstanding',
 
-                'akurasi kelengkapan data penjualan',
-                'persentase gap kompetensi tim terhadap standar skill',
-                'presentase kinerja instruktur',
+                // ================= Manager Edu =================
                 'peningkatan kontribusi pelatihan',
-                'biaya akuisisi client',
-                'laporan mom',
-                'todo administrasi',
-                'kualitas dokumentasi support dan proctor',
-                'ketepatan waktu po',
-                'peningkatan kemampuan kompetensi sales',
-                'feedback kenyamanan berkendaran',
+                'evaluasi kinerja instruktur',
+
+                // ================= Sales =================
                 'target penjualan tahunan',
-                'penyelesaian tagihan perusahaan',
-                'akurasi pencatatan masuk',
-                'pencairan biaya operasional',
-                'inovation adaption rate'
+                'biaya akuisisi perclient',
+
+                // ================= SPV Sales =================
+                'customer acquisition cost',
+                'evaluasi kinerja sales',
+
+                // ================= Adm Sales =================
+                'laporan mom',
+                'akurasi kelengkapan data penjualan',
+                'todo administrasi',
+
+                // ================= Adm Holding =================
+                'ketepatan waktu po',
+                'kualitas dokumentasi support dan proctor',
+
+                // ================= Kombinasi =================
+                'persentase gap kompetensi tim terhadap standar skill',
+                'peningkatan kemampuan kompetensi sales'
             ].map(route => route.toLowerCase());
 
             const rupiahRoutes = [
+                // GM
                 'pemasukan kotor',
+
+                // SPV Sales
                 'meningkatkan revenue perusahaan',
-                'biaya akuisisi client'
             ].map(r => r.toLowerCase());
 
             const angkaRoutes = [
+                // CS
                 'dorong inovasi pelayanan',
-                'inisiatif efisiensi keuangan',
 
+                // Finance
+                'inisiatif efisiensi keuangan',
                 'mengurangi manual work dan error',
                 'laporan analisis keuangan',
 
+                // Digital
                 'efektifitas digital marketing',
 
+                // Instruktur
                 'sertifikasi kompetensi internal',
                 'pelatihan kompetensi eksternal',
+
+                // Manager Edu
                 'pengembangan kurikulum pelatihan',
                 'peningkatan knowledge sharing',
+
+                // Kombinasi IT
+                'inovation adaption rate'
             ].map(route => route.toLowerCase());
 
             if (persenRoutes.includes(routeLower)) {
@@ -2525,7 +2974,6 @@
                 $nilaiTarget.val(autoFillValues[routeLower]).trigger('input');
             }
 
-            // 🔹 Trigger formatting jika nilai sudah terisi
             if ($nilaiTarget.val()) {
                 $nilaiTarget.trigger('input');
             }

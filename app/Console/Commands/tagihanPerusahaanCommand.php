@@ -70,7 +70,24 @@ class tagihanPerusahaanCommand extends Command
                 }
             }
 
+            // set status otomatis
+            $tracking = $tagihan->trackingTagihan->sortByDesc('created_at')->first();
+            $dueDate = null;
+
+            if (!$tracking) continue;
+
+            if($tracking->tanggal_perkiraan_selesai) {
+                $dueDate = Carbon::parse($tracking->tanggal_perkiraan_selesai)->endOfDay();
+            } else {
+                $dueDate = Carbon::parse($tracking->tanggal_perkiraan_mulai)->endOfDay();
+            }         
             
+            if ($dueDate < $now && !in_array($tracking->status, ['selesai', 'pending', 'telat'])) {
+                $tracking->status = 'telat';
+                $tracking->save();
+                $this->info('status tagihan terupdate');
+            }
+                
         }
 
     }

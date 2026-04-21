@@ -229,6 +229,8 @@
         </div>
     </div>
 
+    <input type="hidden" id="currentKaryawanId" value="{{ $targetId ?? Auth::id() }}">
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -477,12 +479,14 @@
 
         function loadDataPersonal() {
             let tahun = {{ now()->year }};
+            let karyawanId = $('#currentKaryawanId').val(); 
 
             $.ajax({
                 url: "{{ route('kpi.overview.dataPersonal') }}",
                 type: 'GET',
                 data: {
-                    tahun: tahun
+                    tahun: tahun,
+                    id_karyawan: karyawanId,
                 },
                 dataType: 'json',
                 beforeSend: function() {

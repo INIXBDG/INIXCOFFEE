@@ -53,8 +53,8 @@
 
                         @forelse($laporans as $laporan)
                             
-                            <tr>
-                                <td>{{ $loop->iteration }}</td>
+                            <tr  @if($laporan->is_draft) class="table-warning" @endif>
+                                <td>{{ ($laporans->currentPage() - 1) * $laporans->perPage() + $loop->iteration }}</td>
                                 <td>
                                     <div class="row ps-3">
                                         {{ $laporan->jenis_meeting }}
@@ -69,31 +69,40 @@
                                 <td>{{ \Carbon\Carbon::parse($laporan->tanggal_pelaksanaan)->format('l, d F Y') }}</td>
                                 <td>{{ $laporan->topic }}</td>
                                 <td>
-                                    @if (count($laporan->catatanClient) > 0)
-                                        <span class="badge bg-info">Catatan Client</span>
-                                    @else
-                                        <span class="badge bg-secondary">Catatan Sales</span>
-                                    @endif
+                                    <div class="d-flex flex-column gap-1">
+                                        @if (count($laporan->catatanClient) > 0)
+                                            <span class="badge bg-info">Catatan Client</span>
+                                            @if (count($laporan->catatanSales) > 0)
+                                                <span class="badge bg-secondary">Catatan Sales</span>
+                                            @endif
+                                        @elseif (count($laporan->catatanSales) > 0)
+                                            <span class="badge bg-secondary">Catatan Sales</span>
+                                        @else
+                                            <span>-</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td>
                                     <a href="{{ route('laporan.harian.edit', $laporan->id) }}" class="btn btn-sm btn-warning">
                                         <i class="bx bx-edit"></i> Edit
                                     </a>
-                                    <form method="POST" action="{{ route('laporan.harian.delete', $laporan->id) }}" style="display: inline;" onsubmit="return confirm('Yakin ingin menghapus?')">
+                                    <form method="POST" action="{{ route('laporan.harian.delete', $laporan->id) }}" style="display: inline;" class="delete-form">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-action="{{ route('laporan.harian.delete', $laporan->id) }}">
                                             <i class="bx bx-trash"></i> Hapus
                                         </button>
                                     </form>
-                                    @if (count($laporan->catatanClient) > 0)
-                                        <a href="{{ route('laporan.harian.pdf', ['id'=>$laporan->id,'type'=>'client']) }}" class="btn btn-sm btn-success">
-                                            <i class="bx bx-file"></i> PDF
-                                        </a>
-                                    @else
-                                        <a href="{{ route('laporan.harian.pdf', ['id'=>$laporan->id,'type'=>'sales']) }}" class="btn btn-sm btn-success">
-                                            <i class="bx bx-file"></i> PDF
-                                        </a>
+                                    @if (!$laporan->is_draft)
+                                        @if (count($laporan->catatanClient) > 0)
+                                            <a href="{{ route('laporan.harian.pdf', ['id'=>$laporan->id,'type'=>'client']) }}" class="btn btn-sm btn-success">
+                                                <i class="bx bx-file"></i> PDF
+                                            </a>
+                                        @else
+                                            <a href="{{ route('laporan.harian.pdf', ['id'=>$laporan->id,'type'=>'sales']) }}" class="btn btn-sm btn-success">
+                                                <i class="bx bx-file"></i> PDF
+                                            </a>
+                                        @endif
                                     @endif
                                 </td>
                             </tr>
@@ -111,9 +120,56 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <div class="mt-4 d-flex justify-content-center">
+                {{ $laporans->links() }}
+            </div>
         </div>
     </div>
 
 </div>
+
+<!-- Modal Konfirmasi Hapus -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Yakin ingin menghapus laporan ini?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Hapus</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        let currentDeleteForm = null;
+        
+        // Set form saat modal ditrigger
+        confirmDeleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const action = button.getAttribute('data-action');
+            const form = button.closest('.delete-form');
+            currentDeleteForm = form;
+        });
+        
+        // Submit form saat tombol Hapus di klik
+        confirmDeleteBtn.addEventListener('click', function() {
+            if (currentDeleteForm) {
+                currentDeleteForm.submit();
+            }
+        });
+    });
+</script>
 
 @endsection

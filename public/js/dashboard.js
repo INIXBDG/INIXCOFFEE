@@ -1367,6 +1367,48 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
     }
 }
 
+function fetchUptimePresentase() {
+    $.ajax({
+        url: '/dashboard/uptime/monitoring',
+        type: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            console.log(data);
+
+            // Update nilai presentase
+            $('#coffee-weekly-uptime').text(data.coffee_week + '%');
+            $('#coffee-monthly-uptime').text(data.coffee_month + '%');
+            $('#latte-weekly-uptime').text(data.latte_week + '%');
+            $('#latte-monthly-uptime').text(data.latte_month + '%');
+
+            if (typeof data.coffee_week_downtime !== 'undefined') {
+                $('#coffee-weekly-downtime-mins').text(data.coffee_week_downtime);
+            }
+            if (typeof data.coffee_month_downtime !== 'undefined') {
+                $('#coffee-monthly-downtime-mins').text(data.coffee_month_downtime);
+            }
+
+
+            $('#coffee-weekly-uptime-bar').css('width', data.coffee_week + '%');
+            $('#coffee-monthly-uptime-bar').css('width', data.coffee_month + '%');
+            $('#latte-weekly-uptime-bar').css('width', data.latte_week + '%');
+            $('#latte-monthly-uptime-bar').css('width', data.latte_month + '%');
+
+            var coffeeWeekDowntimePerc = 100 - parseFloat(data.coffee_week);
+            var coffeeMonthDowntimePerc = 100 - parseFloat(data.coffee_month);
+            $('#coffee-weekly-downtime-bar').css('width', coffeeWeekDowntimePerc);
+            $('#coffee-monthly-downtime-bar').css('width', coffeeMonthDowntimePerc);
+
+            // Sembunyikan loading, tampilkan content
+            $('#uptime-loading').addClass('d-none');
+            $('#uptime-content').removeClass('d-none');
+        },
+        error: function () {
+            $('#uptime-loading').html('<p class="text-danger">Gagal memuat data uptime.</p>');
+        }
+    });
+}
+
 // CHART JUMLAH PEMBUATAN MATERI PER INSTRUKTUR - VERSI FIX
 let jumlahUpdateMateriChart = null;
 
@@ -1375,6 +1417,7 @@ $(document).ready(function () {
     if (!canvas) return;
 
     initJumlahUpdateMateriChart();
+    fetchUptimePresentase();
 
     loadData();
 

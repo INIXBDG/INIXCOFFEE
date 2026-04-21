@@ -131,9 +131,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script>
     $(document).ready(function() {
+		var jabatan = "{{auth()->user()->karyawan->jabatan}}"
         var idInstruktur = "{{ auth()->user()->id_instruktur }}";
         var idSales = "{{ auth()->user()->id_sales }}";
-        if (idInstruktur == 'AD') {
+        if (idInstruktur == 'AD' || jabatan == 'Technical Support' ) {
             var idInstruktur = "";
         }
         if (idSales == 'AM') {

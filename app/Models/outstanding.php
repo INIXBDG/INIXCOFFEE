@@ -21,6 +21,15 @@ class outstanding extends Model
         'tanggal_bayar',
         'path_faktur_pajak',
         'path_dokumen_tambahan',
+        'jumlah_potongan',
+        'jenis_potongan',
+        'deleted_at',
+        'deleted_by',
+    ];
+
+    protected $casts = [
+        'jumlah_potongan' => 'array',
+        'jenis_potongan' => 'array',
     ];
 
     public function rkm()

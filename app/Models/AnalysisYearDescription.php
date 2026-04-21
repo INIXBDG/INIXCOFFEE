@@ -14,5 +14,6 @@ class AnalysisYearDescription extends Model
     protected $fillable = [
         'year',
         'description',
+        'note',
     ];
 }

@@ -5,41 +5,62 @@
 
     <div class="container-fluid py-4">
 
-        <!-- Modal Detail -->
         <div class="modal fade" id="detailModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content shadow">
 
-                    <div class="modal-header">
-                        <h5 class="modal-title">Detail Vendor</h5>
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-semibold">Detail Vendor</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
-                    <div class="modal-body">
+                    <div class="modal-body pt-2">
 
-                        <div class="text-center mb-3">
-                            <img id="detailFoto" class="img-fluid rounded shadow-sm"
+                        <div id="fotoWrapper" class="text-center mb-3 d-none">
+                            <img id="detailFoto" class="img-fluid rounded-3 shadow-sm"
                                 style="max-height:250px; object-fit:cover;">
                         </div>
 
                         <h4 id="detailNama" class="fw-bold text-center mb-3"></h4>
 
-                        <div class="border rounded p-3"
+                        <div id="keteranganWrapper" class="border rounded-3 p-3 mb-3 bg-light"
                             style="white-space: pre-line; overflow-wrap: break-word; max-height:250px; overflow-y:auto;">
-                            <p id="detailKeterangan"></p>
+                            <p id="detailKeterangan" class="mb-0"></p>
+                        </div>
+
+                        <div id="extraDetailWrapper" class="d-none">
+                            <div class="border rounded-3 p-3 bg-light">
+                                <div class="row g-2">
+
+                                    <div class="col-md-6" id="nohpWrapper">
+                                        <small class="text-muted">No HP</small>
+                                        <div class="fw-semibold" id="detailNohp"></div>
+                                    </div>
+
+                                    <div class="col-md-6" id="rekeningWrapper">
+                                        <small class="text-muted">No Rekening</small>
+                                        <div class="fw-semibold" id="detailRekening"></div>
+                                    </div>
+
+                                    <div class="col-12" id="alamatWrapper">
+                                        <small class="text-muted">Alamat</small>
+                                        <div class="fw-semibold" id="detailAlamat"></div>
+                                    </div>
+
+                                </div>
+                            </div>
                         </div>
 
                     </div>
 
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <div class="modal-footer border-0 pt-0">
+                        <button class="btn btn-secondary px-4" data-bs-dismiss="modal">Close</button>
                     </div>
 
                 </div>
             </div>
         </div>
 
-        <!-- Modal Tambah -->
         <div class="modal fade" id="exampleModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -58,16 +79,40 @@
                                 <label class="form-label">Nama</label>
                                 <input type="text" name="nama" class="form-control">
                             </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Foto</label>
-                                <input type="file" name="foto" class="form-control">
-                            </div>
+                            @if ($itemValue == 'bengkel')
+                            @else
+                                <div class="mb-3">
+                                    <label class="form-label">Foto</label>
+                                    <input type="file" name="foto" class="form-control">
+                                </div>
+                            @endif
 
                             <div class="mb-3">
                                 <label class="form-label">Keterangan</label>
                                 <textarea name="keterangan" class="form-control" rows="3"></textarea>
                             </div>
+
+                            @if ($itemValue == 'bengkel')
+                                <div class="mb-3">
+                                    <label class="form-label">No HP</label>
+                                    <input type="text" name="no_hp" class="form-control">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">No Rekening</label>
+                                    <input type="text" name="no_rekening" class="form-control">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Alamat</label>
+                                    <textarea name="alamat" class="form-control" rows="2"></textarea>
+                                </div>
+
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" value="1" checked>
+                                    <label class="form-check-label">Aktif</label>
+                                </div>
+                            @endif
                     </div>
 
                     <div class="modal-footer">
@@ -80,7 +125,6 @@
             </div>
         </div>
 
-        <!-- Modal Ajukan -->
         <div class="modal fade" id="exampleModalAjukan" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -91,18 +135,20 @@
                     </div>
 
                     <div class="modal-body" id="itemContainer">
-                        <form action="{{ route('pengajuanbarang.store') }}" method="post"
-                            enctype="multipart/form-data">
+                        <form action="{{ route('pengajuanbarang.store') }}" method="post" enctype="multipart/form-data">
                             @csrf
 
                             <input type="hidden" name="id_karyawan" value="{{ $karyawan->id }}">
 
                             <div class="mb-3">
-                                <label class="form-label">Tipe</label>      
+                                <label class="form-label">Tipe</label>
                                 <select name="tipe" id="tipe" class="form-select form-select-lg">
-                                    <option value="Makan Siang" {{ $itemValue == 'makansiang' ? 'selected' : '' }}>Makan Siang</option>
-                                    <option value="Coffee Break" {{ $itemValue == 'coffeebreak' ? 'selected' : '' }}>Coffee Break</option>
-                                    <option value="Bengkel" {{ $itemValue == 'bengkel' ? 'selected' : '' }}>Bengkel</option>
+                                    <option value="Makan Siang" {{ $itemValue == 'makansiang' ? 'selected' : '' }}>Makan
+                                        Siang</option>
+                                    <option value="Coffee Break" {{ $itemValue == 'coffeebreak' ? 'selected' : '' }}>Coffee
+                                        Break</option>
+                                    <option value="Bengkel" {{ $itemValue == 'bengkel' ? 'selected' : '' }}>Bengkel
+                                    </option>
                                 </select>
                             </div>
 
@@ -118,7 +164,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Harga Barang (dalam Rp.)</label>
-                                <input type="number" name="barang[harga_barang][]" class="form-control">
+                                <input type="text" name="barang[harga_barang][]" class="form-control">
                             </div>
 
                             <div class="mb-3">
@@ -137,7 +183,6 @@
             </div>
         </div>
 
-        <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
             <h4 class="fw-bold text-dark">Data Vendor {{ $itemValue }}</h4>
             <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
@@ -147,7 +192,6 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
-        <!-- Card -->
         <div class="card shadow-lg border-0 rounded-4">
             <div class="card-header bg-white">
                 <div class="d-flex justify-content-between">
@@ -155,22 +199,29 @@
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
                             Tambah Vendor {{ $itemValue }}
                         </button>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModalAjukan">
-                            Ajukan {{ $itemValue }}
-                        </button>
+                        @if ($itemValue == 'bengkel')
+                        @else
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModalAjukan">
+                                Ajukan {{ $itemValue }}
+                            </button>
+                        @endif
+
                     </div>
                     <span class="badge bg-primary-subtle text-primary">{{ $data->total() }} Data</span>
                 </div>
             </div>
 
-            <div class="card-body p-0">
+            <div class="card-body p-0 glass-force">
                 <div class="table-responsive" style="max-height: 600px;">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table align-middle mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>No</th>
                                 <th>Nama Vendor</th>
-                                <th>Foto</th>
+                                @if ($itemValue == 'bengkel')
+                                @else
+                                    <th>Foto</th>
+                                @endif
                                 <th>Keterangan</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center pe-4">Action</th>
@@ -180,34 +231,42 @@
                         <tbody>
 
                             @forelse($data as $index => $item)
-                                <tr class="vendor-row" data-nama="{{ $item->nama }}"
+                                <tr class="vendor-row" data-nama="{{ $item->nama }}" data-type="{{ $itemValue }}"
                                     data-foto="{{ $item->foto ? asset('storage/' . $item->foto) : '' }}"
-                                    data-keterangan="{{ $item->keterangan }}">
+                                    data-keterangan="{{ $item->keterangan }}" data-nohp="{{ $item->no_hp ?? '' }}"
+                                    data-rekening="{{ $item->no_rekening ?? '' }}"
+                                    data-alamat="{{ $item->alamat ?? '' }}">
 
                                     <td>{{ $index + 1 }}</td>
 
                                     <td>
                                         <span class="truncate-text">{{ Str::limit($item->nama, 20) }}</span>
                                     </td>
-
-                                    <td>
-                                        @if ($item->foto)
-                                            <img src="{{ asset('storage/' . $item->foto) }}"
-                                                style="width:50px; height:50px; object-fit:cover; border-radius:8px;">
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
+                                    @if ($itemValue == 'bengkel')
+                                    @else
+                                        <td>
+                                            @if ($item->foto)
+                                                <img src="{{ asset('storage/' . $item->foto) }}"
+                                                    style="width:50px; height:50px; object-fit:cover; border-radius:8px;">
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                    @endif
 
                                     <td>
                                         <span class="truncate-text">{{ Str::limit($item->keterangan, 25, '...') }}</span>
                                     </td>
 
                                     <td class="text-center">
-                                        @if ($item->is_active == '0')
-                                            <span class="badge bg-warning-subtle text-warning">Tidak Aktif</span>
+                                        @if ($itemValue == 'bengkel')
+                                            @if ($item->is_active == '0')
+                                                <span class="badge bg-warning-subtle text-warning">Tidak Aktif</span>
+                                            @else
+                                                <span class="badge bg-success-subtle text-success">Aktif</span>
+                                            @endif
                                         @else
-                                            <span class="badge bg-success-subtle text-success">Aktif</span>
+                                            <span class="text-muted">-</span>
                                         @endif
                                     </td>
 
@@ -249,7 +308,6 @@
         </div>
     </div>
 
-    <!-- TRUNCATE CSS -->
     <style>
         .truncate-text {
             max-width: 160px;
@@ -269,55 +327,108 @@
         document.querySelectorAll('.vendor-row').forEach(row => {
             row.addEventListener('click', function(e) {
 
-                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'FORM') return;
+                if (e.target.tagName === 'BUTTON' || e.target.closest('form')) return;
 
                 let nama = this.dataset.nama;
                 let foto = this.dataset.foto;
                 let keterangan = this.dataset.keterangan;
+                let nohp = this.dataset.nohp;
+                let rekening = this.dataset.rekening;
+                let alamat = this.dataset.alamat;
 
-                document.getElementById('detailNama').innerText = nama;
+                let type = this.dataset.type;
 
-                document.getElementById('detailFoto').src = foto ? foto :
-                    'https://via.placeholder.com/300x200?text=No+Image';
+                let fotoWrapper = document.getElementById('fotoWrapper');
+                let fotoEl = document.getElementById('detailFoto');
 
-                document.getElementById('detailKeterangan').innerText = keterangan;
+                if (fotoWrapper && fotoEl) {
+
+                    if (type === 'bengkel' || !foto) {
+                        fotoWrapper.classList.add('d-none');
+                    } else {
+                        fotoEl.src = foto;
+                        fotoWrapper.classList.remove('d-none');
+                    }
+
+                }
+
+                document.getElementById('detailNama').innerText = nama || '-';
+                document.getElementById('detailKeterangan').innerText = keterangan || '-';
+                
+                let extraWrapper = document.getElementById('extraDetailWrapper');
+
+                let nohpWrap = document.getElementById('nohpWrapper');
+                let rekeningWrap = document.getElementById('rekeningWrapper');
+                let alamatWrap = document.getElementById('alamatWrapper');
+
+                let hasExtra = false;
+
+                if (nohp) {
+                    document.getElementById('detailNohp').innerText = nohp;
+                    nohpWrap.classList.remove('d-none');
+                    hasExtra = true;
+                } else {
+                    nohpWrap.classList.add('d-none');
+                }
+
+                if (rekening) {
+                    document.getElementById('detailRekening').innerText = rekening;
+                    rekeningWrap.classList.remove('d-none');
+                    hasExtra = true;
+                } else {
+                    rekeningWrap.classList.add('d-none');
+                }
+
+                if (alamat) {
+                    document.getElementById('detailAlamat').innerText = alamat;
+                    alamatWrap.classList.remove('d-none');
+                    hasExtra = true;
+                } else {
+                    alamatWrap.classList.add('d-none');
+                }
+
+                if (hasExtra) {
+                    extraWrapper.classList.remove('d-none');
+                } else {
+                    extraWrapper.classList.add('d-none');
+                }
 
                 var modal = new bootstrap.Modal(document.getElementById('detailModal'));
                 modal.show();
             });
         });
 
-        $(document).ready(function () {
-            setupInputFormatter('#itemContainer input[name="barang[harga_barang][]"]'); 
-            $('form').on('submit', function (e) {  
-                e.preventDefault();  
-                $('#itemContainer input[name="barang[harga_barang][]"]').each(function() {  
-                    $(this).val($(this).val().replace(/\./g, ''));  
-                });   
+        $(document).ready(function() {
+            setupInputFormatter('#itemContainer input[name="barang[harga_barang][]"]');
+
+            $('form').on('submit', function(e) {
+                e.preventDefault();
+                $('#itemContainer input[name="barang[harga_barang][]"]').each(function() {
+                    $(this).val($(this).val().replace(/\./g, ''));
+                });
                 this.submit();
             });
-            function formatRupiah(angka, prefix) {
+
+            function formatRupiah(angka) {
                 var number_string = angka.replace(/[^,\d]/g, '').toString(),
-                        split = number_string.split(','),
-                        sisa = split[0].length % 3,
-                        rupiah = split[0].substr(0, sisa),
-                        ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-    
-                    if (ribuan) {
-                        separator = sisa ? '.' : '';
-                        rupiah += separator + ribuan.join('.');
-                    }
-    
-                    rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-                    return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
-            }
-    
-            function setupInputFormatter(selector) {
-                    var $input = $(selector);
-                    $input.on('input', function() {
-                        $input.val(formatRupiah(this.value));
-                    });
+                    split = number_string.split(','),
+                    sisa = split[0].length % 3,
+                    rupiah = split[0].substr(0, sisa),
+                    ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+                if (ribuan) {
+                    let separator = sisa ? '.' : '';
+                    rupiah += separator + ribuan.join('.');
                 }
+
+                return split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+            }
+
+            function setupInputFormatter(selector) {
+                $(document).on('input', selector, function() {
+                    this.value = formatRupiah(this.value);
+                });
+            }
         });
     </script>
 @endsection

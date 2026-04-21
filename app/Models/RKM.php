@@ -34,9 +34,14 @@ class RKM extends Model
         'tahun',
         'isi_pax',
         'makanan',
-        'pdf_peserta'
+        'pdf_peserta',
+        'deleted_at',
+        'deleted_by',
     ];
-    protected $dates = ['tanggal_awal', 'tanggal_akhir'];
+    protected $casts = [
+        'tanggal_awal' => 'date',
+        'tanggal_akhir' => 'date',
+    ];
 
     public function perhitunganNetSales()
     {
@@ -47,7 +52,7 @@ class RKM extends Model
     {
         return $this->hasOne(checklistRKM::class, 'id_rkm');
     }
-    
+
     public function outstanding()
     {
         return $this->hasOne(outstanding::class, 'id_rkm', 'id');
@@ -66,17 +71,17 @@ class RKM extends Model
 
     public function instruktur()
     {
-        return $this->belongsTo(Karyawan::class, 'instruktur_key', 'kode_karyawan');
+        return $this->belongsTo(karyawan::class, 'instruktur_key', 'kode_karyawan');
     }
 
     public function instruktur2()
     {
-        return $this->belongsTo(Karyawan::class, 'instruktur_key2', 'kode_karyawan');
+        return $this->belongsTo(karyawan::class, 'instruktur_key2', 'kode_karyawan');
     }
 
     public function asisten()
     {
-        return $this->belongsTo(Karyawan::class, 'asisten_key', 'kode_karyawan');
+        return $this->belongsTo(karyawan::class, 'asisten_key', 'kode_karyawan');
     }
 
     public function perusahaan()

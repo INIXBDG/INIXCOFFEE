@@ -48,6 +48,11 @@
             @csrf
             <input type="hidden" name="id_rkm" value="{{ $rkm->id }}">
             <input type="hidden" name="terbilang" id="terbilang_hidden">
+            
+            <!-- Input Hidden untuk isPeserta dan isTtd -->
+            <input type="hidden" name="is_peserta" id="is_peserta_input" value="false">
+            <input type="hidden" name="is_ttd" id="is_ttd_input" value="false">
+
             <div class="table-responsive">
                 <table class="invoice-table">
                     <tbody>
@@ -67,7 +72,7 @@
                                 $invoiceNumber = $idRkm . '/' . $kodeInvoice . '/' . $bulanRomawiNow . '/' . $tahun;
                                 @endphp
                                 <input type="text" class="form-control" name="invoice_number"
-                                    value="{{ old('invoice_number', $invoiceNumber) }}" readonly>
+                                    value="{{ old('invoice_number', $invoiceNumber) }}">
                             </td>
                         </tr>
 
@@ -95,7 +100,7 @@
                             <td colspan="2">
                                 <input type="date" class="form-control" name="due_date" id="due_date"
                                     value="{{ old('due_date') }}">
-                                <small class="text-muted">Otomatis 30 hari dari tanggal invoice</small>
+                                <small class="text-muted">Otomatis 6 bulan dari tanggal invoice</small>
                             </td>
                         </tr>
 
@@ -145,8 +150,16 @@
                                 Sampai Dengan: <input type="date" class="form-control" id="tanggal_akhir"
                                     name="tanggal_akhir"
                                     value="{{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('Y-m-d') }}" required><br>
-                                Peserta: <input type="text" class="form-control" name="peserta"
-                                    value="{{ $rkm->pax ?? '-' }} orang">
+                                Peserta:
+                                    <br>
+                                    @foreach ($rkm->registrasi as $item)
+                                          <input 
+                                            type="text" 
+                                            name="peserta[]" 
+                                            class="form-control"
+                                            value="{{ $item->peserta->nama ?? '-' }}"
+                                        >
+                                    @endforeach
                             </td>
                             <td>
                                 <input type="number" class="form-control" id="pax" name="pax"
@@ -253,6 +266,16 @@
 
                         <tr class="no-print">
                             <td colspan="5" class="border-0 pt-3">
+                                <!-- Toggle Checklist untuk isPeserta dan isTtd -->
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="toggle_is_peserta">
+                                    <label class="form-check-label" for="toggle_is_peserta">Sertakan Daftar Peserta?</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="toggle_is_ttd">
+                                    <label class="form-check-label" for="toggle_is_ttd">Sertakan Tanda Tangan?</label>
+                                </div>
+
                                 <button type="submit" class="btn btn-primary">Simpan Invoice</button>
                                 <a href="{{ route('invoice.index') }}" class="btn btn-secondary">Batal</a>
                             </td>
@@ -385,6 +408,16 @@
 
         document.addEventListener('DOMContentLoaded', (event) => {
             recalculateTotals();
+
+            const togglePeserta = document.getElementById('toggle_is_peserta');
+            const toggleTtd = document.getElementById('toggle_is_ttd');
+            const inputPeserta = document.getElementById('is_peserta_input');
+            const inputTtd = document.getElementById('is_ttd_input');
+
+            togglePeserta.checked = false; // Default false
+            toggleTtd.checked = false;     // Default false
+            inputPeserta.value = togglePeserta.checked ? 'true' : 'false';
+            inputTtd.value = toggleTtd.checked ? 'true' : 'false';
         });
 
         document.getElementById('unit_price').addEventListener('input', function(e) {
@@ -397,24 +430,35 @@
             recalculateTotals();
         });
 
+        document.getElementById('toggle_is_peserta').addEventListener('change', function() {
+            const input = document.getElementById('is_peserta_input');
+            input.value = this.checked ? 'true' : 'false';
+        });
+
+        document.getElementById('toggle_is_ttd').addEventListener('change', function() {
+            const input = document.getElementById('is_ttd_input');
+            input.value = this.checked ? 'true' : 'false';
+        });
+
         document.querySelector('form').addEventListener('submit', function() {
             const unitPriceInput = document.getElementById('unit_price');
             unitPriceInput.value = unformatNumber(unitPriceInput.value);
         });
 
-        // ✅ Auto-fill Due Date (30 hari dari tanggal invoice)
         document.getElementById('tanggal_invoice').addEventListener('change', function() {
             const invoiceDate = new Date(this.value);
+
             if (!isNaN(invoiceDate)) {
-                invoiceDate.setDate(invoiceDate.getDate() + 30);
+                invoiceDate.setMonth(invoiceDate.getMonth() + 6);
+
                 const year = invoiceDate.getFullYear();
                 const month = String(invoiceDate.getMonth() + 1).padStart(2, '0');
                 const day = String(invoiceDate.getDate()).padStart(2, '0');
+
                 document.getElementById('due_date').value = `${year}-${month}-${day}`;
             }
         });
 
-        // ✅ Trigger saat halaman load
         document.getElementById('tanggal_invoice').dispatchEvent(new Event('change'));
 
         const bankAccounts = {
