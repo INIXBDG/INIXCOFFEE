@@ -410,22 +410,65 @@
     <table>
         <thead>
             <tr>
-                <th style="width:5%">No</th>
-                <th style="width:28%">Nama Instruktur</th>
-                <th style="width:18%">Bulan</th>
-                <th style="width:34%">Nama Materi</th>
-                <th style="width:15%" class="text-center">Feedback</th>
+                <th rowspan="2" style="width:5%">No</th>
+                <th rowspan="2" style="width:25%">Instruktur</th>
+                <th colspan="2" class="text-center" style="width:50%">Informasi Kelas</th>
+                <th rowspan="2" style="width:20%" class="text-center">Feedback</th>
+            </tr>
+            <tr>
+                <th style="width:20%">Bulan</th>
+                <th style="width:30%">Materi</th>
             </tr>
         </thead>
+
         <tbody>
-            @forelse($detailFeedback as $item)
-                <tr>
-                    <td class="text-center">{{ $loop->iteration }}</td>
-                    <td>{{ $item['nama'] }}</td>
-                    <td>{{ $item['bulan'] }}</td>
-                    <td>{{ $item['materi'] }}</td>
-                    <td class="text-center">{{ $item['feedback'] }}</td>
-                </tr>
+            @php $no = 1; @endphp
+
+            @forelse($detailFeedback->groupBy('nama') as $nama => $groupNama)
+
+                @php $firstNama = true; @endphp
+
+                @foreach($groupNama->groupBy('bulan') as $bulan => $groupBulan)
+
+                    @php $firstBulan = true; @endphp
+
+                    @foreach($groupBulan as $item)
+                        <tr>
+                            <td class="text-center">
+                                {{ $firstNama && $firstBulan ? $no : '' }}
+                            </td>
+
+                            <td>
+                                {{ $firstNama ? $nama : '' }}
+                            </td>
+
+                            <td>
+                                {{ $firstBulan ? $bulan : '' }}
+                            </td>
+
+                            <td>{{ $item['materi'] }}</td>
+
+                            <td class="text-center">
+                                @if($item['feedback'] >= 4)
+                                    <span class="badge green">{{ $item['feedback'] }}</span>
+                                @elseif($item['feedback'] <= 3.3)
+                                    <span class="badge red">{{ $item['feedback'] }}</span>
+                                @else
+                                    {{ $item['feedback'] }}
+                                @endif
+                            </td>
+                        </tr>
+
+                        @php
+                            $firstNama = false;
+                            $firstBulan = false;
+                        @endphp
+                    @endforeach
+
+                @endforeach
+
+                @php $no++; @endphp
+
             @empty
                 <tr>
                     <td colspan="5" class="text-center">Tidak ada data</td>
