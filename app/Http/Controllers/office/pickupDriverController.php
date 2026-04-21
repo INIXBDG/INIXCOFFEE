@@ -72,20 +72,6 @@ class pickupDriverController extends Controller
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
 
-        $budgetPerKendaraan = pickupDriver::select('kendaraan')
-            ->selectRaw('COALESCE(SUM(biaya_transportasi_drivers.harga), 0) as total_terpakai')
-            ->join('biaya_transportasi_drivers', 'pickup_drivers.id', '=', 'biaya_transportasi_drivers.id_pickup_driver')
-            ->where('pickup_drivers.tipe_perjalanan', 'Operasional Kantor')
-            ->whereHas('detailPickupDriver', function ($q) use ($startOfWeek, $endOfWeek) {
-                $q->whereBetween('tanggal_keberangkatan', [$startOfWeek, $endOfWeek]);
-            })
-            ->groupBy('pickup_drivers.kendaraan')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                $sisa = 1000000 - $item->total_terpakai;
-                return [$item->kendaraan => max(0, $sisa)];
-            });
-
         $kendaraanSedangDipakai = pickupDriver::where('status_apply', 1)->whereNotNull('kendaraan')->where('kendaraan', '!=', '')->pluck('kendaraan')->unique();
 
         $allKendaraan = collect(['H1', 'Innova']);
@@ -107,7 +93,7 @@ class pickupDriverController extends Controller
         $extends = 'layouts_office.app';
         $section = 'office_contents';
 
-        return view('office.pickupdriver.create', compact('dataDriver', 'budgetPerKendaraan', 'kendaraan', 'extends', 'section'));
+        return view('office.pickupdriver.create', compact('dataDriver', 'kendaraan', 'extends', 'section'));
     }
 
     public function store(Request $request)
@@ -131,28 +117,6 @@ class pickupDriverController extends Controller
         $budget = empty($request->budget) || $request->budget == 0 ? null : $request->budget;
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
-
-        if (in_array('Operasional Kantor', $request->tipe) && $budget) {
-            $totalTerpakai = pickupDriver::where('kendaraan', $request->kendaraan)
-                ->where('tipe_perjalanan', 'Operasional Kantor')
-                ->whereHas('detailPickupDriver', function ($q) use ($startOfWeek, $endOfWeek) {
-                    $q->whereBetween('tanggal_keberangkatan', [$startOfWeek, $endOfWeek]);
-                })
-                ->join('biaya_transportasi_drivers', 'pickup_drivers.id', '=', 'biaya_transportasi_drivers.id_pickup_driver')
-                ->sum('biaya_transportasi_drivers.harga');
-
-            $sisaBudget = 1000000 - $totalTerpakai;
-
-            if ($budget > $sisaBudget) {
-                return response()->json(
-                    [
-                        'success' => false,
-                        'message' => "Budget melebihi batas. Sisa budget untuk {$request->kendaraan} minggu ini: Rp " . number_format($sisaBudget, 0, ',', '.'),
-                    ],
-                    422,
-                );
-            }
-        }
 
         $tipePerjalananUtama = in_array('Operasional Kantor', $request->tipe) ? 'Operasional Kantor' : $request->tipe[0];
 
