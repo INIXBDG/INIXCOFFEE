@@ -40,28 +40,32 @@ class LaporanPenjualanController extends Controller
 
         // Filter Status
         if ($status !== null) {
-            $status = (string) $status; 
-            if ($status === '2') { 
-                $query->where('status', $status)
-                      ->whereHas('peluang', function ($q) {
-                          $q->where('tahap', 'lost');
-                      });
-            } else { 
+            $status = (string) $status;
+
+            if ($status === '0') {
+                $query->where('status', '0');
+            } elseif ($status === '2') {
+                $query->whereNotNull('deleted_at')
+                    ->whereNotNull('deleted_by')
+                    ->whereHas('peluang', function ($q) {
+                        $q->where('tahap', 'lost');
+                    });
+            } else {
                 $query->where('status', $status);
             }
         } else {
             $query->where(function ($q) {
-                $q->where('status', '0');
-
-                $q->orWhere(function ($subQ) {
-                    $subQ->where('status', '2')
-                         ->whereHas('peluang', function ($pelQ) {
-                             $pelQ->where('tahap', 'lost');
-                         });
+                $q->where('status', '0')
+                ->orWhere(function ($subQ) {
+                    $subQ->whereNotNull('deleted_at')
+                        ->whereNotNull('deleted_by')
+                        ->whereHas('peluang', function ($pelQ) {
+                            $pelQ->where('tahap', 'lost');
+                        });
                 });
             });
         }
-
+        
         // Filter Sales & Materi
         if ($request->filled('sales_key')) {
             $query->where('sales_key', $request->sales_key);
