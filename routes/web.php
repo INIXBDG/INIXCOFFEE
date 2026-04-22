@@ -61,6 +61,7 @@ use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\PenukaranSouvenirController;
+use App\Http\Controllers\PerpindahanDBController;
 use App\Http\Controllers\ProjectAdministrationController;
 use App\Http\Controllers\ProjectHandoverController;
 use App\Http\Controllers\ProjectKanbanController;
@@ -748,6 +749,15 @@ Route::prefix('crm')->group(function () {
     Route::post('todo-administrasi/store', [TodoAdministrasiController::class, 'store'])->name('todo-administrasi.store');
     Route::put('todo-administrasi/update/{id}', [TodoAdministrasiController::class, 'update'])->name('todo-administrasi.update');
     Route::delete('todo-administrasi/delete/{id}', [TodoAdministrasiController::class, 'destroy'])->name('todo-administrasi.delete');
+
+    // perpindahan database
+    Route::prefix('perpindahandb')->name('perpindahan-db.')->group(function () {
+        Route::get('/', [PerpindahanDBController::class, 'index'])->name('index');
+        Route::get('/data', [PerpindahanDBController::class, 'getData'])->name('data');
+        Route::get('/sales', [PerpindahanDBController::class, 'getSalesList'])->name('sales');
+        Route::post('/transfer', [PerpindahanDBController::class, 'transfer'])->name('transfer');
+        Route::get('/history/{id}', [PerpindahanDBController::class, 'exportHistory'])->name('history');
+    });
 });
 
 //INVOICE
