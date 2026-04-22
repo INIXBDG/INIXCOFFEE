@@ -57,7 +57,13 @@
                                                         </div>
                                                         @endcan
                                                         <div class="col-md-2 col-sm-5 col-xs-5">
-                                                            <a class="btn click-primary mx-1" href="{{ route('detail.peluang', $post->peluang->id) }}" target="_blank">CRM</a>
+                                                            @if(optional($post->peluang)->id)
+                                                                <a class="btn click-primary mx-1"
+                                                                href="{{ route('detail.peluang', $post->peluang->id) }}"
+                                                                target="_blank">
+                                                                    CRM
+                                                                </a>
+                                                            @endif
                                                         </div>
                                                         @if ($kode_karyawan == $post->sales_key || auth()->user()->jabatan == 'SPV Sales' || auth()->user()->jabatan == 'Customer Care')
                                                         @can('Edit RKM')
