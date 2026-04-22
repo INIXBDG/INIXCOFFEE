@@ -554,7 +554,7 @@ class PeluangController extends Controller
             'rkm.exam',
             'rkm.outstanding',
             'rkm.registrasi',
-            'rkm.analisirkm'
+            'rkm.analisisrkm'
         )->where('id', $id)->firstOrFail();
 
         DB::transaction(function () use ($peluang, $request) {
