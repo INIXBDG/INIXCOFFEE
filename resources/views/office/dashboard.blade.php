@@ -335,6 +335,29 @@
                                                             </li>
 
                                                             <li>
+                                                                <button class="dropdown-item text-success btn-ajukan-tagihan" data-id="{{ $tagihan->id }}">
+                                                                    Ajukan Tagihan
+                                                                </button>
+
+                                                                <form id="form-ajukan-{{ $tagihan->id }}" method="POST" style="display:none;">
+                                                                    @csrf
+                                                                    @php
+                                                                        $user = auth()->user();
+                                                                        $karyawan = $user->karyawan;
+                                                                    @endphp
+                                                                    <input type="hidden" name="id_tagihan" value="{{ $tagihan->id }}">
+                                                                    <input name="id_karyawan" value="{{ $karyawan->id }}">
+                                                                    <input id="nama_karyawan" type="text" name="nama_karyawan" value="{{ $karyawan->nama_lengkap }}">
+                                                                    <input id="divisi" type="text" name="divisi" value="{{ $karyawan->divisi }}">
+                                                                    <input type="text" name="tipe" value="Tagihan Perusahaan">  
+                                                                    <input type="text" name="barang[nama_barang][]" value="{{ $tagihan->kegiatan }}">
+                                                                    <input type="number" name="barang[qty][]" value="1"> 
+                                                                    <input type="text" name="barang[harga_barang][]" value="{{ $tagihan->nominal ?? null }}">  
+                                                                    <input type="text" name="barang[keterangan][]" value="{{ $tagihan->keterangan ?? null }}">
+                                                                </form>
+                                                            </li>
+
+                                                            <li>
                                                                 <a class="dropdown-item"
                                                                     href="{{ route('detailTagihanPerusahaan', $tagihan->id) }}">
                                                                     Detail
@@ -3663,6 +3686,31 @@
                 });
 
                 // end filter eksport administrasi
+
+
+                // pengajuan tagihan perusahaan ke pengajuan barang
+                $(document).on('click', '.btn-ajukan-tagihan', function () {
+                    let id = $(this).data('id');
+                    let form = $('#form-ajukan-' + id);
+
+                    $.ajax({
+                        url: "{{ route('pengajuanbarang.store') }}",
+                        type: "POST",
+                        data: form.serialize(),
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function (response) {
+                            alert("Berhasil membuat pengajuan barang!");
+                            location.reload();
+                        },
+                        error: function (xhr) {
+                            alert('Terjadi kesalahan');
+                            console.log(xhr.responseText);
+                        }
+                    });
+                });
+                // end pengajuan tagihan perusahaan ke pengajuan barang
             });
         </script>
 @endsection
