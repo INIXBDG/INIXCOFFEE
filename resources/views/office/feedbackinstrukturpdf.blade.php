@@ -400,6 +400,83 @@
         </div>
     </div>
 
+    <div style="page-break-before: always;"></div>
+
+    <div class="header">
+        <h1>DETAIL FEEDBACK INSTRUKTUR</h1>
+        <h2>{{ $rentangWaktu }}</h2>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2" style="width:5%">No</th>
+                <th rowspan="2" style="width:25%">Instruktur</th>
+                <th colspan="2" class="text-center" style="width:50%">Informasi Kelas</th>
+                <th rowspan="2" style="width:20%" class="text-center">Feedback</th>
+            </tr>
+            <tr>
+                <th style="width:20%">Bulan</th>
+                <th style="width:30%">Materi</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @php $no = 1; @endphp
+
+            @forelse($detailFeedback->groupBy('nama') as $nama => $groupNama)
+
+                @php $firstNama = true; @endphp
+
+                @foreach($groupNama->groupBy('bulan') as $bulan => $groupBulan)
+
+                    @php $firstBulan = true; @endphp
+
+                    @foreach($groupBulan as $item)
+                        <tr>
+                            <td class="text-center">
+                                {{ $firstNama && $firstBulan ? $no : '' }}
+                            </td>
+
+                            <td>
+                                {{ $firstNama ? $nama : '' }}
+                            </td>
+
+                            <td>
+                                {{ $firstBulan ? $bulan : '' }}
+                            </td>
+
+                            <td>{{ $item['materi'] }}</td>
+
+                            <td class="text-center">
+                                @if($item['feedback'] >= 4)
+                                    <span class="badge green">{{ $item['feedback'] }}</span>
+                                @elseif($item['feedback'] <= 3.3)
+                                    <span class="badge red">{{ $item['feedback'] }}</span>
+                                @else
+                                    {{ $item['feedback'] }}
+                                @endif
+                            </td>
+                        </tr>
+
+                        @php
+                            $firstNama = false;
+                            $firstBulan = false;
+                        @endphp
+                    @endforeach
+
+                @endforeach
+
+                @php $no++; @endphp
+
+            @empty
+                <tr>
+                    <td colspan="5" class="text-center">Tidak ada data</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
     <div class="footer">
         Dicetak pada: {{ \Carbon\Carbon::now()->translatedFormat('d F Y, H:i') }} WIB
     </div>

@@ -77,6 +77,7 @@ class AnalysisReportController extends Controller
             'files.*'     => 'file|max:10240',
             'year'        => 'required|digits:4|integer',
             'month'       => 'required|integer|between:1,12',
+            'nilai'       => 'required',
         ]);
 
         $filePaths = [];
@@ -94,6 +95,7 @@ class AnalysisReportController extends Controller
             'file_paths'  => $filePaths,
             'year'        => $request->input('year'),
             'month'       => $request->input('month'),
+            'nilai'       => $request->input('nilai'),
         ]);
 
         return redirect()->back()->with('success', 'Laporan analisis berhasil disimpan.');
@@ -109,6 +111,7 @@ class AnalysisReportController extends Controller
             'files.*'     => 'file|max:10240',
             'year'        => 'required|digits:4|integer',
             'month'       => 'required|integer|between:1,12',
+            'nilai'       => 'required'
         ]);
 
         $filePaths = $report->file_paths ?? [];
@@ -132,6 +135,7 @@ class AnalysisReportController extends Controller
             'file_paths'  => $filePaths,
             'year'        => $request->input('year'),
             'month'       => $request->input('month'),
+            'nilai'       => $request->input('nilai'),
         ]);
 
         return redirect()->back()->with('success', 'Laporan analisis berhasil diperbarui.');
@@ -209,11 +213,13 @@ class AnalysisReportController extends Controller
     public function updateQuarterDescription(Request $request)
     {
         $request->validate([
-            'year'        => 'required|digits:4|integer',
-            'quarter'     => 'required|integer|between:1,4',
-            'description' => 'nullable|string',
-            'files'       => 'nullable|array',
-            'files.*'     => 'file|max:10240',
+            'year'         => 'required|digits:4|integer',
+            'quarter'      => 'required|integer|between:1,4',
+            'description'  => 'nullable|string',
+            'format_nilai' => 'nullable|string|max:255',
+            'nilai'        => 'nullable|numeric',
+            'files'        => 'nullable|array',
+            'files.*'      => 'file|max:10240',
         ]);
 
         $qd = AnalysisQuarterDescription::firstOrNew([
@@ -237,8 +243,10 @@ class AnalysisReportController extends Controller
             }
         }
 
-        $qd->description = $request->input('description');
-        $qd->file_paths = $filePaths;
+        $qd->description  = $request->input('description');
+        $qd->format_nilai = $request->input('format_nilai'); // Menyimpan format nilai
+        $qd->nilai        = $request->input('nilai');        // Menyimpan nilai
+        $qd->file_paths   = $filePaths;
         $qd->save();
 
         return redirect()->back()->with('success', 'Data Triwulan berhasil disimpan.');

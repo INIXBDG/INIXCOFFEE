@@ -15,8 +15,9 @@ class SurveyKepuasanController extends Controller
 
         // Memastikan parameter tersedia dan tiket ditemukan
         $ticket = Tickets::where('ticket_id', $ticket_id)->firstOrFail();
+		$latestSurvey = SurveyKepuasan::where('ticket_id', $ticket_id)->latest()->first();
 
-        return view('surveykepuasan.create', compact('ticket'));
+        return view('surveykepuasan.create', compact('ticket', 'latestSurvey'));
     }
 
     public function store(Request $request)

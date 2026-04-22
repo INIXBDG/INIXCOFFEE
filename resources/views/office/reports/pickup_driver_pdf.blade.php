@@ -137,60 +137,51 @@
         </thead>
         <tbody>
             @php
-                $no = 1;
-                $grandTotalBudget = 0;
-                $grandTotalBiaya = 0;
+                $runningBudget = [];
             @endphp
+
             @foreach ($data as $pickup)
                 @php
+                    $kendaraan = $pickup->kendaraan ?? 'UNKNOWN';
+                    $startOfWeek = \Carbon\Carbon::parse($pickup->created_at)->startOfWeek();
+                    $weekKey = $kendaraan . '_' . $startOfWeek->format('Y-m-d');
+
+                    if (!isset($runningBudget[$weekKey])) {
+                        $runningBudget[$weekKey] = 1000000;
+                    }
+
                     $totalBiaya = $pickup->biayaTransportasi->sum('harga');
-                    $sisaBudget = $pickup->budget ? $pickup->budget - $totalBiaya : null;
-                    $grandTotalBudget += $pickup->budget ?? 0;
-                    $grandTotalBiaya += $totalBiaya;
 
-                    $statusClass = match ($pickup->status_apply) {
-                        0 => 'status-menunggu',
-                        1 => 'status-diterima',
-                        2 => 'status-selesai',
-                        default => '',
-                    };
-                    $statusText = match ($pickup->status_apply) {
-                        0 => 'Menunggu',
-                        1 => 'Diterima',
-                        2 => 'Selesai',
-                        default => '-',
-                    };
-
-                    $detailRute = $pickup->detailPickupDriver
-                        ->map(function ($d) {
-                            return "• {$d->tipe}: {$d->lokasi}";
-                        })
-                        ->implode('<br>');
+                    if ($pickup->tipe_perjalanan === 'Operasional Kantor') {
+                        $budgetAwal = $runningBudget[$weekKey];
+                        $runningBudget[$weekKey] -= $totalBiaya;
+                        $sisaBudget = $runningBudget[$weekKey];
+                    } else {
+                        $budgetAwal = null;
+                        $sisaBudget = null;
+                    }
                 @endphp
+
                 <tr>
-                    <td class="text-center">{{ $no++ }}</td>
+                    <td>{{ $loop->iteration }}</td>
                     <td>{{ \Carbon\Carbon::parse($pickup->created_at)->format('d/m/Y') }}</td>
                     <td>{{ $pickup->karyawan->nama_lengkap ?? '-' }}</td>
-                    <td>{{ $pickup->kendaraan ?? '-' }}</td>
+                    <td>{{ $kendaraan }}</td>
                     <td class="text-right">
-                        {{ $pickup->budget ? 'Rp ' . number_format($pickup->budget, 0, ',', '.') : '-' }}
+                        {{ $budgetAwal ? 'Rp ' . number_format($budgetAwal, 0, ',', '.') : '-' }}
                     </td>
                     <td class="text-right">Rp {{ number_format($totalBiaya, 0, ',', '.') }}</td>
                     <td class="text-right">
-                        {{ $sisaBudget !== null ? 'Rp ' . number_format($sisaBudget, 0, ',', '.') : '-' }}</td>
+                        {{ $sisaBudget !== null ? 'Rp ' . number_format($sisaBudget, 0, ',', '.') : '-' }}
+                    </td>
                     <td>{{ $pickup->KM_awal ?? '-' }}</td>
                     <td>{{ $pickup->KM_akhir ?? '-' }}</td>
-                    <td class="text-center"><span class="{{ $statusClass }}">{{ $statusText }}</span></td>
-                    <td>{!! $detailRute !!}</td>
+                    <td>{{ $pickup->status_apply }}</td>
+                    <td>
+                        {!! $pickup->detailPickupDriver->map(fn($d) => "• {$d->tipe}: {$d->lokasi}")->implode('<br>') !!}
+                    </td>
                 </tr>
             @endforeach
-            <tr class="total-row">
-                <td colspan="4" class="text-right">TOTAL</td>
-                <td class="text-right">Rp {{ number_format($grandTotalBudget, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($grandTotalBiaya, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($grandTotalBudget - $grandTotalBiaya, 0, ',', '.') }}</td>
-                <td colspan="4"></td>
-            </tr>
         </tbody>
     </table>
 </body>

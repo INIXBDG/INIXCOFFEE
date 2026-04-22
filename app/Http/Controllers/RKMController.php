@@ -958,6 +958,7 @@ class RKMController extends Controller
             ->where('materi_key', $materi_key)
             ->where('metode_kelas', $kelas)
             ->whereBetween('tanggal_awal', [$tanggal_awal, $tanggal_akhir])
+            ->where('status', '0')
             ->where(function ($query) {
                 $query->whereHas('peluang', function ($query) {
                     $query->where('tahap', 'merah');

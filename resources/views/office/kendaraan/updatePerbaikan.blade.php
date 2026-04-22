@@ -136,55 +136,54 @@
                                 value="{{ old('estimasi', $perbaikan->estimasi) }}">
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Vendor</label>
+                        <select name="vendor" class="form-control" id="vendor">
+                            <option value="">-- Pilih Vendor --</option>
+                            @foreach ($dataVendor as $vendor)
+                                <option value="{{ $vendor->id }}"
+                                    {{ old('vendor', optional($perbaikan->vendor)->id) == $vendor->id ? 'selected' : '' }}>
+                                    {{ $vendor->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @if ($perbaikan->vendor)
+                            <div class="card border-0 glass-force">
+                                <p class="mt-3">Ringkasan Vendor</p>
+                                <div class="card-body">
+                                    <div class="row g-3">
 
-                            <select name="vendor" class="form-control" id="vendor">
-                                @foreach ($dataVendor as $vendor)
-                                    <option
-                                        value="{{ $vendor->id }} {{ old('vendor', $perbaikan->vendor->id) == $vendor->id ? 'selected' : '' }}">
-                                        {{ $vendor->nama }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="card border-0 glass-force">
-                            <p class="mt-3">Ringkasan Vendor</p>
-                            <div class="card-body">
-                                <div class="row g-3">
-
-                                    <div class="col-md-6">
-                                        <label class="form-label text-muted small">No. Vendor</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light">
-                                                <i class="fa fa-phone"></i>
-                                            </span>
-                                            <input type="text" class="form-control bg-light border-0"
-                                                value="{{ $perbaikan->vendor->no_hp }}" readonly>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted small">No. Vendor</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light">
+                                                    <i class="fa fa-phone"></i>
+                                                </span>
+                                                <input type="text" class="form-control bg-light border-0"
+                                                    value="{{ $perbaikan->vendor->no_hp }}" readonly>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="col-md-6">
-                                        <label class="form-label text-muted small">No. Rekening</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light">
-                                                <i class="fa fa-credit-card"></i>
-                                            </span>
-                                            <input type="text" class="form-control bg-light border-0"
-                                                value="{{ $perbaikan->vendor->no_rekening }}" readonly>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted small">No. Rekening</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light">
+                                                    <i class="fa fa-credit-card"></i>
+                                                </span>
+                                                <input type="text" class="form-control bg-light border-0"
+                                                    value="{{ $perbaikan->vendor->no_rekening }}" readonly>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="col-md-12">
-                                        <label class="form-label text-muted small">Alamat</label>
-                                        <div class="bg-light rounded p-3" style="min-height: 120px;">
-                                            {{ $perbaikan->vendor->alamat }}
+                                        <div class="col-md-12">
+                                            <label class="form-label text-muted small">Alamat</label>
+                                            <div class="bg-light rounded p-3" style="min-height: 120px;">
+                                                {{ $perbaikan->vendor->alamat }}
+                                            </div>
                                         </div>
-                                    </div>
 
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        @endif
 
                         {{-- Deskripsi --}}
                         <div class="col-12">
