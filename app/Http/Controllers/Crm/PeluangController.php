@@ -373,7 +373,7 @@ class PeluangController extends Controller
             $peluang = Peluang::with(
                 'rkm',
                 'rkm.perhitunganNetSales',
-                'rkm.exam',
+                'rkm.eksam',
                 'rkm.outstanding',
                 'rkm.registrasi',
                 'rkm.analisisrkm'
@@ -403,8 +403,8 @@ class PeluangController extends Controller
                     }
                 }
 
-                if (!empty($rkm->exam)) {
-                    $rkm->exam->update([
+                if (!empty($rkm->eksam)) {
+                    $rkm->eksam->update([
                         'deleted_at' => $now,
                         'deleted_by' => $deletedBy,
                     ]);
@@ -498,7 +498,7 @@ class PeluangController extends Controller
             $rkm->event = $request->event;
             $rkm->metode_kelas = $request->metode_kelas;
             $rkm->save();
-            
+
             $final = $validated['final'] - ($validated['final'] * 11 / 100);
 
             // Update Peluang
@@ -545,13 +545,13 @@ class PeluangController extends Controller
             ])->withInput();
         }
     }
-    
+
     public function updateTahap($id, Request $request)
     {
         $peluang = Peluang::with(
             'rkm',
             'rkm.perhitunganNetSales',
-            'rkm.exam',
+            'rkm.eksam',
             'rkm.outstanding',
             'rkm.registrasi',
             'rkm.analisisrkm'
@@ -598,8 +598,8 @@ class PeluangController extends Controller
                         }
                     }
 
-                    if (!empty($rkm->exam)) {
-                        $rkm->exam->update([
+                    if (!empty($rkm->eksam)) {
+                        $rkm->eksam->update([
                             'deleted_at' => $now,
                             'deleted_by' => $deletedBy,
                         ]);
@@ -752,13 +752,13 @@ class PeluangController extends Controller
             'akomodasi_peserta' => 'nullable|numeric',
             'akomodasi_tim' => 'nullable|numeric',
             'keterangan_akomodasi_tim' => 'nullable|string',
-            
+
             'fresh_money' => 'nullable|numeric',
             'entertaint' => 'nullable|numeric',
             'keterangan_entertaint' => 'nullable|string',
             'souvenir' => 'nullable|numeric',
             'cashback' => 'nullable|numeric',
-            
+
             'sewa_laptop' => 'nullable|numeric',
             'tgl_pa' => 'required|date',
             'tipe_pembayaran' => 'required|string',
@@ -798,20 +798,20 @@ class PeluangController extends Controller
 
         $netSales = new perhitunganNetSales();
         $netSales->id_rkm = $request->id_rkm;
-        
+
         $netSales->transportasi = $request->transportasi;
         $netSales->jenis_transportasi = $request->jenis_transportasi;
 
         $netSales->akomodasi_peserta = $request->akomodasi_peserta;
         $netSales->akomodasi_tim = $request->akomodasi_tim;
         $netSales->keterangan_akomodasi_tim = $request->keterangan_akomodasi_tim;
-        
+
         $netSales->fresh_money = $request->fresh_money;
         $netSales->entertaint = $request->entertaint;
         $netSales->keterangan_entertaint = $request->keterangan_entertaint;
         $netSales->souvenir = $request->souvenir;
         $netSales->cashback = $request->cashback;
-        
+
         $netSales->sewa_laptop = $request->sewa_laptop;
         $netSales->tipe_pembayaran = $request->tipe_pembayaran;
         $netSales->tgl_pa = $request->tgl_pa;
