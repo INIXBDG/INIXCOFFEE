@@ -255,8 +255,15 @@ class izinTigaJamController extends Controller
         ]);
 
         $post = izinTigaJam::findOrFail($id);
+        // return $post;
         $jabatan = auth()->user()->jabatan;
         $currentApproval = $post->approval;
+        $absensi = AbsensiKaryawan::where('id_karyawan', $post->id_karyawan)
+            ->where('tanggal', $post->tanggal)
+            ->latest()
+            ->first();
+        // return $absensi;
+            
 
         // Ambil data karyawan yang mengajukan
         $karyawan = karyawan::findOrFail($post->id_karyawan);
@@ -320,6 +327,15 @@ class izinTigaJamController extends Controller
                 'alasan_approval' => $request->alasan_approval,
                 'date_approval' => now(),
             ]);
+
+            if($absensi){
+                $keterangan = 'Masuk (Izin 3 Jam)';
+                $keterlambatan = '00:00:00';
+                $absensi->keterangan = $keterangan;
+                $absensi->waktu_keterlambatan = $keterlambatan;
+                $absensi->save();
+            }
+
         } else {
             return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda tidak berhak melakukan approval pada tahap ini.']);
         }

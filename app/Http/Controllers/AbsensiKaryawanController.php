@@ -175,106 +175,114 @@ class AbsensiKaryawanController extends Controller
             return false;
         }
     }
-private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null, $perintahSpj = false)
-{
-    $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
-    $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
-    $id_karyawan = auth()->user()->karyawan_id;
+    private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null, $perintahSpj = false)
+    {
+        $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
+        $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
+        $id_karyawan = auth()->user()->karyawan_id;
 
-    $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
-        ->whereDate('tanggal_pengajuan', $waktu->toDateString())
-        ->where('approval', 2)
-        ->first();
+        $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
+            ->whereDate('tanggal_pengajuan', $waktu->toDateString())
+            // ->where('approval', 2)
+            ->first();
+        // return $izinHariIni;
 
-    $keteranganLower = strtolower($keterangan ?? '');
+        $keteranganLower = strtolower($keterangan ?? '');
 
-    // ✅ Jika Inhouse Bandung, tidak pernah dianggap telat
-    if (strpos($keteranganLower, 'inhouse bandung') !== false) {
-        return [
-            'valid' => true,
-            'keterangan' => 'Masuk (Inhouse Bandung)',
-            'keterlambatan' => '00:00:00'
-        ];
-    }
-
-    // ✅ Cek SPJ hanya jika keterangan berisi "spj" atau flag perintah_spj true
-    if (strpos($keteranganLower, 'spj') !== false || $perintahSpj) {
-        $spjAktif = \App\Models\SuratPerjalanan::where('id_karyawan', $id_karyawan)
-            ->whereDate('tanggal_berangkat', '<=', $waktu->toDateString())
-            ->whereDate('tanggal_pulang', '>=', $waktu->toDateString())
-            ->where('approval_manager', '1')
-            ->where('approval_hrd', '1')
-            ->where('approval_direksi', '1')
-            ->exists();
-
-        if ($spjAktif) {
-            // Jika punya SPJ aktif → hapus keterlambatan
+        // ✅ Jika Inhouse Bandung, tidak pernah dianggap telat
+        if (strpos($keteranganLower, 'inhouse bandung') !== false) {
             return [
                 'valid' => true,
-                'keterangan' => 'Masuk (SPJ)',
+                'keterangan' => 'Masuk (Inhouse Bandung)',
                 'keterlambatan' => '00:00:00'
             ];
         }
-        // Jika tidak punya SPJ aktif, lanjut ke aturan telat normal di bawah
-    }
 
-    // Validasi waktu shift
-    if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
-        return [
-            'valid' => false,
-            'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
-                $config['jamAwal']->format('H:i') . ' - ' .
-                $config['jamAkhir']->format('H:i')
-        ];
-    }
+        // ✅ Cek SPJ hanya jika keterangan berisi "spj" atau flag perintah_spj true
+        if (strpos($keteranganLower, 'spj') !== false || $perintahSpj) {
+            $spjAktif = \App\Models\SuratPerjalanan::where('id_karyawan', $id_karyawan)
+                ->whereDate('tanggal_berangkat', '<=', $waktu->toDateString())
+                ->whereDate('tanggal_pulang', '>=', $waktu->toDateString())
+                ->where('approval_manager', '1')
+                ->where('approval_hrd', '1')
+                ->where('approval_direksi', '1')
+                ->exists();
 
-    // Sabtu/Minggu (kecuali Office Boy & Technical Support)
-    if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
-        return [
-            'valid' => true,
-            'keterangan' => 'Masuk',
-            'keterlambatan' => '00:00:00'
-        ];
-    }
+            if ($spjAktif) {
+                // Jika punya SPJ aktif → hapus keterlambatan
+                return [
+                    'valid' => true,
+                    'keterangan' => 'Masuk (SPJ)',
+                    'keterlambatan' => '00:00:00'
+                ];
+            }
+            // Jika tidak punya SPJ aktif, lanjut ke aturan telat normal di bawah
+        }
 
-    // Hitung keterlambatan
-    $keterlambatan = '00:00:00';
-    $keteranganOut = 'Masuk';
-
-    if ($izinHariIni) {
-        $izinMulai = Carbon::parse($izinHariIni->jam_mulai);
-        $batasAwalMasuk = $izinMulai->copy()->addHour();
-        $batasAkhirMasuk = $izinMulai->copy()->addHours(3);
-
-        if ($waktu->lessThan($batasAwalMasuk)) {
+        // Validasi waktu shift
+        if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
             return [
                 'valid' => false,
-                'message' => 'Anda belum bisa absen. Minimal pukul ' . $batasAwalMasuk->format('H:i')
+                'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
+                    $config['jamAwal']->format('H:i') . ' - ' .
+                    $config['jamAkhir']->format('H:i')
             ];
-        } elseif ($waktu->greaterThan($batasAkhirMasuk)) {
-            $diffMinutes = $waktu->diffInMinutes($batasAkhirMasuk);
-            $hours = intdiv($diffMinutes, 60);
-            $minutes = ($diffMinutes % 60);
-            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-            $keteranganOut = 'Telat (izin 3 Jam)';
-        } else {
-            $keteranganOut = 'Masuk (Izin 3 Jam)';
-            $keterlambatan = '00:00:00';
         }
-    } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
-        $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
-        $hours = intdiv($diffMinutes, 60);
-        $minutes = ($diffMinutes % 60);
-        $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-        $keteranganOut = 'Telat';
-    }
 
-    return [
-        'valid' => true,
-        'keterangan' => $keteranganOut,
-        'keterlambatan' => $keterlambatan
-    ];
-}
+        // Sabtu/Minggu (kecuali Office Boy & Technical Support)
+        if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
+            return [
+                'valid' => true,
+                'keterangan' => 'Masuk',
+                'keterlambatan' => '00:00:00'
+            ];
+        }
+
+        // Hitung keterlambatan
+        $keterlambatan = '00:00:00';
+        $keteranganOut = 'Masuk';
+
+        if ($izinHariIni) {
+            $izinMulai = Carbon::parse($izinHariIni->jam_mulai);
+            $batasAwalMasuk = $izinMulai->copy();
+            $batasAkhirMasuk = $izinMulai->copy()->addHours(3);
+
+            if ($waktu->lessThan($batasAwalMasuk)) {
+                return [
+                    'valid' => false,
+                    'message' => 'Anda belum bisa absen. Minimal pukul ' . $batasAwalMasuk->format('H:i')
+                ];
+            } elseif ($waktu->greaterThan($batasAkhirMasuk)) {
+                $diffMinutes = $waktu->diffInMinutes($batasAkhirMasuk);
+                $hours = intdiv($diffMinutes, 60);
+                $minutes = ($diffMinutes % 60);
+                $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+                $keteranganOut = 'Telat (izin 3 Jam)';
+            } else {
+                $keteranganOut = 'Masuk (Izin 3 Jam)';
+                $keterlambatan = '00:00:00';
+            }
+        } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
+            $start = $config['jamMulaiShift']->copy()->setSecond(0);
+            $current = $waktu->copy()->setSecond(0);
+
+            if ($current->greaterThan($start)) {
+                $diffMinutes = $current->diffInMinutes($start);
+
+                $hours = intdiv($diffMinutes, 60);
+                $minutes = $diffMinutes % 60;
+
+                $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+                $keteranganOut = 'Telat';
+            }
+        }
+
+        return [
+            'valid' => true,
+            'keterangan' => $keteranganOut,
+            'keterlambatan' => $keterlambatan
+        ];
+    }
 
 
 
@@ -287,7 +295,7 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
         $config = [
             'jamAwal' => Carbon::createFromTimeString('00:00:00'),
             'jamAkhir' => Carbon::createFromTimeString('23:59:59'),
-            'jamMulaiShift' => Carbon::createFromTimeString('08:01:00')
+            'jamMulaiShift' => Carbon::createFromTimeString('08:00:00')
         ];
 
         // Penyesuaian berdasarkan jabatan dan shift
@@ -295,21 +303,21 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
             case 'Office Boy':
                 if ($isWeekend) {
                     $config['jamMulaiShift'] = $shift == 1
-                        ? Carbon::createFromTimeString('05:01:00')
+                        ? Carbon::createFromTimeString('05:00:00')
                         : Carbon::createFromTimeString('11:00:00');
                 } else {
                     $config['jamMulaiShift'] = $shift == 1
-                        ? Carbon::createFromTimeString('05:01:00')
+                        ? Carbon::createFromTimeString('05:00:00')
                         : Carbon::createFromTimeString('16:00:00');
                 }
                 break;
 
             case 'Technical Support':
                 $config['jamMulaiShift'] = $isWeekend
-                    ? Carbon::createFromTimeString('09:01:00')
+                    ? Carbon::createFromTimeString('09:00:00')
                     : Carbon::createFromTimeString('08:00:00');
                 $config['jamAkhir'] = $isWeekend
-                    ? Carbon::createFromTimeString('16:01:00')
+                    ? Carbon::createFromTimeString('15:00:00')
                     : Carbon::createFromTimeString('17:00:00');
                 break;
         }
