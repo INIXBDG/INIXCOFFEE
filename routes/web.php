@@ -83,7 +83,8 @@ use App\Models\izinTigaJam;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\KlaimModulController;
-
+use App\Http\Controllers\LeadProjectController;
+use App\Http\Controllers\ReportSalesProjectController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 /*
@@ -1351,4 +1352,18 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/pengajuanklaimmodul/{id}', [KlaimModulController::class, 'destroy'])->name('pengajuanklaimmodul.destroy');
     Route::put('/pengajuanklaimmodul/{id}/approve', [KlaimModulController::class, 'approve'])->name('pengajuanklaimmodul.approve');
     Route::get('/pengajuanklaimmodul/data/{month}/{year}', [KlaimModulController::class, 'getKlaimModul'])->name('pengajuanklaimmodul.data');
+});
+
+// Modul Leads
+Route::prefix('projects/leads')->group(function () {
+    Route::get('/', [LeadProjectController::class, 'index'])->name('leads.index');
+    Route::get('/data', [LeadProjectController::class, 'getLeads'])->name('leads.data');
+    Route::post('/store', [LeadProjectController::class, 'store'])->name('leads.store');
+    Route::post('/{id}/update-status', [LeadProjectController::class, 'updateStatus'])->name('leads.update_status');
+});
+
+// Modul Rekap Penjualan
+Route::prefix('projects/reports')->group(function () {
+    Route::get('/sales', [ReportSalesProjectController::class, 'index'])->name('reports.sales');
+    Route::get('/sales/data', [ReportSalesProjectController::class, 'getRecapData'])->name('reports.sales.data');
 });

@@ -1194,7 +1194,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-sm-6 mt-2">
+                                            {{-- <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
                                                         <div class="col-md-2">
@@ -1210,7 +1210,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </div> --}}
 
                                             @can('View DataKaryawan')
                                                 <div class="col-sm-6 mt-2">
@@ -1938,7 +1938,7 @@
                                                 <div class="card-body">
                                                     <h5 class="text-center card-title">Finance</h5>
                                                     <div class="row">
-                                                        <div class="col-sm-6 mt-2">
+                                                        {{-- <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
                                                                     <div class="col-md-2">
@@ -1955,7 +1955,7 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        </div> --}}
                                                         @can('View CC')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
@@ -2120,7 +2120,7 @@
                                                 <div class="card-body">
                                                     <h5 class="text-center card-title">Education</h5>
                                                     <div class="row">
-                                                        <div class="col-sm-6 mt-2">
+                                                        {{-- <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
                                                                     <div class="col-md-2">
@@ -2137,7 +2137,7 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        </div> --}}
                                                         <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
@@ -2491,6 +2491,25 @@
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
                                                                     <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/layout.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="/projects/leads"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Lead Projek
+                                                                            </h5>
+                                                                        </a>
+                                                                        <p class="card-text">Fitur Lead Projek yang akan dilakukan.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
                                                                         <img src="{{ asset('icon/calendar.svg') }}"
                                                                             class="img-responsive" width="30px">
                                                                     </div>
@@ -2500,7 +2519,7 @@
                                                                             <h5 class="card-title">Kanban
                                                                             </h5>
                                                                         </a>
-                                                                        <p class="card-text">Kanban Teknis untuk Project.
+                                                                        <p class="card-text">Kanban Teknis untuk Projek.
                                                                         </p>
                                                                     </div>
                                                                 </div>
@@ -2518,7 +2537,25 @@
                                                                             <h5 class="card-title">Handovers
                                                                             </h5>
                                                                         </a>
-                                                                        <p class="card-text">Manajemen handover project.
+                                                                        <p class="card-text">Manajemen handover projek.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/layout.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="/projects/reports/sales" class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Laporan Penjualan Projek
+                                                                            </h5>
+                                                                        </a>
+                                                                        <p class="card-text">Dashboard Penjualan Projek.
                                                                         </p>
                                                                     </div>
                                                                 </div>
