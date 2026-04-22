@@ -310,6 +310,8 @@
         </div>
     </div>
 
+    <div style="page-break-before: always;"></div>
+    
     {{-- FEEDBACK TERTINGGI --}}
     <div class="section-title tertinggi">FEEDBACK TERTINGGI ≥ 4.00</div>
 

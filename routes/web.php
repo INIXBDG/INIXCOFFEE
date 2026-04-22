@@ -747,8 +747,6 @@ Route::prefix('crm')->group(function () {
     Route::delete('todo-administrasi/delete/{id}', [TodoAdministrasiController::class, 'destroy'])->name('todo-administrasi.delete');
 
     // perpindahan database
-    // Fitur perpindahan database - authorization di dalam controller
-    // Route::middleware(['auth'])->prefix('crm')->name('crm.')->group(function () {
     Route::prefix('perpindahandb')->name('perpindahan-db.')->group(function () {
         Route::get('/', [PerpindahanDBController::class, 'index'])->name('index');
         Route::get('/data', [PerpindahanDBController::class, 'getData'])->name('data');

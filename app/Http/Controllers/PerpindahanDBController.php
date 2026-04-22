@@ -21,7 +21,7 @@ class PerpindahanDbController extends Controller
 
     private function denyAccess()
     {
-        abort(403, 'Akses ditolak. Hanya SPV Sales yang dapat mengakses fitur ini.');
+        abort(403, 'Akses ditolak.');
     }
 
     public function index()
@@ -33,9 +33,12 @@ class PerpindahanDbController extends Controller
 
     public function getData(Request $request)
     {
-        if (!$this->isSpvSales())
+        if (!$this->isSpvSales()) {
             return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
         $query = Perusahaan::query();
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -44,19 +47,46 @@ class PerpindahanDbController extends Controller
                     ->orWhere('sales_key', 'like', "%{$search}%");
             });
         }
-        $data = $query->select(['id', 'nama_perusahaan', 'kategori_perusahaan', 'lokasi', 'sales_key', 'status', 'history_sales', 'created_at'])
+
+        $data = $query->select([
+            'id',
+            'nama_perusahaan',
+            'kategori_perusahaan',
+            'lokasi',
+            'sales_key',
+            'status',
+            'history_sales',
+            'created_at'
+        ])
             ->orderByDesc('created_at')
             ->get();
-        return response()->json(['data' => $data]);
+
+        return response()->json([
+            'data' => $data
+        ]);
     }
 
     public function getSalesList()
     {
-        if (!$this->isSpvSales())
+        if (!$this->isSpvSales()) {
             return response()->json(['error' => 'Unauthorized'], 403);
-        $sales = User::where(function ($query) {
-            $query->where('jabatan', 'Sales')->orWhere('role', 'sales');
-        })->select('id', 'name', 'kode_karyawan')->get();
+        }
+
+        $sales = User::with('karyawan:id,kode_karyawan,nama_lengkap')
+            ->where(function ($q) {
+                $q->where('jabatan', 'Sales')
+                    ->orWhere('role', 'sales');
+            })
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'kode_karyawan' => $user->karyawan->kode_karyawan ?? null,
+                    'nama_lengkap' => $user->karyawan->nama_lengkap ?? '-'
+                ];
+            })
+            ->filter(fn($s) => $s['kode_karyawan'] !== null) // penting
+            ->values();
+
         return response()->json(['sales' => $sales]);
     }
 
@@ -64,39 +94,70 @@ class PerpindahanDbController extends Controller
     {
         if (!$this->isSpvSales())
             return back()->with('error', 'Akses ditolak.');
+
         $request->validate([
             'perusahaan_id' => 'required|exists:perusahaans,id',
             'sales_baru' => 'required|string',
             'alasan' => 'nullable|string|max:500',
         ]);
+
         $perusahaan = Perusahaan::findOrFail($request->perusahaan_id);
+
         $salesLama = $perusahaan->sales_key;
         $salesBaru = $request->sales_baru;
-        if ($salesLama === $salesBaru)
-            return back()->with('error', 'Sales tujuan sama dengan sales saat ini.');
-        $history = json_decode($perusahaan->history_sales ?? '[]', true);
-        if (!is_array($history))
-            $history = [];
-        $history[] = ['tanggal' => now()->format('Y-m-d H:i:s'), 'dari' => $salesLama, 'ke' => $salesBaru, 'oleh' => Auth::user()->name, 'alasan' => $request->alasan];
+
+        // ambil history lama
+        $history = [];
+
+        if (!empty($perusahaan->history_sales)) {
+            $decoded = json_decode($perusahaan->history_sales, true);
+            if (is_array($decoded)) {
+                $history = $decoded;
+            }
+        }
+
+        // tambah history baru
+        $history[] = [
+            'tanggal' => now()->format('Y-m-d H:i:s'),
+            'dari' => $salesLama,
+            'ke' => $salesBaru,
+            'oleh' => Auth::user()->name,
+            'alasan' => $request->alasan
+        ];
+
+        // update
+        $perusahaan->update([
+            'sales_key' => $salesBaru,
+            'history_sales' => json_encode($history)
+        ]);
+
         DB::beginTransaction();
         try {
-            $perusahaan->update(['sales_key' => $salesBaru, 'history_sales' => json_encode($history, JSON_UNESCAPED_UNICODE)]);
+            $perusahaan->update([
+                'sales_key' => $salesBaru,
+                'history_sales' => json_encode($history, JSON_UNESCAPED_UNICODE)
+            ]);
+
             DB::commit();
-            return back()->with('success', "✅ Perusahaan {$perusahaan->nama_perusahaan} berhasil dialihkan ke {$salesBaru}.");
+            return back()->with('success', 'Transfer berhasil.');
         } catch (\Throwable $e) {
             DB::rollBack();
-            return back()->with('error', '❌ Gagal transfer: ' . $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
 
     public function exportHistory($id)
     {
-        if (!$this->isSpvSales())
+        if (!$this->isSpvSales()) {
             return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
         $perusahaan = Perusahaan::findOrFail($id);
         $history = json_decode($perusahaan->history_sales ?? '[]', true);
-        if (!is_array($history))
-            $history = [];
-        return response()->json(['perusahaan' => $perusahaan->nama_perusahaan, 'history' => $history]);
+
+        return response()->json([
+            'perusahaan' => $perusahaan->nama_perusahaan,
+            'history' => is_array($history) ? $history : []
+        ]);
     }
 }

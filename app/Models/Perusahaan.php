@@ -20,6 +20,7 @@ class Perusahaan extends Model
         'no_telp',
         'email',
         'foto_npwp',
+        'history_sales',
     ];
 
     public function karyawan()
