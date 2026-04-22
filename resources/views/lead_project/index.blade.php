@@ -186,7 +186,7 @@
                     "render": function(data) { return formatStatus(data); }
                 },
                 {
-                    "data": "project.phase",
+                    "data": "s.phase",
                     "render": function(data) { 
                         return data ? '<span class="text-success fw-bold">Tahap ' + data.toUpperCase() + '</span>' : '-'; 
                     }
@@ -195,7 +195,9 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = '<div class="dropdown">';
-                        actions += '<button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Aksi</button>';
+                        actions += '<button type="button" class="btn dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+                        actions += 'Actions';
+                        actions += '</button>';
                         actions += '<div class="dropdown-menu">';
                         actions += '<a class="dropdown-item btn-edit-status" href="#" data-id="' + row.id + '" data-status="' + row.status + '">Perbarui Tahapan</a>';
                         actions += '</div></div>';
@@ -265,7 +267,7 @@
             var formData = $(this).serialize();
 
             $.ajax({
-                url: "{{ url('/project/leads') }}/" + leadId + "/update-status",
+                url: "{{ url('/projects/leads') }}/" + leadId + "/update-status",
                 type: "POST",
                 data: formData,
                 beforeSend: function() {

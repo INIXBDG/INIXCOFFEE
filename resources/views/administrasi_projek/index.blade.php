@@ -2,7 +2,8 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
+    {{-- Modal Loading Spinner --}}
+    <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered">
             <div class="cube">
                 <div class="cube_item cube_x"></div>
@@ -12,6 +13,7 @@
             </div>
         </div>
     </div>
+
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end mb-3">
@@ -22,11 +24,12 @@
                 {{-- @endcan --}}
             </div>
 
+            {{-- Modal Kelola Dokumen (Update Stage) --}}
             <div class="modal fade" id="updateStageModal" tabindex="-1" aria-labelledby="updateStageModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="updateStageModalLabel">{{ __('Kelola Administrasi Proyek') }}</h5>
+                            <h5 class="modal-title" id="updateStageModalLabel">{{ __('Kelola Dokumen Proyek') }}</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <form id="formUpdateStage" enctype="multipart/form-data">
@@ -36,49 +39,60 @@
                             <div class="modal-body">
                                 <h6 class="fw-bold mb-3 text-primary" id="update_project_name">Nama Proyek</h6>
                                 
+                                {{-- Antarmuka Unggah Dokumen --}}
                                 <div id="uploadSection">
                                     <div class="mb-3">
-                                        <label for="current_stage" class="form-label">{{ __('Pilih Tahap Dokumen') }}</label>
+                                        <label for="current_stage" class="form-label fw-bold">{{ __('Pilih Kategori Dokumen') }}</label>
                                         <select class="form-select" id="current_stage" name="current_stage">
-                                            <option value="kak">KAK</option>
-                                            <option value="proposal">Proposal</option>
-                                            <option value="penganggaran">RAB</option>
-                                            <option value="surat_pekerjaan_dimulai">Surat Pekerjaan Dimulai/Kontrak</option>
-                                            <option value="dokumen_klien">Dokumen Klien</option>
-                                            <option value="bast">Berita Acara (BAST)</option>
-                                            <option value="final_report">Laporan Akhir</option>
-                                            <option value="pembayaran">Pembayaran</option>
+                                            <option value="">-- Pilih Dokumen yang Ingin Diunggah --</option>
+                                            <optgroup label="Fase Administrasi Awal">
+                                                <option value="kak">Kerangka Acuan Kerja (KAK)</option>
+                                                <option value="proposal">Proposal</option>
+                                                <option value="penganggaran">RAB / Penganggaran</option>
+                                                <option value="surat_pekerjaan_dimulai">Surat Pekerjaan Dimulai / Kontrak</option>
+                                                <option value="dokumen_klien">Dokumen Klien</option>
+                                            </optgroup>
+                                            <optgroup label="Fase Penutupan (Handover)">
+                                                <option value="bast">Berita Acara Serah Terima (BAST)</option>
+                                                <option value="final_report">Laporan Akhir</option>
+                                                <option value="pembayaran">Dokumen Pembayaran / Invoice</option>
+                                            </optgroup>
                                         </select>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="file" class="form-label">{{ __('Unggah Dokumen (PDF/DOCX/JPG/PNG)') }}</label>
-                                        <input class="form-control" type="file" id="file" name="file" multiple>
+                                        <label for="file" class="form-label fw-bold">{{ __('Unggah Dokumen') }} <small class="text-muted">(Dapat memilih lebih dari 1 berkas sekaligus)</small></label>
+                                        <input class="form-control" type="file" id="file" name="file[]" multiple required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                        <div class="form-text mt-1 text-black"><i class="fas fa-info-circle me-1"></i> Jika dokumen sudah ada, berkas baru akan ditambahkan (tidak menimpa yang lama).</div>
                                     </div>
                                 </div>
 
+                                {{-- Antarmuka Keputusan Akhir (Final Decision) --}}
                                 <div id="decisionSection" style="display: none;">
                                     <div class="alert alert-success" role="alert">
-                                        Seluruh dokumen administrasi telah lengkap. Tentukan status proyek selanjutnya.
+                                        <i class="fas fa-check-circle me-2"></i>Seluruh prasyarat dokumen telah lengkap. Tentukan arah proyek ini selanjutnya.
                                     </div>
                                     <div class="mb-3">
-                                        <label for="final_decision" class="form-label">{{ __('Keputusan Proyek') }}</label>
+                                        <label for="final_decision" class="form-label fw-bold">{{ __('Keputusan Proyek') }}</label>
                                         <select class="form-select" id="final_decision" name="final_decision">
                                             <option value="">-- Pilih Keputusan --</option>
-                                            <option value="lanjut">Lanjut ke Eksekusi (Project Task)</option>
-                                            <option value="gagal">Gagal (Negosiasi Batal)</option>
+                                            <option value="lanjut">Lanjut ke Eksekusi (Masuk ke Kanban Board)</option>
+                                            <option value="gagal">Gagal (Proyek/Negosiasi Batal)</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
-                                <button type="submit" class="btn btn-primary" id="btnUpdateSave">{{ __('Simpan Perubahan') }}</button>
+                                <button type="submit" class="btn btn-primary" id="btnUpdateSave">
+                                    <i class="fas fa-save me-1"></i> {{ __('Simpan') }}
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
 
+            {{-- Modal Create Administrasi --}}
             <div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -99,7 +113,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="perusahaan_key" class="form-label">{{ __('Klien Dari :') }}</label>
-                                    <select style="height: 30px; width: 50%;" class="form-control @error('perusahaan_key') is-invalid @enderror" name="perusahaan_key" id="perusahaan_key">
+                                    <select style="height: 30px; width: 100%;" class="form-control @error('perusahaan_key') is-invalid @enderror" name="perusahaan_key" id="perusahaan_key">
                                     </select>
                                 </div>
                             </div>
@@ -112,29 +126,30 @@
                 </div>
             </div>
 
-            <div class="card m-4">
+            {{-- Tabel Utama Data Administrasi --}}
+            <div class="card m-4 shadow-sm border-0">
                 <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Administrasi Projek') }}</h3>
-                    <table class="table table-striped text-center" id="administrasiProjekTable">
-                        <thead>
+                    <h3 class="card-title text-center my-3 fw-bold">{{ __('Data Administrasi Proyek') }}</h3>
+                    <table class="table table-striped table-hover text-center align-middle" id="administrasiProjekTable" style="width:100%">
+                        <thead class="table-dark text-nowrap">
                             <tr>
                                 <th scope="col">No</th>
                                 <th scope="col">Nama Projek</th>
-                                <th scope="col">Nama Perusahaan</th>
-                                <th scope="col">Deskripsi</th>
+                                <th scope="col">Perusahaan/Klien</th>
                                 <th scope="col">KAK</th>
                                 <th scope="col">Proposal</th>
-                                <th scope="col">Budget</th>
+                                <th scope="col">RAB</th>
+                                <th scope="col">SPK/Kontrak</th>
                                 <th scope="col">Dokumen Klien</th>
                                 <th scope="col">BAST</th>
-                                <th scope="col">Final Report</th>
+                                <th scope="col">Laporan Akhir</th>
                                 <th scope="col">Pembayaran</th>
-                                <th scope="col">Status Pengerjaan</th>
+                                <th scope="col">Status</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
-
+                        <tbody class="text-nowrap">
+                            {{-- Diisi oleh DataTables AJAX --}}
                         </tbody>
                     </table>
                 </div>
@@ -144,81 +159,83 @@
 </div>
 
 <style>
+    /* Styling Loading Cube (Mempertahankan desain bawaan) */
     .loader {
-    position: relative;
-    text-align: center;
-    margin: 15px auto 35px auto;
-    z-index: 9999;
-    display: block;
-    width: 80px;
-    height: 80px;
-    border: 10px solid rgba(0, 0, 0, .3);
-    border-radius: 50%;
-    border-top-color: #000;
-    animation: spin 1s ease-in-out infinite;
-    -webkit-animation: spin 1s ease-in-out infinite;
+        position: relative;
+        text-align: center;
+        margin: 15px auto 35px auto;
+        z-index: 9999;
+        display: block;
+        width: 80px;
+        height: 80px;
+        border: 10px solid rgba(0, 0, 0, .3);
+        border-radius: 50%;
+        border-top-color: #000;
+        animation: spin 1s ease-in-out infinite;
+        -webkit-animation: spin 1s ease-in-out infinite;
     }
 
-    @keyframes spin {
-    to {
-        -webkit-transform: rotate(360deg);
-    }
-    }
+    @keyframes spin { to { -webkit-transform: rotate(360deg); } }
+    @-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }
 
-    @-webkit-keyframes spin {
-    to {
-        -webkit-transform: rotate(360deg);
-    }
-    }
     .modal-content {
-    border-radius: 0px;
-    box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
+        border-radius: 8px; /* Diperhalus sedikit agar lebih modern */
+        box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.2);
     }
-
     .modal-backdrop.show {
-    opacity: 0.75;
-    }
-
-    .loader-txt p {
-        font-size: 13px;
-        color: #666;
-    }
-    .loader-txt p small {
-        font-size: 11.5px;
-        color: #999;
+        opacity: 0.75;
     }
 </style>
 
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
     $(document).ready(function(){
-        var userRole = '{{ auth()->user()->jabatan ?? '' }}';
         
+        // --- Fungsi Pembantu untuk Merender Kolom Dokumen (Multi-file Support) ---
+        function renderDocumentColumn(data) {
+            // Gaya visual jika dokumen kosong
+            const emptyBadge = '<span class="text-danger fw-bold">&#10008;</span>';
+            
+            if (!data || data === 'null' || data === '[]') {
+                return emptyBadge;
+            }
+            
+            try {
+                let parsed = JSON.parse(data);
+                if (Array.isArray(parsed)) {
+                    if (parsed.length === 0) return emptyBadge;
+                    // Gaya visual jika dokumen terisi (Hijau solid)
+                    return `<span class="badge bg-success" style="padding: 6px 12px; font-weight: bold; border-radius: 4px;">${parsed.length} File</span>`;
+                }
+            } catch (e) {
+                // Tangkapan aman untuk format data lama (string tunggal bukan array)
+                if(typeof data === 'string' && data.trim() !== '') {
+                    return '<span class="text-success fw-bold">&#10004;</span>';
+                }
+            }
+            return emptyBadge;
+        }
+
+        // --- Inisialisasi DataTables ---
         $('#administrasiProjekTable').DataTable({
             "ajax": {
                 "url": "{{ route('getAdministrasi') }}",
                 "type": "GET",
                 "beforeSend": function () {
                     $('#loadingModal').modal('show');
-                    $('#loadingModal').on('show.bs.modal', function () {
-                        $('#loadingModal').removeAttr('inert');
-                    });
                 },
                 "complete": function () {
-                    setTimeout(() => {
-                        $('#loadingModal').modal('hide');
-                        $('#loadingModal').on('hidden.bs.modal', function () {
-                            $('#loadingModal').attr('inert', true);
-                        });
-                        console.log();
-                    }, 1000);
+                    setTimeout(() => { $('#loadingModal').modal('hide'); }, 800);
                 }
             },
+            "scrollX": true, 
             "columns": [
                 {
                     "data": null,
@@ -228,91 +245,46 @@
                         return meta.row + meta.settings._iDisplayStart + 1;
                     }
                 },
-                {
-                    "data": 'dataproject.name',
-                },
-                {
+                { "data": 'dataproject.name', "className": "fw-bold text-start" },
+                { 
                     "data": 'dataproject.client.nama_perusahaan',
+                    "className": "text-start",
+                    "render": function(data) { return data ? data : '-'; }
                 },
+                { "data": "kak_file", "render": renderDocumentColumn },
+                { "data": "proposal_file", "render": renderDocumentColumn },
+                { "data": "budget_file", "render": renderDocumentColumn },
+                { "data": "surat_pekerjaan_dimulai_file", "render": renderDocumentColumn },
+                { "data": "client_doc_file", "render": renderDocumentColumn },
+                { "data": "project_handover.bast_file", "render": renderDocumentColumn },
+                { "data": "project_handover.final_report_file", "render": renderDocumentColumn },
+                { "data": "payment_doc_file", "render": renderDocumentColumn },
                 {
-                    "data": 'dataproject.description',
-                },
-                {
-                    "data": "kak_file",
+                    "data": null,
                     "render": function(data, type, row) {
-                        return data ? '<span class="text-success fw-bold">&#10004;</span>' : '<span class="text-danger fw-bold">&#10008;</span>';
-                    }
-                },
-                {
-                    "data": "proposal_file",
-                    "render": function(data, type, row) {
-                        return data ? '<span class="text-success fw-bold">&#10004;</span>' : '<span class="text-danger fw-bold">&#10008;</span>';
-                    }
-                },
-                {
-                    "data": "budget_file",
-                    "render": function(data, type, row) {
-                        return data ? '<span class="text-success fw-bold">&#10004;</span>' : '<span class="text-danger fw-bold">&#10008;</span>';
-                    }
-                },
-                {
-                    "data": "client_doc_file",
-                    "render": function(data) {
-                        if (data && data.length > 0) {
-                            return data.length + ' file';
-                        }
-                        return '<span class="text-danger fw-bold">&#10008;</span>';
-                    }
-                },
-                {
-                    "data": "project_handover.bast_file",
-                    "render": function(data) {
-                        return data ? '<span class="text-success fw-bold">&#10004;</span>' 
-                                    : '<span class="text-danger fw-bold">&#10008;</span>';
-                    }
-                },
-                {
-                    "data": "project_handover.final_report_file",
-                    "render": function(data) {
-                        return data ? '<span class="text-success fw-bold">&#10004;</span>' 
-                                    : '<span class="text-danger fw-bold">&#10008;</span>';
-                    }
-                },
-                {
-                    "data": "payment_doc_file",
-                    "render": function(data, type, row) {
-                        return data ? '<span class="text-success fw-bold">&#10004;</span>' : '<span class="text-danger fw-bold">&#10008;</span>';
-                    }
-                },
-                {
-                    "data": "project.tasks",
-                    "render": function(data, type, row) {
-                        if (data && data.length > 0) {
-                            var totalTasks = data.length;
-                            var completedTasks = data.filter(task => task.status === 'selesai').length;
-                            return completedTasks + ' / ' + totalTasks + ' Selesai';
-                        }
-                        return 'Belum ada tugas';
+                        if (row.dataproject.phase === 'teknis') return '<span class="badge bg-primary px-3 py-2" style="border-radius: 4px;">Eksekusi Aktif (Kanban)</span>';
+                        if (row.dataproject.phase === 'gagal') return '<span class="badge bg-danger px-3 py-2" style="border-radius: 4px;">Proyek Gagal</span>';
+                        if (row.dataproject.phase === 'selesai') return '<span class="badge bg-success px-3 py-2" style="border-radius: 4px;">Proyek Selesai</span>';
+                        return '<span class="badge bg-warning text-dark px-3 py-2" style="border-radius: 4px;">Administrasi / Persiapan</span>';
                     }
                 },
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        var actions = "";
-                        // Logika pengecekan kelengkapan dokumen
-                        var isComplete = row.kak_file 
-                            && row.proposal_file
-                            && row.budget_file 
-                            && row.client_doc_file;
-                        if (row.dataproject.phase === 'teknis') {
-                            actions += '<span class="badge bg-success">Fase Teknis Aktif</span>';
-                        } else if (row.dataproject.phase === 'gagal') {
-                            actions += '<span class="badge bg-danger">Proyek Gagal</span>';
+                        // Logika Penentuan Kelengkapan Dokumen Dasar
+                        let isComplete = row.kak_file && row.proposal_file && row.budget_file && row.client_doc_file;
+                        
+                        let actions = "";
+                        
+                        if (row.dataproject.phase === 'administrasi') {
+                            if (isComplete) {
+                                actions += '<button class="btn btn-sm btn-success btn-update-stage" style="border-radius: 4px;">Keputusan Akhir</button>';
+                            } else {
+                                actions += '<button class="btn btn-sm btn-primary btn-update-stage" style="border-radius: 4px;">Kelola Dokumen</button>';
+                            }
                         } else {
-                            var btnClass = isComplete ? 'btn-success' : 'btn-primary';
-                            var btnText = isComplete ? 'Keputusan Akhir' : 'Kelola Dokumen';
-                            // Menyematkan kelas khusus untuk diikat pada event listener jQuery
-                            actions += '<button class="btn btn-sm ' + btnClass + ' btn-update-stage">' + btnText + '</button>';
+                             // Jika proyek masuk tahap teknis/selesai, biarkan pengguna tetap bisa mengelola dokumen (misal Laporan Akhir)
+                             actions += '<button class="btn btn-sm btn-primary btn-update-stage" style="border-radius: 4px;">Kelola Dokumen</button>';
                         }
                         
                         return actions;
@@ -321,27 +293,24 @@
             ]
         });
 
-        // Inisialisasi Select2 untuk Perusahaan/Klien
+        // --- Inisialisasi Select2 ---
         $('#perusahaan_key').select2({
-            placeholder: "Pilih Perusahaan",
+            placeholder: "Cari & Pilih Perusahaan...",
             allowClear: true,
-            dropdownParent: $('#createModal'), // Konfigurasi wajib untuk Select2 di dalam Modal Bootstrap
+            dropdownParent: $('#createModal'),
             ajax: {
                 url: '{{route('getPerusahaan')}}',
                 processResults: function({data}){
                     return{
                         results: $.map(data, function(item){
-                            return {
-                                id: item.id,
-                                text: item.nama_perusahaan
-                            }
+                            return { id: item.id, text: item.nama_perusahaan }
                         })
                     }
                 }
             }
         });
 
-        // Penanganan Submit Form Create Administrasi
+        // --- Submit Form Pembuatan Administrasi ---
         $('#formCreateAdministrasi').on('submit', function(e) {
             e.preventDefault();
             let formData = $(this).serialize();
@@ -351,88 +320,71 @@
                 type: "POST",
                 data: formData,
                 beforeSend: function() {
-                    $('#btnSave').prop('disabled', true).text('Menyimpan...');
-                    $('#loadingModal').modal('show');
+                    $('#btnSave').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
                 },
                 success: function(response) {
                     $('#createModal').modal('hide');
                     $('#formCreateAdministrasi')[0].reset();
-                    $('#perusahaan_key').val(null).trigger('change'); // Reset elemen Select2
+                    $('#perusahaan_key').val(null).trigger('change');
                     $('#administrasiProjekTable').DataTable().ajax.reload(null, false);
                 },
                 error: function(xhr) {
-                    let errorMessage = 'Terjadi kesalahan saat menyimpan data.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
+                    let errorMessage = xhr.responseJSON?.message || 'Terjadi kesalahan sistem.';
                     alert(errorMessage);
                 },
                 complete: function() {
                     $('#btnSave').prop('disabled', false).text('Simpan');
-                    setTimeout(() => {
-                        $('#loadingModal').modal('hide');
-                    }, 500);
                 }
             });
         });
 
-        // Event Listener untuk tombol Kelola Dokumen di dalam DataTables
+        // --- Buka Modal Pengelolaan Dokumen (Update Stage) ---
         $('#administrasiProjekTable tbody').on('click', '.btn-update-stage', function () {
             var data = $('#administrasiProjekTable').DataTable().row($(this).parents('tr')).data();
-            console.log(data);
-            bukaModalUpdate(data);
-        });
-
-        function bukaModalUpdate(rowData) {
+            
             $('#formUpdateStage')[0].reset();
-            $('#update_project_id').val(rowData.dataproject.id);
-            $('#update_project_name').text(rowData.dataproject.name);
+            $('#update_project_id').val(data.dataproject.id);
+            $('#update_project_name').text(data.dataproject.name);
 
-            // Validasi kelengkapan berkas
-            var isComplete = rowData.kak_file && rowData.budget_file && rowData.legal_file && rowData.client_doc_file && rowData.payment_doc_file;
+            // Cek kondisi kelengkapan dokumen minimum
+            var isComplete = data.kak_file && data.proposal_file && data.budget_file && data.client_doc_file;
 
-            if (isComplete) {
-                // Tampilkan antarmuka keputusan akhir
+            // Jika status masih administrasi dan dokumen lengkap, tawarkan Keputusan Akhir
+            if (data.dataproject.phase === 'administrasi' && isComplete) {
                 $('#uploadSection').hide();
-                $('#decisionSection').show();
-                
-                // Menonaktifkan validasi wajib pada unggah file
                 $('#file').removeAttr('required');
+                $('#current_stage').removeAttr('required');
+                
+                $('#decisionSection').show();
                 $('#final_decision').attr('required', true);
             } else {
-                // Tampilkan antarmuka unggah dokumen
-                $('#uploadSection').show();
+                // Tampilan reguler: Upload Dokumen Secara Acak
                 $('#decisionSection').hide();
-                
                 $('#final_decision').removeAttr('required');
+                
+                $('#uploadSection').show();
                 $('#file').attr('required', true);
-
-                // Otomatis memilih dropdown dokumen mana yang belum terisi
-                if (!rowData.kak_file) $('#current_stage').val('kak');
-                else if (!rowData.budget_file) $('#current_stage').val('penganggaran');
-                else if (!rowData.legal_file) $('#current_stage').val('legal');
-                else if (!rowData.client_doc_file) $('#current_stage').val('dokumen_klien');
-                else if (!rowData.payment_doc_file) $('#current_stage').val('pembayaran');
+                $('#current_stage').attr('required', true);
             }
 
             $('#updateStageModal').modal('show');
-        }
+        });
 
-        // Penanganan Submit Form Update Stage (Menggunakan FormData untuk berkas)
+        // --- Submit Form Pengelolaan Dokumen (AJAX with FormData) ---
         $('#formUpdateStage').on('submit', function(e) {
             e.preventDefault();
             var projectId = $('#update_project_id').val();
-            var formData = new FormData(this);
+            var formData = new FormData(this); // Menangani transmisi file input[]
             var actionUrl = "{{ url('/projects/administrasi') }}/" + projectId + "/update-stage";
 
             $.ajax({
                 url: actionUrl,
                 type: "POST",
                 data: formData,
-                contentType: false, // Wajib disetel false untuk transmisi berkas
-                processData: false, // Wajib disetel false untuk transmisi berkas
+                contentType: false, 
+                processData: false, 
                 beforeSend: function() {
-                    $('#btnUpdateSave').prop('disabled', true).text('Memproses...');
+                    $('#btnUpdateSave').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
                     $('#loadingModal').modal('show');
                 },
                 success: function(response) {
@@ -441,17 +393,12 @@
                     $('#administrasiProjekTable').DataTable().ajax.reload(null, false);
                 },
                 error: function(xhr) {
-                    let errorMessage = 'Terjadi kesalahan saat memproses data.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
+                    let errorMessage = xhr.responseJSON?.message || 'Terjadi kesalahan sistem.';
                     alert(errorMessage);
                 },
                 complete: function() {
-                    $('#btnUpdateSave').prop('disabled', false).text('Simpan Perubahan');
-                    setTimeout(() => {
-                        $('#loadingModal').modal('hide');
-                    }, 500);
+                    $('#btnUpdateSave').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Simpan');
+                    setTimeout(() => { $('#loadingModal').modal('hide'); }, 500);
                 }
             });
         });

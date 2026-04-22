@@ -1354,7 +1354,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Modul Leads
-Route::prefix('project/leads')->group(function () {
+Route::prefix('projects/leads')->group(function () {
     Route::get('/', [LeadProjectController::class, 'index'])->name('leads.index');
     Route::get('/data', [LeadProjectController::class, 'getLeads'])->name('leads.data');
     Route::post('/store', [LeadProjectController::class, 'store'])->name('leads.store');
@@ -1362,7 +1362,7 @@ Route::prefix('project/leads')->group(function () {
 });
 
 // Modul Rekap Penjualan
-Route::prefix('project/reports')->group(function () {
+Route::prefix('projects/reports')->group(function () {
     Route::get('/sales', [ReportSalesProjectController::class, 'index'])->name('reports.sales');
     Route::get('/sales/data', [ReportSalesProjectController::class, 'getRecapData'])->name('reports.sales.data');
 });

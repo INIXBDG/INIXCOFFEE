@@ -36,7 +36,7 @@ class LeadProjectController extends Controller
             'nama_lead' => $request->nama_lead,
             'perusahaan_id' => $request->perusahaan_id,
             'estimasi_nilai' => $request->estimasi_nilai,
-            'status' => 'new',
+            'status' => 'penawaran_awal',
             'sales_id' => $currentUserKaryawanId,
         ]);
 
