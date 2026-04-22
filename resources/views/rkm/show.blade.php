@@ -11,16 +11,20 @@
                     <div class="row">
                         <div class="col-md-12">
                             @can('Assign RKM Instruktur')
-                            <div class="col-md-8 col-sm-8 col-xs-8 my-2">
-                                <a class="btn click-primary mx-1" href="{{ route('editInstruktur', $params) }}">Assign Instruktur dan Kelas
-                                </a>
-                            </div>
+                                @if (auth()->user()->jabatan != 'Sales')
+                                    <div class="col-md-8 col-sm-8 col-xs-8 my-2">
+                                        <a class="btn click-primary mx-1" href="{{ route('editInstruktur', $params) }}">Assign Instruktur dan Kelas
+                                        </a>
+                                    </div>
+                                @endif
                             @endcan
                             @can('Assign RKM Kelas')
-                            <div class="col-md-8 col-sm-8 col-xs-8 my-2">
-                                <a class="btn click-primary mx-1" href="{{ route('editInstruktur', $params) }}">Assign Ruangan
-                                </a>
-                            </div>
+                                @if (auth()->user()->jabatan != 'Sales')
+                                <div class="col-md-8 col-sm-8 col-xs-8 my-2">
+                                    <a class="btn click-primary mx-1" href="{{ route('editInstruktur', $params) }}">Assign Ruangan
+                                    </a>
+                                </div>
+                                @endif
                             @endcan
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @php
@@ -331,8 +335,8 @@
                                                         // dd($hasRekomendasi);
                                                         @endphp
                                                         @if ($hasRekomendasi == true)
-                                                        <button type="button" class="btn btn-sm btn-primary click-primary" 
-                                                                data-bs-toggle="modal" 
+                                                        <button type="button" class="btn btn-sm btn-primary click-primary"
+                                                                data-bs-toggle="modal"
                                                                 data-bs-target="#modalDetailRekomendasi-{{ $post->id }}">
                                                             Lihat Rekomendasi
                                                         </button>
@@ -690,7 +694,7 @@
 </div>
 
         <style>
-            
+
             @media screen and (min-width: 769px) {
 
                 /* CSS untuk layar web */
@@ -837,7 +841,7 @@
             tr.selected .checkmark:after {
                 display: block;
             }
-            
+
         </style>
             <!-- counter script -->
             @endsection
