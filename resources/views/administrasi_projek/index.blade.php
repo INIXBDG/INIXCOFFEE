@@ -129,9 +129,9 @@
             {{-- Tabel Utama Data Administrasi --}}
             <div class="card m-4 shadow-sm border-0">
                 <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-3 fw-bold">{{ __('Data Administrasi Proyek') }}</h3>
-                    <table class="table table-striped table-hover text-center align-middle" id="administrasiProjekTable" style="width:100%">
-                        <thead class="table-dark text-nowrap">
+                    <h3 class="card-title text-center my-3">{{ __('Data Administrasi Proyek') }}</h3>
+                    <table class="table table-striped " id="administrasiProjekTable" style="width:100%">
+                        <thead>
                             <tr>
                                 <th scope="col">No</th>
                                 <th scope="col">Nama Projek</th>
@@ -199,9 +199,10 @@
     $(document).ready(function(){
         
         // --- Fungsi Pembantu untuk Merender Kolom Dokumen (Multi-file Support) ---
+        // --- Fungsi Pembantu untuk Merender Kolom Dokumen (Desain Sesuai Gambar) ---
         function renderDocumentColumn(data) {
-            // Gaya visual jika dokumen kosong
-            const emptyBadge = '<span class="text-danger fw-bold">&#10008;</span>';
+            // Gaya visual jika dokumen kosong (Silang Merah)
+            const emptyBadge = '<span class="text-danger fw-bold fs-5">&#10008;</span>';
             
             if (!data || data === 'null' || data === '[]') {
                 return emptyBadge;
@@ -211,13 +212,15 @@
                 let parsed = JSON.parse(data);
                 if (Array.isArray(parsed)) {
                     if (parsed.length === 0) return emptyBadge;
-                    // Gaya visual jika dokumen terisi (Hijau solid)
-                    return `<span class="badge bg-success" style="padding: 6px 12px; font-weight: bold; border-radius: 4px;">${parsed.length} File</span>`;
+                    // Gaya visual jika dokumen terisi lebih dari satu (Blok Hijau Solid)
+                    return `<span class="badge bg-success shadow-sm" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 4px;">${parsed.length} File</span>`;
                 }
             } catch (e) {
-                // Tangkapan aman untuk format data lama (string tunggal bukan array)
+                // Tangkapan aman untuk format data lama (string tunggal)
                 if(typeof data === 'string' && data.trim() !== '') {
-                    return '<span class="text-success fw-bold">&#10004;</span>';
+                    // Gaya visual jika dokumen hanya satu (Ceklis Ungu Sesuai Gambar)
+                    // Anda dapat mengganti warna style jika ungu kurang pas, misal: color: #6f42c1;
+                    return '<span class="fw-bold fs-5" style="color: #6f42c1;">&#10004;</span>';
                 }
             }
             return emptyBadge;
@@ -245,7 +248,7 @@
                         return meta.row + meta.settings._iDisplayStart + 1;
                     }
                 },
-                { "data": 'dataproject.name', "className": "fw-bold text-start" },
+                { "data": 'dataproject.name', "className": "text-start" },
                 { 
                     "data": 'dataproject.client.nama_perusahaan',
                     "className": "text-start",
@@ -272,7 +275,8 @@
                     "data": null,
                     "render": function(data, type, row) {
                         // Logika Penentuan Kelengkapan Dokumen Dasar
-                        let isComplete = row.kak_file && row.proposal_file && row.budget_file && row.client_doc_file;
+                        // Logika Penentuan Kelengkapan Dokumen Dasar
+                        let isComplete = row.kak_file && row.proposal_file && row.budget_file && row.client_doc_file && row.surat_pekerjaan_dimulai_file;
                         
                         let actions = "";
                         
@@ -347,7 +351,7 @@
             $('#update_project_name').text(data.dataproject.name);
 
             // Cek kondisi kelengkapan dokumen minimum
-            var isComplete = data.kak_file && data.proposal_file && data.budget_file && data.client_doc_file;
+            var isComplete = data.kak_file && data.proposal_file && data.budget_file && data.client_doc_file && data.surat_pekerjaan_dimulai_file;
 
             // Jika status masih administrasi dan dokumen lengkap, tawarkan Keputusan Akhir
             if (data.dataproject.phase === 'administrasi' && isComplete) {
