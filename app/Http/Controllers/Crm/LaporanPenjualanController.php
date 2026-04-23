@@ -39,28 +39,24 @@ class LaporanPenjualanController extends Controller
                     ->orderByDesc('tanggal_awal');
 
         // Filter Status
-        if ($status !== null) {
-            $status = (string) $status;
-
-            if ($status === '0') {
-                $query->where('status', '0');
-            } elseif ($status === '2') {
-                $query->whereNotNull('deleted_at')
-                    ->whereNotNull('deleted_by')
-                    ->whereHas('peluang', function ($q) {
-                        $q->where('tahap', 'lost');
-                    });
-            } else {
-                $query->where('status', $status);
-            }
-        } else {
-            $query->where(function ($q) {
-                $q->where('status', '0')
+        if ($status === '0') {
+            $query->whereNull('deleted_at')
+                ->whereNull('deleted_by')
+                ->where('status', '0')
+                ->where(function ($q) {
+                    $q->whereDoesntHave('peluang')
+                        ->orWhereHas('peluang', function ($subQ) {
+                            $subQ->where('tahap', '!=', 'lost');
+                        });
+                });
+        } elseif ($status === '2') {
+        $query->withTrashed()
+            ->where(function ($q) {
+                $q->whereNotNull('deleted_at')
                 ->orWhere(function ($subQ) {
-                    $subQ->whereNotNull('deleted_at')
-                        ->whereNotNull('deleted_by')
-                        ->whereHas('peluang', function ($pelQ) {
-                            $pelQ->where('tahap', 'lost');
+                    $subQ->whereNull('deleted_at')
+                        ->whereHas('peluang', function ($p) {
+                            $p->where('tahap', 'lost');
                         });
                 });
             });
