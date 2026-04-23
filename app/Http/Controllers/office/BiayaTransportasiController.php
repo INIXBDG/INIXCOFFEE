@@ -41,7 +41,7 @@ class BiayaTransportasiController extends Controller
             'biaya' => 'required|array|min:1',
             'biaya.*.tipe' => 'required|in:BBM,TOL,Parkir,Lainnya,Budget Lebih',
             'biaya.*.harga' => 'required|numeric|min:500',
-            'biaya.*.bukti' => 'required|image|',
+            'biaya.*.bukti' => 'required',
             'biaya.*.keterangan' => 'nullable|string|max:255',
         ]);
 
@@ -65,10 +65,6 @@ class BiayaTransportasiController extends Controller
                     'bukti' => $path,
                     'keterangan' => $item['keterangan'] ?? null,
                 ]);
-
-                if (!$pengajuan->invoice && $path) {
-                    $pengajuan->update(['invoice' => $path]);
-                }
 
                 detailPengajuanBarang::create([
                     'id_pengajuan_barang' => $pengajuan->id,
@@ -373,5 +369,41 @@ class BiayaTransportasiController extends Controller
         $pdf->setPaper('A4', 'landscape');
 
         return $pdf->stream('Laporan_Biaya_Transportasi_' . date('Y-m-d_His') . '.pdf');
+    }
+
+    public function uploadInvoice(Request $request, $id)
+    {
+        $request->validate([
+            'invoice' => 'required',
+        ]);
+
+        $pengajuan = PengajuanBarang::with('tracking')->findOrFail($id);
+
+        $tracking = strtolower($pengajuan->tracking->tracking ?? '');
+
+        if (!str_contains($tracking, 'selesai')) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Invoice hanya bisa diupload saat status selesai.',
+                ],
+                403,
+            );
+        }
+
+        if ($pengajuan->invoice) {
+            Storage::disk('public')->delete($pengajuan->invoice);
+        }
+
+        $path = $request->file('invoice')->store('invoice_pengajuan', 'public');
+
+        $pengajuan->update([
+            'invoice' => $path,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invoice berhasil diupload.',
+        ]);
     }
 }

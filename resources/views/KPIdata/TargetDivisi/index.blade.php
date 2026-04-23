@@ -488,11 +488,9 @@
 
         const allowedAssistantRoutes = [
             'dorong inovasi pelayanan',
-            'pemasukan bersih',
             'inisiatif efisiensi keuangan',
             'rasio biaya operasional terhadap revenue',
             'mengurangi manual work dan error',
-            'laporan analisis keuangan',
             'pengeluaran biaya karyawan'
         ];
 
@@ -1035,48 +1033,26 @@
                                 }
 
                                 lengthProgress = Math.max(0, Math.min(progressNumeric, 100));
+                                let isTargetReached = false;
+
+                                if (item.tipe_target === 'angka') {
+                                    isTargetReached = item.manual_value >= item.nilai_target;
+                                } else {
+                                    isTargetReached = progressNumeric >= item.nilai_target;
+                                }
 
                                 if (progressNumeric === 0) {
                                     statusText = 'Belum Dimulai';
                                     badgeClass = 'bg-warning text-dark';
-                                } else if (nowTime > item.tenggat_waktu && progressNumeric <
-                                    item.nilai_target) {
+
+                                } else if (nowTime > item.tenggat_waktu && !isTargetReached) {
                                     statusText = 'Gagal';
                                     badgeClass = 'bg-danger';
-                                } else if (nowTime < item.tenggat_waktu && progressNumeric > item.nilai_target) {
-                                    if (item.tipe_target === 'angka') {
-                                        if (item.manual_value >= item.nilai_target) {
-                                            statusText = 'Dalam Progress';
-                                            badgeClass = 'bg-warning text-dark';
-                                        }
-                                    } else if (item.tipe_target === 'rupiah') {
-                                        if (progressNumeric >= item.nilai_target) {
-                                            statusText = 'Dalam Progress';
-                                            badgeClass = 'bg-warning text-dark';
-                                        }
-                                    } else if (item.tipe_target === 'persen') {
-                                        if (progressNumeric >= item.nilai_target) {
-                                            statusText = 'Dalam Progress';
-                                            badgeClass = 'bg-warning text-dark';
-                                        }
-                                    }
-                                } else if (nowTime > item.tenggat_waktu && progressNumeric > item.nilai_target) {
-                                    if (item.tipe_target === 'angka') {
-                                        if (item.manual_value >= item.nilai_target) {
-                                            statusText = 'Selesai';
-                                            badgeClass = 'bg-success';
-                                        }
-                                    } else if (item.tipe_target === 'rupiah') {
-                                        if (progressNumeric >= item.nilai_target) {
-                                            statusText = 'Selesai';
-                                            badgeClass = 'bg-success';
-                                        }
-                                    } else if (item.tipe_target === 'persen') {
-                                        if (progressNumeric >= item.nilai_target) {
-                                            statusText = 'Selesai';
-                                            badgeClass = 'bg-success';
-                                        }
-                                    }
+
+                                } else if (nowTime > item.tenggat_waktu && isTargetReached) {
+                                    statusText = 'Selesai';
+                                    badgeClass = 'bg-success';
+
                                 } else {
                                     statusText = 'Dalam Progress';
                                     badgeClass = 'bg-warning text-dark';
@@ -1480,11 +1456,9 @@
 
                         const allowedAssistantRoutes = [
                             'dorong inovasi pelayanan',
-                            'pemasukan bersih',
                             'rasio biaya operasional terhadap revenue',
                             'inisiatif efisiensi keuangan',
                             'mengurangi manual work dan error',
-                            'laporan analisis keuangan',
                             'pengeluaran biaya karyawan'
                         ];
 
@@ -1506,6 +1480,14 @@
                         const allowedAssistantRoutesForPeningkatanKontribusiPelatihan = [
                             'peningkatan kontribusi pelatihan',
                         ]
+
+                        const allowedAssistantRoutesForPemasukanBersih = [
+                            'pemasukan bersih'
+                        ];
+
+                        const allowedAssistantRoutesForLaporanAnalisisKeuangan = [
+                            'laporan analisis keuangan'
+                        ];
                         
                         let ContentTrafikSales = '';
 
@@ -1978,6 +1960,169 @@
 
                         if (allowedAssistantRoutes.includes(data.condition)) {
                             contentStatisticChart = ``;
+                        } else if (allowedAssistantRoutesForLaporanAnalisisKeuangan.includes(data.condition)) {
+                            const bulanIndo = [
+                                '',
+                                'Januari',
+                                'Februari',
+                                'Maret',
+                                'April',
+                                'Mei',
+                                'Juni',
+                                'Juli',
+                                'Agustus',
+                                'September',
+                                'Oktober',
+                                'November',
+                                'Desember'
+                            ];
+                            contentStatisticChart = `
+                            <div class="row g-4">
+
+                                ${(data.data_detail.analisa_data).map(item => `
+                                <div class="col-md-4 mt-5">
+                                    <div class="card border-0 shadow-sm h-100">
+                                        <div class="mb-2 p-3">
+                                            <h5 class="fw-bold text-primary mb-1">${bulanIndo[item.month]}</h5>
+                                            <small class="text-muted">Laporan Analisis Bulanan</small>
+                                        </div>
+                                        <div class="card-body d-flex flex-column" style="overflow-y: scroll; max-height: 280px;">
+
+                                            <div class="mb-3">
+                                                <p class="mb-0" style="text-align: justify;">
+                                                    ${item.description}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-auto p-3">
+                                            <a href="{{ asset('${item.file_paths}') }}" class="btn btn-sm btn-outline-primary w-100">
+                                                <i class="fas fa-file-alt"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                `).join('')}
+
+                            </div>
+                            `;
+                        } else if (allowedAssistantRoutesForPemasukanBersih.includes(data.condition)) {
+                            const bulanIndo = [
+                                "Januari", "Februari", "Maret", "April",
+                                "Mei", "Juni", "Juli", "Agustus",
+                                "September", "Oktober", "November", "Desember"
+                            ];
+
+                            contentStatisticChart = `
+                                <div class="mt-4">
+                                    <div class="row g-4">
+
+                                        ${(data.data_detail.previous_quarter.data || []).map((item, index) => `
+                                            <div class="col-12 col-md-6 col-lg-4">
+                                                <div class="card border-0 shadow-sm h-100 quarter-card">
+                                                    <div class="card-body d-flex flex-column p-4">
+
+                                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                                            <div>
+                                                                <h6 class="fw-semibold text-muted mb-1">Periode</h6>
+                                                                <h5 class="fw-bold mb-0">
+                                                                    ${bulanIndo[item.month - 1] ?? '-'}
+                                                                </h5>
+                                                            </div>
+                                                            <span class="badge rounded-pill bg-${item.color} bg-opacity-10 text-${item.color} px-3 py-2">
+                                                                Laporan
+                                                            </span>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <h3 class="fw-bold text-dark mb-0">
+                                                                Rp ${item.nilai ? Number(item.nilai).toLocaleString('id-ID') : '-'}
+                                                            </h3>
+                                                            <small class="text-muted">Total Pemasukan</small>
+                                                        </div>
+
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted small mb-2 description-text" id="desc-${index}">
+                                                                ${item.description ?? '-'}
+                                                            </p>
+                                                            ${(item.description && item.description.length > 100) ? `
+                                                                <button class="btn btn-sm btn-link p-0 text-primary btn-toggle-desc" data-target="desc-${index}">
+                                                                    Lihat Selengkapnya
+                                                                </button>
+                                                            ` : ''}
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-end align-items-center mt-4">
+                                                            <a href="{{ asset('${item.file_paths}') }}" class="btn btn-sm btn-dark d-flex align-items-center gap-2" download>
+                                                                <i class="fas fa-download"></i>
+                                                                Download
+                                                            </a>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+
+                                    </div>
+                                </div>
+
+                                <style>
+                                    .quarter-card {
+                                        border-radius: 16px;
+                                        transition: all 0.25s ease;
+                                        background: #ffffff;
+                                    }
+
+                                    .quarter-card:hover {
+                                        transform: translateY(-6px) scale(1.01);
+                                        box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+                                    }
+
+                                    .quarter-card h3 {
+                                        letter-spacing: 0.5px;
+                                    }
+
+                                    .quarter-card .badge {
+                                        font-size: 12px;
+                                        font-weight: 500;
+                                    }
+
+                                    .description-text {
+                                        display: -webkit-box;
+                                        -webkit-line-clamp: 3;
+                                        -webkit-box-orient: vertical;
+                                        overflow: hidden;
+                                    }
+
+                                    .description-text.expanded {
+                                        -webkit-line-clamp: unset;
+                                        overflow: visible;
+                                    }
+
+                                    .quarter-card .btn {
+                                        border-radius: 8px;
+                                        font-size: 13px;
+                                    }
+                                </style>
+                            `;
+
+                                        setTimeout(() => {
+                                        document.querySelectorAll('.btn-toggle-desc').forEach(btn => {
+                                            btn.addEventListener('click', function () {
+                                                const targetId = this.getAttribute('data-target');
+                                                const textEl = document.getElementById(targetId);
+
+                                                if (textEl.classList.contains('expanded')) {
+                                                    textEl.classList.remove('expanded');
+                                                    this.innerText = 'Lihat Selengkapnya';
+                                                } else {
+                                                    textEl.classList.add('expanded');
+                                                    this.innerText = 'Sembunyikan';
+                                                }
+                                            });
+                                        });
+                                    }, 0);
                         } else if (allowedAssistantRoutesForPresentaseGapKompetensi.includes(data.condition)) {
                             contentStatisticChart = `
                                 <div class="mt-4">
@@ -1987,7 +2132,6 @@
 
                                             <form id="formGapKompetensi">
 
-                                                <!-- HEADER -->
                                                 <div class="row mb-2 fw-semibold text-muted border-bottom pb-2">
                                                     <div class="col-md-4">Nama Karyawan</div>
                                                     <div class="col-md-4">Kemampuan (%)</div>

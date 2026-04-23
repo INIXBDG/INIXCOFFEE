@@ -127,7 +127,7 @@ class OfficeController extends Controller
         $endOfThisWeek = $now->copy()->endOfWeek();
         $startOfLastWeek = $now->copy()->subWeek()->startOfWeek();
         $endOfLastWeek = $now->copy()->subWeek()->endOfWeek();
-        
+
         $startDate = $startOfLastWeek;
         $endDate = $endOfThisWeek;
 
@@ -139,58 +139,58 @@ class OfficeController extends Controller
             'instruktur',
             'sales'
         ])
-        ->whereBetween('tanggal_awal', [$startDate, $endDate])
-        ->whereDoesntHave('peluang', function ($query) {
-            $query->where('tentatif', 1);
-        })
-        ->where('status', '0')
-        ->orderBy('tanggal_awal', 'asc')
-        ->get()
-        ->groupBy(function ($item) {
-            return $item->materi_key . '|' .
-                $item->ruang . '|' .
-                $item->metode_kelas . '|' .
-                $item->event . '|' .
-                $item->tanggal_awal;
-        })
+            ->whereBetween('tanggal_awal', [$startDate, $endDate])
+            ->whereDoesntHave('peluang', function ($query) {
+                $query->where('tentatif', 1);
+            })
+            ->where('status', '0')
+            ->orderBy('tanggal_awal', 'asc')
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->materi_key . '|' .
+                    $item->ruang . '|' .
+                    $item->metode_kelas . '|' .
+                    $item->event . '|' .
+                    $item->tanggal_awal;
+            })
 
-        ->map(function ($items) {
+            ->map(function ($items) {
 
-            $first = $items->first();
+                $first = $items->first();
 
-            return (object) [
-                'id' => $items->pluck('id')->implode(', '),
-                'id_all' => $items->pluck('id')->implode(', '),
-                'materi_key' => $first->materi_key,
-                'ruang' => $first->ruang,
-                'metode_kelas' => $first->metode_kelas,
-                'event' => $first->event,
-                'harga_jual' => $first->harga_jual,
-                'pax' => $first->pax,
-                'exam' => $items->pluck('exam')->implode(', '),
-                'instruktur_key' => $first->instruktur_key,
-                'instruktur_key2' => $first->instruktur_key2,
-                'asisten_key' => $first->asisten_key,
-                'makanan' => $items->pluck('makanan')->implode(', '),
-                'perusahaan_all' => $items->pluck('perusahaan_key')->implode(', '),
-                'sales_all' => $items->pluck('sales_key')->implode(', '),
-                'status' => $items->contains('status', 0)
-                    ? 0
-                    : $items->min('status'),
-                'total_pax' => $items->sum('pax'),
-                'tanggal_awal' => $first->tanggal_awal,
-                'tanggal_akhir' => $items->max('tanggal_akhir'),
-                'materi' => $first->materi,
-                'peluang' => $first->peluang,
-                'rekomendasilanjutan' => $first->rekomendasilanjutan,
-                'perusahaan' => $items->pluck('perusahaan')
-                    ->filter()
-                    ->unique('id')
-                    ->values(),
-            ];
-        })
+                return (object) [
+                    'id' => $items->pluck('id')->implode(', '),
+                    'id_all' => $items->pluck('id')->implode(', '),
+                    'materi_key' => $first->materi_key,
+                    'ruang' => $first->ruang,
+                    'metode_kelas' => $first->metode_kelas,
+                    'event' => $first->event,
+                    'harga_jual' => $first->harga_jual,
+                    'pax' => $first->pax,
+                    'exam' => $items->pluck('exam')->implode(', '),
+                    'instruktur_key' => $first->instruktur_key,
+                    'instruktur_key2' => $first->instruktur_key2,
+                    'asisten_key' => $first->asisten_key,
+                    'makanan' => $items->pluck('makanan')->implode(', '),
+                    'perusahaan_all' => $items->pluck('perusahaan_key')->implode(', '),
+                    'sales_all' => $items->pluck('sales_key')->implode(', '),
+                    'status' => $items->contains('status', 0)
+                        ? 0
+                        : $items->min('status'),
+                    'total_pax' => $items->sum('pax'),
+                    'tanggal_awal' => $first->tanggal_awal,
+                    'tanggal_akhir' => $items->max('tanggal_akhir'),
+                    'materi' => $first->materi,
+                    'peluang' => $first->peluang,
+                    'rekomendasilanjutan' => $first->rekomendasilanjutan,
+                    'perusahaan' => $items->pluck('perusahaan')
+                        ->filter()
+                        ->unique('id')
+                        ->values(),
+                ];
+            })
 
-        ->values(); 
+            ->values();
 
         foreach ($rkms as $detail_rkm) {
 
@@ -214,28 +214,28 @@ class OfficeController extends Controller
                     $materiChecked =
                         ($item->subChecklistKeperluans?->materi_module ? 1 : 0) +
                         ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
-    
+
                     $progress += ($materiChecked / 2) * 20;
-    
+
                     // ===== Kelas =====
                     if ($item->kelas) {
                         $progress += 20;
                     }
-    
+
                     // ===== CB =====
                     $cbChecked =
                         ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0) +
                         ($item->subChecklistKeperluans?->cb_peserta ? 1 : 0);
-    
+
                     $progress += ($cbChecked / 2) * 20;
-    
+
                     // ===== Maksi =====
                     $maksiChecked =
                         ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0) +
                         ($item->subChecklistKeperluans?->maksi_peserta ? 1 : 0);
-    
+
                     $progress += ($maksiChecked / 2) * 20;
-    
+
                     // ===== Keperluan Kelas =====
                     $kelasChecked =
                         ($item->subChecklistKeperluans?->kelas_ac ? 1 : 0) +
@@ -247,7 +247,7 @@ class OfficeController extends Controller
                         ($item->subChecklistKeperluans?->kelas_minuman ? 1 : 0) +
                         ($item->subChecklistKeperluans?->kelas_lampu ? 1 : 0) +
                         ($item->subChecklistKeperluans?->kelas_kondisi_kebersihan ? 1 : 0);
-    
+
                     $progress += ($kelasChecked / 9) * 20;
 
                     $item->progress = round($progress);
@@ -260,12 +260,12 @@ class OfficeController extends Controller
                     $materiChecked =
                         ($item->subChecklistKeperluans?->materi_module ? 1 : 0) +
                         ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
-    
+
                     $kategoriSelesai += $materiChecked / $totalMateri;
 
                     // ===== CB =====
                     $kategoriSelesai += ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0);
-    
+
                     // ===== Maksi =====
                     $kategoriSelesai += ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0);
 
@@ -299,8 +299,8 @@ class OfficeController extends Controller
         $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')
             ->whereBetween('tanggal_perkiraan_selesai', [$startOfThisWeek, $endOfNextWeek])
             ->orderByDesc('created_at')
-            ->get(); 
-        
+            ->get();
+
         $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')
             ->whereBetween('dateline', [$startOfThisWeek, $endOfNextWeek])
             ->where('status', '!=', 'selesai')
@@ -320,138 +320,138 @@ class OfficeController extends Controller
         ));
     }
 
-public function TableOutstanding(Request $request)
-{
-    $query = outstanding::with('rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice')
-        ->whereYear('created_at', Carbon::now()->year)
-        ->whereHas('rkm')
-        ->latest();
+    public function TableOutstanding(Request $request)
+    {
+        $query = outstanding::with('rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice')
+            ->whereYear('created_at', Carbon::now()->year)
+            ->whereHas('rkm')
+            ->latest();
 
-    if ($search = $request->search) {
-        $query->where(function ($q) use ($search) {
-            $q->whereHas('rkm.materi', function ($m) use ($search) {
-                $m->where('nama_materi', 'LIKE', "%{$search}%");
-            })
-            ->orWhereHas('rkm.perusahaan', function ($p) use ($search) {
-                $p->where('nama_perusahaan', 'LIKE', "%{$search}%");
-            })
-            ->orWhere('sales_key', 'LIKE', "%{$search}%");
+        if ($search = $request->search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('rkm.materi', function ($m) use ($search) {
+                    $m->where('nama_materi', 'LIKE', "%{$search}%");
+                })
+                    ->orWhereHas('rkm.perusahaan', function ($p) use ($search) {
+                        $p->where('nama_perusahaan', 'LIKE', "%{$search}%");
+                    })
+                    ->orWhere('sales_key', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $perPage = $request->get('length', 10);
+
+        $outstanding = $query->paginate($perPage);
+
+        $data = $outstanding->map(function ($item) {
+            if ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) {
+                $status = "Belum Bayar";
+            } elseif ($item->status_pembayaran == 1 && $item->tanggal_bayar) {
+                if ($item->tanggal_bayar <= $item->due_date) {
+                    $status = "Tepat Waktu";
+                } else {
+                    $status = "Terlambat";
+                }
+            } else {
+                $status = "Belum Bayar";
+            }
+
+            if ($status === "Belum Bayar") {
+                $info = '-';
+            } elseif ($item->rkm->invoice?->amount !== null && (int) $item->rkm->invoice->amount) {
+                $info = 'Sesuai';
+            } else {
+                $info = 'Tidak Sesuai';
+            }
+
+            $admin_transfer = 0;
+            $nominal_pph23 = 0;
+            $nominal_ppn = 0;
+            $jumlah_potongan_as_array = [];
+
+            $jenis_potongan_raw = $item->jenis_potongan;
+            $jumlah_potongan_raw = $item->jumlah_potongan;
+
+            if ($jenis_potongan_raw && $jenis_potongan_raw !== '-' && $jumlah_potongan_raw && $jumlah_potongan_raw !== '-') {
+                if (is_string($jenis_potongan_raw)) {
+                    $jenis_arr = array_map('trim', explode(',', $jenis_potongan_raw));
+                } elseif (is_array($jenis_potongan_raw)) {
+                    $jenis_arr = [];
+                    foreach ($jenis_potongan_raw as $jp) {
+                        if (is_string($jp)) {
+                            $jenis_arr[] = trim($jp);
+                        } elseif (is_object($jp) && isset($jp->jenis)) {
+                            $jenis_arr[] = trim($jp->jenis);
+                        } elseif (is_array($jp) && isset($jp['jenis'])) {
+                            $jenis_arr[] = trim($jp['jenis']);
+                        }
+                    }
+                } else {
+                    $jenis_arr = [];
+                }
+
+                if (is_string($jumlah_potongan_raw)) {
+                    $jumlah_arr_temp = array_map('trim', explode(',', $jumlah_potongan_raw));
+                    $jumlah_arr = array_map('intval', $jumlah_arr_temp);
+                } elseif (is_array($jumlah_potongan_raw)) {
+                    $jumlah_arr = [];
+                    foreach ($jumlah_potongan_raw as $jp) {
+                        if (is_numeric($jp)) {
+                            $jumlah_arr[] = (int) $jp;
+                        } elseif (is_object($jp) && isset($jp->jumlah)) {
+                            $jumlah_arr[] = (int) $jp->jumlah;
+                        } elseif (is_array($jp) && isset($jp['jumlah'])) {
+                            $jumlah_arr[] = (int) $jp['jumlah'];
+                        }
+                    }
+                } else {
+                    $jumlah_arr = [];
+                }
+
+                $jumlah_potongan_as_array = $jumlah_arr;
+
+                foreach ($jenis_arr as $index => $jenis) {
+                    $jumlah = isset($jumlah_arr[$index]) ? $jumlah_arr[$index] : 0;
+
+                    if (stripos($jenis, 'Admin Transfer') !== false) {
+                        $admin_transfer = $jumlah;
+                    } elseif (stripos($jenis, 'Nominal PPH23') !== false) {
+                        $nominal_pph23 = $jumlah;
+                    } elseif (stripos($jenis, 'Nominal PPN') !== false) {
+                        $nominal_ppn = $jumlah;
+                    }
+                }
+            }
+
+            return [
+                'perusahaan' => $item->rkm->perusahaan->nama_perusahaan ?? '-',
+                'kelas' => $item->rkm->materi->nama_materi ?? '-',
+                'sales' => $item->sales_key ?? '-',
+                'tanggal' => $item->rkm->tanggal_akhir,
+                'tagihan' => $item->rkm->invoice?->amount !== null ? (int) $item->rkm->invoice->amount : '-',
+                'tenggat_waktu' => $item->due_date ?? '-',
+                'tanggal_bayar' => $item->tanggal_bayar ?? '-',
+                'nominal_pembayaran' => $item->rkm->invoice?->amount !== null ? (int) $item->rkm->invoice->amount : '-',
+                'admin_transfer' => $admin_transfer,
+                'nominal_pph23' => $nominal_pph23,
+                'nominal_ppn' => $nominal_ppn,
+                'jumlah_potongan' => !empty($jumlah_potongan_as_array) ? implode(', ', $jumlah_potongan_as_array) : '-',
+                'uang_diterima' => (int) $item->jumlah_pembayaran ?? '-',
+                // 'total' => $item->jumlah_pembayaran
+                //     ? ($item->jumlah_pembayaran + array_sum($jumlah_potongan_as_array))
+                //     : '-',
+                'status' => $status,
+                'info' => $info,
+            ];
         });
+
+        return response()->json([
+            'data' => $data,
+            'current_page' => $outstanding->currentPage(),
+            'last_page' => $outstanding->lastPage(),
+            'total' => $outstanding->total(),
+        ]);
     }
-
-    $perPage = $request->get('length', 10);
-
-    $outstanding = $query->paginate($perPage);
-
-    $data = $outstanding->map(function ($item) {
-        if ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) {
-            $status = "Belum Bayar";
-        } elseif ($item->status_pembayaran == 1 && $item->tanggal_bayar) {
-            if ($item->tanggal_bayar <= $item->due_date) {
-                $status = "Tepat Waktu";
-            } else {
-                $status = "Terlambat";
-            }
-        } else {
-            $status = "Belum Bayar";
-        }
-
-        if ($status === "Belum Bayar") {
-            $info = '-';
-        } elseif ($item->rkm->invoice?->amount !== null && (int) $item->rkm->invoice->amount) {
-            $info = 'Sesuai';
-        } else {
-            $info = 'Tidak Sesuai';
-        }
-
-        $admin_transfer = 0;
-        $nominal_pph23 = 0;
-        $nominal_ppn = 0;
-        $jumlah_potongan_as_array = [];
-
-        $jenis_potongan_raw = $item->jenis_potongan;
-        $jumlah_potongan_raw = $item->jumlah_potongan;
-
-        if ($jenis_potongan_raw && $jenis_potongan_raw !== '-' && $jumlah_potongan_raw && $jumlah_potongan_raw !== '-') {
-            if (is_string($jenis_potongan_raw)) {
-                $jenis_arr = array_map('trim', explode(',', $jenis_potongan_raw));
-            } elseif (is_array($jenis_potongan_raw)) {
-                $jenis_arr = [];
-                foreach ($jenis_potongan_raw as $jp) {
-                    if (is_string($jp)) {
-                        $jenis_arr[] = trim($jp);
-                    } elseif (is_object($jp) && isset($jp->jenis)) {
-                        $jenis_arr[] = trim($jp->jenis);
-                    } elseif (is_array($jp) && isset($jp['jenis'])) {
-                        $jenis_arr[] = trim($jp['jenis']);
-                    }
-                }
-            } else {
-                $jenis_arr = [];
-            }
-
-            if (is_string($jumlah_potongan_raw)) {
-                $jumlah_arr_temp = array_map('trim', explode(',', $jumlah_potongan_raw));
-                $jumlah_arr = array_map('intval', $jumlah_arr_temp);
-            } elseif (is_array($jumlah_potongan_raw)) {
-                $jumlah_arr = [];
-                foreach ($jumlah_potongan_raw as $jp) {
-                    if (is_numeric($jp)) {
-                        $jumlah_arr[] = (int)$jp;
-                    } elseif (is_object($jp) && isset($jp->jumlah)) {
-                        $jumlah_arr[] = (int)$jp->jumlah;
-                    } elseif (is_array($jp) && isset($jp['jumlah'])) {
-                        $jumlah_arr[] = (int)$jp['jumlah'];
-                    }
-                }
-            } else {
-                $jumlah_arr = [];
-            }
-
-            $jumlah_potongan_as_array = $jumlah_arr; 
-
-            foreach ($jenis_arr as $index => $jenis) {
-                $jumlah = isset($jumlah_arr[$index]) ? $jumlah_arr[$index] : 0;
-
-                if (stripos($jenis, 'Admin Transfer') !== false) {
-                    $admin_transfer = $jumlah;
-                } elseif (stripos($jenis, 'Nominal PPH23') !== false) {
-                    $nominal_pph23 = $jumlah;
-                } elseif (stripos($jenis, 'Nominal PPN') !== false) {
-                    $nominal_ppn = $jumlah;
-                }
-            }
-        }
-
-        return [
-            'perusahaan' => $item->rkm->perusahaan->nama_perusahaan ?? '-',
-            'kelas' => $item->rkm->materi->nama_materi ?? '-',
-            'sales' => $item->sales_key ?? '-',
-            'tanggal' => $item->rkm->tanggal_akhir,
-            'tagihan' => $item->rkm->invoice?->amount !== null ? (int) $item->rkm->invoice->amount : '-',
-            'tenggat_waktu' => $item->due_date ?? '-',
-            'tanggal_bayar' => $item->tanggal_bayar ?? '-',
-            'nominal_pembayaran' => $item->rkm->invoice?->amount !== null ? (int) $item->rkm->invoice->amount : '-',
-            'admin_transfer' => $admin_transfer,
-            'nominal_pph23' => $nominal_pph23,
-            'nominal_ppn' => $nominal_ppn,
-            'jumlah_potongan' => !empty($jumlah_potongan_as_array) ? implode(', ', $jumlah_potongan_as_array) : '-',
-            'uang_diterima' => (int) $item->jumlah_pembayaran ?? '-',
-            // 'total' => $item->jumlah_pembayaran
-            //     ? ($item->jumlah_pembayaran + array_sum($jumlah_potongan_as_array))
-            //     : '-',
-            'status' => $status,
-            'info' => $info,
-        ];
-    });
-
-    return response()->json([
-        'data' => $data,
-        'current_page' => $outstanding->currentPage(),
-        'last_page' => $outstanding->lastPage(),
-        'total' => $outstanding->total(),
-    ]);
-}
 
     public function GrafikOutstanding(Request $request)
     {
@@ -467,8 +467,7 @@ public function TableOutstanding(Request $request)
 
             if ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) {
                 $belum_bayar++;
-            }
-            elseif ($item->status_pembayaran == 1 && $item->tanggal_bayar) {
+            } elseif ($item->status_pembayaran == 1 && $item->tanggal_bayar) {
 
                 if ($item->tanggal_bayar <= $item->due_date) {
                     $tepat_waktu++;
@@ -507,7 +506,7 @@ public function TableOutstanding(Request $request)
             'persen' => $persen,
         ]);
     }
-    
+
     public function getNilaiInstruktur(Request $request)
     {
         $filter = $request->filter;
@@ -542,8 +541,17 @@ public function TableOutstanding(Request $request)
         $result = [];
 
         foreach ($groupByInstruktur as $instrukturId => $items) {
-            if (!$instrukturId)
+            $instruktur = $items->first()->rkm->instruktur;
+
+            if (
+                !$instrukturId ||
+                !$instruktur ||
+                $instruktur->status_aktif == 0 ||
+                $instruktur->divisi != 'Education' ||
+                str_contains(strtoupper($instruktur->kode_karyawan), 'OL')
+            ) {
                 continue;
+            }
 
             $avgIU = collect(['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8'])
                 ->map(fn($i) => $items->avg($i))
@@ -560,14 +568,14 @@ public function TableOutstanding(Request $request)
             $nilaiAkhir = collect([$avgIU, $avgI2, $avgIas])->avg();
 
             $result[] = [
+                'kode_karyawan' => $instruktur->kode_karyawan,
                 'id_instruktur' => $instrukturId,
-                'nama_instruktur' => $items->first()->rkm->instruktur->nama_lengkap,
+                'nama_instruktur' => $instruktur->nama_lengkap,
                 'nilai_instruktur' => round($nilaiAkhir, 2),
             ];
         }
 
         return response()->json($result);
-
     }
 
     public function exportPdf(Request $request)
@@ -576,7 +584,7 @@ public function TableOutstanding(Request $request)
         $value = $request->value;
         $tahun = $request->tahun ?? now()->year;
 
-        $query = Nilaifeedback::with('rkm.instruktur');
+        $query = Nilaifeedback::with('rkm.instruktur', 'rkm.materi');
 
         if ($filter === 'tahun' && is_numeric($value)) {
             $query->whereYear('created_at', $value);
@@ -602,19 +610,25 @@ public function TableOutstanding(Request $request)
 
         $groupedFeedback = $feedbacks
             ->filter(fn($f) => $f->rkm && $f->rkm->instruktur)
-            ->groupBy(function($f) {
-                return $f->rkm->instruktur->id . '_' . 
+            ->groupBy(function ($f) {
+                return $f->rkm->instruktur->id . '_' .
                     \Carbon\Carbon::parse($f->created_at)->format('Y_m');
             })
-            ->map(function($items) {
+            ->map(function ($items) {
                 $first = $items->first();
-                $avg = $items->avg(function($row) {
+                $avg = $items->avg(function ($row) {
                     return collect([
-                        $row->I1, $row->I2, $row->I3, $row->I4,
-                        $row->I5, $row->I6, $row->I7, $row->I8
+                        $row->I1,
+                        $row->I2,
+                        $row->I3,
+                        $row->I4,
+                        $row->I5,
+                        $row->I6,
+                        $row->I7,
+                        $row->I8
                     ])->avg();
                 });
-                
+
                 return [
                     'instruktur_id' => $first->rkm->instruktur->id,
                     'nama' => $first->rkm->instruktur->nama_lengkap,
@@ -685,6 +699,29 @@ public function TableOutstanding(Request $request)
             'total_instruktur' => $groupedFeedback->unique('nama')->count(),
         ];
 
+        $detailFeedback = $feedbacks
+            ->filter(fn($f) => $f->rkm && $f->rkm->instruktur)
+            ->map(function ($item) {
+                $nilai = collect([
+                    $item->I1,
+                    $item->I2,
+                    $item->I3,
+                    $item->I4,
+                    $item->I5,
+                    $item->I6,
+                    $item->I7,
+                    $item->I8
+                ])->avg();
+
+                return [
+                    'nama' => $item->rkm->instruktur->nama_lengkap ?? '-',
+                    'bulan' => \Carbon\Carbon::parse($item->created_at)->translatedFormat('F Y'),
+                    'materi' => $item->rkm->materi->nama_materi ?? ($item->rkm->nama_rkm ?? '-'),
+                    'feedback' => round($nilai, 2),
+                ];
+            })
+            ->values();
+
         $pdf = Pdf::loadView('office.feedbackinstrukturpdf', [
             'feedbackTerendah' => $feedbackTerendah,
             'feedbackTertinggi' => $feedbackTertinggi,
@@ -693,7 +730,8 @@ public function TableOutstanding(Request $request)
             'summaryBulanTerendah' => $summaryBulanTerendah,
             'summaryBulanTertinggi' => $summaryBulanTertinggi,
             'stats' => $stats,
-            'rentangWaktu' => $rentangWaktu
+            'rentangWaktu' => $rentangWaktu,
+            'detailFeedback' => $detailFeedback,
         ])->setPaper('A4', 'landscape');
 
         return $pdf->download('Laporan_Feedback_Instruktur.pdf');
@@ -704,7 +742,7 @@ public function TableOutstanding(Request $request)
         Carbon::setLocale('id');
 
         $filter = $request->filter;
-        $value  = $request->value;
+        $value = $request->value;
 
         $tahun = is_numeric($request->tahun)
             ? (int) $request->tahun
@@ -730,7 +768,7 @@ public function TableOutstanding(Request $request)
 
         } elseif ($filter === 'triwulan' && is_numeric($value)) {
 
-            $bulanMulai   = ($value - 1) * 3 + 1;
+            $bulanMulai = ($value - 1) * 3 + 1;
             $bulanSelesai = $bulanMulai + 2;
 
             $query->whereYear('pengajuancutis.tanggal_awal', $tahun)
@@ -743,22 +781,22 @@ public function TableOutstanding(Request $request)
         }
 
         $dataCuti = $query->select(
-                'karyawans.id',
-                'karyawans.nama_lengkap',
-                DB::raw('COUNT(*) as total_cuti')
-            )
+            'karyawans.id',
+            'karyawans.nama_lengkap',
+            DB::raw('COUNT(*) as total_cuti')
+        )
             ->groupBy('karyawans.id', 'karyawans.nama_lengkap')
             ->orderByDesc('total_cuti')
             ->get();
 
-        if ($request->boolean('export')){
+        if ($request->boolean('export')) {
             $pdf = Pdf::loadView('office.daftarCutiPdf', compact('dataCuti', 'rentangWaktu'));
             return $pdf->download('Laporan_Cuti.pdf');
         }
 
         return response()->json([
-            'labelCuti'    => $dataCuti->pluck('nama_lengkap'),
-            'totalCuti'    => $dataCuti->pluck('total_cuti'),
+            'labelCuti' => $dataCuti->pluck('nama_lengkap'),
+            'totalCuti' => $dataCuti->pluck('total_cuti'),
             'rentangWaktu' => $rentangWaktu ?: 'Semua Data'
         ]);
     }
@@ -768,7 +806,7 @@ public function TableOutstanding(Request $request)
         Carbon::setLocale('id');
 
         $filter = $request->filter;
-        $value  = $request->value;
+        $value = $request->value;
         $tahun = is_numeric($request->tahun) ? (int) $request->tahun : now()->year;
 
         $baseQuery = DB::table('r_k_m_s')
@@ -789,25 +827,25 @@ public function TableOutstanding(Request $request)
             ->mergeBindings($baseQuery)
             ->join('karyawans', 't.kode_karyawan', '=', 'karyawans.kode_karyawan');
 
-        $query->when($filter === 'tahun' && is_numeric($value), fn($q) => 
+        $query->when($filter === 'tahun' && is_numeric($value), fn($q) =>
             $q->whereYear('t.tanggal_awal', $value))
-            ->when($filter === 'bulan' && is_numeric($value), fn($q) => 
+            ->when($filter === 'bulan' && is_numeric($value), fn($q) =>
                 $q->whereYear('t.tanggal_awal', $tahun)->whereMonth('t.tanggal_awal', $value))
             ->when($filter === 'triwulan' && is_numeric($value), function ($q) use ($value, $tahun) {
                 $bulanMulai = ($value - 1) * 3 + 1;
                 $q->whereYear('t.tanggal_awal', $tahun)
-                ->whereBetween(DB::raw('MONTH(t.tanggal_awal)'), [$bulanMulai, $bulanMulai + 2]);
+                    ->whereBetween(DB::raw('MONTH(t.tanggal_awal)'), [$bulanMulai, $bulanMulai + 2]);
             });
 
         $results = $query->select(
-                't.kode_karyawan',
-                'karyawans.nama_lengkap',
-                't.tanggal_awal',
-                't.rkm_id',
-                't.materi_key',
-                't.perusahaan_key',
-                't.metode_kelas'
-            )
+            't.kode_karyawan',
+            'karyawans.nama_lengkap',
+            't.tanggal_awal',
+            't.rkm_id',
+            't.materi_key',
+            't.perusahaan_key',
+            't.metode_kelas'
+        )
             ->orderBy('t.tanggal_awal')
             ->get();
 
@@ -829,7 +867,7 @@ public function TableOutstanding(Request $request)
 
             $groupedByPeriod = $sessions->groupBy(function ($item) use ($periodType) {
                 $date = Carbon::parse($item->tanggal_awal);
-                
+
                 if ($periodType === 'bulan') {
                     return $date->translatedFormat('F Y');
                 } else {
@@ -844,22 +882,45 @@ public function TableOutstanding(Request $request)
             foreach ($groupedByPeriod as $periodLabel => $periodSessions) {
                 $rkmIds = $periodSessions->pluck('rkm_id')->filter()->toArray();
                 $feedbackAvg = 0;
-                
+
                 if (!empty($rkmIds)) {
                     $feedbacks = Nilaifeedback::whereIn('id_rkm', $rkmIds)->get();
-                    
+
                     if (!$feedbacks->isEmpty()) {
                         $allScores = [];
-                        
-                        $fields = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8', 
-                                'I1b', 'I2b', 'I3b', 'I4b', 'I5b', 'I6b', 'I7b', 'I8b',
-                                'I1as', 'I2as', 'I3as', 'I4as', 'I5as', 'I6as', 'I7as', 'I8as'];
-                        
+
+                        $fields = [
+                            'I1',
+                            'I2',
+                            'I3',
+                            'I4',
+                            'I5',
+                            'I6',
+                            'I7',
+                            'I8',
+                            'I1b',
+                            'I2b',
+                            'I3b',
+                            'I4b',
+                            'I5b',
+                            'I6b',
+                            'I7b',
+                            'I8b',
+                            'I1as',
+                            'I2as',
+                            'I3as',
+                            'I4as',
+                            'I5as',
+                            'I6as',
+                            'I7as',
+                            'I8as'
+                        ];
+
                         foreach ($fields as $col) {
                             $values = $feedbacks->pluck($col)->filter(fn($v) => is_numeric($v))->toArray();
                             $allScores = array_merge($allScores, $values);
                         }
-                        
+
                         if (!empty($allScores)) {
                             $feedbackAvg = round(array_sum($allScores) / count($allScores), 2);
                             $totalFeedback += $feedbackAvg;

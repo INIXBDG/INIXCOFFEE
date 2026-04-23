@@ -55,7 +55,7 @@
                         <div class="row mb-3">
                             <label for="tanggal_awal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Awal') }}</label>
                             <div class="col-md-6">
-                                <input id="tanggal_awal" type="date" placeholder="tanggal_awal" class="form-control @error('tanggal_awal') is-invalid @enderror" name="tanggal_awal" readonly value="{{ old('tanggal_awal', $rkm->tanggal_awal) }}" autocomplete="tanggal_awal" autofocus>
+                                <input id="tanggal_awal" type="date" placeholder="tanggal_awal" class="form-control @error('tanggal_awal') is-invalid @enderror" name="tanggal_awal" readonly value="{{ old('tanggal_awal', $rkm->tanggal_awal ? $rkm->tanggal_awal->format('Y-m-d') : '') }}" autocomplete="tanggal_awal" autofocus>
                                 @error('tanggal_awal')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -67,7 +67,7 @@
                         <div class="row mb-3">
                             <label for="tanggal_akhir" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Akhir') }}</label>
                             <div class="col-md-6">
-                                <input id="tanggal_akhir" type="date" placeholder="tanggal_akhir" class="form-control @error('tanggal_akhir') is-invalid @enderror" name="tanggal_akhir" readonly value="{{ old('tanggal_akhir', $rkm->tanggal_akhir) }}" autocomplete="tanggal_akhir" autofocus>
+                                <input id="tanggal_akhir" type="date" placeholder="tanggal_akhir" class="form-control @error('tanggal_akhir') is-invalid @enderror" name="tanggal_akhir" readonly value="{{ old('tanggal_akhir', $rkm->tanggal_akhir ? $rkm->tanggal_akhir->format('Y-m-d') : '') }}" autocomplete="tanggal_akhir" autofocus>
                                 @error('tanggal_akhir')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>

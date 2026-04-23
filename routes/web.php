@@ -974,6 +974,7 @@ Route::prefix('office')
                 Route::delete('/delete/{id_pickup_driver}', [BiayaTransportasiController::class, 'destroy'])->name('destroy');
                 Route::get('/export-excel', [BiayaTransportasiController::class, 'exportExcel'])->name('exportExcel');
                 Route::get('/export-pdf', [BiayaTransportasiController::class, 'exportPdf'])->name('exportPdf');
+                Route::post('upload-invoice/{id}', [BiayaTransportasiController::class, 'uploadInvoice']);
             });
 
         Route::prefix('feedback')
