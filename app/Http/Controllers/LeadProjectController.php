@@ -78,7 +78,7 @@ class LeadProjectController extends Controller
                     ProjectAdministration::create([
                         'project_id' => $project->id,
                         'current_stage' => 'kak',
-                        'pm_id' => auth()->user()->karyawan->kode_karyawan ?? null, // Default PM
+                        'pm_id' => 'AD', // Default PM
                     ]);
                 }
             }
