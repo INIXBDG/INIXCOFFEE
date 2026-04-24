@@ -127,9 +127,12 @@
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end mb-3">
+                @can('CRUD Project')
                 <button type="button" class="btn btn-md click-primary mx-4" data-bs-toggle="modal" data-bs-target="#createLeadModal">
                     <img src="{{ asset('icon/plus.svg') }}" class="" width="20px"> Tambah Lead
                 </button>
+                @endcan
+
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
