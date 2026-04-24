@@ -100,6 +100,9 @@ class examController extends Controller
         $request->validate($validationRules);
 
         try {
+            $dataMateri = Materi::findOrFail($request->materi);
+            $dataPerusahaan = Perusahaan::findOrFail($request->perusahaan);
+
             $harga = (float) str_replace('.', '', $request->harga);
             $kurs = (float) str_replace('.', '', $request->kurs ?? 0);
             $kursDollar = (float) str_replace('.', '', $request->kurs_dollar);
@@ -161,7 +164,7 @@ class examController extends Controller
                 'currentUser' => $currentUser->username,
             ]);
 
-            DB::transaction(function () use ($request, $harga, $pa, $biayaAdmin, $kurs, $kursDollar, $totalFinal, $hargaTotalRupiah, $salesKey, $instrukturKey) {
+            DB::transaction(function () use ($request, $harga, $pa, $biayaAdmin, $kurs, $kursDollar, $totalFinal, $hargaTotalRupiah, $salesKey, $instrukturKey, $dataMateri, $dataPerusahaan) {
 
                 $year = date('Y');
                 $namaBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -200,9 +203,9 @@ class examController extends Controller
 
                 $exam = eksam::create([
                     'tanggal_pengajuan' => now(),
-                    'materi' => $request->materi,
+                    'materi' => $dataMateri->nama_materi,
                     'id_rkm' => $rkm->id,
-                    'perusahaan' => $request->perusahaan,
+                    'perusahaan' => $dataPerusahaan->nama_perusahaan,
                     'isi_pax' => $request->pax,
                     'pax' => $request->pax,
                     'total_pax' => $request->pax,
