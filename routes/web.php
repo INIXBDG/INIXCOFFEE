@@ -450,6 +450,15 @@ Route::prefix('kpi-data/')
             route::post('/update-target-per-sales', [TargetKPIController::class, 'updateTargetPerSales'])->name('updateTargetPerSales');
         });
 
+            Route::get('/monitoring/export/pdf',   [TargetKPIController::class, 'exportMonitoringPdf'])
+                ->name('monitoring.export.pdf');
+
+            Route::get('/monitoring/export/excel', [TargetKPIController::class, 'exportMonitoringExcel'])
+                ->name('monitoring.export.excel');
+
+        Route::get('/export', [TargetKPIController::class, 'exportKpiTemplate'])->name('export');
+        Route::get('/export/pdf', [TargetKPIController::class, 'exportKpiTemplatePdf'])->name('export.pdf');
+
         //Target Departement
         route::get('/table-data', [TargetKPIController::class, 'kpiIndex'])->name('index');
         route::post('/create-target', [TargetKPIController::class, 'createTarget'])->name('createTarget');

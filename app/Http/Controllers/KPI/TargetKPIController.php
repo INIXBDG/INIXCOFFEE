@@ -62,6 +62,13 @@ use Illuminate\Support\Facades\Http;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Imports\KpiTargetImport;
 
 class TargetKPIController extends Controller
 {
@@ -157,143 +164,92 @@ class TargetKPIController extends Controller
 
     public function importTarget(Request $request)
     {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // Tambah batas ukuran file
-        ]);
-
-        $file = $request->file('file');
-        // Menggunakan heading row import lebih aman jika urutan kolom berubah,
-        // tapi kita tetap pakai toArray sesuai kode asli Anda dengan asumsi template fixed.
-        $data = Excel::toArray([], $file)[0];
-
-        $successCount = 0;
-        $failedRows = [];
-
-        // Opsional: Pre-fetch data karyawan untuk mengurangi query (Optimasi Performa)
-        // Ambil semua karyawan sekali saja untuk mapping nama & jabatan
-        $allKaryawan = Karyawan::select('id', 'nama_lengkap', 'jabatan', 'divisi')->get();
-
-        // Buat mapping: Jabatan -> Divisi (Ambil unik, asumsi 1 jabatan = 1 divisi)
-        // Jika 1 jabatan punya banyak divisi, logika ini harus disesuaikan
-        $jabatanDivisiMap = $allKaryawan->unique('jabatan')->pluck('divisi', 'jabatan')->toArray();
-
-        foreach ($data as $index => $row) {
-            if ($index === 0) continue; // Skip header
-
-            // Gunakan try-catch per baris agar satu baris error tidak menghentikan semua
-            try {
-                DB::transaction(function () use ($row, &$successCount, $allKaryawan, $jabatanDivisiMap) {
-
-                    // Mapping kolom (Pastikan index sesuai file Excel)
-                    $rowData = [
-                        'judul_kpi'       => trim($row[1] ?? ''),
-                        'deskripsi_kpi'   => trim($row[2] ?? ''),
-                        'jabatan'         => trim($row[3] ?? ''),
-                        'karyawan'        => trim($row[4] ?? ''),
-                        'jangka_target'   => trim($row[5] ?? ''),
-                        'detail_jangka'   => trim($row[6] ?? ''),
-                        'tipe_target'     => trim($row[7] ?? ''),
-                        'nilai_target'    => $row[8] ?? 0,
-                        'asistant_route'  => trim($row[9] ?? ''),
-                    ];
-
-                    // Validasi Wajib
-                    if (empty($rowData['judul_kpi']) || empty($rowData['jabatan'])) {
-                        throw new \Exception("Judul dan Jabatan wajib diisi.");
-                    }
-
-                    $listJabatan = array_filter(array_map('trim', explode(',', $rowData['jabatan'])));
-                    $listNamaKaryawanInput = array_filter(array_map('trim', explode(',', $rowData['karyawan'])));
-
-                    if (empty($listJabatan)) {
-                        throw new \Exception("Format jabatan tidak valid.");
-                    }
-
-                    // 1. Buat Target KPI Utama
-                    $createTarget = TargetKPI::create([ // Gunakan PascalCase untuk Model
-                        'id_assistant'   => null,
-                        'id_pembuat'     => auth()->id(),
-                        'judul'          => $rowData['judul_kpi'],
-                        'deskripsi'      => $rowData['deskripsi_kpi'],
-                        'asistant_route' => $rowData['asistant_route'],
-                        'status'         => '0',
-                    ]);
-
-                    if (!$createTarget) {
-                        throw new \Exception("Gagal membuat Target KPI Utama.");
-                    }
-
-                    foreach ($listJabatan as $jabatan) {
-                        // 2. Ambil Divisi dari Mapping (Bukan Query Loop)
-                        $divisi = $jabatanDivisiMap[$jabatan] ?? null;
-
-                        // Validasi apakah jabatan ada di database
-                        if (!$divisi) {
-                            // Opsional: Bisa throw error atau skip
-                            throw new \Exception("Jabatan '{$jabatan}' tidak ditemukan di database.");
-                        }
-
-                        $detailStore = DetailTargetKPI::create([
-                            'id_targetKPI'   => $createTarget->id,
-                            'jabatan'        => $jabatan,
-                            'divisi'         => $divisi,
-                            'jangka_target'  => $rowData['jangka_target'],
-                            'detail_jangka'  => $rowData['detail_jangka'],
-                            'tipe_target'    => $rowData['tipe_target'],
-                            'nilai_target'   => $rowData['nilai_target'],
-                        ]);
-
-                        // 3. Assign Karyawan (Jika ada nama yang diinput)
-                        if ($detailStore && !empty($listNamaKaryawanInput)) {
-                            // Filter karyawan dari collection yang sudah di-load di awal (Lebih Cepat)
-                            $validKaryawanIds = $allKaryawan
-                                ->whereIn('nama_lengkap', $listNamaKaryawanInput)
-                                ->where('jabatan', $jabatan)
-                                ->pluck('id')
-                                ->toArray();
-
-                            if (empty($validKaryawanIds)) {
-                                // Opsional: Warning jika nama karyawan tidak ditemukan untuk jabatan ini
-                                // throw new \Exception("Tidak ditemukan karyawan dengan nama tersebut untuk jabatan {$jabatan}.");
-                            }
-
-                            $personData = [];
-                            foreach ($validKaryawanIds as $karyawanId) {
-                                $personData[] = [
-                                    'id_target'       => $createTarget->id,
-                                    'detailTargetKey' => $detailStore->id,
-                                    'id_karyawan'     => $karyawanId,
-                                    'created_at'      => now(),
-                                    'updated_at'      => now(),
-                                ];
-                            }
-
-                            // Bulk Insert untuk performa lebih baik
-                            if (!empty($personData)) {
-                                DetailPersonKPI::insert($personData);
-                            }
-                        }
-                    }
-
-                    $successCount++;
-                });
-            } catch (\Exception $e) {
-                $failedRows[] = [
-                    'row'   => $index + 1,
-                    'error' => $e->getMessage()
-                ];
-                // Lanjut ke baris berikutnya (tidak re-throw)
-            }
-        }
-
-        // 4. Berikan Feedback yang Jelas
-        if (empty($failedRows)) {
-            return back()->with('success', "Berhasil mengimport {$successCount} data.");
-        } else {
-            return back()->with([
-                'success'    => "Selesai. {$successCount} berhasil, " . count($failedRows) . " gagal.",
-                'failedRows' => $failedRows
+        try {
+            $request->validate([
+                'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+                'skip_duplicate' => 'nullable|boolean',
+                'dry_run' => 'nullable|boolean',
+            ], [
+                'file.mimes' => 'File harus berformat Excel (.xlsx/.xls) atau CSV',
+                'file.max' => 'Ukuran file maksimal 10MB',
             ]);
+
+            $file = $request->file('file');
+            $options = [
+                'skip_duplicate' => $request->boolean('skip_duplicate'),
+                'dry_run' => $request->boolean('dry_run'),
+            ];
+
+            if ($options['dry_run']) {
+                return $this->previewImport($file, $options);
+            }
+
+            $import = new KpiTargetImport($options);
+            
+            Excel::import($import, $file);
+            
+            $summary = $import->getSummary();
+
+            $messages = [];
+            if ($summary['imported'] > 0) {
+                $messages[] = "✅ {$summary['imported']} data berhasil diimport.";
+            }
+            if ($summary['skipped'] > 0) {
+                $messages[] = "⏭️ {$summary['skipped']} data dilewati (duplikat).";
+            }
+            if (!empty($summary['errors'])) {
+                $messages[] = "❌ " . count($summary['errors']) . " error ditemukan.";
+            }
+
+            if (!empty($summary['errors'])) {
+                Log::warning("Import KPI dengan error", ['errors' => $summary['errors']]);
+            }
+
+            return back()->with([
+                'success' => implode(' ', $messages),
+                'import_summary' => $summary,
+            ]);
+
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errorList = [];
+            
+            foreach ($failures as $failure) {
+                $errorList[] = "Baris #{$failure->row()}: {$failure->errors()[0]}";
+            }
+
+            return back()->withInput()->withErrors([
+                'file' => "Validasi gagal:\n" . implode("\n", array_slice($errorList, 0, 10))
+                        . (count($errorList) > 10 ? "\n...dan " . (count($errorList) - 10) . " error lainnya" : '')
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Import KPI failed", [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id(),
+            ]);
+
+            return back()->withInput()->withErrors([
+                'file' => 'Terjadi kesalahan saat mengimport: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+
+    private function previewImport($file, array $options)
+    {
+        $import = new KpiTargetImport($options);
+        
+        try {
+            Excel::toCollection($import, $file);
+            
+            return back()->with('success', '✅ Preview: Semua data valid! Siap untuk diimport.');
+            
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $errors = collect($e->failures())->map(function ($failure) {
+                return "Baris #{$failure->row()}: {$failure->errors()[0]}";
+            })->take(10);
         }
     }
 
@@ -11682,25 +11638,19 @@ class TargetKPIController extends Controller
     //Overview KPI
     public function personalIndex($id = null)
     {
-        $targetId = $id ?? Auth::id();
-        $currentUserId = Auth::id();
-        $userJabatan = Auth::user()->karyawan->jabatan ?? '';
-
+        $targetId = $id ?? auth()->user()->id;
         return view('KPIdata.TargetSubDivisi.overviewKaryawan', compact('targetId'));
     }
-
     public function getDataOverviewPersonal(Request $request)
     {
         try {
-            if (!Auth()->user()->karyawan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Data karyawan tidak ditemukan',
-                ], 404);
+            $karyawanId = $request->id_karyawan ?? Auth()->user()->id;
+            $tahunFilter = $request->tahun ?? now()->year;
+
+            if (!karyawan::find($karyawanId)) {
+                return response()->json(['success' => false, 'message' => 'Data karyawan tidak ditemukan'], 404);
             }
 
-            $karyawanId = $request->id_karyawan ?? Auth()->id();
-            $tahunFilter = $request->tahun ?? now()->year;
 
             $allTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan'])
                 ->whereYear('created_at', $tahunFilter)
@@ -11901,7 +11851,7 @@ class TargetKPIController extends Controller
             return response()->json(['message' => 'Divisi dan tahun harus diisi'], 400);
         }
 
-        $karyawanDiDivisi = karyawan::where('divisi', $divisiFilter)->get();
+        $karyawanDiDivisi = karyawan::where('divisi', $divisiFilter)->where('status_aktif', '1')->get();
         $karyawanIds = $karyawanDiDivisi->pluck('id')->toArray();
 
         if (empty($karyawanIds)) {
@@ -12230,5 +12180,848 @@ class TargetKPIController extends Controller
         }
 
         return $totalMinutes / 60;
+    }
+
+    private function formatTenggatWaktuExport(string $jangka, string $detail): string
+    {
+        $namaBulanId = [
+            1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'Mei',6=>'Jun',
+            7=>'Jul',8=>'Agt',9=>'Sep',10=>'Okt',11=>'Nov',12=>'Des',
+        ];
+
+        switch (strtolower($jangka)) {
+            case 'tahunan':
+                $year = (int) $detail;
+                return "31 Des {$year}";
+
+            case 'bulanan':
+                $parts = explode('-', trim($detail));
+                if (count($parts) === 2) {
+                    [$year, $month] = $parts;
+                    $lastDay  = date('t', mktime(0,0,0,(int)$month,1,(int)$year));
+                    return "{$lastDay} " . ($namaBulanId[(int)$month] ?? $month) . " {$year}";
+                }
+                return $detail;
+
+            case 'kuartalan':
+            case 'quartal':
+                if (preg_match('/(\d{4})\D?Q?(\d)/i', $detail, $m)) {
+                    $year     = $m[1];
+                    $monthEnd = (int)$m[2] * 3;
+                    $lastDay  = date('t', mktime(0,0,0,$monthEnd,1,(int)$year));
+                    return "{$lastDay} " . ($namaBulanId[$monthEnd] ?? $monthEnd) . " {$year}";
+                }
+                return $detail;
+
+            case 'mingguan':
+                if (preg_match('/(\d{4})\D?W?(\d{1,2})/i', $detail, $m)) {
+                    return "Minggu ke-{$m[2]}, {$m[1]}";
+                }
+                return $detail;
+        }
+
+        return $detail;
+    }
+
+    private function hitungStatusExport(
+        float  $progressPersen,
+        float  $nilaiTarget,
+        string $tipe,
+        float  $progressRaw,
+        string $tenggatWaktu
+    ): string {
+        $isTargetReached = false;
+        if ($tipe === 'rupiah') {
+            $isTargetReached = $progressRaw >= $nilaiTarget;
+        } elseif ($tipe === 'angka') {
+            $isTargetReached = $progressRaw >= $nilaiTarget;
+        } else {
+            $isTargetReached = $progressPersen >= $nilaiTarget;
+        }
+
+        try {
+            $deadline   = Carbon::parse($tenggatWaktu)->startOfDay();
+            $now        = now()->startOfDay();
+            $isOverdue  = $now->gt($deadline);
+            $isSameYear = $now->year === $deadline->year;
+        } catch (\Exception $e) {
+            return 'Dalam Progress';
+        }
+
+        if (!$isOverdue && $isSameYear) {
+            return $progressPersen <= 0 ? 'Belum Dimulai' : 'Dalam Progress';
+        }
+
+        if ($isOverdue) {
+            return $isTargetReached ? 'Selesai' : 'Gagal';
+        }
+
+        return 'Dalam Progress';
+    }
+
+    private function formatNilaiTargetExport($nilaiTarget, string $tipe): string
+    {
+        if ($tipe === 'rupiah') {
+            return 'Rp ' . number_format((float) $nilaiTarget, 0, ',', '.');
+        }
+        if ($tipe === 'persen' || $tipe === 'angka') {
+            return number_format((float) $nilaiTarget, 0, ',', '.') . '%';
+        }
+        return number_format((float) $nilaiTarget, 0, ',', '.');
+    }
+
+    private function buildMonitoringData(int $karyawanId, int $tahun): array
+    {
+        $karyawan = karyawan::find($karyawanId);
+        if (!$karyawan) return [];
+
+        $allTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI'])
+            ->whereYear('created_at', $tahun)
+            ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanId) {
+                $q->where('id_karyawan', $karyawanId);
+            })
+            ->get();
+
+        $namaBulan = [
+            1=>'Januari', 2=>'Februari', 3=>'Maret',    4=>'April',
+            5=>'Mei',     6=>'Juni',     7=>'Juli',      8=>'Agustus',
+            9=>'September',10=>'Oktober',11=>'November', 12=>'Desember',
+        ];
+
+        $tabelTarget = [];
+
+        foreach ($allTargets as $item) {
+            $detail = $item->detailTargetKPI->first();
+            if (!$detail) continue;
+
+            $jangka      = $detail->jangka_target;
+            $detailJangka = (string)($detail->detail_jangka ?? '');
+            $tipe        = $detail->tipe_target;
+            $nilaiTarget = (float)$detail->nilai_target;
+
+            $tenggatWaktu = $this->formatTenggatWaktuExport($jangka, $detailJangka);
+
+            $calc = $this->getCalculationByRoute($item, $karyawanId);
+
+            if (!$calc || !isset($calc['progress'])) {
+                $calc = ['progress' => 0, 'gap' => 0, 'pie_chart' => ['above'=>0,'below'=>0], 'monthly_data' => [], 'daily_breakdown_per_month' => []];
+            }
+
+            $progressRaw = (float)($calc['progress'] ?? 0);
+
+            if ($tipe === 'rupiah') {
+                $progressPersen = $nilaiTarget > 0
+                    ? round(min(($progressRaw / $nilaiTarget) * 100, 999), 2)
+                    : 0;
+                $progressDisplay = 'Rp ' . number_format($progressRaw, 0, ',', '.');
+            } else {
+                $progressPersen  = round($progressRaw, 2);
+                $progressDisplay = $progressPersen . '%';
+            }
+
+            $lengthProgress = max(0, min($progressPersen, 100));
+
+            $status = $this->hitungStatusExport($progressPersen, $nilaiTarget, $tipe, $progressRaw, $tenggatWaktu);
+
+            $jabatanList = $item->detailTargetKPI->pluck('jabatan')->unique()->values()->toArray();
+            if (count($jabatanList) === 1) {
+                $jabatanDisplay = $jabatanList[0] ?? '-';
+            } else {
+                $jabatanDisplay = implode(', ', array_map(fn($j) => substr($j, 0, 4) . '...', $jabatanList));
+            }
+
+            $monthlyData = $calc['monthly_data'] ?? [];
+
+            $tabelTarget[] = [
+                'judul'            => $item->judul,
+                'asistant_route'   => $item->asistant_route,
+                'jangka_target'    => ucfirst($jangka),
+                'detail_jangka'    => $detailJangka,
+                'status'           => $status,
+                'tipe_target'      => $tipe,
+                'nilai_target'     => $nilaiTarget,
+                'nilai_target_fmt' => $this->formatNilaiTargetExport($nilaiTarget, $tipe),
+                'jabatan'          => $jabatanDisplay,
+                'divisi'           => $item->detailTargetKPI->pluck('divisi')->unique()->filter()->implode(', ') ?: '-',
+                'pembuat'          => $item->karyawan->nama_lengkap ?? '-',
+                'progress_raw'     => $progressRaw,
+                'progress_persen'  => $progressPersen,
+                'length_progress'  => $lengthProgress,
+                'progress_display' => $progressDisplay,
+                'tenggat_waktu'    => $tenggatWaktu,
+                'monthly_data'     => $monthlyData,
+                'gap'              => $calc['gap'] ?? 0,
+            ];
+        }
+
+        $rekapPerBulan  = array_fill(1, 12, []); 
+        $rupiahPerBulan = array_fill(1, 12, 0);
+        $nilaiTargetTahunan = 0;
+        $targetPemasukanKotor = null;
+
+        foreach ($tabelTarget as $t) {
+            $tipe        = $t['tipe_target'];
+            $nilaiTarget = $t['nilai_target'];
+            $monthlyData = $t['monthly_data'];
+
+            if ($t['asistant_route'] === 'Pemasukan Kotor') {
+                $nilaiTargetTahunan   = $nilaiTarget;
+                $targetPemasukanKotor = $t;
+            }
+
+            if (empty($monthlyData)) {
+                $persenTahunan = $t['progress_persen'];
+                if ($persenTahunan > 0) {
+                    $persenPerBulan = round($persenTahunan / 12, 4);
+                    for ($b = 1; $b <= 12; $b++) {
+                        $rekapPerBulan[$b][] = $persenPerBulan;
+                    }
+                }
+                continue;
+            }
+
+            foreach ($monthlyData as $monthKey => $nilai) {
+                if (preg_match('/^\d{4}-(\d{2})$/', (string)$monthKey, $m)) {
+                    $bulan = (int)$m[1];
+                } elseif (is_numeric($monthKey) && $monthKey >= 1 && $monthKey <= 12) {
+                    $bulan = (int)$monthKey;
+                } else {
+                    continue;
+                }
+
+                $nilai = (float)$nilai;
+
+                if ($tipe === 'rupiah') {
+                    $persen = $nilaiTarget > 0 ? round(($nilai / $nilaiTarget) * 100, 4) : 0;
+                    $rupiahPerBulan[$bulan] += $nilai;
+                } else {
+                    $persen = round($nilai, 4);
+                }
+
+                if ($persen > 0) {
+                    $rekapPerBulan[$bulan][] = $persen;
+                }
+            }
+        }
+
+        $rekapBulanan   = [];
+        $analisaData    = [];
+        $totalKumulatif = 0;
+        $kumulatif      = 0;
+
+        for ($b = 1; $b <= 12; $b++) {
+            $persenList = $rekapPerBulan[$b];
+            $avgPersen  = count($persenList) > 0
+                ? round(array_sum($persenList) / count($persenList), 2)
+                : 0;
+
+            $kumulatif += $avgPersen;
+            $totalKumulatif = $kumulatif; 
+
+            $status = $avgPersen > 0 ? 'In Progress' : '-';
+
+            $rekapBulanan[$b] = [
+                'nama_bulan'     => $namaBulan[$b],
+                'persen_capaian' => $avgPersen,
+                'status'         => $status,
+            ];
+
+            $analisaData[] = [
+                'target_tahunan' => $nilaiTargetTahunan,
+                'actual_rupiah'  => $rupiahPerBulan[$b] ?? 0,
+                'nama_bulan'     => $namaBulan[$b],
+                'persen_bulan'   => $avgPersen,
+                'kumulatif'      => round($kumulatif, 2),
+            ];
+        }
+
+        $totalKumulatif    = round($totalKumulatif, 2);
+        $totalActualRupiah = array_sum($rupiahPerBulan);
+
+        $allNilaiKPI = nilaiKPI::where('id_evaluated', $karyawanId)
+            ->whereYear('created_at', $tahun)
+            ->get();
+
+        $persentaseJenis = [
+            'General Manager'                           => 35,
+            'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
+            'Rekan Kerja (Satu Divisi)'                 => 20,
+            'Pekerja (Beda Divisi)'                     => 10,
+            'Self Apprisial'                            => 5,
+        ];
+
+        $jenisTotalRaw = [];
+        foreach ($persentaseJenis as $jenis => $bobot) {
+            $nilaiForJenis = $allNilaiKPI->where('jenis_penilaian', $jenis)
+                ->pluck('nilai')->filter(fn($n) => is_numeric($n));
+            if ($nilaiForJenis->isNotEmpty()) {
+                $jenisTotalRaw[$jenis] = ($nilaiForJenis->avg() * $bobot) / 100;
+            }
+        }
+        $nilaiSoftskill = empty($jenisTotalRaw) ? 0 : round(array_sum($jenisTotalRaw), 2);
+
+        $nilaiKPIxBobot       = round($totalKumulatif * 0.6, 2);
+        $nilaiSoftskillxBobot = round($nilaiSoftskill * 0.4, 2);
+        $totalAkhir           = round($nilaiKPIxBobot + $nilaiSoftskillxBobot, 2);
+
+        $statusCount = ['Selesai' => 0, 'Dalam Progress' => 0, 'Belum Dimulai' => 0, 'Gagal' => 0];
+        foreach ($tabelTarget as $t) {
+            $key = $t['status'];
+            if (array_key_exists($key, $statusCount)) {
+                $statusCount[$key]++;
+            } else {
+                $statusCount['Dalam Progress']++;
+            }
+        }
+
+        return [
+            'karyawan'            => $karyawan,
+            'tahun'               => $tahun,
+            'tabel_target'        => $tabelTarget,
+            'rekap_bulanan'       => array_values($rekapBulanan),
+            'total_kumulatif'     => $totalKumulatif,
+            'analisa_data'        => $analisaData,
+            'total_actual_rupiah' => $totalActualRupiah,
+            'nilai_target_tahunan'=> $nilaiTargetTahunan,
+            'penilaian' => [
+                'nilai_softskill'       => $nilaiSoftskill,
+                'total_capaian_kpi'     => $totalKumulatif,
+                'kpi_x_bobot'           => $nilaiKPIxBobot,
+                'softskill_x_bobot'     => $nilaiSoftskillxBobot,
+                'total_akhir'           => $totalAkhir,
+            ],
+            'status_count' => $statusCount,
+        ];
+    }
+
+    public function exportMonitoringPdf(Request $request)
+    {
+        try {
+            $karyawanId = (int)($request->query('id_karyawan') ?? $request->input('id_karyawan') ?? Auth::id());
+            $tahun      = (int)($request->query('tahun')       ?? $request->input('tahun')       ?? now()->year);
+
+            $data = $this->buildMonitoringData($karyawanId, $tahun);
+            if (empty($data)) {
+                return back()->withErrors(['export' => 'Data karyawan tidak ditemukan.']);
+            }
+
+            $pdf = Pdf::loadView('KPIdata.export.export_pdf', $data)
+                ->setPaper('a4', 'landscape')
+                ->setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled'      => false,
+                    'defaultFont'          => 'DejaVu Sans',
+                    'dpi'                  => 150,
+                ]);
+
+            $namaFile = 'KPI_' . str_replace(' ', '_', $data['karyawan']->nama_lengkap ?? 'unknown') . '_' . $tahun . '.pdf';
+            return $pdf->download($namaFile);
+
+        } catch (\Exception $e) {
+            Log::error('Export PDF KPI error', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return back()->withErrors(['export' => 'Gagal export PDF: ' . $e->getMessage()]);
+        }
+    }
+
+
+    public function exportMonitoringExcel(Request $request)
+    {
+        try {
+            $karyawanId = (int)($request->query('id_karyawan') ?? $request->input('id_karyawan') ?? Auth::id());
+            $tahun      = (int)($request->query('tahun')       ?? $request->input('tahun')       ?? now()->year);
+
+            $data = $this->buildMonitoringData($karyawanId, $tahun);
+            if (empty($data)) {
+                return back()->withErrors(['export' => 'Data karyawan tidak ditemukan.']);
+            }
+
+            $namaKaryawan = $data['karyawan']->nama_lengkap ?? '-';
+            $jabatan      = $data['karyawan']->jabatan ?? '-';
+
+            $C_HDR   = '2F5496';
+            $C_SUB   = '8EA9DB';
+            $C_ODD   = 'DCE6F1'; 
+            $C_WH    = 'FFFFFF';
+            $C_TOT   = 'D9E1F2';
+            $C_GRN   = '70AD47';
+            $C_YEL   = 'FFC000';
+            $C_RED   = 'FF4444';
+            $C_AMB   = 'D97706';
+            $C_DRK   = '1F2937';
+            $C_GRY   = '888888';
+
+            $spreadsheet = new Spreadsheet();
+            $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(10);
+
+            $s1 = $spreadsheet->getActiveSheet()->setTitle('Daftar Target KPI');
+
+            $colW1 = ['A'=>4,'B'=>40,'C'=>12,'D'=>16,'E'=>24,'F'=>20,'G'=>22,'H'=>22,'I'=>18,'J'=>18];
+            foreach ($colW1 as $col => $w) $s1->getColumnDimension($col)->setWidth($w);
+
+            $r = 1;
+
+            $s1->mergeCells("A{$r}:J{$r}");
+            $s1->setCellValue("A{$r}", "DAFTAR TARGET KPI — {$namaKaryawan} ({$jabatan}) — Tahun {$tahun}");
+            $this->xlStyle($s1, "A{$r}:J{$r}", $C_HDR, $C_WH, 13, true, 'center');
+            $s1->getRowDimension($r)->setRowHeight(28);
+            $r += 2;
+
+            $headers1 = ['A'=>'No','B'=>'Judul KPI','C'=>'Jangka','D'=>'Status',
+                        'E'=>'Target','F'=>'Jabatan','G'=>'Divisi','H'=>'Pembuat',
+                        'I'=>'Progress','J'=>'Tenggat'];
+            foreach ($headers1 as $col => $h) $s1->setCellValue("{$col}{$r}", $h);
+            $this->xlStyle($s1, "A{$r}:J{$r}", $C_HDR, $C_WH, 10, true, 'center');
+            $s1->getRowDimension($r)->setRowHeight(20);
+            $r++;
+
+            foreach ($data['tabel_target'] as $idx => $t) {
+                $bg = ($idx % 2 === 0) ? $C_ODD : $C_WH;
+
+                // Warna status
+                $sColor = match($t['status']) {
+                    'Selesai'       => $C_GRN,
+                    'Gagal'         => $C_RED,
+                    'Belum Dimulai' => $C_YEL,
+                    default         => $C_AMB,
+                };
+
+                // Warna progress
+                $pColor = $t['progress_persen'] >= 100 ? $C_GRN
+                        : ($t['progress_persen'] >= 50  ? $C_YEL : $C_RED);
+
+                $s1->setCellValue("A{$r}", $idx + 1);
+                $s1->setCellValue("B{$r}", $t['judul']);
+                $s1->setCellValue("C{$r}", $t['jangka_target']);
+                $s1->setCellValue("D{$r}", $t['status']);
+                $s1->setCellValue("E{$r}", $t['nilai_target_fmt']);
+                $s1->setCellValue("F{$r}", $t['jabatan']);
+                $s1->setCellValue("G{$r}", $t['divisi']);
+                $s1->setCellValue("H{$r}", $t['pembuat']);
+                $s1->setCellValue("I{$r}", $t['progress_display']); 
+                $s1->setCellValue("J{$r}", $t['tenggat_waktu']);
+
+                $this->xlStyle($s1, "A{$r}:J{$r}", $bg, $C_DRK, 10, false, 'center');
+                $s1->getStyle("B{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                $s1->getStyle("F{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                $s1->getStyle("G{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                $s1->getStyle("H{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+                $s1->getStyle("D{$r}")->getFont()->getColor()->setARGB("FF{$sColor}");
+                $s1->getStyle("D{$r}")->getFont()->setName('Calibri')->setBold(true);
+                $s1->getStyle("I{$r}")->getFont()->getColor()->setARGB("FF{$sColor}");
+                $s1->getStyle("I{$r}")->getFont()->setName('Calibri')->setBold(true);
+
+                $s1->getRowDimension($r)->setRowHeight(18);
+                $r++;
+            }
+
+
+            $allPersen     = array_column($data['tabel_target'], 'progress_persen');
+            $filtered      = array_filter($allPersen, fn($v) => $v > 0);
+            $avgProgress   = count($filtered) > 0 ? round(array_sum($filtered)/count($filtered), 2) : 0;
+
+            $s1->mergeCells("A{$r}:H{$r}");
+            $s1->setCellValue("A{$r}", 'RATA-RATA PROGRESS SEMUA KPI');
+            $s1->setCellValue("I{$r}", $avgProgress . '%');
+            $s1->setCellValue("J{$r}", '-');
+            $this->xlStyle($s1, "A{$r}:J{$r}", $C_TOT, $C_DRK, 10, true, 'center');
+            $s1->getStyle("A{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+            $chartStartRow = $r + 2;
+            $s1->setCellValue("A{$chartStartRow}", 'ChartData');
+            $this->xlHide($s1, "A{$chartStartRow}");
+
+            foreach ($data['tabel_target'] as $ci => $t) {
+                $cr = $chartStartRow + $ci + 1;
+                $s1->setCellValue("B{$cr}", $t['judul']);
+                $s1->setCellValue("C{$cr}", $t['progress_persen']); 
+                $this->xlHide($s1, "B{$cr}");
+                $this->xlHide($s1, "C{$cr}");
+            }
+
+            $chartEnd  = $chartStartRow + count($data['tabel_target']);
+            $s1Title   = $s1->getTitle();
+            $nKPI      = count($data['tabel_target']);
+
+            if ($nKPI > 0) {
+                $lblBar  = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('String', "'{$s1Title}'!C{$chartStartRow}", null, 1)];
+                $xBar    = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('String', "'{$s1Title}'!\$B\$".($chartStartRow+1).":\$B\${$chartEnd}", null, $nKPI)];
+                $vBar    = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('Number', "'{$s1Title}'!\$C\$".($chartStartRow+1).":\$C\${$chartEnd}", null, $nKPI)];
+
+                $serBar  = new \PhpOffice\PhpSpreadsheet\Chart\DataSeries(
+                    \PhpOffice\PhpSpreadsheet\Chart\DataSeries::TYPE_BARCHART,
+                    \PhpOffice\PhpSpreadsheet\Chart\DataSeries::GROUPING_CLUSTERED,
+                    [0], $lblBar, $xBar, $vBar
+                );
+                $serBar->setPlotDirection(\PhpOffice\PhpSpreadsheet\Chart\DataSeries::DIRECTION_COL);
+
+                $chartBar = new \PhpOffice\PhpSpreadsheet\Chart\Chart(
+                    'chart_progress_kpi',
+                    new \PhpOffice\PhpSpreadsheet\Chart\Title('Progress per KPI (%)'),
+                    new \PhpOffice\PhpSpreadsheet\Chart\Legend(\PhpOffice\PhpSpreadsheet\Chart\Legend::POSITION_BOTTOM, null, false),
+                    new \PhpOffice\PhpSpreadsheet\Chart\PlotArea(null, [$serBar]),
+                    true, 0, null, null
+                );
+                $chartBar->setTopLeftPosition("A" . ($r + 2));
+                $chartBar->setBottomRightPosition("J" . ($r + 22));
+                $s1->addChart($chartBar);
+            }
+
+            $s2 = $spreadsheet->createSheet()->setTitle('Rekap & Analisa');
+
+            $colW2 = ['A'=>4,'B'=>18,'C'=>20,'D'=>16,'E'=>22,'F'=>22,'G'=>18,'H'=>18];
+            foreach ($colW2 as $col => $w) $s2->getColumnDimension($col)->setWidth($w);
+
+            $r2 = 1;
+
+            $s2->mergeCells("A{$r2}:H{$r2}");
+            $s2->setCellValue("A{$r2}", "REKAP & ANALISA KPI — {$namaKaryawan} — Tahun {$tahun}");
+            $this->xlStyle($s2, "A{$r2}:H{$r2}", $C_HDR, $C_WH, 13, true, 'center');
+            $s2->getRowDimension($r2)->setRowHeight(28);
+            $r2 += 2;
+
+            $s2->mergeCells("A{$r2}:D{$r2}");
+            $s2->setCellValue("A{$r2}", 'REKAP BULANAN');
+            $this->xlStyle($s2, "A{$r2}:D{$r2}", $C_SUB, $C_WH, 11, true, 'center');
+            $r2++;
+
+            foreach (['A'=>'No','B'=>'Bulan','C'=>'% Capaian','D'=>'Status'] as $col => $h)
+                $s2->setCellValue("{$col}{$r2}", $h);
+            $this->xlStyle($s2, "A{$r2}:D{$r2}", $C_HDR, $C_WH, 10, true, 'center');
+            $r2++;
+
+            $rekapDataStart = $r2; 
+
+            foreach ($data['rekap_bulanan'] as $idx => $rekap) {
+                $bg     = ($idx % 2 === 0) ? $C_ODD : $C_WH;
+                $persen = $rekap['persen_capaian'];
+                $pColor = $persen >= 80 ? $C_GRN : ($persen >= 40 ? $C_YEL : ($persen > 0 ? $C_RED : $C_GRY));
+
+                $s2->setCellValue("A{$r2}", $idx + 1);
+                $s2->setCellValue("B{$r2}", $rekap['nama_bulan']);
+                $s2->setCellValue("C{$r2}", $persen > 0 ? $persen . '%' : '-');
+                $s2->setCellValue("D{$r2}", $rekap['status']);
+                $this->xlStyle($s2, "A{$r2}:D{$r2}", $bg, $C_DRK, 10, false, 'center');
+                $s2->getStyle("B{$r2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                if ($persen > 0) {
+                    $s2->getStyle("C{$r2}")->getFont()->getColor()->setARGB("FF{$pColor}");
+                    $s2->getStyle("C{$r2}")->getFont()->setBold(true);
+                }
+                $r2++;
+            }
+
+            $s2->mergeCells("A{$r2}:B{$r2}");
+            $s2->setCellValue("A{$r2}", 'TOTAL');
+            $s2->setCellValue("C{$r2}", $data['total_kumulatif'] . '%');
+            $s2->setCellValue("D{$r2}", '-');
+            $this->xlStyle($s2, "A{$r2}:D{$r2}", $C_TOT, $C_DRK, 10, true, 'center');
+            $r2 += 2;
+
+            $s2->mergeCells("A{$r2}:D{$r2}");
+            $s2->setCellValue("A{$r2}", 'INDIKATOR KEBERHASILAN');
+            $this->xlStyle($s2, "A{$r2}:D{$r2}", $C_SUB, $C_WH, 11, true, 'center');
+            $r2++;
+
+            foreach (['A'=>'Kategori','B'=>'Keterangan','C'=>'Bobot','D'=>''] as $col => $h)
+                $s2->setCellValue("{$col}{$r2}", $h);
+            $this->xlStyle($s2, "A{$r2}:C{$r2}", $C_HDR, $C_WH, 10, true, 'center');
+            $r2++;
+
+            foreach ([[$C_ODD,'Softskill/360','Penilaian 360 (softskill)','40%'],
+                    [$C_WH, 'KPI',          'Total pencapaian KPI',     '60%'],
+                    [$C_TOT,'TOTAL',         '',                         '100%']] as [$bg,$kat,$ket,$bobot]) {
+                $s2->setCellValue("A{$r2}", $kat);
+                $s2->setCellValue("B{$r2}", $ket);
+                $s2->setCellValue("C{$r2}", $bobot);
+                $this->xlStyle($s2, "A{$r2}:C{$r2}", $bg, $C_DRK, 10, $bg===$C_TOT, 'center');
+                $s2->getStyle("B{$r2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                $r2++;
+            }
+            $r2++;
+
+            $s2->mergeCells("A{$r2}:E{$r2}");
+            $s2->setCellValue("A{$r2}", "ANALISA PENGAMBILAN TARGET (TAHUN {$tahun})");
+            $this->xlStyle($s2, "A{$r2}:E{$r2}", $C_SUB, $C_WH, 11, true, 'center');
+            $r2++;
+
+            foreach (['A'=>'Target 1 Tahun','B'=>'Actual Per Bulan','C'=>'Bulan','D'=>'% Bulan','E'=>'% Kumulatif'] as $col => $h)
+                $s2->setCellValue("{$col}{$r2}", $h);
+            $this->xlStyle($s2, "A{$r2}:E{$r2}", $C_HDR, $C_WH, 10, true, 'center');
+            $s2->getRowDimension($r2)->setRowHeight(18);
+            $r2++;
+
+            foreach ($data['analisa_data'] as $idx => $analisa) {
+                $bg = ($idx % 2 === 0) ? $C_ODD : $C_WH;
+                $targetDisp = $analisa['target_tahunan'] > 0
+                    ? 'Rp ' . number_format($analisa['target_tahunan'], 0, ',', '.') : '-';
+                $actualDisp = $analisa['actual_rupiah'] > 0
+                    ? 'Rp ' . number_format($analisa['actual_rupiah'], 0, ',', '.') : '-';
+
+                $s2->setCellValue("A{$r2}", $targetDisp);
+                $s2->setCellValue("B{$r2}", $actualDisp);
+                $s2->setCellValue("C{$r2}", $analisa['nama_bulan']);
+                $s2->setCellValue("D{$r2}", $analisa['persen_bulan'] > 0 ? $analisa['persen_bulan'] . '%' : '-');
+                $s2->setCellValue("E{$r2}", $analisa['kumulatif'] > 0 ? $analisa['kumulatif'] . '%' : '-');
+                $this->xlStyle($s2, "A{$r2}:E{$r2}", $bg, $C_DRK, 10, false, 'center');
+                $s2->getStyle("A{$r2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $s2->getStyle("B{$r2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $s2->getStyle("C{$r2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                $r2++;
+            }
+
+            $totalTgtDisp = $data['nilai_target_tahunan'] > 0
+                ? 'Rp ' . number_format($data['nilai_target_tahunan'], 0, ',', '.') : '-';
+            $totalActDisp = $data['total_actual_rupiah'] > 0
+                ? 'Rp ' . number_format($data['total_actual_rupiah'], 0, ',', '.') : '-';
+
+            $s2->setCellValue("A{$r2}", $totalTgtDisp);
+            $s2->setCellValue("B{$r2}", $totalActDisp);
+            $s2->setCellValue("C{$r2}", '-');
+            $s2->setCellValue("D{$r2}", '-');
+            $s2->setCellValue("E{$r2}", $data['total_kumulatif'] . '%');
+            $this->xlStyle($s2, "A{$r2}:E{$r2}", $C_TOT, $C_DRK, 10, true, 'center');
+            $s2->getStyle("A{$r2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $s2->getStyle("B{$r2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $r2 += 2;
+
+            $s2->mergeCells("A{$r2}:C{$r2}");
+            $s2->setCellValue("A{$r2}", 'TABEL PENILAIAN AKHIR');
+            $this->xlStyle($s2, "A{$r2}:C{$r2}", $C_SUB, $C_WH, 11, true, 'center');
+            $r2++;
+
+            foreach (['A'=>'Kategori','B'=>'Total Capaian (Actual)','C'=>'Capaian × Bobot'] as $col => $h)
+                $s2->setCellValue("{$col}{$r2}", $h);
+            $this->xlStyle($s2, "A{$r2}:C{$r2}", $C_HDR, $C_WH, 10, true, 'center');
+            $r2++;
+
+            $p = $data['penilaian'];
+            foreach ([[$C_ODD,'Softskill/360', $p['nilai_softskill']>0 ? $p['nilai_softskill'].'%' : '-', $p['softskill_x_bobot']],
+                    [$C_WH, 'KPI',           $p['total_capaian_kpi'].'%',                              $p['kpi_x_bobot']],
+                    [$C_TOT,'TOTAL',          '100%',                                                   $p['total_akhir']]] as [$bg,$kat,$act,$xb]) {
+                $s2->setCellValue("A{$r2}", $kat);
+                $s2->setCellValue("B{$r2}", $act);
+                $s2->setCellValue("C{$r2}", $xb);
+                $this->xlStyle($s2, "A{$r2}:C{$r2}", $bg, $C_DRK, 10, $bg===$C_TOT, 'center');
+                $r2++;
+            }
+
+            $chartDataRow = $r2 + 2;
+            $this->xlHide($s2, "A{$chartDataRow}");
+
+            foreach ($data['rekap_bulanan'] as $ci => $rekap) {
+                $cr = $chartDataRow + $ci + 1;
+                $s2->setCellValue("B{$cr}", $rekap['nama_bulan']);
+                $s2->setCellValue("C{$cr}", $rekap['persen_capaian']);
+                $s2->setCellValue("D{$cr}", $data['analisa_data'][$ci]['kumulatif'] ?? 0);
+                $this->xlHide($s2, "B{$cr}");
+                $this->xlHide($s2, "C{$cr}");
+                $this->xlHide($s2, "D{$cr}");
+            }
+            $chartDataEnd = $chartDataRow + 12;
+            $s2Title      = $s2->getTitle();
+
+            $xLine  = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('String', "'{$s2Title}'!\$B\$".($chartDataRow+1).":\$B\${$chartDataEnd}", null, 12)];
+            $lbl1   = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('String', "'{$s2Title}'!C{$chartDataRow}", null, 1)];
+            $lbl2   = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('String', "'{$s2Title}'!D{$chartDataRow}", null, 1)];
+            $v1     = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('Number', "'{$s2Title}'!\$C\$".($chartDataRow+1).":\$C\${$chartDataEnd}", null, 12)];
+            $v2     = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('Number', "'{$s2Title}'!\$D\$".($chartDataRow+1).":\$D\${$chartDataEnd}", null, 12)];
+
+            $serLine = new \PhpOffice\PhpSpreadsheet\Chart\DataSeries(
+                \PhpOffice\PhpSpreadsheet\Chart\DataSeries::TYPE_LINECHART,
+                \PhpOffice\PhpSpreadsheet\Chart\DataSeries::GROUPING_STANDARD,
+                [0,1], array_merge($lbl1, $lbl2), $xLine, array_merge($v1, $v2)
+            );
+
+            $chartLine = new \PhpOffice\PhpSpreadsheet\Chart\Chart(
+                'chart_tren_bulanan',
+                new \PhpOffice\PhpSpreadsheet\Chart\Title('Tren Capaian Bulanan & Kumulatif (%)'),
+                new \PhpOffice\PhpSpreadsheet\Chart\Legend(\PhpOffice\PhpSpreadsheet\Chart\Legend::POSITION_BOTTOM, null, false),
+                new \PhpOffice\PhpSpreadsheet\Chart\PlotArea(null, [$serLine]),
+                true, 0, null, null
+            );
+            $chartLine->setTopLeftPosition('F2');
+            $chartLine->setBottomRightPosition('N22');
+            $s2->addChart($chartLine);
+
+            if ($data['nilai_target_tahunan'] > 0) {
+                $rupiahRow = $chartDataEnd + 2;
+                foreach ($data['analisa_data'] as $ci => $analisa) {
+                    $cr = $rupiahRow + $ci + 1;
+                    $s2->setCellValue("B{$cr}", $analisa['nama_bulan']);
+                    $s2->setCellValue("C{$cr}", $analisa['actual_rupiah']);
+                    $this->xlHide($s2, "B{$cr}");
+                    $this->xlHide($s2, "C{$cr}");
+                }
+                $rupiahEnd = $rupiahRow + 12;
+
+                $xRup   = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('String', "'{$s2Title}'!\$B\$".($rupiahRow+1).":\$B\${$rupiahEnd}", null, 12)];
+                $lblRup = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('String', "'{$s2Title}'!C{$rupiahRow}", null, 1)];
+                $vRup   = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('Number', "'{$s2Title}'!\$C\$".($rupiahRow+1).":\$C\${$rupiahEnd}", null, 12)];
+
+                $serRup = new \PhpOffice\PhpSpreadsheet\Chart\DataSeries(
+                    \PhpOffice\PhpSpreadsheet\Chart\DataSeries::TYPE_BARCHART,
+                    \PhpOffice\PhpSpreadsheet\Chart\DataSeries::GROUPING_CLUSTERED,
+                    [0], $lblRup, $xRup, $vRup
+                );
+                $serRup->setPlotDirection(\PhpOffice\PhpSpreadsheet\Chart\DataSeries::DIRECTION_COL);
+
+                $chartRup = new \PhpOffice\PhpSpreadsheet\Chart\Chart(
+                    'chart_rupiah_bulanan',
+                    new \PhpOffice\PhpSpreadsheet\Chart\Title('Actual Pemasukan Per Bulan (Rp)'),
+                    new \PhpOffice\PhpSpreadsheet\Chart\Legend(\PhpOffice\PhpSpreadsheet\Chart\Legend::POSITION_BOTTOM, null, false),
+                    new \PhpOffice\PhpSpreadsheet\Chart\PlotArea(null, [$serRup]),
+                    true, 0, null, null
+                );
+                $chartRup->setTopLeftPosition('F24');
+                $chartRup->setBottomRightPosition('N44');
+                $s2->addChart($chartRup);
+            }
+
+            $s3 = $spreadsheet->createSheet()->setTitle('Ringkasan Eksekutif');
+
+            foreach (['A'=>24,'B'=>16,'C'=>16,'D'=>14,'E'=>14,'F'=>14] as $col => $w)
+                $s3->getColumnDimension($col)->setWidth($w);
+
+            $r3 = 1;
+
+            $s3->mergeCells("A{$r3}:F{$r3}");
+            $s3->setCellValue("A{$r3}", "RINGKASAN EKSEKUTIF KPI — {$namaKaryawan} — {$tahun}");
+            $this->xlStyle($s3, "A{$r3}:F{$r3}", $C_HDR, $C_WH, 13, true, 'center');
+            $s3->getRowDimension($r3)->setRowHeight(28);
+            $r3 += 2;
+
+            $sc   = $data['status_count'];
+            $total = count($data['tabel_target']);
+
+            $ringkasan = [
+                ['Total Target KPI',           $total,                            $C_SUB],
+                ['Target Selesai',             $sc['Selesai']       ?? 0,         $C_GRN],
+                ['Target Dalam Progress',      $sc['Dalam Progress'] ?? 0,        $C_YEL],
+                ['Target Belum Dimulai',       $sc['Belum Dimulai'] ?? 0,         $C_GRY],
+                ['Target Gagal',               $sc['Gagal']          ?? 0,         $C_RED],
+                ['Total % Kumulatif KPI',      $data['total_kumulatif'] . '%',    $C_HDR],
+                ['Nilai KPI × 60%',            $p['kpi_x_bobot'],                 $C_HDR],
+                ['Nilai Softskill × 40%',      $p['softskill_x_bobot'],           $C_SUB],
+                ['NILAI AKHIR',                $p['total_akhir'],                 '1A5276'],
+            ];
+
+            foreach ($ringkasan as [$label, $nilai, $col]) {
+                $isFinal = ($label === 'NILAI AKHIR');
+                $s3->setCellValue("A{$r3}", $label);
+                $s3->setCellValue("B{$r3}", $nilai);
+                $this->xlStyle($s3, "A{$r3}:B{$r3}", $isFinal ? 'D6EAF8' : $C_ODD, $C_DRK, $isFinal ? 12 : 10, $isFinal, 'left');
+                $s3->getStyle("B{$r3}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $s3->getStyle("B{$r3}")->getFont()->getColor()->setARGB("FF{$col}");
+                $s3->getStyle("B{$r3}")->getFont()->setBold(true);
+                $s3->getStyle("A{$r3}:B{$r3}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $s3->getRowDimension($r3)->setRowHeight(22);
+                $r3++;
+            }
+
+            $r3 += 2;
+
+            $s3->mergeCells("A{$r3}:B{$r3}");
+            $s3->setCellValue("A{$r3}", 'DISTRIBUSI STATUS KPI');
+            $this->xlStyle($s3, "A{$r3}:B{$r3}", $C_SUB, $C_WH, 11, true, 'center');
+            $r3++;
+
+            foreach (['A'=>'Status','B'=>'Jumlah'] as $col => $h) $s3->setCellValue("{$col}{$r3}", $h);
+            $this->xlStyle($s3, "A{$r3}:B{$r3}", $C_HDR, $C_WH, 10, true, 'center');
+            $r3++;
+
+            $pieStart = $r3;
+            $sColors  = ['Selesai'=>$C_GRN,'Dalam Progress'=>$C_YEL,'Belum Dimulai'=>$C_GRY,'Gagal'=>$C_RED];
+
+            foreach ($data['status_count'] as $status => $count) {
+                $bg = (($r3 - $pieStart) % 2 === 0) ? $C_ODD : $C_WH;
+                $s3->setCellValue("A{$r3}", $status);
+                $s3->setCellValue("B{$r3}", $count);
+                $this->xlStyle($s3, "A{$r3}:B{$r3}", $bg, $C_DRK, 10, false, 'center');
+                $s3->getStyle("A{$r3}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                $s3->getStyle("A{$r3}")->getFont()->getColor()->setARGB('FF' . ($sColors[$status] ?? $C_DRK));
+                $s3->getStyle("A{$r3}")->getFont()->setBold(true);
+                $r3++;
+            }
+            $pieEnd  = $r3 - 1;
+            $s3Title = $s3->getTitle();
+
+            $lblPie = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('String', "'{$s3Title}'!\$A\${$pieStart}:\$A\${$pieEnd}", null, 4)];
+            $xPie   = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('String', "'{$s3Title}'!\$A\${$pieStart}:\$A\${$pieEnd}", null, 4)];
+            $vPie   = [new \PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues('Number', "'{$s3Title}'!\$B\${$pieStart}:\$B\${$pieEnd}", null, 4)];
+
+            $serPie = new \PhpOffice\PhpSpreadsheet\Chart\DataSeries(
+                \PhpOffice\PhpSpreadsheet\Chart\DataSeries::TYPE_PIECHART,
+                null, [0], $lblPie, $xPie, $vPie
+            );
+
+            $chartPie = new \PhpOffice\PhpSpreadsheet\Chart\Chart(
+                'chart_distribusi_status',
+                new \PhpOffice\PhpSpreadsheet\Chart\Title('Distribusi Status Target KPI'),
+                new \PhpOffice\PhpSpreadsheet\Chart\Legend(\PhpOffice\PhpSpreadsheet\Chart\Legend::POSITION_BOTTOM, null, false),
+                new \PhpOffice\PhpSpreadsheet\Chart\PlotArea(null, [$serPie]),
+                true, 0, null, null
+            );
+            $chartPie->setTopLeftPosition('D2');
+            $chartPie->setBottomRightPosition('J24');
+            $s3->addChart($chartPie);
+
+            $spreadsheet->setActiveSheetIndex(0);
+
+            $namaFile = 'KPI_' . str_replace(' ', '_', $namaKaryawan) . '_' . $tahun . '.xlsx';
+            $tmpPath  = tempnam(sys_get_temp_dir(), 'kpi_') . '.xlsx';
+
+            $writer = new Xlsx($spreadsheet);
+            $writer->setIncludeCharts(true);
+            $writer->save($tmpPath);
+
+            return response()->download($tmpPath, $namaFile, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ])->deleteFileAfterSend(true);
+
+        } catch (\Exception $e) {
+            Log::error('Export Excel KPI error', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return back()->withErrors(['export' => 'Gagal export Excel: ' . $e->getMessage()]);
+        }
+    }
+
+    private function xlStyle(
+        \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet,
+        string $range,
+        string $bgRgb,
+        string $fontRgb  = '1F2937',
+        int    $fontSize  = 10,
+        bool   $bold      = false,
+        string $hAlign    = 'left'
+    ): void {
+        $style = $sheet->getStyle($range);
+
+        $style->getFill()->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB("FF{$bgRgb}");
+
+        $style->getFont()
+            ->setBold($bold)->setSize($fontSize)->setName('Calibri')
+            ->getColor()->setARGB("FF{$fontRgb}");
+
+        $hMap = ['center' => Alignment::HORIZONTAL_CENTER,
+                'right'  => Alignment::HORIZONTAL_RIGHT,
+                'left'   => Alignment::HORIZONTAL_LEFT];
+
+        $style->getAlignment()
+            ->setHorizontal($hMap[$hAlign] ?? Alignment::HORIZONTAL_LEFT)
+            ->setVertical(Alignment::VERTICAL_CENTER)
+            ->setWrapText(true);
+
+        $style->getBorders()->getAllBorders()
+            ->setBorderStyle(Border::BORDER_THIN)
+            ->getColor()->setARGB('FFCCCCCC');
+    }
+
+    private function xlHide(
+        \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet,
+        string $cell
+    ): void {
+        $sheet->getStyle($cell)->getFont()->getColor()->setARGB('FFFFFFFF');
+        $sheet->getStyle($cell)->getFill()->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('FFFFFFFF');
     }
 }
