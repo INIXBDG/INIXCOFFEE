@@ -2355,6 +2355,9 @@
                                             <h6 class="fw-semibold mb-3">Input Presentase Kemampuan Programmer</h6>
 
                                             <form id="formGapKompetensi">
+                                                @php
+                                                    $allowed = auth()->user()->jabatan === 'Koordinator ITSM';
+                                                @endphp
 
                                                 <div class="row mb-2 fw-semibold text-muted border-bottom pb-2">
                                                     <div class="col-md-4">Nama Karyawan</div>
@@ -2390,13 +2393,13 @@
                                                             <div class="col-md-4">
                                                                 <input type="number" step="0.1" class="form-control kemampuan-input"
                                                                     name="data[${index}][kemampuan]"
-                                                                    value="${kemampuan}">
+                                                                    value="${kemampuan}" {{ $allowed ? '' : 'disabled' }}>
                                                             </div>
 
                                                             <div class="col-md-4">
                                                                 <input type="number" step="0.1" class="form-control standar-input"
                                                                     name="data[${index}][standar]"
-                                                                    value="${standar}">
+                                                                    value="${standar}" {{ $allowed ? '' : 'disabled' }}>
                                                             </div>
 
                                                             <input type="hidden" name="data[${index}][id]" value="${item.id}">
@@ -2405,11 +2408,13 @@
                                                 }).join('')}
 
                                                 <!-- BUTTON -->
-                                                <div class="mt-3">
-                                                    <button type="submit" class="btn btn-primary">
-                                                        Simpan
-                                                    </button>
-                                                </div>
+                                                @if (auth()->user()->jabatan === 'Koordinator ITSM')
+                                                    <div class="mt-3">
+                                                        <button type="submit" class="btn btn-primary">
+                                                            Simpan
+                                                        </button>
+                                                    </div>
+                                                @endif
 
                                             </form>
                                         </div>
