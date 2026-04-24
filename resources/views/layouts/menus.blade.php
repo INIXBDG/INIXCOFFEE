@@ -2461,7 +2461,7 @@
                                         </div>
                                     </div>
                                 @endcan
-                                {{-- @can('Fitur Project') --}}
+                                @can('Fitur Project')
                                     <div class="row">
                                         <div class="col-md-12 mt-1">
                                             <div class="card">
@@ -2549,7 +2549,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                {{-- @endcan --}}
+                                @endcan
 
                             </div>
                         </div>
