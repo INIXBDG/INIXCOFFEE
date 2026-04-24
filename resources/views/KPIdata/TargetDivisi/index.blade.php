@@ -229,49 +229,156 @@
         <div class="stretch-card">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title"><i class="fas fa-bullseye card-icon me-2"></i> Buat Target Baru</h4> 
-                    {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalImport">
-                        Import Target
-                    </button> --}}
-
-                    <div class="d-flex flex-wrap gap-3 mt-3" id="targetContainer">
-                        <button type="button" class="target-card add-card d-flex align-items-center justify-content-center"
-                            data-bs-toggle="modal" data-bs-target="#modalBuatTarget" style="width: 280px; flex: 0 0 auto;">
-                            <i class="fas fa-plus fa-2x text-success"></i>
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-primary me-2"
+                            data-bs-toggle="modal" data-bs-target="#modalBuatTarget">
+                            <i class="fas fa-plus fa-2x"></i>  buat target baru
                         </button>
-
-                        <div id="content_target" class="d-flex flex-wrap gap-3"></div>
+                        <button type="button" class="btn btn-success me-2"
+                            data-bs-toggle="modal" data-bs-target="#ModalImport">
+                            <i class="fas fa-file-import"></i>  Import
+                        </button>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Judul</th>
+                                    <th>Jangka</th>
+                                    <th>Status</th>
+                                    <th>Target</th>
+                                    <th>Jabatan</th>
+                                    <th>Divisi</th>
+                                    <th>Pembuat</th>
+                                    <th>Progress</th>
+                                    <th>Tenggat</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="content_target"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="modal fade" id="ModalImport" tabindex="-1" role="dialog" aria-labelledby="ModalImportLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+
+    <div class="modal fade" id="ModalImport" tabindex="-1" aria-labelledby="ModalImportLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
-                <form action="{{ route('kpi.importTarget') }}" method="post">
+                <form action="{{ route('kpi.importTarget') }}" method="post" enctype="multipart/form-data" id="formImport">
                     @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="ModalImportLabel">Modal title</h5>
-                        <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                        </button>
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="ModalImportLabel">📥 Import Data KPI</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="form-group">
-                            <label for="file">File Import</label>
-                            <input type="file" class="form-control" id="file" placeholder="pilih file xlsx,xls,csv">
+                        
+                        <div id="importPreview" class="alert alert-info d-none">
+                            <div class="d-flex align-items-center">
+                                <i class="fa-solid fa-spinner fa-spin me-2"></i>
+                                <span>Memproses file...</span>
+                            </div>
                         </div>
-                        <div class="form-group text-center">     
-                            <small id="emailHelp" class="form-text text-muted">jika belum memiliki file template, silahkan di download.</small>
-                            <a href="{{ asset('template_KPI/template_import_kpi.xlsx') }}" class="btn btn-success" download>Download Template</a>
+
+                        <div class="mb-3">
+                            <label for="file" class="form-label fw-semibold">Pilih File Excel/CSV</label>
+                            <input type="file" 
+                                class="form-control @error('file') is-invalid @enderror" 
+                                id="file" 
+                                name="file"
+                                accept=".xlsx,.xls,.csv"
+                                required>
+                            @error('file')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">
+                                <i class="fa-solid fa-circle-info me-1"></i>
+                                Maksimal 10MB • Format: .xlsx, .xls, .csv
+                            </div>
+                        </div>
+
+                        <div class="card bg-light border-0 mb-3">
+                            <div class="card-body py-2">
+                                <h6 class="fw-semibold mb-2">Opsi Import</h6>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="skipDuplicate" name="skip_duplicate" value="1" checked>
+                                    <label class="form-check-label" for="skipDuplicate">
+                                        Lewati data duplikat (berdasarkan judul + pembuat)
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="dryRun" name="dry_run" value="1">
+                                    <label class="form-check-label" for="dryRun">
+                                        Mode preview (hanya validasi, tidak simpan ke database)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center p-3 border rounded bg-white">
+                            <small class="text-muted d-block mb-2">Belum punya template?</small>
+                            <a href="{{ asset('template_KPI/template_import_kpi.xlsx') }}" 
+                            class="btn btn-success btn-sm" 
+                            download>
+                                <i class="fa-solid fa-download me-1"></i>Download Template Excel
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#modalPreviewTemplate">
+                                <i class="fa-solid fa-eye me-1"></i>Lihat Contoh
+                            </button>
+                        </div>
+
+                        <div id="errorSummary" class="d-none mt-3">
+                            <div class="alert alert-danger mb-0 py-2">
+                                <strong>Ditemukan {{ count($errors ?? []) }} error:</strong>
+                                <ul class="mb-0 mt-1 small" style="max-height: 150px; overflow-y: auto;">
+                                </ul>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keluar</button>
-                        <button type="submit" class="btn btn-primary">Import</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary" id="btnSubmitImport">
+                            <i class="fa-solid fa-upload me-1"></i>Import Sekarang
+                        </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalPreviewTemplate" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Format Kolom Template</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Kolom</th>
+                                    <th>Wajib</th>
+                                    <th>Format/Contoh</th>
+                                    <th>Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Judul KPI</td><td>✅</td><td>"Meningkatkan Revenue"</td><td>Maksimal 255 karakter</td></tr>
+                                <tr><td>Deskripsi</td><td>❌</td><td>"Target penjualan Q1"</td><td>Opsional, maksimal 500 karakter</td></tr>
+                                <tr><td>Jabatan</td><td>✅</td><td>"Sales, SPV Sales"</td><td>Pisahkan dengan koma jika multiple</td></tr>
+                                <tr><td>Karyawan</td><td>❌</td><td>"Budi, Siti"</td><td>Nama lengkap sesuai database</td></tr>
+                                <tr><td>Jangka Target</td><td>✅</td><td>"tahunan"</td><td>Harus pilih satu nilai ini</td></tr>
+                                <tr><td>Detail Jangka</td><td>✅</td><td>"2024", "01-2024", "Q1-2024", "2024W01"</td><td>Sesuai format jangka</td></tr>
+                                <tr><td>Tipe Target</td><td>✅</td><td>"rupiah", "persen", "angka"</td><td>Harus salah satu nilai ini</td></tr>
+                                <tr><td>Nilai Target</td><td>✅</td><td>"1000000", "80", "10"</td><td>Angka tanpa simbol</td></tr>
+                                <tr><td>Assistant Route</td><td>✅</td><td>"target penjualan tahunan"</td><td>Harus sesuai route yang terdaftar</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -462,6 +569,7 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -498,6 +606,105 @@
             'pengeluaran biaya karyawan'
         ];
 
+        const assistantRouteUrlMap = {
+            // GM
+            "Pemasukan Kotor": "/rkm",
+            "pemasukan bersih": "/office/analysis",
+            "Kepuasan Pelanggan": "/feedback",
+            "rasio biaya operasional terhadap revenue": "/kpi-data/table-data",
+            "performa KPI departemen": "/kpi-data/table-data",
+
+            // Customer Care
+            "peserta puas dengan pelayanan dan fasilitas training": "/feedback",
+            "dorong inovasi pelayanan": "/kpi-data/table-data",
+            "penanganan komplain perseta": "/komplain-peserta",
+            "report persiapan kelas": "/office/dashboard",
+
+            // Finance
+            "outstanding": "/outstanding",
+            "inisiatif efisiensi keuangan": "/kpi-data/table-data",
+            "mengurangi manual work dan error": "/kpi-data/table-data",
+            "laporan analisis keuangan": "/office/analysis",
+            "pencairan biaya operasional": "/pengajuanbarang",
+            "penyelesaian tagihan perusahaan": "/office/tagihan-perusahaan",
+            "akurasi pencatatan masuk": "/outstanding",
+
+            // HRD
+            "pelaksanaan kegiatan karyawan": "office/kegiatan/index",
+            "pengeluaran biaya karyawan": "/office/administrasi-karyawan",
+            "administrasi karyawan": "/office/administrasi-karyawan",
+
+            // Driver
+            "perbaikan kendaraan": "/office/kendaraan/index/perbaikan",
+            "report kondisi kendaraan": "/office/kendaraan/index/kondisi",
+            "kontrol pengeluaran transportasi": "/office/pickup-driver/index",
+            "feedback kenyamanan berkendaran": "/feedback",
+
+            // OB
+            "feedback kebersihan dan kenyamanan": "/feedback",
+            "penyelesaian tugas harian": "/office/daftar-tugas/Index",
+
+            // ITSM
+            "meningkatkan kepuasan dan loyalitas peserta/client": "/survey/kepuasan/table",
+            "availability sistem internal kritis": "/home",
+
+            // Programmer
+            "ketepatan waktu penyelesaian fitur": "/tickets",
+            "mengukur kualitas aplikasi agar minim bug": "/tickets",
+
+            // Digital
+            "konsistensi campaign digital": "/content-schedules",
+            "efektifitas diital marketing": "/colaborator",
+
+            // TS
+            "keberhasilan support memenuhi sla": "/dashboard-sla/{tech-support}",
+            "kualitas layanan exam": "/registrasi",
+
+            // Instruktur
+            "presentase kinerja instruktur": "/activityinstruktur",
+            "kepuasan peserta pelatihan": "/feedback",
+            "upseling lanjutan materi": "/office/rekomendasi-lanjutan/index",
+            "sertifikasi kompetensi internal": "/development",
+            "pelatihan kompetensi eksternal": "/development",
+
+            // Manager Edu
+            "pengembangan kurikulum pelatihan": "/materi",
+            "peningkatan knowledge sharing": "/activityinstruktur",
+            "peningkatan kontribusi pelatihan": "/rkm",
+            "evaluasi kinerja instruktur": "/activityinstruktur",
+
+            // Sales
+            "target penjualan tahunan": "/rkm",
+            "biaya akuisisi perclient": "/crm/peluang/index",
+
+            // SPV Sales
+            "meningkatkan revenue perusahaan": "/rkm",
+            "customer acquisition cost": "/crm/peluang/index",
+            "evaluasi kinerja sales": "/crm/aktivitas",
+
+            // ADM Sales
+            "laporan mom": "/crm/laporan-harian",
+            "akurasi kelengkapan data penjualan": "/crm/laporanPenjualan",
+            "todo administrasi": "/crm/todo-administrasi",
+
+            // ADM Holding
+            "ketepatan waktu po": "/modul/index",
+            "kualitas dokumentasi support dan proctor": "/daftar-peserta-exam"
+        };
+
+        $(document).on('click', '.buttonGoRoute', function () {
+            const url = $(this).data('url');
+
+            if (url && url !== '#') {
+                window.location.href = url;
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Route belum tersedia',
+                    text: 'Assistant route ini belum memiliki halaman.'
+                });
+            }
+        });
 
         function formatNumber(value) {
             if (!value && value !== '0') return '';
@@ -920,245 +1127,262 @@
                             return color;
                         };
 
-                        Object.entries(groupedByPembuat).forEach(([idPembuat, group]) => {
-                            const bgColor = getColor(idPembuat);
-                            const cardWrapper = $(`
-                                    <div class="rounded-3 p-3" style="background-color: white; border: 4px solid ${bgColor}40;">
-                                        <h6 class="mb-3 fw-bold" style="color: ${bgColor};">
-                                            <i class="fa-solid fa-user me-1"></i> Target oleh: ${group.nama_pembuat || '–'}
-                                        </h6>
-                                        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-center">
-                                        </div>
-                                    </div>
-                                `);
-                            const targetContainer = cardWrapper.find('div.d-flex');
+                            Object.entries(groupedByPembuat).forEach(([idPembuat, group]) => {
+                                const bgColor = getColor(idPembuat);
 
-                            group.targets.forEach(function(item) {
-                                let formattedTarget = item.nilai_target;
-                                if (item.tipe_target === 'persen' || item.tipe_target ===
-                                    'angka') {
-                                    formattedTarget = `${item.nilai_target}%`;
-                                } else if (item.tipe_target === 'rupiah') {
-                                    formattedTarget = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR',
-                                        minimumFractionDigits: 0
-                                    }).format(item.nilai_target);
-                                }
+                                group.targets.forEach(function(item) {
+                                    let formattedTarget = item.nilai_target;
+                                    if (item.tipe_target === 'persen' || item.tipe_target ===
+                                        'angka') {
+                                        formattedTarget = `${item.nilai_target}%`;
+                                    } else if (item.tipe_target === 'rupiah') {
+                                        formattedTarget = new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR',
+                                            minimumFractionDigits: 0
+                                        }).format(item.nilai_target);
+                                    }
 
-                                let jabatanDisplay = '-';
-                                if (item.jabatan && item.jabatan.length > 0) {
-                                    const jabatanList = item.jabatan;
-                                    if (jabatanList.length === 1) {
-                                        jabatanDisplay = jabatanList[0];
+                                    let jabatanDisplay = '-';
+                                    if (item.jabatan && item.jabatan.length > 0) {
+                                        const jabatanList = item.jabatan;
+                                        if (jabatanList.length === 1) {
+                                            jabatanDisplay = jabatanList[0];
+                                        } else {
+                                            jabatanDisplay = jabatanList.map(j => j.substring(0,
+                                                4) + '...').join(', ');
+                                        }
+                                    }
+
+                                    let deadlineText = '';
+                                    let deadlineDate = null;
+                                    const detail = item.detail_jangka ? item.detail_jangka
+                                        .toString().trim() : '';
+
+                                    if (item.jangka_target === 'tahunan') {
+                                        const year = parseInt(detail);
+                                        if (!isNaN(year)) {
+                                            deadlineText = `31 Des ${year}`;
+                                            deadlineDate = new Date(`${year}-12-31`);
+                                        }
+                                    } else if (item.jangka_target === 'bulanan') {
+                                        const parts = detail.split('-');
+                                        if (parts.length === 2) {
+                                            const [year, month] = parts;
+                                            const lastDay = new Date(year, month, 0).getDate();
+                                            const monthName = new Date(year, month - 1)
+                                                .toLocaleString('id-ID', {
+                                                    month: 'short'
+                                                });
+                                            deadlineText = `${lastDay} ${monthName} ${year}`;
+                                            deadlineDate = new Date(year, month - 1, lastDay);
+                                        }
+                                    } else if (item.jangka_target === 'kuartalan') {
+                                        const match = detail.match(/(\d{4})\D?Q?(\d)/i);
+                                        if (match) {
+                                            const year = match[1];
+                                            const quarter = parseInt(match[2]);
+                                            const monthEnd = quarter * 3;
+                                            const lastDay = new Date(year, monthEnd, 0).getDate();
+                                            const monthName = new Date(year, monthEnd - 1)
+                                                .toLocaleString('id-ID', {
+                                                    month: 'short'
+                                                });
+                                            deadlineText = `${lastDay} ${monthName} ${year}`;
+                                            deadlineDate = new Date(year, monthEnd - 1, lastDay);
+                                        }
+                                    } else if (item.jangka_target === 'mingguan') {
+                                        const match = detail.match(/(\d{4})\D?W?(\d{1,2})/i);
+                                        if (match) {
+                                            const year = parseInt(match[1]);
+                                            const week = parseInt(match[2]);
+                                            const firstDay = new Date(year, 0, 1);
+                                            const deadlineMillis = firstDay.getTime() + (week * 7 *
+                                                24 * 60 * 60 * 1000);
+                                            deadlineDate = new Date(deadlineMillis);
+                                            deadlineText = `Minggu ke-${week}, ${year}`;
+                                        }
+                                    }
+
+                                    let statusText = '';
+                                    let badgeClass = 'bg-secondary';
+                                    const now = new Date();
+                                    const year = now.getFullYear();
+                                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                                    const day = String(now.getDate()).padStart(2, '0');
+                                    const nowTime = `${year}-${month}-${day}`;
+                                    let lengthProgress;
+
+                                    if (item.tipe_target === 'persen' || item.tipe_target ===
+                                        'angka') {
+                                        progressNumeric = parseFloat(item.progress) || 0;
+                                        progressValueDisplay = `${progressNumeric}%`;
+                                    } else if (item.tipe_target === 'rupiah') {
+                                        const target = parseFloat(item.nilai_target) || 0;
+                                        const progressRupiah = parseFloat(item.progress) || 0;
+                                        progressNumeric = target > 0 ? Math.min((progressRupiah /
+                                            target) * 100, 100) : 0;
+                                        progressValueDisplay = new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR',
+                                            minimumFractionDigits: 0
+                                        }).format(progressRupiah);
+                                    }
+
+                                    lengthProgress = Math.max(0, Math.min(progressNumeric, 100));
+                                    let isTargetReached = false;
+
+                                    if (item.tipe_target === 'angka') {
+                                        isTargetReached = item.manual_value >= item.nilai_target;
+
+                                    } else if (item.tipe_target === 'rupiah') {
+                                        const progressRupiah = parseFloat(item.progress) || 0;
+                                        const target = parseFloat(item.nilai_target) || 0;
+                                        isTargetReached = progressRupiah >= target;
+
                                     } else {
-                                        jabatanDisplay = jabatanList.map(j => j.substring(0,
-                                            4) + '...').join(', ');
+                                        isTargetReached = progressNumeric >= item.nilai_target;
                                     }
-                                }
 
-                                let deadlineText = '';
-                                let deadlineDate = null;
-                                const detail = item.detail_jangka ? item.detail_jangka
-                                    .toString().trim() : '';
+                                    const nowDate = new Date();
+                                    let deadline;
 
-                                if (item.jangka_target === 'tahunan') {
-                                    const year = parseInt(detail);
-                                    if (!isNaN(year)) {
-                                        deadlineText = `31 Des ${year}`;
-                                        deadlineDate = new Date(`${year}-12-31`);
+                                    if (item.tenggat_waktu.includes('-')) {
+                                        const parts = item.tenggat_waktu.split('-');
+
+                                        if (parts[0].length === 4) {
+                                            deadline = new Date(parts[0], parts[1] - 1, parts[2]);
+                                        } else {
+                                            deadline = new Date(parts[2], parts[1] - 1, parts[0]);
+                                        }
+                                    } else {
+                                        deadline = new Date(item.tenggat_waktu);
                                     }
-                                } else if (item.jangka_target === 'bulanan') {
-                                    const parts = detail.split('-');
-                                    if (parts.length === 2) {
-                                        const [year, month] = parts;
-                                        const lastDay = new Date(year, month, 0).getDate();
-                                        const monthName = new Date(year, month - 1)
-                                            .toLocaleString('id-ID', {
-                                                month: 'short'
-                                            });
-                                        deadlineText = `${lastDay} ${monthName} ${year}`;
-                                        deadlineDate = new Date(year, month - 1, lastDay);
+
+                                    const isOverdue = nowDate > deadline;
+
+                                    const isSameYear = nowDate.getFullYear() === deadline.getFullYear();
+
+                                    if (!isOverdue && isSameYear) {
+                                        if (!progressNumeric || progressNumeric === 0) {
+                                            statusText = 'Belum Dimulai';
+                                            badgeClass = 'bg-warning text-dark';
+                                        } else {
+                                            statusText = 'Dalam Progress';
+                                            badgeClass = 'bg-warning text-dark';
+                                        }
+                                    } else if (isOverdue) {
+                                        if (isTargetReached) {
+                                            statusText = 'Selesai';
+                                            badgeClass = 'bg-success';
+                                        } else {
+                                            statusText = 'Gagal';
+                                            badgeClass = 'bg-danger';
+                                        }
+                                    } else {
+                                        statusText = 'Dalam Progress';
+                                        badgeClass = 'bg-warning text-dark';
                                     }
-                                } else if (item.jangka_target === 'kuartalan') {
-                                    const match = detail.match(/(\d{4})\D?Q?(\d)/i);
-                                    if (match) {
-                                        const year = match[1];
-                                        const quarter = parseInt(match[2]);
-                                        const monthEnd = quarter * 3;
-                                        const lastDay = new Date(year, monthEnd, 0).getDate();
-                                        const monthName = new Date(year, monthEnd - 1)
-                                            .toLocaleString('id-ID', {
-                                                month: 'short'
-                                            });
-                                        deadlineText = `${lastDay} ${monthName} ${year}`;
-                                        deadlineDate = new Date(year, monthEnd - 1, lastDay);
-                                    }
-                                } else if (item.jangka_target === 'mingguan') {
-                                    const match = detail.match(/(\d{4})\D?W?(\d{1,2})/i);
-                                    if (match) {
-                                        const year = parseInt(match[1]);
-                                        const week = parseInt(match[2]);
-                                        const firstDay = new Date(year, 0, 1);
-                                        const deadlineMillis = firstDay.getTime() + (week * 7 *
-                                            24 * 60 * 60 * 1000);
-                                        deadlineDate = new Date(deadlineMillis);
-                                        deadlineText = `Minggu ke-${week}, ${year}`;
-                                    }
-                                }
 
-                                let statusText = '';
-                                let badgeClass = 'bg-secondary';
-                                const now = new Date();
-                                const year = now.getFullYear();
-                                const month = String(now.getMonth() + 1).padStart(2, '0');
-                                const day = String(now.getDate()).padStart(2, '0');
-                                const nowTime = `${year}-${month}-${day}`;
-                                let lengthProgress;
+                                    let buttonIsiForm = '';
 
-                                if (item.tipe_target === 'persen' || item.tipe_target ===
-                                    'angka') {
-                                    progressNumeric = parseFloat(item.progress) || 0;
-                                    progressValueDisplay = `${progressNumeric}%`;
-                                } else if (item.tipe_target === 'rupiah') {
-                                    const target = parseFloat(item.nilai_target) || 0;
-                                    const progressRupiah = parseFloat(item.progress) || 0;
-                                    progressNumeric = target > 0 ? Math.min((progressRupiah /
-                                        target) * 100, 100) : 0;
-                                    progressValueDisplay = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR',
-                                        minimumFractionDigits: 0
-                                    }).format(progressRupiah);
-                                }
-
-                                lengthProgress = Math.max(0, Math.min(progressNumeric, 100));
-                                let isTargetReached = false;
-
-                                if (item.tipe_target === 'angka') {
-                                    isTargetReached = item.manual_value >= item.nilai_target;
-                                } else {
-                                    isTargetReached = progressNumeric >= item.nilai_target;
-                                }
-
-                                if (progressNumeric === 0) {
-                                    statusText = 'Belum Dimulai';
-                                    badgeClass = 'bg-warning text-dark';
-
-                                } else if (nowTime > item.tenggat_waktu && !isTargetReached) {
-                                    statusText = 'Gagal';
-                                    badgeClass = 'bg-danger';
-
-                                } else if (nowTime > item.tenggat_waktu && isTargetReached) {
-                                    statusText = 'Selesai';
-                                    badgeClass = 'bg-success';
-
-                                } else {
-                                    statusText = 'Dalam Progress';
-                                    badgeClass = 'bg-warning text-dark';
-                                }
-
-                                let buttonIsiForm = '';
-
-                                if (allowedAssistantRoutes.includes(item.asistant_route)) {
-                                    buttonIsiForm = `
-                                            <div class="position-absolute top-0 p-3 start-0">
+                                    if (allowedAssistantRoutes.includes(item.asistant_route)) {
+                                        buttonIsiForm = `
+                                            <li>
                                                 <button type="button"
-                                                    class="btn btn-sm btn-info rounded-circle d-flex align-items-center justify-content-center buttonForm"
+                                                    class="dropdown-item text-dark buttonForm"
                                                     data-id="${item.id}"
                                                     data-value="${item.manual_value}"
                                                     data-route="${item.asistant_route}"
-                                                    title="isi data"
                                                     data-bs-toggle="modal"
-                                                    data-bs-target="#modalFormManual"
-                                                    style="width: 36px; height: 36px; font-size: 0.9rem;">
-                                                    <i class="fa-solid fa-file-pen"></i>
+                                                    data-bs-target="#modalFormManual">
+                                                    <i class="fa-solid fa-file-pen me-2"></i>
+                                                    Isi Data
                                                 </button>
-                                            </div>
+                                            </li>
                                         `;
-                                }
+                                    }
 
+                                    const routeUrl = assistantRouteUrlMap[item.asistant_route] || '#';
 
-                                targetContainer.append(`
-                                        <div class="target-card rounded-4 border-1 shadow-md position-relative overflow-hidden" style="background: white; flex: 0 0 auto; border: 2px solid #f0f0f0; cursor: pointer;">
-                                            <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: ${badgeClass === 'bg-success' ? '#28a745' :
-                                        badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
-                                    };"></div>
+                                    $('#content_target').append(`
+                                        <tr>
+                                            <td class="fw-bold" style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.judul}</td>
 
-                                            <div class="action-buttons position-absolute top-0 start-0 end-0 p-3 d-flex justify-content-between align-items-center"
-                                                style="z-index: 10;">
+                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
+                                                <span class="badge bg-light text-primary border border-primary">
+                                                    ${item.jangka_target.charAt(0).toUpperCase() + item.jangka_target.slice(1)}
+                                                </span>
+                                            </td>
 
-                                                ${buttonIsiForm}
+                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
+                                                <span class="badge ${badgeClass}">
+                                                    ${statusText}
+                                                </span>
+                                            </td>
 
-                                                <div class="d-flex gap-2 position-absolute top-0 end-0 p-3">
-                                                    <button type="button" class="btn btn-sm btn-danger rounded-circle d-flex align-items-center justify-content-center buttonHapusTarget" data-id="${item.id}" title="Hapus" style="width: 36px; height: 36px; font-size: 0.9rem;">
-                                                        <i class="fa-solid fa-trash-can"></i>
+                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${formattedTarget}</td>
+
+                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${jabatanDisplay}</td>
+                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.divisi || '-'}</td>
+                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.pembuat || '-'}</td>
+
+                                            <td style="min-width:150px; cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
+                                                <div class="progress" style="height: 12px;">
+                                                    <div class="progress-bar"
+                                                        style="width: ${lengthProgress}%; background: ${
+                                                            badgeClass === 'bg-success' ? '#28a745' :
+                                                            badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
+                                                        }">
+                                                    </div>
+                                                </div>
+                                                <small>${progressValueDisplay}</small>
+                                            </td>
+
+                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
+                                                <small>
+                                                    <i class="fa-solid fa-calendar-days me-1"></i>
+                                                    ${item.tenggat_waktu}
+                                                </small>
+                                            </td>
+
+                                           <td>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-primary dropdown-toggle"
+                                                        type="button"
+                                                        data-bs-toggle="dropdown"
+                                                        aria-expanded="false">
+                                                        Aksi
                                                     </button>
+
+                                                    <ul class="dropdown-menu">
+                                                        ${buttonIsiForm}
+
+                                                        <li>
+                                                            <a href="${routeUrl}" 
+                                                                class="dropdown-item text-dark"
+                                                                target="_blank">
+                                                                <i class="fa-solid fa-arrow-up-right-from-square me-2"></i>
+                                                                Lihat Detail KPI
+                                                            </a>
+                                                        </li>
+
+                                                        <li>
+                                                            <button type="button" 
+                                                                class="dropdown-item text-danger buttonHapusTarget"
+                                                                data-id="${item.id}">
+                                                                <i class="fa-solid fa-trash-can me-2"></i>
+                                                                Hapus
+                                                            </button>
+                                                        </li>
+                                                    </ul>
                                                 </div>
+                                            </td>
 
-                                            </div>
-
-                                            <div data-id="${item.id}" id="buttonDetailTarget"  data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-
-                                            <div class="p-3 pt-4 mt-4">
-                                                <h5 class="fw-bold mb-2 fs-6 text-dark" style="min-height: 2.2em; line-height: 1.2;">
-                                                    ${item.judul}
-                                                </h5>
-
-                                                <div class="d-flex align-items-center mb-2">
-                                                    <span class="badge bg-light text-primary border border-primary me-2" style="font-size: 0.75rem;">
-                                                        ${item.jangka_target.charAt(0).toUpperCase() + item.jangka_target.slice(1)}
-                                                    </span>
-                                                    <span class="badge ${badgeClass}" style="font-size: 0.75rem;">${statusText}</span>
-                                                </div>
-
-                                                <div class="mb-2">
-                                                    <p class="mb-1 text-muted small">
-                                                        <i class="fa-solid fa-bullseye me-1"></i>
-                                                        <strong>Target:</strong> ${formattedTarget}
-                                                    </p>
-                                                </div>
-
-                                                <div class="small text-muted mb-2" style="font-size: 0.82rem;">
-                                                    <div class="d-flex justify-content-between mb-1">
-                                                        <span>Jabatan</span>
-                                                        <span class="fw-medium">${jabatanDisplay}</span>
-                                                    </div>
-                                                    <div class="d-flex justify-content-between mb-1">
-                                                        <span>Divisi</span>
-                                                        <span class="fw-medium">${item.divisi || '-'}</span>
-                                                    </div>
-                                                    <div class="d-flex justify-content-between">
-                                                        <span>Dibuat oleh</span>
-                                                        <span class="fw-medium">${item.pembuat || '-'}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div class="mt-2 mb-1">
-                                                    <div class="progress rounded-pill" style="height: 12px; background-color: #e9ecef; position: relative;">
-                                                        <div class="progress-bar rounded-pill"
-                                                            style="width: ${lengthProgress}%; background: ${badgeClass === 'bg-success' ? '#28a745' :
-                                                                    badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
-                                                                }"></div>
-                                                        <span class="position-absolute top-50 start-50 translate-middle" style="font-size: 0.7rem; color: black;">
-                                                            ${progressValueDisplay}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div class="d-flex align-items-center justify-content-between mt-1">
-                                                    <small class="text-muted">
-                                                        <i class="fa-solid fa-calendar-days me-1"></i>
-                                                        ${item.tenggat_waktu}
-                                                    </small>
-                                                </div>
-                                            </div>
-                                            </div>
-                                        </div>
+                                        </tr>
                                     `);
+                                });
                             });
-                            content_target.append(cardWrapper);
-                        });
                     }
 
                     const $editJangka = $('#edit_jangka_target');
