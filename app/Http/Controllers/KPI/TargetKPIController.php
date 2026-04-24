@@ -7858,7 +7858,7 @@ class TargetKPIController extends Controller
     }
 
     //Tim Digital
-    private function calculateKonsistensiHybridDetail($itemDetail)
+    private function calculateKonsistensiCampaignDigitalDetail($itemDetail)
 	{
 		$details = $itemDetail->detailTargetKPI;
 
