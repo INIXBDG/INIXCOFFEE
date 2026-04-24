@@ -95,4 +95,42 @@ class LeadProjectController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal memperbarui tahapan: ' . $e->getMessage()], 500);
         }
     }
+
+    public function updateLead(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'nama_lead' => 'required|string|max:255',
+            'nama_pic' => 'required|string|max:255',
+            'kontak_pic' => 'required|string|max:255',
+            'estimasi_nilai' => 'required|numeric',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $lead = LeadProject::findOrFail($id);
+
+            // 1. Memperbarui Data Lead
+            $lead->update([
+                'nama_lead' => $request->nama_lead,
+                'nama_pic' => $request->nama_pic,
+                'kontak_pic' => $request->kontak_pic,
+                'estimasi_nilai' => $request->estimasi_nilai,
+            ]);
+
+            // 2. Mensinkronkan Data dengan Project (Jika sudah terkonversi/masuk fase administrasi)
+            if ($lead->project) {
+                $lead->project->update([
+                    'name' => $request->nama_lead,
+                    'nilai_proyek' => $request->estimasi_nilai,
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Data Lead berhasil diperbarui.'], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Gagal memperbarui data Lead: ' . $e->getMessage()], 500);
+        }
+    }
 }
