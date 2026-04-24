@@ -101,7 +101,7 @@
                         </tr>
                         <tr>
                             <td style="padding:10px; height:100px; ">
-                                {{ $invoice->rkm->perusahaan->nama_perusahaan ?? 'Bank Indonesia' }}
+                                {{ $invoice->rkm->perusahaan->nama_perusahaan ?? '-' }}
                             </td>
                         </tr>
                     </table>

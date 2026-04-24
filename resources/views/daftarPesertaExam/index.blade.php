@@ -119,33 +119,30 @@
 
     function loadData() {
         $('#loadingModal').modal('show');
-        
+
         $.ajax({
             url: "{{ route('daftar-peserta-exam.get-data') }}",
             type: 'GET',
             dataType: 'json',
             success: function(response) {
                 $('#loadingModal').modal('hide');
-                
+
                 if (response.success) {
                     let html = '';
-                    
+
                     if (response.data.length > 0) {
                         $.each(response.data, function(index, item) {
-                            console.log( "item : ",item);
-                            let url = `{{ route('registrasi.destroy', ':id') }}`;
-                            url = url.replace(':id', item.id);
 
                             html += `
                                 <tr>
                                     <td>${item.no}</td>
                                     <td>${item.nama_peserta}</td>
-                                    <td>${item.nama_materi}</td>
+                                    <td>${item.nama_exam}</td>
                                     <td>
                                         ${
-                                            item.skor
+                                            item.skor !== '-' && item.skor !== null
                                             ? item.skor
-                                            : ( item.dokumentasi 
+                                            : ( item.dokumentasi
                                                 ? `<a href="/storage/${item.dokumentasi}" target="_blank" class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-download"></i> Lihat File
                                                 </a>`
@@ -154,35 +151,22 @@
                                         }
                                     </td>
                                     <td class="text-capitalize">
-                                        ${item.keterangan_lulus}
+                                        <span class="badge ${item.keterangan_lulus === 'lulus' ? 'bg-success' : (item.keterangan_lulus === 'Belum Exam' ? 'bg-warning' : 'bg-danger')}">
+                                            ${item.keterangan_lulus}
+                                        </span>
                                     </td>
                                     <td>
                                         <div class="d-flex gap-2">
-                                            <button class="btn btn-primary btn-action" onclick="editData(${item.id})">
+                                            <button class="btn btn-primary btn-sm" onclick="editData(${item.id})">
                                                 Edit
                                             </button>
-                                            <form action="${url}" method="POST" style="display:inline;">
-                                                <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                                <input type="hidden" name="_method" value="DELETE">
-
-                                                <button type="submit" class="btn btn-danger btn-action"
-                                                    onclick="return confirm('Yakin hapus data ini?')">
-                                                    Hapus
-                                                </button>
-                                            </form>
                                         </div>
                                     </td>
                                 </tr>
                             `;
                         });
                     } else {
-                        html += `
-                            <tr>
-                                <td colspan="6" class="text-center text-muted">
-                                    Tidak ada data peserta exam
-                                </td>
-                            </tr>
-                        `;
+                        html += `<tr><td colspan="6" class="text-center text-muted">Tidak ada data peserta exam</td></tr>`;
                     }
 
                     $('#daftarPesertaExamTable tbody').html(html);
@@ -192,36 +176,21 @@
                     }
 
                     $('#daftarPesertaExamTable').DataTable({
-                        paging: true,       
-                        searching: true,    
-                        ordering: true,     
-                        info: true,          
-                        pageLength: 10,    
-                        lengthMenu: [5, 10, 25, 50, 100],
-
-                        scrollX: true,     
+                        scrollX: true,
                         autoWidth: false,
+                        pageLength: 10,
+                        language: {
+                            url: "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json"
+                        }
                     });
 
                 } else {
-                    $('#daftarPesertaExamTable tbody').html(`
-                        <tr>
-                            <td colspan="6" class="text-center text-danger">
-                                Gagal memuat data
-                            </td>
-                        </tr>
-                    `);
+                    $('#daftarPesertaExamTable tbody').html(`<tr><td colspan="6" class="text-center text-danger">Gagal memuat data</td></tr>`);
                 }
             },
             error: function() {
                 $('#loadingModal').modal('hide');
-                $('#daftarPesertaExamTable tbody').html(`
-                    <tr>
-                        <td colspan="6" class="text-center text-danger">
-                            Terjadi kesalahan saat memuat data
-                        </td>
-                    </tr>
-                `);
+                $('#daftarPesertaExamTable tbody').html(`<tr><td colspan="6" class="text-center text-danger">Terjadi kesalahan server</td></tr>`);
             }
         });
     }

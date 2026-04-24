@@ -77,6 +77,7 @@ class AnalysisReportController extends Controller
             'files.*'     => 'file|max:10240',
             'year'        => 'required|digits:4|integer',
             'month'       => 'required|integer|between:1,12',
+            'nilai'       => 'required',
         ]);
 
         $filePaths = [];
@@ -94,6 +95,7 @@ class AnalysisReportController extends Controller
             'file_paths'  => $filePaths,
             'year'        => $request->input('year'),
             'month'       => $request->input('month'),
+            'nilai'       => $request->input('nilai'),
         ]);
 
         return redirect()->back()->with('success', 'Laporan analisis berhasil disimpan.');
@@ -109,6 +111,7 @@ class AnalysisReportController extends Controller
             'files.*'     => 'file|max:10240',
             'year'        => 'required|digits:4|integer',
             'month'       => 'required|integer|between:1,12',
+            'nilai'       => 'required'
         ]);
 
         $filePaths = $report->file_paths ?? [];
@@ -132,6 +135,7 @@ class AnalysisReportController extends Controller
             'file_paths'  => $filePaths,
             'year'        => $request->input('year'),
             'month'       => $request->input('month'),
+            'nilai'       => $request->input('nilai'),
         ]);
 
         return redirect()->back()->with('success', 'Laporan analisis berhasil diperbarui.');

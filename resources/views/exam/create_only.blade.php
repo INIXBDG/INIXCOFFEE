@@ -31,31 +31,29 @@
                                 @enderror
                             </div>
                         </div>
-<!-- Bagian select sales yang perlu diperbaiki -->
-@if($isSPVSales)
-<div class="row mb-3">
-    <label for="selected_sales" class="col-md-4 col-form-label text-md-start">Pilih Sales</label>
-    <div class="col-md-6">
-        <select name="selected_sales" id="selected_sales" class="form-control @error('selected_sales') is-invalid @enderror" required>
-            <option value="">-- Pilih Sales --</option>
-            @foreach($salesEmployees as $sales)
-                <!-- GANTI: Gunakan id sebagai value, bukan nama_lengkap -->
-                <option value="{{ $sales->id }}" {{ old('selected_sales') == $sales->id ? 'selected' : '' }}>
-                    {{ $sales->nama_lengkap }} ({{ $sales->kode_karyawan }})
-                </option>
-            @endforeach
-        </select>
-        @error('selected_sales')
-        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-        @enderror
-        <small class="form-text text-muted">
-            Sebagai SPV Sales, Anda dapat memilih karyawan sales untuk exam ini.
-        </small>
-    </div>
-</div>
-@endif
-
-
+                        <!-- Bagian select sales yang perlu diperbaiki -->
+                        @if($isSPVSales)
+                        <div class="row mb-3">
+                            <label for="selected_sales" class="col-md-4 col-form-label text-md-start">Pilih Sales</label>
+                            <div class="col-md-6">
+                                <select name="selected_sales" id="selected_sales" class="form-control @error('selected_sales') is-invalid @enderror" required>
+                                    <option value="">-- Pilih Sales --</option>
+                                    @foreach($salesEmployees as $sales)
+                                        <!-- GANTI: Gunakan id sebagai value, bukan nama_lengkap -->
+                                        <option value="{{ $sales->id }}" {{ old('selected_sales') == $sales->id ? 'selected' : '' }}>
+                                            {{ $sales->nama_lengkap }} ({{ $sales->kode_karyawan }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('selected_sales')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                                <small class="form-text text-muted">
+                                    Sebagai SPV Sales, Anda dapat memilih karyawan sales untuk exam ini.
+                                </small>
+                            </div>
+                        </div>
+                        @endif
                         <div class="row mb-3">
                             <label for="materi" class="col-md-4 col-form-label text-md-start">Materi</label>
                             <div class="col-md-6">
@@ -98,7 +96,7 @@
                                 <input type="text"
                                     id="perusahaan_autocomplete"
                                     class="form-control @error('perusahaan') is-invalid @enderror"
-                                    placeholder="Ketik nama perusahaan..." 
+                                    placeholder="Ketik nama perusahaan..."
                                     value="{{ old('perusahaan_autocomplete') }}" required>
                                 <input type="hidden" name="perusahaan" id="perusahaan" value="{{ old('perusahaan') }}">
                                 @error('perusahaan')
@@ -131,7 +129,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="currency-symbol">$</span>
-                                    <input type="text" step="0.01" class="form-control @error('harga') is-invalid @enderror" 
+                                    <input type="text" step="0.01" class="form-control @error('harga') is-invalid @enderror"
                                            name="harga" id="harga" value="{{ old('harga') }}" required>
                                 </div>
                                 @error('harga')
@@ -147,7 +145,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control @error('kurs') is-invalid @enderror" 
+                                    <input type="text" class="form-control @error('kurs') is-invalid @enderror"
                                            name="kurs" id="kurs" value="{{ old('kurs') }}" required>
                                 </div>
                                 @error('kurs')
@@ -163,7 +161,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">$</span>
-                                    <input type="text" step="0.01" class="form-control @error('biaya_admin') is-invalid @enderror" 
+                                    <input type="text" step="0.01" class="form-control @error('biaya_admin') is-invalid @enderror"
                                            name="biaya_admin" id="biaya_admin" value="{{ old('biaya_admin') }}" required>
                                 </div>
                                 @error('biaya_admin')
@@ -179,7 +177,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control @error('kurs_dollar') is-invalid @enderror" 
+                                    <input type="text" class="form-control @error('kurs_dollar') is-invalid @enderror"
                                            name="kurs_dollar" id="kurs_dollar" value="{{ old('kurs_dollar') }}" required>
                                 </div>
                                 @error('kurs_dollar')
@@ -195,7 +193,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" step="0.01" class="form-control @error('harga_rupiah') is-invalid @enderror" 
+                                    <input type="text" step="0.01" class="form-control @error('harga_rupiah') is-invalid @enderror"
                                            name="harga_rupiah" id="harga_rupiah" readonly>
                                 </div>
                                 @error('harga_rupiah')
@@ -209,7 +207,7 @@
                         <div class="row mb-3">
                             <label for="pax" class="col-md-4 col-form-label text-md-start">{{ __('Pax') }}</label>
                             <div class="col-md-6">
-                                <input type="text" class="form-control @error('pax') is-invalid @enderror" 
+                                <input type="text" class="form-control @error('pax') is-invalid @enderror"
                                        name="pax" id="pax" value="{{ old('pax') }}" required>
                                 @error('pax')
                                     <span class="invalid-feedback" role="alert">
@@ -224,7 +222,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control @error('total') is-invalid @enderror" 
+                                    <input type="text" class="form-control @error('total') is-invalid @enderror"
                                            name="total" id="total" readonly>
                                 </div>
                                 @error('total')
@@ -437,7 +435,7 @@ $(document).ready(function() {
             return false;
         }
         @endif
-        
+
         if (!$('#perusahaan').val()) {
             alert('Pilih perusahaan terlebih dahulu!');
             e.preventDefault();

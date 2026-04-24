@@ -112,9 +112,11 @@
 </style>
 
 @php
-use Carbon\Carbon;
-$latestSurvey = \App\Models\SurveyKepuasan::where('id_user', auth()->id())->latest()->first();
-$canSurvey = !$latestSurvey || Carbon::parse($latestSurvey->created_at)->diffInMonths(Carbon::now()) >= 3;
+    // Cek apakah ticket_id ini sudah pernah mengisi survey
+    $alreadySurveyed = \App\Models\SurveyKepuasan::where('ticket_id', $ticket->ticket_id)->exists();
+    
+    // User bisa isi survey JIKA belum pernah mengisi untuk ticket_id tersebut
+    $canSurvey = !$alreadySurveyed;
 @endphp
 
 @if (auth()->user()->karyawan->divisi === "IT Service Management")

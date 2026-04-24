@@ -12,7 +12,7 @@ class DokumentasiExam extends Model
     protected $fillable = [
         'id_registrasi',
         'nama_exam',
-        'tanggal_perusahaan',
+        'tanggal_pelaksanaan',
         'skor',
         'dokumentasi',
         'invoice',
@@ -21,6 +21,6 @@ class DokumentasiExam extends Model
 
     public function registrasi()
     {
-        return $this->belongsTo(Registrasi::class, 'id_registrasi', 'id');
+        return $this->belongsTo(registexam::class, 'id_registrasi', 'id');
     }
 }

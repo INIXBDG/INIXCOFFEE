@@ -52,7 +52,7 @@ class AdministrasiKaryawanController extends Controller
             'dateline' => 'required|date',
             'keterangan' => 'nullable|string'
         ]);
-
+    
         AdministrasiKaryawan::create($validasi);
 
         return back()->with('success_administrasi', 'Administrasi Karyawan berhasil dibuat.');

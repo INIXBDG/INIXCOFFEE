@@ -282,33 +282,92 @@
                 let badge = emp.rata_rata_progress >= 75 ?
                     '<span class="badge bg-primary-subtle text-primary">Top</span>' :
                     (emp.rata_rata_progress < 50 ?
-                        '<span class="badge bg-danger-subtle text-danger">⚠️ Perlu Bimbingan</span>' : '');
+                        '<span class="badge bg-danger-subtle text-danger">Perlu Bimbingan</span>' : '<span class="badge bg-success-subtle text-success"> Sedang Berjalan</span>');
 
                 html += `
-                <div 
-                    class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} clickable-item"
-                    onclick="handleClickCheck(${emp.id_karyawan})" 
-                    style="cursor: pointer;">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>${emp.nama}</strong><br>
-                            <small class="text-muted">${emp.jabatan}</small>
-                        </div>
-                        <div class="text-end">
-                            <div class="fw-bold">${Math.round(emp.rata_rata_progress)}%</div>
-                            ${badge}
+                    <div 
+                        class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} clickable-item"
+                        onclick="handleClickCheck(${emp.id_karyawan})" 
+                        style="cursor: pointer;">
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            
+                            <div>
+                                <strong>${emp.nama}</strong><br>
+                                <small class="text-muted">${emp.jabatan}</small>
+                            </div>
+
+                            <div class="text-end d-flex flex-column align-items-end">
+                                    <div class="row">
+                                        <div class="col-sm">
+                                            <div class="fw-bold">${Math.round(emp.rata_rata_progress)}%</div> ${badge}
+                                        </div>
+                                        <div class="col-sm">
+                                            <div class="mt-2">
+                                                <div class="dropdown">
+                                                    <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" onclick="event.stopPropagation();">
+                                                        <i class="fas fa-download me-1"></i> Export
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item btn-export" 
+                                                            data-type="excel" 
+                                                            data-id="${emp.id_karyawan}">
+                                                                <i class="fas fa-file-excel me-1 text-success"></i> Excel
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item btn-export" 
+                                                            data-type="pdf" 
+                                                            data-id="${emp.id_karyawan}" 
+                                                            data-tahun="${new Date().getFullYear()}">
+                                                                <i class="fas fa-file-pdf me-1 text-danger"></i> PDF
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-                </div>
-            `;
+                `;
             });
 
             $('#employeeList').html(html);
         }
 
-        function handleClickCheck(karyawanId) {
-            window.location.href = "{{ route('kpi.overview.indexPersonal') }}/" + karyawanId;
-        }
+        $(document).on('click', '.btn-export', function(e) {
+            e.preventDefault();
+            
+            const type = $(this).data('type');
+            const karyawanId = $(this).data('id');
+            const tahun = new Date().getFullYear();
+            const url = type === 'pdf' 
+                ? '{{ route("kpi.monitoring.export.pdf") }}' 
+                : '{{ route("kpi.monitoring.export.excel") }}';
+            
+            const form = $('<form>', {
+                method: 'GET',
+                action: url,
+                target: '_blank', 
+                style: 'display:none;'
+            }).append($('<input>', { type: 'hidden', name: 'id_karyawan', value: karyawanId }))
+            .append($('<input>', { type: 'hidden', name: 'tahun', value: tahun }));
+            
+            $('body').append(form);
+            
+            if (type === 'pdf') {
+                form.submit();
+            } else {
+                form.submit();
+            }
+            
+            setTimeout(() => form.remove(), 1000);
+        });
 
         function updateLowPerformanceList(employees) {
             let lowPerf = employees.filter(emp => emp.rata_rata_progress < 50);

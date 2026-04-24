@@ -297,7 +297,7 @@
                             const isMerah = data.tahap === 'merah';
 
                             let rkmButton = '';
-                            let lostDisabled = isMerah ? 'disabled' : '';
+                            let lostDisabled = (isMerah || isLost) ? 'disabled' : '';
 
                             if (isLost || !rkm) {
                                 rkmButton = `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`;

@@ -73,9 +73,7 @@
                                     <strong>{{ $message }}</strong>
                                 </span>
                                 @enderror
-                                <span id="jam_mulai-error" class="invalid-feedback d-none" role="alert">
-                                    <strong>Waktu mulai tidak boleh kurang dari waktu saat ini.</strong>
-                                </span>
+                                
                             </div>
                         </div>
 
@@ -196,29 +194,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateJamMulaiConstraint() {
-        const selectedTime = jamMulaiInput.value;
-        const currentTime = getCurrentTime();
+        // ❌ Hapus semua validasi waktu sekarang
+        jamMulaiInput.removeAttribute('min');
+        jamMulaiInput.classList.remove('is-invalid');
+        errorMessage.classList.add('d-none');
 
-        // Hanya validasi jam jika tanggal izin adalah HARI INI
-        if (isTodaySelected()) {
-            jamMulaiInput.setAttribute('min', currentTime);
-
-            if (selectedTime && selectedTime < currentTime) {
-                jamMulaiInput.classList.add('is-invalid');
-                errorMessage.classList.remove('d-none');
-                jamMulaiInput.value = currentTime;
-            } else {
-                jamMulaiInput.classList.remove('is-invalid');
-                errorMessage.classList.add('d-none');
-            }
-        } else {
-            // Jika tanggal izin bukan hari ini (kemarin/besok), hapus batasan min
-            jamMulaiInput.removeAttribute('min');
-            jamMulaiInput.classList.remove('is-invalid');
-            errorMessage.classList.add('d-none');
-        }
-
-        // Setelah memastikan jam_mulai valid, hitung jam_selesai
+        // Tetap hitung jam selesai
         if (jamMulaiInput.value) {
             jamSelesaiInput.value = calculateEndTime(jamMulaiInput.value);
         } else {
@@ -241,12 +222,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Jalankan saat load awal
     setTimeout(updateJamMulaiConstraint, 500);
 
-    // Update min time tiap menit jika hari ini
-    setInterval(() => {
-        if (isTodaySelected()) {
-            updateJamMulaiConstraint();
-        }
-    }, 60000);
+    
 });
 
 

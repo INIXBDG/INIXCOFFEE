@@ -137,7 +137,7 @@
         if (idInstruktur == 'AD' || jabatan == 'Technical Support' ) {
             var idInstruktur = "";
         }
-        if (idSales == 'AM') {
+        if (idSales == 'VN' || jabatan == 'SPV Sales' || jabatan == 'Adm Sales') {
             var idSales = "";
         }
         $('#datafeedback').DataTable({

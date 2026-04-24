@@ -82,8 +82,7 @@
             </li>
 
             <li class="menu-item">
-                <a href="javascript:void(0)" class="menu-link" data-bs-toggle="modal"
-                    data-bs-target="#importExcelModal">
+                <a href="javascript:void(0)" class="menu-link" data-bs-toggle="modal" data-bs-target="#importExcelModal">
                     <i class="menu-icon tf-icons bx bx-upload"></i>
                     <div class="text-truncate">Import Perusahaan</div>
                 </a>
@@ -161,7 +160,7 @@
                     </a>
                 </li>
             @endif
-            
+
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Untuk &amp; Anda</span>
             </li>
@@ -211,6 +210,15 @@
                     <a href="{{ route('CRM.myDasboard') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-home"></i>
                         <div class="text-truncate" data-i18n="Dashboards">My Dashboard</div>
+                    </a>
+                </li>
+            @endif
+
+            @if ($user->jabatan == 'SPV Sales')
+                <li class="menu-item {{ request()->routeIs('crm.perpindahan-db.*') ? 'active open' : '' }}">
+                    <a href="{{ route('perpindahan-db.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-file-blank"></i>
+                        <div class="text-truncate" data-i18n="Dashboards">Perpindahan Database</div>
                     </a>
                 </li>
             @endif

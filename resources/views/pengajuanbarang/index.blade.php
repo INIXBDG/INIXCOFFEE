@@ -951,28 +951,51 @@ function tableFinance(){
                     },
                     {
                         "data": null,
-            "render": function(data, type, row) {
-                let actions = `
-                    <div class="dropdown">
-                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="/pengajuanbarang/${row.id}">
-                                <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
-                            </a>
-                            ${row.invoice ? `
-                            <a class="dropdown-item" href="/storage/${row.invoice}" target="_blank">
-                                <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
-                            </a>` : ``}
-                            <form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>
-                                </form>
-                        </div>
-                    </div>
-                `;
-                return actions;
-            }
+                        "render": function(data, type, row) {
+                            let userRole = '{{ auth()->user()->jabatan }}';
+                            
+                            // Gunakan row atau data (keduanya sama jika data: null)
+                            // Tambahkan pengecekan agar tidak error jika tracking kosong
+                            let trackingStatus = (row.tracking && row.tracking.tracking) ? row.tracking.tracking : '';
+
+                            let actions = `
+                                <div class="dropdown">
+                                    <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="/pengajuanbarang/${row.id}">
+                                            <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
+                                        </a>
+
+                                        ${row.invoice ? `
+                                        <a class="dropdown-item" href="/storage/${row.invoice}" target="_blank">
+                                            <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
+                                        </a>` : ''}
+
+                                        ${(userRole == 'Finance &amp; Accounting' && (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses') || trackingStatus.includes('Selesai'))) 
+                                            ? `<button type="button" class="dropdown-item" onclick="openApproveModal(${row.id}, 'Manager')">
+                                                    <img src="{{ asset('icon/check-circle.svg') }}"> Approve
+                                            </button>` 
+                                            : `<button type="button" class="dropdown-item disabled">
+                                                    <img src="{{ asset('icon/check-circle.svg') }}"> Approve
+                                            </button>`
+                                        }
+
+                                        <hr class="dropdown-divider">
+
+                                        <form onsubmit="return confirm('Apakah Anda Yakin ?');" action="{{ url('/pengajuanbarang') }}/${row.id}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            `;
+
+                            return actions;
+            
+                        }
 
                     }
                 ],

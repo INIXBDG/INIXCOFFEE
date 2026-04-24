@@ -168,6 +168,9 @@ public function createKwitansi($invoiceId)
 
         $isPeserta = $request->input('is_peserta') === 'true';
         $isTtd = $request->input('is_ttd') === 'true';
+        $nama_perusahaan = $request->input('perusahaan');
+        $tanggal_awal = $request->input('tanggal_awal');
+        $tanggal_akhir = $request->input('tanggal_akhir');
 
         $rkm = RKM::where('id', $request->id_rkm)->firstOrFail();
         $duedate = $rkm->tanggal_akhir->addMonths(6)->toDateString();
@@ -196,7 +199,7 @@ public function createKwitansi($invoiceId)
             $outstanding->update();
         }
 
-        return $this->downloadPdf($invoice->id, $pesertaList, $isPeserta, $isTtd);
+        return $this->downloadPdf($invoice->id, $pesertaList, $isPeserta, $isTtd, $nama_perusahaan, $tanggal_awal, $tanggal_akhir);
 
         // return redirect()->route('invoice.index')->with(['success' => 'Invoice berhasil dibuat!']);
     }
@@ -473,7 +476,7 @@ public function exportExcel($id)
     }, $fileName);
 }
 
-    public function downloadPdf($id, $pesertaList = [], $isPeserta = false, $isTtd = false)
+    public function downloadPdf($id, $pesertaList = [], $isPeserta = false, $isTtd = false, $nama_perusahaan = null, $tanggal_awal = null, $tanggal_akhir = null)
     {
         $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta'])
             ->findOrFail($id);
@@ -492,7 +495,7 @@ public function exportExcel($id)
             );
         }
 
-        $pdf = Pdf::loadView('invoice.pdf', compact('invoice', 'terbilang', 'karyawan', 'pesertaList', 'isPeserta', 'isTtd'))
+        $pdf = Pdf::loadView('invoice.pdf', compact('invoice', 'terbilang', 'karyawan', 'pesertaList', 'isPeserta', 'isTtd', 'nama_perusahaan', 'tanggal_awal', 'tanggal_akhir'))
             ->setPaper('a4', 'portrait')
             ->setOptions([
                 'isRemoteEnabled' => true,

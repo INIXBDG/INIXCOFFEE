@@ -20,6 +20,9 @@ class ProjectAdministration extends Model
         'pm_id',
         'assignee_id',
         'current_stage',
+        'surat_pekerjaan_dimulai_file',
+        'proposal_file',
+        'project_handover_id',
     ];
 
     /**
@@ -28,7 +31,8 @@ class ProjectAdministration extends Model
      * @var array
      */
     protected $casts = [
-        'assignee_id' => 'array', // Memastikan assignee_id diproses sebagai array
+        'assignee_id' => 'array',
+        'client_doc_file' => 'array', // ✅ TAMBAH INI
     ];
 
     public function dataproject()
@@ -42,6 +46,11 @@ class ProjectAdministration extends Model
     public function projectManager()
     {
         return $this->belongsTo(Karyawan::class, 'pm_id', 'kode_karyawan');
+    }
+
+    public function project_handover()
+    {
+        return $this->belongsTo(ProjectHandover::class, 'project_handover_id', 'id');
     }
 
     /**
