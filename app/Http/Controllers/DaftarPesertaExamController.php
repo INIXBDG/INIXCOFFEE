@@ -119,12 +119,15 @@ class DaftarPesertaExamController extends Controller
                     $createdCount++;
                 } else {
                     $registExam = registexam::where('id_peserta', $pesertaId)->first();
+                    $dokumentasi = DokumentasiExam::where('id_registrasi', $registExam->id) ->first();
 
-                    DokumentasiExam::create([
-                        'id_registrasi'       => $registExam->id,
-                        'nama_exam'           => $exam->materi?->nama_materi ?? ($exam->rkm?->materi?->nama_materi ?? ''),
-                        'tanggal_pelaksanaan' => now()->format('Y-m-d'),
-                    ]);
+                    if (!$dokumentasi) {
+                        DokumentasiExam::create([
+                            'id_registrasi'       => $registExam->id,
+                            'nama_exam'           => $exam->materi?->nama_materi ?? ($exam->rkm?->materi?->nama_materi ?? ''),
+                            'tanggal_pelaksanaan' => now()->format('Y-m-d'),
+                        ]);
+                    }
 
                     $skippedCount++;
                 }
