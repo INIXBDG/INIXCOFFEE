@@ -32,6 +32,14 @@
                             <select class="form-control" name="perusahaan_id" id="perusahaan_id" style="width: 100%;" required></select>
                         </div>
                         <div class="mb-3">
+                            <label for="nama_pic" class="form-label">{{ __('Nama PIC Klien') }}</label>
+                            <input type="text" class="form-control" id="nama_pic" name="nama_pic" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="kontak_pic" class="form-label">{{ __('Kontak PIC (No. HP / Email)') }}</label>
+                            <input type="text" class="form-control" id="kontak_pic" name="kontak_pic" required>
+                        </div>
+                        <div class="mb-3">
                             <label for="estimasi_nilai" class="form-label">{{ __('Estimasi Nilai (Rp)') }}</label>
                             <input type="number" class="form-control" id="estimasi_nilai" name="estimasi_nilai" min="0" required>
                         </div>
@@ -82,19 +90,20 @@
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end mb-3">
-                <button type="button" class="btn btn-md btn-primary mx-4" data-bs-toggle="modal" data-bs-target="#createLeadModal">
+                <button type="button" class="btn btn-md click-primary mx-4" data-bs-toggle="modal" data-bs-target="#createLeadModal">
                     <img src="{{ asset('icon/plus.svg') }}" class="" width="20px"> Tambah Lead
                 </button>
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
                     <h3 class="card-title text-center my-1">{{ __('Data Leads (Prospek)') }}</h3>
-                    <table class="table table-striped text-center" id="leadsTable">
+                    <table class="table table-striped" id="leadsTable">
                         <thead>
                             <tr>
                                 <th scope="col">No</th>
                                 <th scope="col">Nama Lead</th>
                                 <th scope="col">Perusahaan</th>
+                                <th scope="col">PIC Klien</th>
                                 <th scope="col">Estimasi Nilai</th>
                                 <th scope="col">Tahapan / Status</th>
                                 <th scope="col">Proyek Terhubung</th>
@@ -178,6 +187,14 @@
                     "render": function(data) { return data ? data : '-'; }
                 },
                 {
+                    "data": "nama_pic",
+                    "render": function(data, type, row) { 
+                        let nama = data ? data : '-';
+                        let kontak = row.kontak_pic ? row.kontak_pic : '-';
+                        return '<span class="fw-bold">' + nama + '</span><br><small class="text-muted">' + kontak + '</small>'; 
+                    }
+                },
+                {
                     "data": "estimasi_nilai",
                     "render": function(data) { return formatRupiah(data); }
                 },
@@ -194,11 +211,11 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        var actions = '<div class="dropdown">';
-                        actions += '<button type="button" class="btn dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-                        actions += 'Actions';
+                        let actions = '<div class="btn-group dropup">';
+                        actions += '<button type="button" class="btn btn-sm dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+                        actions += 'Actions ';
                         actions += '</button>';
-                        actions += '<div class="dropdown-menu">';
+                        actions += '<div class="dropdown-menu shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
                         actions += '<a class="dropdown-item btn-edit-status" href="#" data-id="' + row.id + '" data-status="' + row.status + '">Perbarui Tahapan</a>';
                         actions += '</div></div>';
                         return actions;

@@ -196,4 +196,38 @@ class ProjectAdministrationController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Memperbarui informasi dasar dan tanggal proyek.
+     */
+    public function updateProjectInfo(Request $request, $id)
+    {
+        $request->validate([
+            'nama_projek' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'tanggal_awal' => 'nullable|date',
+            'tanggal_akhir' => 'nullable|date|after_or_equal:tanggal_awal',
+        ]);
+
+        try {
+            $project = \App\Models\Project::findOrFail($id);
+            $project->update([
+                'name' => $request->nama_projek, // Sesuaikan dengan nama kolom tabel Anda
+                'description' => $request->deskripsi,
+                'tanggal_awal' => $request->tanggal_awal,
+                'tanggal_akhir' => $request->tanggal_akhir,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data Proyek berhasil diperbarui.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui data proyek.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

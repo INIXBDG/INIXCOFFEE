@@ -27,6 +27,8 @@ class LeadProjectController extends Controller
         $request->validate([
             'nama_lead' => 'required|string|max:255',
             'perusahaan_id' => 'required|exists:perusahaans,id',
+            'nama_pic' => 'required|string|max:255',     // Validasi PIC
+            'kontak_pic' => 'required|string|max:255',
             'estimasi_nilai' => 'required|numeric',
         ]);
 
@@ -35,6 +37,8 @@ class LeadProjectController extends Controller
         LeadProject::create([
             'nama_lead' => $request->nama_lead,
             'perusahaan_id' => $request->perusahaan_id,
+            'nama_pic' => $request->nama_pic,            // Penyimpanan Data
+            'kontak_pic' => $request->kontak_pic,
             'estimasi_nilai' => $request->estimasi_nilai,
             'status' => 'penawaran_awal',
             'sales_id' => $currentUserKaryawanId,
