@@ -1339,7 +1339,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/projects/administrasi/get-data', [ProjectAdministrationController::class, 'getAdministrasi'])->name('getAdministrasi');
     Route::post('/projects/administrasi/{id}/update-stage', [ProjectAdministrationController::class, 'updateStage'])->name('administrasi.updateStage');
     Route::resource('/projects/administrasi', ProjectAdministrationController::class);
-
+    Route::post('/projects/{id}/update-info', [ProjectAdministrationController::class, 'updateProjectInfo'])->name('projects.update_info');
     // Route Kanban Project
     Route::get('/projects/kanban', [ProjectKanbanController::class, 'index'])->name('kanban.index');
     Route::get('/projects/kanban/get-tasks', [ProjectKanbanController::class, 'getTasks']);
@@ -1379,6 +1379,7 @@ Route::prefix('projects/leads')->group(function () {
     Route::get('/data', [LeadProjectController::class, 'getLeads'])->name('leads.data');
     Route::post('/store', [LeadProjectController::class, 'store'])->name('leads.store');
     Route::post('/{id}/update-status', [LeadProjectController::class, 'updateStatus'])->name('leads.update_status');
+    Route::post('/{id}/update-data', [LeadProjectController::class, 'updateLead'])->name('leads.update_data');
 });
 
 // Modul Rekap Penjualan
