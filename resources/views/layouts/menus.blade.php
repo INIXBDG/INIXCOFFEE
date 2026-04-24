@@ -2461,7 +2461,7 @@
                                         </div>
                                     </div>
                                 @endcan
-                                @can('Fitur Project')
+                                @can('Fitur Menu Project')
                                     <div class="row">
                                         <div class="col-md-12 mt-1">
                                             <div class="card">
