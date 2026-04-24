@@ -38,7 +38,8 @@ class OfficeController extends Controller
             ->where('id', '!=', ['36', '38', '45', '46', '47', '48', '49', '52', '53', '54'])
             ->count();
 
-        $karyawan = Karyawan::where('status_aktif', '1')
+        $karyawan = karyawan::where('status_aktif', '1')
+            ->whereRaw("UPPER(kode_karyawan) NOT LIKE '%OL%'")
             ->where('divisi', '!=', 'Direksi')
             ->where('jabatan', '!=', 'GM')
             ->where('id', '!=', ['36', '38', '45', '46', '47', '48', '49', '52', '53', '54'])
