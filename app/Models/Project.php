@@ -38,7 +38,7 @@ class Project extends Model
 
     public function client()
     {
-        return $this->belongsTo(Perusahaan::class, 'id');
+        return $this->belongsTo(Perusahaan::class, 'client_id');
     }
 
     public function handover()

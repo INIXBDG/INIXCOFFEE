@@ -227,6 +227,7 @@
     .modal-backdrop.show {
         opacity: 0.75;
     }
+    
 </style>
 
 @push('js')
@@ -323,8 +324,8 @@
                         // Logika Penentuan Kelengkapan Dokumen Dasar (Pastikan isComplete sudah didefinisikan sebelumnya)
                         
                         // 1. Pembuka Kerangka Dropup
-                        let actions = '<div class="btn-group dropup">';
-                        actions += '<button type="button" class="btn btn-sm dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+                        let actions = '<div class="btn-group dropup" style="overflow: visible !important;">';
+                        actions += '<button type="button" class="btn btn-sm dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-bs-boundary="window">';
                         actions += 'Actions ';
                         actions += '</button>';
                         actions += '<div class="dropdown-menu shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
