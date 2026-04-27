@@ -34,7 +34,6 @@
             border: 1px solid #000;
             border-collapse: collapse;
             width: 100%;
-            page-break-inside: avoid; 
         }
 
         .table-invoice th,
@@ -43,7 +42,6 @@
             padding: 4px 6px;
             vertical-align: top;
         }
-
         .table-invoice th {
             background: #f1f1f1;
             text-align: center;
@@ -195,7 +193,7 @@
                             <td style="border:none; padding: 2px 6px;"><strong>Materi</strong></td>
                             <td style="border:none; padding: 2px 6px;">:</td>
                             <td style="border:none; padding: 2px 6px;">
-                                {{ optional($invoice->rkm->materi)->nama_materi ?? '-' }}
+                                {{ $materi ?? '-' }}
                             </td>
                         </tr>
                         <tr>
@@ -220,45 +218,49 @@
                                         {{ $loop->iteration }}. {{ e($namaPeserta) }}<br>
                                     @endforeach
                                 @else
-                                    {{ $invoice->rkm->pax ? $invoice->rkm->pax . ' orang' : '-' }}
+                                    {{ $invoice->rkm->isi_pax ? $invoice->rkm->isi_pax . ' orang' : '-' }}
                                 @endif
                             @else
-                                {{ $invoice->rkm->pax ? $invoice->rkm->pax . ' orang' : '-' }}
+                                {{ $invoice->rkm->isi_pax ? $invoice->rkm->isi_pax . ' orang' : '-' }}
                             @endif
                             </td>
                         </tr>
                     </table>
                 </td>
-                <td class="text-center">{{ $invoice->rkm->pax ?? '-' }}</td>
-                <td class="text-end">Rp {{ number_format($invoice->rkm->harga_jual ?? 0, 0, ',', '.') }}</td>
-                <td class="text-end">Rp {{ number_format(($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0), 0, ',', '.') }}</td>
+                <td class="text-center">{{ $invoice->rkm->isi_pax ?? '0' }}</td>
+                <td class="text-end">Rp {{ number_format($unit_price ?? 0, 0, ',', '.') }}</td>
+                <td class="text-end">Rp {{ number_format(($unit_price ?? 0) * ($pax ?? 0), 0, ',', '.') }}</td>
             </tr>
             <tr>
-                <td colspan="3" rowspan="4"></td>
+                <td colspan="3" rowspan="{{ $isPPh ? 4 : 3 }}"></td>
                 <td class="text-end">Sub Total</td>
                 <td class="text-end">
-                    Rp {{ number_format(($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0), 0, ',', '.') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="text-end">PPN 11%</td>
-                <td class="text-end">
-                    Rp {{ number_format((($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0)) * 0.11, 0, ',', '.') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="text-end">PPh 23 (2%)</td>
-                <td class="text-end">
-                    - Rp {{ number_format((($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0)) * 0.02, 0, ',', '.') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="text-end fw-bold">TOTAL</td>
-                <td class="text-end fw-bold">
-                    Rp {{ number_format($invoice->amount, 0, ',', '.') }}
+                    Rp {{ number_format($subtotal, 0, ',', '.') }}
                 </td>
             </tr>
 
+            <tr>
+                <td class="text-end">PPN 11%</td>
+                <td class="text-end">
+                    Rp {{ number_format($ppn, 0, ',', '.') }}
+                </td>
+            </tr>
+
+            @if ($isPPh)
+            <tr>
+                <td class="text-end">PPh 23 (2%)</td>
+                <td class="text-end">
+                    - Rp {{ number_format($pph, 0, ',', '.') }}
+                </td>
+            </tr>
+            @endif
+
+            <tr>
+                <td class="text-end fw-bold">TOTAL</td>
+                <td class="text-end fw-bold">
+                    Rp {{ number_format($total, 0, ',', '.') }}
+                </td>
+            </tr>
             <tr>
                 <td colspan="5" class="text-center fw-bold" style="background-color: #ddd;"><i>{{ $terbilang }}</i></td>
             </tr>
@@ -280,12 +282,12 @@
                 @endphp
 
                 <p style="margin:0; font-weight:bold;">a/n {{ $accountName }}</p>
-
+{{-- 
                 @if($invoice->catatan_pembayaran)
                     <p style="margin:0;">{{ $invoice->catatan_pembayaran }}</p>
                 @else
                     <p style="margin:0;">Note : Mohon nomor invoice dan nama perusahaan dicantumkan</p>
-                @endif
+                @endif --}}
             </td>
         </tr>
     </table>

@@ -379,8 +379,14 @@ class PeluangController extends Controller
                 'rkm.analisisrkm'
             )->findOrFail($id);
 
-            $deletedBy = Auth::user()->karyawan->kode_karyawan ?? null;
+            $deletedBy = Auth::user()->karyawan->kode_karyawan;
             $now = Carbon::now();
+
+            if(!Auth::check()) {
+                return back()->with([
+                    'error' => 'Gagal menghapus peluang: User belum login.',
+                ]);
+            }
 
             if ($peluang->rkm) {
                 $rkm = $peluang->rkm;
@@ -559,7 +565,13 @@ class PeluangController extends Controller
 
         DB::transaction(function () use ($peluang, $request) {
             $now = Carbon::now();
-            $deletedBy = Auth::user()->karyawan->kode_karyawan ?? null;
+            $deletedBy = Auth::user()->karyawan->kode_karyawan;
+
+            if(!Auth::check()) {
+                return back()->with([
+                    'error' => 'Gagal memperbarui tahap: User belum login.',
+                ]);
+            }
 
             if ($request->tahap === 'biru') {
                 $peluang->tahap = 'biru';
@@ -576,6 +588,8 @@ class PeluangController extends Controller
                 $peluang->tahap = 'lost';
                 $peluang->lost = $now;
                 $peluang->desc_lost = $request->input('desc_lost');
+                $peluang->deleted_at = $now;
+                $peluang->deleted_by = $deletedBy;
 
                 if ($peluang->rkm) {
                     $rkm = $peluang->rkm;
