@@ -111,7 +111,6 @@
                             <td colspan="3">Perusahaan:</td>
                             <td colspan="2">
                                 <input type="text" class="form-control" name="perusahaan" value="{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}">
-                                {{-- <b>{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</b> --}}
                             </td>
                         </tr>
                         <tr>
@@ -163,7 +162,7 @@
                                     @endforeach
                             </td>
                             <td>
-                                <input type="number" class="form-control" id="pax" name="pax"
+                                <input type="number" class="form-control" id="pax" name="pax" readonly
                                     value="{{ $rkm->pax ?? 0 }}">
                             </td>
                             <td>
@@ -177,16 +176,15 @@
                             <td>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control currency-input" id="total_amount"
-                                        name="amount"
-                                        value="{{ number_format(($rkm->harga_jual ?? 0) * ($rkm->pax ?? 0), 0, ',', '.') }}"
-                                        readonly>
+                                    <input type="text" class="form-control currency-input" id="jumlah"
+                                        name="jumlah"
+                                        value="{{ number_format(($rkm->harga_jual ?? 0) * ($rkm->pax ?? 0), 0, ',', '.') }}">
                                 </div>
                             </td>
                         </tr>
 
                         <tr>
-                            <td colspan="3" rowspan="3" class="align-top">
+                            <td colspan="3" rowspan="4" class="align-top">
                                 <label for="bank_name" class="fw-bold">Nama Bank:</label>
                                 <select name="bank_name" id="bank_name" class="form-control mb-2">
                                     <option value="">Pilih Nama Bank</option>
@@ -200,14 +198,14 @@
                                     <option value="">Pilih Nomor Rekening</option>
                                 </select>
                             </td>
-                            <td class="text-end">SubTotal</td>
+                            <td class="text-end">Sub Total</td>
                             <td class="text-end">
                                 <div class="input-group">
                                     <span class="input-group-text">Rp.</span>
                                     <input type="text" class="form-control currency-input text-end"
-                                        id="sub_total_display"
-                                        value="{{ number_format(($rkm->harga_jual ?? 0) * ($rkm->pax ?? 0), 0, ',', '.') }}"
-                                        readonly>
+                                        id="subtotal"
+                                        name="subtotal"
+                                        value="{{ number_format(($rkm->harga_jual ?? 0) * ($rkm->pax ?? 0), 0, ',', '.') }}">
                                 </div>
                             </td>
                         </tr>
@@ -217,42 +215,44 @@
                                 <div class="input-group">
                                     <span class="input-group-text">Rp.</span>
                                     <input type="text" class="form-control currency-input text-end" id="ppn"
-                                        value="{{ number_format((($rkm->harga_jual ?? 0) * ($rkm->pax ?? 0)) * 0.11, 0, ',', '.') }}"
-                                        readonly>
+                                        name="ppn"
+                                        value="{{ number_format((($rkm->harga_jual ?? 0) * ($rkm->pax ?? 0)) * 0.11, 0, ',', '.') }}">
                                 </div>
                             </td>
                         </tr>
                         <tr class="no-print">
                             <td colspan="2" class="text-end">
                                 <div class="form-check d-inline-block">
-                                    <input class="form-check-input" type="checkbox" id="pph23_check">
+                                    <input type="hidden" name="pph23" value="0">
+                                    <input class="form-check-input" type="checkbox" id="pph23_check" name='pph23' value="true">
                                     <label class="form-check-label fw-bold" for="pph23_check">
                                         Gunakan PPh 23 (2%)
                                     </label>
                                 </div>
                             </td>
-                        </tr>
+                        </tr>   
                         <tr id="pph23_row" style="display:none;">
-                            <td colspan="3"></td>
                             <td class="text-end">PPh 23 (2%)</td>
                             <td class="text-end">
                                 <div class="input-group">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control currency-input text-end" id="pph23" value="0" readonly>
+                                    <input type="text" class="form-control currency-input text-end" id="pph"
+                                        name="pph"
+                                        value="0" readonly> <!-- Dibuat readonly karena biasanya dihitung otomatis -->
                                 </div>
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="3"></td>
                             <td class="text-end fw-bold">TOTAL</td>
                             <td class="text-end fw-bold">
                                 <div class="input-group">
                                     <span class="input-group-text">Rp.</span>
                                     <input type="text" class="form-control currency-input text-end"
-                                        id="grand_total"
-                                        value="{{ number_format((($rkm->harga_jual ?? 0) * ($rkm->pax ?? 0)) * 1.11, 0, ',', '.') }}"
-                                        readonly>
-                                    <input type="hidden" name="amount" id="final_amount">
+                                        id="total"
+                                        name="total"
+                                        value="{{ number_format((($rkm->harga_jual ?? 0) * ($rkm->pax ?? 0)) * 1.11, 0, ',', '.') }}">
+                                    <!-- Hidden input untuk amount utama jika diperlukan, tetapi total yang utama adalah 'total' -->
+                                    <input type="hidden" name="amount" id="final_amount_main" value="{{ ($rkm->harga_jual ?? 0) * ($rkm->pax ?? 0) }}">
                                 </div>
                             </td>
                         </tr>
@@ -363,50 +363,120 @@
             return number.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
+        // State untuk melacak apakah input turunan sedang diedit secara manual
+        let isEditingSubtotal = false;
+        let isEditingPpn = false;
+        let isEditingTotal = false;
+        let isEditingJumlah = false; // Menambahkan state untuk jumlah
+
         function recalculateTotals() {
-            const unitPriceInput = document.getElementById('unit_price');
-            const paxInput = document.getElementById('pax');
-            const totalAmountInput = document.getElementById('total_amount');
-            const subTotalDisplayInput = document.getElementById('sub_total_display');
-            const ppnInput = document.getElementById('ppn');
-            const grandTotalInput = document.getElementById('grand_total');
-            const terbilangDisplay = document.getElementById('terbilang_total');
-            const finalAmountInput = document.getElementById('final_amount');
-            const terbilangHidden = document.getElementById('terbilang_hidden');
+            // Hanya lakukan perhitungan otomatis jika input sumber (unit_price atau pax) yang diubah
+            // dan input turunan (jumlah, subtotal, ppn, total) tidak sedang diedit manual
+            const unitPrice = parseFloat(unformatNumber(document.getElementById('unit_price').value)) || 0;
+            const pax = parseInt(document.getElementById('pax').value, 10) || 0;
             const pph23Check = document.getElementById('pph23_check');
-            const pph23Row = document.getElementById('pph23_row');
-            const pph23Input = document.getElementById('pph23');
 
-            let unitPrice = parseFloat(unformatNumber(unitPriceInput.value)) || 0;
-            let pax = parseInt(paxInput.value, 10) || 0;
+            const calculatedJumlah = unitPrice * pax;
+            const calculatedSubtotal = unitPrice * pax; // Biasanya jumlah = subtotal
+            const calculatedPpn = calculatedSubtotal * 0.11;
+            let calculatedTotal = calculatedSubtotal + calculatedPpn;
 
-            const totalAmount = unitPrice * pax;
-            const ppn = totalAmount * 0.11;
-            let grandTotal = totalAmount + ppn;
-
-            let pph23 = 0;
+            // Hitung PPh jika checkbox dicentang
+            let calculatedPph = 0;
             if (pph23Check.checked) {
-                pph23Row.style.display = '';
-                pph23 = totalAmount * 0.02;
-                grandTotal -= pph23;
+                document.getElementById('pph23_row').style.display = '';
+                calculatedPph = calculatedSubtotal * 0.02;
+                calculatedTotal = calculatedSubtotal + calculatedPpn - calculatedPph; // Sesuaikan total jika PPh aktif
             } else {
-                pph23Row.style.display = 'none';
+                document.getElementById('pph23_row').style.display = 'none';
             }
 
-            totalAmountInput.value = formatNumber(totalAmount);
-            subTotalDisplayInput.value = formatNumber(totalAmount);
-            ppnInput.value = formatNumber(ppn);
-            pph23Input.value = formatNumber(pph23);
-            grandTotalInput.value = formatNumber(grandTotal);
+            // Update input jumlah jika tidak sedang diedit
+            if (!isEditingJumlah) {
+                document.getElementById('jumlah').value = formatNumber(calculatedJumlah);
+            }
+            // Update input subtotal jika tidak sedang diedit
+            if (!isEditingSubtotal) {
+                document.getElementById('subtotal').value = formatNumber(calculatedSubtotal);
+            }
+            // Update input ppn jika tidak sedang diedit
+            if (!isEditingPpn) {
+                document.getElementById('ppn').value = formatNumber(calculatedPpn);
+            }
+             // Update input pph jika tidak sedang diedit (biasanya dihitung otomatis jika PPh aktif)
+            document.getElementById('pph').value = formatNumber(calculatedPph);
+            // Update input total jika tidak sedang diedit
+            if (!isEditingTotal) {
+                document.getElementById('total').value = formatNumber(calculatedTotal);
+            }
 
-            finalAmountInput.value = grandTotal;
-            const terbilangValue = terbilang(grandTotal);
-            terbilangDisplay.innerText = terbilangValue;
-            terbilangHidden.value = terbilangValue;
+            // Update terbilang berdasarkan nilai TOTAL (bukan subtotal)
+            const grandTotalForTerbilang = parseFloat(unformatNumber(document.getElementById('total').value)) || 0;
+            const terbilangValue = terbilang(grandTotalForTerbilang);
+            document.getElementById('terbilang_total').innerText = terbilangValue;
+            document.getElementById('terbilang_hidden').value = terbilangValue;
         }
 
+        // Event listener untuk input yang memicu perhitungan otomatis
+        document.getElementById('unit_price').addEventListener('input', function(e) {
+            let cleanValue = e.target.value.replace(/[^0-9]/g, '');
+            e.target.value = formatNumber(cleanValue);
+            recalculateTotals(); // Panggil recalculate ketika harga/unit berubah
+        });
+
+        document.getElementById('pax').addEventListener('input', function(e) {
+            recalculateTotals(); // Panggil recalculate ketika jumlah pax berubah
+        });
+
+        // Event listener untuk input turunan yang bisa diedit manual
+        document.getElementById('jumlah').addEventListener('focus', function() {
+            isEditingJumlah = true;
+        });
+        document.getElementById('jumlah').addEventListener('blur', function() {
+            isEditingJumlah = false;
+            // Opsional: Format ulang saat blur jika diinginkan
+            let val = parseFloat(unformatNumber(this.value)) || 0;
+            this.value = formatNumber(val);
+        });
+
+        document.getElementById('subtotal').addEventListener('focus', function() {
+            isEditingSubtotal = true;
+        });
+        document.getElementById('subtotal').addEventListener('blur', function() {
+            isEditingSubtotal = false;
+            // Opsional: Format ulang saat blur jika diinginkan
+             let val = parseFloat(unformatNumber(this.value)) || 0;
+            this.value = formatNumber(val);
+        });
+
+        document.getElementById('ppn').addEventListener('focus', function() {
+            isEditingPpn = true;
+        });
+        document.getElementById('ppn').addEventListener('blur', function() {
+            isEditingPpn = false;
+             // Opsional: Format ulang saat blur jika diinginkan
+              let val = parseFloat(unformatNumber(this.value)) || 0;
+            this.value = formatNumber(val);
+        });
+
+        document.getElementById('total').addEventListener('focus', function() {
+            isEditingTotal = true;
+        });
+        document.getElementById('total').addEventListener('blur', function() {
+            isEditingTotal = false;
+             // Opsional: Format ulang saat blur jika diinginkan
+              let val = parseFloat(unformatNumber(this.value)) || 0;
+            this.value = formatNumber(val);
+            // Update terbilang saat total di-edit dan blur
+            const terbilangValue = terbilang(val);
+            document.getElementById('terbilang_total').innerText = terbilangValue;
+            document.getElementById('terbilang_hidden').value = terbilangValue;
+        });
+
+        // Event listener untuk checkbox PPh
         document.getElementById('pph23_check').addEventListener('change', recalculateTotals);
 
+        // Inisialisasi saat halaman dimuat
         document.addEventListener('DOMContentLoaded', (event) => {
             recalculateTotals();
 
@@ -421,16 +491,7 @@
             inputTtd.value = toggleTtd.checked ? 'true' : 'false';
         });
 
-        document.getElementById('unit_price').addEventListener('input', function(e) {
-            let cleanValue = e.target.value.replace(/[^0-9]/g, '');
-            e.target.value = formatNumber(cleanValue);
-            recalculateTotals();
-        });
-
-        document.getElementById('pax').addEventListener('input', function(e) {
-            recalculateTotals();
-        });
-
+        // Event listener untuk toggle peserta dan ttd
         document.getElementById('toggle_is_peserta').addEventListener('change', function() {
             const input = document.getElementById('is_peserta_input');
             input.value = this.checked ? 'true' : 'false';
@@ -441,11 +502,16 @@
             input.value = this.checked ? 'true' : 'false';
         });
 
+        // Format nilai sebelum submit formulir
         document.querySelector('form').addEventListener('submit', function() {
-            const unitPriceInput = document.getElementById('unit_price');
-            unitPriceInput.value = unformatNumber(unitPriceInput.value);
+            // Format kembali semua input currency ke bentuk numerik sebelum submit
+            const currencyInputs = document.querySelectorAll('.currency-input');
+            currencyInputs.forEach(input => {
+                input.value = unformatNumber(input.value);
+            });
         });
 
+        // Update due date saat invoice date berubah
         document.getElementById('tanggal_invoice').addEventListener('change', function() {
             const invoiceDate = new Date(this.value);
 
@@ -462,6 +528,7 @@
 
         document.getElementById('tanggal_invoice').dispatchEvent(new Event('change'));
 
+        // Populate account number based on selected bank
         const bankAccounts = {
             "BANK MANDIRI KK BANDUNG CIHAMPELAS": "131-00-0734797-6",
             "BANK BCA KK BANDUNG ABDUL RIVAI": "5170583738",

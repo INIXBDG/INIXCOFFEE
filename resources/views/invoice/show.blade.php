@@ -283,7 +283,7 @@
 
     <div class="no-print text-center" style="margin-top:40px;">
         <a href="{{ route('download.pdf', ['id' => $invoice->id, 'peserta[]' => $peserta]) }}" class="btn btn-primary">
-            <i class="bi bi-printer"></i> Pdf
+            Pdf
         </a>
     </div>
 </body>
