@@ -262,7 +262,7 @@ class KpiTargetImport implements ToModel, WithHeadingRow, WithValidation, WithCh
      */
     private function validateBusinessRules(array $data): void
     {
-        // Validasi enum values
+        
         if (!in_array($data['jangka_target'], self::VALID_JANGKA)) {
             throw new \Exception("Jangka target '{$data['jangka_target']}' tidak valid. Gunakan: " . implode(', ', self::VALID_JANGKA));
         }
@@ -395,16 +395,14 @@ class KpiTargetImport implements ToModel, WithHeadingRow, WithValidation, WithCh
         return is_numeric($cleaned) ? (float) $cleaned : 0;
     }
 
-    // ===== Laravel Excel Contracts =====
-
     public function rules(): array
     {
         return [
             '*.judul_kpi' => 'required|string|max:255',
             '*.jabatan' => 'required|string|max:255',
-            '*.jangka_target' => 'required|string|in:' . implode(',', self::VALID_JANGKA),
-            '*.detail_jangka' => 'required|string|max:50',
-            '*.tipe_target' => 'required|string|in:' . implode(',', self::VALID_TIPE),
+            '*.jangka_target' => 'required|string',
+            '*.detail_jangka' => 'required|max:50',
+            '*.tipe_target' => 'required|string',
             '*.nilai_target' => 'required|numeric|min:0',
             '*.asistant_route' => 'required|string|max:255',
             '*.deskripsi_kpi' => 'nullable|string|max:500',
@@ -417,8 +415,10 @@ class KpiTargetImport implements ToModel, WithHeadingRow, WithValidation, WithCh
         return [
             '*.judul_kpi.required' => 'Judul KPI wajib diisi',
             '*.jabatan.required' => 'Jabatan wajib diisi',
-            '*.jangka_target.in' => 'Jangka target tidak valid',
-            '*.tipe_target.in' => 'Tipe target tidak valid',
+            '*.jangka_target.required' => 'Jangka target wajib diisi',
+            '*.detail_jangka.required' => 'Detail jangka wajib diisi',
+            '*.tipe_target.required' => 'Tipe target wajib diisi',
+            '*.nilai_target.required' => 'Nilai target wajib diisi',
             '*.nilai_target.numeric' => 'Nilai target harus angka',
             '*.asistant_route.required' => 'Assistant route wajib diisi',
         ];

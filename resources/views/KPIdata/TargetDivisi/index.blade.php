@@ -264,12 +264,12 @@
     </div>
 
     <div class="modal fade" id="ModalImport" tabindex="-1" aria-labelledby="ModalImportLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog modal-md" role="document">
             <div class="modal-content">
                 <form action="{{ route('kpi.importTarget') }}" method="post" enctype="multipart/form-data" id="formImport">
                     @csrf
                     <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title" id="ModalImportLabel">📥 Import Data KPI</h5>
+                        <h5 class="modal-title" id="ModalImportLabel">Import Data KPI</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -301,13 +301,13 @@
                         <div class="card bg-light border-0 mb-3">
                             <div class="card-body py-2">
                                 <h6 class="fw-semibold mb-2">Opsi Import</h6>
-                                <div class="form-check form-switch">
+                                <div class="form-check form-switch p-2">
                                     <input class="form-check-input" type="checkbox" id="skipDuplicate" name="skip_duplicate" value="1" checked>
                                     <label class="form-check-label" for="skipDuplicate">
                                         Lewati data duplikat (berdasarkan judul + pembuat)
                                     </label>
                                 </div>
-                                <div class="form-check form-switch">
+                                <div class="form-check form-switch p-2">
                                     <input class="form-check-input" type="checkbox" id="dryRun" name="dry_run" value="1">
                                     <label class="form-check-label" for="dryRun">
                                         Mode preview (hanya validasi, tidak simpan ke database)
@@ -378,6 +378,12 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success me-2"
+                        data-bs-toggle="modal" data-bs-target="#ModalImport">
+                        Kembali
+                    </button>
                 </div>
             </div>
         </div>
@@ -1709,10 +1715,18 @@
                             'pemasukan bersih'
                         ];
 
+                        const allowedAssistantRoutesForPerformaKPIDepartemen = [
+                            'performa KPI departemen'
+                        ];
+
+                        const allowedAssistantRoutesForKepuasanPelanggan = [
+                            'Kepuasan Pelanggan'
+                        ];
+
                         const allowedAssistantRoutesForLaporanAnalisisKeuangan = [
                             'laporan analisis keuangan'
                         ];
-                        
+
                         let ContentTrafikSales = '';
 
                         if (allowedAssistantRoutesForTargetPenjualanTahunan.includes(data.condition)) {
@@ -1952,6 +1966,224 @@
                                     }, 100);
                                 }
                             }
+                        } else if (allowedAssistantRoutesForPemasukanBersih.includes(data.condition)) {
+                            const bulanIndo = [
+                                "Januari", "Februari", "Maret", "April",
+                                "Mei", "Juni", "Juli", "Agustus",
+                                "September", "Oktober", "November", "Desember"
+                            ];
+
+                            ContentTrafikSales = `
+                                <div class="mt-4">
+                                    <div class="row g-4">
+
+                                        ${(data.data_detail.previous_quarter.data || []).map((item, index) => `
+                                            <div class="col-12 col-md-6 col-lg-4">
+                                                <div class="card border-0 shadow-sm h-100 quarter-card">
+                                                    <div class="card-body d-flex flex-column p-4">
+
+                                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                                            <div>
+                                                                <h6 class="fw-semibold text-muted mb-1">Periode</h6>
+                                                                <h5 class="fw-bold mb-0">
+                                                                    ${bulanIndo[item.month - 1] ?? '-'}
+                                                                </h5>
+                                                            </div>
+                                                            <span class="badge rounded-pill bg-${item.color} bg-opacity-10 text-${item.color} px-3 py-2">
+                                                                Laporan
+                                                            </span>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <h3 class="fw-bold text-dark mb-0">
+                                                                Rp ${item.nilai ? Number(item.nilai).toLocaleString('id-ID') : '-'}
+                                                            </h3>
+                                                            <small class="text-muted">Total Pemasukan</small>
+                                                        </div>
+
+                                                        <div class="flex-grow-1">
+                                                            <p class="text-muted small mb-2 description-text" id="desc-${index}">
+                                                                ${item.description ?? '-'}
+                                                            </p>
+                                                            ${(item.description && item.description.length > 100) ? `
+                                                                <button class="btn btn-sm btn-link p-0 text-primary btn-toggle-desc" data-target="desc-${index}">
+                                                                    Lihat Selengkapnya
+                                                                </button>
+                                                            ` : ''}
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-end align-items-center mt-4">
+                                                            <a href="{{ asset('${item.file_paths}') }}" class="btn btn-sm btn-dark d-flex align-items-center gap-2" download>
+                                                                <i class="fas fa-download"></i>
+                                                                Download
+                                                            </a>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+
+                                    </div>
+                                </div>
+
+                                <style>
+                                    .quarter-card {
+                                        border-radius: 16px;
+                                        transition: all 0.25s ease;
+                                        background: #ffffff;
+                                    }
+
+                                    .quarter-card:hover {
+                                        transform: translateY(-6px) scale(1.01);
+                                        box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+                                    }
+
+                                    .quarter-card h3 {
+                                        letter-spacing: 0.5px;
+                                    }
+
+                                    .quarter-card .badge {
+                                        font-size: 12px;
+                                        font-weight: 500;
+                                    }
+
+                                    .description-text {
+                                        display: -webkit-box;
+                                        -webkit-line-clamp: 3;
+                                        -webkit-box-orient: vertical;
+                                        overflow: hidden;
+                                    }
+
+                                    .description-text.expanded {
+                                        -webkit-line-clamp: unset;
+                                        overflow: visible;
+                                    }
+
+                                    .quarter-card .btn {
+                                        border-radius: 8px;
+                                        font-size: 13px;
+                                    }
+                                </style>
+                            `;
+
+                                        setTimeout(() => {
+                                        document.querySelectorAll('.btn-toggle-desc').forEach(btn => {
+                                            btn.addEventListener('click', function () {
+                                                const targetId = this.getAttribute('data-target');
+                                                const textEl = document.getElementById(targetId);
+
+                                                if (textEl.classList.contains('expanded')) {
+                                                    textEl.classList.remove('expanded');
+                                                    this.innerText = 'Lihat Selengkapnya';
+                                                } else {
+                                                    textEl.classList.add('expanded');
+                                                    this.innerText = 'Sembunyikan';
+                                                }
+                                            });
+                                        });
+                                    }, 0);
+                        } else if (allowedAssistantRoutesForKepuasanPelanggan.includes(data.condition)) {
+                            const item = data.data_detail;
+                            ContentTrafikSales = `
+                                <div class="row g-4 mt-1">
+
+                                    <div class="col-lg-4">
+                                        <div class="card shadow-sm border-0 rounded-4 h-100">
+                                            <div class="card-body">
+                                                <h6 class="fw-semibold text-secondary mb-3">RINGKASAN</h6>
+
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted">Total Feedback</span>
+                                                    <span class="fw-bold">${item.total_feedback ?? 0}</span>
+                                                </div>
+
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted">Total Sesi</span>
+                                                    <span class="fw-bold">${item.total_sessions ?? 0}</span>
+                                                </div>
+
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="text-muted">Prediksi</span>
+                                                    <span class="fw-bold text-primary">${item.prediction ?? 0}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-4">
+                                        <div class="card shadow-sm border-0 rounded-4 h-100">
+                                            <div class="card-body">
+                                                <h6 class="fw-semibold text-secondary mb-3">PERFORMA</h6>
+
+                                                <div class="mb-3">
+                                                    <small class="text-muted d-block">Top Performer</small>
+                                                    <span class="fw-bold text-success">${item.top_performer?.label ?? '-'} (${item.top_performer?.value ?? 0})</span>
+                                                </div>
+
+                                                <div>
+                                                    <small class="text-muted d-block">Lowest Performer</small>
+                                                    <span class="fw-bold text-danger">${item.lowest_performer?.label ?? '-'} (${item.lowest_performer?.value ?? 0})</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-4">
+                                        <div class="card shadow-sm border-0 rounded-4 h-100">
+                                            <div class="card-body">
+                                                <h6 class="fw-semibold text-secondary mb-3">STATUS</h6>
+
+                                                <div class="mb-2">
+                                                    <span class="badge bg-${item.trend === 'up' ? 'success' : (item.trend === 'down' ? 'danger' : 'secondary')}">
+                                                        Trend: ${item.trend} (${item.trend_value})
+                                                    </span>
+                                                </div>
+
+                                                <div class="mb-2">
+                                                    <span class="badge bg-${item.consistency === 'stable' ? 'success' : 'warning'}">
+                                                        Konsistensi: ${item.consistency}
+                                                    </span>
+                                                </div>
+
+                                                <div>
+                                                    <span class="badge bg-${item.target_status === 'on_track' ? 'success' : (item.target_status === 'at_risk' ? 'warning' : 'danger')}">
+                                                        Target: ${item.target_status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="card shadow-sm border-0 rounded-4">
+                                            <div class="card-body">
+                                                <h6 class="fw-semibold text-secondary mb-3">KATEGORI PENILAIAN</h6>
+                                                <div class="row text-center">
+
+                                                    ${Object.entries(item.category_scores || {}).map(([key, val]) => `
+                                                        <div class="col">
+                                                            <div class="p-2 border rounded-3">
+                                                                <small class="text-muted d-block">${key}</small>
+                                                                <h5 class="fw-bold mb-0">${val}</h5>
+                                                            </div>
+                                                        </div>
+                                                    `).join('')}
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="alert alert-info rounded-4 shadow-sm mb-0">
+                                            <i class="fa-solid fa-lightbulb me-2"></i>
+                                            ${item.insight ?? '-'}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            `;
                         } else if (allowedAssistantRoutesForPeningkatanKontribusiPelatihan.includes(data.condition)) {
                             ContentTrafikSales = `
                             <div class="card mt-4 border-0 rounded-4" style="background:#f8fafc;">
@@ -2184,6 +2416,145 @@
 
                         if (allowedAssistantRoutes.includes(data.condition)) {
                             contentStatisticChart = ``;
+                        }   else if (allowedAssistantRoutesForPerformaKPIDepartemen.includes(data.condition)) {
+                            const item = data.data_detail;
+                            const trend = item.trend ?? 'stable';
+                            const trendValue = item.trend_value ?? 0;
+                            const consistency = item.consistency ?? 'stable';
+                            const targetStatus = item.target_status ?? 'behind';
+
+                            const trendColor = trend === 'up' ? 'success' : (trend === 'down' ? 'danger' : 'secondary');
+                            const consistencyColor = consistency === 'stable' ? 'success' : 'warning';
+                            const targetColor = targetStatus === 'on_track' ? 'success' : (targetStatus === 'at_risk' ? 'warning' : 'danger');
+
+                            const divisionHtml = Object.entries(item.division_breakdown || {}).map(([div, val]) => `
+                                <div class="col mb-3">
+                                    <div class="p-2 border rounded-3">
+                                        <small class="text-muted d-block">${div}</small>
+                                        <h5 class="fw-bold mb-0">${val}%</h5>
+                                    </div>
+                                </div>
+                            `).join('');
+
+                            const riskHtml = (item.risk_divisions && item.risk_divisions.length > 0)
+                                ? `
+                                <div class="col-6">
+                                    <div class="card shadow-sm border-0 rounded-4">
+                                        <div class="card-body">
+                                            <h6 class="fw-semibold text-danger mb-3">DIVISI BERISIKO</h6>
+                                            <div class="row">
+                                                ${item.risk_divisions.map(risk => `
+                                                    <div class="col mb-2">
+                                                        <div class="p-2 border rounded-3 text-center">
+                                                            <small class="text-muted d-block">${risk.name}</small>
+                                                            <span class="fw-bold text-danger">${risk.value}%</span>
+                                                        </div>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                `
+                                : '';
+
+                            contentStatisticChart = `
+                            <div class="row g-4 mt-1">
+
+                                <div class="col-lg-4">
+                                    <div class="card shadow-sm border-0 rounded-4 h-100">
+                                        <div class="card-body">
+                                            <h6 class="fw-semibold text-secondary mb-3">RINGKASAN</h6>
+
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span class="text-muted">Total KPI</span>
+                                                <span class="fw-bold">${item.total_kpi ?? 0}</span>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span class="text-muted">Total Divisi</span>
+                                                <span class="fw-bold">${item.total_division ?? 0}</span>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Progress</span>
+                                                <span class="fw-bold text-primary">${item.progress ?? 0}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="card shadow-sm border-0 rounded-4 h-100">
+                                        <div class="card-body">
+                                            <h6 class="fw-semibold text-secondary mb-3">PERFORMA DIVISI</h6>
+
+                                            <div class="mb-3">
+                                                <small class="text-muted d-block">Top Division</small>
+                                                <span class="fw-bold text-success">
+                                                    ${item.top_division?.name ?? '-'} (${item.top_division?.value ?? 0}%)
+                                                </span>
+                                            </div>
+
+                                            <div>
+                                                <small class="text-muted d-block">Lowest Division</small>
+                                                <span class="fw-bold text-danger">
+                                                    ${item.lowest_division?.name ?? '-'} (${item.lowest_division?.value ?? 0}%)
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="card shadow-sm border-0 rounded-4 h-100">
+                                        <div class="card-body">
+                                            <h6 class="fw-semibold text-secondary mb-3">STATUS</h6>
+
+                                            <div class="mb-2">
+                                                <span class="badge bg-${trendColor}">
+                                                    Trend: ${trend} (${trendValue})
+                                                </span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <span class="badge bg-${consistencyColor}">
+                                                    Konsistensi: ${consistency}
+                                                </span>
+                                            </div>
+
+                                            <div>
+                                                <span class="badge bg-${targetColor}">
+                                                    Target: ${targetStatus}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-6">
+                                    <div class="card shadow-sm border-0 rounded-4">
+                                        <div class="card-body">
+                                            <h6 class="fw-semibold text-secondary mb-3">BREAKDOWN DIVISI</h6>
+                                            <div class="row text-center">
+                                                ${divisionHtml}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                ${riskHtml}
+
+                                <div class="col-12">
+                                    <div class="alert alert-info rounded-4 shadow-sm mb-0">
+                                        <i class="fa-solid fa-lightbulb me-2"></i>
+                                        ${item.insight ?? '-'}
+                                    </div>
+                                </div>
+
+                            </div>
+                            `;
+
                         } else if (allowedAssistantRoutesForLaporanAnalisisKeuangan.includes(data.condition)) {
                             const bulanIndo = [
                                 '',
@@ -2230,123 +2601,6 @@
 
                             </div>
                             `;
-                        } else if (allowedAssistantRoutesForPemasukanBersih.includes(data.condition)) {
-                            const bulanIndo = [
-                                "Januari", "Februari", "Maret", "April",
-                                "Mei", "Juni", "Juli", "Agustus",
-                                "September", "Oktober", "November", "Desember"
-                            ];
-
-                            contentStatisticChart = `
-                                <div class="mt-4">
-                                    <div class="row g-4">
-
-                                        ${(data.data_detail.previous_quarter.data || []).map((item, index) => `
-                                            <div class="col-12 col-md-6 col-lg-4">
-                                                <div class="card border-0 shadow-sm h-100 quarter-card">
-                                                    <div class="card-body d-flex flex-column p-4">
-
-                                                        <div class="d-flex justify-content-between align-items-start mb-3">
-                                                            <div>
-                                                                <h6 class="fw-semibold text-muted mb-1">Periode</h6>
-                                                                <h5 class="fw-bold mb-0">
-                                                                    ${bulanIndo[item.month - 1] ?? '-'}
-                                                                </h5>
-                                                            </div>
-                                                            <span class="badge rounded-pill bg-${item.color} bg-opacity-10 text-${item.color} px-3 py-2">
-                                                                Laporan
-                                                            </span>
-                                                        </div>
-
-                                                        <div class="mb-3">
-                                                            <h3 class="fw-bold text-dark mb-0">
-                                                                Rp ${item.nilai ? Number(item.nilai).toLocaleString('id-ID') : '-'}
-                                                            </h3>
-                                                            <small class="text-muted">Total Pemasukan</small>
-                                                        </div>
-
-                                                        <div class="flex-grow-1">
-                                                            <p class="text-muted small mb-2 description-text" id="desc-${index}">
-                                                                ${item.description ?? '-'}
-                                                            </p>
-                                                            ${(item.description && item.description.length > 100) ? `
-                                                                <button class="btn btn-sm btn-link p-0 text-primary btn-toggle-desc" data-target="desc-${index}">
-                                                                    Lihat Selengkapnya
-                                                                </button>
-                                                            ` : ''}
-                                                        </div>
-
-                                                        <div class="d-flex justify-content-end align-items-center mt-4">
-                                                            <a href="{{ asset('${item.file_paths}') }}" class="btn btn-sm btn-dark d-flex align-items-center gap-2" download>
-                                                                <i class="fas fa-download"></i>
-                                                                Download
-                                                            </a>
-                                                        </div>
-
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-
-                                    </div>
-                                </div>
-
-                                <style>
-                                    .quarter-card {
-                                        border-radius: 16px;
-                                        transition: all 0.25s ease;
-                                        background: #ffffff;
-                                    }
-
-                                    .quarter-card:hover {
-                                        transform: translateY(-6px) scale(1.01);
-                                        box-shadow: 0 15px 35px rgba(0,0,0,0.08);
-                                    }
-
-                                    .quarter-card h3 {
-                                        letter-spacing: 0.5px;
-                                    }
-
-                                    .quarter-card .badge {
-                                        font-size: 12px;
-                                        font-weight: 500;
-                                    }
-
-                                    .description-text {
-                                        display: -webkit-box;
-                                        -webkit-line-clamp: 3;
-                                        -webkit-box-orient: vertical;
-                                        overflow: hidden;
-                                    }
-
-                                    .description-text.expanded {
-                                        -webkit-line-clamp: unset;
-                                        overflow: visible;
-                                    }
-
-                                    .quarter-card .btn {
-                                        border-radius: 8px;
-                                        font-size: 13px;
-                                    }
-                                </style>
-                            `;
-
-                                        setTimeout(() => {
-                                        document.querySelectorAll('.btn-toggle-desc').forEach(btn => {
-                                            btn.addEventListener('click', function () {
-                                                const targetId = this.getAttribute('data-target');
-                                                const textEl = document.getElementById(targetId);
-
-                                                if (textEl.classList.contains('expanded')) {
-                                                    textEl.classList.remove('expanded');
-                                                    this.innerText = 'Lihat Selengkapnya';
-                                                } else {
-                                                    textEl.classList.add('expanded');
-                                                    this.innerText = 'Sembunyikan';
-                                                }
-                                            });
-                                        });
-                                    }, 0);
                         } else if (allowedAssistantRoutesForPresentaseGapKompetensi.includes(data.condition)) {
                             contentStatisticChart = `
                                 <div class="mt-4">

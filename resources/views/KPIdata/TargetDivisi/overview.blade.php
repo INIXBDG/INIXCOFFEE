@@ -277,61 +277,53 @@
             employees.forEach(emp => {
                 let bgColor = emp.rata_rata_progress >= 75 ?
                     'bg-primary bg-opacity-10 border-start border-4 border-primary' :
-                    (emp.rata_rata_progress < 50 ? 'bg-danger bg-opacity-10 border-start border-4 border-danger' :
-                        'bg-light');
+                    (emp.rata_rata_progress < 50 ? 'bg-danger bg-opacity-10 border-start border-4 border-danger' : 'bg-light');
+                    
                 let badge = emp.rata_rata_progress >= 75 ?
                     '<span class="badge bg-primary-subtle text-primary">Top</span>' :
                     (emp.rata_rata_progress < 50 ?
-                        '<span class="badge bg-danger-subtle text-danger">Perlu Bimbingan</span>' : '<span class="badge bg-success-subtle text-success"> Sedang Berjalan</span>');
+                        '<span class="badge bg-danger-subtle text-danger">Perlu Bimbingan</span>' : 
+                        '<span class="badge bg-success-subtle text-success">Sedang Berjalan</span>');
 
                 html += `
-                    <div 
-                        class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} clickable-item"
-                        onclick="handleClickCheck(${emp.id_karyawan})" 
-                        style="cursor: pointer;">
-                        
+                    <div class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} clickable-item" style="cursor: pointer;">
                         <div class="d-flex justify-content-between align-items-center">
-                            
-                            <div>
+                            <div onclick="handleClickCheck(${emp.id_karyawan})">
                                 <strong>${emp.nama}</strong><br>
                                 <small class="text-muted">${emp.jabatan}</small>
                             </div>
-
                             <div class="text-end d-flex flex-column align-items-end">
-                                    <div class="row">
-                                        <div class="col-sm">
-                                            <div class="fw-bold">${Math.round(emp.rata_rata_progress)}%</div> ${badge}
-                                        </div>
-                                        <div class="col-sm">
-                                            <div class="mt-2">
-                                                <div class="dropdown">
-                                                    <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" onclick="event.stopPropagation();">
-                                                        <i class="fas fa-download me-1"></i> Export
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        <li>
-                                                            <a href="javascript:void(0)" class="dropdown-item btn-export" 
-                                                            data-type="excel" 
-                                                            data-id="${emp.id_karyawan}">
-                                                                <i class="fas fa-file-excel me-1 text-success"></i> Excel
-                                                            </a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="javascript:void(0)" class="dropdown-item btn-export" 
-                                                            data-type="pdf" 
-                                                            data-id="${emp.id_karyawan}" 
-                                                            data-tahun="${new Date().getFullYear()}">
-                                                                <i class="fas fa-file-pdf me-1 text-danger"></i> PDF
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </div>
+                                <div class="row align-items-center g-2">
+                                    <div class="col-auto">
+                                        <div class="fw-bold">${Math.round(emp.rata_rata_progress)}%</div> ${badge}
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="dropdown">
+                                            <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-download me-1"></i> Export
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a href="javascript:void(0)" class="dropdown-item btn-export"
+                                                    data-type="excel" 
+                                                    data-id="${emp.id_karyawan}" 
+                                                    data-tahun="${new Date().getFullYear()}">
+                                                        <i class="fas fa-file-excel me-1 text-success"></i> Excel
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="javascript:void(0)" class="dropdown-item btn-export"
+                                                    data-type="pdf" 
+                                                    data-id="${emp.id_karyawan}" 
+                                                    data-tahun="${new Date().getFullYear()}">
+                                                        <i class="fas fa-file-pdf me-1 text-danger"></i> PDF
+                                                    </a>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 `;
@@ -340,33 +332,113 @@
             $('#employeeList').html(html);
         }
 
-        $(document).on('click', '.btn-export', function(e) {
-            e.preventDefault();
+        function handleClickCheck(id) {
+            window.location.href = `/kpi-data/overview/index/personal/${id}`;
+        }
+
+        let exportFilterModalInstance = null;
+
+        function initExportFilterModal() {
+            if (!document.getElementById('exportFilterModal')) {
+                const filterModal = `
+                <div class="modal fade" id="exportFilterModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Filter Export Data</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="exportFilterForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Tahun</label>
+                                        <select class="form-select" name="tahun_filter" id="filterTahun">
+                                            <option value="">Semua Tahun</option>
+                                            ${Array.from({length: 5}, (_, i) => (new Date().getFullYear() - i)).map(y => `<option value="${y}">${y}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Periode</label>
+                                        <select class="form-select" name="periode" id="filterPeriode">
+                                            <option value="all">Semua Periode</option>
+                                            <option value="tahunan">Tahunan</option>
+                                            <option value="kuartalan">Kuartalan</option>
+                                            <option value="bulanan">Bulanan</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3" id="filterQuarter" style="display:none;">
+                                        <label class="form-label">Pilih Kuartal</label>
+                                        <select class="form-select" name="quarter">
+                                            <option value="1">Q1 (Jan-Mar)</option>
+                                            <option value="2">Q2 (Apr-Jun)</option>
+                                            <option value="3">Q3 (Jul-Sep)</option>
+                                            <option value="4">Q4 (Okt-Des)</option>
+                                        </select>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button type="button" class="btn btn-primary" id="btnApplyFilter">Terapkan & Export</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                $('body').append(filterModal);
+                
+                exportFilterModalInstance = new bootstrap.Modal(document.getElementById('exportFilterModal'));
+                
+                $('#filterPeriode').off('change').on('change', function() {
+                    $('#filterQuarter').toggle($(this).val() === 'kuartalan');
+                });
+                
+                $('#btnApplyFilter').off('click').on('click', function() {
+                    applyFilterAndExport();
+                });
+            }
+        }
+
+        function applyFilterAndExport() {
+            if (!window.exportData) return;
             
-            const type = $(this).data('type');
-            const karyawanId = $(this).data('id');
-            const tahun = new Date().getFullYear();
-            const url = type === 'pdf' 
+            const params = new URLSearchParams({
+                id_karyawan: window.exportData.id,
+                tahun: $('#filterTahun').val() || window.exportData.tahun,
+                periode: $('#filterPeriode').val(),
+                quarter: $('#filterQuarter').is(':visible') ? $('select[name="quarter"]').val() : ''
+            });
+            
+            const baseUrl = window.exportData.type === 'pdf' 
                 ? '{{ route("kpi.monitoring.export.pdf") }}' 
                 : '{{ route("kpi.monitoring.export.excel") }}';
             
-            const form = $('<form>', {
-                method: 'GET',
-                action: url,
-                target: '_blank', 
-                style: 'display:none;'
-            }).append($('<input>', { type: 'hidden', name: 'id_karyawan', value: karyawanId }))
-            .append($('<input>', { type: 'hidden', name: 'tahun', value: tahun }));
+            window.open(`${baseUrl}?${params.toString()}`);
             
-            $('body').append(form);
-            
-            if (type === 'pdf') {
-                form.submit();
-            } else {
-                form.submit();
+            if (exportFilterModalInstance) {
+                exportFilterModalInstance.hide();
             }
+        }
+
+        $(document).ready(function() {
+            initExportFilterModal();
             
-            setTimeout(() => form.remove(), 1000);
+            $(document).off('click', '.btn-export').on('click', '.btn-export', function(e) {
+                e.preventDefault();
+                
+                window.exportData = {
+                    type: $(this).data('type'),
+                    id: $(this).data('id'),
+                    tahun: $(this).data('tahun')
+                };
+                
+                $('#exportFilterForm')[0].reset();
+                $('#filterTahun').val(window.exportData.tahun);
+                $('#filterQuarter').hide();
+                
+                if (exportFilterModalInstance) {
+                    exportFilterModalInstance.show();
+                }
+            });
         });
 
         function updateLowPerformanceList(employees) {
