@@ -39,12 +39,29 @@ class LaporanPenjualanController extends Controller
                     ->orderByDesc('tanggal_awal');
 
         // Filter Status
-        if ($status !== null) {
-            $query->where('status', $status);
-        } else {
-            $query->whereIn('status', ['0', '2']);
+        if ($status === '0') {
+            $query->whereNull('deleted_at')
+                ->whereNull('deleted_by')
+                ->where('status', '0')
+                ->where(function ($q) {
+                    $q->whereDoesntHave('peluang')
+                        ->orWhereHas('peluang', function ($subQ) {
+                            $subQ->where('tahap', '!=', 'lost');
+                        });
+                });
+        } elseif ($status === '2') {
+        $query->withTrashed()
+            ->where(function ($q) {
+                $q->whereNotNull('deleted_at')
+                ->orWhere(function ($subQ) {
+                    $subQ->whereNull('deleted_at')
+                        ->whereHas('peluang', function ($p) {
+                            $p->where('tahap', 'lost');
+                        });
+                });
+            });
         }
-
+        
         // Filter Sales & Materi
         if ($request->filled('sales_key')) {
             $query->where('sales_key', $request->sales_key);

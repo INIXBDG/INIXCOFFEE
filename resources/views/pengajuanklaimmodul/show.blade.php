@@ -36,7 +36,7 @@
                                 </div>
                                 <div class="row mb-2">
                                     <div class="col-4">
-                                        <p>Pembuat</p>
+                                        <p>Yang Mengajukan</p>
                                     </div>
                                     <div class="col-1">
                                         <p>:</p>
@@ -47,7 +47,7 @@
                                 </div>
                                 <div class="row mb-2">
                                     <div class="col-4">
-                                        <p>Instruktur</p>
+                                        <p>Pembuat</p>
                                     </div>
                                     <div class="col-1">
                                         <p>:</p>

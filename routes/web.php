@@ -61,6 +61,7 @@ use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\PenukaranSouvenirController;
+use App\Http\Controllers\PerpindahanDBController;
 use App\Http\Controllers\ProjectAdministrationController;
 use App\Http\Controllers\ProjectHandoverController;
 use App\Http\Controllers\ProjectKanbanController;
@@ -84,6 +85,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\KlaimModulController;
 use App\Http\Controllers\KPI\DataTargetController;
+use App\Http\Controllers\LeadProjectController;
+use App\Http\Controllers\ReportSalesProjectController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 /*
@@ -377,6 +380,7 @@ Route::post('/daftar-peserta-exam/store', [App\Http\Controllers\DaftarPesertaExa
 Route::get('/daftar-peserta-exam/get-data', [App\Http\Controllers\DaftarPesertaExamController::class, 'getData'])->name('daftar-peserta-exam.get-data');
 Route::get('/daftar-peserta-exam/{id}/edit', [App\Http\Controllers\DaftarPesertaExamController::class, 'edit'])->name('daftar-peserta-exam.edit');
 Route::put('/daftar-peserta-exam/{id}', [App\Http\Controllers\DaftarPesertaExamController::class, 'update'])->name('daftar-peserta-exam.update');
+Route::post('/daftar-peserta-exam/store-peserta-ajax', [App\Http\Controllers\DaftarPesertaExamController::class, 'storePesertaAjax'])->name('daftar-peserta-exam.storeAjax');
 Route::post('/listexam/delete/{id}', [App\Http\Controllers\ListExamController::class, 'destroy']);
 
 Route::get('/feedbackPelayanan', [App\Http\Controllers\feedbackController::class, 'pelayananFeedbackShow'])->name('feedbackPelayanan');
@@ -768,6 +772,15 @@ Route::prefix('crm')->group(function () {
     Route::post('todo-administrasi/store', [TodoAdministrasiController::class, 'store'])->name('todo-administrasi.store');
     Route::put('todo-administrasi/update/{id}', [TodoAdministrasiController::class, 'update'])->name('todo-administrasi.update');
     Route::delete('todo-administrasi/delete/{id}', [TodoAdministrasiController::class, 'destroy'])->name('todo-administrasi.delete');
+
+    // perpindahan database
+    Route::prefix('perpindahandb')->name('perpindahan-db.')->group(function () {
+        Route::get('/', [PerpindahanDBController::class, 'index'])->name('index');
+        Route::get('/data', [PerpindahanDBController::class, 'getData'])->name('data');
+        Route::get('/sales', [PerpindahanDBController::class, 'getSalesList'])->name('sales');
+        Route::post('/transfer', [PerpindahanDBController::class, 'transfer'])->name('transfer');
+        Route::get('/history/{id}', [PerpindahanDBController::class, 'exportHistory'])->name('history');
+    });
 });
 
 //INVOICE
@@ -914,7 +927,7 @@ Route::prefix('office')->group(function () {
     Route::get('/data-hari-libur/edit/{id}', [OfficeController::class, 'editHariLibur'])->name('editHariLibur');
     Route::post('/data-hari-libur/update/{id}', [OfficeController::class, 'updateHariLibur'])->name('updateHariLibur');
     Route::post('/data-hari-libur/delete/{id}', [OfficeController::class, 'deleteHariLibur'])->name('deleteHariLibur');
-    
+
     Route::get('/table/outstanding/', [OfficeController::class, 'TableOutstanding'])->name('office.table.outstanding');
     Route::get('/grafik/outstanding/', [OfficeController::class, 'GrafikOutstanding'])->name('office.grafik.outstanding');
     Route::get('/grafik/ketepatan-waktu/', [OfficeController::class, 'GrafikKetepatanWaktu'])->name('office.grafik.ketepatan.waktu');
@@ -1340,7 +1353,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/projects/administrasi/get-data', [ProjectAdministrationController::class, 'getAdministrasi'])->name('getAdministrasi');
     Route::post('/projects/administrasi/{id}/update-stage', [ProjectAdministrationController::class, 'updateStage'])->name('administrasi.updateStage');
     Route::resource('/projects/administrasi', ProjectAdministrationController::class);
-
+    Route::post('/projects/{id}/update-info', [ProjectAdministrationController::class, 'updateProjectInfo'])->name('projects.update_info');
     // Route Kanban Project
     Route::get('/projects/kanban', [ProjectKanbanController::class, 'index'])->name('kanban.index');
     Route::get('/projects/kanban/get-tasks', [ProjectKanbanController::class, 'getTasks']);
@@ -1372,4 +1385,19 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/pengajuanklaimmodul/{id}', [KlaimModulController::class, 'destroy'])->name('pengajuanklaimmodul.destroy');
     Route::put('/pengajuanklaimmodul/{id}/approve', [KlaimModulController::class, 'approve'])->name('pengajuanklaimmodul.approve');
     Route::get('/pengajuanklaimmodul/data/{month}/{year}', [KlaimModulController::class, 'getKlaimModul'])->name('pengajuanklaimmodul.data');
+});
+
+// Modul Leads
+Route::prefix('projects/leads')->group(function () {
+    Route::get('/', [LeadProjectController::class, 'index'])->name('leads.index');
+    Route::get('/data', [LeadProjectController::class, 'getLeads'])->name('leads.data');
+    Route::post('/store', [LeadProjectController::class, 'store'])->name('leads.store');
+    Route::post('/{id}/update-status', [LeadProjectController::class, 'updateStatus'])->name('leads.update_status');
+    Route::post('/{id}/update-data', [LeadProjectController::class, 'updateLead'])->name('leads.update_data');
+});
+
+// Modul Rekap Penjualan
+Route::prefix('projects/reports')->group(function () {
+    Route::get('/sales', [ReportSalesProjectController::class, 'index'])->name('reports.sales');
+    Route::get('/sales/data', [ReportSalesProjectController::class, 'getRecapData'])->name('reports.sales.data');
 });

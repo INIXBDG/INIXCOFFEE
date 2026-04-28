@@ -1194,7 +1194,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-sm-6 mt-2">
+                                            {{-- <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
                                                         <div class="col-md-2">
@@ -1210,7 +1210,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </div> --}}
 
                                             @can('View DataKaryawan')
                                                 <div class="col-sm-6 mt-2">
@@ -1605,25 +1605,6 @@
                                                     </div>
                                                 </div>
                                             @endcan
-                                            @can('Fitur Labs dan Subs')
-                                                <div class="col-sm-6 mt-2">
-                                                    <div class="card" id="card-hover">
-                                                        <div class="card-body d-flex">
-                                                            <div class="col-md-2">
-                                                                <i class="fa-solid fa-timeline"
-                                                                    style="font-size: 30px;"></i>
-                                                            </div>
-                                                            <div class="col-md-10" style="margin-left: 10px">
-                                                                <a href="{{ route('pengajuanlabsdansubs.index') }}"
-                                                                    class="link stretched-link text-decoration-none">
-                                                                    <h5 class="card-title">Pengajuan Labs dan Subs</h5>
-                                                                </a>
-                                                                <p class="card-text">menejemen labs dan subs.</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endcan
                                             @can('Fitur Content')
                                                 <div class="col-sm-6 mt-2">
                                                     <div class="card" id="card-hover">
@@ -1957,7 +1938,7 @@
                                                 <div class="card-body">
                                                     <h5 class="text-center card-title">Finance</h5>
                                                     <div class="row">
-                                                        <div class="col-sm-6 mt-2">
+                                                        {{-- <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
                                                                     <div class="col-md-2">
@@ -1974,7 +1955,7 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        </div> --}}
                                                         @can('View CC')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
@@ -2139,7 +2120,7 @@
                                                 <div class="card-body">
                                                     <h5 class="text-center card-title">Education</h5>
                                                     <div class="row">
-                                                        <div class="col-sm-6 mt-2">
+                                                        {{-- <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
                                                                     <div class="col-md-2">
@@ -2156,7 +2137,7 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        </div> --}}
                                                         <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
@@ -2202,7 +2183,25 @@
                                                                 </div>
                                                             </div>
                                                         @endcan
-
+                                                        @can('Fitur Labs dan Subs')
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <i class="fa-solid fa-timeline"
+                                                                                style="font-size: 30px;"></i>
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="{{ route('pengajuanlabsdansubs.index') }}"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Pengajuan Lab</h5>
+                                                                            </a>
+                                                                            <p class="card-text">pengajuan dan manajemen labs</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endcan
                                                         @can('View RekapInstruktur')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
@@ -2462,7 +2461,7 @@
                                         </div>
                                     </div>
                                 @endcan
-                                {{-- @can('Fitur Project') --}}
+                                @can('Fitur Menu Project')
                                     <div class="row">
                                         <div class="col-md-12 mt-1">
                                             <div class="card">
@@ -2492,6 +2491,25 @@
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
                                                                     <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/layout.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="/projects/leads"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Lead Projek
+                                                                            </h5>
+                                                                        </a>
+                                                                        <p class="card-text">Fitur Lead Projek yang akan dilakukan.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
                                                                         <img src="{{ asset('icon/calendar.svg') }}"
                                                                             class="img-responsive" width="30px">
                                                                     </div>
@@ -2501,7 +2519,7 @@
                                                                             <h5 class="card-title">Kanban
                                                                             </h5>
                                                                         </a>
-                                                                        <p class="card-text">Kanban Teknis untuk Project.
+                                                                        <p class="card-text">Kanban Teknis untuk Projek.
                                                                         </p>
                                                                     </div>
                                                                 </div>
@@ -2515,11 +2533,11 @@
                                                                             class="img-responsive" width="30px">
                                                                     </div>
                                                                     <div class="col-md-10" style="margin-left: 10px">
-                                                                        <a href="/projects/handovers" class="link stretched-link text-decoration-none">
-                                                                            <h5 class="card-title">Handovers
+                                                                        <a href="/projects/reports/sales" class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Laporan Penjualan Projek
                                                                             </h5>
                                                                         </a>
-                                                                        <p class="card-text">Manajemen handover project.
+                                                                        <p class="card-text">Dashboard Penjualan Projek.
                                                                         </p>
                                                                     </div>
                                                                 </div>
@@ -2531,7 +2549,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                {{-- @endcan --}}
+                                @endcan
 
                             </div>
                         </div>
