@@ -69,6 +69,8 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Imports\KpiTargetImport;
+use App\Models\DataTarget;
+use App\Models\HariLibur;
 
 class TargetKPIController extends Controller
 {
@@ -101,65 +103,156 @@ class TargetKPIController extends Controller
         return response()->json($karyawan);
     }
 
+    public function getAssistantRoutesByJabatan(Request $request)
+    {
+        $jabatanList = $request->input('jabatan', []);
+        
+        if (!is_array($jabatanList)) {
+            $jabatanList = [$jabatanList];
+        }
+
+        if (empty($jabatanList)) {
+            return response()->json([]);
+        }
+
+        $routeMapping = [
+            'GM' => ['Pemasukan Kotor', 'pemasukan bersih', 'Kepuasan Pelanggan', 'rasio biaya operasional terhadap revenue', 'performa KPI departemen'],
+            'Customer Care' => ['peserta puas dengan pelayanan dan fasilitas training', 'dorong inovasi pelayanan', 'penanganan komplain perseta', 'report persiapan kelas'],
+            'Finance & Accounting' => ['outstanding', 'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'laporan analisis keuangan', 'pencairan biaya operasional', 'penyelesaian tagihan perusahaan', 'akurasi pencatatan masuk'],
+            'HRD' => ['pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan', 'administrasi karyawan'],
+            'Driver' => ['perbaikan kendaraan', 'report kondisi kendaraan', 'kontrol pengeluaran transportasi', 'feedback kenyamanan berkendaran'],
+            'Office Boy' => ['feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian'],
+            'Koordinator ITSM' => ['meningkatkan kepuasan dan loyalitas peserta/client', 'availability sistem internal kritis'],
+            'Programmer' => ['ketepatan waktu penyelesaian fitur', 'mengukur kualitas aplikasi agar minim bug'],
+            'Tim Digital' => ['konsistensi campaign digital', 'efektifitas diital marketing'],
+            'Technical Support' => ['keberhasilan support memenuhi sla', 'kualitas layanan exam'],
+            'Instruktur' => ['presentase kinerja instruktur', 'kepuasan peserta pelatihan', 'upseling lanjutan materi', 'sertifikasi kompetensi internal', 'pelatihan kompetensi eksternal'],
+            'Education Manager' => ['pengembangan kurikulum pelatihan', 'peningkatan knowledge sharing', 'peningkatan kontribusi pelatihan', 'evaluasi kinerja instruktur'],
+            'Sales' => ['target penjualan tahunan', 'biaya akuisisi perclient'],
+            'SPV Sales' => ['meningkatkan revenue perusahaan', 'customer acquisition cost', 'evaluasi kinerja sales'],
+            'Adm Sales' => ['laporan mom', 'akurasi kelengkapan data penjualan', 'todo administrasi'],
+            'Admin Holding' => ['ketepatan waktu po', 'kualitas dokumentasi support dan proctor'],
+        ];
+
+        $kombinasiIT = ['Programmer', 'Tim Digital', 'Technical Support'];
+        $kombinasiSales = ['Sales', 'SPV Sales', 'Adm Sales'];
+        
+        $availableRoutes = [];
+
+        if (count(array_intersect($jabatanList, $kombinasiIT)) === 3) {
+            $availableRoutes = ['kepuasan client ITSM', 'inovation adaption rate', 'persentase gap kompetensi tim terhadap standar skill'];
+        } elseif (count(array_intersect($jabatanList, $kombinasiSales)) === 3) {
+            $availableRoutes = ['peningkatan kemampuan kompetensi sales'];
+        } else {
+            foreach ($jabatanList as $jabatan) {
+                if (isset($routeMapping[$jabatan])) {
+                    $availableRoutes = array_merge($availableRoutes, $routeMapping[$jabatan]);
+                }
+            }
+            $availableRoutes = array_unique($availableRoutes);
+        }
+
+        $dataTargets = DataTarget::whereIn('asistant_route', $availableRoutes)->get(['asistant_route', 'jangka_target', 'tipe_target', 'nilai_target']);
+
+        return response()->json($dataTargets);
+    }
+
+    public function getDataTargetByRoute(Request $request)
+    {
+        $route = $request->query('route');
+        
+        if (!$route) {
+            return response()->json(['error' => 'Parameter route diperlukan'], 400);
+        }
+
+        $dataTarget = DataTarget::where('asistant_route', $route)->first();
+        
+        if (!$dataTarget) {
+            return response()->json(['error' => 'Data target tidak ditemukan'], 404);
+        }
+        
+        return response()->json($dataTarget);
+    }
+
     public function createTarget(Request $request)
     {
         $validated = $request->validate([
-            'id_pembuat' => 'required',
-            'judul_kpi' => 'required',
-            'jabatan' => 'required|array',
-            'jabatan.*' => 'required|string',
-            'karyawan' => 'required|array',
-            'karyawan.*' => 'required',
-            'jangka_target' => 'required|string',
-            'detail_jangka' => 'nullable',
-            'tipe_target' => 'required|string',
-            'nilai_target' => 'required',
-            'asistant_route' => 'required',
+            'id_pembuat'       => 'required',
+            'judul_kpi'        => 'required|string',
+            'deskripsi_kpi'    => 'nullable|string',
+            'jabatan'          => 'required|array',
+            'jabatan.*'        => 'required|string',
+            'karyawan'         => 'nullable|array',
+            'karyawan.*'       => 'required',
+            'asistant_route'   => 'required|string',
+            'detail_jangka'    => 'required',
         ]);
 
-        $createTarget = targetKPI::create([
-            'id_assistant' => null,
-            'id_pembuat' => $validated['id_pembuat'],
-            'judul' => $validated['judul_kpi'],
-            'deskripsi' => $request->input('deskripsi_kpi'),
-            'asistant_route' => $validated['asistant_route'],
-            'status' => '0',
-        ]);
+        $dataTarget = DataTarget::where('asistant_route', $validated['asistant_route'])->first();
 
-        if ($createTarget) {
-            foreach ($validated['jabatan'] as $jabatan) {
-                $dataDivisi = karyawan::where('jabatan', $jabatan)->whereNot('divisi', 'Direksi')->first();
-
-                $detailStore = DetailTargetKPI::create([
-                    'id_targetKPI' => $createTarget->id,
-                    'jabatan' => $jabatan,
-                    'divisi' => $dataDivisi?->divisi,
-                    'jangka_target' => $validated['jangka_target'],
-                    'detail_jangka' => $validated['detail_jangka'],
-                    'tipe_target' => $validated['tipe_target'],
-                    'nilai_target' => $validated['nilai_target'],
-                ]);
-
-                if ($detailStore) {
-                    $karyawanDiJabatanIni = karyawan::whereIn('id', $validated['karyawan'])->where('jabatan', $jabatan)->pluck('id')->toArray();
-
-                    foreach ($karyawanDiJabatanIni as $karyawanId) {
-                        detailPersonKPI::create([
-                            'id_target' => $createTarget->id,
-                            'detailTargetKey' => $detailStore->id,
-                            'id_karyawan' => $karyawanId,
-                        ]);
-                    }
-                }
-            }
+        if (!$dataTarget) {
+            return response()->json(['message' => 'Konfigurasi target tidak ditemukan'], 404);
         }
 
-        return response()->json(
-            [
+        return DB::transaction(function () use ($validated, $dataTarget) {
+            $createTarget = targetKPI::create([
+                'id_pembuat'     => $validated['id_pembuat'],
+                'id_data_target' => $dataTarget->id,
+                'judul'          => $validated['judul_kpi'],
+                'deskripsi'      => $validated['deskripsi_kpi'],
+                'status'         => '0',
+            ]);
+
+            foreach ($validated['jabatan'] as $jabatan) {
+                $dataDivisi = karyawan::where('jabatan', $jabatan)
+                    ->where('divisi', '!=', 'Direksi')
+                    ->value('divisi');
+
+                $detail_jangka_value = null;
+                if ($dataTarget->jangka_target === 'Tahunan' && !empty($validated['detail_jangka'])) {
+                    $detail_jangka_value = $validated['detail_jangka'];
+                }
+
+                $detailStore = DetailTargetKPI::create([
+                    'id_targetKPI'   => $createTarget->id,
+                    'jabatan'        => $jabatan,
+                    'divisi'         => $dataDivisi,
+                    'id_data_target' => $dataTarget->id,
+                    'jangka_target'  => $dataTarget->jangka_target, 
+                    'detail_jangka'  => $detail_jangka_value,       
+                    'tipe_target'    => $dataTarget->tipe_target,   
+                    'nilai_target'   => $dataTarget->nilai_target,  
+                ]);
+
+                $karyawanIds = [];
+                if (!empty($validated['karyawan'])) {
+                    $karyawanIds = karyawan::whereIn('id', $validated['karyawan'])
+                        ->where('jabatan', $jabatan)
+                        ->where('status_aktif', '1')
+                        ->pluck('id')
+                        ->toArray();
+                } else {
+                    $karyawanIds = karyawan::where('jabatan', $jabatan)
+                        ->where('divisi', '!=', 'Direksi')
+                        ->where('status_aktif', '1')
+                        ->pluck('id')
+                        ->toArray();
+                }
+
+                foreach ($karyawanIds as $karyawanId) {
+                    detailPersonKPI::create([
+                        'id_target'       => $createTarget->id,
+                        'detailTargetKey' => $detailStore->id,
+                        'id_karyawan'     => $karyawanId,
+                    ]);
+                }
+            }
+
+            return response()->json([
                 'message' => 'Target berhasil dibuat',
-            ],
-            201,
-        );
+                'data'    => ['id_target' => $createTarget->id]
+            ], 201);
+        });
     }
 
     public function importTarget(Request $request)
@@ -184,8 +277,7 @@ class TargetKPIController extends Controller
                 return $this->previewImport($file, $options);
             }
 
-            $import = new KpiTargetImport($options);
-            
+            $import = new \App\Imports\KpiTargetImport($options);
             Excel::import($import, $file);
             
             $summary = $import->getSummary();
@@ -202,12 +294,15 @@ class TargetKPIController extends Controller
             }
 
             if (!empty($summary['errors'])) {
-                Log::warning("Import KPI dengan error", ['errors' => $summary['errors']]);
+                Log::warning("Import KPI dengan error", [
+                    'user_id' => auth()->id(),
+                    'errors' => array_slice($summary['errors'], 0, 20)
+                ]);
             }
 
             return back()->with([
                 'success' => implode(' ', $messages),
-                'import_summary' => $summary,
+                'import_errors' => $summary['errors'],
             ]);
 
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
@@ -215,7 +310,9 @@ class TargetKPIController extends Controller
             $errorList = [];
             
             foreach ($failures as $failure) {
-                $errorList[] = "Baris #{$failure->row()}: {$failure->errors()[0]}";
+                $field = $failure->attribute();
+                $errors = implode(', ', $failure->errors());
+                $errorList[] = "Baris #{$failure->row()} [{$field}]: {$errors}";
             }
 
             return back()->withInput()->withErrors([
@@ -227,29 +324,40 @@ class TargetKPIController extends Controller
             Log::error("Import KPI failed", [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'user_id' => Auth::id(),
+                'user_id' => auth()->id(),
             ]);
 
             return back()->withInput()->withErrors([
-                'file' => 'Terjadi kesalahan saat mengimport: ' . $e->getMessage()
+                'file' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
             ]);
         }
     }
 
-
     private function previewImport($file, array $options)
     {
-        $import = new KpiTargetImport($options);
+        $import = new \App\Imports\KpiTargetImport($options);
         
         try {
             Excel::toCollection($import, $file);
+            
+            $summary = $import->getSummary();
+            
+            if (!empty($summary['errors'])) {
+                return back()->withErrors([
+                    'file' => "Preview gagal:\n" . implode("\n", array_slice($summary['errors'], 0, 10))
+                ]);
+            }
             
             return back()->with('success', '✅ Preview: Semua data valid! Siap untuk diimport.');
             
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
             $errors = collect($e->failures())->map(function ($failure) {
-                return "Baris #{$failure->row()}: {$failure->errors()[0]}";
+                return "Baris #{$failure->row()} [{$failure->attribute()}]: " . implode(', ', $failure->errors());
             })->take(10);
+            
+            return back()->withErrors([
+                'file' => "Validasi preview:\n" . implode("\n", $errors->toArray())
+            ]);
         }
     }
 
@@ -394,15 +502,15 @@ class TargetKPIController extends Controller
             return response()->json(['average_progress' => 0, 'message' => 'Karyawan tidak ditemukan'], 404);
         }
 
-        $calculatePenilaianScore = function ($collectionNilaiKPI) {
-            $persentaseJenis = [
-                'General Manager' => 35,
-                'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
-                'Rekan Kerja (Satu Divisi)' => 20,
-                'Pekerja (Beda Divisi)' => 10,
-                'Self Apprisial' => 5,
-            ];
+        $persentaseJenis = [
+            'General Manager' => 35,
+            'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
+            'Rekan Kerja (Satu Divisi)' => 20,
+            'Pekerja (Beda Divisi)' => 10,
+            'Self Apprisial' => 5,
+        ];
 
+        $calculatePenilaianScore = function ($collectionNilaiKPI) use ($persentaseJenis) {
             $jenisTotalRaw = [];
 
             foreach ($persentaseJenis as $jenis => $bobot) {
@@ -454,106 +562,105 @@ class TargetKPIController extends Controller
                 : 0;
         };
 
-        $calculatePersonalKpiDashboard = function ($tEmpId, $jPembuat, $iPembuat, $iUser, $tGet, $cYear) use ($calculatePenilaianScore) {
+        $listKPI = targetKPI::with(['detailTargetKPI'])
+            ->whereYear('created_at', $currentYear)
+            ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($targetEmployeeId) {
+                $q->where('id_karyawan', $targetEmployeeId);
+            })
+            ->get();
 
-            $listKPI = targetKPI::with(['detailTargetKPI'])
-                ->whereYear('created_at', $cYear)
-                ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($tEmpId) {
-                    $q->where('id_karyawan', $tEmpId);
-                })
-                ->get();
+        $allNilaiKPI = nilaiKPI::where('id_evaluated', $targetEmployeeId)
+            ->whereYear('created_at', $currentYear)
+            ->get();
 
-            $allNilaiKPI = nilaiKPI::where('id_evaluated', $tEmpId)
-                ->whereYear('created_at', $cYear)
-                ->get();
+        $progressList = [];
+        $monthly_progress = [];
+        $daily_progress_per_month = [];
 
-            $progressList = [];
-            $monthlyData = [];
+        foreach ($listKPI as $item) {
+            $detail = $item->detailTargetKPI->first();
+            if (!$detail) continue;
 
-            foreach ($listKPI as $item) {
-                $detail = $item->detailTargetKPI->first();
-                if (!$detail) continue;
+            $result = $this->getCalculationByRoute($item, $targetEmployeeId);
+            if (!isset($result['progress'])) continue;
 
-                $result = $this->getCalculationByRoute($item, $tEmpId);
-                if (!isset($result['progress'])) continue;
+            $progress = $result['progress'];
 
-                $progress = $result['progress'];
-
-                if ($detail->tipe_target === 'rupiah') {
-                    $progress = $detail->nilai_target > 0
-                        ? ($progress / $detail->nilai_target) * 100
-                        : 0;
-                }
-
-                if ($progress > 0) {
-                    $progressList[] = $progress;
-
-                    $monthKey = $item->created_at->format('Y-m');
-
-                    if (!isset($monthlyData[$monthKey])) {
-                        $monthlyData[$monthKey] = [];
-                    }
-
-                    $monthlyData[$monthKey][] = $progress;
-                }
+            if ($detail->tipe_target === 'rupiah') {
+                $progress = $detail->nilai_target > 0
+                    ? ($progress / $detail->nilai_target) * 100
+                    : 0;
             }
 
-            $avgTargetYearly = count($progressList) > 0
-                ? round(array_sum($progressList) / count($progressList), 2)
+            if ($progress > 0) {
+                $progressList[] = $progress;
+
+                $monthKey = $item->created_at->format('Y-m');
+                $dayKey = $item->created_at->format('Y-m-d');
+
+                if (!isset($monthly_progress[$monthKey])) {
+                    $monthly_progress[$monthKey] = [];
+                }
+                $monthly_progress[$monthKey][] = $progress;
+
+                if (!isset($daily_progress_per_month[$monthKey])) {
+                    $daily_progress_per_month[$monthKey] = [];
+                }
+                if (!isset($daily_progress_per_month[$monthKey][$dayKey])) {
+                    $daily_progress_per_month[$monthKey][$dayKey] = [];
+                }
+                $daily_progress_per_month[$monthKey][$dayKey][] = $progress;
+            }
+        }
+
+        $avgTargetYearly = count($progressList) > 0
+            ? round(array_sum($progressList) / count($progressList), 2)
+            : 0;
+
+        $avgPenilaianYearly = $calculatePenilaianScore($allNilaiKPI);
+
+        if ($avgTargetYearly == 0 && $avgPenilaianYearly == 0) {
+            $nilaiKpiAnda = 0;
+            $titleGetData = 'Tidak ada data';
+        } elseif ($avgTargetYearly == 0) {
+            $nilaiKpiAnda = $avgPenilaianYearly * 0.4;
+            $titleGetData = 'Dari Penilaian';
+        } elseif ($avgPenilaianYearly == 0) {
+            $nilaiKpiAnda = $avgTargetYearly;
+            $titleGetData = 'Dari Target KPI';
+        } else {
+            $nilaiKpiAnda = round($avgTargetYearly * 0.6 + $avgPenilaianYearly * 0.4, 2);
+            $titleGetData = 'Gabungan Target KPI & Penilaian';
+        }
+
+        $kpiPerbulan = [];
+        $now = now();
+
+        for ($i = 3; $i >= 0; $i--) {
+            $date = $now->copy()->subMonths($i);
+            $key = $date->format('Y-m');
+
+            $nilai = isset($monthly_progress[$key]) && count($monthly_progress[$key]) > 0
+                ? round(array_sum($monthly_progress[$key]) / count($monthly_progress[$key]), 2)
                 : 0;
 
-            $avgPenilaianYearly = $calculatePenilaianScore($allNilaiKPI);
-
-            if ($avgTargetYearly == 0 && $avgPenilaianYearly == 0) {
-                $nilaiKpiAnda = 0;
-                $titleGetData = 'Tidak ada data';
-            } elseif ($avgTargetYearly == 0) {
-                $nilaiKpiAnda = $avgPenilaianYearly * 0.4;
-                $titleGetData = 'Dari Penilaian';
-            } elseif ($avgPenilaianYearly == 0) {
-                $nilaiKpiAnda = $avgTargetYearly;
-                $titleGetData = 'Dari Target KPI';
-            } else {
-                $nilaiKpiAnda = round($avgTargetYearly * 0.6 + $avgPenilaianYearly * 0.4, 2);
-                $titleGetData = 'Gabungan Target KPI & Penilaian';
-            }
-
-            $kpiPerbulan = [];
-            $now = now();
-
-            for ($i = 3; $i >= 0; $i--) {
-                $date = $now->copy()->subMonths($i);
-                $key = $date->format('Y-m');
-
-                $nilai = isset($monthlyData[$key]) && count($monthlyData[$key]) > 0
-                    ? round(array_sum($monthlyData[$key]) / count($monthlyData[$key]), 2)
-                    : 0;
-
-                $kpiPerbulan[] = [
-                    'bulan' => $date->locale('id')->isoFormat('MMMM YYYY'),
-                    'nilai' => $nilai
-                ];
-            }
-
-            return [
-                'nilai_kpi_anda' => $nilaiKpiAnda,
-                'progress_kpi_perbulan' => $kpiPerbulan,
-                'performance' => 0,
-                'performance_title' => 'Stabil',
-                'deadline' => "{$cYear}-12-31 23:59:59",
-                'countdown' => '',
-                'titleGet_data' => $titleGetData,
+            $kpiPerbulan[] = [
+                'bulan' => $date->locale('id')->isoFormat('MMMM YYYY'),
+                'nilai' => $nilai
             ];
-        };
+        }
 
-        $personalDashboard = $calculatePersonalKpiDashboard(
-            $targetEmployeeId,
-            $jabatan_pembuat,
-            $id_pembuat,
-            $idUser,
-            $typeGet,
-            $currentYear
-        );
+        $personalDashboard = [
+            'nilai_kpi_anda' => $nilaiKpiAnda,
+            'progress_kpi_perbulan' => $kpiPerbulan,
+            'performance' => 0,
+            'performance_title' => 'Stabil',
+            'deadline' => "{$currentYear}-12-31 23:59:59",
+            'countdown' => '',
+            'titleGet_data' => $titleGetData,
+            'daily_progress_per_month' => $daily_progress_per_month,
+            'monthly_progress' => $monthly_progress,
+        ];
 
         $divisionTeamData = [];
         $currentUser = karyawan::find($id_pembuat);
@@ -562,21 +669,69 @@ class TargetKPIController extends Controller
             $teamMembers = karyawan::where('divisi', $currentUser->divisi)->get();
 
             foreach ($teamMembers as $member) {
-                $kpiData = $calculatePersonalKpiDashboard(
-                    $member->id,
-                    $jabatan_pembuat,
-                    $id_pembuat,
-                    $member->id,
-                    'divisi',
-                    $currentYear
-                );
+                $listKPITeam = targetKPI::with(['detailTargetKPI'])
+                    ->whereYear('created_at', $currentYear)
+                    ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($member) {
+                        $q->where('id_karyawan', $member->id);
+                    })
+                    ->get();
+
+                $allNilaiKPITeam = nilaiKPI::where('id_evaluated', $member->id)
+                    ->whereYear('created_at', $currentYear)
+                    ->get();
+
+                $progressListTeam = [];
+                $monthly_progress_team = [];
+
+                foreach ($listKPITeam as $item) {
+                    $detail = $item->detailTargetKPI->first();
+                    if (!$detail) continue;
+
+                    $result = $this->getCalculationByRoute($item, $member->id);
+                    if (!isset($result['progress'])) continue;
+
+                    $progress = $result['progress'];
+
+                    if ($detail->tipe_target === 'rupiah') {
+                        $progress = $detail->nilai_target > 0
+                            ? ($progress / $detail->nilai_target) * 100
+                            : 0;
+                    }
+
+                    if ($progress > 0) {
+                        $progressListTeam[] = $progress;
+
+                        $monthKey = $item->created_at->format('Y-m');
+                        if (!isset($monthly_progress_team[$monthKey])) {
+                            $monthly_progress_team[$monthKey] = [];
+                        }
+                        $monthly_progress_team[$monthKey][] = $progress;
+                    }
+                }
+
+                $avgTargetYearlyTeam = count($progressListTeam) > 0
+                    ? round(array_sum($progressListTeam) / count($progressListTeam), 2)
+                    : 0;
+
+                $avgPenilaianYearlyTeam = $calculatePenilaianScore($allNilaiKPITeam);
+
+                if ($avgTargetYearlyTeam == 0 && $avgPenilaianYearlyTeam == 0) {
+                    $nilaiKpiTeam = 0;
+                } elseif ($avgTargetYearlyTeam == 0) {
+                    $nilaiKpiTeam = $avgPenilaianYearlyTeam * 0.4;
+                } elseif ($avgPenilaianYearlyTeam == 0) {
+                    $nilaiKpiTeam = $avgTargetYearlyTeam;
+                } else {
+                    $nilaiKpiTeam = round($avgTargetYearlyTeam * 0.6 + $avgPenilaianYearlyTeam * 0.4, 2);
+                }
 
                 $divisionTeamData[] = [
                     'nama_karyawan' => $member->nama_lengkap,
                     'jabatan' => $member->divisi,
-                    'nilaitargetkpi' => $kpiData['nilai_kpi_anda'] ?? 0,
-                    'performance' => $kpiData['performance_title'] ?? 'Stabil',
-                    'nilai_performance' => $kpiData['performance'] ?? 0,
+                    'nilaitargetkpi' => $nilaiKpiTeam,
+                    'performance' => 0,
+                    'performance_title' => 'Stabil',
+                    'nilai_performance' => 0,
                 ];
             }
         }
@@ -590,16 +745,16 @@ class TargetKPIController extends Controller
         foreach ($divisions as $divisi) {
             $employees = karyawan::where('divisi', $divisi)->pluck('id');
 
-            $listKPI = targetKPI::with(['detailTargetKPI'])
+            $listKPIDiv = targetKPI::with(['detailTargetKPI'])
                 ->whereYear('created_at', $currentYear)
                 ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($employees) {
                     $q->whereIn('id_karyawan', $employees);
                 })
                 ->get();
 
-            $progressList = [];
+            $progressListDiv = [];
 
-            foreach ($listKPI as $item) {
+            foreach ($listKPIDiv as $item) {
                 foreach ($employees as $empId) {
                     $detail = $item->detailTargetKPI->first();
                     if (!$detail) continue;
@@ -616,13 +771,13 @@ class TargetKPIController extends Controller
                     }
 
                     if (is_numeric($progress) && $progress > 0) {
-                        $progressList[] = $progress;
+                        $progressListDiv[] = $progress;
                     }
                 }
             }
 
-            $avgKpiValue = count($progressList) > 0
-                ? round(array_sum($progressList) / count($progressList), 2)
+            $avgKpiValue = count($progressListDiv) > 0
+                ? round(array_sum($progressListDiv) / count($progressListDiv), 2)
                 : 0;
 
             $divisionKpiData[] = [
@@ -655,26 +810,23 @@ class TargetKPIController extends Controller
             if (!$karyawan) {
                 return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
             }
-
             $divisiUser = $karyawan->divisi;
         } else {
             $karyawan = karyawan::find($id_pembuat);
             if (!$karyawan) {
                 return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
             }
-
             $divisiUser = $karyawan->divisi;
         }
 
         if ($jabatan_pembuat === 'GM' || $jabatan_pembuat === 'HRD' || $jabatan_pembuat === 'Direktur Utama') {
             $jabatanKhusus = ['SPV Sales', 'Koordinator ITSM', 'Education Manager', 'GM'];
-
             $dataJabatan = karyawan::where(function ($q) use ($jabatanKhusus) {
                 $q->whereIn('jabatan', $jabatanKhusus)->orWhere('divisi', 'Office');
             })
-                ->whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
-                ->distinct()
-                ->pluck('jabatan');
+            ->whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
+            ->distinct()
+            ->pluck('jabatan');
         } else {
             $dataJabatan = karyawan::where('divisi', $divisiUser)
                 ->whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
@@ -682,7 +834,11 @@ class TargetKPIController extends Controller
                 ->pluck('jabatan');
         }
 
-        $query = targetKPI::with(['karyawan', 'detailTargetKPI'])->whereYear('created_at', now()->year);
+        $query = targetKPI::with([
+            'karyawan',
+            'detailTargetKPI.dataTarget',
+            'detailTargetKPI.detailPersonKPI'
+        ])->whereYear('created_at', now()->year);
 
         if (filled($idUser) && filled($typeGet)) {
             $query->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($idUser) {
@@ -703,16 +859,37 @@ class TargetKPIController extends Controller
                     }
 
                     $tenggat_waktu = null;
+                    $jangka = strtolower($detail->jangka_target ?? '');
+                    $detailJangka = $detail->detail_jangka;
 
-                    switch (strtolower($detail->jangka_target)) {
+                    switch ($jangka) {
                         case 'tahunan':
-                            $year = (int) $detail->detail_jangka;
+                            $year = (int) $detailJangka;
                             $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
+                            break;
+                        case 'bulanan':
+                            if ($detailJangka && preg_match('/(\d{4})-(\d{2})/', $detailJangka, $m)) {
+                                $lastDay = date('t', strtotime("$detailJangka-01"));
+                                $tenggat_waktu = "$detailJangka-$lastDay";
+                            }
+                            break;
+                        case 'kuartalan':
+                            if ($detailJangka && preg_match('/(\d{4})-Q([1-4])/', $detailJangka, $m)) {
+                                $monthEnd = ((int)$m[2]) * 3;
+                                $lastDay = date('t', strtotime("{$m[1]}-$monthEnd-01"));
+                                $tenggat_waktu = "{$m[1]}-$monthEnd-$lastDay";
+                            }
+                            break;
+                        case 'mingguan':
+                            if ($detailJangka && preg_match('/(\d{4})-W(\d{1,2})/', $detailJangka, $m)) {
+                                $firstDay = strtotime("{$m[1]}-01-01");
+                                $weekStart = strtotime("+".(($m[2]-1)*7)." days", $firstDay);
+                                $tenggat_waktu = date('Y-m-d', strtotime("+6 days", $weekStart));
+                            }
                             break;
                     }
 
                     $personId = !empty($idUser) ? (int) $idUser : null;
-
                     $progress = $this->resolveProgress($item, $personId);
 
                     return [
@@ -738,6 +915,7 @@ class TargetKPIController extends Controller
                 ->filter()
                 ->values(),
             'jabatan_list' => $dataJabatan,
+            'routes' => DataTarget::select('asistant_route', 'jangka_target', 'tipe_target', 'nilai_target')->get(),
         ];
 
         return response()->json($data);
@@ -745,171 +923,139 @@ class TargetKPIController extends Controller
 
     private function resolveProgress($item, $personId)
     {
-        $progress = null;
+        $progress = 0;
 
-        // Office / GM
-        if ($item->asistant_route === 'Kepuasan Pelanggan') {
+        $detail = $item->detailTargetKPI->first();
+        $asistantRoute = $detail->dataTarget->asistant_route ?? null;
+
+        if ($asistantRoute === 'Kepuasan Pelanggan') {
             $progress = $this->calculateProgressKepuasanPelanggan($item, $personId);
-        } elseif ($item->asistant_route === 'Pemasukan Kotor') {
+        } elseif ($asistantRoute === 'Pemasukan Kotor') {
             $progress = $this->calculatePemasukanKotor($item, $personId);
-        } elseif ($item->asistant_route == 'pemasukan bersih') {
+        } elseif ($asistantRoute === 'pemasukan bersih') {
             $progress = $this->calculatePemasukanBersih($item, $personId);
-        } elseif ($item->asistant_route === 'rasio biaya operasional terhadap revenue') {
+        } elseif ($asistantRoute === 'rasio biaya operasional terhadap revenue') {
             $progress = $this->calculateRasioBiayaOperasionalTerhadapRevenue($item, $personId);
-        } elseif ($item->asistant_route === 'performa KPI departemen') {
+        } elseif ($asistantRoute === 'performa KPI departemen') {
             $progress = $this->calculatePerformaKPIDepartemen($item, $personId);
         }
-
-        // CS
-        elseif ($item->asistant_route === 'peserta puas dengan pelayanan dan fasilitas training') {
+        elseif ($asistantRoute === 'peserta puas dengan pelayanan dan fasilitas training') {
             $progress = $this->calculatePesertaPuasDenganPelayananDanFasilitasTraining($item, $personId);
-        } elseif ($item->asistant_route === 'dorong inovasi pelayanan') {
+        } elseif ($asistantRoute === 'dorong inovasi pelayanan') {
             $progress = $this->calculateDorongInovasiPelayanan($item, $personId);
-        } elseif ($item->asistant_route === 'penanganan komplain peserta') {
+        } elseif ($asistantRoute === 'penanganan komplain peserta') {
             $progress = $this->calculatePenangananKomplainPerseta($item, $personId);
-        } elseif ($item->asistant_route === 'report persiapan kelas') {
+        } elseif ($asistantRoute === 'report persiapan kelas') {
             $progress = $this->calculateReportPersiapanKelas($item, $personId);
         }
-
-        // Finance
-        elseif ($item->asistant_route === 'outstanding') {
+        elseif ($asistantRoute === 'outstanding') {
             $progress = $this->calculateOutstanding($item, $personId);
-        } elseif ($item->asistant_route === 'inisiatif efisiensi keuangan') {
+        } elseif ($asistantRoute === 'inisiatif efisiensi keuangan') {
             $progress = $this->calculateInisiatifEfisiensiKeuangan($item, $personId);
-        } elseif ($item->asistant_route === 'mengurangi manual work dan error') {
+        } elseif ($asistantRoute === 'mengurangi manual work dan error') {
             $progress = $this->calculateMengurangiManualWorkDanError($item, $personId);
-        } elseif ($item->asistant_route === 'laporan analisis keuangan') {
+        } elseif ($asistantRoute === 'laporan analisis keuangan') {
             $progress = $this->calculateLaporanAnalisisKeuangan($item, $personId);
-        } elseif ($item->asistant_route === 'pencairan biaya operasional') {
+        } elseif ($asistantRoute === 'pencairan biaya operasional') {
             $progress = $this->calculatePencairanBiayaOperasional($item, $personId);
-        } elseif ($item->asistant_route === 'penyelesaian tagihan perusahaan') {
+        } elseif ($asistantRoute === 'penyelesaian tagihan perusahaan') {
             $progress = $this->calculatePenyelesaianTagihanPerusahaan($item, $personId);
-        } elseif ($item->asistant_route === 'akurasi pencatatan masuk') {
+        } elseif ($asistantRoute === 'akurasi pencatatan masuk') {
             $progress = $this->calculateAkurasiPencatatanMasuk($item, $personId);
         }
-
-        // HRD
-        elseif ($item->asistant_route === 'pelaksanaan kegiatan karyawan') {
+        elseif ($asistantRoute === 'pelaksanaan kegiatan karyawan') {
             $progress = $this->calculatePelaksanaanKegiatanKaryawan($item, $personId);
-        } elseif ($item->asistant_route === 'pengeluaran biaya karyawan') {
+        } elseif ($asistantRoute === 'pengeluaran biaya karyawan') {
             $progress = $this->calculatePengeluaranBiayaKaryawan($item, $personId);
-        } elseif ($item->asistant_route === 'administrasi karyawan') {
+        } elseif ($asistantRoute === 'administrasi karyawan') {
             $progress = $this->calculateAdministrasiKaryawan($item, $personId);
         }
-
-        // Driver
-        elseif ($item->asistant_route === 'perbaikan kendaraan') {
+        elseif ($asistantRoute === 'perbaikan kendaraan') {
             $progress = $this->calculatePerbaikanKendaraan($item, $personId);
-        } elseif ($item->asistant_route === 'kontrol pengeluaran transportasi') {
+        } elseif ($asistantRoute === 'kontrol pengeluaran transportasi') {
             $progress = $this->calculateKontrolPengeluaranTransportasi($item, $personId);
-        } elseif ($item->asistant_route === 'report kondisi kendaraan') {
+        } elseif ($asistantRoute === 'report kondisi kendaraan') {
             $progress = $this->calculateReportKondisiKendaraan($item, $personId);
-        } elseif ($item->asistant_route === 'feedback kenyamanan berkendaran') {
+        } elseif ($asistantRoute === 'feedback kenyamanan berkendaran') {
             $progress = $this->calculateFeedbackKenyamananBerkendara($item, $personId);
         }
-
-        //Admin Holding
-        elseif ($item->asistant_route === 'ketepatan waktu po') {
+        elseif ($asistantRoute === 'ketepatan waktu po') {
             $progress = $this->calculateKetepatanWaktuPo($item, $personId);
-        } elseif ($item->asistant_route === 'kualitas dokumentasi support dan proctor') {
+        } elseif ($asistantRoute === 'kualitas dokumentasi support dan proctor') {
             $progress = $this->calculatekualitasDokumentasiSupportDanProctor($item, $personId);
         }
-
-        // OB
-        elseif ($item->asistant_route === 'feedback kebersihan dan kenyamanan') {
+        elseif ($asistantRoute === 'feedback kebersihan dan kenyamanan') {
             $progress = $this->calculateFeedbackKebersihanDanKenyamanan($item, $personId);
-        } elseif ($item->asistant_route === 'penyelesaian tugas harian') {
+        } elseif ($asistantRoute === 'penyelesaian tugas harian') {
             $progress = $this->calculatePenyelesaianTugasHarian($item, $personId);
         }
-
-        // ITSM
-        elseif ($item->asistant_route === 'kepuasan client ITSM') {
+        elseif ($asistantRoute === 'kepuasan client ITSM') {
             $progress = $this->calculateProgressKepuasanClientITSM($item, $personId);
-        } elseif ($item->asistant_route === 'inovation adaption rate') {
+        } elseif ($asistantRoute === 'inovation adaption rate') {
             $progress = $this->calculateInovationAdaptionRate($item, $personId);
         }
-
-        // Koordinator ITSM
-        elseif ($item->asistant_route === 'availability sistem internal kritis') {
+        elseif ($asistantRoute === 'availability sistem internal kritis') {
             $progress = $this->calculateAvailabilitySistemInternalKritis($item, $personId);
-        } elseif ($item->asistant_route === 'meningkatkan kepuasan dan loyalitas peserta/client') {
+        } elseif ($asistantRoute === 'meningkatkan kepuasan dan loyalitas peserta/client') {
             $progress = $this->calculateMeningkatkanKepuasanDanLoyalitasPeserta($item, $personId);
-        } elseif ($item->asistant_route === 'persentase gap kompetensi tim terhadap standar skill') {
+        } elseif ($asistantRoute === 'persentase gap kompetensi tim terhadap standar skill') {
             $progress = $this->calculatePersentaseGapKompetensi($item, $personId);
         }
-
-        // Programmer
-        elseif ($item->asistant_route === 'ketepatan waktu penyelesaian fitur') {
+        elseif ($asistantRoute === 'ketepatan waktu penyelesaian fitur') {
             $progress = $this->calculateProgressKetepatanWaktuPenyelesaianFitur($item, $personId);
-        } elseif ($item->asistant_route === 'mengukur kualitas aplikasi agar minim bug') {
+        } elseif ($asistantRoute === 'mengukur kualitas aplikasi agar minim bug') {
             $progress = $this->calculateMengukurKualitasAplikasiAgarMinimBug($item, $personId);
         }
-
-        // Digital
-        elseif ($item->asistant_route === 'konsistensi campaign digital') {
+        elseif ($asistantRoute === 'konsistensi campaign digital') {
             $progress = $this->calculateKonsistensiCampaignDigital($item, $personId);
-        } elseif ($item->asistant_route === 'efektifitas diital marketing') {
+        } elseif ($asistantRoute === 'efektifitas diital marketing') {
             $progress = $this->calculateEfektifitasDiitalMarketing($item, $personId);
         }
-
-        // TS
-        elseif ($item->asistant_route === 'keberhasilan support memenuhi sla') {
+        elseif ($asistantRoute === 'keberhasilan support memenuhi sla') {
             $progress = $this->calculateTingkatKeberhasilanSupportMemenuhiSLA($item, $personId);
-        } elseif ($item->asistant_route === 'kualitas layanan exam') {
+        } elseif ($asistantRoute === 'kualitas layanan exam') {
             $progress = $this->calculateKualitasLayananExam($item, $personId);
         }
-
-        // Education
-        elseif ($item->asistant_route === 'kepuasan peserta pelatihan') {
+        elseif ($asistantRoute === 'kepuasan peserta pelatihan') {
             $progress = $this->calculateKepuasanPesertaPelatihan($item, $personId);
-        } elseif ($item->asistant_route === 'upseling lanjutan materi') {
+        } elseif ($asistantRoute === 'upseling lanjutan materi') {
             $progress = $this->calculateUpselingLanjutanMateri($item, $personId);
-        } elseif ($item->asistant_route === 'sertifikasi kompetensi internal') {
+        } elseif ($asistantRoute === 'sertifikasi kompetensi internal') {
             $progress = $this->calculateSertifikasiKompetensiInternal($item, $personId);
-        } elseif ($item->asistant_route === 'pelatihan kompetensi eksternal') {
+        } elseif ($asistantRoute === 'pelatihan kompetensi eksternal') {
             $progress = $this->calculatePelatihanKompetensiEksternal($item, $personId);
-        } elseif ($item->asistant_route === 'presentase kinerja instruktur') {
+        } elseif ($asistantRoute === 'presentase kinerja instruktur') {
             $progress = $this->calculatePresentaseKinerjaInstruktur($item, $personId);
         }
-
-        // Education Manager
-        elseif ($item->asistant_route === 'pengembangan kurikulum pelatihan') {
+        elseif ($asistantRoute === 'pengembangan kurikulum pelatihan') {
             $progress = $this->calculatePengembanganKurikulumPelatihan($item, $personId);
-        } elseif ($item->asistant_route === 'peningkatan knowledge sharing') {
+        } elseif ($asistantRoute === 'peningkatan knowledge sharing') {
             $progress = $this->calculatePeningkatanKnowledgeSharing($item, $personId);
-        } elseif ($item->asistant_route === 'peningkatan kontribusi pelatihan') {
+        } elseif ($asistantRoute === 'peningkatan kontribusi pelatihan') {
             $progress = $this->calculatePeningkatanKontribusiPelatihan($item, $personId);
-        } elseif ($item->asistant_route === 'evaluasi kinerja instruktur') {
+        } elseif ($asistantRoute === 'evaluasi kinerja instruktur') {
             $progress = $this->calculateEvaluasiKinerjaInstruktur($item, $personId);
         }
-
-        // Sales & Marketing
-        // Sales
-        elseif ($item->asistant_route === 'target penjualan tahunan') {
+        elseif ($asistantRoute === 'target penjualan tahunan') {
             $progress = $this->calculateTargetPenjualanTahunan($item, $personId);
-        } elseif ($item->asistant_route === 'peningkatan kemampuan kompetensi sales') {
+        } elseif ($asistantRoute === 'peningkatan kemampuan kompetensi sales') {
             $progress = $this->calculatePeningkatanKemampuanKompetensiSales($item, $personId);
-        } elseif ($item->asistant_route === 'customer acquisition cost') {
+        } elseif ($asistantRoute === 'customer acquisition cost') {
             $progress = $this->calculateCustomerAcquisitionCost($item, $personId);
         }
-
-        // SPV Sales
-        elseif ($item->asistant_route === 'meningkatkan revenue perusahaan') {
+        elseif ($asistantRoute === 'meningkatkan revenue perusahaan') {
             $progress = $this->calculateMeningkatkanRevenuePerusahaan($item, $personId);
-        } elseif ($item->asistant_route === 'evaluasi kinerja sales') {
+        } elseif ($asistantRoute === 'evaluasi kinerja sales') {
             $progress = $this->calculateEvaluasiKinerjaSales($item, $personId);
         }
-
-        elseif ($item->asistant_route === 'biaya akuisisi client') {
+        elseif ($asistantRoute === 'biaya akuisisi client') {
             $progress = $this->calculateBiayaAkuisisiClient($item, $personId);
         }
-
-        // Admin
-        elseif ($item->asistant_route === 'laporan mom') {
+        elseif ($asistantRoute === 'laporan mom') {
             $progress = $this->calculateLaporanMOM($item, $personId);
-        } elseif ($item->asistant_route === 'akurasi kelengkapan data penjualan') {
+        } elseif ($asistantRoute === 'akurasi kelengkapan data penjualan') {
             $progress = $this->calculateAkurasiKelengkapanDataPenjualan($item, $personId);
-        } elseif ($item->asistant_route === 'todo administrasi') {
+        } elseif ($asistantRoute === 'todo administrasi') {
             $progress = $this->calculateTodoAdministrasi($item);
         }
 
@@ -920,14 +1066,17 @@ class TargetKPIController extends Controller
     //target GM
     private function calculateProgressKepuasanPelanggan($item, $personId)
     {
-        $detailJangkas = $item->detailTargetKPI->pluck('detail_jangka')->filter();
-
-        if ($detailJangkas->isEmpty()) {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $tahun = (int) $detailJangkas->first();
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
 
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
@@ -986,14 +1135,19 @@ class TargetKPIController extends Controller
 
     private function calculatePemasukanKotor($item, $personId)
     {
-        $details = $item->detailTargetKPI;
-
-        if ($details->isEmpty()) {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $tahun = (int) $details->first()->detail_jangka;
-        $nilaiTarget = (float) $details->first()->nilai_target;
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         if ($nilaiTarget <= 0) {
             return 0;
@@ -1016,10 +1170,18 @@ class TargetKPIController extends Controller
     {
         $detail = $item->detailTargetKPI->first();
 
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
+
         $labaKotor = $this->calculatePemasukanKotor($item, $personId);
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
 
         if ($labaKotor == 0) {
             return 0;
@@ -1049,7 +1211,17 @@ class TargetKPIController extends Controller
     private function calculateRasioBiayaOperasionalTerhadapRevenue($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
 
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
         $nilaiTarget = (float) $detail->nilai_target;
 
         $labaKotor = $this->calculatePemasukanKotor($item, $personId);
@@ -1078,7 +1250,7 @@ class TargetKPIController extends Controller
 
     private function calculatePerformaKPIDepartemen($item, $personId)
     {
-        $allTargets = targetKPI::with(['detailTargetKPI'])
+        $allTargets = targetKPI::with(['detailTargetKPI.dataTarget'])
             ->whereYear('created_at', now()->year)
             ->get();
 
@@ -1114,11 +1286,13 @@ class TargetKPIController extends Controller
 
                 if ($targetItem->asistant_route === 'Pemasukan Kotor') {
                     $dataRupiah = $this->calculatePemasukanKotor($targetItem, $personId);
-                    $targetValue = $targetItem->detail_target ?? 0;
+                    $detail = $targetItem->detailTargetKPI->first();
+                    $targetValue = $detail ? (float) $detail->nilai_target : 0;
                     $progress = $targetValue > 0 ? max(0, min(100, round(($dataRupiah / $targetValue) * 100, 1))) : 0;
                 } elseif ($targetItem->asistant_route === 'meningkatkan revenue perusahaan') {
                     $dataRupiah = $this->calculateMeningkatkanRevenuePerusahaan($targetItem, $personId);
-                    $targetValue = $targetItem->detail_target ?? 0;
+                    $detail = $targetItem->detailTargetKPI->first();
+                    $targetValue = $detail ? (float) $detail->nilai_target : 0;
                     $progress = $targetValue > 0 ? max(0, min(100, round(($dataRupiah / $targetValue) * 100, 1))) : 0;
                 } else {
                     $progress = $this->resolveProgress($targetItem, $personId);
@@ -1147,13 +1321,19 @@ class TargetKPIController extends Controller
     private function calculatePesertaPuasDenganPelayananDanFasilitasTraining($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
+
         $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
             return 0;
@@ -1204,9 +1384,12 @@ class TargetKPIController extends Controller
     private function calculateDorongInovasiPelayanan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
 
         $nilaiTarget = (float) $detail->nilai_target;
-
         $progress = 0;
 
         if (!is_null($detail->manual_value)) {
@@ -1225,13 +1408,22 @@ class TargetKPIController extends Controller
     private function calculatePenangananKomplainPerseta($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
 
         if (!$detail) {
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
             return 0;
@@ -1269,9 +1461,18 @@ class TargetKPIController extends Controller
     private function calculateReportPersiapanKelas($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-        $nilaiTarget = (float) $detail->nilai_target;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
 
-        $tahun = (int) ($item->detail_jangka ?? now()->year);
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $totalRkm = RKM::whereYear('tanggal_awal', $tahun)->count();
 
@@ -1290,13 +1491,18 @@ class TargetKPIController extends Controller
     private function calculateOutstanding($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
             return 0;
@@ -1328,8 +1534,8 @@ class TargetKPIController extends Controller
     private function calculateInisiatifEfisiensiKeuangan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (is_null($detail) || is_null($detail->manual_value)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
@@ -1351,8 +1557,8 @@ class TargetKPIController extends Controller
     private function calculateMengurangiManualWorkDanError($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (is_null($detail) || is_null($detail->manual_value)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
@@ -1374,14 +1580,18 @@ class TargetKPIController extends Controller
     private function calculateLaporanAnalisisKeuangan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        $nilaiTarget = (float) $detail->nilai_target;
-
-        $tahun = (int) $detail->detail_jangka;
-
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
+
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $analisisData = AnalysisReport::where('year', $tahun)->count();
 
@@ -1403,16 +1613,18 @@ class TargetKPIController extends Controller
     private function calculatePencairanBiayaOperasional($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -1472,16 +1684,18 @@ class TargetKPIController extends Controller
     private function calculatePenyelesaianTagihanPerusahaan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -1505,17 +1719,18 @@ class TargetKPIController extends Controller
     private function calculateAkurasiPencatatanMasuk($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
-
+        
+        $nilaiTarget = (float) $detail->nilai_target;
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
@@ -1557,14 +1772,13 @@ class TargetKPIController extends Controller
     private function calculatePelaksanaanKegiatanKaryawan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (is_null($detail) || is_null($detail->manual_value)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
-
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
 
@@ -1613,14 +1827,14 @@ class TargetKPIController extends Controller
     private function calculatePengeluaranBiayaKaryawan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
 
@@ -1700,14 +1914,14 @@ class TargetKPIController extends Controller
     private function calculateAdministrasiKaryawan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (is_null($detail)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
 
@@ -1730,13 +1944,18 @@ class TargetKPIController extends Controller
     private function calculatePerbaikanKendaraan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        $nilaiTarget = (float) $detail->nilai_target;
-        $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
+
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -1762,17 +1981,18 @@ class TargetKPIController extends Controller
     private function calculateKontrolPengeluaranTransportasi($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -1814,17 +2034,18 @@ class TargetKPIController extends Controller
     private function calculateReportKondisiKendaraan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $startPeriode = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $endPeriode = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -1906,17 +2127,18 @@ class TargetKPIController extends Controller
     private function calculateFeedbackKenyamananBerkendara($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -1954,17 +2176,18 @@ class TargetKPIController extends Controller
     private function calculateFeedbackKebersihanDanKenyamanan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -2005,13 +2228,18 @@ class TargetKPIController extends Controller
     private function calculatePenyelesaianTugasHarian($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        $nilaiTarget = (float) $detail->nilai_target;
-        $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
+
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         if ($personId !== null) {
             $daftarTugas = KontrolTugas::whereYear('created_at', $tahun)
@@ -2038,17 +2266,18 @@ class TargetKPIController extends Controller
     private function calculateMeningkatkanKepuasanDanLoyalitasPeserta($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -2109,16 +2338,18 @@ class TargetKPIController extends Controller
     private function calculateAvailabilitySistemInternalKritis($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -2141,21 +2372,21 @@ class TargetKPIController extends Controller
 
     private function calculatePersentaseGapKompetensi($item, $personId = null)
     {
-        $details = $item->detailTargetKPI;
-
-        if ($details->isEmpty()) {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $firstDetail = $details->first();
-        $nilaiTarget = (float) $firstDetail->nilai_target;
-        $tahun = (int) $firstDetail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun <= 0) {
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
-        $detailIds = $details->pluck('id');
+        $detailIds = $detail->pluck('id');
 
         $query = detailPersonKPI::whereIn('detailTargetKey', $detailIds);
 
@@ -2195,90 +2426,110 @@ class TargetKPIController extends Controller
 
     //Tim Digital
     private function calculateKonsistensiCampaignDigital($item, $personId)
-	{
-		$details = $item->detailTargetKPI;
-
-		if ($details->isEmpty()) {
-			return 0;
-		}
-
-		$tahun = (int) $details->first()->detail_jangka;
-
-		if ($tahun < 2000 || $tahun > now()->year + 1) {
-			$tahun = now()->year;
-		}
-
-		$start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-		$end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-		$contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
-			->whereNotNull('upload_date')
-			->get();
-
-		if ($contentSchedules->isEmpty()) {
-			return 0;
-		}
-
-		$weeklyCounts = [];
-
-		foreach ($contentSchedules as $schedule) {
-			$weekKey = Carbon::parse($schedule->upload_date)->format('o-\WW');
-			$weeklyCounts[$weekKey] = ($weeklyCounts[$weekKey] ?? 0) + 1;
-		}
-
-		$targetMingguan = 3;
-
-		// =====================
-		// ✅ CONSISTENCY SCORE
-		// =====================
-		$compliantWeeks = 0;
-		$totalWeeksWithData = 0;
-
-		foreach ($weeklyCounts as $count) {
-			if ($count >= 1) {
-				$totalWeeksWithData++;
-
-				if ($count >= $targetMingguan) {
-					$compliantWeeks++;
-				}
-			}
-		}
-
-		$CS = $totalWeeksWithData === 0
-			? 0
-			: $compliantWeeks / $totalWeeksWithData;
-
-		// =====================
-		// ✅ PRODUCTIVITY SCORE
-		// =====================
-		$totalKonten = $contentSchedules->count();
-		$jumlahMinggu = Carbon::parse($start)->diffInWeeks($end) + 1;
-
-		$PS = $totalKonten / ($targetMingguan * $jumlahMinggu);
-		$PS = min($PS, 1);
-
-		// =====================
-		// ✅ FINAL HYBRID SCORE
-		// =====================
-		$finalScore = ($CS * 0.6) + ($PS * 0.4);
-
-		return round($finalScore * 100, 1);
-	}
-
-    private function calculateEfektifitasDiitalMarketing($item, $personId)
     {
-        $details = $item->detailTargetKPI;
-
-        if ($details->isEmpty()) {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
             return 0;
         }
 
-        $tahun = (int) $details->first()->detail_jangka;
-
-        if ($tahun < 2000 || $tahun > now()->year + 1) {
-            $tahun = now()->year;
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return 0;
         }
 
+        $response = Http::get("https://libur.deno.dev/api", [
+            'year' => $tahun
+        ]);
+
+        if ($response->successful()) {
+            foreach ($response->json() as $libur) {
+                HariLibur::updateOrCreate(
+                    ['tanggal' => $libur['date']],
+                    [
+                        'nama' => $libur['name'],
+                        'year' => $tahun,
+                        'tipe' => $libur['is_national_holiday'] ? 'national' : 'other'
+                    ]
+                );
+            }
+        }
+
+        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+
+        $hariLibur = HariLibur::where('year', $tahun)->pluck('tanggal')->map(function ($d) {
+            return Carbon::parse($d)->toDateString();
+        })->toArray();
+
+        $contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
+            ->whereNotNull('upload_date')
+            ->get()
+            ->filter(function ($item) use ($hariLibur) {
+                return !in_array(Carbon::parse($item->upload_date)->toDateString(), $hariLibur);
+            });
+
+        if ($contentSchedules->isEmpty()) {
+            return 0;
+        }
+
+        $weeklyCounts = [];
+
+        foreach ($contentSchedules as $schedule) {
+            $date = Carbon::parse($schedule->upload_date);
+            $weekStart = $date->copy()->startOfWeek(Carbon::MONDAY);
+            $weekEnd = $date->copy()->endOfWeek(Carbon::SUNDAY);
+            $weekKey = $weekStart->format('Y-m-d') . '_' . $weekEnd->format('Y-m-d');
+            $weeklyCounts[$weekKey] = ($weeklyCounts[$weekKey] ?? 0) + 1;
+        }
+
+        $targetMingguan = 3;
+
+        $compliantWeeks = 0;
+        $totalWeeksWithData = 0;
+
+        foreach ($weeklyCounts as $count) {
+            if ($count >= 1) {
+                $totalWeeksWithData++;
+                if ($count >= $targetMingguan) {
+                    $compliantWeeks++;
+                }
+            }
+        }
+
+        $CS = $totalWeeksWithData === 0 ? 0 : $compliantWeeks / $totalWeeksWithData;
+
+        $totalKonten = $contentSchedules->count();
+
+        $jumlahMinggu = 0;
+        $current = $start->copy()->startOfWeek(Carbon::MONDAY);
+
+        while ($current <= $end) {
+            $jumlahMinggu++;
+            $current->addWeek();
+        }
+
+        $PS = $totalKonten / ($targetMingguan * $jumlahMinggu);
+        $PS = min($PS, 1);
+
+        $finalScore = ($CS * 0.6) + ($PS * 0.4);
+
+        return round($finalScore * 100, 1);
+    }
+
+    private function calculateEfektifitasDiitalMarketing($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
@@ -2305,39 +2556,50 @@ class TargetKPIController extends Controller
     //Programmer
     private function calculateMengukurKualitasAplikasiAgarMinimBug($item, $personId)
     {
-        $details = $item->detailTargetKPI;
-
-        if ($details->isEmpty()) {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $firstDetail = $details->first();
-        $nilaiTarget = (float) $firstDetail->nilai_target;
-        $tahun = (int) $firstDetail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun <= 0) {
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
 
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        $nilaiTarget = (float) $detail->nilai_target;
 
-        $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)->pluck('id_karyawan')->unique()->toArray();
+        $start = Carbon::create($tahun, 1, 1, 0, 0, 0, 'Asia/Jakarta');
+        $end = Carbon::create($tahun, 12, 31, 23, 59, 59, 'Asia/Jakarta');
+
+        $idKaryawans = detailPersonKPI::where('detailTargetKey', $detail->id)
+            ->pluck('id_karyawan')
+            ->unique()
+            ->toArray();
 
         if (empty($idKaryawans)) {
             return 0;
         }
 
-        $picNames = karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->map(fn($nama) => explode(' ', trim($nama))[0] ?? '')->filter()->unique()->values()->toArray();
+        $picNames = karyawan::whereIn('id', $idKaryawans)
+            ->pluck('nama_lengkap')
+            ->map(fn($nama) => explode(' ', trim($nama))[0] ?? '')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
 
         if (empty($picNames)) {
             return 0;
         }
 
         $normalizedPicNames = array_map(function ($name) {
-            if ($name === 'Stepanus') return 'Stefan';
-            if ($name === 'Jonathan') return 'Valen';
-            return $name;
+            return match ($name) {
+                'Stepanus' => 'Stefan',
+                'Jonathan' => 'Valen',
+                default => $name,
+            };
         }, $picNames);
 
         $errorQuery = Tickets::whereBetween('created_at', [$start, $end])
@@ -2353,15 +2615,18 @@ class TargetKPIController extends Controller
             if (!$karyawanData) {
                 return 0;
             }
+
             $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
             if (!$firstName) {
                 return 0;
             }
-            if ($firstName === 'Stepanus') {
-                $firstName = 'Stefan';
-            } elseif ($firstName === 'Jonathan') {
-                $firstName = 'Valen';
-            }
+
+            $firstName = match ($firstName) {
+                'Stepanus' => 'Stefan',
+                'Jonathan' => 'Valen',
+                default => $firstName,
+            };
+
             $errorQuery->where('pic', $firstName);
             $requestQuery->where('pic', $firstName);
         } else {
@@ -2374,7 +2639,7 @@ class TargetKPIController extends Controller
 
         $jumlahError = $ticketsError->count();
         $jumlahRequest = $ticketsRequest->count();
-        $totalTicket = $jumlahRequest + $jumlahError;
+        $totalTicket = $jumlahError + $jumlahRequest;
 
         if ($totalTicket === 0) {
             return 0;
@@ -2388,72 +2653,91 @@ class TargetKPIController extends Controller
             $totalSkorError = 0;
 
             foreach ($ticketsError as $ticket) {
-                $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
-                if (strlen($ticket->tanggal_selesai) > 10) {
-                    $endAt = Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta');
-                } else {
-                    $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
+                try {
+                    $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
+
+                    $endAt = strlen($ticket->tanggal_selesai) > 10
+                        ? Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta')
+                        : Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
+
+                    $durasiJam = $this->hitungJamKerja($startAt, $endAt);
+
+                    $skorDurasi = match (true) {
+                        $durasiJam <= 4 => 100,
+                        $durasiJam <= 8 => 80,
+                        $durasiJam <= 24 => 60,
+                        default => 30,
+                    };
+
+                    $bobot = match ($ticket->tingkat_kesulitan) {
+                        'Major' => 1.5,
+                        'Moderate' => 1.2,
+                        default => 1.0,
+                    };
+
+                    $totalSkorError += min(100, $skorDurasi * $bobot);
+                } catch (\Exception $e) {
+                    continue;
                 }
-                $durasiJam = $this->hitungJamKerja($startAt, $endAt);
-
-                $skorDurasi = match (true) {
-                    $durasiJam <= 4 => 100,
-                    $durasiJam <= 8 => 80,
-                    $durasiJam <= 24 => 60,
-                    default => 30,
-                };
-
-                $bobot = match ($ticket->tingkat_kesulitan) {
-                    'Major' => 1.5,
-                    'Moderate' => 1.2,
-                    default => 1.0,
-                };
-
-                $skorError = min(100, $skorDurasi * $bobot);
-                $totalSkorError += $skorError;
             }
 
-            $rataSkorError = $totalSkorError / $jumlahError;
+            $rataSkorError = $jumlahError > 0 ? $totalSkorError / $jumlahError : 0;
         }
 
-        $skorKualitas = $skorRasio * 0.5 + $rataSkorError * 0.5;
+        $skorKualitas = ($skorRasio * 0.5) + ($rataSkorError * 0.5);
 
         $progress = $nilaiTarget > 0 ? ($skorKualitas / $nilaiTarget) * 100 : 0;
-        $progress = round($progress, 1);
-        $progress = min($progress, 100);
 
-        return $progress;
+        return min(100, round($progress, 1));
     }
 
     private function calculateProgressKetepatanWaktuPenyelesaianFitur($item, $personId)
     {
-        $details = $item->detailTargetKPI;
-
-        if ($details->isEmpty()) {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $firstDetail = $details->first();
-        $nilaiTarget = (float) $firstDetail->nilai_target;
-        $tahun = (int) $firstDetail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun <= 0) {
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
 
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        $nilaiTarget = (float) $detail->nilai_target;
 
-        $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)->pluck('id_karyawan')->unique()->toArray();
+        $start = Carbon::create($tahun, 1, 1, 0, 0, 0, 'Asia/Jakarta');
+        $end = Carbon::create($tahun, 12, 31, 23, 59, 59, 'Asia/Jakarta');
 
-        $picNames = karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->map(fn($nama) => explode(' ', $nama)[0] ?? '')->filter()->unique()->values()->toArray();
+        $idKaryawans = detailPersonKPI::where('detailTargetKey', $detail->id)
+            ->pluck('id_karyawan')
+            ->unique()
+            ->toArray();
 
-        if ($personId !== null) {
-            $picJabatan = karyawan::whereIn('id', $idKaryawans)->pluck('jabatan')->unique()->map(fn($n) => ucwords(strtolower($n)))->values()->toArray();
-        } else {
-            $targetJabatanList = $details->pluck('jabatan')->unique()->toArray();
-            $picJabatan = karyawan::whereIn('jabatan', $targetJabatanList)->pluck('jabatan')->unique()->map(fn($n) => ucwords(strtolower($n)))->values()->toArray();
+        if (empty($idKaryawans)) {
+            return 0;
         }
+
+        $picNames = karyawan::whereIn('id', $idKaryawans)
+            ->pluck('nama_lengkap')
+            ->map(fn($nama) => explode(' ', trim($nama))[0] ?? '')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (empty($picNames)) {
+            return 0;
+        }
+
+        $picJabatan = karyawan::whereIn('id', $idKaryawans)
+            ->pluck('jabatan')
+            ->filter()
+            ->unique()
+            ->map(fn($n) => ucwords(strtolower($n)))
+            ->values()
+            ->toArray();
 
         $jabatanFilter = array_map(function ($jabatan) {
             return match (strtolower($jabatan)) {
@@ -2474,22 +2758,23 @@ class TargetKPIController extends Controller
             ->whereBetween('created_at', [$start, $end])
             ->whereNotNull('tanggal_selesai');
 
-        if (!empty($picNames)) {
-            if ($personId !== null) {
-                $karyawanData = karyawan::find($personId);
-                if (!$karyawanData) {
-                    return 0;
-                }
-                $firstName = explode(' ', $karyawanData->nama_lengkap)[0] ?? '';
-                if ($firstName === 'Stepanus') {
-                    $firstName = 'Stefan';
-                } elseif ($firstName === 'Jonathan') {
-                    $firstName = 'Valen';
-                }
-                $ticketQuery->where('pic', $firstName);
-            } else {
-                $ticketQuery->whereIn('pic', $picNames);
+        if ($personId !== null) {
+            $karyawanData = karyawan::find($personId);
+            if (!$karyawanData) {
+                return 0;
             }
+
+            $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
+
+            $firstName = match ($firstName) {
+                'Stepanus' => 'Stefan',
+                'Jonathan' => 'Valen',
+                default => $firstName,
+            };
+
+            $ticketQuery->where('pic', $firstName);
+        } else {
+            $ticketQuery->whereIn('pic', $picNames);
         }
 
         $tickets = $ticketQuery->get();
@@ -2502,220 +2787,190 @@ class TargetKPIController extends Controller
         $total = $tickets->count();
 
         foreach ($tickets as $ticket) {
-            $priority = 'Other';
-
-            if (in_array(strtolower($ticket->tingkat_kesulitan), ['major', 'moderate'])) {
-                $priority = 'High';
-            } elseif (in_array(strtolower($ticket->tingkat_kesulitan), ['minor', 'normal']) && $ticket->kategori === 'Error (Aplikasi)') {
-                $priority = 'Medium';
-            } elseif ($ticket->kategori === 'Request') {
-                $priority = 'Low';
-            }
-
-            $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
-
-            if (strlen($ticket->tanggal_selesai) > 10) {
-                $endAt = Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta');
-            } else {
-                $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
-            }
-
-            $actualHours = $this->hitungJamKerja($startAt, $endAt);
-            $slaMet = false;
-
-            if ($priority === 'High' && $actualHours <= 24) {
-                $slaMet = true;
-            } elseif ($priority === 'Medium' && $actualHours <= 40) {
-                $slaMet = true;
-            } elseif ($priority === 'Low') {
-                $slaMet = true;
-            }
-
-            if ($slaMet) {
-                $metCount++;
-            }
-        }
-
-        $realisasiPersen = $total > 0 ? ($metCount / $total) * 100 : 0;
-        $progress = $nilaiTarget > 0 ? ($realisasiPersen / $nilaiTarget) * 100 : 0;
-
-        return min(100, round($progress, 1));
-    }
-
-    //TS
-    private function calculateTingkatKeberhasilanSupportMemenuhiSLA($item, $personId)
-    {
-        $details = $item->detailTargetKPI;
-
-        if ($details->isEmpty()) {
-            return 0;
-        }
-
-        $firstDetail = $details->first();
-        $nilaiTarget = (float) $firstDetail->nilai_target;
-        $tahun = (int) $firstDetail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun <= 0) {
-            return 0;
-        }
-
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-        $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)->pluck('id_karyawan')->unique()->toArray();
-
-        if (empty($idKaryawans)) {
-            return 0;
-        }
-
-        $picNames = karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->map(fn($nama) => explode(' ', trim($nama))[0] ?? '')->filter()->unique()->values()->toArray();
-
-        if (empty($picNames)) {
-            return 0;
-        }
-
-        if ($personId !== null) {
-            $picJabatan = karyawan::whereIn('id', $idKaryawans)->pluck('jabatan')->unique()->map(fn($n) => ucwords(strtolower($n)))->values()->toArray();
-        } else {
-            $targetJabatanList = $details->pluck('jabatan')->unique()->toArray();
-            $picJabatan = karyawan::whereIn('jabatan', $targetJabatanList)->pluck('jabatan')->unique()->map(fn($n) => ucwords(strtolower($n)))->values()->toArray();
-        }
-
-        $keperluanPatterns = [];
-        foreach ($picJabatan as $jabatan) {
-            $jabatanLower = strtolower($jabatan);
-            if (str_contains($jabatanLower, 'programmer') || str_contains($jabatanLower, 'koordinator itsm')) {
-                $keperluanPatterns[] = 'Programming';
-            } elseif (str_contains($jabatanLower, 'technical support') || str_contains($jabatanLower, 'tech support')) {
-                $keperluanPatterns[] = 'Technical Support';
-            }
-        }
-
-        $keperluanPatterns = array_unique(array_filter($keperluanPatterns));
-
-        if (empty($keperluanPatterns)) {
-            return 0;
-        }
-
-        $ticketQuery = DB::table('tickets')
-            ->select('created_at', 'tanggal_response', 'jam_response', 'tanggal_selesai', 'jam_selesai', 'pic', 'keperluan')
-            ->whereIn('keperluan', $keperluanPatterns)
-            ->whereNotNull('tanggal_selesai')
-            ->whereBetween('created_at', [$start, $end]);
-
-        if ($personId !== null) {
-            $karyawanData = karyawan::find($personId);
-            if (!$karyawanData) {
-                return 0;
-            }
-            $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
-            if (!$firstName) {
-                return 0;
-            }
-            $ticketQuery->where('pic', $firstName);
-        } else {
-            $ticketQuery->whereIn('pic', $picNames);
-        }
-
-        $rawTickets = $ticketQuery->get();
-
-        if ($rawTickets->isEmpty()) {
-            return 0;
-        }
-
-        $totalTickets = 0;
-        $resolutionMet = 0;
-
-        foreach ($rawTickets as $ticket) {
             try {
-                $createdAt = Carbon::parse($ticket->created_at);
+                $priority = 'Low';
 
-                $responseAt = null;
-                if (!empty($ticket->tanggal_response) && !empty($ticket->jam_response)) {
-                    $responseAt = Carbon::createFromFormat('Y-m-d H:i:s', $ticket->tanggal_response . ' ' . $ticket->jam_response);
+                if (in_array(strtolower($ticket->tingkat_kesulitan), ['major', 'moderate'])) {
+                    $priority = 'High';
+                } elseif ($ticket->kategori === 'Error (Aplikasi)') {
+                    $priority = 'Medium';
                 }
 
-                $resolvedAt = null;
-                if (!empty($ticket->tanggal_selesai) && !empty($ticket->jam_selesai)) {
-                    $resolvedAt = Carbon::createFromFormat('Y-m-d H:i:s', $ticket->tanggal_selesai . ' ' . $ticket->jam_selesai);
-                }
+                $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
 
-                if (!$resolvedAt || !$createdAt) {
-                    continue;
-                }
+                $endAt = strlen($ticket->tanggal_selesai) > 10
+                    ? Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta')
+                    : Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
 
-                $totalTickets++;
+                $actualHours = $this->hitungJamKerja($startAt, $endAt);
 
-                $startResolution = $responseAt ?? $createdAt;
+                $slaMet = match ($priority) {
+                    'High' => $actualHours <= 24,
+                    'Medium' => $actualHours <= 40,
+                    default => true,
+                };
 
-                $current = clone $startResolution;
-                $endCalc = clone $resolvedAt;
-                $totalHours = 0;
-
-                $workStartHour = 8;
-                $workEndHour = 17;
-
-                while ($current->lt($endCalc)) {
-                    if (in_array($current->dayOfWeek, [0, 6])) {
-                        $current->startOfDay()->addDays(1)->setTime($workStartHour, 0, 0);
-                        continue;
-                    }
-
-                    if ($current->hour < $workStartHour) {
-                        $current->setTime($workStartHour, 0, 0);
-                    }
-
-                    if ($current->hour >= $workEndHour) {
-                        $current->startOfDay()->addDays(1)->setTime($workStartHour, 0, 0);
-                        continue;
-                    }
-
-                    $endOfWorkDay = clone $current;
-                    $endOfWorkDay->setTime($workEndHour, 0, 0);
-
-                    $segmentEnd = $endOfWorkDay->lt($endCalc) ? $endOfWorkDay : $endCalc;
-
-                    $diffInMinutes = $current->diffInMinutes($segmentEnd);
-                    $totalHours += $diffInMinutes / 60.0;
-
-                    $current = clone $segmentEnd;
-                    if ($current->lt($endCalc)) {
-                        $current->startOfDay()->addDays(1)->setTime($workStartHour, 0, 0);
-                    }
-                }
-
-                $actualResolutionHours = round($totalHours, 2);
-
-                if ($actualResolutionHours <= 8) {
-                    $resolutionMet++;
+                if ($slaMet) {
+                    $metCount++;
                 }
             } catch (\Exception $e) {
                 continue;
             }
         }
 
-        if ($totalTickets === 0) {
+        $realisasiPersen = ($metCount / $total) * 100;
+        $progress = $nilaiTarget > 0 ? ($realisasiPersen / $nilaiTarget) * 100 : 0;
+
+        return min(100, round($progress, 1));
+    }
+    //TS
+    private function calculateTingkatKeberhasilanSupportMemenuhiSLA($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $progress = ($resolutionMet / $totalTickets) * 100;
-        return round($progress, 1);
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $start = Carbon::create($tahun, 1, 1, 0, 0, 0, 'Asia/Jakarta');
+        $end = Carbon::create($tahun, 12, 31, 23, 59, 59, 'Asia/Jakarta');
+
+        $idKaryawans = detailPersonKPI::where('detailTargetKey', $detail->id)
+            ->pluck('id_karyawan')
+            ->unique()
+            ->toArray();
+
+        if (empty($idKaryawans)) {
+            return 0;
+        }
+
+        $picNames = karyawan::whereIn('id', $idKaryawans)
+            ->pluck('nama_lengkap')
+            ->map(fn($nama) => explode(' ', trim($nama))[0] ?? '')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (empty($picNames)) {
+            return 0;
+        }
+
+        $picJabatan = karyawan::whereIn('id', $idKaryawans)
+            ->pluck('jabatan')
+            ->filter()
+            ->unique()
+            ->map(fn($n) => strtolower($n))
+            ->values()
+            ->toArray();
+
+        $keperluanPatterns = [];
+
+        foreach ($picJabatan as $jabatan) {
+            if (str_contains($jabatan, 'programmer') || str_contains($jabatan, 'koordinator itsm')) {
+                $keperluanPatterns[] = 'Programming';
+            } elseif (str_contains($jabatan, 'technical support')) {
+                $keperluanPatterns[] = 'Technical Support';
+            }
+        }
+
+        $keperluanPatterns = array_unique($keperluanPatterns);
+
+        if (empty($keperluanPatterns)) {
+            return 0;
+        }
+
+        $ticketQuery = DB::table('tickets')
+            ->whereIn('keperluan', $keperluanPatterns)
+            ->whereBetween('created_at', [$start, $end])
+            ->whereNotNull('tanggal_selesai');
+
+        if ($personId !== null) {
+            $karyawanData = karyawan::find($personId);
+            if (!$karyawanData) {
+                return 0;
+            }
+
+            $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
+            $ticketQuery->where('pic', $firstName);
+        } else {
+            $ticketQuery->whereIn('pic', $picNames);
+        }
+
+        $tickets = $ticketQuery->get();
+
+        if ($tickets->isEmpty()) {
+            return 0;
+        }
+
+        $total = 0;
+        $met = 0;
+
+        foreach ($tickets as $ticket) {
+            try {
+                $createdAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
+
+                if (empty($ticket->tanggal_selesai)) {
+                    continue;
+                }
+
+                $resolvedAt = Carbon::parse(
+                    strlen($ticket->tanggal_selesai) > 10
+                        ? $ticket->tanggal_selesai
+                        : $ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'),
+                    'Asia/Jakarta'
+                );
+
+                $startAt = $createdAt;
+
+                if (!empty($ticket->tanggal_response) && !empty($ticket->jam_response)) {
+                    $startAt = Carbon::createFromFormat(
+                        'Y-m-d H:i:s',
+                        $ticket->tanggal_response . ' ' . $ticket->jam_response,
+                        'Asia/Jakarta'
+                    );
+                }
+
+                $hours = $this->hitungJamKerja($startAt, $resolvedAt);
+
+                $total++;
+
+                if ($hours <= 8) {
+                    $met++;
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        if ($total === 0) {
+            return 0;
+        }
+
+        return round(($met / $total) * 100, 1);
     }
 
     private function calculateKualitasLayananExam($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -2748,17 +3003,18 @@ class TargetKPIController extends Controller
     private function calculateProgressKepuasanClientITSM($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -2803,9 +3059,18 @@ class TargetKPIController extends Controller
     private function calculateInovationAdaptionRate($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-        $nilaiTarget = (float) $detail->nilai_target;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
 
-        $tahun = (int) ($detail->detail_jangka ?? now()->year);
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $totalIde = IdeInovasi::whereYear('created_at', $tahun)->count();
 
@@ -2823,18 +3088,18 @@ class TargetKPIController extends Controller
     private function calculateKepuasanPesertaPelatihan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
-
+        
+        $nilaiTarget = (float) $detail->nilai_target;
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
@@ -2939,17 +3204,18 @@ class TargetKPIController extends Controller
     private function calculateUpselingLanjutanMateri($item, $personId): float
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -2981,18 +3247,18 @@ class TargetKPIController extends Controller
     private function calculateSertifikasiKompetensiInternal($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
-
+        
+        $nilaiTarget = (float) $detail->nilai_target;
         $startYear = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $endYear = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
@@ -3040,18 +3306,18 @@ class TargetKPIController extends Controller
     private function calculatePelatihanKompetensiEksternal($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
-
+        
+        $nilaiTarget = (float) $detail->nilai_target;
         $startYear = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $endYear = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
@@ -3095,18 +3361,18 @@ class TargetKPIController extends Controller
 
     private function calculatePresentaseKinerjaInstruktur($item, $personId) {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
-
+        
+        $nilaiTarget = (float) $detail->nilai_target;
         $isMonthly = true;
 
         if ($isMonthly) {
@@ -3192,16 +3458,18 @@ class TargetKPIController extends Controller
     private function calculatePengembanganKurikulumPelatihan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $dataMateri = Materi::whereYear('created_at', $tahun)->get();
 
@@ -3227,16 +3495,18 @@ class TargetKPIController extends Controller
     private function calculatePeningkatanKnowledgeSharing($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $dataMateri = ActivityInstruktur::whereYear('activity_date', $tahun)->where('activity_type', 'Sharing Knowledge')->get();
 
@@ -3268,16 +3538,18 @@ class TargetKPIController extends Controller
     private function calculatePeningkatanKontribusiPelatihan($item)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (is_null($detail) || is_null($detail->nilai_target) || is_null($detail->detail_jangka)) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $startDate = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $endDate = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -3328,17 +3600,18 @@ class TargetKPIController extends Controller
     private function calculateEvaluasiKinerjaInstruktur($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $instrukturs = Karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')
@@ -3401,17 +3674,18 @@ class TargetKPIController extends Controller
     private function calculateTargetPenjualanTahunan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $totalSales = RKM::where('status', '0')
             ->whereYear('tanggal_awal', $tahun);
@@ -3453,16 +3727,18 @@ class TargetKPIController extends Controller
     private function calculateMeningkatkanRevenuePerusahaan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $peluang = Peluang::with('rkm.perhitunganNetSales')->whereYear('created_at', $tahun)->get();
 
@@ -3498,18 +3774,18 @@ class TargetKPIController extends Controller
     private function calculateCustomerAcquisitionCost($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
-
+        
+        $nilaiTarget = (float) $detail->nilai_target;
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
@@ -3557,20 +3833,22 @@ class TargetKPIController extends Controller
 
         return round($progress, 1);
     }
+
     private function calculateBiayaAkuisisiClient($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-        $nilaiTarget = (float) $detail->nilai_target;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $peluang = Peluang::with('rkm.perhitunganNetSales')
             ->whereYear('created_at', $tahun)
@@ -3617,16 +3895,18 @@ class TargetKPIController extends Controller
     private function calculateLaporanMOM($item)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $momCount = LaporanHarianSales::whereYear('created_at', $tahun)->count();
 
@@ -3672,13 +3952,17 @@ class TargetKPIController extends Controller
     private function calculateAkurasiKelengkapanDataPenjualan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka)) {
-            return;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+        
         $rkms = RKM::with(['perhitunganNetSales', 'outstanding'])
             ->whereYear('created_at', $tahun)->get();
 
@@ -3743,17 +4027,18 @@ class TargetKPIController extends Controller
     private function calculateEvaluasiKinerjaSales($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        $nilaiTarget = (float) $detail->nilai_target;
 
         $Saless = Karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')
@@ -3905,17 +4190,17 @@ class TargetKPIController extends Controller
     private function calculateKetepatanWaktuPo($item)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
-
+        
         $pos = NomorModul::with('moduls')
             ->whereYear('created_at', $tahun)
             ->get();
@@ -3970,17 +4255,17 @@ class TargetKPIController extends Controller
     private function calculatekualitasDokumentasiSupportDanProctor($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-
-        if (!$detail) {
-            return 0.0;
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
         }
-
+        
         $registrasi = Registrasi::whereYear('created_at', $tahun)
             ->count();
 
@@ -4017,7 +4302,8 @@ class TargetKPIController extends Controller
         $idTarget = $request->id;
         $personId = $request->idUser ?? null;
 
-        $query = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan'])->where('id', $idTarget);
+        $query = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan', 'detailTargetKPI.dataTarget'])
+            ->where('id', $idTarget);
 
         if ($personId !== null) {
             $query->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($personId) {
@@ -4035,37 +4321,13 @@ class TargetKPIController extends Controller
                         return null;
                     }
 
-                    $tenggat_waktu = null;
-
-                    switch (strtolower($detail->jangka_target)) {
-                        case 'tahunan':
-                            $year = (int) $detail->detail_jangka;
-                            $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
-                            break;
-
-                        case 'bulanan':
-                            [$bulan, $tahun] = explode('-', str_replace(' ', '', $detail->detail_jangka));
-                            $tenggat_waktu = date('Y-m-d', strtotime("last day of $tahun-$bulan"));
-                            break;
-
-                        case 'kuartalan':
-                            if (preg_match('/Q(\d)\s*-\s*(\d{4})/i', $detail->detail_jangka, $m)) {
-                                $bulan = $m[1] * 3;
-                                $tenggat_waktu = date('Y-m-t', strtotime("{$m[2]}-$bulan-01"));
-                            }
-                            break;
-
-                        case 'mingguan':
-                            $tenggat_waktu = $detail->detail_jangka;
-                            break;
-                    }
-
+                    $tenggat_waktu = $this->resolveTenggatWaktu($detail);
                     $dataCalculation = $this->getCalculationByRoute($itemDetail, $personId);
 
                     $dataOutput = [
-                        'pembuat' => $itemDetail->karyawan->nama_lengkap,
+                        'pembuat' => $itemDetail->karyawan->nama_lengkap ?? null,
                         'judul' => $itemDetail->judul,
-                        'condition' => $itemDetail->asistant_route,
+                        'condition' => $detail->dataTarget?->asistant_route,
                         'deskripsi' => $itemDetail->deskripsi,
                         'jabatan_kpi' => $detail->jabatan,
                         'divisi_kpi' => $detail->divisi,
@@ -4099,9 +4361,48 @@ class TargetKPIController extends Controller
         return response()->json($data);
     }
 
+    private function resolveTenggatWaktu($detail)
+    {
+        $tenggat_waktu = null;
+        $jangka = strtolower($detail->jangka_target ?? '');
+        $detailJangka = $detail->detail_jangka;
+
+        switch ($jangka) {
+            case 'tahunan':
+                $year = (int) $detailJangka;
+                $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
+                break;
+            case 'bulanan':
+                if ($detailJangka && preg_match('/(\d{4})-(\d{2})/', $detailJangka, $m)) {
+                    $lastDay = date('t', strtotime("$detailJangka-01"));
+                    $tenggat_waktu = "$detailJangka-$lastDay";
+                }
+                break;
+            case 'kuartalan':
+                if ($detailJangka && preg_match('/(\d{4})-Q([1-4])/', $detailJangka, $m)) {
+                    $monthEnd = ((int)$m[2]) * 3;
+                    $lastDay = date('t', strtotime("{$m[1]}-$monthEnd-01"));
+                    $tenggat_waktu = "{$m[1]}-$monthEnd-$lastDay";
+                }
+                break;
+            case 'mingguan':
+                if ($detailJangka && preg_match('/(\d{4})-W(\d{1,2})/', $detailJangka, $m)) {
+                    $firstDay = strtotime("{$m[1]}-01-01");
+                    $weekStart = strtotime("+".(($m[2]-1)*7)." days", $firstDay);
+                    $tenggat_waktu = date('Y-m-d', strtotime("+6 days", $weekStart));
+                }
+                break;
+            default:
+                $tenggat_waktu = $detailJangka;
+        }
+
+        return $tenggat_waktu;
+    }
+
     private function getCalculationByRoute($itemDetail, $personId)
     {
-        $route = $itemDetail->asistant_route;
+        $detail = $itemDetail->detailTargetKPI->first();
+        $route  = $detail->dataTarget?->asistant_route;
 
         // --- Target Detail Office - GM ---
         if ($route === 'Kepuasan Pelanggan') {
@@ -4165,9 +4466,9 @@ class TargetKPIController extends Controller
         }
 
         // ADM Holding
-        elseif ($itemDetail->asistant_route === 'ketepatan waktu po') {
+        elseif ($route === 'ketepatan waktu po') {
             return $this->calculateKetepatanWaktuPoDetail($itemDetail);
-        } elseif ($itemDetail->asistant_route === 'kualitas dokumentasi support dan proctor') {
+        } elseif ($route === 'kualitas dokumentasi support dan proctor') {
             return $this->calculatekualitasDokumentasiSupportDanProctorDetail($itemDetail);
         }
 
@@ -4241,31 +4542,31 @@ class TargetKPIController extends Controller
 
         //Sales & Marketing
         // Sales
-        elseif ($itemDetail->asistant_route === 'target penjualan tahunan') {
+        elseif ($route === 'target penjualan tahunan') {
             return $this->calculateTargetPenjualanTahunanDetail($itemDetail, $personId);
-        } elseif ($itemDetail->asistant_route === 'peningkatan kemampuan kompetensi sales') {
+        } elseif ($route === 'peningkatan kemampuan kompetensi sales') {
             return $this->calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail, $personId);
-        } elseif ($itemDetail->asistant_route === 'customer acquisition cost') {
+        } elseif ($route === 'customer acquisition cost') {
             return $this->calculateCustomerAcquisitionCostDetail($itemDetail, $personId);
         }
 
         // SPV Sales
-        elseif ($itemDetail->asistant_route === 'meningkatkan revenue perusahaan') {
+        elseif ($route === 'meningkatkan revenue perusahaan') {
             return $this->calculateMeningkatkanRevenuePerusahaanDetail($itemDetail);
-        } elseif ($itemDetail->asistant_route === 'evaluasi kinerja sales') {
+        } elseif ($route === 'evaluasi kinerja sales') {
             return $this->calculateEvaluasiKinerjaSalesDetail($itemDetail);
         }
 
-        elseif ($itemDetail->asistant_route === 'biaya akuisisi client') {
+        elseif ($route === 'biaya akuisisi client') {
             return $this->calculateBiayaAkuisisiClientDetail($itemDetail);
         }
 
         // ADM Sales
-        elseif ($itemDetail->asistant_route === 'laporan mom') {
+        elseif ($route === 'laporan mom') {
             return $this->calculateLaporanMOMDetail($itemDetail);
-        } elseif ($itemDetail->asistant_route === 'akurasi kelengkapan data penjualan') {
+        } elseif ($route === 'akurasi kelengkapan data penjualan') {
             return $this->calculateAkurasiKelengkapanDataPenjualanDetail($itemDetail, $personId);
-        }  elseif ($itemDetail->asistant_route === 'todo administrasi') {
+        }  elseif ($route === 'todo administrasi') {
             return $this->calculateTodoAdministrasiDetail($itemDetail);
         }
 
@@ -4865,7 +5166,9 @@ class TargetKPIController extends Controller
 
             $salesRevenue = $salesRevenue ? (float) $salesRevenue : 0;
 
-            $targetPenjualanTahunan = targetKPI::where('asistant_route', 'target penjualan tahunan')->first();
+            $targetPenjualanTahunan = targetKPI::whereHas('detailTargetKPI.dataTarget', function ($q) {
+                $q->where('asistant_route', 'Target Penjualan Tahunan');
+            })->first();
 
             $idTargetToUse = $targetPenjualanTahunan ? $targetPenjualanTahunan->id : $itemDetail->id;
 
@@ -5121,7 +5424,7 @@ class TargetKPIController extends Controller
 
     private function calculatePerformaKPIDepartemenDetail($itemDetail, $personId)
     {
-        $allTargets = targetKPI::with(['detailTargetKPI'])
+        $allTargets = targetKPI::with(['detailTargetKPI.dataTarget'])
             ->whereYear('created_at', now()->year)
             ->get();
 
@@ -5134,9 +5437,6 @@ class TargetKPIController extends Controller
             $divisions = $details->pluck('divisi')->unique()->filter();
 
             foreach ($divisions as $divisi) {
-                if (!isset($targetsByDivisi[$divisi])) {
-                    $targetsByDivisi[$divisi] = [];
-                }
                 $targetsByDivisi[$divisi][] = $target;
             }
         }
@@ -5150,40 +5450,46 @@ class TargetKPIController extends Controller
             $progresses = [];
 
             foreach ($items as $item) {
-                if ($item->asistant_route === 'performa KPI departemen') continue;
-
                 $detail = $item->detailTargetKPI->first();
+                if (!$detail) continue;
 
-                if ($detail && !is_null($detail->nilai_target)) {
+                $route = strtolower($detail->dataTarget?->asistant_route ?? '');
+
+                // skip KPI performa itu sendiri
+                if ($route === 'performa kpi departemen') continue;
+
+                if (!is_null($detail->nilai_target)) {
                     $targetValues[] = (float) $detail->nilai_target;
                 }
 
                 $progress = $this->resolveProgress($item, $personId);
 
-                if ($detail && $detail->tipe_target === 'rupiah') {
-                    if (strtolower($item->asistant_route) === 'pemasukan kotor') {
+                if ($detail->tipe_target === 'rupiah') {
+                    $targetVal = $detail->nilai_target;
+
+                    if ($route === 'pemasukan kotor') {
                         $data = $this->calculatePemasukanKotor($item, $personId);
-                        $targetVal = $detail->nilai_target;
                         $progress = $targetVal > 0 ? max(0, min(100, round(($data / $targetVal) * 100, 1))) : 0;
-                    } elseif (strtolower($item->asistant_route) === 'meningkatkan revenue perusahaan') {
+
+                    } elseif ($route === 'meningkatkan revenue perusahaan') {
                         $data = $this->calculateMeningkatkanRevenuePerusahaan($item, $personId);
-                        $targetVal = $detail->nilai_target;
                         $progress = $targetVal > 0 ? max(0, min(100, round(($data / $targetVal) * 100, 1))) : 0;
-                    } elseif (strtolower($item->asistant_route) === 'laporan mom') {
+
+                    } elseif ($route === 'laporan mom') {
                         $progress = $this->calculateLaporanMOM($item);
                     }
                 }
 
-                if ($progress !== null && is_numeric($progress)) {
+                if (is_numeric($progress)) {
                     $progresses[] = $progress;
                     $allProgress[] = $progress;
                 }
             }
 
             if (!empty($progresses)) {
-                $divisionAvg = array_sum($progresses) / count($progresses);
-                $divisionAverages[$divisi] = round($divisionAvg, 1);
-                $divisionBreakdown[$divisi] = round($divisionAvg, 1);
+                $avg = array_sum($progresses) / count($progresses);
+                $divisionAverages[$divisi] = round($avg, 1);
+                $divisionBreakdown[$divisi] = round($avg, 1);
             }
         }
 
@@ -5210,17 +5516,16 @@ class TargetKPIController extends Controller
         $lowestDivisionName = key($divisionAverages);
         $lowestDivisionValue = current($divisionAverages);
 
-        $mean = count($allProgress) > 0 ? array_sum($allProgress) / count($allProgress) : 0;
+        $mean = count($allProgress) ? array_sum($allProgress) / count($allProgress) : 0;
+
         $variance = 0;
         foreach ($allProgress as $val) {
             $variance += pow($val - $mean, 2);
         }
-        $variance = count($allProgress) > 0 ? $variance / count($allProgress) : 0;
+        $variance = count($allProgress) ? $variance / count($allProgress) : 0;
+
         $stdDev = sqrt($variance);
         $consistency = $stdDev < 10 ? 'stable' : 'fluctuating';
-
-        $trend = 'stable';
-        $trendValue = 0;
 
         $targetStatus = 'behind';
         if ($progress >= $averageTarget) {
@@ -5239,7 +5544,7 @@ class TargetKPIController extends Controller
             }
         }
 
-        $insight = "Performa KPI departemen {$trend} dengan rata-rata {$progress}%. ";
+        $insight = "Performa KPI departemen stable dengan rata-rata {$progress}%. ";
         $insight .= "Divisi terbaik {$topDivisionName} ({$topDivisionValue}%), ";
         $insight .= "terendah {$lowestDivisionName} ({$lowestDivisionValue}%). ";
         $insight .= "Status target: {$targetStatus}, konsistensi {$consistency}.";
@@ -5248,10 +5553,6 @@ class TargetKPIController extends Controller
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => ['above' => $above, 'below' => $below],
-            'monthly_data' => [],
-            'daily_breakdown_per_month' => [],
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
             'division_breakdown' => $divisionBreakdown,
             'top_division' => [
                 'name' => $topDivisionName,
@@ -5261,8 +5562,8 @@ class TargetKPIController extends Controller
                 'name' => $lowestDivisionName,
                 'value' => $lowestDivisionValue
             ],
-            'trend' => $trend,
-            'trend_value' => $trendValue,
+            'trend' => 'stable',
+            'trend_value' => 0,
             'consistency' => $consistency,
             'target_status' => $targetStatus,
             'total_kpi' => $allTargets->count(),
@@ -11158,7 +11459,11 @@ class TargetKPIController extends Controller
         }
 
         $progressRupiah = round($totalSales, 1);
-        $dataTarget = targetKPI::with('detailTargetKPI')->where('asistant_route', 'Pemasukan Kotor')->first() ?? null;
+        $dataTarget = targetKPI::with(['detailTargetKPI', 'dataTarget'])
+            ->whereHas('dataTarget', function ($q) {
+                $q->where('asistant_route', 'Pemasukan Kotor');
+            })
+            ->first();
         $targetGM   = ModelsTarget::where('quartal', 'All')->first() ?? null;
         $targetGlobal = $dataTarget->detailTargetKPI->first()->nilai_target  ?? $targetGM->target ?? 0;
 
@@ -12431,166 +12736,72 @@ class TargetKPIController extends Controller
         $targetId = $id ?? auth()->user()->id;
         return view('KPIdata.TargetSubDivisi.overviewKaryawan', compact('targetId'));
     }
+
     public function getDataOverviewPersonal(Request $request)
     {
         try {
-            $karyawanId = $request->id_karyawan ?? Auth()->user()->id;
+            $karyawanId = $request->id_karyawan ?? auth()->id();
             $tahunFilter = $request->tahun ?? now()->year;
 
             if (!karyawan::find($karyawanId)) {
                 return response()->json(['success' => false, 'message' => 'Data karyawan tidak ditemukan'], 404);
             }
 
+            $karyawan = karyawan::find($karyawanId);
 
-            $allTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan'])
+            $processedTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan', 'detailTargetKPI.dataTarget'])
                 ->whereYear('created_at', $tahunFilter)
                 ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanId) {
                     $q->where('id_karyawan', $karyawanId);
                 })
-                ->get();
+                ->get()
+                ->map(function ($target) use ($karyawanId) {
+                    $detail = $target->detailTargetKPI->first();
+                    if (!$detail) return null;
 
-            $totalTarget = $allTargets->count();
-            $progressValues = [];
-            $kpiAktif = 0;
-            $kpiSelesai = 0;
-            $distribusiStatus = ['Selesai' => 0, 'Aktif' => 0, 'Belum Mulai' => 0];
+                    $progress = $this->resolveProgress($target, $karyawanId);
+                    if ($progress === null) return null;
 
-            foreach ($allTargets as $target) {
-                $detail = $target->detailTargetKPI->first();
-                if (!$detail)
-                    continue;
+                    $nilaiTarget = $detail->nilai_target;
+                    $tipeTarget = $detail->tipe_target;
+                    $isRupiah = $tipeTarget === 'rupiah';
+                    $percent = $isRupiah
+                        ? ($nilaiTarget > 0 ? ($progress / $nilaiTarget) * 100 : 0)
+                        : ($nilaiTarget > 0 ? ($progress / $nilaiTarget) * 100 : 0);
 
-                $progress = $this->resolveProgress($target, $karyawanId);
-                $nilaiTarget = $detail->nilai_target;
-                $tipeTarget = $detail->tipe_target;
-                $manualValue = $detail->manual_value;
+                    $status = $isRupiah
+                        ? ($percent >= 100 ? 'Selesai' : ($percent > 0 ? 'Aktif' : 'Belum Mulai'))
+                        : ($progress >= $nilaiTarget ? 'Selesai' : ($progress > 0 ? 'Aktif' : 'Belum Mulai'));
 
-                if ($progress !== null) {
-                    if ($tipeTarget === 'rupiah') {
-                        $percent = $nilaiTarget > 0 ? ($progress / $nilaiTarget) * 100 : 0;
-                        $progressValues[] = $percent;
+                    $progressDisplay = match (true) {
+                        $progress === null => '-',
+                        $tipeTarget === 'rupiah' => 'Rp ' . number_format($progress, 0, ',', '.'),
+                        $tipeTarget === 'persen' => round($progress, 2) . '%',
+                        default => number_format($progress, 0, ',', '.')
+                    };
 
-                        if ($percent >= 100) {
-                            $kpiSelesai++;
-                            $distribusiStatus['Selesai']++;
-                        } elseif ($percent > 0) {
-                            $kpiAktif++;
-                            $distribusiStatus['Aktif']++;
-                        } else {
-                            $distribusiStatus['Belum Mulai']++;
-                        }
-                    } else {
-                        $progressValues[] = $progress;
+                    return [
+                        'id' => $target->id,
+                        'judul' => $target->judul,
+                        'asistant_route' => $target->asistant_route,
+                        'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
+                        'tipe_target' => $tipeTarget,
+                        'target' => $nilaiTarget,
+                        'progress' => round($progress),
+                        'progress_display' => $progressDisplay,
+                        'progress_percent' => $percent,
+                        'status' => $status,
+                        'status_badge' => $status === 'Selesai' ? 'bg-success' : 'bg-warning text-dark',
+                        'deskripsi' => $detail->deskripsi ?? '-',
+                        'manual_value' => $detail->manual_value,
+                        'created_at' => $target->created_at->format('d M Y'),
+                    ];
+                })
+                ->filter()
+                ->values();
 
-                        if ($progress >= $nilaiTarget) {
-                            $kpiSelesai++;
-                            $distribusiStatus['Selesai']++;
-                        } elseif ($progress > 0) {
-                            $kpiAktif++;
-                            $distribusiStatus['Aktif']++;
-                        } else {
-                            $distribusiStatus['Belum Mulai']++;
-                        }
-                    }
-                }
-            }
-
-            $progressValuesNonZero = array_filter($progressValues, fn($v) => $v > 0);
-            $rataRataProgress = count($progressValuesNonZero) > 0
-                ? round(array_sum($progressValuesNonZero) / count($progressValuesNonZero), 2)
-                : 0;
-
-            $statistikPerTarget = [];
-            $detailPersonsStats = detailPersonKPI::whereHas('detailTargetKPI.targetKPI', function ($q) use ($tahunFilter) {
-                $q->whereYear('created_at', $tahunFilter);
-            })
-                ->where('id_karyawan', $karyawanId)
-                ->with(['detailTargetKPI.targetKPI'])
-                ->get();
-
-            foreach ($detailPersonsStats as $dp) {
-                $target = $dp->detailTargetKPI->targetKPI ?? null;
-                if (!$target) continue;
-
-                $detail = $target->detailTargetKPI->first();
-                if (!$detail)
-                    continue;
-
-                $progress = $this->resolveProgress($target, $karyawanId);
-                $nilaiTarget = $detail->nilai_target;
-                $tipeTarget = $detail->tipe_target;
-
-                if ($tipeTarget === 'rupiah') {
-                    $percent = $nilaiTarget > 0 ? ($progress / $nilaiTarget) * 100 : 0;
-                    $status = $percent >= 100 ? 'Selesai' : ($percent > 0 ? 'Aktif' : 'Belum Mulai');
-                } else {
-                    $status = $progress >= $nilaiTarget ? 'Selesai' : ($progress > 0 ? 'Aktif' : 'Belum Mulai');
-                }
-
-                $statistikPerTarget[] = [
-                    'judul' => $target->judul,
-                    'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                    'tipe_target' => $tipeTarget,
-                    'target' => $nilaiTarget,
-                    'progress' => $progress ?? 0,
-                    'status' => $status,
-                ];
-            }
-
-            $daftarTargetPribadi = [];
-            $detailPersonsList = detailPersonKPI::whereHas('detailTargetKPI.targetKPI', function ($q) use ($tahunFilter) {
-                $q->whereYear('created_at', $tahunFilter);
-            })
-                ->where('id_karyawan', $karyawanId)
-                ->with(['detailTargetKPI.targetKPI', 'detailTargetKPI'])
-                ->get();
-
-            foreach ($detailPersonsList as $dp) {
-                $item = $dp->detailTargetKPI->targetKPI ?? null;
-                if (!$item) continue;
-
-                $detail = $item->detailTargetKPI->first();
-                if (!$detail) continue;
-
-                $progress = $this->resolveProgress($item, $karyawanId);
-                $nilaiTarget = $detail->nilai_target;
-                $tipeTarget = $detail->tipe_target;
-
-                if ($tipeTarget === 'rupiah') {
-                    $percent = $nilaiTarget > 0 ? ($progress / $nilaiTarget) * 100 : 0;
-                    $status = $percent >= 100 ? 'Selesai' : 'Aktif';
-                } else {
-                    $status = $progress >= $nilaiTarget ? 'Selesai' : 'Aktif';
-                }
-
-                if ($progress === null) {
-                    $progressDisplay = '-';
-                } elseif ($tipeTarget === 'rupiah') {
-                    $progressDisplay = 'Rp ' . number_format($progress, 0, ',', '.');
-                } elseif ($tipeTarget === 'persen') {
-                    $progressDisplay = round($progress, 2) . '%';
-                } else {
-                    $progressDisplay = number_format($progress, 0, ',', '.');
-                }
-
-                $daftarTargetPribadi[] = [
-                    'id' => $item->id,
-                    'judul' => $item->judul,
-                    'asistant_route' => $item->asistant_route,
-                    'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                    'tipe_target' => $tipeTarget,
-                    'target' => $nilaiTarget,
-                    'progress' => round($progress ?? 0),
-                    'progress_display' => $progressDisplay,
-                    'status' => $status,
-                    'status_badge' => $status === 'Selesai' ? 'bg-success' : 'bg-warning text-dark',
-                    'deskripsi' => $detail->deskripsi ?? '-',
-                    'manual_value' => $manualValue,
-                    'created_at' => $item->created_at->format('d M Y'),
-                ];
-            }
-
-            $karyawan = karyawan::where('id', $karyawanId)->first();
+            $progressPercentages = $processedTargets->pluck('progress_percent')->filter(fn($v) => $v > 0);
+            $rataRataProgress = $progressPercentages->isNotEmpty() ? round($progressPercentages->sum() / $progressPercentages->count(), 2) : 0;
 
             return response()->json([
                 'success' => true,
@@ -12599,23 +12810,28 @@ class TargetKPIController extends Controller
                     'jabatan' => $karyawan->jabatan ?? '-',
                     'divisi' => $karyawan->divisi ?? '-',
                 ],
-                'total_target' => $totalTarget,
+                'total_target' => $processedTargets->count(),
                 'rata_rata_progress' => $rataRataProgress,
-                'kpi_aktif' => $kpiAktif,
-                'kpi_selesai' => $kpiSelesai,
-                'statistik_per_target' => $statistikPerTarget,
-                'distribusi_status' => $distribusiStatus,
-                'daftar_target_pribadi' => $daftarTargetPribadi,
+                'kpi_aktif' => $processedTargets->where('status', 'Aktif')->count(),
+                'kpi_selesai' => $processedTargets->where('status', 'Selesai')->count(),
+                'statistik_per_target' => $processedTargets->map(fn($t) => [
+                    'judul' => $t['judul'],
+                    'periode' => $t['periode'],
+                    'tipe_target' => $t['tipe_target'],
+                    'target' => $t['target'],
+                    'progress' => $t['progress'],
+                    'status' => $t['status'],
+                ])->values(),
+                'distribusi_status' => [
+                    'Selesai' => $processedTargets->where('status', 'Selesai')->count(),
+                    'Aktif' => $processedTargets->where('status', 'Aktif')->count(),
+                    'Belum Mulai' => $processedTargets->where('status', 'Belum Mulai')->count(),
+                ],
+                'daftar_target_pribadi' => $processedTargets,
                 'tahun' => $tahunFilter,
             ]);
         } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
-                ],
-                500,
-            );
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
         }
     }
 
@@ -12642,9 +12858,10 @@ class TargetKPIController extends Controller
         }
 
         $karyawanDiDivisi = karyawan::where('divisi', $divisiFilter)
-        ->where('jabatan', '!=', 'Outsource')
-        ->where('status_aktif', '1')->get();
-        
+            ->where('jabatan', '!=', 'Outsource')
+            ->where('status_aktif', '1')
+            ->get();
+
         $karyawanIds = $karyawanDiDivisi->pluck('id')->toArray();
 
         if (empty($karyawanIds)) {
@@ -12666,161 +12883,92 @@ class TargetKPIController extends Controller
             ]);
         }
 
-        $allTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan'])
+        $allTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan', 'detailTargetKPI.dataTarget'])
             ->whereYear('created_at', $tahunFilter)
             ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
                 $q->whereIn('id_karyawan', $karyawanIds);
             })
             ->get();
 
-        $totalTarget = $allTargets->count();
-
-        $progressValues = [];
-        $kpiAktif = 0;
-        $kpiSelesai = 0;
-        $distribusi = ['0-25%' => 0, '26-50%' => 0, '51-75%' => 0, '76-100%' => 0, '>100%' => 0];
-
-        foreach ($allTargets as $target) {
+        $targetAggregates = $allTargets->map(function ($target) {
             $detail = $target->detailTargetKPI->first();
-            if (!$detail) continue;
-
-            $tipeTarget = $detail->tipe_target;
+            if (!$detail) return null;
 
             $personIds = $detail->detailPersonKPI->pluck('id_karyawan')->toArray();
-            if (empty($personIds)) continue;
+            if (empty($personIds)) return null;
 
-            $targetProgressValues = [];
-
-            foreach ($personIds as $personId) {
+            $progressValues = collect($personIds)->map(function ($personId) use ($target, $detail) {
                 $progress = $this->resolveProgress($target, $personId);
+                if ($progress === null || $progress <= 0) return null;
+                return $detail->tipe_target === 'rupiah' && $detail->nilai_target > 0
+                    ? ($progress / $detail->nilai_target) * 100
+                    : $progress;
+            })->filter()->values();
 
-                if ($progress !== null && $progress > 0) {
-                    if ($tipeTarget === 'rupiah') {
-                        $targetValue = (float) $detail->nilai_target;
-                        $progress = $targetValue > 0 ? ($progress / $targetValue) * 100 : 0;
-                    }
+            if ($progressValues->isEmpty()) return null;
 
-                    $targetProgressValues[] = $progress;
-                }
-            }
+            $avg = $progressValues->sum() / $progressValues->count();
+            return [
+                'judul' => $target->judul,
+                'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
+                'target' => $detail->nilai_target,
+                'progress' => round($avg, 2),
+                'status' => $avg >= 100 ? 'Selesai' : 'Belum Selesai',
+                'avg_raw' => $avg,
+            ];
+        })->filter()->values();
 
-            if (!empty($targetProgressValues)) {
-                $progressRataRata = array_sum($targetProgressValues) / count($targetProgressValues);
-                $progressValues[] = $progressRataRata;
-
-                if ($progressRataRata <= 25) {
-                    $distribusi['0-25%']++;
-                } elseif ($progressRataRata <= 50) {
-                    $distribusi['26-50%']++;
-                } elseif ($progressRataRata <= 75) {
-                    $distribusi['51-75%']++;
-                } elseif ($progressRataRata <= 100) {
-                    $distribusi['76-100%']++;
-                } else {
-                    $distribusi['>100%']++;
-                }
-
-                if ($progressRataRata < 100) {
-                    $kpiAktif++;
-                } else {
-                    $kpiSelesai++;
-                }
-            }
+        $distribusi = ['0-25%' => 0, '26-50%' => 0, '51-75%' => 0, '76-100%' => 0, '>100%' => 0];
+        foreach ($targetAggregates as $agg) {
+            if ($agg['avg_raw'] <= 25) $distribusi['0-25%']++;
+            elseif ($agg['avg_raw'] <= 50) $distribusi['26-50%']++;
+            elseif ($agg['avg_raw'] <= 75) $distribusi['51-75%']++;
+            elseif ($agg['avg_raw'] <= 100) $distribusi['76-100%']++;
+            else $distribusi['>100%']++;
         }
 
-        $rataRataProgress = count($progressValues) > 0 ? round(array_sum($progressValues) / count($progressValues), 2) : 0;
+        $daftarTargetKPI = $targetAggregates->map(fn($t) => collect($t)->except('avg_raw')->toArray())->values();
+        $kpiAktif = $targetAggregates->where('status', 'Belum Selesai')->count();
+        $kpiSelesai = $targetAggregates->where('status', 'Selesai')->count();
+        $rataRataProgress = $daftarTargetKPI->isNotEmpty() ? round(collect($daftarTargetKPI)->pluck('progress')->sum() / $daftarTargetKPI->count(), 2) : 0;
 
-        $karyawanDepartemen = [];
-
-        foreach ($karyawanDiDivisi as $karyawan) {
-            $karyawanTargets = targetKPI::with(['detailTargetKPI.detailPersonKPI'])
-                ->whereYear('created_at', $tahunFilter)
-                ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawan) {
-                    $q->where('id_karyawan', $karyawan->id);
-                })
-                ->get();
-
+        $karyawanDepartemen = $karyawanDiDivisi->map(function ($karyawan) use ($allTargets) {
             $progressList = [];
             $targetBelumTercapai = 0;
 
-            foreach ($karyawanTargets as $target) {
+            $employeeTargets = $allTargets->filter(fn($t) => $t->detailTargetKPI->first()?->detailPersonKPI->pluck('id_karyawan')->contains($karyawan->id));
+
+            foreach ($employeeTargets as $target) {
                 $detail = $target->detailTargetKPI->first();
                 if (!$detail) continue;
 
                 $progress = $this->resolveProgress($target, $karyawan->id);
-                $nilaiTarget = $detail->nilai_target;
-                $tipeTarget = $detail->tipe_target;
+                if ($progress === null) continue;
 
-                if ($progress !== null) {
-                    if ($tipeTarget === 'rupiah') {
-                        $progress = $nilaiTarget > 0 ? ($progress / $nilaiTarget) * 100 : 0;
-                    }
-
-                    if ($progress > 0) {
-                        $progressList[] = $progress;
-                    }
-
-                    if ($progress < 100) {
-                        $targetBelumTercapai++;
-                    }
+                if ($detail->tipe_target === 'rupiah') {
+                    $progress = (float)$detail->nilai_target > 0 ? ($progress / $detail->nilai_target) * 100 : 0;
                 }
+
+                if ($progress > 0) $progressList[] = $progress;
+                if ($progress < 100) $targetBelumTercapai++;
             }
 
-            $rataRata = count($progressList) > 0 ? round(array_sum($progressList) / count($progressList), 2) : 0;
-
-            $karyawanDepartemen[] = [
+            return [
                 'id_karyawan' => $karyawan->id,
                 'nama' => $karyawan->nama_lengkap,
                 'jabatan' => $karyawan->jabatan,
                 'total_target_belum_tercapai' => $targetBelumTercapai,
-                'rata_rata_progress' => $rataRata,
+                'rata_rata_progress' => !empty($progressList) ? round(array_sum($progressList) / count($progressList), 2) : 0,
             ];
-        }
-
-        $statistikKaryawan = $this->getEmployeeStatistics($tahunFilter, $karyawanIds, $divisiFilter);
-
-        $daftarTargetKPI = [];
-
-        foreach ($allTargets as $target) {
-            $detail = $target->detailTargetKPI->first();
-            if (!$detail) continue;
-
-            $personIds = $detail->detailPersonKPI->pluck('id_karyawan')->toArray();
-            $progressList = [];
-
-            foreach ($personIds as $personId) {
-                $progress = $this->resolveProgress($target, $personId);
-
-                if ($progress !== null && $progress > 0) {
-                    if ($detail->tipe_target === 'rupiah') {
-                        $targetValue = (float) $detail->nilai_target;
-                        $progress = $targetValue > 0 ? ($progress / $targetValue) * 100 : 0;
-                    }
-
-                    $progressList[] = $progress;
-                }
-            }
-
-            $progressRataRata = count($progressList) > 0 ? array_sum($progressList) / count($progressList) : 0;
-
-            $status = $progressRataRata >= 100 ? 'Selesai' : 'Belum Selesai';
-
-            $daftarTargetKPI[] = [
-                'judul' => $target->judul,
-                'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                'target' => $detail->nilai_target,
-                'progress' => round($progressRataRata, 2),
-                'status' => $status,
-            ];
-        }
+        })->values();
 
         return response()->json([
-            'total_target' => $totalTarget,
+            'total_target' => $allTargets->count(),
             'rata_rata_progress' => $rataRataProgress,
             'kpi_aktif' => $kpiAktif,
             'kpi_selesai' => $kpiSelesai,
             'karyawan_departemen' => $karyawanDepartemen,
-            'statistik_karyawan' => $statistikKaryawan,
+            'statistik_karyawan' => $this->getEmployeeStatistics($tahunFilter, $karyawanIds, $divisiFilter),
             'distribusi_nilai' => $distribusi,
             'daftar_target_kpi' => $daftarTargetKPI,
         ]);
@@ -12828,64 +12976,41 @@ class TargetKPIController extends Controller
 
     private function getEmployeeStatistics($tahun, $karyawanIds, $divisi)
     {
-        $statistik = [];
-
-        $allKaryawan = karyawan::whereIn('id', $karyawanIds)->get();
-
-        foreach ($allKaryawan as $karyawan) {
-            $detailPersons = detailPersonKPI::whereHas('detailTargetKPI.targetKPI', function ($q) use ($tahun) {
-                $q->whereYear('created_at', $tahun);
-            })
+        return karyawan::whereIn('id', $karyawanIds)->get()->map(function ($karyawan) use ($tahun) {
+            $detailPersons = detailPersonKPI::whereHas('detailTargetKPI.targetKPI', fn($q) => $q->whereYear('created_at', $tahun))
                 ->where('id_karyawan', $karyawan->id)
-                ->with(['detailTargetKPI.targetKPI'])
+                ->with(['detailTargetKPI.targetKPI', 'detailTargetKPI.dataTarget'])
                 ->get();
 
-            $totalTarget = $detailPersons->count();
             $progressList = [];
             $targetAktif = 0;
             $targetSelesai = 0;
 
-            foreach ($detailPersons as $dp) {
+            $detailPersons->each(function ($dp) use ($karyawan, &$progressList, &$targetAktif, &$targetSelesai) {
                 $target = $dp->detailTargetKPI->targetKPI ?? null;
-                if (!$target) continue;
-
-                $detail = $target->detailTargetKPI->first();
-                if (!$detail) continue;
+                $detail = $target?->detailTargetKPI->first();
+                if (!$target || !$detail) return;
 
                 $progress = $this->resolveProgress($target, $karyawan->id);
-                $nilaiTarget = $detail->nilai_target;
-                $tipeTarget = $detail->tipe_target;
+                if ($progress === null) return;
 
-                if ($progress !== null) {
-                    if ($tipeTarget === 'rupiah') {
-                        $progress = $nilaiTarget > 0 ? ($progress / $nilaiTarget) * 100 : 0;
-                    }
-
-                    if ($progress > 0) {
-                        $progressList[] = $progress;
-                    }
-
-                    if ($progress < 100) {
-                        $targetAktif++;
-                    } else {
-                        $targetSelesai++;
-                    }
+                if ($detail->tipe_target === 'rupiah') {
+                    $progress = (float)$detail->nilai_target > 0 ? ($progress / $detail->nilai_target) * 100 : 0;
                 }
-            }
 
-            $rataRataProgress = count($progressList) > 0 ? round(array_sum($progressList) / count($progressList), 2) : 0;
+                if ($progress > 0) $progressList[] = $progress;
+                $progress < 100 ? $targetAktif++ : $targetSelesai++;
+            });
 
-            $statistik[] = [
+            return [
                 'nama' => explode(' ', $karyawan->nama_lengkap)[0],
                 'jabatan' => $karyawan->jabatan,
-                'total_target' => $totalTarget,
+                'total_target' => $detailPersons->count(),
                 'target_aktif' => $targetAktif,
                 'target_selesai' => $targetSelesai,
-                'rata_rata_progress' => $rataRataProgress,
+                'rata_rata_progress' => !empty($progressList) ? round(array_sum($progressList) / count($progressList), 2) : 0,
             ];
-        }
-
-        return $statistik;
+        })->values();
     }
 
     private function calculateWorkingDays()

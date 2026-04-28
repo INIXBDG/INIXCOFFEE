@@ -234,10 +234,10 @@
                             data-bs-toggle="modal" data-bs-target="#modalBuatTarget">
                             <i class="fas fa-plus fa-2x"></i>  buat target baru
                         </button>
-                        <button type="button" class="btn btn-success me-2"
+                        {{-- <button type="button" class="btn btn-success me-2"
                             data-bs-toggle="modal" data-bs-target="#ModalImport">
                             <i class="fas fa-file-import"></i>  Import
-                        </button>
+                        </button> --}}
                     </div>
                     <div class="table-responsive mt-3">
                         <table class="table table-bordered table-hover align-middle">
@@ -321,12 +321,14 @@
                             <a href="{{ asset('template_KPI/template_import_kpi.xlsx') }}" 
                             class="btn btn-success btn-sm" 
                             download>
-                                <i class="fa-solid fa-download me-1"></i>Download Template Excel
+                                <i class="fa-solid fa-download me-1"></i>Download Template
                             </a>
-                            <button type="button" class="btn btn-outline-secondary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#modalPreviewTemplate">
+                            <button type="button" class="btn btn-outline-secondary btn-sm ms-2" 
+                                    data-bs-toggle="modal" data-bs-target="#modalPreviewTemplate">
                                 <i class="fa-solid fa-eye me-1"></i>Lihat Contoh
                             </button>
                         </div>
+
 
                         <div id="errorSummary" class="d-none mt-3">
                             <div class="alert alert-danger mb-0 py-2">
@@ -351,10 +353,16 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Format Kolom Template</h5>
+                    <h5 class="modal-title">Format Kolom Template (Updated)</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fa-solid fa-circle-info me-2"></i>
+                        <strong>Catatan:</strong> Kolom <code>Tipe Target</code>, <code>Nilai Target</code>, dan 
+                        <code>Jangka Target</code> <u>tidak perlu diisi</u> karena akan diambil otomatis dari 
+                        konfigurasi database berdasarkan <strong>Assistant Route</strong>.
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-bordered table-sm">
                             <thead class="table-light">
@@ -368,15 +376,40 @@
                             <tbody>
                                 <tr><td>Judul KPI</td><td>✅</td><td>"Meningkatkan Revenue"</td><td>Maksimal 255 karakter</td></tr>
                                 <tr><td>Deskripsi</td><td>❌</td><td>"Target penjualan Q1"</td><td>Opsional, maksimal 500 karakter</td></tr>
-                                <tr><td>Jabatan</td><td>✅</td><td>"Sales, SPV Sales"</td><td>Pisahkan dengan koma jika multiple</td></tr>
-                                <tr><td>Karyawan</td><td>❌</td><td>"Budi, Siti"</td><td>Nama lengkap sesuai database</td></tr>
-                                <tr><td>Jangka Target</td><td>✅</td><td>"tahunan"</td><td>Harus pilih satu nilai ini</td></tr>
-                                <tr><td>Detail Jangka</td><td>✅</td><td>"2024", "01-2024", "Q1-2024", "2024W01"</td><td>Sesuai format jangka</td></tr>
-                                <tr><td>Tipe Target</td><td>✅</td><td>"rupiah", "persen", "angka"</td><td>Harus salah satu nilai ini</td></tr>
-                                <tr><td>Nilai Target</td><td>✅</td><td>"1000000", "80", "10"</td><td>Angka tanpa simbol</td></tr>
-                                <tr><td>Assistant Route</td><td>✅</td><td>"target penjualan tahunan"</td><td>Harus sesuai route yang terdaftar</td></tr>
+                                <tr><td>Jabatan</td><td>✅</td><td>"Sales" atau "Sales, SPV Sales"</td><td>Pisahkan dengan koma jika multiple. Harus sesuai database.</td></tr>
+                                <tr><td>Karyawan</td><td>❌</td><td>"Budi Santoso, Siti Aminah"</td><td>Nama lengkap sesuai database. Jika kosong, semua karyawan di jabatan akan dipilih.</td></tr>
+                                <tr><td>Assistant Route</td><td>✅</td><td>"target penjualan tahunan"</td><td><strong>Wajib sesuai</strong> dengan route yang terdaftar di sistem untuk jabatan tersebut.</td></tr>
+                                <tr><td>Detail Jangka</td><td>✅*</td><td>"2024", "2025"</td><td><strong>Wajib hanya jika</strong> Assistant Route bertipe "Tahunan". Format: 4 digit tahun.</td></tr>
+                                <tr class="table-secondary">
+                                    <td><em>Tipe Target</em></td>
+                                    <td><em>Otomatis</em></td>
+                                    <td><em>-</em></td>
+                                    <td><em>Diambil dari database berdasarkan Assistant Route</em></td>
+                                </tr>
+                                <tr class="table-secondary">
+                                    <td><em>Nilai Target</em></td>
+                                    <td><em>Otomatis</em></td>
+                                    <td><em>-</em></td>
+                                    <td><em>Diambil dari database berdasarkan Assistant Route</em></td>
+                                </tr>
+                                <tr class="table-secondary">
+                                    <td><em>Jangka Target</em></td>
+                                    <td><em>Otomatis</em></td>
+                                    <td><em>-</em></td>
+                                    <td><em>Diambil dari database berdasarkan Assistant Route</em></td>
+                                </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <h6 class="fw-semibold">Contoh Baris Valid:</h6>
+                        <code class="d-block p-2 bg-white border rounded small">
+                            Judul: "Target Q1 2024"<br>
+                            Jabatan: "Sales"<br>
+                            Assistant Route: "target penjualan tahunan"<br>
+                            Detail Jangka: "2024"
+                        </code>
+                        <small class="text-muted">→ Sistem akan otomatis mengambil: tipe=rupiah, nilai=1000000, jangka=Tahunan dari database</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -389,8 +422,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalBuatTarget" tabindex="-1" role="dialog" aria-labelledby="modalBuatTargetLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="modalBuatTarget" tabindex="-1" role="dialog" aria-labelledby="modalBuatTargetLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <form action="{{ route('kpi.createTarget') }}" method="post" id="targetForm">
@@ -407,92 +439,53 @@
                             <input type="hidden" name="id_pembuat" value="{{ auth()->user()->id }}">
 
                             <div class="col-md-12 mb-3">
-                                <label for="judul_kpi" class="form-label">Judul KPI <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" name="judul_kpi" id="judul_kpi" class="form-control"
-                                    placeholder="Contoh: Peningkatan Penjualan Produk A" required>
+                                <label for="judul_kpi" class="form-label">Judul KPI <span class="text-danger">*</span></label>
+                                <input type="text" name="judul_kpi" id="judul_kpi" class="form-control" placeholder="Contoh: Peningkatan Penjualan Produk A" required>
                             </div>
 
                             <div class="col-md-12 mb-3">
                                 <label for="deskripsi_kpi" class="form-label">Deskripsi KPI</label>
-                                <textarea name="deskripsi_kpi" id="deskripsi_kpi" class="form-control" rows="2"
-                                    placeholder="Jelaskan tujuan atau konteks dari target ini..."></textarea>
+                                <textarea name="deskripsi_kpi" id="deskripsi_kpi" class="form-control" rows="2" placeholder="Jelaskan tujuan atau konteks dari target ini..."></textarea>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="jabatan" class="form-label">Pilih Jabatan <span
-                                        class="text-danger">*</span></label>
-                                <select name="jabatan[]" id="jabatan" class="form-select select2" multiple></select>
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label for="karyawan" class="form-label">Pilih Karyawan <span
-                                        class="text-danger">*</span></label>
-                                <select name="karyawan[]" id="karyawan" class="form-select select2" multiple></select>
-                            </div>
-
-                            <div class="col-md-12 mb-3">
-                                <label for="assistant_route" class="form-label">Pilih Assistant Route <span
-                                        class="text-danger">*</span></label>
+                                <label for="assistant_route" class="form-label">Pilih Assistant Route <span class="text-danger">*</span></label>
                                 <select name="asistant_route" id="assistant_route" class="form-select" required>
                                     <option selected disabled>-- Pilih Assistant Route --</option>
                                 </select>
                             </div>
 
-
                             <div class="col-md-6 mb-3">
-                                <label for="tipeTarget" class="form-label">Tipe Target <span
-                                        class="text-danger">*</span></label>
-                                <select name="tipe_target" id="tipeTarget" class="form-select" required>
-                                    <option selected disabled>-- Pilih Tipe --</option>
-                                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
-                                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
-                                    <option value="persen">Persen (%)</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label for="nilaiTarget" class="form-label">Nilai Target <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" name="nilai_target" id="nilaiTarget" class="form-control"
-                                    placeholder="Contoh: 1200" required>
+                                <label for="jabatan" class="form-label">Pilih Jabatan <span class="text-danger">*</span></label>
+                                <select name="jabatan[]" id="jabatan" class="form-select select2" multiple></select>
                             </div>
 
                             <div class="col-md-12 mb-3">
-                                <label for="jangkaTarget" class="form-label">Jangka Target <span
-                                        class="text-danger">*</span></label>
-                                <select name="jangka_target" id="jangkaTarget" class="form-select" required>
-                                    <option selected disabled>-- Pilih Jangka --</option>
-                                </select>
+                                <label for="karyawan" class="form-label">Pilih Karyawan (Opsional - Jika kosong akan terisi otomatis sesuai jabatan)</label>
+                                <select name="karyawan[]" id="karyawan" class="form-select select2" multiple></select>
                             </div>
 
-                            <div class="col-md-12 mb-3" id="detailJangkaGroup" style="display: none;">
-                                <label for="detailJangka" class="form-label" id="detailJangkaLabel">
-                                    Detail Jangka <span class="text-danger">*</span>
-                                </label>
-                                <div id="detailJangkaField"></div>
-                            </div>
-
-                            <div class="col-md-12 mb-3" id="konversiGroup"
-                                style="display: none; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
-                                <h6 class="mb-2">
-                                    <i class="fas fa-calculator me-2"></i> Estimasi Distribusi Target Tahunan:
-                                </h6>
-                                <div class="row text-center">
+                            <!-- Field Otomatis dari Route -->
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label text-muted small">Detail Konfigurasi (Auto-filled)</label>
+                                <div class="row g-2">
                                     <div class="col-md-4">
-                                        <small class="text-muted">Per Bulan</small>
-                                        <p class="mb-0 fw-bold" id="hasilBulanan">-</p>
+                                        <input type="text" id="jangka_target_display" class="form-control bg-light" readonly placeholder="Jangka Target">
+                                        <input type="hidden" name="jangka_target" id="jangka_target_hidden">
                                     </div>
                                     <div class="col-md-4">
-                                        <small class="text-muted">Per Kuartal</small>
-                                        <p class="mb-0 fw-bold" id="hasilKuartal">-</p>
+                                        <input type="text" id="tipe_target_display" class="form-control bg-light" readonly placeholder="Tipe Target">
+                                        <input type="hidden" name="tipe_target" id="tipe_target_hidden">
                                     </div>
                                     <div class="col-md-4">
-                                        <small class="text-muted">Per Minggu</small>
-                                        <p class="mb-0 fw-bold" id="hasilMingguan">-</p>
+                                        <input type="text" id="nilai_target_display" class="form-control bg-light" readonly placeholder="Nilai Target">
+                                        <input type="hidden" name="nilai_target" id="nilai_target_hidden">
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Container Dinamis untuk Detail Jangka -->
+                            <div id="detail_jangka_container"></div>
                         </div>
                     </div>
 
@@ -769,6 +762,110 @@
         }
 
         $(document).ready(function() {
+
+            @if(session('import_errors'))
+                const errors = @json(session('import_errors'));
+                if (errors.length > 0) {
+                    const $errorSummary = $('#errorSummary');
+                    const $errorList = $errorSummary.find('ul');
+                    
+                    $errorList.empty();
+                    errors.slice(0, 10).forEach(err => {
+                        $errorList.append(`<li class="text-danger">${err}</li>`);
+                    });
+                    
+                    if (errors.length > 10) {
+                        $errorList.append(`<li class="text-muted">...dan ${errors.length - 10} error lainnya</li>`);
+                    }
+                    
+                    $errorSummary.removeClass('d-none');
+                    $('#ModalImport').modal('show');
+                }
+            @endif
+
+            $('#formImport').on('submit', function(e) {
+                const $btn = $('#btnSubmitImport');
+                const $preview = $('#importPreview');
+                
+                $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i>Memproses...');
+                $preview.removeClass('d-none');
+            });
+
+            $.ajax({
+                url: '{{ route('kpi.getDataTarget') }}',
+                type: 'GET',
+                success: function(response) {
+                    const routeSelect = $('#assistant_route');
+                    if (routeSelect.length && response.routes) {
+                        routeSelect.empty().append('<option selected disabled>-- Pilih Assistant Route --</option>');
+                        response.routes.forEach(function(route) {
+                            routeSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
+                        });
+                    }
+
+                    const jabatanSelect = $('#jabatan');
+                    if (jabatanSelect.length && response.jabatan_list) {
+                        jabatanSelect.empty();
+                        response.jabatan_list.forEach(function(jab) {
+                            jabatanSelect.append(`<option value="${jab}">${jab}</option>`);
+                        });
+                        $('.select2').select2();
+                    }
+                }
+            });
+
+            $('#jabatan').off('change').on('change', function() {
+                const selectedJabatans = $(this).val() || [];
+                const karyawanSelect = $('#karyawan');
+                karyawanSelect.empty().trigger('change');
+
+                if (selectedJabatans.length === 0) return;
+
+                $.ajax({
+                    url: '{{ route('kpi.getKaryawanByJabatan') }}',
+                    type: 'GET',
+                    data: { jabatan: selectedJabatans },
+                    success: function(response) {
+                        karyawanSelect.empty();
+                        response.forEach(function(emp) {
+                            karyawanSelect.append(`<option value="${emp.id}">${emp.text}</option>`);
+                        });
+                        karyawanSelect.trigger('change');
+                    }
+                });
+            });
+
+            $('#targetForm').off('submit').on('submit', function(e) {
+                e.preventDefault();
+                const form = $(this);
+                const formData = new FormData(this);
+
+                $.ajax({
+                    url: form.attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#modalBuatTarget').modal('hide');
+                        form[0].reset();
+                        $('.select2').val(null).trigger('change');
+                        Swal.fire('Berhasil', response.message, 'success');
+                        loadContentForm();
+                    },
+                    error: function(xhr) {
+                        const errors = xhr.responseJSON?.errors;
+                        let message = 'Terjadi kesalahan.';
+                        if (errors) {
+                            message = Object.values(errors).flat().join('\n');
+                        } else if (xhr.responseJSON?.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        Swal.fire('Error', message, 'error');
+                    }
+                });
+            });
+
             loadContentForm();
 
             initInputFormatting();
@@ -1096,364 +1193,168 @@
                 url: '{{ route('kpi.getDataTarget') }}',
                 type: 'GET',
                 success: function(response) {
-                    const data = response;
                     const content_target = $('#content_target');
-                    const jabatanSelect = $('#jabatan');
-                    const jangkaSelect = $('#jangkaTarget');
-                    const pembuatGroup = $('#pembuatGroup');
-                    const pembuatContainer = $('#radioPembuatContainer');
-                    const tahunIni = new Date().getFullYear();
-
                     content_target.empty();
 
-                    if (data.detail.length === 0) {} else {
-                        const now = new Date();
-                        const groupedByPembuat = {};
-                        data.detail.forEach(item => {
-                            const idPembuat = item.id_pembuat;
-                            if (!groupedByPembuat[idPembuat]) {
-                                groupedByPembuat[idPembuat] = {
-                                    nama_pembuat: item.pembuat,
-                                    targets: []
-                                };
-                            }
-                            groupedByPembuat[idPembuat].targets.push(item);
-                        });
+                    if (!response.detail || response.detail.length === 0) return;
 
-                        const getColor = (str) => {
-                            let hash = 0;
-                            for (let i = 0; i < str.length; i++) {
-                                hash = str.charCodeAt(i) + ((hash << 5) - hash);
-                            }
-                            let color = '#';
-                            for (let i = 0; i < 3; i++) {
-                                const value = (hash >> (i * 8)) & 0xFF;
-                                color += Math.floor(value * 0.7).toString(16).padStart(2, '0');
-                            }
-                            return color;
-                        };
-
-                            Object.entries(groupedByPembuat).forEach(([idPembuat, group]) => {
-                                const bgColor = getColor(idPembuat);
-
-                                group.targets.forEach(function(item) {
-                                    let formattedTarget = item.nilai_target;
-                                    if (item.tipe_target === 'persen' || item.tipe_target ===
-                                        'angka') {
-                                        formattedTarget = `${item.nilai_target}%`;
-                                    } else if (item.tipe_target === 'rupiah') {
-                                        formattedTarget = new Intl.NumberFormat('id-ID', {
-                                            style: 'currency',
-                                            currency: 'IDR',
-                                            minimumFractionDigits: 0
-                                        }).format(item.nilai_target);
-                                    }
-
-                                    let jabatanDisplay = '-';
-                                    if (item.jabatan && item.jabatan.length > 0) {
-                                        const jabatanList = item.jabatan;
-                                        if (jabatanList.length === 1) {
-                                            jabatanDisplay = jabatanList[0];
-                                        } else {
-                                            jabatanDisplay = jabatanList.map(j => j.substring(0,
-                                                4) + '...').join(', ');
-                                        }
-                                    }
-
-                                    let deadlineText = '';
-                                    let deadlineDate = null;
-                                    const detail = item.detail_jangka ? item.detail_jangka
-                                        .toString().trim() : '';
-
-                                    if (item.jangka_target === 'tahunan') {
-                                        const year = parseInt(detail);
-                                        if (!isNaN(year)) {
-                                            deadlineText = `31 Des ${year}`;
-                                            deadlineDate = new Date(`${year}-12-31`);
-                                        }
-                                    } else if (item.jangka_target === 'bulanan') {
-                                        const parts = detail.split('-');
-                                        if (parts.length === 2) {
-                                            const [year, month] = parts;
-                                            const lastDay = new Date(year, month, 0).getDate();
-                                            const monthName = new Date(year, month - 1)
-                                                .toLocaleString('id-ID', {
-                                                    month: 'short'
-                                                });
-                                            deadlineText = `${lastDay} ${monthName} ${year}`;
-                                            deadlineDate = new Date(year, month - 1, lastDay);
-                                        }
-                                    } else if (item.jangka_target === 'kuartalan') {
-                                        const match = detail.match(/(\d{4})\D?Q?(\d)/i);
-                                        if (match) {
-                                            const year = match[1];
-                                            const quarter = parseInt(match[2]);
-                                            const monthEnd = quarter * 3;
-                                            const lastDay = new Date(year, monthEnd, 0).getDate();
-                                            const monthName = new Date(year, monthEnd - 1)
-                                                .toLocaleString('id-ID', {
-                                                    month: 'short'
-                                                });
-                                            deadlineText = `${lastDay} ${monthName} ${year}`;
-                                            deadlineDate = new Date(year, monthEnd - 1, lastDay);
-                                        }
-                                    } else if (item.jangka_target === 'mingguan') {
-                                        const match = detail.match(/(\d{4})\D?W?(\d{1,2})/i);
-                                        if (match) {
-                                            const year = parseInt(match[1]);
-                                            const week = parseInt(match[2]);
-                                            const firstDay = new Date(year, 0, 1);
-                                            const deadlineMillis = firstDay.getTime() + (week * 7 *
-                                                24 * 60 * 60 * 1000);
-                                            deadlineDate = new Date(deadlineMillis);
-                                            deadlineText = `Minggu ke-${week}, ${year}`;
-                                        }
-                                    }
-
-                                    let statusText = '';
-                                    let badgeClass = 'bg-secondary';
-                                    const now = new Date();
-                                    const year = now.getFullYear();
-                                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                                    const day = String(now.getDate()).padStart(2, '0');
-                                    const nowTime = `${year}-${month}-${day}`;
-                                    let lengthProgress;
-
-                                    if (item.tipe_target === 'persen' || item.tipe_target ===
-                                        'angka') {
-                                        progressNumeric = parseFloat(item.progress) || 0;
-                                        progressValueDisplay = `${progressNumeric}%`;
-                                    } else if (item.tipe_target === 'rupiah') {
-                                        const target = parseFloat(item.nilai_target) || 0;
-                                        const progressRupiah = parseFloat(item.progress) || 0;
-                                        progressNumeric = target > 0 ? Math.min((progressRupiah /
-                                            target) * 100, 100) : 0;
-                                        progressValueDisplay = new Intl.NumberFormat('id-ID', {
-                                            style: 'currency',
-                                            currency: 'IDR',
-                                            minimumFractionDigits: 0
-                                        }).format(progressRupiah);
-                                    }
-
-                                    lengthProgress = Math.max(0, Math.min(progressNumeric, 100));
-                                    let isTargetReached = false;
-
-                                    if (item.tipe_target === 'angka') {
-                                        isTargetReached = item.manual_value >= item.nilai_target;
-
-                                    } else if (item.tipe_target === 'rupiah') {
-                                        const progressRupiah = parseFloat(item.progress) || 0;
-                                        const target = parseFloat(item.nilai_target) || 0;
-                                        isTargetReached = progressRupiah >= target;
-
-                                    } else {
-                                        isTargetReached = progressNumeric >= item.nilai_target;
-                                    }
-
-                                    const nowDate = new Date();
-                                    let deadline;
-
-                                    if (item.tenggat_waktu.includes('-')) {
-                                        const parts = item.tenggat_waktu.split('-');
-
-                                        if (parts[0].length === 4) {
-                                            deadline = new Date(parts[0], parts[1] - 1, parts[2]);
-                                        } else {
-                                            deadline = new Date(parts[2], parts[1] - 1, parts[0]);
-                                        }
-                                    } else {
-                                        deadline = new Date(item.tenggat_waktu);
-                                    }
-
-                                    const isOverdue = nowDate > deadline;
-
-                                    const isSameYear = nowDate.getFullYear() === deadline.getFullYear();
-
-                                    if (!isOverdue && isSameYear) {
-                                        if (!progressNumeric || progressNumeric === 0) {
-                                            statusText = 'Belum Dimulai';
-                                            badgeClass = 'bg-warning text-dark';
-                                        } else {
-                                            statusText = 'Dalam Progress';
-                                            badgeClass = 'bg-warning text-dark';
-                                        }
-                                    } else if (isOverdue) {
-                                        if (isTargetReached) {
-                                            statusText = 'Selesai';
-                                            badgeClass = 'bg-success';
-                                        } else {
-                                            statusText = 'Gagal';
-                                            badgeClass = 'bg-danger';
-                                        }
-                                    } else {
-                                        statusText = 'Dalam Progress';
-                                        badgeClass = 'bg-warning text-dark';
-                                    }
-
-                                    let buttonIsiForm = '';
-
-                                    if (allowedAssistantRoutes.includes(item.asistant_route)) {
-                                        buttonIsiForm = `
-                                            <li>
-                                                <button type="button"
-                                                    class="dropdown-item text-dark buttonForm"
-                                                    data-id="${item.id}"
-                                                    data-value="${item.manual_value}"
-                                                    data-route="${item.asistant_route}"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalFormManual">
-                                                    <i class="fa-solid fa-file-pen me-2"></i>
-                                                    Isi Data
-                                                </button>
-                                            </li>
-                                        `;
-                                    }
-
-                                    const routeUrl = assistantRouteUrlMap[item.asistant_route] || '#';
-
-                                    $('#content_target').append(`
-                                        <tr>
-                                            <td class="fw-bold" style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.judul}</td>
-
-                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-                                                <span class="badge bg-light text-primary border border-primary">
-                                                    ${item.jangka_target.charAt(0).toUpperCase() + item.jangka_target.slice(1)}
-                                                </span>
-                                            </td>
-
-                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-                                                <span class="badge ${badgeClass}">
-                                                    ${statusText}
-                                                </span>
-                                            </td>
-
-                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${formattedTarget}</td>
-
-                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${jabatanDisplay}</td>
-                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.divisi || '-'}</td>
-                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.pembuat || '-'}</td>
-
-                                            <td style="min-width:150px; cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-                                                <div class="progress" style="height: 12px;">
-                                                    <div class="progress-bar"
-                                                        style="width: ${lengthProgress}%; background: ${
-                                                            badgeClass === 'bg-success' ? '#28a745' :
-                                                            badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
-                                                        }">
-                                                    </div>
-                                                </div>
-                                                <small>${progressValueDisplay}</small>
-                                            </td>
-
-                                            <td style="cursor: pointer;" data-id="${item.id}" id="buttonDetailTarget" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-                                                <small>
-                                                    <i class="fa-solid fa-calendar-days me-1"></i>
-                                                    ${item.tenggat_waktu}
-                                                </small>
-                                            </td>
-
-                                           <td>
-                                                <div class="dropdown">
-                                                    <button class="btn btn-sm btn-primary dropdown-toggle"
-                                                        type="button"
-                                                        data-bs-toggle="dropdown"
-                                                        aria-expanded="false">
-                                                        Aksi
-                                                    </button>
-
-                                                    <ul class="dropdown-menu">
-                                                        ${buttonIsiForm}
-
-                                                        <li>
-                                                            <a href="${routeUrl}" 
-                                                                class="dropdown-item text-dark"
-                                                                target="_blank">
-                                                                <i class="fa-solid fa-arrow-up-right-from-square me-2"></i>
-                                                                Lihat Detail KPI
-                                                            </a>
-                                                        </li>
-
-                                                        <li>
-                                                            <button type="button" 
-                                                                class="dropdown-item text-danger buttonHapusTarget"
-                                                                data-id="${item.id}">
-                                                                <i class="fa-solid fa-trash-can me-2"></i>
-                                                                Hapus
-                                                            </button>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </td>
-
-                                        </tr>
-                                    `);
-                                });
-                            });
-                    }
-
-                    const $editJangka = $('#edit_jangka_target');
-                    $editJangka.empty().append('<option selected disabled>-- Pilih Jangka --</option>');
-                    $editJangka.append(`<option value="Tahunan">Tahunan</option>`);
-
-                    jangkaSelect.empty().append('<option selected disabled>-- Pilih Jangka Target --</option>');
-                    pembuatContainer.empty();
-
-                    const jabatanTersedia = data.jabatan_list || [];
-                    const detailTargets = data.detail || [];
-                    const jabatanCount = {};
-                    detailTargets.forEach(d => {
-                        jabatanCount[d.jabatan] = (jabatanCount[d.jabatan] || 0) + 1;
-                    });
-
-                    jabatanTersedia.forEach(jab => {
-                        if (jabatanSelect.find(`option[value="${jab}"]`).length > 0) {
-                            return;
+                    const groupedByPembuat = {};
+                    response.detail.forEach(item => {
+                        const idPembuat = item.id_pembuat;
+                        if (!groupedByPembuat[idPembuat]) {
+                            groupedByPembuat[idPembuat] = {
+                                nama_pembuat: item.pembuat,
+                                targets: []
+                            };
                         }
-
-                        const count = jabatanCount[jab] || 0;
-                        const isDisabled = false;
-                        let label = jab;
-
-                        jabatanSelect.append(`
-                                <option value="${jab}">
-                                    ${label}
-                                </option>
-                            `);
+                        groupedByPembuat[idPembuat].targets.push(item);
                     });
 
-                    jangkaSelect.append(`<option value="Tahunan">Tahunan</option>`);
+                    const getColor = (str) => {
+                        let hash = 0;
+                        for (let i = 0; i < str.length; i++) {
+                            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                        }
+                        let color = '#';
+                        for (let i = 0; i < 3; i++) {
+                            const value = (hash >> (i * 8)) & 0xFF;
+                            color += Math.floor(value * 0.7).toString(16).padStart(2, '0');
+                        }
+                        return color;
+                    };
 
-                    const hasPembuat = data.pembuat && (
-                        (Array.isArray(data.pembuat) && data.pembuat.length > 0) ||
-                        (typeof data.pembuat === 'string' && data.pembuat.trim() !== '')
-                    );
-                    if (hasPembuat) {
-                        pembuatGroup.show();
-                        const pembuatList = Array.isArray(data.pembuat) ? data.pembuat : [{
-                            nama: data.pembuat
-                        }];
-                        pembuatList.forEach((p, idx) => {
-                            const nama = p.nama ?? p;
-                            const idValue = p.id ?? idx;
-                            const checked = (pembuatList.length === 1) ? 'checked' : '';
-                            pembuatContainer.append(`
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input pembuat-radio" type="radio" name="pembuat" id="pembuat_${idValue}" value="${idValue}" ${checked}>
-                                <label class="form-check-label" for="pembuat_${idValue}">${nama}</label>
-                            </div>
-                        `);
+                    Object.entries(groupedByPembuat).forEach(([idPembuat, group]) => {
+                        group.targets.forEach(function(item) {
+                            let formattedTarget = item.nilai_target;
+                            if (item.tipe_target === 'persen' || item.tipe_target === 'angka') {
+                                formattedTarget = `${item.nilai_target}%`;
+                            } else if (item.tipe_target === 'rupiah') {
+                                formattedTarget = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR',
+                                    minimumFractionDigits: 0
+                                }).format(item.nilai_target);
+                            }
+
+                            let jabatanDisplay = '-';
+                            if (item.jabatan && item.jabatan.length > 0) {
+                                const jabatanList = item.jabatan;
+                                if (jabatanList.length === 1) {
+                                    jabatanDisplay = jabatanList[0];
+                                } else {
+                                    jabatanDisplay = jabatanList.map(j => j.substring(0, 4) + '...').join(', ');
+                                }
+                            }
+
+                            let statusText = '';
+                            let badgeClass = 'bg-secondary';
+                            const nowDate = new Date();
+                            let lengthProgress;
+                            let progressNumeric = parseFloat(item.progress) || 0;
+                            let progressValueDisplay = progressNumeric + '%';
+
+                            if (item.tipe_target === 'rupiah') {
+                                const target = parseFloat(item.nilai_target) || 0;
+                                const progressRupiah = parseFloat(item.progress) || 0;
+                                progressNumeric = target > 0 ? Math.min((progressRupiah / target) * 100, 100) : 0;
+                                progressValueDisplay = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR',
+                                    minimumFractionDigits: 0
+                                }).format(progressRupiah);
+                            }
+
+                            lengthProgress = Math.max(0, Math.min(progressNumeric, 100));
+                            let isTargetReached = false;
+
+                            if (item.tipe_target === 'angka') {
+                                isTargetReached = item.manual_value >= item.nilai_target;
+                            } else if (item.tipe_target === 'rupiah') {
+                                isTargetReached = (parseFloat(item.progress) || 0) >= (parseFloat(item.nilai_target) || 0);
+                            } else {
+                                isTargetReached = progressNumeric >= item.nilai_target;
+                            }
+
+                            let deadline;
+                            if (item.tenggat_waktu.includes('-')) {
+                                const parts = item.tenggat_waktu.split('-');
+                                if (parts[0].length === 4) {
+                                    deadline = new Date(parts[0], parts[1] - 1, parts[2]);
+                                } else {
+                                    deadline = new Date(parts[2], parts[1] - 1, parts[0]);
+                                }
+                            } else {
+                                deadline = new Date(item.tenggat_waktu);
+                            }
+
+                            const isOverdue = nowDate > deadline;
+                            const isSameYear = nowDate.getFullYear() === deadline.getFullYear();
+
+                            if (!isOverdue && isSameYear) {
+                                statusText = progressNumeric === 0 ? 'Belum Dimulai' : 'Dalam Progress';
+                                badgeClass = 'bg-warning text-dark';
+                            } else if (isOverdue) {
+                                statusText = isTargetReached ? 'Selesai' : 'Gagal';
+                                badgeClass = isTargetReached ? 'bg-success' : 'bg-danger';
+                            } else {
+                                statusText = 'Dalam Progress';
+                                badgeClass = 'bg-warning text-dark';
+                            }
+
+                            let buttonIsiForm = '';
+                            if (typeof allowedAssistantRoutes !== 'undefined' && allowedAssistantRoutes.includes(item.asistant_route)) {
+                                buttonIsiForm = `
+                                    <li>
+                                        <button type="button" class="dropdown-item text-dark buttonForm"
+                                            data-id="${item.id}" data-value="${item.manual_value}" data-route="${item.asistant_route}"
+                                            data-bs-toggle="modal" data-bs-target="#modalFormManual">
+                                            <i class="fa-solid fa-file-pen me-2"></i> Isi Data
+                                        </button>
+                                    </li>
+                                `;
+                            }
+
+                            const routeUrl = (typeof assistantRouteUrlMap !== 'undefined' && assistantRouteUrlMap[item.asistant_route]) || '#';
+
+                            $('#content_target').append(`
+                                <tr>
+                                    <td class="fw-bold" style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.judul}</td>
+                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
+                                        <span class="badge bg-light text-primary border border-primary">${item.jangka_target.charAt(0).toUpperCase() + item.jangka_target.slice(1)}</span>
+                                    </td>
+                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
+                                        <span class="badge ${badgeClass}">${statusText}</span>
+                                    </td>
+                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${formattedTarget}</td>
+                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${jabatanDisplay}</td>
+                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.divisi || '-'}</td>
+                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.pembuat || '-'}</td>
+                                    <td style="min-width:150px; cursor: pointer;" data-id="${item.id}" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
+                                        <div class="progress" style="height: 12px;">
+                                            <div class="progress-bar" style="width: ${lengthProgress}%; background: ${badgeClass === 'bg-success' ? '#28a745' : badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'}"></div>
+                                        </div>
+                                        <small>${progressValueDisplay}</small>
+                                    </td>
+                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
+                                        <small><i class="fa-solid fa-calendar-days me-1"></i> ${item.tenggat_waktu}</small>
+                                    </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Aksi</button>
+                                            <ul class="dropdown-menu">
+                                                ${buttonIsiForm}
+                                                <li><a href="${routeUrl}" class="dropdown-item text-dark" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square me-2"></i> Lihat Detail KPI</a></li>
+                                                <li><button type="button" class="dropdown-item text-danger buttonHapusTarget" data-id="${item.id}"><i class="fa-solid fa-trash-can me-2"></i> Hapus</button></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `);
                         });
-                    } else {
-                        pembuatGroup.hide();
-                    }
-
-                    setupFormListeners();
-                    $('#detailJangkaGroup').hide();
-                    $('#konversiGroup').hide();
+                    });
                 },
                 error: function(xhr) {
-                    Swal.fire('Error', 'Gagal memuat data form: ' + (xhr.responseJSON?.message ||
-                        'Silakan coba lagi.'), 'error');
+                    Swal.fire('Error', 'Gagal memuat data: ' + (xhr.responseJSON?.message || 'Silakan coba lagi.'), 'error');
                 }
             });
         }
@@ -1491,7 +1392,7 @@
         });
 
 
-        $(document).on('click', '#buttonDetailTarget', function() {
+        $(document).on('click', '.buttonDetailTarget', function() {
             let id = $(this).data('id');
 
             $.ajax({
@@ -3200,407 +3101,139 @@
             const selectedJabatan = $(this).val();
             const assistantRouteSelect = $('#assistant_route');
             const tipeTargetSelect = $('#tipeTarget');
+            const nilaiTargetInput = $('#nilaiTarget');
+            const detailJangkaGroup = $('#detailJangkaGroup');
+            const detailJangkaField = $('#detailJangkaField');
 
-            assistantRouteSelect.empty();
-            tipeTargetSelect.empty();
+            assistantRouteSelect.empty().prop('disabled', true).html('<option selected disabled>-- Memuat routes... --</option>');
+            tipeTargetSelect.empty().prop('disabled', true).html('<option selected disabled>-- Pilih Assistant Route Terlebih Dahulu --</option>');
+            nilaiTargetInput.val('').prop('disabled', true);
+            detailJangkaGroup.hide();
+            detailJangkaField.empty();
 
             if (!selectedJabatan || selectedJabatan.length === 0) {
-                assistantRouteSelect.prop('disabled', true).html(
-                    '<option selected disabled>-- Pilih Jabatan Terlebih Dahulu --</option>');
-                tipeTargetSelect.prop('disabled', true).html(
-                    '<option selected disabled>-- Pilih Assistant Route Terlebih Dahulu --</option>');
+                assistantRouteSelect.html('<option selected disabled>-- Pilih Jabatan Terlebih Dahulu --</option>');
                 return;
             }
 
-            const hasGM = selectedJabatan.includes('GM');
-            const hasKoorITSM = selectedJabatan.includes('Koordinator ITSM');
-            const hasProgrammer = selectedJabatan.includes('Programmer');
-            const hasDigital = selectedJabatan.includes('Tim Digital');
-            const hasTS = selectedJabatan.includes('Technical Support');
-            const hasCC = selectedJabatan.includes('Customer Care');
-            const hasFinance = selectedJabatan.includes('Finance & Accounting');
-            const hasHRD = selectedJabatan.includes('HRD');
-            const hasDriver = selectedJabatan.includes('Driver');
-            const hasOB = selectedJabatan.includes('Office Boy');
-            const hasInstruktur = selectedJabatan.includes('Instruktur');
-            const hasManagerEdu = selectedJabatan.includes('Education Manager');
-            const hasSales = selectedJabatan.includes('Sales');
-            const hasSPVSales = selectedJabatan.includes('SPV Sales');
-            const hasAdmSales = selectedJabatan.includes('Adm Sales');
-            const hasAdmHolding = selectedJabatan.includes('Admin Holding');
+            $.ajax({
+                url: '{{ route('kpi.getRoutesByJabatan') }}',
+                type: 'GET',
+                data: { jabatan: selectedJabatan },
+                success: function(response) {
+                    assistantRouteSelect.empty();
+                    assistantRouteSelect.append('<option selected disabled>-- Pilih Assistant Route --</option>');
+                    
+                    if (response.length === 0) {
+                        assistantRouteSelect.append('<option disabled>-- Tidak ada Assistant Route tersedia untuk jabatan ini --</option>');
+                        assistantRouteSelect.prop('disabled', true);
+                        return;
+                    }
 
-            let options = '<option selected disabled>-- Pilih Assistant Route --</option>';
-
-            const jabatanCount = selectedJabatan.length;
-
-            if (jabatanCount >= 2) {
-                // Programmer + Tim Digital + TS
-                if (hasProgrammer && hasDigital && hasTS) {
-                    options += `
-                        <option value="kepuasan client ITSM">Kepuasan Client ITSM</option>
-                        <option value="inovation adaption rate">Inovation Adaption Rate</option>
-                        <option value="persentase gap kompetensi tim terhadap standar skill">Persentase Gap Kompetensi Tim terhadap Standar Skill</option>
-                    `;
-                } else if (hasSales && hasSPVSales && hasAdmSales) {
-                    options += `
-                        <option value="peningkatan kemampuan kompetensi sales">Peningkatan Kemampuan Kompetensi Sales</option>
-                    `;
-                } else {
-                    options +=
-                        '<option disabled>-- Kombinasi jabatan ini belum memiliki Assistant Route --</option>';
+                    response.forEach(route => {
+                        assistantRouteSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
+                    });
+                    
+                    assistantRouteSelect.prop('disabled', false);
+                },
+                error: function() {
+                    assistantRouteSelect.html('<option disabled>-- Gagal memuat routes --</option>');
+                    Swal.fire('Error', 'Gagal memuat daftar assistant route', 'error');
                 }
-            } else {
-                //Office
-                //GM
-                if (hasGM) {
-                    options += `
-                            <option value="Pemasukan Kotor">Pemasukan Kotor (PK * Pengeluaran)</option>
-                            <option value="pemasukan bersih">Laba Bersih</option>
-                            <option value="Kepuasan Pelanggan">Feedback Peserta</option>
-                            <option value="rasio biaya operasional terhadap revenue">Rasio Biaya Operasional Terhadap Revenue</option>
-                            <option value="performa KPI departemen">Performa KPI Departemen</option>
-                        `;
-                }
-                //CS
-                else if (hasCC) {
-                    options += `
-                            <option value="peserta puas dengan pelayanan dan fasilitas training">Peserta Puas Dengan Pelayanan & Fasilitas Training</option>
-                            <option value="dorong inovasi pelayanan">Dorong Inovasi Pelayanan</option>
-                            <option value="penanganan komplain perseta">Penanganan Komplain Peserta</option>
-                            <option value="report persiapan kelas">Report Persiapan Kelas</option>
-                        `;
-                }
-                //Finanace
-                else if (hasFinance) {
-                    options += `
-                        <option value="outstanding">Banyak Tagihan Client Yang Belum Lunas</option>
-                        <option value="inisiatif efisiensi keuangan">Inisiatif Efisiensi keuangan</option>
-                        <option value="mengurangi manual work dan error">Mengurangi Manual Work Dan Error</option>
-                        <option value="laporan analisis keuangan">Laporan Analisis Keuangan</option>
-                        <option value="pencairan biaya operasional">Pencairan Biaya Operasional Kantor</option>
-                        <option value="penyelesaian tagihan perusahaan">Penyelesaian Tagihan Perusahaan</option>
-                        <option value="akurasi pencatatan masuk">Akurasi Pencatatan Masuk</option>
-                    `;
-                }
-
-                //HRD
-                else if (hasHRD) {
-                    options += `
-                            <option value="pelaksanaan kegiatan karyawan">Pelaksanaan Kegiatan Karyawan</option>
-                            <option value="pengeluaran biaya karyawan">Pengeluaran Biaya Karyawan</option>
-                            <option value="administrasi karyawan">Administrasi Karyawan</option>
-                        `;
-                }
-
-                //Driver
-                else if (hasDriver) {
-                    options += `
-                        <option value="perbaikan kendaraan">Perbaikan kendaraan</option>
-                        <option value="report kondisi kendaraan">Report Kondisi Kendaraan</option>
-                        <option value="kontrol pengeluaran transportasi">Kontrol Pengeluaran Transportasi</option>
-                        <option value="feedback kenyamanan berkendaran">Feedback Kenyamanan Berkendara</option>
-                    `;
-                }
-
-                //OB
-                else if (hasOB) {
-                    options += `
-                        <option value="feedback kebersihan dan kenyamanan">Feedback Kebersihan Dan Kenyamanan Peserta</option>
-                        <option value="penyelesaian tugas harian">Peyelesaian Tugas Harian</option>
-                    `;
-                }
-
-                //ITSM
-                //Koordinator ITSM
-                else if (hasKoorITSM) {
-                    options += `
-                            <option value="meningkatkan kepuasan dan loyalitas peserta/client">Meningkatkan Kepuasan Dan Loyalitas Peserta/Client</option>
-                            <option value="availability sistem internal kritis">Availability Sistem Internal Kritis (Uptime%)</option>
-                        `;
-                }
-                //Programmer
-                else if (hasProgrammer) {
-                    options += `
-                            <option value="ketepatan waktu penyelesaian fitur">Ketepatan Waktu Penyelesaian Fitur/Modul</option>
-                            <option value="mengukur kualitas aplikasi agar minim bug">Mengukur Kualitas Aplikasi Agar Minim Bug</option>
-                        `;
-                }
-                //Digital
-                else if (hasDigital) {
-                    options += `
-                            <option value="konsistensi campaign digital">Konsistensi Campaign Digital</option>
-                            <option value="efektifitas diital marketing">Database Client Baru</option>
-                        `;
-                }
-                //TS
-                else if (hasTS) {
-                    options += `
-                            <option value="keberhasilan support memenuhi sla">Tingkat Keberhasilan Support Memenuhi SLA</option>
-                            <option value="kualitas layanan exam">Kualitas Layanan Exam</option>
-                        `;
-                }
-
-                //Education
-                //Instruktur
-                else if (hasInstruktur) {
-                    options += `
-                            <option value="presentase kinerja instruktur">Presentase Kinerja Instruktur</option>
-                            <option value="kepuasan peserta pelatihan">Kepuasan Peserta Pelatihan</option>
-                            <option value="upseling lanjutan materi">Upseling Lanjutan Materi</option>
-                            <option value="sertifikasi kompetensi internal">Peningkatan Kompetensi Instruktur - Sertifikasi Internal</option>
-                            <option value="pelatihan kompetensi eksternal">Peningkatan Kompetensi Instruktur - Pelatihan Eksternal</option>
-                        `;
-                }
-
-                //Education Manager
-                else if (hasManagerEdu) {
-                    options += `
-                            <option value="pengembangan kurikulum pelatihan">Pengembangan Kurikulum & Modul Pelatihan</option>
-                            <option value="peningkatan knowledge sharing">Peningkatan Knowledge Sharing</option>
-                            <option value="peningkatan kontribusi pelatihan">Peningkatan Kontribusi Pelatihan</option>
-                            <option value="evaluasi kinerja instruktur">Evaluasi Kinerja Instruktur</option>
-                        `;
-                }
-
-                //Sales & Materketing
-                //Sales
-                else if (hasSales) {
-                    options += `
-                        <option value="target penjualan tahunan">Target Penjualan Tahunan</option>
-                        <option value="biaya akuisisi perclient">Biaya Akuisisi Perclient</option>
-                    `;
-                }
-
-                //SPV Sales
-                else if (hasSPVSales) {
-                    options += `
-                        <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option>
-                        <option value="customer acquisition cost">Customer Acquisition Cost</option>
-                        <option value="evaluasi kinerja sales">Evaluasi Kinerja Sales</option>
-                    `;
-                }
-
-                // ADM Sales
-                else if (hasAdmSales) {
-                    options += `
-                        <option value="laporan mom">Laporan MOM</option>
-                        <option value="akurasi kelengkapan data penjualan">Akurasi Kelengkapan Data Penjualan</option>
-                        <option value="todo administrasi">Todo Administrasi</option>
-                    `;
-                }
-
-                // ADM Holding
-                else if (hasAdmHolding) {
-                    options += `
-                        <option value="ketepatan waktu po">Ketepatan Waktu PO</option>
-                        <option value="kualitas dokumentasi support dan proctor">Kualitas Dokumentasi Support Dan Proctor</option>
-                    `;
-                }
-
-                //end/selesai
-                else {
-                    options +=
-                        '<option disabled>-- Tidak ada Assistant Route tersedia untuk jabatan ini --</option>';
-                }
-
-            }
-
-            assistantRouteSelect.html(options);
-
-            const hasValidOptions = options.includes('<option value=');
-            assistantRouteSelect.prop('disabled', !hasValidOptions);
-
-            tipeTargetSelect.prop('disabled', true).html(
-                '<option selected disabled>-- Pilih Assistant Route Terlebih Dahulu --</option>');
+            });
         });
 
         $(document).on('change', '#assistant_route', function() {
             const selectedRoute = $(this).val();
-            const $tipeTarget = $('#tipeTarget');
-            const $nilaiTarget = $('#nilaiTarget');
+            const $form = $('#targetForm');
 
-            if (!selectedRoute) {
-                $tipeTarget
-                    .removeClass('select-readonly')
-                    .html(`
-                        <option selected disabled>-- Silahkan Memilih Assistant Route --</option>
-                    `)
-                    .prop('disabled', false);
-                $nilaiTarget.prop('disabled', false).val('').trigger('input');
-                return;
-            }
+            $('#jangka_target_display, #tipe_target_display, #nilai_target_display')
+                .val('').addClass('bg-light');
+            $('#jangka_target_hidden, #tipe_target_hidden, #nilai_target_hidden').val('');
+            $('#detail_jangka_container').empty();
 
+            if (!selectedRoute) return;
 
-            const routeLower = selectedRoute.toLowerCase();
+            $.ajax({
+                url: '{{ route('kpi.getTargetByRoute') }}',
+                type: 'GET',
+                data: { route: selectedRoute },
+                success: function(config) {
+                    // 1. Jangka Target
+                    const jangka = config.jangka_target || 'Tidak ditentukan';
+                    $('#jangka_target_display').val(jangka);
+                    $('#jangka_target_hidden').val(jangka);
 
-            const persenRoutes = [
-                // ================= GM =================
-                'pemasukan bersih',
-                'kepuasan pelanggan',
-                'rasio biaya operasional terhadap revenue',
-                'performa kpi departemen',
+                    // 2. Tipe Target
+                    let tipeLabel = '';
+                    if (config.tipe_target === 'persen') tipeLabel = 'Persen (%)';
+                    else if (config.tipe_target === 'rupiah') tipeLabel = 'Rupiah (Nilai Keuangan)';
+                    else tipeLabel = 'Angka (Unit, Jumlah, dll)';
+                    
+                    $('#tipe_target_display').val(tipeLabel);
+                    $('#tipe_target_hidden').val(config.tipe_target);
 
-                // ================= CS =================
-                'peserta puas dengan pelayanan dan fasilitas training',
-                'penanganan komplain peserta',
-                'report persiapan kelas',
+                    // 3. Nilai Target
+                    let nilaiFormatted = '';
+                    if (config.tipe_target === 'rupiah') {
+                        nilaiFormatted = new Intl.NumberFormat('id-ID', {
+                            style: 'currency', currency: 'IDR', minimumFractionDigits: 0
+                        }).format(config.nilai_target);
+                    } else if (config.tipe_target === 'persen') {
+                        nilaiFormatted = `${config.nilai_target} %`;
+                    } else {
+                        nilaiFormatted = new Intl.NumberFormat('id-ID').format(config.nilai_target);
+                    }
+                    $('#nilai_target_display').val(nilaiFormatted);
+                    $('#nilai_target_hidden').val(config.nilai_target);
 
-                // ================= Finance =================
-                'outstanding',
-                'penyelesaian tagihan perusahaan',
-                'akurasi pencatatan masuk',
-                'pencairan biaya operasional',
+                    // 4. Generate Field Detail Jangka secara Dinamis
+                    let jangkaLower = jangka.toLowerCase();
+                    let htmlDetailJangka = '';
 
-                // ================= HRD =================
-                'pelaksanaan kegiatan karyawan',
-                'pengeluaran biaya karyawan',
-                'administrasi karyawan',
+                    if (jangkaLower === 'tahunan') {
+                        const tahunIni = new Date().getFullYear();
+                        htmlDetailJangka = `
+                            <div class="col-md-12 mb-3">
+                                <label for="detail_jangka" class="form-label">Tahun Pelaksanaan <span class="text-danger">*</span></label>
+                                <select name="detail_jangka" id="detail_jangka" class="form-select" required>
+                                    <option value="${tahunIni}" selected>${tahunIni}</option>
+                                    <option value="${tahunIni + 1}">${tahunIni + 1}</option>
+                                </select>
+                            </div>
+                        `;
+                    } else if (jangkaLower === 'bulanan') {
+                        htmlDetailJangka = `
+                            <div class="col-md-6 mb-3">
+                                <label for="detail_jangka" class="form-label">Bulan & Tahun <span class="text-danger">*</span></label>
+                                <input type="month" name="detail_jangka" id="detail_jangka" class="form-control" required>
+                            </div>
+                        `;
+                    } else if (jangkaLower === 'kuartalan') {
+                        htmlDetailJangka = `
+                            <div class="col-md-6 mb-3">
+                                <label for="detail_jangka" class="form-label">Tahun & Kuartal <span class="text-danger">*</span></label>
+                                <input type="text" name="detail_jangka" id="detail_jangka" class="form-control" placeholder="Contoh: 2026-Q1" required>
+                            </div>
+                        `;
+                    } else {
+                        // Mingguan atau Lainnya
+                        htmlDetailJangka = `
+                            <div class="col-md-6 mb-3">
+                                <label for="detail_jangka" class="form-label">Detail Jangka <span class="text-danger">*</span></label>
+                                <input type="text" name="detail_jangka" id="detail_jangka" class="form-control" placeholder="Masukkan periode spesifik" required>
+                            </div>
+                        `;
+                    }
 
-                // ================= Driver =================
-                'perbaikan kendaraan',
-                'report kondisi kendaraan',
-                'kontrol pengeluaran transportasi',
-                'feedback kenyamanan berkendaran',
-
-                // ================= OB =================
-                'feedback kebersihan dan kenyamanan',
-                'penyelesaian tugas harian',
-
-                // ================= ITSM =================
-                'kepuasan client itsm',
-                'meningkatkan kepuasan dan loyalitas peserta/client',
-                'availability sistem internal kritis',
-
-                // ================= Programmer =================
-                'ketepatan waktu penyelesaian fitur',
-                'mengukur kualitas aplikasi agar minim bug',
-
-                // ================= Digital =================
-                'konsistensi campaign digital',
-
-                // ================= TS =================
-                'keberhasilan support memenuhi sla',
-                'kualitas layanan exam',
-
-                // ================= Instruktur =================
-                'presentase kinerja instruktur',
-                'kepuasan peserta pelatihan',
-                'upseling lanjutan materi',
-
-                // ================= Manager Edu =================
-                'peningkatan kontribusi pelatihan',
-                'evaluasi kinerja instruktur',
-
-                // ================= Sales =================
-                'target penjualan tahunan',
-                'biaya akuisisi perclient',
-
-                // ================= SPV Sales =================
-                'customer acquisition cost',
-                'evaluasi kinerja sales',
-
-                // ================= Adm Sales =================
-                'laporan mom',
-                'akurasi kelengkapan data penjualan',
-                'todo administrasi',
-
-                // ================= Adm Holding =================
-                'ketepatan waktu po',
-                'kualitas dokumentasi support dan proctor',
-
-                // ================= Kombinasi =================
-                'persentase gap kompetensi tim terhadap standar skill',
-                'peningkatan kemampuan kompetensi sales'
-            ].map(route => route.toLowerCase());
-
-            const rupiahRoutes = [
-                // GM
-                'pemasukan kotor',
-
-                // SPV Sales
-                'meningkatkan revenue perusahaan',
-            ].map(r => r.toLowerCase());
-
-            const angkaRoutes = [
-                // CS
-                'dorong inovasi pelayanan',
-
-                // Finance
-                'inisiatif efisiensi keuangan',
-                'mengurangi manual work dan error',
-                'laporan analisis keuangan',
-
-                // Digital
-                'efektifitas digital marketing',
-
-                // Instruktur
-                'sertifikasi kompetensi internal',
-                'pelatihan kompetensi eksternal',
-
-                // Manager Edu
-                'pengembangan kurikulum pelatihan',
-                'peningkatan knowledge sharing',
-
-                // Kombinasi IT
-                'inovation adaption rate'
-            ].map(route => route.toLowerCase());
-
-            if (persenRoutes.includes(routeLower)) {
-                $tipeTarget
-                    .html(`
-                        <option disabled>Angka (Unit, Jumlah, dll)</option>
-                        <option disabled>Rupiah (Nilai Keuangan)</option>
-                        <option value="persen" selected>Persen (%)</option>
-                    `)
-                    .addClass('select-readonly')
-                    .prop('disabled', false); 
-            } else if (rupiahRoutes.includes(routeLower)) {
-                $tipeTarget
-                    .html(`
-                        <option disabled>Angka (Unit, Jumlah, dll)</option>
-                        <option value="rupiah" selected>Rupiah (Nilai Keuangan)</option>
-                        <option disabled>Persen (%)</option>
-                    `)
-                    .addClass('select-readonly')
-                    .prop('disabled', false);
-            } else if (angkaRoutes.includes(routeLower)) {
-                $tipeTarget
-                    .html(`
-                        <option value="angka" selected>Angka (Unit, Jumlah, dll)</option>
-                        <option disabled>Rupiah (Nilai Keuangan)</option>
-                        <option disabled>Persen (%)</option>
-                    `)
-                    .addClass('select-readonly')
-                    .prop('disabled', false);
-            } else {
-                $tipeTarget
-                    .html(`
-                        <option selected disabled>-- Route Tidak Dikenali --</option>
-                    `)
-                    .removeClass('select-readonly') 
-                    .prop('disabled', false);
-            }
-
-            const autoFillValues = {
-                'sertifikasi kompetensi internal': $('#jabatan').val()?.length || 1,
-                'pelatihan kompetensi eksternal': $('#jabatan').val()?.length || 1,
-                'efektifitas digital marketing': 4,
-                'laporan analisis keuangan': 12,
-                'dorong inovasi pelayanan': 3,
-                'mengurangi manual work dan error': 2,
-                'inisiatif efisiensi keuangan': 2,
-                'pengembangan kurikulum pelatihan': 12,
-            };
-
-            if (autoFillValues.hasOwnProperty(routeLower)) {
-                $nilaiTarget.val(autoFillValues[routeLower]).trigger('input');
-            }
-
-            if ($nilaiTarget.val()) {
-                $nilaiTarget.trigger('input');
-            }
+                    $('#detail_jangka_container').html(htmlDetailJangka);
+                },
+                error: function() {
+                    Swal.fire('Error', 'Gagal memuat konfigurasi target', 'error');
+                }
+            });
         });
-
+        
         document.getElementById('manual_document').addEventListener('change', function(e) {
             const preview = document.getElementById('documentPreview');
             preview.innerHTML = '';

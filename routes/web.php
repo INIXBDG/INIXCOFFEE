@@ -83,7 +83,7 @@ use App\Models\izinTigaJam;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\KlaimModulController;
-
+use App\Http\Controllers\KPI\DataTargetController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 /*
@@ -434,6 +434,18 @@ Route::prefix('kpi-data/')
     ->name('kpi.')
     ->middleware(['auth'])
     ->group(function () {
+        Route::prefix('data-target')->name('dataTarget.')->group(function () {
+            Route::get('/index', [DataTargetController::class, 'index'])->name('index');
+            Route::get('/template', [DataTargetController::class, 'downloadTemplate'])->name('template');
+            Route::post('/import', [DataTargetController::class, 'import'])->name('import');
+            Route::put('/{id}', [DataTargetController::class, 'update'])->name('update');
+            Route::delete('/{id}', [DataTargetController::class, 'destroy'])->name('destroy');
+            Route::get('/api', [DataTargetController::class, 'getDataTargets'])->name('api');
+        });
+
+        Route::get('/get-routes-by-jabatan', [TargetKPIController::class, 'getAssistantRoutesByJabatan'])->name('getRoutesByJabatan');
+        Route::get('/get-target-by-route', [TargetKPIController::class, 'getDataTargetByRoute'])->name('getTargetByRoute');
+
         //Overview KPI
         route::prefix('overview/')
             ->name('overview.')

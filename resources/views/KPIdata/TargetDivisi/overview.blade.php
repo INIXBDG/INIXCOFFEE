@@ -286,9 +286,9 @@
                         '<span class="badge bg-success-subtle text-success">Sedang Berjalan</span>');
 
                 html += `
-                    <div class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} clickable-item" style="cursor: pointer;">
+                    <div class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} employee-card" data-employee-id="${emp.id_karyawan}" style="cursor: pointer;" onclick="handleClickCheck(${emp.id_karyawan})">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div onclick="handleClickCheck(${emp.id_karyawan})">
+                            <div class="employee-info" style="cursor: pointer;">
                                 <strong>${emp.nama}</strong><br>
                                 <small class="text-muted">${emp.jabatan}</small>
                             </div>
@@ -299,7 +299,7 @@
                                     </div>
                                     <div class="col-auto">
                                         <div class="dropdown">
-                                            <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="event.stopPropagation();">
                                                 <i class="fas fa-download me-1"></i> Export
                                             </button>
                                             <ul class="dropdown-menu">
@@ -424,6 +424,7 @@
             
             $(document).off('click', '.btn-export').on('click', '.btn-export', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 
                 window.exportData = {
                     type: $(this).data('type'),
@@ -437,6 +438,25 @@
                 
                 if (exportFilterModalInstance) {
                     exportFilterModalInstance.show();
+                }
+            });
+            
+            $(document).on('click', '.employee-card', function(e) {
+                // Abaikan jika yang diklik adalah dropdown atau tombol export
+                if ($(e.target).closest('.dropdown, .dropdown-toggle, .btn-export').length > 0) {
+                    return;
+                }
+
+                // Gunakan .attr() agar 100% terbaca dari HTML
+                const empId = $(this).attr('data-employee-id');
+                
+                // Debugging: cek di Console browser (F12) apakah ID terbaca
+                console.log('Klik detail karyawan, ID:', empId); 
+
+                if (empId) {
+                    handleClickCheck(empId);
+                } else {
+                    console.warn('ID Karyawan tidak ditemukan pada data-employee-id');
                 }
             });
         });

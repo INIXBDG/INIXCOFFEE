@@ -314,7 +314,6 @@
                             $auth === 'Education Manager' ||
                             $auth === 'GM' ||
                             $auth === 'SPV Sales')
-
                         <li class="nav-item {{ Request::routeIs('kpi.index') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('kpi.index') }}">
                                 <span class="menu-title">Target Divisi</span>
@@ -336,6 +335,15 @@
                             <i class="fa-solid fa-users-viewfinder menu-icon"></i>
                         </a>
                     </li>
+                    
+                    @if ($auth === 'GM' || $auth === 'HRD' || $auth === 'Direktur Utama' || $auth === 'Direktur')
+                        <li class="nav-item {{ Request::routeIs('kpi.dataTarget.index') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('kpi.dataTarget.index') }}">
+                                <span class="menu-title">Data Target</span>
+                                <i class="fa-solid fa-bullseye menu-icon"></i>
+                            </a>
+                        </li>
+                    @endif
 
                     <li class="nav-item">
                         <a class="nav-link" style="margin-left: -10px;">
