@@ -228,6 +228,7 @@
                     <p style="margin:0;">{{ $kwitansi->invoice->catatan_pembayaran }}</p>
                 @else
                     <p style="margin:0;">Note : Mohon nomor invoice dan nama perusahaan dicantumkan</p>
+                    <p style="margin:0; padding-left:33px;">Silahkan bayar harga invoice tanpa dikurangi biaya bank</p>
                 @endif
             </td>
         </tr>
