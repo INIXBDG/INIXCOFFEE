@@ -402,82 +402,91 @@ class OutstandingController extends Controller
 
     public function edit($id)
     {
-        $outstanding = outstanding::findOrFail($id);
+        $outstanding = Outstanding::with('rkm.perusahaan', 'rkm.materi')->findOrFail($id);
         $tracking_outstanding = trackingOutstanding::where('id_outstanding', $id)->first();
 
+        // Handle potongan
         $potongan = [];
-
         if (!empty($outstanding->jumlah_potongan)) {
-            $potongan = $outstanding->jumlah_potongan ?? [];
+            $potongan = is_string($outstanding->jumlah_potongan)
+                ? json_decode($outstanding->jumlah_potongan, true)
+                : $outstanding->jumlah_potongan;
         }
 
-        if ($tracking_outstanding == null || $tracking_outstanding == '') {
-            $tracking_outstanding = [
-                'invoice' => 0,
-                'faktur_pajak' => 0,
-                'dokumen_tambahan' => 0,
-                'konfir_cs' => 0,
-                'tracking_dokumen' => 0,
-                'no_resi' => 0,
-                'net_sales' => 0,
-                'konfir_pic' => 0,
-                'pembayaran' => 0,
-                'status_resi' => '',
-                'status_pic' => '',
-            ];
-        } else {
-            $tracking_outstanding = [
-                'id' => $tracking_outstanding->id,
-                'id_outstanding' => $tracking_outstanding->id_outstanding,
-                'invoice' => $tracking_outstanding->invoice,
-                'faktur_pajak' => $tracking_outstanding->faktur_pajak,
-                'dokumen_tambahan' => $tracking_outstanding->dokumen_tambahan,
-                'konfir_cs' => $tracking_outstanding->konfir_cs,
-                'tracking_dokumen' => $tracking_outstanding->tracking_dokumen,
-                'no_resi' => $tracking_outstanding->no_resi,
-                'konfir_pic' => $tracking_outstanding->konfir_pic,
-                'pembayaran' => $tracking_outstanding->pembayaran,
-                'status_resi' => $tracking_outstanding->status_resi,
-                'status_pic' => $tracking_outstanding->status_pic,
-                'net_sales' => $outstanding->net_sales,
-                'created_at' => $tracking_outstanding->created_at,
-                'updated_at' => $tracking_outstanding->updated_at,
-            ];
+        // Tentukan current status dari tracking
+        $currentStatus = '';
+
+        if ($tracking_outstanding) {
+            // Cek dari yang tertinggi (pembayaran) ke terendah
+            if ($tracking_outstanding->pembayaran == 1) {
+                $currentStatus = 'pembayaran';
+            } elseif ($tracking_outstanding->konfir_pic == 1) {
+                $currentStatus = 'konfir_pic';
+            } elseif ($tracking_outstanding->no_resi == 1) {
+                $currentStatus = 'no_resi';
+            } elseif ($tracking_outstanding->tracking_dokumen == 1) {
+                $currentStatus = 'tracking_dokumen';
+            } elseif ($tracking_outstanding->konfir_cs == 1) {
+                $currentStatus = 'konfir_cs';
+            } elseif ($tracking_outstanding->dokumen_tambahan == 1) {
+                $currentStatus = 'dokumen_tambahan';
+            } elseif ($tracking_outstanding->faktur_pajak == 1) {
+                $currentStatus = 'faktur_pajak';
+            } elseif ($tracking_outstanding->invoice == 1) {
+                $currentStatus = 'invoice';
+            }
         }
 
-        return view('outstanding.edit', compact('outstanding', 'tracking_outstanding', 'potongan'));
+        // Debug log
+        Log::info('Edit Outstanding', [
+            'id' => $id,
+            'status_pembayaran' => $outstanding->status_pembayaran,
+            'tracking_exists' => $tracking_outstanding ? true : false,
+            'tracking_data' => $tracking_outstanding ? $tracking_outstanding->toArray() : null,
+            'currentStatus' => $currentStatus
+        ]);
+
+        return view('outstanding.edit', compact('outstanding', 'tracking_outstanding', 'potongan', 'currentStatus'));
     }
 
     public function update(Request $request, $id)
     {
+        // Validasi
         $this->validate($request, [
-            'id_rkm' => 'required',
-            'net_sales' => 'nullable',
-            'no_regist' => 'nullable',
-            'no_invoice' => 'nullable',
-            'tanggal_bayar' => 'nullable',
-            'status_pembayaran' => 'required',
-            'jumlah_pembayaran' => 'nullable',
-            'due_date' => 'required',
-            'pic' => 'required',
-            'sales_key' => 'required',
-            'faktur_pajak' => 'nullable|file|max:2048',
+            'id_rkm' => 'required|exists:r_k_m_s,id',
+            'net_sales' => 'nullable|numeric',
+            'no_regist' => 'nullable|string|max:255',
+            'no_invoice' => 'nullable|string|max:255',
+            'tanggal_bayar' => 'nullable|date',
+            'status_pembayaran' => 'required|in:0,1',
+            'jumlah_pembayaran' => 'nullable|numeric',
+            'due_date' => 'required|date',
+            'pic' => 'required|string|max:255',
+            'sales_key' => 'required|string|max:255',
+            'faktur_pajak' => 'nullable|file|mimes:pdf|max:2048',
+            'dokumen_tambahan_files.*' => 'nullable|file|mimes:pdf|max:2048',
+            'pembayaran' => 'nullable|file|mimes:pdf|max:2048',
         ]);
 
         $post = Outstanding::findOrFail($id);
 
-        $fakturPath = null;
+        // Handle file uploads
+        $fakturPath = $post->path_faktur_pajak;
         if ($request->hasFile('faktur_pajak')) {
-            $file = $request->file('faktur_pajak');
-            $fakturPath = $file->store('faktur_pajak', 'public');
+            // Delete old file
+            if ($fakturPath && Storage::exists($fakturPath)) {
+                Storage::delete($fakturPath);
+            }
+            $fakturPath = $request->file('faktur_pajak')->store('faktur_pajak', 'public');
         }
-        $dokumenTambahanPath = null;
 
+        $dokumenTambahanPath = $post->path_dokumen_tambahan;
+
+        // Handle dokumen tambahan
         if ($request->hasFile('dokumen_tambahan_files')) {
             $files = $request->file('dokumen_tambahan_files');
-
-            // Simpan sementara file ke storage/temp
             $tempPaths = [];
+
             foreach ($files as $file) {
                 $path = $file->store('temp');
                 $tempPaths[] = storage_path('app/' . $path);
@@ -489,10 +498,8 @@ class OutstandingController extends Controller
             }
 
             $pdf = new Fpdi();
-
             foreach ($tempPaths as $filePath) {
                 $pageCount = $pdf->setSourceFile($filePath);
-
                 for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
                     $tpl = $pdf->importPage($pageNo);
                     $size = $pdf->getTemplateSize($tpl);
@@ -500,44 +507,40 @@ class OutstandingController extends Controller
                     $pdf->useTemplate($tpl);
                 }
             }
-
-            // Simpan PDF hasil merge
             $pdf->Output($outputPath, 'F');
 
-            // Hapus file sementara
+            // Cleanup temp files
             foreach ($tempPaths as $path) {
                 if (file_exists($path)) {
                     unlink($path);
                 }
             }
 
-            // 🔥 Optimalkan PDF hasil gabungan
+            // Optimize PDF
             $optimizedOutputPath = str_replace('.pdf', '_optimized.pdf', $outputPath);
-
             $result = FacadePdfOptimizer::fromDisk('local')
-                ->open(str_replace(storage_path('app/'), '', $outputPath)) // Path relatif dari disk 'local'
-                ->settings(PdfSettings::SCREEN) // Atau PREPRESS, PRINTER, dll
+                ->open(str_replace(storage_path('app/'), '', $outputPath))
+                ->settings(PdfSettings::SCREEN)
                 ->colorConversionStrategy(ColorConversionStrategy::DEVICE_INDEPENDENT_COLOR)
-                ->colorImageResolution(50) // Atur resolusi gambar untuk mengurangi ukuran
+                ->colorImageResolution(50)
                 ->optimize($optimizedOutputPath);
 
-            // Jika optimasi berhasil, gunakan file hasil optimasi
             if ($result->status) {
-                unlink($outputPath); // Hapus file asli yang belum dioptimalkan
+                unlink($outputPath);
                 $dokumenTambahanPath = str_replace(storage_path('app/'), '', $optimizedOutputPath);
             } else {
-                // Jika optimasi gagal, gunakan file asli
                 $dokumenTambahanPath = str_replace(storage_path('app/'), '', $outputPath);
             }
         }
 
+        // Handle bukti pembayaran
         if ($request->hasFile('pembayaran')) {
             $newFile = $request->file('pembayaran');
             $newFilePath = $newFile->store('temp');
 
             $oldFilePath = null;
-            if ($post->path_dokumen_tambahan) {
-                $oldFilePath = storage_path('app/' . $post->path_dokumen_tambahan);
+            if ($dokumenTambahanPath) {
+                $oldFilePath = storage_path('app/' . $dokumenTambahanPath);
             }
 
             $allTempPaths = [];
@@ -552,10 +555,8 @@ class OutstandingController extends Controller
             }
 
             $pdf = new Fpdi();
-
             foreach ($allTempPaths as $filePath) {
                 $pageCount = $pdf->setSourceFile($filePath);
-
                 for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
                     $tpl = $pdf->importPage($pageNo);
                     $size = $pdf->getTemplateSize($tpl);
@@ -563,10 +564,9 @@ class OutstandingController extends Controller
                     $pdf->useTemplate($tpl);
                 }
             }
-
             $pdf->Output($outputPath, 'F');
 
-            // Hapus file sementara (kecuali file lama dari database)
+            // Cleanup
             foreach ($allTempPaths as $path) {
                 if ($path !== $oldFilePath && file_exists($path)) {
                     unlink($path);
@@ -578,9 +578,8 @@ class OutstandingController extends Controller
                 unlink($newFilePathToDelete);
             }
 
-            // 🔥 Optimalkan PDF hasil gabungan
+            // Optimize
             $optimizedOutputPath = str_replace('.pdf', '_optimized.pdf', $outputPath);
-
             $result = FacadePdfOptimizer::fromDisk('local')
                 ->open(str_replace(storage_path('app/'), '', $outputPath))
                 ->settings(PdfSettings::SCREEN)
@@ -592,16 +591,14 @@ class OutstandingController extends Controller
                 if (file_exists($outputPath)) {
                     unlink($outputPath);
                 }
-                // Simpan path baru untuk update ke database
                 $dokumenTambahanPath = str_replace(storage_path('app/'), '', $optimizedOutputPath);
             } else {
-                // Jika optimasi gagal, gunakan file asli
                 $dokumenTambahanPath = str_replace(storage_path('app/'), '', $outputPath);
             }
         }
 
+        // Handle potongan
         $potonganData = [];
-
         if ($request->jumlah_potongan && $request->jenis_potongan) {
             foreach ($request->jumlah_potongan as $index => $jumlah) {
                 if ($jumlah && $request->jenis_potongan[$index]) {
@@ -613,6 +610,7 @@ class OutstandingController extends Controller
             }
         }
 
+        // Update outstanding
         $post->update([
             'id_rkm' => $request->id_rkm,
             'net_sales' => $request->net_sales,
@@ -624,12 +622,40 @@ class OutstandingController extends Controller
             'no_regist' => $request->no_regist,
             'no_invoice' => $request->no_invoice,
             'tanggal_bayar' => $request->tanggal_bayar,
-            'path_faktur_pajak' => $fakturPath ?? $post->path_faktur_pajak,
-            'path_dokumen_tambahan' => $dokumenTambahanPath ?? $post->path_dokumen_tambahan,
+            'path_faktur_pajak' => $fakturPath,
+            'path_dokumen_tambahan' => $dokumenTambahanPath,
             'jumlah_potongan' => !empty($potonganData) ? $potonganData : null,
             'jenis_potongan' => !empty($potonganData) ? array_column($potonganData, 'jenis') : null,
         ]);
 
+        // Handle status tracking
+        $request_status = $request->status_tracking;
+
+        // Fallback: jika status kosong, pertahankan yang lama
+        if (empty($request_status)) {
+            $oldTracking = trackingOutstanding::where('id_outstanding', $id)->first();
+            if ($oldTracking) {
+                if ($oldTracking->pembayaran == 1) {
+                    $request_status = 'pembayaran';
+                } elseif ($oldTracking->konfir_pic == 1) {
+                    $request_status = 'konfir_pic';
+                } elseif ($oldTracking->no_resi == 1) {
+                    $request_status = 'no_resi';
+                } elseif ($oldTracking->tracking_dokumen == 1) {
+                    $request_status = 'tracking_dokumen';
+                } elseif ($oldTracking->konfir_cs == 1) {
+                    $request_status = 'konfir_cs';
+                } elseif ($oldTracking->dokumen_tambahan == 1) {
+                    $request_status = 'dokumen_tambahan';
+                } elseif ($oldTracking->faktur_pajak == 1) {
+                    $request_status = 'faktur_pajak';
+                } elseif ($oldTracking->invoice == 1) {
+                    $request_status = 'invoice';
+                }
+            }
+        }
+
+        // Initialize status tracking
         $status_tracking = [
             'invoice' => 0,
             'faktur_pajak' => 0,
@@ -641,8 +667,7 @@ class OutstandingController extends Controller
             'pembayaran' => 0,
         ];
 
-        $request_status = $request->status_tracking;
-
+        // Set status tracking
         switch ($request_status) {
             case 'invoice':
                 $status_tracking['invoice'] = 1;
@@ -696,17 +721,33 @@ class OutstandingController extends Controller
                 $status_tracking['konfir_pic'] = 1;
                 $status_tracking['pembayaran'] = 1;
                 break;
+            default:
+                // Pertahankan status lama jika tidak ada yang valid
+                $oldTracking = trackingOutstanding::where('id_outstanding', $id)->first();
+                if ($oldTracking) {
+                    $status_tracking = [
+                        'invoice' => $oldTracking->invoice,
+                        'faktur_pajak' => $oldTracking->faktur_pajak,
+                        'dokumen_tambahan' => $oldTracking->dokumen_tambahan,
+                        'konfir_cs' => $oldTracking->konfir_cs,
+                        'tracking_dokumen' => $oldTracking->tracking_dokumen,
+                        'no_resi' => $oldTracking->no_resi,
+                        'konfir_pic' => $oldTracking->konfir_pic,
+                        'pembayaran' => $oldTracking->pembayaran,
+                    ];
+                }
+                break;
         }
 
-        // Cek entri trackingOutstanding
+        // Update or create tracking
         $tracking = trackingOutstanding::where('id_outstanding', $post->id)->first();
         if ($tracking) {
             $tracking->update(
                 array_merge($status_tracking, [
-                    'status_resi' => $request->status_resi ?? '-',
-                    'status_pic' => $request->status_pic ?? '-',
+                    'status_resi' => $request->status_resi ?? $tracking->status_resi,
+                    'status_pic' => $request->status_pic ?? $tracking->status_pic,
                     'updated_at' => now(),
-                ]),
+                ])
             );
         } else {
             trackingOutstanding::create(
@@ -714,27 +755,24 @@ class OutstandingController extends Controller
                     'id_outstanding' => $post->id,
                     'status_resi' => $request->status_resi ?? '-',
                     'status_pic' => $request->status_pic ?? '-',
-                ]),
+                ])
             );
         }
 
-        // Update notifikasi jika status pembayaran 1
+        // Send notifications if payment is complete
         if ($request->status_pembayaran == '1') {
-            $rkm = RKM::where('id', $request->id_rkm)->with('perusahaan', 'materi')->first();
+            $rkm = RKM::with('perusahaan', 'materi')->where('id', $post->id_rkm)->first();
+
             DB::table('notifications')
                 ->where('type', 'App\Notifications\OutstandingNotification')
                 ->whereJsonContains('data->message->nama_perusahaan', $rkm->perusahaan->nama_perusahaan)
                 ->whereJsonContains('data->message->nama_materi', $rkm->materi->nama_materi)
-                ->whereJsonContains('data->message->due_date', $request->due_date)
                 ->update(['read_at' => now()]);
-        }
 
-        if ($request->status_pembayaran == '1') {
-            $rkm = RKM::with(['perusahaan', 'materi'])
-                ->where('id', $post->id_rkm)
-                ->first();
-
-            $users = User::where('id_sales', $post->sales_key)->where('jabatan', 'Finance & Accounting')->get();
+            // Notify Finance
+            $users = User::where('id_sales', $post->sales_key)
+                ->orWhere('jabatan', 'Finance & Accounting')
+                ->get();
 
             $data = [
                 'perusahaan' => $rkm->perusahaan->nama_perusahaan,
@@ -745,21 +783,27 @@ class OutstandingController extends Controller
             ];
 
             NotificationFacade::send($users, new OutstandingSelesai($data));
-        }
 
-        if ($request->status_pembayaran == '1') {
-            $rkm = RKM::with('outstanding', 'perusahaan', 'materi')->where('id', $post->id_rkm)->first();
-            $penerima = User::where('jabatan', 'Finance & Accounting')->where('status_akun', '1')->get();
+            // Notify for PA
+            $penerima = User::where('jabatan', 'Finance & Accounting')
+                ->where('status_akun', '1')
+                ->get();
 
-            $data = [
+            $dataPA = [
                 'perusahaan' => $rkm->perusahaan->nama_perusahaan,
                 'materi' => $rkm->materi->nama_materi,
                 'periode' => $rkm->tanggal_awal . ' -> ' . $rkm->tanggal_akhir,
             ];
 
             $path = '/outstanding/' . $rkm->id . '/detail';
-            NotificationFacade::send($penerima, new OutstandingPaNotification($data, $path));
+            NotificationFacade::send($penerima, new OutstandingPaNotification($dataPA, $path));
         }
+
+        Log::info('Outstanding Updated', [
+            'id' => $id,
+            'status_tracking' => $request_status,
+            'status_pembayaran' => $request->status_pembayaran
+        ]);
 
         return redirect()
             ->route('outstanding.index')
