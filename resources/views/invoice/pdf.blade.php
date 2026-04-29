@@ -282,7 +282,7 @@
                 @endphp
 
                 <p style="margin:0; font-weight:bold;">a/n {{ $accountName }}</p>
-{{-- 
+                
                 @if($invoice->catatan_pembayaran)
                     <p style="margin:0;">{{ $invoice->catatan_pembayaran }}</p>
                 @else
