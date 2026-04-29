@@ -105,7 +105,14 @@
                                         <td>{{ \Carbon\Carbon::parse($rkm->tanggal_awal)->format('d F Y') }} s/d {{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('d F Y') }}</td>
                                         <td>{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</td>
                                         <td>
-                                            <a href="{{ route('invoice.show', $rkm->invoice->id) }}" class="btn btn-success btn-sm">Lihat Invoice</a>
+                                            @php
+                                                $peserta = $rkm->registrasi
+                                                    ->pluck('peserta.nama')
+                                                    ->toArray();
+                                            @endphp
+                                            <a href="{{ route('download.pdf', ['id' => $rkm->invoice->id, 'peserta[]' => $peserta]) }}" class="btn btn-primary">
+                                                Pdf
+                                            </a>
                                         </td>
                                     </tr>
                                     @endforeach
