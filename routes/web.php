@@ -84,6 +84,7 @@ use App\Models\izinTigaJam;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\KlaimModulController;
+use App\Http\Controllers\KPI\DataTargetController;
 use App\Http\Controllers\LeadProjectController;
 use App\Http\Controllers\ReportSalesProjectController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
@@ -379,6 +380,7 @@ Route::post('/daftar-peserta-exam/store', [App\Http\Controllers\DaftarPesertaExa
 Route::get('/daftar-peserta-exam/get-data', [App\Http\Controllers\DaftarPesertaExamController::class, 'getData'])->name('daftar-peserta-exam.get-data');
 Route::get('/daftar-peserta-exam/{id}/edit', [App\Http\Controllers\DaftarPesertaExamController::class, 'edit'])->name('daftar-peserta-exam.edit');
 Route::put('/daftar-peserta-exam/{id}', [App\Http\Controllers\DaftarPesertaExamController::class, 'update'])->name('daftar-peserta-exam.update');
+Route::post('/daftar-peserta-exam/store-peserta-ajax', [App\Http\Controllers\DaftarPesertaExamController::class, 'storePesertaAjax'])->name('daftar-peserta-exam.storeAjax');
 Route::post('/listexam/delete/{id}', [App\Http\Controllers\ListExamController::class, 'destroy']);
 
 Route::get('/feedbackPelayanan', [App\Http\Controllers\feedbackController::class, 'pelayananFeedbackShow'])->name('feedbackPelayanan');
@@ -436,6 +438,18 @@ Route::prefix('kpi-data/')
     ->name('kpi.')
     ->middleware(['auth'])
     ->group(function () {
+        Route::prefix('data-target')->name('dataTarget.')->group(function () {
+            Route::get('/index', [DataTargetController::class, 'index'])->name('index');
+            Route::get('/template', [DataTargetController::class, 'downloadTemplate'])->name('template');
+            Route::post('/import', [DataTargetController::class, 'import'])->name('import');
+            Route::put('/{id}', [DataTargetController::class, 'update'])->name('update');
+            Route::delete('/{id}', [DataTargetController::class, 'destroy'])->name('destroy');
+            Route::get('/api', [DataTargetController::class, 'getDataTargets'])->name('api');
+        });
+
+        Route::get('/get-routes-by-jabatan', [TargetKPIController::class, 'getAssistantRoutesByJabatan'])->name('getRoutesByJabatan');
+        Route::get('/get-target-by-route', [TargetKPIController::class, 'getDataTargetByRoute'])->name('getTargetByRoute');
+
         //Overview KPI
         route::prefix('overview/')
             ->name('overview.')
@@ -449,6 +463,15 @@ Route::prefix('kpi-data/')
             //yang hilang
             route::post('/update-target-per-sales', [TargetKPIController::class, 'updateTargetPerSales'])->name('updateTargetPerSales');
         });
+
+            Route::get('/monitoring/export/pdf',   [TargetKPIController::class, 'exportMonitoringPdf'])
+                ->name('monitoring.export.pdf');
+
+            Route::get('/monitoring/export/excel', [TargetKPIController::class, 'exportMonitoringExcel'])
+                ->name('monitoring.export.excel');
+
+        Route::get('/export', [TargetKPIController::class, 'exportKpiTemplate'])->name('export');
+        Route::get('/export/pdf', [TargetKPIController::class, 'exportKpiTemplatePdf'])->name('export.pdf');
 
         //Target Departement
         route::get('/table-data', [TargetKPIController::class, 'kpiIndex'])->name('index');
@@ -904,7 +927,7 @@ Route::prefix('office')->group(function () {
     Route::get('/data-hari-libur/edit/{id}', [OfficeController::class, 'editHariLibur'])->name('editHariLibur');
     Route::post('/data-hari-libur/update/{id}', [OfficeController::class, 'updateHariLibur'])->name('updateHariLibur');
     Route::post('/data-hari-libur/delete/{id}', [OfficeController::class, 'deleteHariLibur'])->name('deleteHariLibur');
-    
+
     Route::get('/table/outstanding/', [OfficeController::class, 'TableOutstanding'])->name('office.table.outstanding');
     Route::get('/grafik/outstanding/', [OfficeController::class, 'GrafikOutstanding'])->name('office.grafik.outstanding');
     Route::get('/grafik/ketepatan-waktu/', [OfficeController::class, 'GrafikKetepatanWaktu'])->name('office.grafik.ketepatan.waktu');
@@ -1330,7 +1353,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/projects/administrasi/get-data', [ProjectAdministrationController::class, 'getAdministrasi'])->name('getAdministrasi');
     Route::post('/projects/administrasi/{id}/update-stage', [ProjectAdministrationController::class, 'updateStage'])->name('administrasi.updateStage');
     Route::resource('/projects/administrasi', ProjectAdministrationController::class);
-
+    Route::post('/projects/{id}/update-info', [ProjectAdministrationController::class, 'updateProjectInfo'])->name('projects.update_info');
     // Route Kanban Project
     Route::get('/projects/kanban', [ProjectKanbanController::class, 'index'])->name('kanban.index');
     Route::get('/projects/kanban/get-tasks', [ProjectKanbanController::class, 'getTasks']);
@@ -1370,6 +1393,7 @@ Route::prefix('projects/leads')->group(function () {
     Route::get('/data', [LeadProjectController::class, 'getLeads'])->name('leads.data');
     Route::post('/store', [LeadProjectController::class, 'store'])->name('leads.store');
     Route::post('/{id}/update-status', [LeadProjectController::class, 'updateStatus'])->name('leads.update_status');
+    Route::post('/{id}/update-data', [LeadProjectController::class, 'updateLead'])->name('leads.update_data');
 });
 
 // Modul Rekap Penjualan

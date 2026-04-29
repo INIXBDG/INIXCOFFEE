@@ -98,7 +98,11 @@
                         <tr>
                             <td colspan="3" class="fw-bold">Due Date:</td>
                             <td colspan="2">
-                                <input type="date" class="form-control" name="due_date" id="due_date"
+                                {{-- due date ke db --}}
+                                <input type="date" hidden name="due_date" id="due_date"
+                                    value="{{ old('due_date') }}">
+                                {{-- due date manual --}}
+                                <input type="date" class="form-control" name="due_date_manual" id="due_date_manual"
                                     value="{{ old('due_date') }}">
                                 <small class="text-muted">Otomatis 6 bulan dari tanggal invoice</small>
                             </td>
@@ -523,6 +527,7 @@
                 const day = String(invoiceDate.getDate()).padStart(2, '0');
 
                 document.getElementById('due_date').value = `${year}-${month}-${day}`;
+                document.getElementById('due_date_manual').value = `${year}-${month}-${day}`;
             }
         });
 

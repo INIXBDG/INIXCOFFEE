@@ -414,8 +414,8 @@ class KegiatanController extends Controller
         $kegiatan = Kegiatan::findOrFail($id);
         $userId = auth()->user()->id;
 
-        $startDate = Carbon::parse($kegiatan->waktu_kegiatan)->subWeek();
-        $endDate = Carbon::parse($kegiatan->kegiatan)->addWeeks(2);
+        $startDate = Carbon::parse($kegiatan->waktu_kegiatan)->subMonth();
+        $endDate = Carbon::parse($kegiatan->kegiatan)->addMonth();
 
         $pengajuanBarang = PengajuanBarang::with(['karyawan', 'detail'])
             ->whereHas('karyawan', function ($q) use ($userId) {

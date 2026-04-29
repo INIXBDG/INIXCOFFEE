@@ -316,13 +316,7 @@
                 },
                 {
                     "data": "phase",
-                    "render": function(data) {
-                        let phaseClass = 'bg-secondary';
-                        if(data === 'administrasi') phaseClass = 'bg-info text-dark';
-                        if(data === 'teknis') phaseClass = 'bg-primary';
-                        if(data === 'selesai') phaseClass = 'bg-success';
-                        return '<span class="badge ' + phaseClass + '">' + data.toUpperCase() + '</span>';
-                    }
+                    "render": function(data) { return data ? data : '-'; }
                 },
                 {
                     "data": "nilai_proyek",

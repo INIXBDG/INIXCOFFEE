@@ -16,7 +16,14 @@ class Project extends Model
         'description',
         'client_id',
         'phase',
+        'tanggal_awal',
+        'tanggal_akhir',
         'nilai_proyek',
+    ];
+
+    protected $casts = [
+        'tanggal_awal' => 'date',
+        'tanggal_akhir' => 'date',
     ];
 
     public function administration()

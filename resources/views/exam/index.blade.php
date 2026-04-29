@@ -238,9 +238,6 @@
                                 actions += '@else';
                                     actions += '<a href="/pengajuanExam/' + data.id + '" class="btn disabled btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
                                 actions += '@endif';
-                                actions += '@if (auth()->user()->can('Daftar Peserta Exam'))'
-                                    actions += '<a href="/daftar-peserta-exam/create/' + data.id + '" class="btn btn-md click-primary mx-4">Assign</a>';
-                                actions += '@endif';
                                 return actions;
                             }
                         },
@@ -325,6 +322,12 @@
                                 actions += '<div class="dropdown-menu">';
                                 actions += '<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '">Detail</a>';
 
+                                // Penempatan fungsi Assign Peserta agar berlaku universal untuk ID Exam
+                                actions += '@can("Daftar Peserta Exam")';
+                                actions += '<a class="dropdown-item text-primary" href="/daftar-peserta-exam/create/' + row.id + '"><i class="fas fa-users"></i> Assign Peserta</a>';
+                                actions += '@endcan';
+                                actions += '<div class="dropdown-divider"></div>';
+
                                 var tglMulai = row.tanggal_mulai ? row.tanggal_mulai : '';
                                 var tglSelesai = row.tanggal_selesai ? row.tanggal_selesai : '';
                                 actions += '<a class="dropdown-item text-primary" href="javascript:void(0)" onclick="openTanggalModal(' + row.id + ', \'' + tglMulai + '\', \'' + tglSelesai + '\')"><i class="fas fa-calendar-alt"></i> Set Tanggal Exam</a>';
@@ -354,6 +357,7 @@
                                     actions += '<div class="dropdown-divider"></div>';
                                 }
 
+                                // Logika Assign Ruangan khusus untuk status Exam Only (3)
                                 if (row.status == '3') {
                                     var roomAssigned = row.rkm && row.rkm.ruang && row.rkm.ruang !== 'Exam';
                                     if (!roomAssigned) {
@@ -361,6 +365,7 @@
                                     } else {
                                         actions += '<a class="dropdown-item text-success" href="#"><i class="fas fa-check"></i> Ruangan: ' + (row.rkm.ruang || '-') + '</a>';
                                     }
+                                    actions += '<div class="dropdown-divider"></div>';
                                 }
 
                                 actions += '@can("Edit Exam")<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '/edit">Edit</a>@endcan';

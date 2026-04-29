@@ -13,6 +13,8 @@ class LeadProject extends Model
     protected $fillable = [
         'nama_lead',
         'perusahaan_id',
+        'nama_pic',    // Penambahan atribut nama PIC
+        'kontak_pic',
         'estimasi_nilai',
         'status',
         'sales_id',

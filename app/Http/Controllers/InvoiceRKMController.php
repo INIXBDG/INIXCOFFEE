@@ -182,6 +182,7 @@ public function store(Request $request)
     $nama_perusahaan = $request->input('perusahaan');
     $tanggal_awal = $request->input('tanggal_awal');
     $tanggal_akhir = $request->input('tanggal_akhir');
+    $dueDateManual = $request->input('due_date_manual');
 
     $jumlah = $request->input('jumlah');
     $subtotal = $request->input('subtotal');
@@ -216,7 +217,7 @@ public function store(Request $request)
     if ($outstanding) {
         trackingOutstanding::where('id_outstanding', $outstanding->id)
             ->update(['invoice' => 1]);
-
+     
         $outstanding->no_invoice = $request->input('invoice_number');
         $outstanding->update();
     }
@@ -236,7 +237,8 @@ public function store(Request $request)
         $subtotal, 
         $ppn,     
         $pph,     
-        $total    
+        $total,
+        $dueDateManual
     );
 }
 
@@ -527,7 +529,8 @@ public function downloadPdf(
     $subtotal = null, 
     $ppn = null,      
     $pph = null,      
-    $total = null     
+    $total = null,
+    $dueDateManual = null
 ) {
     $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta'])
         ->findOrFail($id);
@@ -546,11 +549,10 @@ public function downloadPdf(
 
     if (!empty($invoice->file_path) &&
         Storage::disk('local')->exists($invoice->file_path)) {
-
-        return response()->download(
-            storage_path('app/' . $invoice->file_path)
-        );
-    }
+            return response()->download(
+                storage_path('app/' . $invoice->file_path)
+            );
+        }
 
     $pdf = Pdf::loadView('invoice.pdf', compact(
         'invoice',
@@ -569,7 +571,8 @@ public function downloadPdf(
         'subtotal', 
         'ppn',      
         'pph',      
-        'total'     
+        'total',
+        'dueDateManual'
     ))
         ->setPaper('a4', 'portrait')
         ->setOptions([

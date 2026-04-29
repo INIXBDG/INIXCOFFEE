@@ -32,6 +32,14 @@
                             <select class="form-control" name="perusahaan_id" id="perusahaan_id" style="width: 100%;" required></select>
                         </div>
                         <div class="mb-3">
+                            <label for="nama_pic" class="form-label">{{ __('Nama PIC Klien') }}</label>
+                            <input type="text" class="form-control" id="nama_pic" name="nama_pic" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="kontak_pic" class="form-label">{{ __('Kontak PIC (No. HP / Email)') }}</label>
+                            <input type="text" class="form-control" id="kontak_pic" name="kontak_pic" required>
+                        </div>
+                        <div class="mb-3">
                             <label for="estimasi_nilai" class="form-label">{{ __('Estimasi Nilai (Rp)') }}</label>
                             <input type="number" class="form-control" id="estimasi_nilai" name="estimasi_nilai" min="0" required>
                         </div>
@@ -79,22 +87,63 @@
         </div>
     </div>
 
+    <div class="modal fade" id="editLeadModal" tabindex="-1" aria-labelledby="editLeadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editLeadModalLabel">{{ __('Edit Data Lead') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formEditLead">
+                    @csrf
+                    <input type="hidden" id="edit_lead_id" name="lead_id">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="edit_nama_lead" class="form-label">{{ __('Nama Lead / Prospek') }}</label>
+                            <input type="text" class="form-control" id="edit_nama_lead" name="nama_lead" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_nama_pic" class="form-label">{{ __('Nama PIC Klien') }}</label>
+                            <input type="text" class="form-control" id="edit_nama_pic" name="nama_pic" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_kontak_pic" class="form-label">{{ __('Kontak PIC (No. HP / Email)') }}</label>
+                            <input type="text" class="form-control" id="edit_kontak_pic" name="kontak_pic" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_estimasi_nilai" class="form-label">{{ __('Estimasi Nilai (Rp)') }}</label>
+                            <input type="number" class="form-control" id="edit_estimasi_nilai" name="estimasi_nilai" min="0" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+                        <button type="submit" class="btn btn-warning" id="btnUpdateLead">{{ __('Simpan Perubahan') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end mb-3">
-                <button type="button" class="btn btn-md btn-primary mx-4" data-bs-toggle="modal" data-bs-target="#createLeadModal">
+                @can('CRUD Project')
+                <button type="button" class="btn btn-md click-primary mx-4" data-bs-toggle="modal" data-bs-target="#createLeadModal">
                     <img src="{{ asset('icon/plus.svg') }}" class="" width="20px"> Tambah Lead
                 </button>
+                @endcan
+
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
                     <h3 class="card-title text-center my-1">{{ __('Data Leads (Prospek)') }}</h3>
-                    <table class="table table-striped text-center" id="leadsTable">
+                    <table class="table table-striped" id="leadsTable">
                         <thead>
                             <tr>
                                 <th scope="col">No</th>
                                 <th scope="col">Nama Lead</th>
                                 <th scope="col">Perusahaan</th>
+                                <th scope="col">PIC Klien</th>
                                 <th scope="col">Estimasi Nilai</th>
                                 <th scope="col">Tahapan / Status</th>
                                 <th scope="col">Proyek Terhubung</th>
@@ -178,6 +227,14 @@
                     "render": function(data) { return data ? data : '-'; }
                 },
                 {
+                    "data": "nama_pic",
+                    "render": function(data, type, row) { 
+                        let nama = data ? data : '-';
+                        let kontak = row.kontak_pic ? row.kontak_pic : '-';
+                        return '<span class="fw-bold">' + nama + '</span><br><small class="text-muted">' + kontak + '</small>'; 
+                    }
+                },
+                {
                     "data": "estimasi_nilai",
                     "render": function(data) { return formatRupiah(data); }
                 },
@@ -194,12 +251,13 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        var actions = '<div class="dropdown">';
-                        actions += '<button type="button" class="btn dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-                        actions += 'Actions';
+                        let actions = '<div class="btn-group dropup">';
+                        actions += '<button type="button" class="btn btn-sm dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+                        actions += 'Actions ';
                         actions += '</button>';
-                        actions += '<div class="dropdown-menu">';
+                        actions += '<div class="dropdown-menu shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
                         actions += '<a class="dropdown-item btn-edit-status" href="#" data-id="' + row.id + '" data-status="' + row.status + '">Perbarui Tahapan</a>';
+                        actions += '<a class="dropdown-item btn-edit-lead" href="#" data-id="' + row.id + '" data-nama="' + row.nama_lead + '" data-pic="' + (row.nama_pic || '') + '" data-kontak="' + (row.kontak_pic || '') + '" data-nilai="' + row.estimasi_nilai + '">Edit Data Lead</a>';
                         actions += '</div></div>';
                         return actions;
                     }
@@ -283,6 +341,54 @@
                 },
                 complete: function() {
                     $('#btnUpdateStatus').prop('disabled', false).text('Simpan Perubahan');
+                    setTimeout(() => { $('#loadingModal').modal('hide'); }, 500);
+                }
+            });
+        });
+
+        // 1. Membuka Modal Edit dan Memasukkan Data dari Atribut DataTables
+        $('#leadsTable tbody').on('click', '.btn-edit-lead', function (e) {
+            e.preventDefault();
+            $('#edit_lead_id').val($(this).data('id'));
+            $('#edit_nama_lead').val($(this).data('nama'));
+            $('#edit_nama_pic').val($(this).data('pic'));
+            $('#edit_kontak_pic').val($(this).data('kontak'));
+            $('#edit_estimasi_nilai').val($(this).data('nilai'));
+            
+            $('#editLeadModal').modal('show');
+        });
+
+        // 2. Mengirim Pembaruan Data via AJAX
+        $('#formEditLead').on('submit', function(e) {
+            e.preventDefault();
+            var leadId = $('#edit_lead_id').val();
+            var formData = $(this).serialize();
+
+            // Sesuaikan URL prefix (misal: /projects/leads atau /leads) berdasarkan konfigurasi routes/web.php Anda
+            var actionUrl = "{{ url('/projects/leads') }}/" + leadId + "/update-data";
+
+            $.ajax({
+                url: actionUrl,
+                type: "POST", // Menggunakan metode POST (dapat diubah ke PUT dengan @method('PUT') jika rute disetel mendengarkan PUT)
+                data: formData,
+                beforeSend: function() {
+                    $('#btnUpdateLead').prop('disabled', true).text('Memproses...');
+                    $('#loadingModal').modal('show');
+                },
+                success: function(response) {
+                    $('#editLeadModal').modal('hide');
+                    $('#formEditLead')[0].reset();
+                    table.ajax.reload(null, false);
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Gagal memperbarui data.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    alert(errorMessage);
+                },
+                complete: function() {
+                    $('#btnUpdateLead').prop('disabled', false).text('Simpan Perubahan');
                     setTimeout(() => { $('#loadingModal').modal('hide'); }, 500);
                 }
             });

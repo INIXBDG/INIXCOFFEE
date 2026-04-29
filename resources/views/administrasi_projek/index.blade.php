@@ -17,11 +17,11 @@
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end mb-3">
-                {{-- @can('Create Administrasi') --}}
+                @can('CRUD Project')
                     <button type="button" class="btn btn-md click-primary mx-4" data-bs-toggle="modal" data-bs-target="#createModal">
                         <img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Tambah Administrasi
                     </button>
-                {{-- @endcan --}}
+                @endcan
             </div>
 
             {{-- Modal Kelola Dokumen (Update Stage) --}}
@@ -126,12 +126,54 @@
                 </div>
             </div>
 
+            {{-- Modal Edit Proyek --}}
+            <div class="modal fade" id="editProjectModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ __('Edit Data & Tanggal Proyek') }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form id="formEditProject">
+                            @csrf
+                            <input type="hidden" id="edit_project_id" name="project_id">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ __('Nama Projek') }}</label>
+                                    <input type="text" class="form-control" id="edit_nama_projek" name="nama_projek" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ __('Deskripsi Projek') }}</label>
+                                    <textarea class="form-control" id="edit_deskripsi" name="deskripsi" rows="2"></textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">{{ __('Tanggal Mulai') }}</label>
+                                        <input type="date" class="form-control" id="edit_tanggal_awal" name="tanggal_awal">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">{{ __('Tanggal Selesai') }}</label>
+                                        <input type="date" class="form-control" id="edit_tanggal_selesai" name="tanggal_selesai">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+                                <button type="submit" class="btn btn-warning" id="btnUpdateProject">
+                                    <i class="fas fa-edit me-1"></i> {{ __('Simpan Perubahan') }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             {{-- Tabel Utama Data Administrasi --}}
             <div class="card m-4 shadow-sm border-0">
                 <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-3 fw-bold">{{ __('Data Administrasi Proyek') }}</h3>
-                    <table class="table table-striped table-hover text-center align-middle" id="administrasiProjekTable" style="width:100%">
-                        <thead class="table-dark text-nowrap">
+                    <h3 class="card-title text-center my-3">{{ __('Data Administrasi Proyek') }}</h3>
+                    <table class="table table-striped " id="administrasiProjekTable" style="width:100%">
+                        <thead>
                             <tr>
                                 <th scope="col">No</th>
                                 <th scope="col">Nama Projek</th>
@@ -199,9 +241,10 @@
     $(document).ready(function(){
         
         // --- Fungsi Pembantu untuk Merender Kolom Dokumen (Multi-file Support) ---
+        // --- Fungsi Pembantu untuk Merender Kolom Dokumen (Desain Sesuai Gambar) ---
         function renderDocumentColumn(data) {
-            // Gaya visual jika dokumen kosong
-            const emptyBadge = '<span class="text-danger fw-bold">&#10008;</span>';
+            // Gaya visual jika dokumen kosong (Silang Merah)
+            const emptyBadge = '<span class="text-danger fw-bold fs-5">&#10008;</span>';
             
             if (!data || data === 'null' || data === '[]') {
                 return emptyBadge;
@@ -211,13 +254,15 @@
                 let parsed = JSON.parse(data);
                 if (Array.isArray(parsed)) {
                     if (parsed.length === 0) return emptyBadge;
-                    // Gaya visual jika dokumen terisi (Hijau solid)
-                    return `<span class="badge bg-success" style="padding: 6px 12px; font-weight: bold; border-radius: 4px;">${parsed.length} File</span>`;
+                    // Gaya visual jika dokumen terisi lebih dari satu (Blok Hijau Solid)
+                    return `<span class="badge bg-success shadow-sm" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 4px;">${parsed.length} File</span>`;
                 }
             } catch (e) {
-                // Tangkapan aman untuk format data lama (string tunggal bukan array)
+                // Tangkapan aman untuk format data lama (string tunggal)
                 if(typeof data === 'string' && data.trim() !== '') {
-                    return '<span class="text-success fw-bold">&#10004;</span>';
+                    // Gaya visual jika dokumen hanya satu (Ceklis Ungu Sesuai Gambar)
+                    // Anda dapat mengganti warna style jika ungu kurang pas, misal: color: #6f42c1;
+                    return '<span class="fw-bold fs-5" style="color: #6f42c1;">&#10004;</span>';
                 }
             }
             return emptyBadge;
@@ -245,7 +290,7 @@
                         return meta.row + meta.settings._iDisplayStart + 1;
                     }
                 },
-                { "data": 'dataproject.name', "className": "fw-bold text-start" },
+                { "data": 'dataproject.name', "className": "text-start" },
                 { 
                     "data": 'dataproject.client.nama_perusahaan',
                     "className": "text-start",
@@ -272,21 +317,38 @@
                     "data": null,
                     "render": function(data, type, row) {
                         // Logika Penentuan Kelengkapan Dokumen Dasar
-                        let isComplete = row.kak_file && row.proposal_file && row.budget_file && row.client_doc_file;
+                        // Logika Penentuan Kelengkapan Dokumen Dasar
+                        let isComplete = row.kak_file && row.proposal_file && row.budget_file && row.client_doc_file && row.surat_pekerjaan_dimulai_file;
                         
-                        let actions = "";
+                        // Logika Penentuan Kelengkapan Dokumen Dasar (Pastikan isComplete sudah didefinisikan sebelumnya)
                         
+                        // 1. Pembuka Kerangka Dropup
+                        let actions = '<div class="btn-group dropup">';
+                        actions += '<button type="button" class="btn btn-sm dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+                        actions += 'Actions ';
+                        actions += '</button>';
+                        actions += '<div class="dropdown-menu shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
+
+                        // 2. Logika Tombol Kelola/Keputusan
                         if (row.dataproject.phase === 'administrasi') {
                             if (isComplete) {
-                                actions += '<button class="btn btn-sm btn-success btn-update-stage" style="border-radius: 4px;">Keputusan Akhir</button>';
+                                actions += '<button class="dropdown-item btn-update-stage fw-bold text-success"><i class="fas fa-gavel me-2"></i>Keputusan Akhir</button>';
                             } else {
-                                actions += '<button class="btn btn-sm btn-primary btn-update-stage" style="border-radius: 4px;">Kelola Dokumen</button>';
+                                actions += '<button class="dropdown-item btn-update-stage"><i class="fas fa-folder-open me-2 text-primary"></i>Kelola Dokumen</button>';
                             }
                         } else {
-                             // Jika proyek masuk tahap teknis/selesai, biarkan pengguna tetap bisa mengelola dokumen (misal Laporan Akhir)
-                             actions += '<button class="btn btn-sm btn-primary btn-update-stage" style="border-radius: 4px;">Kelola Dokumen</button>';
+                            actions += '<button class="dropdown-item btn-update-stage"><i class="fas fa-folder-open me-2 text-primary"></i>Kelola Dokumen</button>';
                         }
-                        
+
+                        // Garis Pemisah (Opsional, agar tampilan menu lebih rapi)
+                        actions += '<div class="dropdown-divider"></div>';
+
+                        // 3. Tombol Edit Data & Tanggal Proyek
+                        actions += '<button class="dropdown-item btn-edit-project"><i class="fas fa-pen me-2 text-warning"></i>Edit Proyek</button>';
+
+                        // 4. Penutup Kerangka Dropup
+                        actions += '</div></div>';
+
                         return actions;
                     }
                 },
@@ -347,7 +409,7 @@
             $('#update_project_name').text(data.dataproject.name);
 
             // Cek kondisi kelengkapan dokumen minimum
-            var isComplete = data.kak_file && data.proposal_file && data.budget_file && data.client_doc_file;
+            var isComplete = data.kak_file && data.proposal_file && data.budget_file && data.client_doc_file && data.surat_pekerjaan_dimulai_file;
 
             // Jika status masih administrasi dan dokumen lengkap, tawarkan Keputusan Akhir
             if (data.dataproject.phase === 'administrasi' && isComplete) {
@@ -399,6 +461,56 @@
                 complete: function() {
                     $('#btnUpdateSave').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Simpan');
                     setTimeout(() => { $('#loadingModal').modal('hide'); }, 500);
+                }
+            });
+        });
+
+        // --- Buka Modal Edit Data & Tanggal Proyek ---
+        $('#administrasiProjekTable tbody').on('click', '.btn-edit-project', function () {
+            var data = $('#administrasiProjekTable').DataTable().row($(this).parents('tr')).data();
+            
+            $('#formEditProject')[0].reset();
+            $('#edit_project_id').val(data.dataproject.id);
+            $('#edit_nama_projek').val(data.dataproject.name);
+            $('#edit_deskripsi').val(data.dataproject.description);
+            
+            // Format format tanggal YYYY-MM-DD dari DB jika ada
+            if(data.dataproject.tanggal_awal) {
+                $('#edit_tanggal_awal').val(data.dataproject.tanggal_awal.substring(0, 10));
+            }
+            if(data.dataproject.tanggal_selesai) {
+                $('#edit_tanggal_selesai').val(data.dataproject.tanggal_selesai.substring(0, 10));
+            }
+
+            $('#editProjectModal').modal('show');
+        });
+
+        // --- Submit Form Edit Proyek ---
+        $('#formEditProject').on('submit', function(e) {
+            e.preventDefault();
+            var projectId = $('#edit_project_id').val();
+            var formData = $(this).serialize();
+            
+            $.ajax({
+                url: "/projects/" + projectId + "/update-info", // Sesuaikan dengan Rute yang dibuat
+                type: "POST",
+                data: formData,
+                beforeSend: function() {
+                    $('#btnUpdateProject').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+                },
+                success: function(response) {
+                    if(response.success) {
+                        $('#editProjectModal').modal('hide');
+                        $('#administrasiProjekTable').DataTable().ajax.reload(null, false);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    alert(xhr.responseJSON?.message || 'Terjadi kesalahan sistem.');
+                },
+                complete: function() {
+                    $('#btnUpdateProject').prop('disabled', false).html('<i class="fas fa-edit me-1"></i> Simpan Perubahan');
                 }
             });
         });
