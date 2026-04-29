@@ -60,7 +60,7 @@
                                 $bulanRomawi = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'];
                                 $bulanRomawiNow = $bulanRomawi[(int) date('m')];
                                 $tahun = date('Y');
-                                $idRkm = $invoice->rkm->id;
+                                $idRkm = explode('/', $invoice->invoice_number)[0];
                                 $kwitansiNumber = $idRkm . '/' . $kodeKwitansi . '/' . $bulanRomawiNow . '/' . $tahun;
                                 @endphp
                                 <input type="text" class="form-control" name="nomor_kwitansi"

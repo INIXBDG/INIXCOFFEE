@@ -165,7 +165,7 @@
                                         {{ $invoice->purchase_order ?? '-' }}
                                     </td>
                                     <td style="border:1px solid #000; padding:6px;">
-                                        {{ $invoice->due_date ? \Carbon\Carbon::parse($invoice->due_date)->translatedFormat('l, d F Y') : '-' }}
+                                        {{ $dueDateManual ? \Carbon\Carbon::parse($dueDateManual)->translatedFormat('l, d F Y') : '-' }}
                                     </td>
                                 </tr>
                             </table>
@@ -285,6 +285,7 @@
                     <p style="margin:0;">{{ $invoice->catatan_pembayaran }}</p>
                 @else
                     <p style="margin:0;">Note : Mohon nomor invoice dan nama perusahaan dicantumkan</p>
+                    <p style="margin:0; padding-left: 34px">Silahkan bayar harga invoice tanpa dikurangi biaya bank</p>
                 @endif
             </td>
         </tr>
