@@ -50,7 +50,8 @@ class JurnalAkuntansiController extends Controller
      */
     public function getData(Request $request)
     {
-        $query = JurnalAkuntansi::query();
+        // Tambahkan pemuatan relasi eksplisit menggunakan with()
+        $query = JurnalAkuntansi::with('no_accounting');
 
         if ($request->has('start_date') && $request->start_date != '') {
             $query->whereDate('tanggal_transaksi', '>=', $request->start_date);
@@ -229,16 +230,6 @@ class JurnalAkuntansiController extends Controller
             'is_petty_cash' => $is_petty_cash
         ]);
     }
-
-    /**
-     * Memperbarui data jurnal akuntansi di dalam database berdasarkan jenis jurnal.
-     */
-    /**
-     * Memperbarui data jurnal akuntansi di dalam database.
-     */
-    /**
-     * Memperbarui data jurnal akuntansi di dalam database.
-     */
     public function update(Request $request, $id)
     {
         $jurnal = JurnalAkuntansi::findOrFail($id);
@@ -326,7 +317,7 @@ class JurnalAkuntansiController extends Controller
 
                 // Menentukan Nomor KK: Gunakan dari file Excel, jika kosong jalankan method generator
                 $nomor_kk = !empty($row[0]) ? $row[0] : $this->generateNomorKK($tanggal);
-
+                $no_akun_bersih = isset($row[3]) && $row[3] !== '' ? trim((string) $row[3]) : null;
                 // Normalisasi string mata uang menjadi float
                 $debit = isset($row[4]) ? (float) preg_replace('/[^0-9.]/', '', $row[4]) : 0;
                 $kredit = isset($row[5]) ? (float) preg_replace('/[^0-9.]/', '', $row[5]) : 0;
@@ -336,7 +327,7 @@ class JurnalAkuntansiController extends Controller
                     'id_pengajuan_barang' => null,
                     'tanggal_transaksi' => $tanggal,
                     'keterangan' => $row[2],
-                    'no_akun' => $row[3] ?? null,
+                    'no_akun' => $no_akun_bersih,
                     'debit' => $debit,
                     'kredit' => $kredit,
                 ]);

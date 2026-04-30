@@ -211,6 +211,93 @@
             </div>
         </div>
     </div>
+    <!-- Modal Data Master No Akun -->
+    <div class="modal fade" id="masterNoAkunModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Manajemen Master No Akun</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" onclick="openFormNoAkun()">+ Tambah Akun</button>
+                        <button class="btn btn-success btn-sm" onclick="$('#importNoAkunModal').modal('show')">Import Excel</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="tableNoAkun" style="width: 100%">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>No Akun</th>
+                                    <th>Nama Akun</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form Create/Edit No Akun -->
+    <div class="modal fade" id="formNoAkunModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="titleFormNoAkun">Tambah No Akun</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="noAkunForm">
+                    @csrf
+                    <input type="hidden" name="_method" id="methodNoAkun" value="POST">
+                    <input type="hidden" id="id_no_akun">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nomor Akun</label>
+                            <input type="text" class="form-control" id="form_no_akun" name="no" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nama Akun</label>
+                            <input type="text" class="form-control" id="form_nama_akun" name="nama_akun" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Import No Akun -->
+    <div class="modal fade" id="importNoAkunModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Master No Akun</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formImportNoAkun" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">File Excel</label>
+                            <input type="file" class="form-control" name="file_no_akun" id="file_no_akun" accept=".xlsx, .xls, .csv" required>
+                            <small class="text-muted mt-2 d-block">Format: Kolom A (No Akun), Kolom B (Nama Akun). Baris 1 diabaikan sebagai header.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success">Mulai Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end mb-3 ">
@@ -222,6 +309,9 @@
                 </button>
                 <button type="button" class="btn btn-secondary ms-2" data-bs-toggle="modal" data-bs-target="#exportModal">
                     <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export Laporan
+                </button>
+                <button type="button" class="btn click-primary ms-2" id="btn-master-no-akun">
+                   Master No Akun
                 </button>
             </div>
             <div class="card m-4">
@@ -389,6 +479,47 @@
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
 <script>
+    // Deklarasi variabel global untuk DataTable No Akun
+    var dtNoAkun;
+
+    // FUNGSI GLOBAL TETAP DI LUAR (karena dipanggil via onclick di dalam DataTables render)
+    function openFormNoAkun() {
+        $('#noAkunForm')[0].reset();
+        $('#id_no_akun').val('');
+        $('#methodNoAkun').val('POST');
+        $('#titleFormNoAkun').text('Tambah No Akun');
+        $('#formNoAkunModal').modal('show');
+    }
+
+    function editNoAkun(id) {
+        $.get("{{ url('/no-akun') }}/" + id + "/edit", function(res) {
+            if(res.success) {
+                $('#noAkunForm')[0].reset();
+                $('#id_no_akun').val(res.data.id);
+                $('#form_no_akun').val(res.data.no);
+                $('#form_nama_akun').val(res.data.nama_akun);
+
+                $('#methodNoAkun').val('PUT');
+                $('#titleFormNoAkun').text('Edit No Akun');
+                $('#formNoAkunModal').modal('show');
+            }
+        });
+    }
+
+    function deleteNoAkun(id) {
+        if(confirm('Yakin ingin menghapus data ini?')) {
+            $.ajax({
+                url: "{{ url('/no-akun') }}/" + id,
+                type: "POST",
+                data: { _method: 'DELETE', _token: '{{ csrf_token() }}' },
+                success: function(res) {
+                    if(res.success) {
+                        if(dtNoAkun) dtNoAkun.ajax.reload(null, false);
+                    }
+                }
+            });
+        }
+    }
     $(document).ready(function(){
         // Inisialisasi DataTables
         var table = $('#jurnaltable').DataTable({
@@ -429,7 +560,7 @@
                     }
                 },
                 {"data": "keterangan"},
-                {"data": "no_akun"},
+                {"data": "no_accounting.nama_akun"},
                 {
                     "data": "debit",
                     "render": function(data, type, row) {
@@ -956,8 +1087,91 @@
 
             $('#detailPengajuanContent').html(html);
             $('#detailPengajuanModal').modal('show');
+        });  
+        
+        // EVENT LISTENER BUKA MODAL MASTER NO AKUN & INISIALISASI DATATABLES
+        $('#btn-master-no-akun').click(function() {
+            $('#masterNoAkunModal').modal('show');
+
+            // Gunakan timeout kecil untuk memastikan modal selesai render sebelum DataTables dimuat
+            // Ini mencegah isu lebar kolom yang tidak rata
+            setTimeout(function() {
+                if ($.fn.DataTable.isDataTable('#tableNoAkun')) {
+                    dtNoAkun.ajax.reload();
+                } else {
+                    dtNoAkun = $('#tableNoAkun').DataTable({
+                        ajax: { url: "{{ route('no_akun.data') }}", type: "GET" },
+                        columns: [
+                            { data: "no" },
+                            { data: "nama_akun" },
+                            {
+                                data: null,
+                                render: function(data, type, row) {
+                                    return `
+                                        <button class="btn btn-sm btn-info text-white" onclick="editNoAkun(${row.id})">Edit</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteNoAkun(${row.id})">Hapus</button>
+                                    `;
+                                }
+                            }
+                        ],
+                        order: [[0, 'asc']],
+                        // Penyesuaian agar DataTable muncul sempurna di dalam Modal
+                        autoWidth: false,
+                        responsive: true
+                    });
+                }
+            }, 200); 
+        });
+
+        // Event listener Submit Form Create/Edit No Akun
+        $('#noAkunForm').submit(function(e) {
+            e.preventDefault();
+            let id = $('#id_no_akun').val();
+            let url = id ? "{{ url('/no-akun') }}/" + id : "{{ route('no_akun.store') }}";
+
+            $.ajax({
+                url: url,
+                type: "POST", 
+                data: $(this).serialize(),
+                success: function(res) {
+                    if(res.success) {
+                        alert(res.message);
+                        $('#formNoAkunModal').modal('hide');
+                        if(dtNoAkun) dtNoAkun.ajax.reload(null, false);
+                    }
+                },
+                error: function(xhr) {
+                    alert('Gagal menyimpan data.');
+                }
+            });
+        });
+
+        // Event listener Import Master No Akun
+        $('#formImportNoAkun').submit(function(e) {
+            e.preventDefault();
+            let formData = new FormData(this);
+
+            $.ajax({
+                url: "{{ route('no_akun.import') }}",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    if(res.success) {
+                        alert(res.message);
+                        $('#importNoAkunModal').modal('hide');
+                        $('#formImportNoAkun')[0].reset();
+                        if(dtNoAkun) dtNoAkun.ajax.reload(null, false);
+                    }
+                },
+                error: function(xhr) {
+                    alert('Terjadi kesalahan saat import data.');
+                }
+            });
         });
     });
+    
 </script>
 @endpush
 @endsection

@@ -1271,3 +1271,10 @@ Route::prefix('projects/reports')->group(function () {
     Route::get('/sales', [ReportSalesProjectController::class, 'index'])->name('reports.sales');
     Route::get('/sales/data', [ReportSalesProjectController::class, 'getRecapData'])->name('reports.sales.data');
 });
+
+Route::get('/no-akun/data', [App\Http\Controllers\NoAkunController::class, 'getData'])->name('no_akun.data');
+Route::post('/no-akun', [App\Http\Controllers\NoAkunController::class, 'store'])->name('no_akun.store');
+Route::get('/no-akun/{id}/edit', [App\Http\Controllers\NoAkunController::class, 'edit'])->name('no_akun.edit');
+Route::put('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'update'])->name('no_akun.update');
+Route::delete('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'destroy'])->name('no_akun.destroy');
+Route::post('/no-akun/import', [App\Http\Controllers\NoAkunController::class, 'importExcel'])->name('no_akun.import');
