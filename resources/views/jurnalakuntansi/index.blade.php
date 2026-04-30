@@ -453,7 +453,14 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        return '<button class="btn btn-sm btn-primary btn-edit-jurnal" data-id="' + row.id + '">Edit</button>';
+                        var actions = "";
+                        
+                        actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                        actions += '<div class="dropdown-menu px-2" aria-labelledby="dropdownMenuButton">';
+                            actions += '<button type="button" class="btn-edit-jurnal dropdown-item mb-2 rounded-2 bg-primary text-white" data-id="' + row.id + '">Edit</button>';
+                            actions += '<a class="dropdown-item bg-danger text-white rounded-2" href="{{ url('/jurnalakuntansi/pdf') }}/' + row.id + '">PDF</a>';
+                        actions += '</div>';
+                        return actions;
                     }
                 }
             ],

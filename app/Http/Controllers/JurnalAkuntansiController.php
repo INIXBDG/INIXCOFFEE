@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\JurnalAkuntansi;
-use Illuminate\Http\Request;
+use App\Models\karyawan;
 use App\Models\PengajuanBarang;
 use App\Models\perhitunganNetSales;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 
 class JurnalAkuntansiController extends Controller
 {
@@ -422,5 +424,25 @@ class JurnalAkuntansiController extends Controller
         }
 
         return redirect()->back()->with('error', 'Format eksport tidak valid.');
+    }
+
+    public function eksportPdf($id) 
+    {
+        $jurnalAkuntansi = JurnalAkuntansi::findOrFail($id);
+
+        $data = PengajuanBarang::with(['detail', 'tracking', 'karyawan'])->where('id', $jurnalAkuntansi->id_pengajuan_barang)->first();
+        // return $data->karyawan->divisi;
+        if ($data->karyawan->divisi == 'Education') {
+            $finance = karyawan::where('jabatan', 'Education Manager')->latest()->first();
+        } elseif ($data->karyawan->divisi == 'Sales & Marketing') {
+            $finance = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
+        } elseif ($data->karyawan->divisi == 'Office') {
+            $finance = karyawan::where('jabatan', 'GM')->latest()->first();
+        } elseif ($data->karyawan->divisi == 'IT Service Management') { 
+            $finance = karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
+        }
+        $gm = karyawan::where('jabatan', 'GM')->latest()->first();
+        
+        return view('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'data', 'gm', 'finance'));
     }
 }

@@ -528,6 +528,7 @@ public function downloadPdfKwitansi($id)
     $fileName = preg_replace('/[\/\\\\]/', '-', $kwitansi->invoice->invoice_number) . '.pdf';
     $filePath = 'kwitansi/' . $fileName;
 
+    return view('kwitansi.pdf', compact('kwitansi', 'terbilang', 'karyawan'));
     if (!empty($kwitansi->file_path) &&
         Storage::disk('local')->exists($kwitansi->file_path)) {
 
