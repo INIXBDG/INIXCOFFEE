@@ -63,31 +63,24 @@
 
                         <div class="mb-3">
                             <label for="no_akun" class="form-label">No Akun</label>
-                            <input type="text" class="form-control" id="no_akun" name="no_akun">
+                            <select class="form-control" id="no_akun" name="no_akun">
+                                <option value="" selected>Pilih No Akun</option>
+                                @foreach ( $no_akun as $data )
+                                <option value="{{ $data->no }}">{{ $data->no }} - {{ $data->nama_akun }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         
-                        <div id="form-pengajuan-group" style="display: none;">
-                            <div class="mb-3">
-                                <label for="edit_kredit_pengajuan" class="form-label">Kredit (Rp)</label>
-                                <input type="number" class="form-control input-pengajuan" id="edit_kredit_pengajuan" name="kredit" min="0" step="0.01">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_debit" class="form-label">Debit (Rp)</label>
+                                <input type="number" class="form-control" id="edit_debit" name="debit" min="0" step="0.01" value="0" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_kredit" class="form-label">Kredit (Rp)</label>
+                                <input type="number" class="form-control" id="edit_kredit" name="kredit" min="0" step="0.01" value="0" required>
                             </div>
                         </div>
-
-                        <div id="form-pettycash-group" style="display: none;">
-                            <div class="mb-3">
-                                <label for="edit_tipe_transaksi" class="form-label">Tipe Transaksi</label>
-                                <select class="form-control input-pettycash" id="edit_tipe_transaksi" name="tipe_transaksi">
-                                    <option value="" disabled selected>-- Pilih Tipe --</option>
-                                    <option value="debit">Pemasukan (Debit)</option>
-                                    <option value="kredit">Pengeluaran (Kredit)</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="edit_nominal_pettycash" class="form-label">Nominal (Rp)</label>
-                                <input type="number" class="form-control input-pettycash" id="edit_nominal_pettycash" name="nominal" min="0" step="0.01">
-                            </div>
-                        </div>
-
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -120,7 +113,12 @@
 
                         <div class="mb-3">
                             <label for="no_akun" class="form-label">No Akun</label>
-                            <input type="text" class="form-control" id="no_akun" name="no_akun">
+                            <select class="form-control input-pettycash" id="no_akun" name="no_akun">
+                                <option value="" selected>Pilih No Akun</option>
+                                @foreach ( $no_akun as $data )
+                                <option value="{{ $data->no }}">{{ $data->no }} - {{ $data->nama_akun }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         
                         <div class="mb-3">
@@ -187,6 +185,8 @@
                 </div>
                 <form action="{{ route('jurnalakuntansi.export') }}" method="GET" target="_blank">
                     <div class="modal-body">
+                        <input type="hidden" name="format_export" value="preview">
+                        
                         <div class="mb-3">
                             <label for="tipe_periode" class="form-label">Tipe Periode</label>
                             <select class="form-select" id="tipe_periode" name="tipe_periode" required>
@@ -202,17 +202,10 @@
                             <input type="date" class="form-control" id="tanggal_acuan" name="tanggal_acuan" value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" required>
                             <small class="text-muted">Sistem akan otomatis menghitung rentang awal dan akhir periode berdasarkan tanggal acuan ini.</small>
                         </div>
-                        <div class="mb-3">
-                            <label for="format_export" class="form-label">Format File</label>
-                            <select class="form-select" id="format_export" name="format_export" required>
-                                <option value="excel">Microsoft Excel (.xlsx)</option>
-                                <option value="pdf">Dokumen PDF (.pdf)</option>
-                            </select>
-                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary" onclick="$('#exportModal').modal('hide');">Download Laporan</button>
+                        <button type="submit" class="btn btn-primary" onclick="$('#exportModal').modal('hide');">Tampilkan Preview</button>
                     </div>
                 </form>
             </div>
@@ -453,7 +446,7 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        return '<button class="btn btn-sm btn-primary btn-edit-jurnal" data-id="' + row.id + '">Edit</button>';
+                        return '<button class="btn btn-edit-jurnal" data-id="' + row.id + '">Edit</button>';
                     }
                 }
             ],
@@ -648,37 +641,40 @@
                     $('#loadingModal').attr('inert', true);
                     
                     if (response.success) {
+                        // 1. RESET FORM KE KONDISI AWAL
+                        $('#editJurnalForm')[0].reset();
                         $('#edit_id').val(response.data.id);
                         
+                        // 2. SET VALUE DATA UMUM
                         var dateOnly = response.data.tanggal_transaksi.split(' ')[0];
                         $('#edit_tanggal_transaksi').val(dateOnly);
                         $('#edit_keterangan').val(response.data.keterangan);
                         
-                        // Logika pemisahan form berdasarkan parameter is_petty_cash
+                        if(response.data.no_akun != null) {
+                           $('#no_akun').val(response.data.no_akun); 
+                        } else {
+                           $('#no_akun').prop('selectedIndex', 0);
+                        }
+
+                        // 3. SET VALUE DEBIT & KREDIT SECARA LANGSUNG
+                        $('#edit_debit').val(response.data.debit);
+                        $('#edit_kredit').val(response.data.kredit);
+
+                        // 4. PAKSA BUKA KUNCI SEMUA FIELD
+                        $('#edit_tanggal_transaksi, #edit_keterangan, #no_akun, #edit_debit, #edit_kredit').prop('disabled', false).prop('readonly', false);
+                        
+                        // 5. SET JUDUL MODAL
                         if (response.is_petty_cash) {
-                            $('#form-pengajuan-group').hide();
-                            $('.input-pengajuan').removeAttr('required').attr('disabled', true);
-                            
-                            $('#form-pettycash-group').show();
-                            $('.input-pettycash').attr('required', true).removeAttr('disabled');
-                            
-                            var tipe = response.data.debit > 0 ? 'debit' : 'kredit';
-                            var nominal = response.data.debit > 0 ? response.data.debit : response.data.kredit;
-                            
-                            $('#edit_tipe_transaksi').val(tipe);
-                            $('#edit_nominal_pettycash').val(nominal);
                             $('#editJurnalModalLabel').text('Edit Kas Kecil');
                         } else {
-                            $('#form-pettycash-group').hide();
-                            $('.input-pettycash').removeAttr('required').attr('disabled', true);
-                            
-                            $('#form-pengajuan-group').show();
-                            $('.input-pengajuan').attr('required', true).removeAttr('disabled');
-                            
-                            $('#edit_kredit_pengajuan').val(response.data.kredit);
-                            $('#editJurnalModalLabel').text('Edit Jurnal Pengajuan Barang');
+                            $('#editJurnalModalLabel').text('Edit Jurnal Pengajuan');
                         }
                         
+                        // 6. MENGHILANGKAN PEMBLOKIR FOKUS BOOTSTRAP
+                        $('#editJurnalModal').removeAttr('tabindex'); 
+                        $('#editJurnalModal').removeAttr('inert');    
+                        
+                        // 7. TAMPILKAN MODAL
                         $('#editJurnalModal').modal('show');
                     } else {
                         alert('Gagal mengambil data jurnal.');
