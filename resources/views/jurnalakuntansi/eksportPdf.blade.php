@@ -172,7 +172,8 @@
                     @elseif($jurnalAkuntansi->debit === '0.00')
                         {{ formatRupiah($jurnalAkuntansi->kredit) }}
                     @else
-                        -
+                        Debit : {{ formatRupiah($jurnalAkuntansi->debit) }}<br>
+                        Kredit : {{ formatRupiah($jurnalAkuntansi->kredit) }}
                     @endif
                 </td>
             </tr>

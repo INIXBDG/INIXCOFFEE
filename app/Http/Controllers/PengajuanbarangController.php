@@ -441,6 +441,7 @@ class PengajuanBarangController extends Controller
             return redirect()
                 ->route('pengajuanbarang.index')
                 ->with(['success' => 'Data berhasil diperbarui!']);
+                
         } elseif ($request->approval == '2') {
             $status = 'Pengajuan ditolak dikarenakan ' . $request->alasan;
             $e = tracking_pengajuan_barang::create([
