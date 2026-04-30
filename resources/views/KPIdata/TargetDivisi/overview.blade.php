@@ -33,7 +33,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <select class="form-select" name="tahun" id="selectTahun">
                                 <option value="">Periode Tahun</option>
                                 @for ($year = 2025; $year <= now()->year; $year++)
@@ -44,10 +44,29 @@
                                 @endfor
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-4 d-flex gap-2">
                             <button type="submit" class="btn btn-primary w-100">
                                 <i class="fa-solid fa-filter me-1"></i> Filter
                             </button>
+
+                            <div class="dropdown flex-grow-1">
+                                <button class="btn btn-outline-dark w-100 dropdown-toggle" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-file-export me-1"></i>
+                                </button>
+                                <ul class="dropdown-menu w-100 shadow-sm border-0">
+                                    <li>
+                                        <a href="#" class="dropdown-item btn-export-dept" data-type="excel">
+                                            <i class="fa-solid fa-file-excel text-success me-2"></i> Excel
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="dropdown-item btn-export-dept" data-type="pdf">
+                                            <i class="fa-solid fa-file-pdf text-danger me-2"></i> PDF
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -116,7 +135,8 @@
                 <div class="col-md-8">
                     <div class="card border-0 shadow-sm rounded-4 h-100">
                         <div class="card-body">
-                            <h6 class="fw-semibold mb-3" id="employeeTitle"><i class="fa-solid fa-users"></i> Karyawan di Departemen</h6>
+                            <h6 class="fw-semibold mb-3" id="employeeTitle"><i class="fa-solid fa-users"></i> Karyawan di
+                                Departemen</h6>
                             <div id="employeeList">
                                 <div class="text-center py-5">
                                     <i class="fa-solid fa-spinner fa-spin fa-2x text-muted"></i>
@@ -130,7 +150,8 @@
                 <div class="col-md-4">
                     <div class="card border-0 shadow-sm rounded-4 h-100">
                         <div class="card-body">
-                            <h6 class="fw-semibold mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Perlu Perhatian</h6>
+                            <h6 class="fw-semibold mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Perlu Perhatian
+                            </h6>
                             <p class="text-muted small">Karyawan dengan KPI belum tercapai</p>
                             <div id="lowPerformanceList">
                                 <div class="text-center py-5">
@@ -277,18 +298,19 @@
             employees.forEach(emp => {
                 let bgColor = emp.rata_rata_progress >= 75 ?
                     'bg-primary bg-opacity-10 border-start border-4 border-primary' :
-                    (emp.rata_rata_progress < 50 ? 'bg-danger bg-opacity-10 border-start border-4 border-danger' : 'bg-light');
-                    
+                    (emp.rata_rata_progress < 50 ? 'bg-danger bg-opacity-10 border-start border-4 border-danger' :
+                        'bg-light');
+
                 let badge = emp.rata_rata_progress >= 75 ?
                     '<span class="badge bg-primary-subtle text-primary">Top</span>' :
                     (emp.rata_rata_progress < 50 ?
-                        '<span class="badge bg-danger-subtle text-danger">Perlu Bimbingan</span>' : 
+                        '<span class="badge bg-danger-subtle text-danger">Perlu Bimbingan</span>' :
                         '<span class="badge bg-success-subtle text-success">Sedang Berjalan</span>');
 
                 html += `
-                    <div class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} employee-card" data-employee-id="${emp.id_karyawan}" style="cursor: pointer;" onclick="handleClickCheck(${emp.id_karyawan})">
+                    <div class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} employee-card" data-employee-id="${emp.id_karyawan}" style="cursor: pointer;">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div class="employee-info" style="cursor: pointer;">
+                            <div class="employee-info">
                                 <strong>${emp.nama}</strong><br>
                                 <small class="text-muted">${emp.jabatan}</small>
                             </div>
@@ -299,7 +321,7 @@
                                     </div>
                                     <div class="col-auto">
                                         <div class="dropdown">
-                                            <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="event.stopPropagation();">
+                                            <button class="btn btn-primary btn-sm dropdown-toggle export-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                 <i class="fas fa-download me-1"></i> Export
                                             </button>
                                             <ul class="dropdown-menu">
@@ -400,20 +422,20 @@
 
         function applyFilterAndExport() {
             if (!window.exportData) return;
-            
+
             const params = new URLSearchParams({
                 id_karyawan: window.exportData.id,
                 tahun: $('#filterTahun').val() || window.exportData.tahun,
                 periode: $('#filterPeriode').val(),
                 quarter: $('#filterQuarter').is(':visible') ? $('select[name="quarter"]').val() : ''
             });
-            
-            const baseUrl = window.exportData.type === 'pdf' 
-                ? '{{ route("kpi.monitoring.export.pdf") }}' 
-                : '{{ route("kpi.monitoring.export.excel") }}';
-            
+
+            const baseUrl = window.exportData.type === 'pdf' ?
+                '{{ route('kpi.monitoring.export.pdf') }}' :
+                '{{ route('kpi.monitoring.export.excel') }}';
+
             window.open(`${baseUrl}?${params.toString()}`);
-            
+
             if (exportFilterModalInstance) {
                 exportFilterModalInstance.hide();
             }
@@ -421,42 +443,65 @@
 
         $(document).ready(function() {
             initExportFilterModal();
-            
+
+            $(document).on('click', '.export-trigger', function(e) {
+                e.stopPropagation();
+            });
+
             $(document).off('click', '.btn-export').on('click', '.btn-export', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 window.exportData = {
                     type: $(this).data('type'),
                     id: $(this).data('id'),
                     tahun: $(this).data('tahun')
                 };
-                
+
                 $('#exportFilterForm')[0].reset();
                 $('#filterTahun').val(window.exportData.tahun);
                 $('#filterQuarter').hide();
-                
+
                 if (exportFilterModalInstance) {
                     exportFilterModalInstance.show();
                 }
             });
-            
-            $(document).on('click', '.employee-card', function(e) {
-                // Abaikan jika yang diklik adalah dropdown atau tombol export
-                if ($(e.target).closest('.dropdown, .dropdown-toggle, .btn-export').length > 0) {
+
+            $(document).on('click', '.btn-export-dept', function(e) {
+                e.preventDefault();
+                
+                let divisi = $('#selectDivisi').val();
+                let tahun = $('#selectTahun').val() || {{ now()->year }};
+                let type = $(this).data('type');
+
+                if (!divisi) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Silakan pilih Departemen terlebih dahulu sebelum export.'
+                    });
                     return;
                 }
 
-                // Gunakan .attr() agar 100% terbaca dari HTML
+                let url = '';
+                if (type === 'excel') {
+                    url = "{{ route('kpi.departement.export.excel') }}";
+                } else if (type === 'pdf') {
+                    url = "{{ route('kpi.departement.export.pdf') }}";
+                }
+
+                window.location.href = `${url}?divisi=${encodeURIComponent(divisi)}&tahun=${tahun}`;
+            });
+
+            $(document).on('click', '.employee-card', function(e) {
+                if ($(e.target).closest('.dropdown').length > 0) {
+                    return false;
+                }
+
                 const empId = $(this).attr('data-employee-id');
-                
-                // Debugging: cek di Console browser (F12) apakah ID terbaca
-                console.log('Klik detail karyawan, ID:', empId); 
 
                 if (empId) {
                     handleClickCheck(empId);
-                } else {
-                    console.warn('ID Karyawan tidak ditemukan pada data-employee-id');
                 }
             });
         });
