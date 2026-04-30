@@ -22,22 +22,69 @@
             </div>
         @endif
 
-        {{-- Filter Card --}}
+
+        {{-- Filter & Export Card --}}
         <div class="card shadow-sm mb-3 glass-force">
             <div class="card-body py-3">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-bold small mb-1">Dari Tanggal</label>
                         <input type="date" id="minDate" class="form-control form-control-sm">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-bold small mb-1">Sampai Tanggal</label>
                         <input type="date" id="maxDate" class="form-control form-control-sm">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <button id="resetFilter" class="btn btn-sm btn-secondary w-100">
                             Reset Filter
                         </button>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <div class="dropup w-100">
+
+                            <button class="btn btn-success btn-sm dropdown-toggle w-100"
+                                type="button"
+                                id="exportDropup"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                Export
+                            </button>
+
+                            <ul class="dropdown-menu w-100" aria-labelledby="exportDropup">
+                                <li>
+                                    <a class="dropdown-item" href="#" id="exportPdfBtn">
+                                        Export PDF
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" id="exportExcelBtn">
+                                        Export Excel
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <form id="exportExcelForm"
+                            action="{{ route('office.excelExportPerbaikan') }}"
+                            method="GET"
+                            target="_blank"
+                            style="display:none">
+
+                            <input type="hidden" name="from" id="exportFrom">
+                            <input type="hidden" name="to" id="exportTo">
+
+                        </form>
+
+                        <form id="exportPdfForm"
+                            action="{{ route('office.pdfExportPerbaikan') }}"
+                            method="GET"
+                            target="_blank"
+                            style="display:none">
+
+                            <input type="hidden" name="from" id="exportFrom">
+                            <input type="hidden" name="to" id="exportTo">
+                        </form>
                     </div>
                 </div>
             </div>
@@ -73,8 +120,8 @@
                                             {{ $item->type_condition }}
                                         </span>
                                     </td>
-                                    <td data-order="{{ $item->created_at }}">
-                                        {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}
+                                    <td data-order="{{ $item->tanggal_kejadian ? \Carbon\Carbon::parse($item->tanggal_kejadian)->format('Y-m-d') : '' }}">
+                                        {{ $item->tanggal_kejadian ? \Carbon\Carbon::parse($item->tanggal_kejadian)->format('d M Y') : '-' }}
                                     </td>
                                     <td>
                                         {{ $item->status }}
@@ -496,12 +543,14 @@
                 const max = $('#maxDate').val();
                 const dateStr = table.cell(dataIndex, 4).nodes().to$().attr('data-order');
 
+                // Jika data kosong, tetap tampil
                 if (!dateStr) return true;
                 if (!min && !max) return true;
 
-                const date = new Date(dateStr);
-                const minDate = min ? new Date(min) : null;
-                const maxDate = max ? new Date(max) : null;
+                // Pastikan format tanggal valid (YYYY-MM-DD)
+                const date = dateStr ? new Date(dateStr + 'T00:00:00') : null;
+                const minDate = min ? new Date(min + 'T00:00:00') : null;
+                const maxDate = max ? new Date(max + 'T23:59:59') : null;
 
                 if (minDate && date < minDate) return false;
                 if (maxDate && date > maxDate) return false;
@@ -583,6 +632,26 @@
 
             });
 
+        });
+        // Export PDF button
+        $('#exportPdfBtn').on('click', function(e) {
+            e.preventDefault();
+            // Ambil tanggal dari filter
+            const from = $('#minDate').val();
+            const to = $('#maxDate').val();
+            $('#exportFrom').val(from);
+            $('#exportTo').val(to);
+            $('#exportPdfForm').submit();
+        });
+
+        // Export Excel button
+        $('#exportExcelBtn').on('click', function(e) {
+            e.preventDefault();
+            const from = $('#minDate').val();
+            const to = $('#maxDate').val();
+            $('#exportFrom').val(from);
+            $('#exportTo').val(to);
+            $('#exportExcelForm').submit();
         });
     </script>
 @endsection

@@ -26,8 +26,11 @@ class BiayaTransportasiController extends Controller
 
     public function index()
     {
-        $dataPickup = pickupDriver::with(['karyawan', 'detailPickupDriver'])
+        $dataPickup = pickupDriver::with(['karyawan', 'detailPickupDriver', 'biayaTransportasi'])
             ->where('created_at', '>=', Carbon::now()->subDays(7))
+            ->where(function ($q) {
+                $q->whereDoesntHave('biayaTransportasi');
+            })
             ->latest()
             ->get();
 
@@ -148,6 +151,7 @@ class BiayaTransportasiController extends Controller
                             'karyawan' => $item->pickupDriver->karyawan
                                 ? [
                                     'nama_lengkap' => $item->pickupDriver->karyawan->nama_lengkap,
+                                    'kendaraan' => $item->pickupDriver->kendaraan,
                                 ]
                                 : null,
                             'detail_pickup_driver' => $item->pickupDriver->detailPickupDriver ? $item->pickupDriver->detailPickupDriver->map(fn($d) => ['lokasi' => $d->lokasi]) : [],

@@ -27,7 +27,7 @@ class NotificationPerbaikanKendaraan extends Notification
 
     public function via($notifiable): array
     {
-        return ['database', 'broadcast', 'App\Channels\WebPushChannel'];
+        return ['database', 'broadcast'];
     }
 
     public function broadcastOn(): PrivateChannel
