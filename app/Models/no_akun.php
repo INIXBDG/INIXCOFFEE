@@ -9,9 +9,13 @@ class no_akun extends Model
 {
     use HasFactory;
 
+    
     protected $fillable = [
         'no',
         'nama_akun',
-       
+    ];
+
+    protected $casts = [
+        'no' => 'string',
     ];
 }
