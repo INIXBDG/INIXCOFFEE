@@ -195,6 +195,8 @@
                             <tr>
                                 <th class="text-center">No</th>
                                 <th>Koordinasi</th>
+                                <th>Kendaraan</th>
+                                <th>Driver</th>
                                 <th>Tipe</th>
                                 <th>Harga</th>
                                 <th>Struk</th>
@@ -481,6 +483,8 @@
                         const row = `
                         <tr>
                             ${showAction ? `<td rowspan="${rowspan}" class="text-center">${no++}</td><td rowspan="${rowspan}">${koordinasi}</td>` : ''}
+                            <td>${d.pickupDriver.karyawan.nama_lengkap}</td>
+                            <td>${d.pickupDriver.karyawan.kendaraan}</td>
                             <td>${d.tipe ?? '-'}</td>
                             <td class="text-end">${currencyFormat.format(Number(d.harga) || 0)}</td>
                             ${showBukti ? `<td rowspan="${rowspan}" class="text-center">

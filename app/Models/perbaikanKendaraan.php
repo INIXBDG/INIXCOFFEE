@@ -44,6 +44,6 @@ class PerbaikanKendaraan extends Model
 
     public function pengajuanBarang()
     {
-        return $this->belongTo(PengajuanBarang::class, 'pengajuanbarangs_id');
+        return $this->belongsTo(PengajuanBarang::class, 'pengajuanbarangs_id');
     }
 }

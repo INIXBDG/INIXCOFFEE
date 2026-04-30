@@ -61,7 +61,7 @@ class PickupDriverReportExport implements FromCollection, WithHeadings, WithMapp
         $periodeEnd = $this->endDate ? Carbon::parse($this->endDate)->format('d M Y') : 'Sekarang';
         $exportedAt = Carbon::now()->format('d M Y H:i:s');
 
-        return [['LAPORAN KOORDINASI DRIVER & BIAYA TRANSPORTASI'], ["Periode: {$periodeStart} s/d {$periodeEnd}"], ["Diexport pada: {$exportedAt}"], [], ['No', 'Tanggal Koordinasi', 'Driver', 'Pembuat', 'Kendaraan', 'Tipe Perjalanan', 'Budget', 'Total Biaya', 'Sisa Budget', 'Kilometer Awal', 'Kilometer Akhir', 'Status', 'Detail Rute', 'Waktu Kepulangan', 'Tracking Terakhir']];
+        return [['LAPORAN KOORDINASI DRIVER & BIAYA TRANSPORTASI'], ["Periode: {$periodeStart} s/d {$periodeEnd}"], ["Diexport pada: {$exportedAt}"], [], ['No', 'Tanggal Koordinasi', 'Driver', 'Pembuat', 'Kendaraan', 'Tipe Perjalanan', 'Budget', 'Realisasi', 'Sisa Budget', 'Kilometer Awal', 'Kilometer Akhir', 'Status', 'Detail Rute', 'Waktu Kepulangan', 'Tracking Terakhir']];
     }
 
     protected $runningBudget = [];
