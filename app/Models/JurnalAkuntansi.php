@@ -44,6 +44,10 @@ class JurnalAkuntansi extends Model
     {
         return $this->belongsTo(perhitunganNetSales::class, 'id_perhitungan_net_sales', 'id');
     }
+    public function no_accounting()
+    {
+        return $this->belongsTo(no_akun::class, 'no', 'no_akun');
+    }
 
 
 }

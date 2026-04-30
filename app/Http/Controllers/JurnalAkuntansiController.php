@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\JurnalAkuntansi;
+use App\Models\karyawan;
+use App\Models\no_akun;
 use Illuminate\Http\Request;
 use App\Models\PengajuanBarang;
 use App\Models\perhitunganNetSales;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class JurnalAkuntansiController extends Controller
 {
@@ -19,7 +22,8 @@ class JurnalAkuntansiController extends Controller
      */
     public function index()
     {
-        return view('jurnalakuntansi.index');
+        $no_akun = no_akun::get();
+        return view('jurnalakuntansi.index', compact('no_akun'));
     }
 
     private function generateNomorKK($tanggal_transaksi)
@@ -197,7 +201,7 @@ class JurnalAkuntansiController extends Controller
 
         // return $pengajuan;
         JurnalAkuntansi::create([
-            'nomor_kk' => $pengajuan->no_kk ?? $this->generateNomorKK($tanggal_transaksi), // GENERATE DISINI
+            'nomor_kk' => 'KK-' .$pengajuan->no_kk ?? $this->generateNomorKK($tanggal_transaksi), // GENERATE DISINI
             'id_pengajuan_barang' => $id,
             'tanggal_transaksi' => $tanggal_transaksi,
             'keterangan' => 'Pengeluaran untuk Pengajuan Barang dari : ' . $pengajuan->karyawan->nama_lengkap . ' (' . $pengajuan->tipe . ')',
@@ -229,46 +233,31 @@ class JurnalAkuntansiController extends Controller
     /**
      * Memperbarui data jurnal akuntansi di dalam database berdasarkan jenis jurnal.
      */
+    /**
+     * Memperbarui data jurnal akuntansi di dalam database.
+     */
+    /**
+     * Memperbarui data jurnal akuntansi di dalam database.
+     */
     public function update(Request $request, $id)
     {
         $jurnal = JurnalAkuntansi::findOrFail($id);
-        $is_petty_cash = is_null($jurnal->id_pengajuan_barang);
 
-        if ($is_petty_cash) {
-            $request->validate([
-                'tanggal_transaksi' => 'required|date',
-                'keterangan' => 'required|string',
-                'tipe_transaksi' => 'required|in:debit,kredit',
-                'nominal' => 'required|numeric|min:0',
-                'no_akun' => 'nullable|min:0',
-            ]);
+        $request->validate([
+            'tanggal_transaksi' => 'required|date',
+            'keterangan' => 'required|string',
+            'no_akun' => 'nullable',
+            'debit' => 'required|numeric|min:0',
+            'kredit' => 'required|numeric|min:0',
+        ]);
 
-            $debit = $request->tipe_transaksi === 'debit' ? $request->nominal : 0;
-            $kredit = $request->tipe_transaksi === 'kredit' ? $request->nominal : 0;
-
-            $jurnal->update([
-                'tanggal_transaksi' => $request->tanggal_transaksi,
-                'keterangan' => $request->keterangan,
-                'no_akun' => $request->no_akun,
-                'debit' => $debit,
-                'kredit' => $kredit,
-            ]);
-        } else {
-            $request->validate([
-                'tanggal_transaksi' => 'required|date',
-                'keterangan' => 'required|string',
-                'kredit' => 'required|numeric|min:0',
-                'no_akun' => 'nullable|min:0',
-
-            ]);
-
-            $jurnal->update([
-                'tanggal_transaksi' => $request->tanggal_transaksi,
-                'keterangan' => $request->keterangan,
-                'kredit' => $request->kredit,
-                'no_akun' => $request->no_akun,
-            ]);
-        }
+        $jurnal->update([
+            'tanggal_transaksi' => $request->tanggal_transaksi,
+            'keterangan' => $request->keterangan,
+            'no_akun' => $request->no_akun,
+            'debit' => $request->debit,
+            'kredit' => $request->kredit,
+        ]);
 
         return response()->json([
             'success' => true, 
@@ -369,11 +358,14 @@ class JurnalAkuntansiController extends Controller
     /**
      * Memproses export data berdasarkan periode yang dipilih.
      */
+    /**
+     * Memproses export data berdasarkan periode yang dipilih.
+     */
     public function export(Request $request)
     {
         $tipe_periode = $request->tipe_periode;
         $tanggal_acuan = \Carbon\Carbon::parse($request->tanggal_acuan);
-        $format = $request->format_export;
+        $format = $request->format_export; // Menerima: preview, excel, pdf
 
         $query = JurnalAkuntansi::query();
 
@@ -412,15 +404,55 @@ class JurnalAkuntansiController extends Controller
         }
 
         $data = $query->orderBy('tanggal_transaksi', 'asc')->get();
-        $periode = $labelPeriode;
+
+        // Mode Preview: Mengembalikan tampilan interaktif
+        if ($format === 'preview') {
+            $totalDebit = $data->sum('debit');
+            $totalKredit = $data->sum('kredit');
+            return view('jurnalakuntansi.preview_export', compact('data', 'labelPeriode', 'tipe_periode', 'tanggal_acuan', 'totalDebit', 'totalKredit'));
+        }
+
+        // Mode Export: Menangkap nilai hasil kalkulasi manual dari UI Preview
+        $saldo_awal = (float) $request->input('saldo_awal', 0);
+        $kas_masuk = (float) $request->input('kas_masuk', 0);
+        $kas_keluar = (float) $request->input('kas_keluar', 0);
+        $saldo_akhir = (float) $request->input('saldo_akhir', 0);
+
         if ($format === 'excel') {
-            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\JurnalAkuntansiExport($data, $labelPeriode), 'Jurnal_Akuntansi_' . time() . '.xlsx');
+            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\JurnalAkuntansiExport($data, $labelPeriode, $format, $saldo_awal, $kas_masuk, $kas_keluar, $saldo_akhir), 'Jurnal_Akuntansi_' . time() . '.xlsx');
         } elseif ($format === 'pdf') {
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('jurnalakuntansi.export_template', compact('data', 'periode'))
-                        ->setPaper('a4', 'landscape');
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('jurnalakuntansi.export_template', [
+                'data' => $data,
+                'periode' => $labelPeriode,
+                'format' => $format,
+                'saldo_awal' => $saldo_awal,
+                'kas_masuk' => $kas_masuk,
+                'kas_keluar' => $kas_keluar,
+                'saldo_akhir' => $saldo_akhir
+            ])->setPaper('a4', 'landscape');
             return $pdf->download('Jurnal_Akuntansi_' . time() . '.pdf');
         }
 
         return redirect()->back()->with('error', 'Format eksport tidak valid.');
+    }
+
+    public function eksportPdf($id) 
+    {
+        $jurnalAkuntansi = JurnalAkuntansi::findOrFail($id);
+
+        $data = PengajuanBarang::with(['detail', 'tracking', 'karyawan'])->where('id', $jurnalAkuntansi->id_pengajuan_barang)->first();
+        // return $data->karyawan->divisi;
+        if ($data->karyawan->divisi == 'Education') {
+            $finance = karyawan::where('jabatan', 'Education Manager')->latest()->first();
+        } elseif ($data->karyawan->divisi == 'Sales & Marketing') {
+            $finance = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
+        } elseif ($data->karyawan->divisi == 'Office') {
+            $finance = karyawan::where('jabatan', 'GM')->latest()->first();
+        } elseif ($data->karyawan->divisi == 'IT Service Management') { 
+            $finance = karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
+        }
+        $gm = karyawan::where('jabatan', 'GM')->latest()->first();
+        
+        return view('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'data', 'gm', 'finance'));
     }
 }

@@ -60,12 +60,27 @@ class LeadProjectController extends Controller
 
             $lead->update(['status' => $newStatus]);
 
-            // Logika Penanganan Status 'Lost' (Soft Delete)
+            // Logika Penanganan Status 'Lost' (Soft Delete Hierarkis)
             if ($newStatus === 'lost') {
                 if ($lead->project) {
-                    $lead->project->delete(); // Soft delete proyek yang sudah terbentuk
+                    // Soft delete entitas ProjectAdministration
+                    $administration = \App\Models\ProjectAdministration::where('project_id', $lead->project->id)->first();
+                    if ($administration) {
+                        $administration->delete();
+                    }
+
+                    // Soft delete entitas ProjectHandover
+                    $handover = \App\Models\ProjectHandover::where('project_id', $lead->project->id)->first();
+                    if ($handover) {
+                        $handover->delete();
+                    }
+
+                    // Soft delete entitas Project
+                    $lead->project->delete(); 
                 }
-                $lead->delete(); // Soft delete lead itu sendiri
+                
+                // Soft delete entitas LeadProject
+                $lead->delete(); 
             } 
             // Logika Transisi ke Administrasi
             else if (in_array($newStatus, ['dokumen_penawaran', 'mengirim_proposal_teknis', 'surat_penawaran', 'won'])) {
