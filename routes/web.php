@@ -86,6 +86,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\KlaimModulController;
 use App\Http\Controllers\LeadProjectController;
 use App\Http\Controllers\ReportSalesProjectController;
+use App\Http\Controllers\PicPenagihanController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 /*
@@ -904,7 +905,7 @@ Route::prefix('office')->group(function () {
     Route::get('/data-hari-libur/edit/{id}', [OfficeController::class, 'editHariLibur'])->name('editHariLibur');
     Route::post('/data-hari-libur/update/{id}', [OfficeController::class, 'updateHariLibur'])->name('updateHariLibur');
     Route::post('/data-hari-libur/delete/{id}', [OfficeController::class, 'deleteHariLibur'])->name('deleteHariLibur');
-    
+
     Route::get('/table/outstanding/', [OfficeController::class, 'TableOutstanding'])->name('office.table.outstanding');
     Route::get('/grafik/outstanding/', [OfficeController::class, 'GrafikOutstanding'])->name('office.grafik.outstanding');
     Route::get('/grafik/ketepatan-waktu/', [OfficeController::class, 'GrafikKetepatanWaktu'])->name('office.grafik.ketepatan.waktu');
@@ -939,6 +940,13 @@ Route::prefix('office')->group(function () {
     Route::get('/analysis/download-quarter/{year}/{quarter}/{index}', [AnalysisReportController::class, 'downloadQuarter'])->name('download.quarter.analysis');
     Route::post('/analysis/update-annual', [AnalysisReportController::class, 'updateAnnualReport'])->name('update.annual.description.analysis');
     Route::get('/analysis/download-annual/{year}/{index}', [AnalysisReportController::class, 'downloadAnnual'])->name('download.annual.analysis');
+
+    Route::get('/pic/penagihan', [PicPenagihanController::class, 'index'])->name('picpenagihan.index');
+    Route::post('/pic/penagihan/store', [PicPenagihanController::class, 'store'])->name('picpenagihan.store');
+    Route::get('/pic/penagihan/data', [PicPenagihanController::class, 'getData'])->name('picpenagihan.data');
+    Route::put('/pic-penagihan/update/{id}', [PicPenagihanController::class, 'update'])->name('picpenagihan.update');
+    Route::delete('/pic-penagihan/delete/{id}', [PicPenagihanController::class, 'destroy'])->name('picpenagihan.delete');
+    Route::get('/pic-penagihan/pdf/{id}', [PicPenagihanController::class, 'exportPdf'])->name('picpenagihan.pdf');
 });
 
 Route::prefix('dashboard-sla/{team}')->group(function () {
@@ -1377,3 +1385,6 @@ Route::prefix('projects/reports')->group(function () {
     Route::get('/sales', [ReportSalesProjectController::class, 'index'])->name('reports.sales');
     Route::get('/sales/data', [ReportSalesProjectController::class, 'getRecapData'])->name('reports.sales.data');
 });
+
+
+

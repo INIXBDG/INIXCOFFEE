@@ -12,6 +12,61 @@
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="modalPicPenagihan" tabindex="-1" aria-labelledby="modalPicPenagihanLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form id="formPicPenagihan" method="POST" action="{{ url('/office/pic/penagihan/store') }}">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title text-dark">Input PIC Penagihan</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" name="id_rkm" id="input_id_rkm">
+                            <input type="hidden" name="perusahaan_id" id="input_perusahaan_id">
+
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">Nama Perusahaan</label>
+                                <input type="text" id="display_perusahaan" class="form-control bg-light" readonly>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">Nama Materi</label>
+                                <input type="text" id="display_materi" class="form-control bg-light" readonly>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">Periode Pelatihan</label>
+                                <input type="text" id="display_periode" class="form-control bg-light" readonly>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">Alamat Penagihan</label>
+                                <textarea name="alamat" id="input_alamat" class="form-control" rows="2"></textarea>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">Kategori</label>
+                                <input type="text" name="category" id="input_category" class="form-control">
+                            </div>
+                            <hr class="my-3">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">Nama PIC</label>
+                                <input type="text" name="pic" id="input_pic" class="form-control" placeholder="Input manual" required>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">Telepon PIC</label>
+                                <input type="text" name="telepon" id="input_telepon" class="form-control" placeholder="Input manual" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary">Simpan Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div class="row justify-content-center">
             <div class="col-md-12">
                 <div class="d-flex justify-content-end">
@@ -144,7 +199,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="modal fade" id="modalSinkron" tabindex="-1" role="dialog"
                     aria-labelledby="modalSinkronLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
@@ -519,43 +574,47 @@
                             "data": null,
                             "render": function(data, type, row) {
                                 var actions = "";
-                                actions += '@if (auth()->user()->can('Edit Outstanding') || auth()->user()->can('Delete Outstanding '))';
+                                actions += '@if (auth()->user()->can("Edit Outstanding") || auth()->user()->can("Delete Outstanding "))';
                                 actions += '<div class="dropdown">';
-                                actions +=
-                                    '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions +=
-                                    '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                                actions += '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                                actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+
                                 actions += `<a class="dropdown-item" href="/download/dokumen/${row.id}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
                                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                                 <polyline points="7 10 12 15 17 10"></polyline>
                                                 <line x1="12" y1="15" x2="12" y2="3"></line>
                                             </svg> Download Dokumen </a>`;
-                                actions += '@can('Edit Outstanding')';
-                                actions +=
-                                    '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row
-                                    .id +
-                                    '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
+                                            
+                                if (!row.has_pic_penagihan) {
+                                    actions += '<div class="dropdown-divider"></div>';
+                                    actions += '<a class="dropdown-item btn-pic-penagihan" style="cursor: pointer;" data-row=\'' + JSON.stringify(row).replace(/'/g, "&#39;") + '\'>';
+                                    actions += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Input PIC Penagihan';
+                                    actions += '</a>';
+                                }
+
+                                actions += '<div class="dropdown-divider"></div>';
+
+                                actions += '@can("Edit Outstanding")';
+                                actions += '<a class="dropdown-item" href="{{ url("/outstanding") }}/' + row.id + '/edit"><img src="{{ asset("icon/edit-warning.svg") }}" class=""> Edit</a>';
                                 actions += '@endcan';
-                                actions += '@can('Delete Outstanding')';
-                                actions +=
-                                    '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' +
-                                    row.id + '" method="POST">';
+
+                                actions += '@can("Delete Outstanding")';
+                                actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url("/outstanding") }}/' + row.id + '" method="POST">';
                                 actions += '@csrf';
-                                actions += '@method('DELETE')';
-                                actions +=
-                                    '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                                actions += '@method("DELETE")';
+                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset("icon/trash-danger.svg") }}" class=""> Hapus</button>';
                                 actions += '</form>';
                                 actions += '@endcan';
+
                                 actions += '</div>';
                                 actions += '</div>';
-                                actions +=
-                                    '@else';
+                                actions += '@else';
                                 actions += '<div class="dropdown">';
-                                actions +=
-                                    '<button class="btn dropdown-toggle disabled text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                                actions += '<button class="btn dropdown-toggle disabled text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                                 actions += '</div>';
                                 actions += '@endif';
+
                                 return actions;
                             }
                         }
@@ -901,6 +960,45 @@
 
                 $('#filterBulanPA').change(function() {
                     tablePA.ajax.reload();
+                });
+
+                $('#outstandinglunasTable tbody').on('click', '.btn-pic-penagihan', function (e) {
+                    e.preventDefault();
+
+                    var rowData = $(this).data('row');
+
+                    $('#input_id_rkm').val(rowData.id_rkm || '');
+
+                    if (rowData.rkm) {
+                        var namaMateri = rowData.rkm.materi ? rowData.rkm.materi.nama_materi : '-';
+                        $('#display_materi').val(namaMateri);
+
+                        if (rowData.rkm.tanggal_awal && rowData.rkm.tanggal_akhir) {
+                            moment.locale('id');
+                            var tgl = moment(rowData.rkm.tanggal_awal).format('LL') + ' s/d ' + moment(rowData.rkm.tanggal_akhir).format('LL');
+                            $('#display_periode').val(tgl);
+                        } else {
+                            $('#display_periode').val('-');
+                        }
+
+                        if (rowData.rkm.perusahaan) {
+                            $('#input_perusahaan_id').val(rowData.rkm.perusahaan.id || '');
+                            $('#display_perusahaan').val(rowData.rkm.perusahaan.nama_perusahaan || '-');
+                            $('#input_alamat').val(rowData.rkm.perusahaan.alamat || '');
+                            $('#input_category').val(rowData.rkm.perusahaan.kategori_perusahaan || '');
+                        } else {
+                            $('#input_perusahaan_id').val('');
+                            $('#display_perusahaan').val('-');
+                            $('#input_alamat').val('');
+                            $('#input_category').val('');
+                        }
+                    }
+
+                    $('#input_pic').val(rowData.pic ? rowData.pic : '');
+
+                    $('#input_telepon').val('');
+
+                    $('#modalPicPenagihan').modal('show');
                 });
 
             });
