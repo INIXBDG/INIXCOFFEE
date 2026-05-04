@@ -471,7 +471,7 @@ class PeluangController extends Controller
         try {
             // Validate the request
             $validated = $request->validate([
-                'id_perusahaan' => 'required|integer|exists:perusahaan,id', // TAMBAHKAN VALIDASI INI (sesuaikan nama tabel jika perlu, misal: perusahaans)
+                'id_perusahaan' => 'required|integer|exists:perusahaans,id',
                 'materi' => 'required|string|max:255',
                 'catatan' => 'nullable|string|max:255',
                 'harga' => 'required|numeric|min:0',
@@ -513,7 +513,7 @@ class PeluangController extends Controller
 
             // Update Peluang
             $peluang->update([
-                'id_perusahaan' => $validated['id_perusahaan'], // TAMBAHKAN BARIS INI
+                'id_contact' => $validated['id_perusahaan'], // TAMBAHKAN BARIS INI
                 'materi' => $validated['materi'],
                 'catatan' => $validated['catatan'],
                 'harga' => $validated['harga'],
