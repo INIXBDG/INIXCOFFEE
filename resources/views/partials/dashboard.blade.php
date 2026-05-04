@@ -38,6 +38,30 @@
         </div>
     </div>
 </div>
+<!-- Card: Project Target Car -->
+<div class="card" style="margin-bottom: 8px">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-6 d-flex justify-content-start">
+                <p style="margin:0">
+                    Total Hasil Project Saat ini adalah:
+                    <span id="totalProjectDisplay">Rp 0</span>
+                </p>
+            </div>
+        </div>
+
+        <div id="progress-container-project" style="position: relative;">
+            <div id="progress-bar-project" class="progress-bar"></div>
+            <div id="car-project" class="car"></div>
+            <div class="target-label-right-project">Goal
+                <img src="{{ asset('css/finish-flag.png') }}" alt="finish" style="width: 20px">
+            </div>
+        </div>
+
+        <div class="horizontal-ruler-labels-project" style="position: relative; width: 100%; height: 20px;">
+        </div>
+    </div>
+</div>
 <div class="card" style="margin-bottom: 8px">
     <div class="card-body" style="overflow-x:auto">
         @php
@@ -1905,6 +1929,20 @@
             position: relative;
         }
     }
+
+    .horizontal-ruler-labels-project {
+        position: relative;
+        width: 100%;
+        height: 20px;
+        white-space: nowrap;
+    }
+
+    .horizontal-ruler-labels-project .label {
+        transform: translateX(-50%);
+        white-space: nowrap;
+        font-size: 0.875rem;
+    }
+
 
     .nav-tabs {
         display: flex;

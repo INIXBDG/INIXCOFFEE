@@ -524,6 +524,62 @@
             white-space: nowrap;
         }
 
+        #progress-container-project {
+            width: 100%;
+            height: 100px;
+            position: relative;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        
+        #progress-bar-project {
+            width: 0%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0);
+            background-image: url("{{ asset('css/jalan_terang.png') }}");
+            background-repeat: repeat-x;
+            background-position: left;
+            position: absolute;
+            transition: width 10s ease; /* 🔥 ini juga dibenerin */
+        }
+        
+        #car-project {
+            width: 110px;
+            height: 110px;
+            background-image: url("{{ asset('css/car.png') }}");
+            background-size: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            transition: left 10s ease-in-out;
+        }
+        
+        .target-label-right-project {
+            position: absolute;
+            top: 0;
+            font-size: 20px;
+            font-weight: bold;
+            color: #000;
+            z-index: 1;
+        }
+        
+        .horizontal-ruler-labels-project {
+            position: relative;
+            width: 100%;
+            height: 20px;
+            margin-top: 10px;
+        }
+        
+        .horizontal-ruler-labels-project .label {
+            position: absolute;
+            font-size: 14px;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        
         .tab-pane {
             position: relative;
             transition: opacity 0.5s ease-in-out;

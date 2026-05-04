@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\AbsensiKaryawan;
+use App\Models\notif;
+use App\Models\Project;
+use App\Models\Registrasi;
+use App\Models\RKM;
+use App\Models\target;
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Models\RKM;
-use App\Models\Registrasi;
-use App\Models\notif;
-use App\Models\target;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class HomeController extends Controller
 {
@@ -89,7 +91,10 @@ class HomeController extends Controller
     {
         $tahun = $year;
         $targetdatabase = target::where('quartal', 'All')->where('tahun', $tahun)->first();
-        $target = $targetdatabase ? (int) $targetdatabase->target : 0;
+        $targetsales = $targetdatabase ? (int) $targetdatabase->target : 0;
+        $targetProject = $targetdatabase ? (int) $targetdatabase->target_project : 0;
+
+        $target = max($targetsales - $targetProject, 0);
 
         $totalSales = $this->getTotalSales($tahun); // Ambil total sales berdasarkan tahun
 
@@ -138,6 +143,50 @@ class HomeController extends Controller
         ]);
     }
 
+    public function getProjectTarget($year)
+    {
+        try {
+            // Ambil target_project dari tabel target berdasarkan tahun
+            $targetRow = target::where('tahun', $year)->first();
+            $targetProject = $targetRow ? (float) $targetRow->target_project : 0;
 
+            // Hitung total nilai_proyek dari project yang phase = 'selesai'
+            $completedSum = Project::where('phase', 'selesai')
+                ->whereYear('tanggal_akhir', $year)
+                ->sum('nilai_proyek');
 
+            // Generate labels untuk ruler (9 titik: 0%, 12.5%, 25%, ... 100%)
+            $targetLabels = [];
+            if ($targetProject > 0) {
+                for ($i = 0; $i <= 8; $i++) {
+                    $targetLabels[] = $this->formatTargetLabel(($i / 8) * $targetProject);
+                }
+            } else {
+                $targetLabels = array_fill(0, 9, "0");
+            }
+
+            return response()->json([
+                'success' => true,
+                'completedSum' => (float) $completedSum,
+                'target' => (float) $targetProject,
+                'targetLabels' => $targetLabels,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('getProjectTarget error', [
+                'msg' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Server error'], 500);
+        }
+    }
+
+    // Helper function (jika belum ada)
+    private function formatTargetLabel($value)
+    {
+        if ($value >= 1000000000)
+            return round($value / 1000000000, 1) . ' M';
+        if ($value >= 1000000)
+            return round($value / 1000000, 1) . ' JT';
+        return number_format($value, 0, ',', '.');
+    }
 }
