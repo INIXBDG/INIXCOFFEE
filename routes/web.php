@@ -470,6 +470,12 @@ Route::prefix('kpi-data/')
             Route::get('/monitoring/export/excel', [TargetKPIController::class, 'exportMonitoringExcel'])
                 ->name('monitoring.export.excel');
 
+            Route::get('departement/export/excel', [TargetKPIController::class, 'exportDeptExcel'])
+                ->name('departement.export.excel');
+                
+            Route::get('departement/export/pdf', [TargetKPIController::class, 'exportDeptPdf'])
+                ->name('departement.export.pdf');
+
         Route::get('/export', [TargetKPIController::class, 'exportKpiTemplate'])->name('export');
         Route::get('/export/pdf', [TargetKPIController::class, 'exportKpiTemplatePdf'])->name('export.pdf');
 
