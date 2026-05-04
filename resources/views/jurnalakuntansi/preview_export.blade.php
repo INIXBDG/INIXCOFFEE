@@ -28,7 +28,7 @@
                             <td class="text-center">{{ $item->nomor_kk ?? '-' }}</td>
                             <td class="text-center">{{ \Carbon\Carbon::parse($item->tanggal_transaksi)->format('d-m-Y') }}</td>
                             <td>{{ $item->keterangan }}</td>
-                            <td class="text-center">{{ $item->no_akun ?? '-' }}</td>
+                            <td class="text-start">{{ $item->no_akun ?? '-'}} - {{ $item->no_accounting->nama_akun ?? '-' }}</td>
                             <td class="text-end">{{ number_format($item->debit, 2, ',', '.') }}</td>
                             <td class="text-end">{{ number_format($item->kredit, 2, ',', '.') }}</td>
                         </tr>

@@ -46,7 +46,7 @@
                     <td class="border-all text-center">{{ $item->nomor_kk ?? '-' }}</td>
                     <td class="border-all text-center">{{ \Carbon\Carbon::parse($item->tanggal_transaksi)->format('d-m-Y') }}</td>
                     <td class="border-all">{{ $item->keterangan }}</td>
-                    <td class="border-all text-center">{{ $item->no_akun ?? '-' }}</td>
+                    <td class="border-all text-center">{{ $item->no_akun ?? '-'}} - {{ $item->nama_akun ?? '-' }}</td>
                     <td class="border-all text-right" style="mso-number-format:'\@';">{{ number_format($item->debit, 2, ',', '.') }}</td>
                     <td class="border-all text-right" style="mso-number-format:'\@';">{{ number_format($item->kredit, 2, ',', '.') }}</td>
                 </tr>

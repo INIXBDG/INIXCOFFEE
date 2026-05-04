@@ -63,7 +63,7 @@
 
                         <div class="mb-3">
                             <label for="no_akun" class="form-label">No Akun</label>
-                            <select class="form-control" id="no_akun" name="no_akun">
+                            <select class="form-control select2" id="no_akun" name="no_akun" style="width: 75%">
                                 <option value="" selected>Pilih No Akun</option>
                                 @foreach ( $no_akun as $data )
                                 <option value="{{ $data->no }}">{{ $data->no }} - {{ $data->nama_akun }}</option>
@@ -211,7 +211,6 @@
             </div>
         </div>
     </div>
-    <!-- Modal Data Master No Akun -->
     <div class="modal fade" id="masterNoAkunModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -240,8 +239,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal Form Create/Edit No Akun -->
     <div class="modal fade" id="formNoAkunModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -271,8 +268,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal Import No Akun -->
     <div class="modal fade" id="importNoAkunModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -294,6 +289,22 @@
                         <button type="submit" class="btn btn-success">Mulai Import</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="detailJurnalModal" tabindex="-1" aria-labelledby="detailJurnalModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailJurnalModalLabel">{{ __('Detail Jurnal Akuntansi') }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="detailJurnalBody">
+                    {{-- Konten detail akan disuntikkan oleh JavaScript --}}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+                </div>
             </div>
         </div>
     </div>
@@ -478,6 +489,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     // Deklarasi variabel global untuk DataTable No Akun
     var dtNoAkun;
@@ -521,6 +533,13 @@
         }
     }
     $(document).ready(function(){
+        $('#no_akun').select2({
+            placeholder: "Pilih No Akun",
+            allowClear: true,
+            dropdownParent: $('#editJurnalModal'),
+            
+            
+        });
         // Inisialisasi DataTables
         var table = $('#jurnaltable').DataTable({
             "ajax": {
@@ -560,7 +579,15 @@
                     }
                 },
                 {"data": "keterangan"},
-                {"data": "no_accounting.nama_akun"},
+                {
+                    "data": "no_accounting",
+                    "render": function(data, type, row) {
+                        var actions = "";
+                        actions +=  data.no + ' - ' + data.nama_akun;
+                        console.log(data);
+                        return actions;
+                    }
+                },
                 {
                     "data": "debit",
                     "render": function(data, type, row) {
@@ -619,7 +646,120 @@
                 $(api.column(4).footer()).html(formatRupiah(debitTotal));
                 $(api.column(5).footer()).html(formatRupiah(kreditTotal));
             }
+
+            
         });
+        // --- Penanganan Event Klik pada Baris Tabel ---
+        // --- Penanganan Event Klik pada Baris Tabel ---
+        $('#jurnaltable tbody').on('click', 'tr', function (e) {
+            // Mencegah modal terbuka jika pengguna mengklik tombol Aksi atau Dropdown
+            if ($(e.target).closest('button, a, .dropdown-menu, .btn-group').length) {
+                return;
+            }
+
+            var data = table.row(this).data();
+            if (!data) return;
+
+            var akunText = data.no_accounting ? (data.no_accounting.no + ' - ' + data.no_accounting.nama_akun) : data.no_akun;
+            var tglTransaksi = new Date(data.tanggal_transaksi).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+            
+            // 1. Merender Informasi Dasar Jurnal Akuntansi
+            var html = '<h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="fas fa-file-invoice-dollar me-2"></i>Informasi Utama Transaksi</h6>';
+            html += '<table class="table table-bordered table-striped table-sm mb-4">';
+            html += `<tr><th width="35%" class="bg-light">Nomor KK</th><td>${data.nomor_kk || '-'}</td></tr>`;
+            html += `<tr><th class="bg-light">Tanggal Transaksi</th><td>${tglTransaksi}</td></tr>`;
+            html += `<tr><th class="bg-light">Keterangan</th><td>${data.keterangan || '-'}</td></tr>`;
+            html += `<tr><th class="bg-light">No. Akun</th><td>${akunText}</td></tr>`;
+            html += `<tr><th class="bg-light">Debit</th><td class="text-success fw-bold">${formatRupiah(data.debit)}</td></tr>`;
+            html += `<tr><th class="bg-light">Kredit</th><td class="text-danger fw-bold">${formatRupiah(data.kredit)}</td></tr>`;
+            html += '</table>';
+
+            // --- Fungsi Pembantu Tingkat Lanjut untuk Merender Objek Relasi ---
+            function renderDetailedTable(obj, titlePrefix, colorClass, iconClass) {
+                const ignoredKeys = ['id', 'created_at', 'updated_at', 'deleted_at', 'deleted_by', 'id_rkm', 'id_tracking', 'id_pengajuan_barang', 'id_perhitungan_net_sales'];
+                const currencyKeys = ['cashback', 'transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'fresh_money', 'entertaint', 'souvenir', 'sewa_laptop', 'nominal_pengajuan', 'total_biaya'];
+
+                let tableHtml = `<h6 class="fw-bold text-${colorClass} border-bottom pb-2 mt-4 mb-3"><i class="${iconClass} me-2"></i>Detail Referensi: ${titlePrefix}</h6>`;
+                tableHtml += '<table class="table table-bordered table-sm mb-4"><tbody>';
+                
+                let hasValidData = false;
+                let childTableHtml = ''; // Variabel penampung sub-tabel rincian item
+
+                for (let key in obj) {
+                    if(ignoredKeys.includes(key)) continue; 
+                    if(obj[key] === null || obj[key] === '') continue;
+
+                    // Logika Penanganan Array (Rincian Detail Pengajuan Barang)
+                    if (Array.isArray(obj[key])) {
+                        if (obj[key].length > 0 && key === 'detail') {
+                            childTableHtml += '<h6 class="fw-bold text-secondary mt-3 mb-2"><i class="fas fa-list me-2"></i>Rincian Item Pengajuan</h6>';
+                            childTableHtml += '<table class="table table-bordered table-sm mb-4 align-middle text-center"><thead><tr class="bg-light">';
+                            childTableHtml += '<th>Nama Barang</th><th>Qty</th><th>Harga</th><th>Keterangan</th>';
+                            childTableHtml += '</tr></thead><tbody>';
+                            
+                            obj[key].forEach(function(item) {
+                                childTableHtml += `<tr>
+                                    <td class="text-start">${item.nama_barang || '-'}</td>
+                                    <td>${item.qty || '-'}</td>
+                                    <td class="text-end">${formatRupiah(item.harga || 0)}</td>
+                                    <td class="text-start" style="white-space: pre-wrap;">${item.keterangan || '-'}</td>
+                                </tr>`;
+                            });
+                            childTableHtml += '</tbody></table>';
+                        }
+                        continue; // Lewati perulangan utama agar array tidak dirender sebagai string biasa
+                    }
+
+                    hasValidData = true;
+
+                    let formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    let val = obj[key];
+
+                    // Logika Penanganan Tautan Berkas Invoice
+                    if (key === 'invoice') {
+                        val = `<a href="{{ asset('storage') }}/${val}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-external-link-alt me-1"></i>Lihat Invoice</a>`;
+                    }
+                    // Deteksi tanggal otomatis (Format YYYY-MM-DD)
+                    else if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        val = new Date(val).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+                    }
+                    // Deteksi dan format mata uang berdasarkan daftar kunci
+                    else if (currencyKeys.includes(key)) {
+                        val = `<span class="fw-bold">${formatRupiah(val)}</span>`;
+                    }
+
+                    tableHtml += `<tr><th width="35%" class="bg-light">${formattedKey}</th><td>${val}</td></tr>`;
+                }
+                
+                tableHtml += '</tbody></table>';
+                
+                // Menyisipkan sub-tabel rincian item di bawah tabel utama relasi
+                tableHtml += childTableHtml;
+
+                if (!hasValidData) {
+                    tableHtml = `<h6 class="fw-bold text-${colorClass} border-bottom pb-2 mt-4 mb-3"><i class="${iconClass} me-2"></i>Detail Referensi: ${titlePrefix}</h6>`;
+                    tableHtml += `<div class="alert alert-secondary small py-2"><i class="fas fa-info-circle me-2"></i>Tidak ada atribut data tambahan yang terisi.</div>`;
+                }
+
+                return tableHtml;
+            }
+
+            // 2. Merender Detail Pengajuan Barang
+            if (data.pengajuan_barang && Object.keys(data.pengajuan_barang).length > 0) {
+                html += renderDetailedTable(data.pengajuan_barang, 'Pengajuan Barang', 'success', 'fas fa-box-open');
+            }
+
+            // 3. Merender Detail Perhitungan Net Sales
+            if (data.net_sales && Object.keys(data.net_sales).length > 0) {
+                html += renderDetailedTable(data.net_sales, 'Perhitungan Net Sales', 'info', 'fas fa-chart-line');
+            }
+
+            // Menyuntikkan HTML ke dalam Modal dan menampilkannya
+            $('#detailJurnalBody').html(html);
+            $('#detailJurnalModal').modal('show');
+        });
+        
+        $('#jurnaltable tbody').css('cursor', 'pointer');
 
         // Inisialisasi DataTables untuk Pengajuan Belum Dijurnal
         var tableBelumJurnal = $('#belumjurnaltable').DataTable({
