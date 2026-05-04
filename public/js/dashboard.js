@@ -14,6 +14,7 @@ function initializeYearlySales() {
         fetchTotalMengajarPerMateri(year, 'All');
         fetchAbsenPerbulan(year, 'All');
         dashboardEdu();
+        getProjectTarget(year);
         // fetchNilaiFeedback(year, '1');
         // fetchJumlahPICData();
         // fetchJumlahTicketingData();
@@ -99,6 +100,95 @@ function updateCarPosition(totalSales, target) {
         car.css('left', `${carPosition}%`); // Pindahkan mobil sesuai posisi progres
         car.css('transition', 'left 10s ease-in-out'); // Set animasi mobil, misalnya 2 detik
     }, 10000); // Waktu tunggu sama dengan durasi progress bar
+}
+
+function getProjectTarget(year) {
+    $.ajax({
+        url: `/getProjectTarget/${year}`,
+        type: 'GET',
+        dataType: 'json',
+        success: function (response) {
+            let total = response.completedSum || 0;
+            let target = response.target || 0;
+            let targetLabels = response.targetLabels?.length
+                ? response.targetLabels
+                : Array(9).fill("0");
+
+            // Update teks total
+            $('#totalProjectDisplay').text(formatRupiah(total));
+
+            // Update UI Project (selector berbeda)
+            updateRulerLabelsProject(total, target, targetLabels);
+            updateCarPositionProject(total, target);
+        },
+        error: function (xhr, status, error) {
+            console.error('Error fetching project target:', error);
+            $('#totalProjectDisplay').text('Error');
+        }
+    });
+}
+
+function updateRulerLabelsProject(total, target, targetLabels) {
+    let maxRange = Math.max(total, target, 1);
+    let isMobile = window.innerWidth <= 768;
+
+    // Kosongkan container project
+    $('.horizontal-ruler-labels-project').empty();
+
+    // Dynamically create labels based on targetLabels or total
+    $.each(targetLabels, function (index, label) {
+        let labelValue = (index / (targetLabels.length - 1)) * maxRange;
+        let labelPosition = (labelValue / maxRange) * 100;
+
+        // Use total-based dynamic labels if total > target, otherwise use static targetLabels
+        let displayLabel = total > target ? formatTarget(labelValue) : label;
+
+        let labelDiv = $('<div></div>', {
+            class: 'label',
+            text: displayLabel,
+            css: {
+                position: 'absolute',
+                left: `${labelPosition}%`
+            }
+        });
+
+        if (isMobile && index % 2 !== 0) {
+            labelDiv.hide();
+        }
+
+        $('.horizontal-ruler-labels-project').append(labelDiv);
+    });
+}
+
+function updateCarPositionProject(total, target) {
+    let maxRange = Math.max(total, target, 1);
+    let progress = Math.max((total / maxRange) * 100, 2);
+    let targetPosition = (target / maxRange) * 100;
+
+    // Selector project
+    let car = $('#car-project');
+    let goal = $('.target-label-right-project');
+
+    let isMobile = window.innerWidth <= 600;
+    let carPosition = Math.max(progress - (isMobile ? 30 : 7), 0);
+
+    // Set posisi tujuan
+    goal.css('left', `${Math.min(targetPosition, 100)}%`);
+
+    // Animasi progress bar terlebih dahulu
+    $("#progress-bar-project").css({
+        'width': `${progress}%`,
+        'transition': 'width 10s ease' // Durasi animasi disesuaikan
+    });
+    console.log("Project - Max Range:", maxRange, "Progress:", progress, "Target Position:", targetPosition, "Car", carPosition);
+
+    // Tunggu sampai progress bar selesai, lalu animasi mobil
+    setTimeout(() => {
+        car.css('left', `${carPosition}%`); // Pindahkan mobil sesuai posisi progres
+        car.css('transition', 'left 10s ease-in-out'); // Set animasi mobil
+    }, 10000); // Waktu tunggu sama dengan durasi progress bar
+
+    console.log("total:", total, "target:", target, "progress:", progress); 
 }
 
 function fetchPenjualanPerSalesPerTahun(year) {
@@ -827,7 +917,7 @@ function dashboardEdu() {
                 document.getElementById('silabusValue').innerText = res.pembuatanSilabus;
             }
         })
-    .catch(err => console.error('Aktivitas error:', err));
+        .catch(err => console.error('Aktivitas error:', err));
 }
 
 function fetchTabInix(year) {
@@ -2682,8 +2772,11 @@ $(document).ready(function () {
     // 1. INISIALISASI & TAB LAMA
     // =======================================================================
 
+    initializeYearlySales();
+    initializeProjectTarget();
+
     // Inisialisasi dropdown filter bulan
-    if(typeof loadBulanFilter === 'function') {
+    if (typeof loadBulanFilter === 'function') {
         loadBulanFilter('#filterBulan');
         loadBulanFilter('#filterMonthPIC');
         loadBulanFilter('#filterMonth');
@@ -2704,6 +2797,14 @@ $(document).ready(function () {
     $('#pills-jumlah-permintaan-tab').on('shown.bs.tab', function () { fetchJumlahPermintaanPerBulanData(); });
     $('#pills-permintaan-sering-diajukan-tab').on('shown.bs.tab', function () { fetchPermintaanSeringDiajukanData(); });
 
+
+    $('#tahun').on('change', function () {
+        let year = $(this).val();
+        if (year) {
+            initializeYearlySales();
+            initializeProjectTarget(); // TAMBAHKAN INI
+        }
+    });
 
     // =======================================================================
     // 2. HELPER UMUM SLA
@@ -2972,7 +3073,7 @@ $(document).ready(function () {
                 activePill.data('loaded', true);
             }
 
-        // --- Logika Tab Lama (Legacy) ---
+            // --- Logika Tab Lama (Legacy) ---
         } else {
             if (!isLoaded) {
                 switch (activePillId) {
