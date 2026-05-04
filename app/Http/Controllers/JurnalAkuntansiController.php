@@ -51,7 +51,7 @@ class JurnalAkuntansiController extends Controller
     public function getData(Request $request)
     {
         // Tambahkan pemuatan relasi eksplisit menggunakan with()
-        $query = JurnalAkuntansi::with('no_accounting');
+        $query = JurnalAkuntansi::with('no_accounting', 'pengajuanBarang.detail', 'netSales');
 
         if ($request->has('start_date') && $request->start_date != '') {
             $query->whereDate('tanggal_transaksi', '>=', $request->start_date);
