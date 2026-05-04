@@ -126,14 +126,14 @@
                         { "data": "tahun" },
                         {
                             "data": "target",
-                            "render": function (data, type, row) {
-                                return 'Rp. ' + formatRupiah(data.toString()); // Format target as Rupiah
+                            "render": function (data) {
+                                return data ? 'Rp. ' + formatRupiah(data.toString()) : '-';
                             }
                         },
                         {
                             "data": "target_project",
-                            "render": function (data, type, row) {
-                                return 'Rp. ' + formatRupiah(data.toString());
+                            "render": function (data) {
+                                return data ? 'Rp. ' + formatRupiah(data.toString()) : '-';
                             }
                         },
 
