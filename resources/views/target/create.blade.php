@@ -65,7 +65,7 @@
                             </div>
 
                             <div class="row mb-3">
-                                <label for="target" class="col-md-4 col-form-label text-md-start">{{ __('Target') }}</label>
+                                <label for="target" class="col-md-4 col-form-label text-md-start">{{ __('Target Penjualan') }}</label>
                                 <div class="col-md-6">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text">Rp.</span>

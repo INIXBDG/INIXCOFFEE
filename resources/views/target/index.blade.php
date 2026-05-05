@@ -29,7 +29,7 @@
                                     <th scope="col">Objek</th>
                                     <th scope="col">Quartal</th>
                                     <th scope="col">Tahun</th>
-                                    <th scope="col">Target</th>
+                                    <th scope="col">Target Penjualan</th>
                                     <th scope="col">Target Project</th>
                                     <th scope="col">Aksi</th>
                                 </tr>

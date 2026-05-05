@@ -91,10 +91,7 @@ class HomeController extends Controller
     {
         $tahun = $year;
         $targetdatabase = target::where('quartal', 'All')->where('tahun', $tahun)->first();
-        $targetsales = $targetdatabase ? (int) $targetdatabase->target : 0;
-        $targetProject = $targetdatabase ? (int) $targetdatabase->target_project : 0;
-
-        $target = max($targetsales - $targetProject, 0);
+        $target = $targetdatabase ? (int) $targetdatabase->target : 0;
 
         $totalSales = $this->getTotalSales($tahun); // Ambil total sales berdasarkan tahun
 
