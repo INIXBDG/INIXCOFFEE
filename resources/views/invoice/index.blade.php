@@ -189,7 +189,7 @@
                                         <td>{{ \Carbon\Carbon::parse($rkm->tanggal_awal)->format('d F Y') }} s/d {{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('d F Y') }}</td>
                                         <td>{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</td>
                                         <td>
-                                            <a href="{{ route('kwitansi.show', $rkm->kwitansi->first()->id) }}" class="btn btn-success btn-sm">Lihat Kwitansi</a>
+                                            <a href="{{ route('kwitansi.pdf', $rkm->kwitansi->first()->id) }}" class="btn btn-success btn-sm">Lihat Kwitansi</a>
                                         </td>
                                     </tr>
                                     @endforeach

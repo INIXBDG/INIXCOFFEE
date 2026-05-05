@@ -2,7 +2,8 @@
 
 @section('office_contents')
     @php
-        $isReadOnly = Auth::user()->jabatan !== 'Driver';
+        $isReadOnly = Auth::user()->jabatan !== 'Driver' 
+                    && Auth::user()->jabatan !== 'HRD';
     @endphp
 
     <div class="container-fluid">

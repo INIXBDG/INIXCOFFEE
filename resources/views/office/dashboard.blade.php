@@ -350,7 +350,7 @@
                                                                     <input id="nama_karyawan" type="text" name="nama_karyawan" value="{{ $karyawan->nama_lengkap }}">
                                                                     <input id="divisi" type="text" name="divisi" value="{{ $karyawan->divisi }}">
                                                                     <input type="text" name="tipe" value="Tagihan Perusahaan">  
-                                                                    <input type="text" name="barang[nama_barang][]" value="{{ $tagihan->kegiatan }}">
+                                                                    <input type="text" name="barang[nama_barang][]" value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan->kegiatan }}">
                                                                     <input type="number" name="barang[qty][]" value="1"> 
                                                                     <input type="text" name="barang[harga_barang][]" value="{{ $tagihan->nominal ?? null }}">  
                                                                     <input type="text" name="barang[keterangan][]" value="{{ $tagihan->keterangan ?? null }}">

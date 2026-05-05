@@ -121,13 +121,13 @@
 
                                 <div class="mb-3">
                                     <label for="cp" class="form-label">Phone CP</label>
-                                    <input type="text" class="form-control" id="cp" name="cp">
+                                    <input type="text" class="form-control" id="cp" name="cp" required>
                                     <div class="form-text">Nomor kontak.</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="divisi" class="form-label">Divisi</label>
-                                    <input type="text" class="form-control" id="divisi" name="divisi">
+                                    <input type="text" class="form-control" id="divisi" name="divisi" required>
                                     <div class="form-text">Misal: Marketing, Finance, HR.</div>
                                 </div>
                             </div>
@@ -182,13 +182,13 @@
 
                                 <div class="mb-3">
                                     <label for="edit_cp" class="form-label">Phone CP</label>
-                                    <input type="text" class="form-control" id="edit_cp" name="cp">
+                                    <input type="text" class="form-control" id="edit_cp" name="cp" required>
                                     <div class="form-text">Nomor kontak.</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="edit_divisi" class="form-label">Divisi</label>
-                                    <input type="text" class="form-control" id="edit_divisi" name="divisi">
+                                    <input type="text" class="form-control" id="edit_divisi" name="divisi" required>
                                     <div class="form-text">Misal: Marketing, Finance, HR.</div>
                                 </div>
                             </div>

@@ -47,7 +47,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">{{ __('Nama Exam/Kelas') }} <span class="text-danger">*</span></label>
-                                <input type="text" name="nama_exam" class="form-control @error('nama_exam') is-invalid @enderror" 
+                                <input type="text" name="nama_exam" class="form-control @error('nama_exam') is-invalid @enderror"
                                     value="{{ old('nama_exam', $dokumentasi?->nama_exam) }}" required>
                                 @error('nama_exam')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -61,8 +61,8 @@
                             <div class="col-md-4">
                                 <label class="form-label">{{ __('Skor') }}</label>
                                 <div class="input-group">
-                                    <input type="number" name="skor" class="form-control @error('skor') is-invalid @enderror" 
-                                        value="{{ old('skor', $dokumentasi?->skor) }}" step="0.01" min="0" max="100">
+                                    <input type="number" name="skor" class="form-control @error('skor') is-invalid @enderror"
+                                        value="{{ old('skor', $dokumentasi?->skor) }}" step="0.01" min="0">
                                     @error('skor')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
@@ -81,11 +81,8 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">{{ __('Tanggal Pelaksanaan') }} <span class="text-danger">*</span></label>
-                                <input type="date" name="tanggal_pelaksanaan" class="form-control @error('tanggal_pelaksanaan') is-invalid @enderror" 
-                                    value="{{ old('tanggal_pelaksanaan', $dokumentasi?->tanggal_perusahaan) }}" required>
-                                @error('tanggal_pelaksanaan')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <input type="date" name="tanggal_pelaksanaan" class="form-control @error('tanggal_pelaksanaan') is-invalid @enderror"
+                                    value="{{ old('tanggal_pelaksanaan', $dokumentasi && $dokumentasi->tanggal_pelaksanaan ? \Carbon\Carbon::parse($dokumentasi->tanggal_pelaksanaan)->format('Y-m-d') : '') }}" required>
                             </div>
                         </div>
 
@@ -157,7 +154,7 @@
         border: 1px solid #dee2e6;
     }
 
-    .form-control:disabled, 
+    .form-control:disabled,
     .form-control[readonly] {
         background-color: #e9ecef;
         cursor: not-allowed;

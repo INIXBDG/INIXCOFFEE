@@ -41,6 +41,7 @@ class TargetController extends Controller
             'quartal' => 'required',
             'tahun' => 'required',
             'target' => 'required',
+            'target_project' => 'required',
         ]);
 
         // Check if a record with the same 'objek', 'quartal', and 'tahun' already exists
@@ -60,6 +61,7 @@ class TargetController extends Controller
             'quartal' => $request->quartal,
             'tahun' => $request->tahun,
             'target' => $request->target,
+            'target_project' => $request->target_project
         ]);
 
         // Redirect to the index route with a success message

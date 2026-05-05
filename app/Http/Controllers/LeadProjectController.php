@@ -27,6 +27,8 @@ class LeadProjectController extends Controller
         $request->validate([
             'nama_lead' => 'required|string|max:255',
             'perusahaan_id' => 'required|exists:perusahaans,id',
+            'nama_pic' => 'required|string|max:255',     // Validasi PIC
+            'kontak_pic' => 'required|string|max:255',
             'estimasi_nilai' => 'required|numeric',
         ]);
 
@@ -35,6 +37,8 @@ class LeadProjectController extends Controller
         LeadProject::create([
             'nama_lead' => $request->nama_lead,
             'perusahaan_id' => $request->perusahaan_id,
+            'nama_pic' => $request->nama_pic,            // Penyimpanan Data
+            'kontak_pic' => $request->kontak_pic,
             'estimasi_nilai' => $request->estimasi_nilai,
             'status' => 'penawaran_awal',
             'sales_id' => $currentUserKaryawanId,
@@ -56,12 +60,27 @@ class LeadProjectController extends Controller
 
             $lead->update(['status' => $newStatus]);
 
-            // Logika Penanganan Status 'Lost' (Soft Delete)
+            // Logika Penanganan Status 'Lost' (Soft Delete Hierarkis)
             if ($newStatus === 'lost') {
                 if ($lead->project) {
-                    $lead->project->delete(); // Soft delete proyek yang sudah terbentuk
+                    // Soft delete entitas ProjectAdministration
+                    $administration = \App\Models\ProjectAdministration::where('project_id', $lead->project->id)->first();
+                    if ($administration) {
+                        $administration->delete();
+                    }
+
+                    // Soft delete entitas ProjectHandover
+                    $handover = \App\Models\ProjectHandover::where('project_id', $lead->project->id)->first();
+                    if ($handover) {
+                        $handover->delete();
+                    }
+
+                    // Soft delete entitas Project
+                    $lead->project->delete(); 
                 }
-                $lead->delete(); // Soft delete lead itu sendiri
+                
+                // Soft delete entitas LeadProject
+                $lead->delete(); 
             } 
             // Logika Transisi ke Administrasi
             else if (in_array($newStatus, ['dokumen_penawaran', 'mengirim_proposal_teknis', 'surat_penawaran', 'won'])) {
@@ -78,7 +97,7 @@ class LeadProjectController extends Controller
                     ProjectAdministration::create([
                         'project_id' => $project->id,
                         'current_stage' => 'kak',
-                        'pm_id' => auth()->user()->karyawan->kode_karyawan ?? null, // Default PM
+                        'pm_id' => 'AD', // Default PM
                     ]);
                 }
             }
@@ -89,6 +108,44 @@ class LeadProjectController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Gagal memperbarui tahapan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function updateLead(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'nama_lead' => 'required|string|max:255',
+            'nama_pic' => 'required|string|max:255',
+            'kontak_pic' => 'required|string|max:255',
+            'estimasi_nilai' => 'required|numeric',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $lead = LeadProject::findOrFail($id);
+
+            // 1. Memperbarui Data Lead
+            $lead->update([
+                'nama_lead' => $request->nama_lead,
+                'nama_pic' => $request->nama_pic,
+                'kontak_pic' => $request->kontak_pic,
+                'estimasi_nilai' => $request->estimasi_nilai,
+            ]);
+
+            // 2. Mensinkronkan Data dengan Project (Jika sudah terkonversi/masuk fase administrasi)
+            if ($lead->project) {
+                $lead->project->update([
+                    'name' => $request->nama_lead,
+                    'nilai_proyek' => $request->estimasi_nilai,
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Data Lead berhasil diperbarui.'], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Gagal memperbarui data Lead: ' . $e->getMessage()], 500);
         }
     }
 }

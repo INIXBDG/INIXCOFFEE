@@ -16,7 +16,7 @@
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
                     <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
                         {{-- Table Tagihan --}}
-                        <div class="table-responsive mb-4" style="max-height: 500px; overflow-y: auto;">
+                        <div class="table-responsive mb-4">
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-light sticky-top">
                                     <tr>
@@ -138,7 +138,7 @@
                                                                 <input id="nama_karyawan" type="text" name="nama_karyawan" value="{{ $karyawan->nama_lengkap }}">
                                                                 <input id="divisi" type="text" name="divisi" value="{{ $karyawan->divisi }}">
                                                                 <input type="text" name="tipe" value="Tagihan Perusahaan">  
-                                                                <input type="text" name="barang[nama_barang][]" value="{{ $tagihan->kegiatan }}">
+                                                                <input type="text" name="barang[nama_barang][]" value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan->kegiatan }}">
                                                                 <input type="number" name="barang[qty][]" value="1"> 
                                                                 <input type="text" name="barang[harga_barang][]" value="{{ $tagihan->nominal ?? null }}">  
                                                                 <input type="text" name="barang[keterangan][]" value="{{ $tagihan->keterangan ?? null }}">

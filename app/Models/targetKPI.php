@@ -9,7 +9,7 @@ class targetKPI extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_targetKPI', 'id_pembuat', 'asistant_route', 'judul', 'deskripsi', 'status'];
+    protected $fillable = ['id_pembuat', 'id_data_target', 'judul', 'deskripsi', 'status'];
 
     public function karyawan()
     {
@@ -21,8 +21,13 @@ class targetKPI extends Model
         return $this->hasMany(DetailTargetKPI::class, 'id_targetKPI', 'id');
     }
 
+    public function dataTarget()
+    {
+        return $this->belongsTo(DataTarget::class, 'id_data_target', 'id');
+    }
+
     public function detailPersonKPI()
     {
-        return $this->hasMany(DetailPersonKPI::class, 'id_target', 'id');
+        return $this->hasMany(detailPersonKPI::class, 'id_target', 'id');
     }
 }

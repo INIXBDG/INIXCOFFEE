@@ -32,6 +32,10 @@ class JurnalAkuntansi extends Model
         'kredit',
     ];
 
+    protected $casts = [
+        'no_akun' => 'string',
+    ];
+
     /**
      * Relasi ke model PengajuanBarang.
      */
@@ -43,6 +47,10 @@ class JurnalAkuntansi extends Model
     public function netSales()
     {
         return $this->belongsTo(perhitunganNetSales::class, 'id_perhitungan_net_sales', 'id');
+    }
+    public function no_accounting()
+    {
+        return $this->belongsTo(no_akun::class, 'no_akun', 'no');
     }
 
 

@@ -63,31 +63,24 @@
 
                         <div class="mb-3">
                             <label for="no_akun" class="form-label">No Akun</label>
-                            <input type="text" class="form-control" id="no_akun" name="no_akun">
+                            <select class="form-control select2" id="no_akun" name="no_akun" style="width: 75%">
+                                <option value="" selected>Pilih No Akun</option>
+                                @foreach ( $no_akun as $data )
+                                <option value="{{ $data->no }}">{{ $data->no }} - {{ $data->nama_akun }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         
-                        <div id="form-pengajuan-group" style="display: none;">
-                            <div class="mb-3">
-                                <label for="edit_kredit_pengajuan" class="form-label">Kredit (Rp)</label>
-                                <input type="number" class="form-control input-pengajuan" id="edit_kredit_pengajuan" name="kredit" min="0" step="0.01">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_debit" class="form-label">Debit (Rp)</label>
+                                <input type="number" class="form-control" id="edit_debit" name="debit" min="0" step="0.01" value="0" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit_kredit" class="form-label">Kredit (Rp)</label>
+                                <input type="number" class="form-control" id="edit_kredit" name="kredit" min="0" step="0.01" value="0" required>
                             </div>
                         </div>
-
-                        <div id="form-pettycash-group" style="display: none;">
-                            <div class="mb-3">
-                                <label for="edit_tipe_transaksi" class="form-label">Tipe Transaksi</label>
-                                <select class="form-control input-pettycash" id="edit_tipe_transaksi" name="tipe_transaksi">
-                                    <option value="" disabled selected>-- Pilih Tipe --</option>
-                                    <option value="debit">Pemasukan (Debit)</option>
-                                    <option value="kredit">Pengeluaran (Kredit)</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="edit_nominal_pettycash" class="form-label">Nominal (Rp)</label>
-                                <input type="number" class="form-control input-pettycash" id="edit_nominal_pettycash" name="nominal" min="0" step="0.01">
-                            </div>
-                        </div>
-
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -120,7 +113,12 @@
 
                         <div class="mb-3">
                             <label for="no_akun" class="form-label">No Akun</label>
-                            <input type="text" class="form-control" id="no_akun" name="no_akun">
+                            <select class="form-control input-pettycash" id="no_akun" name="no_akun">
+                                <option value="" selected>Pilih No Akun</option>
+                                @foreach ( $no_akun as $data )
+                                <option value="{{ $data->no }}">{{ $data->no }} - {{ $data->nama_akun }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         
                         <div class="mb-3">
@@ -187,6 +185,8 @@
                 </div>
                 <form action="{{ route('jurnalakuntansi.export') }}" method="GET" target="_blank">
                     <div class="modal-body">
+                        <input type="hidden" name="format_export" value="preview">
+                        
                         <div class="mb-3">
                             <label for="tipe_periode" class="form-label">Tipe Periode</label>
                             <select class="form-select" id="tipe_periode" name="tipe_periode" required>
@@ -202,22 +202,113 @@
                             <input type="date" class="form-control" id="tanggal_acuan" name="tanggal_acuan" value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" required>
                             <small class="text-muted">Sistem akan otomatis menghitung rentang awal dan akhir periode berdasarkan tanggal acuan ini.</small>
                         </div>
-                        <div class="mb-3">
-                            <label for="format_export" class="form-label">Format File</label>
-                            <select class="form-select" id="format_export" name="format_export" required>
-                                <option value="excel">Microsoft Excel (.xlsx)</option>
-                                <option value="pdf">Dokumen PDF (.pdf)</option>
-                            </select>
-                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary" onclick="$('#exportModal').modal('hide');">Download Laporan</button>
+                        <button type="submit" class="btn btn-primary" onclick="$('#exportModal').modal('hide');">Tampilkan Preview</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+    <div class="modal fade" id="masterNoAkunModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Manajemen Master No Akun</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" onclick="openFormNoAkun()">+ Tambah Akun</button>
+                        <button class="btn btn-success btn-sm" onclick="$('#importNoAkunModal').modal('show')">Import Excel</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="tableNoAkun" style="width: 100%">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>No Akun</th>
+                                    <th>Nama Akun</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="formNoAkunModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="titleFormNoAkun">Tambah No Akun</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="noAkunForm">
+                    @csrf
+                    <input type="hidden" name="_method" id="methodNoAkun" value="POST">
+                    <input type="hidden" id="id_no_akun">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nomor Akun</label>
+                            <input type="text" class="form-control" id="form_no_akun" name="no" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nama Akun</label>
+                            <input type="text" class="form-control" id="form_nama_akun" name="nama_akun" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="importNoAkunModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Master No Akun</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formImportNoAkun" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">File Excel</label>
+                            <input type="file" class="form-control" name="file_no_akun" id="file_no_akun" accept=".xlsx, .xls, .csv" required>
+                            <small class="text-muted mt-2 d-block">Format: Kolom A (No Akun), Kolom B (Nama Akun). Baris 1 diabaikan sebagai header.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success">Mulai Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="detailJurnalModal" tabindex="-1" aria-labelledby="detailJurnalModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailJurnalModalLabel">{{ __('Detail Jurnal Akuntansi') }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="detailJurnalBody">
+                    {{-- Konten detail akan disuntikkan oleh JavaScript --}}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end mb-3 ">
@@ -229,6 +320,9 @@
                 </button>
                 <button type="button" class="btn btn-secondary ms-2" data-bs-toggle="modal" data-bs-target="#exportModal">
                     <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export Laporan
+                </button>
+                <button type="button" class="btn click-primary ms-2" id="btn-master-no-akun">
+                   Master No Akun
                 </button>
             </div>
             <div class="card m-4">
@@ -395,8 +489,57 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+    // Deklarasi variabel global untuk DataTable No Akun
+    var dtNoAkun;
+
+    // FUNGSI GLOBAL TETAP DI LUAR (karena dipanggil via onclick di dalam DataTables render)
+    function openFormNoAkun() {
+        $('#noAkunForm')[0].reset();
+        $('#id_no_akun').val('');
+        $('#methodNoAkun').val('POST');
+        $('#titleFormNoAkun').text('Tambah No Akun');
+        $('#formNoAkunModal').modal('show');
+    }
+
+    function editNoAkun(id) {
+        $.get("{{ url('/no-akun') }}/" + id + "/edit", function(res) {
+            if(res.success) {
+                $('#noAkunForm')[0].reset();
+                $('#id_no_akun').val(res.data.id);
+                $('#form_no_akun').val(res.data.no);
+                $('#form_nama_akun').val(res.data.nama_akun);
+
+                $('#methodNoAkun').val('PUT');
+                $('#titleFormNoAkun').text('Edit No Akun');
+                $('#formNoAkunModal').modal('show');
+            }
+        });
+    }
+
+    function deleteNoAkun(id) {
+        if(confirm('Yakin ingin menghapus data ini?')) {
+            $.ajax({
+                url: "{{ url('/no-akun') }}/" + id,
+                type: "POST",
+                data: { _method: 'DELETE', _token: '{{ csrf_token() }}' },
+                success: function(res) {
+                    if(res.success) {
+                        if(dtNoAkun) dtNoAkun.ajax.reload(null, false);
+                    }
+                }
+            });
+        }
+    }
     $(document).ready(function(){
+        $('#no_akun').select2({
+            placeholder: "Pilih No Akun",
+            allowClear: true,
+            dropdownParent: $('#editJurnalModal'),
+            
+            
+        });
         // Inisialisasi DataTables
         var table = $('#jurnaltable').DataTable({
             "ajax": {
@@ -436,7 +579,15 @@
                     }
                 },
                 {"data": "keterangan"},
-                {"data": "no_akun"},
+                {
+                    "data": "no_accounting",
+                    "render": function(data, type, row) {
+                        var actions = "";
+                        actions +=  data.no + ' - ' + data.nama_akun;
+                        console.log(data);
+                        return actions;
+                    }
+                },
                 {
                     "data": "debit",
                     "render": function(data, type, row) {
@@ -453,7 +604,14 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        return '<button class="btn btn-sm btn-primary btn-edit-jurnal" data-id="' + row.id + '">Edit</button>';
+                        var actions = "";
+                        
+                        actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                        actions += '<div class="dropdown-menu px-2" aria-labelledby="dropdownMenuButton">';
+                            actions += '<button type="button" class="btn-edit-jurnal dropdown-item mb-2 rounded-2 bg-primary text-white" data-id="' + row.id + '">Edit</button>';
+                            actions += '<a class="dropdown-item bg-danger text-white rounded-2" href="{{ url('/jurnalakuntansi/pdf') }}/' + row.id + '">PDF</a>';
+                        actions += '</div>';
+                        return actions;
                     }
                 }
             ],
@@ -488,7 +646,120 @@
                 $(api.column(4).footer()).html(formatRupiah(debitTotal));
                 $(api.column(5).footer()).html(formatRupiah(kreditTotal));
             }
+
+            
         });
+        // --- Penanganan Event Klik pada Baris Tabel ---
+        // --- Penanganan Event Klik pada Baris Tabel ---
+        $('#jurnaltable tbody').on('click', 'tr', function (e) {
+            // Mencegah modal terbuka jika pengguna mengklik tombol Aksi atau Dropdown
+            if ($(e.target).closest('button, a, .dropdown-menu, .btn-group').length) {
+                return;
+            }
+
+            var data = table.row(this).data();
+            if (!data) return;
+
+            var akunText = data.no_accounting ? (data.no_accounting.no + ' - ' + data.no_accounting.nama_akun) : data.no_akun;
+            var tglTransaksi = new Date(data.tanggal_transaksi).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+            
+            // 1. Merender Informasi Dasar Jurnal Akuntansi
+            var html = '<h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="fas fa-file-invoice-dollar me-2"></i>Informasi Utama Transaksi</h6>';
+            html += '<table class="table table-bordered table-striped table-sm mb-4">';
+            html += `<tr><th width="35%" class="bg-light">Nomor KK</th><td>${data.nomor_kk || '-'}</td></tr>`;
+            html += `<tr><th class="bg-light">Tanggal Transaksi</th><td>${tglTransaksi}</td></tr>`;
+            html += `<tr><th class="bg-light">Keterangan</th><td>${data.keterangan || '-'}</td></tr>`;
+            html += `<tr><th class="bg-light">No. Akun</th><td>${akunText}</td></tr>`;
+            html += `<tr><th class="bg-light">Debit</th><td class="text-success fw-bold">${formatRupiah(data.debit)}</td></tr>`;
+            html += `<tr><th class="bg-light">Kredit</th><td class="text-danger fw-bold">${formatRupiah(data.kredit)}</td></tr>`;
+            html += '</table>';
+
+            // --- Fungsi Pembantu Tingkat Lanjut untuk Merender Objek Relasi ---
+            function renderDetailedTable(obj, titlePrefix, colorClass, iconClass) {
+                const ignoredKeys = ['id', 'created_at', 'updated_at', 'deleted_at', 'deleted_by', 'id_rkm', 'id_tracking', 'id_pengajuan_barang', 'id_perhitungan_net_sales'];
+                const currencyKeys = ['cashback', 'transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'fresh_money', 'entertaint', 'souvenir', 'sewa_laptop', 'nominal_pengajuan', 'total_biaya'];
+
+                let tableHtml = `<h6 class="fw-bold text-${colorClass} border-bottom pb-2 mt-4 mb-3"><i class="${iconClass} me-2"></i>Detail Referensi: ${titlePrefix}</h6>`;
+                tableHtml += '<table class="table table-bordered table-sm mb-4"><tbody>';
+                
+                let hasValidData = false;
+                let childTableHtml = ''; // Variabel penampung sub-tabel rincian item
+
+                for (let key in obj) {
+                    if(ignoredKeys.includes(key)) continue; 
+                    if(obj[key] === null || obj[key] === '') continue;
+
+                    // Logika Penanganan Array (Rincian Detail Pengajuan Barang)
+                    if (Array.isArray(obj[key])) {
+                        if (obj[key].length > 0 && key === 'detail') {
+                            childTableHtml += '<h6 class="fw-bold text-secondary mt-3 mb-2"><i class="fas fa-list me-2"></i>Rincian Item Pengajuan</h6>';
+                            childTableHtml += '<table class="table table-bordered table-sm mb-4 align-middle text-center"><thead><tr class="bg-light">';
+                            childTableHtml += '<th>Nama Barang</th><th>Qty</th><th>Harga</th><th>Keterangan</th>';
+                            childTableHtml += '</tr></thead><tbody>';
+                            
+                            obj[key].forEach(function(item) {
+                                childTableHtml += `<tr>
+                                    <td class="text-start">${item.nama_barang || '-'}</td>
+                                    <td>${item.qty || '-'}</td>
+                                    <td class="text-end">${formatRupiah(item.harga || 0)}</td>
+                                    <td class="text-start" style="white-space: pre-wrap;">${item.keterangan || '-'}</td>
+                                </tr>`;
+                            });
+                            childTableHtml += '</tbody></table>';
+                        }
+                        continue; // Lewati perulangan utama agar array tidak dirender sebagai string biasa
+                    }
+
+                    hasValidData = true;
+
+                    let formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    let val = obj[key];
+
+                    // Logika Penanganan Tautan Berkas Invoice
+                    if (key === 'invoice') {
+                        val = `<a href="{{ asset('storage') }}/${val}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-external-link-alt me-1"></i>Lihat Invoice</a>`;
+                    }
+                    // Deteksi tanggal otomatis (Format YYYY-MM-DD)
+                    else if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        val = new Date(val).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+                    }
+                    // Deteksi dan format mata uang berdasarkan daftar kunci
+                    else if (currencyKeys.includes(key)) {
+                        val = `<span class="fw-bold">${formatRupiah(val)}</span>`;
+                    }
+
+                    tableHtml += `<tr><th width="35%" class="bg-light">${formattedKey}</th><td>${val}</td></tr>`;
+                }
+                
+                tableHtml += '</tbody></table>';
+                
+                // Menyisipkan sub-tabel rincian item di bawah tabel utama relasi
+                tableHtml += childTableHtml;
+
+                if (!hasValidData) {
+                    tableHtml = `<h6 class="fw-bold text-${colorClass} border-bottom pb-2 mt-4 mb-3"><i class="${iconClass} me-2"></i>Detail Referensi: ${titlePrefix}</h6>`;
+                    tableHtml += `<div class="alert alert-secondary small py-2"><i class="fas fa-info-circle me-2"></i>Tidak ada atribut data tambahan yang terisi.</div>`;
+                }
+
+                return tableHtml;
+            }
+
+            // 2. Merender Detail Pengajuan Barang
+            if (data.pengajuan_barang && Object.keys(data.pengajuan_barang).length > 0) {
+                html += renderDetailedTable(data.pengajuan_barang, 'Pengajuan Barang', 'success', 'fas fa-box-open');
+            }
+
+            // 3. Merender Detail Perhitungan Net Sales
+            if (data.net_sales && Object.keys(data.net_sales).length > 0) {
+                html += renderDetailedTable(data.net_sales, 'Perhitungan Net Sales', 'info', 'fas fa-chart-line');
+            }
+
+            // Menyuntikkan HTML ke dalam Modal dan menampilkannya
+            $('#detailJurnalBody').html(html);
+            $('#detailJurnalModal').modal('show');
+        });
+        
+        $('#jurnaltable tbody').css('cursor', 'pointer');
 
         // Inisialisasi DataTables untuk Pengajuan Belum Dijurnal
         var tableBelumJurnal = $('#belumjurnaltable').DataTable({
@@ -648,37 +919,40 @@
                     $('#loadingModal').attr('inert', true);
                     
                     if (response.success) {
+                        // 1. RESET FORM KE KONDISI AWAL
+                        $('#editJurnalForm')[0].reset();
                         $('#edit_id').val(response.data.id);
                         
+                        // 2. SET VALUE DATA UMUM
                         var dateOnly = response.data.tanggal_transaksi.split(' ')[0];
                         $('#edit_tanggal_transaksi').val(dateOnly);
                         $('#edit_keterangan').val(response.data.keterangan);
                         
-                        // Logika pemisahan form berdasarkan parameter is_petty_cash
+                        if(response.data.no_akun != null) {
+                           $('#no_akun').val(response.data.no_akun); 
+                        } else {
+                           $('#no_akun').prop('selectedIndex', 0);
+                        }
+
+                        // 3. SET VALUE DEBIT & KREDIT SECARA LANGSUNG
+                        $('#edit_debit').val(response.data.debit);
+                        $('#edit_kredit').val(response.data.kredit);
+
+                        // 4. PAKSA BUKA KUNCI SEMUA FIELD
+                        $('#edit_tanggal_transaksi, #edit_keterangan, #no_akun, #edit_debit, #edit_kredit').prop('disabled', false).prop('readonly', false);
+                        
+                        // 5. SET JUDUL MODAL
                         if (response.is_petty_cash) {
-                            $('#form-pengajuan-group').hide();
-                            $('.input-pengajuan').removeAttr('required').attr('disabled', true);
-                            
-                            $('#form-pettycash-group').show();
-                            $('.input-pettycash').attr('required', true).removeAttr('disabled');
-                            
-                            var tipe = response.data.debit > 0 ? 'debit' : 'kredit';
-                            var nominal = response.data.debit > 0 ? response.data.debit : response.data.kredit;
-                            
-                            $('#edit_tipe_transaksi').val(tipe);
-                            $('#edit_nominal_pettycash').val(nominal);
                             $('#editJurnalModalLabel').text('Edit Kas Kecil');
                         } else {
-                            $('#form-pettycash-group').hide();
-                            $('.input-pettycash').removeAttr('required').attr('disabled', true);
-                            
-                            $('#form-pengajuan-group').show();
-                            $('.input-pengajuan').attr('required', true).removeAttr('disabled');
-                            
-                            $('#edit_kredit_pengajuan').val(response.data.kredit);
-                            $('#editJurnalModalLabel').text('Edit Jurnal Pengajuan Barang');
+                            $('#editJurnalModalLabel').text('Edit Jurnal Pengajuan');
                         }
                         
+                        // 6. MENGHILANGKAN PEMBLOKIR FOKUS BOOTSTRAP
+                        $('#editJurnalModal').removeAttr('tabindex'); 
+                        $('#editJurnalModal').removeAttr('inert');    
+                        
+                        // 7. TAMPILKAN MODAL
                         $('#editJurnalModal').modal('show');
                     } else {
                         alert('Gagal mengambil data jurnal.');
@@ -953,8 +1227,91 @@
 
             $('#detailPengajuanContent').html(html);
             $('#detailPengajuanModal').modal('show');
+        });  
+        
+        // EVENT LISTENER BUKA MODAL MASTER NO AKUN & INISIALISASI DATATABLES
+        $('#btn-master-no-akun').click(function() {
+            $('#masterNoAkunModal').modal('show');
+
+            // Gunakan timeout kecil untuk memastikan modal selesai render sebelum DataTables dimuat
+            // Ini mencegah isu lebar kolom yang tidak rata
+            setTimeout(function() {
+                if ($.fn.DataTable.isDataTable('#tableNoAkun')) {
+                    dtNoAkun.ajax.reload();
+                } else {
+                    dtNoAkun = $('#tableNoAkun').DataTable({
+                        ajax: { url: "{{ route('no_akun.data') }}", type: "GET" },
+                        columns: [
+                            { data: "no" },
+                            { data: "nama_akun" },
+                            {
+                                data: null,
+                                render: function(data, type, row) {
+                                    return `
+                                        <button class="btn btn-sm btn-info text-white" onclick="editNoAkun(${row.id})">Edit</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteNoAkun(${row.id})">Hapus</button>
+                                    `;
+                                }
+                            }
+                        ],
+                        order: [[0, 'asc']],
+                        // Penyesuaian agar DataTable muncul sempurna di dalam Modal
+                        autoWidth: false,
+                        responsive: true
+                    });
+                }
+            }, 200); 
+        });
+
+        // Event listener Submit Form Create/Edit No Akun
+        $('#noAkunForm').submit(function(e) {
+            e.preventDefault();
+            let id = $('#id_no_akun').val();
+            let url = id ? "{{ url('/no-akun') }}/" + id : "{{ route('no_akun.store') }}";
+
+            $.ajax({
+                url: url,
+                type: "POST", 
+                data: $(this).serialize(),
+                success: function(res) {
+                    if(res.success) {
+                        alert(res.message);
+                        $('#formNoAkunModal').modal('hide');
+                        if(dtNoAkun) dtNoAkun.ajax.reload(null, false);
+                    }
+                },
+                error: function(xhr) {
+                    alert('Gagal menyimpan data.');
+                }
+            });
+        });
+
+        // Event listener Import Master No Akun
+        $('#formImportNoAkun').submit(function(e) {
+            e.preventDefault();
+            let formData = new FormData(this);
+
+            $.ajax({
+                url: "{{ route('no_akun.import') }}",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    if(res.success) {
+                        alert(res.message);
+                        $('#importNoAkunModal').modal('hide');
+                        $('#formImportNoAkun')[0].reset();
+                        if(dtNoAkun) dtNoAkun.ajax.reload(null, false);
+                    }
+                },
+                error: function(xhr) {
+                    alert('Terjadi kesalahan saat import data.');
+                }
+            });
         });
     });
+    
 </script>
 @endpush
 @endsection

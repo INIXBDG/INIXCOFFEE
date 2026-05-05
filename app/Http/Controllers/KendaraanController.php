@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PerbaikanKendaraanExport;
 use App\Models\detailPengajuanBarang;
 use App\Models\tracking_pengajuan_barang;
 use App\Models\karyawan;
@@ -12,9 +13,13 @@ use App\Models\User;
 use App\Models\vendorBengkel;
 use App\Notifications\KondisiKendaraan as NotificationsKondisiKendaraan;
 use App\Notifications\NotificationPerbaikanKendaraan;
+use Barryvdh\DomPDF\Facade\Pdf as FacadePdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Excel;
+use Maatwebsite\Excel\Facades\Excel as FacadesExcel;
 
 class KendaraanController extends Controller
 {
@@ -463,5 +468,46 @@ class KendaraanController extends Controller
         $PengajuanBarang->save();
 
         return back()->with('success', 'Perbaikan kendaraan berhasil diselesaikan.');
+    }
+
+    public function pdfExport(Request $request)
+    {
+        $from = $request->from; 
+        $to   = $request->to ?? Carbon::now();   
+
+        $query = PerbaikanKendaraan::with(['user.karyawan', 'vendor']);
+
+        if ($from && $to) {
+            $query->whereBetween('tanggal_kejadian', [
+                \Carbon\Carbon::parse($from)->startOfDay(),
+                \Carbon\Carbon::parse($to)->endOfDay(),
+            ]);
+        }
+
+        $data = $query->get();
+
+        $pdf = FacadePdf::loadView('office.kendaraan.pdf', compact('data', 'from', 'to'))
+            ->setPaper('a4', 'landscape')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'defaultFont'          => 'DejaVu Sans',
+            ]);
+
+        return $pdf->download(
+            'laporan-perbaikan-kendaraan-' . now()->format('Ymd-His') . '.pdf'
+        );
+    }
+
+    public function excelExport(Request $request)
+    {
+        $from = $request->get('from');     
+        $to   = $request->get('to');   
+
+        $export = new PerbaikanKendaraanExport($from, $to);
+
+        $filename = 'laporan-perbaikan-kendaraan-' . now()->format('Ymd-His') . '.xlsx';
+
+        return FacadesExcel::download($export, $filename);
     }
 }

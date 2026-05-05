@@ -184,7 +184,7 @@
                                                 @if ($regis)
                                                     Edit PDF
                                                 @else
-                                                    Upload PDF                                                
+                                                    Upload PDF
                                                 @endif
                                             </button>
                                     </div>
@@ -414,10 +414,26 @@
                                 </div>
                             @endif
 
+                            <!-- Input Perusahaan -->
+                            <div class="mb-3">
+                                <label for="edit_id_perusahaan" class="form-label">Perusahaan</label>
+                                <select class="form-select" id="edit_id_perusahaan" name="id_perusahaan" required>
+                                    <option value="">-- Pilih Perusahaan --</option>
+                                    @foreach ($perusahaanAll as $item)
+                                        <option value="{{ $item->id }}" {{ $item->id == $peluang->perusahaan?->id ? 'selected' : '' }}>
+                                            {{ $item->nama_perusahaan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('id_perusahaan')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             <!-- Existing Fields -->
                             <div class="mb-3">
-                                <label for="materi" class="form-label">Materi</label>
-                                <select class="form-select" id="materi" name="materi" required>
+                                <label for="edit_id_materi" class="form-label">Materi</label>
+                                <select class="form-select" id="edit_id_materi" name="materi" required>
                                     <option value="">-- Pilih Materi --</option>
                                     @foreach ($materi as $item)
                                         <option value="{{ $item->id }}" {{ $item->id == $peluang->materi ? 'selected' : '' }}>
@@ -564,7 +580,7 @@
                                     {{ old('authorize', $peluang->rkm?->authorize ?? 0) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="authorizeToggle">Authorize</label>
                             </div>
-                            
+
                             <!-- Related Activities -->
                             <div class="mb-3">
                                 <h6 class="fw-bold">Aktivitas Terkait</h6>
@@ -1250,6 +1266,8 @@
 
                 // Existing JavaScript for Select2 and input formatting
                 initContactSelect2();
+                initPerusahaanSelect2();
+                initMateriSelect2();
 
                 let peluang = @json($peluang);
                 console.log(peluang);
@@ -1359,6 +1377,36 @@
 
                 function initContactSelect2() {
                     var $select = $('#id_contact');
+                    if (typeof $.fn.select2 !== 'function') {
+                        console.error('Select2 belum ter-load!');
+                        return;
+                    }
+                    var $closestModal = $select.closest('.modal');
+                    $select.select2({
+                        width: '100%',
+                        theme: 'bootstrap-5',
+                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                    });
+                }
+
+                function initPerusahaanSelect2() {
+                    // Ubah selektor menjadi #edit_id_perusahaan sesuai dengan ID elemen HTML
+                    var $select = $('#edit_id_perusahaan');
+                    if (typeof $.fn.select2 !== 'function') {
+                        console.error('Select2 belum ter-load!');
+                        return;
+                    }
+                    var $closestModal = $select.closest('.modal');
+                    $select.select2({
+                        width: '100%',
+                        theme: 'bootstrap-5',
+                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                    });
+                }
+
+                function initMateriSelect2() {
+                    // Ubah selektor menjadi #edit_id_materi sesuai dengan ID elemen HTML
+                    var $select = $('#edit_id_materi');
                     if (typeof $.fn.select2 !== 'function') {
                         console.error('Select2 belum ter-load!');
                         return;
