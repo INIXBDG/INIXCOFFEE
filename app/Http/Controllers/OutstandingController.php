@@ -10,10 +10,11 @@ use App\Models\Invoice;
 use App\Models\jabatan;
 use App\Models\karyawan;
 use App\Models\Kwitansi;
-use App\Models\Outstanding;
+use App\Models\outstanding;
 use App\Models\outstanding as ModelsOutstanding;
 use App\Models\Registrasi;
 use App\Models\RKM;
+use App\Models\PicPenagihanInvoice;
 use App\Models\SertifikatPDF;
 use App\Models\trackingOutstanding;
 use App\Models\User;
@@ -68,7 +69,7 @@ class OutstandingController extends Controller
             $endOfWeek = Carbon::parse($tanggal_akhir)->toDateString();
         }
 
-        $existing = Outstanding::pluck('id_rkm')->toArray();
+        $existing = outstanding::pluck('id_rkm')->toArray();
 
         $rkms = RKM::whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
             ->where('status', '0')
@@ -82,7 +83,7 @@ class OutstandingController extends Controller
         }
 
         foreach ($rkms as $rkm) {
-            $outstanding = Outstanding::create([
+            $outstanding = outstanding::create([
                 'id_rkm' => $rkm->id,
                 'due_date' => Carbon::parse($rkm->tanggal_akhir)->addMonths(6)->toDateString(),
                 'sales_key' => $rkm->sales_key,
@@ -179,7 +180,9 @@ class OutstandingController extends Controller
         $users = auth()->user();
         $idSales = $users->jabatan == 'SPV Sales' ? '' : $users->id_sales;
 
-        $query = Outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')->where('status_pembayaran', '1')->whereYear('created_at', $tahun);
+        $query = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
+            ->where('status_pembayaran', '1')
+            ->whereYear('created_at', $tahun);
 
         if ($idSales) {
             $query->whereHas('rkm', function ($q) use ($idSales) {
@@ -187,7 +190,16 @@ class OutstandingController extends Controller
             });
         }
 
-        return response()->json(['data' => $query->get()]);
+        $data = $query->get();
+
+        $existingPicRkms = PicPenagihanInvoice::pluck('id_rkm')->toArray();
+
+        $data->map(function ($item) use ($existingPicRkms) {
+            $item->has_pic_penagihan = in_array($item->id_rkm, $existingPicRkms);
+            return $item;
+        });
+
+        return response()->json(['data' => $data]);
     }
 
     public function getOutstandingHutang(Request $request)
@@ -196,7 +208,7 @@ class OutstandingController extends Controller
         $user = auth()->user();
         $idSales = $user->jabatan == 'SPV Sales' ? '' : $user->id_sales;
 
-        $query = Outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')->where('status_pembayaran', '0')->whereYear('created_at', $tahun);
+        $query = outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')->where('status_pembayaran', '0')->whereYear('created_at', $tahun);
 
         if ($idSales) {
             $query->whereHas('rkm', function ($q) use ($idSales) {
@@ -210,7 +222,7 @@ class OutstandingController extends Controller
     public function getOutstandingRKM($year, $month)
     {
         // Ambil semua id_rkm yang sudah ada di tabel outstanding
-        $existingRKMs = Outstanding::pluck('id_rkm')->toArray();
+        $existingRKMs = outstanding::pluck('id_rkm')->toArray();
         $user = auth()->user()->id_sales;
         if ($user) {
             // Ambil data RKM yang belum ada di tabel outstanding
@@ -281,7 +293,7 @@ class OutstandingController extends Controller
 
         $dueDate = Carbon::parse($rkm->tanggal_akhir)->addMonths(6);
 
-        $outstanding = Outstanding::create([
+        $outstanding = outstanding::create([
             'id_rkm' => $request->id_rkm,
             'net_sales' => $request->net_sales,
             'status_pembayaran' => $request->status_pembayaran,
@@ -468,7 +480,7 @@ class OutstandingController extends Controller
             'pembayaran' => 'nullable|file|mimes:pdf|max:2048',
         ]);
 
-        $post = Outstanding::findOrFail($id);
+        $post = outstanding::findOrFail($id);
 
         // Handle file uploads
         $fakturPath = $post->path_faktur_pajak;
@@ -836,7 +848,7 @@ class OutstandingController extends Controller
 
     public function dokumenGabungan($id)
     {
-        $outstanding = Outstanding::findOrFail($id);
+        $outstanding = outstanding::findOrFail($id);
         $invoice = Invoice::where('id_rkm', $outstanding->id_rkm)->first();
         $absensi = AbsensiPDF::where('id_rkm', $outstanding->id_rkm)->first();
 
@@ -1051,7 +1063,7 @@ class OutstandingController extends Controller
             'karyawan' => 'nullable|integer|exists:karyawan,id',
         ]);
 
-        $query = Outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice']);
+        $query = outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice']);
 
         $this->applyDateFilter($query, $request);
 
