@@ -34,7 +34,7 @@ class PicPenagihanController extends Controller
             'status' => '0',
         ]);
 
-        return back()->with('success', 'Data PIC Penagihan berhasil disimpan.');
+        return redirect()->route('picpenagihan.index')->with('success', 'Data PIC Penagihan berhasil disimpan.');
     }
 
     public function getData(Request $request)
