@@ -67,6 +67,39 @@
                 <div class="card m-4">
                     <div class="card-body table-responsive">
                         <h3 class="card-title text-center my-1">{{ __('Data Klaim Modul') }}</h3>
+                        <div class="row justify-content-center mb-3">
+                            <div class="col-md-3 mx-1">
+                                <label for="tahun" class="form-label">Tahun</label>
+                                <select id="tahun" class="form-select">
+                                    @php
+                                        $tahun_sekarang = now()->year;
+                                        for ($tahun = 2020; $tahun <= $tahun_sekarang + 1; $tahun++) {
+                                            $selected = $tahun == $tahun_sekarang ? 'selected' : '';
+                                            echo "<option value=\"$tahun\" $selected>$tahun</option>";
+                                        }
+                                    @endphp
+                                </select>
+                            </div>
+                            <div class="col-md-3 mx-1">
+                                <label for="bulan" class="form-label">Bulan</label>
+                                <select id="bulan" class="form-select">
+                                    <option value="All">Semua Bulan</option> <!-- Opsi untuk mencopot filter bulan -->
+                                    @php
+                                        $bulan_sekarang = now()->month;
+                                        $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                        foreach ($nama_bulan as $index => $nama) {
+                                            $val = $index + 1;
+                                            $selected = $val == $bulan_sekarang ? 'selected' : '';
+                                            echo "<option value=\"$val\" $selected>$nama</option>";
+                                        }
+                                    @endphp
+                                </select>
+                            </div>
+                            <div class="col-md-2 mx-1">
+                                <button type="button" id="btnCari" class="btn btn-primary" style="margin-top: 32px">Cari
+                                    Data</button>
+                            </div>
+                        </div>
                         <table class="table table-striped" id="klaimModulTable"
                             style="overflow-x: scroll; max-width: 150%;">
                             <thead>
@@ -137,6 +170,10 @@
         <script>
             $(document).ready(function () {
                 loadData();
+
+                $('#btnCari').on('click', function () {
+                    loadData();
+                });
 
                 // Format input Rupiah saat mengetik
                 $('#price').on('input', function () {
@@ -277,12 +314,12 @@
 
                             render: function (data, type, row) {
                                 let actions = `
-                                <div class="dropdown">
-                                    <button class="btn btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        Action
-                                    </button>
-                                    <div class="dropdown-menu">
-                            `;
+                                                        <div class="dropdown">
+                                                            <button class="btn btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                                Action
+                                                            </button>
+                                                            <div class="dropdown-menu">
+                                                    `;
 
                                 let jabatan = '{{ auth()->user()->karyawan->jabatan }}';
                                 let kodeKaryawan = '{{ auth()->user()->karyawan->kode_karyawan }}';
@@ -294,20 +331,20 @@
                                     status === 'Diajukan dan Sedang Ditinjau oleh Education Manager'
                                 ) {
                                     actions += `
-                                    <button type="button" class="dropdown-item"
-                                        onclick="openApproveModal(${row.id})">
-                                        <img src="{{ asset('icon/check-circle.svg') }}" width="16">
-                                        Approve
-                                    </button>
-                                `;
+                                                            <button type="button" class="dropdown-item"
+                                                                onclick="openApproveModal(${row.id})">
+                                                                <img src="{{ asset('icon/check-circle.svg') }}" width="16">
+                                                                Approve
+                                                            </button>
+                                                        `;
                                 }
 
                                 actions += `
-                                <a href="{{ url('/pengajuanklaimmodul') }}/${row.id}" class="dropdown-item">
-                                    <img src="{{ asset('icon/clipboard-primary.svg') }}" width="16">
-                                    Detail
-                                </a>
-                            `;
+                                                        <a href="{{ url('/pengajuanklaimmodul') }}/${row.id}" class="dropdown-item">
+                                                            <img src="{{ asset('icon/clipboard-primary.svg') }}" width="16">
+                                                            Detail
+                                                        </a>
+                                                    `;
 
                                 if (
                                     kodeKaryawan == moduleKode &&
@@ -315,12 +352,12 @@
                                     !status.includes('Ditolak')
                                 ) {
                                     actions += `
-                                    <a href="{{ url('/pengajuanklaimmodul') }}/${row.id}/edit"
-                                       class="dropdown-item">
-                                        <img src="{{ asset('icon/edit.svg') }}" width="16">
-                                        Edit
-                                    </a>
-                                `;
+                                                            <a href="{{ url('/pengajuanklaimmodul') }}/${row.id}/edit"
+                                                               class="dropdown-item">
+                                                                <img src="{{ asset('icon/edit.svg') }}" width="16">
+                                                                Edit
+                                                            </a>
+                                                        `;
                                 }
 
                                 if (
@@ -329,18 +366,18 @@
                                     jabatan == 'GM'
                                 ) {
                                     actions += `
-                                    <form method="POST"
-                                          action="{{ url('/pengajuanklaimmodul') }}/${row.id}"
-                                          onsubmit="return confirm('Yakin hapus?')">
-                                        @csrf
-                                        @method('DELETE')
+                                                            <form method="POST"
+                                                                  action="{{ url('/pengajuanklaimmodul') }}/${row.id}"
+                                                                  onsubmit="return confirm('Yakin hapus?')">
+                                                                @csrf
+                                                                @method('DELETE')
 
-                                        <button type="submit" class="dropdown-item">
-                                            <img src="{{ asset('icon/trash-danger.svg') }}" width="16">
-                                            Hapus
-                                        </button>
-                                    </form>
-                                `;
+                                                                <button type="submit" class="dropdown-item">
+                                                                    <img src="{{ asset('icon/trash-danger.svg') }}" width="16">
+                                                                    Hapus
+                                                                </button>
+                                                            </form>
+                                                        `;
                                 }
 
                                 actions += `</div></div>`;
