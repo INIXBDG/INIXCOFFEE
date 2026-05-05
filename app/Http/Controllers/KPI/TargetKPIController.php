@@ -12976,17 +12976,17 @@ class TargetKPIController extends Controller
                 if (!$detail) continue;
 
                 $result = $this->getCalculationByRoute($target, $karyawan->id);
-                if (!$result || !isset($result['progress'])) continue;
-
-                $progress = $result['progress'];
-
-                if ($detail->tipe_target === 'rupiah') {
-                    $progress = (float)$detail->nilai_target > 0 ? ($progress / $detail->nilai_target) * 100 : 0;
+                $progress = 0;
+                if ($result && isset($result['progress'])) {
+                    $progress = $result['progress'];
+                    if ($detail->tipe_target === 'rupiah') {
+                        $progress = (float)$detail->nilai_target > 0 ? ($progress / $detail->nilai_target) * 100 : 0;
+                    }
                 }
 
+                $progressList[] = $progress;
+
                 if ($progress > 0) {
-                    $progressList[] = $progress;
-                    
                     $monthKey = $target->created_at->format('Y-m');
                     $dayKey = $target->created_at->format('Y-m-d');
 
@@ -13044,7 +13044,6 @@ class TargetKPIController extends Controller
             'daftar_target_kpi' => $daftarTargetKPI,
         ]);
     }
-
     private function getEmployeeStatistics($tahun, $karyawanIds, $divisi)
     {
         return karyawan::whereIn('id', $karyawanIds)->get()->map(function ($karyawan) use ($tahun) {
@@ -13082,59 +13081,6 @@ class TargetKPIController extends Controller
                 'rata_rata_progress' => !empty($progressList) ? round(array_sum($progressList) / count($progressList), 2) : 0,
             ];
         })->values();
-    }
-
-    private function calculateWorkingDays()
-    {
-        $year = now()->year;
-
-        $start = Carbon::createFromDate($year, 1, 1);
-        $end = Carbon::createFromDate($year, 12, 31);
-
-        $holidays = [
-            "$year-01-01", // New Year's Day - Tahun Baru Masehi
-            "$year-01-16", // Ascension of the Prophet Muhammad (tanggal Hijriyah, bisa berubah)
-            "$year-02-16", // Chinese New Year Joint Holiday (tanggal Imlek, bisa berubah)
-            "$year-02-17", // Chinese New Year's Day (tanggal Imlek, bisa berubah)
-            "$year-02-19", // Ramadan Start (tanggal Hijriyah, bisa berubah)
-            "$year-03-18", // Nyepi Joint Holiday (Bali, Hindu New Year, bisa berubah)
-            "$year-03-19", // Nyepi (Bali, Hindu New Year, bisa berubah)
-            "$year-03-20", // Idul Fitri Joint Holiday (tanggal Hijriyah, bisa berubah)
-            "$year-03-21", // Idul Fitri (tanggal Hijriyah, bisa berubah)
-            "$year-03-22", // Idul Fitri Holiday (tanggal Hijriyah, bisa berubah)
-            "$year-03-23", // Idul Fitri Joint Holiday (tanggal Hijriyah, bisa berubah)
-            "$year-03-24", // Idul Fitri Joint Holiday (tanggal Hijriyah, bisa berubah)
-            "$year-04-03", // Good Friday
-            "$year-04-05", // Easter Sunday
-            "$year-05-01", // International Labor Day
-            "$year-05-14", // Ascension Day of Jesus Christ
-            "$year-05-15", // Joint Holiday after Ascension Day
-            "$year-05-27", // Idul Adha (tanggal Hijriyah, bisa berubah)
-            "$year-05-28", // Joint Holiday for Idul Adha (tanggal Hijriyah, bisa berubah)
-            "$year-05-31", // Waisak Day (Buddha's Anniversary)
-            "$year-06-01", // Pancasila Day
-            "$year-06-16", // Muharram / Islamic New Year (tanggal Hijriyah, bisa berubah)
-            "$year-08-17", // Indonesian Independence Day
-            "$year-08-25", // Maulid Nabi Muhammad (tanggal Hijriyah, bisa berubah)
-            "$year-12-24", // Christmas Eve Joint Holiday
-            "$year-12-25", // Christmas Day
-            "$year-12-31", // New Year's Eve
-        ];
-
-        $period = CarbonPeriod::create($start, $end);
-
-        $workingDays = 0;
-
-        foreach ($period as $date) {
-            if (
-                !in_array($date->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])
-                && !in_array($date->toDateString(), $holidays)
-            ) {
-                $workingDays++;
-            }
-        }
-
-        return $workingDays;
     }
 
     private function hitungJamKerja($startAt, $endAt)
@@ -13214,7 +13160,7 @@ class TargetKPIController extends Controller
                 return $detail;
         }
         return $detail;
-    }
+    }    
 
     private function hitungStatusExport(float $progressPersen, float $nilaiTarget, string $tipe, float $progressRaw, string $tenggatWaktu): string
     {
@@ -13285,11 +13231,12 @@ class TargetKPIController extends Controller
 
         $result = [];
         foreach ($quarters as $q => $data) {
+            $quarterAvg = $data['count'] > 0 ? round($data['total'] / $data['count'], 2) : 0;
             $result[$q] = [
                 'label'      => $data['label'],
                 'periode'    => "{$tahun}-Q{$q}",
-                'rata_rata'  => $data['count'] > 0 ? round($data['total'] / $data['count'], 2) : 0,
-                'total'      => round($data['total'], 2),
+                'rata_rata'  => $quarterAvg,
+                'total'      => $quarterAvg,
                 'bulan_aktif'=> $data['count'],
             ];
         }
@@ -13439,6 +13386,10 @@ class TargetKPIController extends Controller
             ];
         }
 
+        $allPersen = array_column($tabelTarget, 'progress_persen');
+        $filteredPersen = array_filter($allPersen, fn($v) => $v > 0);
+        $avgProgressAllKPI = count($filteredPersen) > 0 ? round(array_sum($filteredPersen)/count($filteredPersen), 2) : 0;
+
         $rekapPerBulan  = array_fill(1, 12, []); 
         $rupiahPerBulan = array_fill(1, 12, 0);
         $nilaiTargetTahunan = 0;
@@ -13455,13 +13406,6 @@ class TargetKPIController extends Controller
             }
 
             if (empty($monthlyData)) {
-                $persenTahunan = $t['progress_persen'];
-                if ($persenTahunan > 0) {
-                    $persenPerBulan = round($persenTahunan / 12, 4);
-                    for ($b = 1; $b <= 12; $b++) {
-                        $rekapPerBulan[$b][] = $persenPerBulan;
-                    }
-                }
                 continue;
             }
 
@@ -13490,8 +13434,7 @@ class TargetKPIController extends Controller
 
         $rekapBulanan   = [];
         $analisaData    = [];
-        $totalKumulatif = 0;
-        $kumulatif      = 0;
+        $allMonthlyPersen = [];
 
         for ($b = 1; $b <= 12; $b++) {
             $persenList = $rekapPerBulan[$b];
@@ -13499,8 +13442,7 @@ class TargetKPIController extends Controller
                 ? round(array_sum($persenList) / count($persenList), 2)
                 : 0;
 
-            $kumulatif += $avgPersen;
-            $totalKumulatif = $kumulatif; 
+            $allMonthlyPersen[] = $avgPersen;
 
             $status = $avgPersen > 0 ? 'In Progress' : '-';
             $grade = $this->getGradeLabel($avgPersen);
@@ -13517,9 +13459,18 @@ class TargetKPIController extends Controller
                 'actual_rupiah'  => $rupiahPerBulan[$b] ?? 0,
                 'nama_bulan'     => $namaBulan[$b],
                 'persen_bulan'   => $avgPersen,
-                'kumulatif'      => round($kumulatif, 2),
+                'kumulatif'      => 0,
                 'grade'          => $grade,
             ];
+        }
+
+        $filteredMonthly = array_filter($allMonthlyPersen, fn($v) => $v > 0);
+        $totalKumulatif = count($filteredMonthly) > 0 
+            ? round(array_sum($filteredMonthly) / count($filteredMonthly), 2) 
+            : 0;
+
+        if ($totalKumulatif === 0 && $avgProgressAllKPI > 0) {
+            $totalKumulatif = $avgProgressAllKPI;
         }
 
         $totalKumulatif    = round($totalKumulatif, 2);
@@ -13597,6 +13548,7 @@ class TargetKPIController extends Controller
             'grade_distribution'  => $gradeDistribution,
             'filters_applied'     => $filters,
             'has_rupiah_target'   => $hasRupiahTarget,
+            'avg_progress_all_kpi'=> $avgProgressAllKPI,
             'penilaian' => [
                 'nilai_softskill'       => $nilaiSoftskill,
                 'total_capaian_kpi'     => $totalKumulatif,
@@ -13725,9 +13677,7 @@ class TargetKPIController extends Controller
                 $r++;
             }
 
-            $allPersen = array_column($data['tabel_target'], 'progress_persen');
-            $filtered = array_filter($allPersen, fn($v) => $v > 0);
-            $avgProgress = count($filtered) > 0 ? round(array_sum($filtered)/count($filtered), 2) : 0;
+            $avgProgress = $data['avg_progress_all_kpi'];
 
             $s1->mergeCells("A{$r}:H{$r}");
             $s1->setCellValue("A{$r}", 'RATA-RATA PROGRESS SEMUA KPI');
@@ -13806,7 +13756,7 @@ class TargetKPIController extends Controller
             $s2->mergeCells("A{$r2}:C{$r2}");
             $s2->setCellValue("A{$r2}", 'TOTAL');
             $s2->setCellValue("D{$r2}", $data['total_kumulatif'] . '%');
-            $s2->setCellValue("E{$r2}", $data['grade_akhir']);
+            $s2->setCellValue("E{$r2}", $this->getGradeLabel($data['total_kumulatif']));
             $this->xlStyle($s2, "A{$r2}:E{$r2}", $C_TOT, $C_DRK, 10, true, 'center');
             $styleETotal = $s2->getStyle("E{$r2}");
             $styleETotal->getFont()->setBold(true);
@@ -14046,7 +13996,6 @@ class TargetKPIController extends Controller
         $sheet->getStyle($cell)->getFont()->getColor()->setARGB('FFFFFFFF');
         $sheet->getStyle($cell)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFFFFFF');
     }
-
     //export departement
     public function exportDeptExcel(Request $request)
     {
