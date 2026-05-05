@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\ApprovalPendapatan;
 use App\Models\Materi;
+use App\Models\outstanding;
 use App\Models\Perusahaan;
+use App\Models\PicPenagihanInvoice;
 use App\Models\RKM;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -235,6 +237,38 @@ class ApprovalPendapatanController extends Controller
 
             $approval->save();
 
+            $outstanding = outstanding::where('id_rkm', $id)->first();
+
+            if ($outstanding) {
+                $netSales = $approval->total_penjualan_sales ?? $approval->harga_net;
+                
+                $potonganData = [];
+                if ($approval->PPN) {
+                    $potonganData[] = ['jenis' => 'PPN', 'jumlah' => $approval->PPN];
+                }
+                if ($approval->PPH) {
+                    $potonganData[] = ['jenis' => 'PPH', 'jumlah' => $approval->PPH];
+                }
+                if ($approval->biaya_admin) {
+                    $potonganData[] = ['jenis' => 'biaya_admin', 'jumlah' => $approval->biaya_admin];
+                }
+
+                $picPenagihan = PicPenagihanInvoice::where('id_rkm', $id)->first();
+                $picValue = $picPenagihan ? $picPenagihan->pic : $outstanding->pic;
+
+                $outstanding->update([
+                    'net_sales' => $netSales,
+                    'jumlah_pembayaran' => $approval->jumlah_pembayaran,
+                    'tanggal_bayar' => $approval->tanggal_pembayaran,
+                    'ppn' => $approval->PPN,
+                    'pph' => $approval->PPH,
+                    'biaya_admin' => $approval->biaya_admin,
+                    'jumlah_potongan' => !empty($potonganData) ? $potonganData : null,
+                    'jenis_potongan' => !empty($potonganData) ? array_column($potonganData, 'jenis') : null,
+                    'pic' => $picValue,
+                ]);
+            }
+
             DB::commit();
 
             return response()->json([
@@ -251,6 +285,6 @@ class ApprovalPendapatanController extends Controller
                 ],
                 500,
             );
-        } 
+        }
     }
 }

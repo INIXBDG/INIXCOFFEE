@@ -84,13 +84,10 @@ class OutstandingController extends Controller
         }
 
         foreach ($rkms as $rkm) {
-<<<<<<< Updated upstream
-            $outstanding = outstanding::create([
-=======
             $approvalPendapatan = ApprovalPendapatan::where('id_rkm', $rkm->id)->first();
 
             $netSales = $approvalPendapatan 
-                ? ($approvalPendapatan->total_penjualan_sales ?? $approvalPendapatan->harga_net ?? $rkm->harga_jual) 
+                ? ($approvalPendapatan->total_penjualan_sales ?? $approvalPendapatan->total_penjualan_sales ?? $rkm->harga_jual) 
                 : $rkm->harga_jual;
             
             $jumlahPembayaran = $approvalPendapatan ? $approvalPendapatan->jumlah_pembayaran : null;
@@ -114,7 +111,6 @@ class OutstandingController extends Controller
             }
 
             $outstanding = Outstanding::create([
->>>>>>> Stashed changes
                 'id_rkm' => $rkm->id,
                 'due_date' => Carbon::parse($rkm->tanggal_akhir)->addMonths(6)->toDateString(),
                 'sales_key' => $rkm->sales_key,
@@ -257,12 +253,7 @@ class OutstandingController extends Controller
 
     public function getOutstandingRKM($year, $month)
     {
-<<<<<<< Updated upstream
-        // Ambil semua id_rkm yang sudah ada di tabel outstanding
-        $existingRKMs = outstanding::pluck('id_rkm')->toArray();
-=======
         $existingRKMs = Outstanding::pluck('id_rkm')->toArray();
->>>>>>> Stashed changes
         $user = auth()->user()->id_sales;
 
         $query = RKM::with(['perusahaan', 'materi', 'approvalPendapatan'])
@@ -276,7 +267,7 @@ class OutstandingController extends Controller
 
         $outstanding = $query->get()->map(function ($rkm) {
             $approval = $rkm->approvalPendapatan;
-            $hargaNet = $approval ? ($approval->harga_net ?? $rkm->harga_jual) : $rkm->harga_jual;
+            $hargaNet = $approval ? ($approval->total_penjualan_sales ?? $rkm->harga_jual) : $rkm->harga_jual;
             $pax = $approval ? ($approval->pax ?? $rkm->pax) : $rkm->pax;
 
             return [
@@ -479,7 +470,7 @@ class OutstandingController extends Controller
         $tracking_outstanding = trackingOutstanding::where('id_outstanding', $id)->first();
 
         $approval = $outstanding->rkm->approvalPendapatan;
-        $hargaNet = $approval ? ($approval->harga_net ?? $outstanding->rkm->harga_jual) : $outstanding->rkm->harga_jual;
+        $hargaNet = $approval ? ($approval->total_penjualan_sales ?? $outstanding->rkm->harga_jual) : $outstanding->rkm->harga_jual;
         $pax = $approval ? ($approval->pax ?? $outstanding->rkm->pax) : $outstanding->rkm->pax;
         $totalNetSales = $hargaNet * $pax;
 

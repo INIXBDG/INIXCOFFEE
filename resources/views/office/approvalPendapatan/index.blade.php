@@ -240,7 +240,7 @@
                                         <div class="card-header bg-white border-bottom fw-semibold">Ringkasan</div>
                                         <div class="card-body">
                                             <div class="mb-3">
-                                                <small class="text-muted">Total Penjualan Sales</small>
+                                                <small class="text-muted">Total Penjualan Sales (Bersih)</small>
                                                 <h4 class="fw-bold mb-0 text-success" id="total_penjualan_sales_display">
                                                     Rp 0</h4>
                                                 <input type="hidden" id="total_penjualan_sales"
@@ -410,6 +410,8 @@
                                     <td class="text-end">${formatRupiah(item.total_uang_saku || 0)}</td>
                                     <td class="text-end">${formatRupiah(item.total_akomodasi || 0)}</td>
                                     <td class="text-end">${formatRupiah(item.oleh_oleh || 0)}</td>
+                                    <td>${escapeHtml(item.jenis_transport || '-')}</td>
+                                    <td class="text-end">${formatRupiah(item.biaya_transport || 0)}</td>
                                     <td class="text-end">${formatRupiah(item.total_penjualan_sales || 0)}</td>
                                     <td class="text-end">${formatRupiah(item.PPN || 0)}</td>
                                     <td class="text-end">${formatRupiah(item.PPH || 0)}</td>
@@ -417,8 +419,6 @@
                                     <td class="text-end">${escapeHtml(item.tanggal_pembayaran || '-')}</td>
                                     <td class="text-end">${escapeHtml(item.biaya_admin || '-')}</td>
                                     <td class="text-end">${escapeHtml(item.total_piutang || '-')}</td>
-                                    <td>${escapeHtml(item.jenis_transport || '-')}</td>
-                                    <td class="text-end">${formatRupiah(item.biaya_transport || 0)}</td>
                                     <td>${escapeHtml(item.tanggal_mulai || '-')}</td>
                                     <td>${escapeHtml(item.tanggal_selesai || '-')}</td>
                                 </tr>
@@ -440,6 +440,8 @@
                                         <td class="text-end">${formatRupiah(footerBulanan.total_uang_saku || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerBulanan.total_akomodasi || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerBulanan.oleh_oleh || 0)}</td>
+                                        <td class="text-end">-</td>
+                                        <td class="text-end">${formatRupiah(footerBulanan.biaya_transport || 0)}</td>                                        
                                         <td class="text-end">${formatRupiah(footerBulanan.total_penjualan_sales || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerBulanan.total_ppn || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerBulanan.total_pph || 0)}</td>
@@ -447,8 +449,6 @@
                                         <td class="text-end">-</td>
                                         <td class="text-end">${formatRupiah(footerBulanan.biaya_admin || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerBulanan.total_piutang || 0)}</td>
-                                        <td class="text-end">-</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.biaya_transport || 0)}</td>
                                         <td colspan="2"></td>
                                     </tr>
 
@@ -462,6 +462,8 @@
                                         <td class="text-end">${formatRupiah(footerTahunan.total_uang_saku || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerTahunan.total_akomodasi || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerTahunan.oleh_oleh || 0)}</td>
+                                        <td class="text-end">-</td>
+                                        <td class="text-end">${formatRupiah(footerTahunan.biaya_transport || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerTahunan.total_penjualan_sales || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerTahunan.total_ppn || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerTahunan.total_pph || 0)}</td>
@@ -469,8 +471,6 @@
                                         <td class="text-end">-</td>
                                         <td class="text-end">${formatRupiah(footerTahunan.biaya_admin || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerTahunan.total_piutang || 0)}</td>
-                                        <td class="text-end">-</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.biaya_transport || 0)}</td>
                                         <td colspan="2"></td>
                                     </tr>
                                 </tfoot>
@@ -508,15 +508,15 @@
                                                     <th>Uang Saku</th>
                                                     <th>Akomodasi</th>
                                                     <th>Oleh-Oleh peserta</th>
-                                                    <th>Total Penjualan Sales</th>
+                                                    <th>Jenis Transport</th>
+                                                    <th>Biaya Transport</th>
+                                                    <th>Total Penjualan Sales (Bersih)</th>
                                                     <th>PPN</th>
                                                     <th>PPH</th>
                                                     <th>Jumlah Pembayaran</th>
                                                     <th>Tanggal Pembayaran</th>
                                                     <th>Biaya Admin</th>
                                                     <th>Total Piutang</th>
-                                                    <th>Jenis Transport</th>
-                                                    <th>Biaya Transport</th>
                                                     <th>Tanggal Mulai</th>
                                                     <th>Tanggal Selesai</th>
                                                 </tr>
