@@ -37,6 +37,10 @@ class KlaimModulController extends Controller
     public function getKlaimModul($month, $year)
     {
         $user = auth()->user();
+        if (!$user || !$user->karyawan) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
         $karyawan = $user->karyawan;
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
@@ -51,13 +55,16 @@ class KlaimModulController extends Controller
         ];
 
         $baseQuery = PengajuanKlaimModul::with($commonWith)
-            ->select('pengajuan_klaim_modul.id', 'module_id', 'price', 'status', 'approved_at', 'created_at')
-            ->whereMonth('created_at', $month == 'All' ? now()->month : $month)
-            ->whereYear('created_at', $year)
-            ->latest();
+            ->select('pengajuan_klaim_modul.id', 'module_id', 'price', 'status', 'approved_at', 'created_at');
+
+        if ($month !== 'All') {
+            $baseQuery->whereMonth('created_at', $month);
+        }
+
+        $baseQuery->whereYear('created_at', $year);
 
         if ($jabatan == 'Finance & Accounting' || $jabatan == 'GM') {
-            $klaimModul = $baseQuery->get();
+            $klaimModul = $baseQuery->latest()->get();
         } elseif ($jabatan == 'Education Manager') {
             $klaimModul = $baseQuery->whereHas('module', function ($query) use ($karyawan) {
                 $query->where(function ($q) use ($karyawan) {
@@ -70,7 +77,7 @@ class KlaimModulController extends Controller
                             $q2->where('users.karyawan_id', $karyawan->id);
                         });
                 });
-            })->get();
+            })->latest()->get();
         } else {
             $klaimModul = $baseQuery->whereHas('module', function ($query) use ($karyawan, $divisi) {
                 $query->where(function ($q) use ($karyawan, $divisi) {
@@ -90,12 +97,12 @@ class KlaimModulController extends Controller
                             });
                     }
                 });
-            })->get();
+            })->latest()->get();
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'List Klaim Modul',
+            'message' => 'List Klaim Modul Berhasil Dimuat',
             'data' => $klaimModul,
         ]);
     }
