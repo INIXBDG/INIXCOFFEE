@@ -180,7 +180,7 @@
                 var idSales = "{{ auth()->user()->id_sales }}";
 
                 if (idInstruktur == 'AD') { var idInstruktur = ""; }
-                if (idSales == 'AM') { var idSales = ""; }
+                if (idSales == 'VN' || userRole == 'SPV Sales') { var idSales = ""; }
                 if (userRole == "Technical Support") { var idInstruktur = ""; }
 
                 var tableIndex1 = 1;

@@ -25,12 +25,18 @@ class InstructorDevelopmentController extends Controller
     public function index()
     {
         $user = auth()->user();
+
         if (!$user || !$user->karyawan || !$user->karyawan->jabatan) {
             return redirect()->route('login');
         }
 
         $jabatan = $user->karyawan->jabatan;
+
         $isManager = ($jabatan === 'Education Manager');
+        $isGM = ($jabatan === 'GM');
+
+        // Gabungkan role yang punya akses penuh
+        $isPrivileged = $isManager || $isGM;
 
         // 1. Query Sertifikasi
         $sertifikasiQuery = Sertifikasi::with([
@@ -41,9 +47,14 @@ class InstructorDevelopmentController extends Controller
         ]);
 
         // 2. Query Pelatihan
-        $pelatihanQuery = Pelatihan::with(['user.karyawan', 'approver', 'pengajuan_barang.tracking']);
+        $pelatihanQuery = Pelatihan::with([
+            'user.karyawan',
+            'approver',
+            'pengajuan_barang.tracking'
+        ]);
 
-        if (!$isManager) {
+        // 🔥 FIX DI SINI
+        if (!$isPrivileged) {
             $sertifikasiQuery->where('user_id', $user->id);
             $pelatihanQuery->where('user_id', $user->id);
         }
@@ -52,20 +63,26 @@ class InstructorDevelopmentController extends Controller
         $pelatihans = $pelatihanQuery->latest()->get();
 
         // 3. Query Specialization Area
-        if ($isManager) {
-            // Manager: Melihat SEMUA data specialization
+        if ($isPrivileged) {
+            // Manager & GM lihat semua
             $specializations = SpecializationArea::latest()->get();
         } else {
-            // Non-Manager: Melihat HANYA data miliknya sendiri
+            // selain itu hanya miliknya
             $specializations = collect();
+
             if ($user->karyawan && $user->karyawan->kode_karyawan) {
-                $specializations = SpecializationArea::where('kode_instruktur', $user->karyawan->kode_karyawan)
-                    ->latest()
-                    ->get();
+                $specializations = SpecializationArea::where(
+                    'kode_instruktur',
+                    $user->karyawan->kode_karyawan
+                )->latest()->get();
             }
         }
 
-        return view('development.index', compact('sertifikasis', 'pelatihans', 'specializations'));
+        return view('development.index', compact(
+            'sertifikasis',
+            'pelatihans',
+            'specializations'
+        ));
     }
 
     public function storeSertifikasi(Request $request)
