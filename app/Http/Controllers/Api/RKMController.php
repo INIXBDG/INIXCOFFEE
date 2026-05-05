@@ -301,7 +301,6 @@ class RKMController extends Controller
         foreach ($rows as $row) {
             // Buat kunci unik berdasarkan materi_key, tanggal_awal, dan tanggal_akhir
             $key = $row->materi_key . '|' . $row->tanggal_awal . '|' . $row->tanggal_akhir;
-
             if (!isset($mergedData[$key])) {
                 // Jika kunci belum ada, tambahkan data baru
                 $mergedData[$key] = $row->toArray();
@@ -323,6 +322,8 @@ class RKMController extends Controller
             $data['sales_key'] = implode(', ', $data['sales_key']); // Gabungkan sales_key
             $data['perusahaan_key'] = implode(', ', $data['perusahaan_key']); // Gabungkan perusahaan_key
             $data['id_rkm'] = implode(', ', $data['id_rkm']);
+			$data['tanggal_awal'] = Carbon::parse($data['tanggal_awal'])->format('Y-m-d');
+			$data['tanggal_akhir'] = Carbon::parse($data['tanggal_akhir'])->format('Y-m-d');
             $result = $data;
         }
 

@@ -725,7 +725,7 @@
                             <select id="bulan" class="form-select" aria-label="bulan">
                                 <option disabled>Pilih Bulan</option>
                                 @php
-                                $bulan_sekarang = now()->month;
+                                $bulan_sekarang = now()->subMonth()->month;
                                 $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                                 for ($bulan = 1; $bulan <= 12; $bulan++) {
                                     $bulan_awal = $nama_bulan[$bulan - 1];
