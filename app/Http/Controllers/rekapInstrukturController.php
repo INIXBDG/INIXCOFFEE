@@ -246,104 +246,124 @@ class rekapInstrukturController extends Controller
         return view('rekapinstruktur.ceklevel', compact('data'));
     }
 
-public function getMengajarInstruktur($id, $month, $year) 
-	{
-		// Mengambil data rekap mengajar instruktur
-		if ($id == 'OL') {
-			$data = rekapMengajarInstruktur::with('instruktur')->where('bulan', $month)
-				->where('tahun', $year)
-				->where('id_instruktur', 'LIKE', '%OL%')
-				->get();
-		} else {
-			$data = rekapMengajarInstruktur::with('instruktur')->where('bulan', $month)
-				->where('tahun', $year)
-				->where('id_instruktur', $id)
-				->get();
-		}
+    public function getMengajarInstruktur($id, $month, $year) 
+    {
+        // Mengambil data rekap mengajar instruktur
+        if ($id == 'OL') {
+            $data = rekapMengajarInstruktur::with('instruktur')->where('bulan', $month)
+                ->where('tahun', $year)
+                ->where('id_instruktur', 'LIKE', '%OL%')
+                ->get();
+        } else {
+            $data = rekapMengajarInstruktur::with('instruktur')->where('bulan', $month)
+                ->where('tahun', $year)
+                ->where('id_instruktur', $id)
+                ->get();
+        }
 
-		// Ambil hanya RKM pertama jika lebih dari satu
-		$data->transform(function ($item) {
-			$item->id_rkm = explode(',', $item->id_rkm)[0]; 
-			return $item;
-		});
+        // Pemilihan ID RKM dengan prioritas ketersediaan nilai feedback
+        $data->transform(function ($item) {
+            $rkmIds = array_map('trim', explode(',', $item->id_rkm));
+            $selectedRkmId = $rkmIds[0]; // Tetapkan default indeks 0
 
-		// Ambil data RKM dan relasi feedback
-		$rkmData = $data->map(function ($item) {
-			return RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
-				->where('id', $item->id_rkm)
-				->first();
-		});
+            if (count($rkmIds) > 1) {
+                // Validasi eksistensi relasi nilaifeedback menggunakan metode whereHas
+                $rkmWithFeedback = \App\Models\RKM::whereIn('id', $rkmIds)
+                    ->whereHas('nilaifeedback')
+                    ->first();
 
-		// Inisialisasi total dan counter untuk rata-rata global
-		$totalFeedbackPerRKM = 0;
-		$totalRKM = 0;
+                if ($rkmWithFeedback) {
+                    $selectedRkmId = $rkmWithFeedback->id;
+                }
+            }
 
-		$result = $data->map(function ($item, $index) use ($rkmData, &$totalFeedbackPerRKM, &$totalRKM) {
-			$rkm = $rkmData[$index];
+            $item->id_rkm = $selectedRkmId;
+            return $item;
+        });
 
-			// Hitung rata-rata I1-I8 dari semua feedback per RKM
-			$avgFeedbackRKM = 0;
-			$jumlahFeedback = 0;
+        // Ambil data RKM dan relasi feedback berdasarkan ID yang telah diseleksi
+        $rkmData = $data->map(function ($item) {
+            return RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
+                ->where('status', '0')
+                ->where('id', $item->id_rkm)
+                ->first();
+        });
 
-			if ($rkm && $rkm->nilaifeedback) {
-				$feedbackList = $rkm->nilaifeedback;
+        // Inisialisasi total dan counter untuk rata-rata global
+        $totalFeedbackPerRKM = 0;
+        $totalRKM = 0;
 
-				$feedbackList->each(function ($feedback) use (&$avgFeedbackRKM, &$jumlahFeedback) {
-					$nilai = [
-						$feedback->I1,
-						$feedback->I2,
-						$feedback->I3,
-						$feedback->I4,
-						$feedback->I5,
-						$feedback->I6,
-						$feedback->I7,
-						$feedback->I8
-					];
+        $result = $data->map(function ($item, $index) use ($rkmData, &$totalFeedbackPerRKM, &$totalRKM) {
+            $rkm = $rkmData[$index];
 
-					$total = array_sum($nilai);
-					$avg = $total / 8;
+            // Hitung rata-rata I1-I8 dari semua feedback per RKM
+            $avgFeedbackRKM = 0;
+            $jumlahFeedback = 0;
 
-					$avgFeedbackRKM += $avg;
-					$jumlahFeedback++;
-				});
+            // Validasi eksistensi data dan konversi relasi menjadi format koleksi
+            if ($rkm && $rkm->nilaifeedback && collect($rkm->nilaifeedback)->isNotEmpty()) {
+                
+                // Normalisasi bentuk data ke dalam Collection untuk keamanan fungsi each()
+                $feedbackList = collect($rkm->nilaifeedback);
 
-				if ($jumlahFeedback > 0) {
-					$avgFeedbackRKM = $avgFeedbackRKM / $jumlahFeedback;
-				}
-			}
+                $feedbackList->each(function ($feedback) use (&$avgFeedbackRKM, &$jumlahFeedback) {
+                    
+                    // Implementasi Null Coalescing Operator dan Type Casting ke Float
+                    $nilai = [
+                        (float) ($feedback->I1 ?? $feedback->i1 ?? 0),
+                        (float) ($feedback->I2 ?? $feedback->i2 ?? 0),
+                        (float) ($feedback->I3 ?? $feedback->i3 ?? 0),
+                        (float) ($feedback->I4 ?? $feedback->i4 ?? 0),
+                        (float) ($feedback->I5 ?? $feedback->i5 ?? 0),
+                        (float) ($feedback->I6 ?? $feedback->i6 ?? 0),
+                        (float) ($feedback->I7 ?? $feedback->i7 ?? 0),
+                        (float) ($feedback->I8 ?? $feedback->i8 ?? 0)
+                    ];
 
-			// Tambah ke total semua RKM
-			$totalFeedbackPerRKM += $avgFeedbackRKM;
-			$totalRKM++;
+                    $total = array_sum($nilai);
+                    $avg = $total / 8;
 
-			return [
-				'id' => $item->id,
-				'id_rkm' => $item->id_rkm,
-				'id_instruktur' => $item->id_instruktur,
-				'level' => $item->level,
-				'durasi' => $item->durasi,
-				'keterangan' => $item->keterangan,
-				'tanggal_awal' => $item->tanggal_awal ?? null,
-				'tanggal_akhir' => $item->tanggal_akhir ?? null,
-				'nama_materi' => $rkm->materi->nama_materi ?? null,
-				'nama_lengkap' => $item->instruktur->nama_lengkap ?? null,
-				'metode_kelas' => $rkm->metode_kelas ?? null,
-				'pax' => $item->pax,
-				'feedback' => round($avgFeedbackRKM, 1),
-				'rkm' => $rkm,
-			];
-		});
+                    $avgFeedbackRKM += $avg;
+                    $jumlahFeedback++;
+                });
 
-		// Hitung rata-rata keseluruhan feedback instruktur (semua RKM)
-		$averageAllFeedback = $totalRKM > 0 ? round($totalFeedbackPerRKM / $totalRKM, 1) : 0;
+                if ($jumlahFeedback > 0) {
+                    $avgFeedbackRKM = $avgFeedbackRKM / $jumlahFeedback;
+                }
+            }
 
-		return response()->json([
-			'success' => true,
-			'message' => 'List data',
-			'average_feedback_instruktur' => $averageAllFeedback,
-			'data' => $result,
-		]);
-	}
+            // Tambah ke total semua RKM
+            $totalFeedbackPerRKM += $avgFeedbackRKM;
+            $totalRKM++;
+
+            return [
+                'id' => $item->id,
+                'id_rkm' => $item->id_rkm,
+                'id_instruktur' => $item->id_instruktur,
+                'level' => $item->level,
+                'durasi' => $item->durasi,
+                'keterangan' => $item->keterangan,
+                'tanggal_awal' => $item->tanggal_awal ?? null,
+                'tanggal_akhir' => $item->tanggal_akhir ?? null,
+                'nama_materi' => $rkm->materi->nama_materi ?? null,
+                'nama_lengkap' => $item->instruktur->nama_lengkap ?? null,
+                'metode_kelas' => $rkm->metode_kelas ?? null,
+                'pax' => $item->pax,
+                'feedback' => round((float) $avgFeedbackRKM, 2),
+                'rkm' => $rkm,
+            ];
+        });
+
+        // Hitung rata-rata keseluruhan feedback instruktur (semua RKM)
+        $averageAllFeedback = $totalRKM > 0 ? round($totalFeedbackPerRKM / $totalRKM, 2) : 0;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List data',
+            'average_feedback_instruktur' => $averageAllFeedback,
+            'data' => $result,
+        ]);
+    }
 
 
 
