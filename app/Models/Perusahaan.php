@@ -25,7 +25,7 @@ class Perusahaan extends Model
 
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'sales_key', 'kode_karyawan');
+        return $this->belongsTo(karyawan::class, 'sales_key', 'kode_karyawan');
     }
 
     public function rkms()

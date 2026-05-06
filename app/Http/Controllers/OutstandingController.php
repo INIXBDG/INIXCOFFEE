@@ -5,15 +5,17 @@ namespace App\Http\Controllers;
 use App\Exports\OutstandingReportExport;
 use App\Exports\RkmExport;
 use App\Models\AbsensiPDF;
+use App\Models\ApprovalPendapatan;
 use App\Models\Certificate;
 use App\Models\Invoice;
 use App\Models\jabatan;
 use App\Models\karyawan;
 use App\Models\Kwitansi;
-use App\Models\Outstanding;
+use App\Models\outstanding;
 use App\Models\outstanding as ModelsOutstanding;
 use App\Models\Registrasi;
 use App\Models\RKM;
+use App\Models\PicPenagihanInvoice;
 use App\Models\SertifikatPDF;
 use App\Models\trackingOutstanding;
 use App\Models\User;
@@ -68,7 +70,7 @@ class OutstandingController extends Controller
             $endOfWeek = Carbon::parse($tanggal_akhir)->toDateString();
         }
 
-        $existing = Outstanding::pluck('id_rkm')->toArray();
+        $existing = outstanding::pluck('id_rkm')->toArray();
 
         $rkms = RKM::whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
             ->where('status', '0')
@@ -82,11 +84,44 @@ class OutstandingController extends Controller
         }
 
         foreach ($rkms as $rkm) {
+            $approvalPendapatan = ApprovalPendapatan::where('id_rkm', $rkm->id)->first();
+
+            $netSales = $approvalPendapatan 
+                ? ($approvalPendapatan->total_penjualan_sales ?? $approvalPendapatan->total_penjualan_sales ?? $rkm->harga_jual) 
+                : $rkm->harga_jual;
+            
+            $jumlahPembayaran = $approvalPendapatan ? $approvalPendapatan->jumlah_pembayaran : null;
+            $tanggalBayar = $approvalPendapatan ? $approvalPendapatan->tanggal_pembayaran : null;
+            
+            $ppn = $approvalPendapatan ? $approvalPendapatan->PPN : null;
+            $pph = $approvalPendapatan ? $approvalPendapatan->PPH : null;
+            $biayaAdmin = $approvalPendapatan ? $approvalPendapatan->biaya_admin : null;
+
+            $potonganData = [];
+            if ($approvalPendapatan) {
+                if ($ppn) {
+                    $potonganData[] = ['jenis' => 'PPN', 'jumlah' => $ppn];
+                }
+                if ($pph) {
+                    $potonganData[] = ['jenis' => 'PPH', 'jumlah' => $pph];
+                }
+                if ($biayaAdmin) {
+                    $potonganData[] = ['jenis' => 'biaya_admin', 'jumlah' => $biayaAdmin];
+                }
+            }
+
             $outstanding = Outstanding::create([
                 'id_rkm' => $rkm->id,
                 'due_date' => Carbon::parse($rkm->tanggal_akhir)->addMonths(6)->toDateString(),
                 'sales_key' => $rkm->sales_key,
-                'net_sales' => $rkm->harga_jual,
+                'net_sales' => $netSales,
+                'jumlah_pembayaran' => $jumlahPembayaran,
+                'tanggal_bayar' => $tanggalBayar,
+                'ppn' => $ppn,
+                'pph' => $pph,
+                'biaya_admin' => $biayaAdmin,
+                'jumlah_potongan' => !empty($potonganData) ? $potonganData : null,
+                'jenis_potongan' => !empty($potonganData) ? array_column($potonganData, 'jenis') : null,
             ]);
 
             if (!$outstanding || !$outstanding->id) {
@@ -130,14 +165,12 @@ class OutstandingController extends Controller
                 ]),
             );
 
-            // Kirim Notifikasi
             $rkmData = RKM::with('perusahaan', 'materi')->find($rkm->id);
             if ($rkmData) {
                 $data = [
                     'nama_materi' => $rkmData->materi->nama_materi,
                     'nama_perusahaan' => $rkmData->perusahaan->nama_perusahaan,
                     'due_date' => $outstanding->due_date,
-                    // 'net_sales' => $request->net_sales,
                     'status_pembayaran' => $request->status_pembayaran,
                     'sales_key' => $rkmData->sales_key,
                 ];
@@ -179,7 +212,9 @@ class OutstandingController extends Controller
         $users = auth()->user();
         $idSales = $users->jabatan == 'SPV Sales' ? '' : $users->id_sales;
 
-        $query = Outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')->where('status_pembayaran', '1')->whereYear('created_at', $tahun);
+        $query = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
+            ->where('status_pembayaran', '1')
+            ->whereYear('created_at', $tahun);
 
         if ($idSales) {
             $query->whereHas('rkm', function ($q) use ($idSales) {
@@ -187,7 +222,16 @@ class OutstandingController extends Controller
             });
         }
 
-        return response()->json(['data' => $query->get()]);
+        $data = $query->get();
+
+        $existingPicRkms = PicPenagihanInvoice::pluck('id_rkm')->toArray();
+
+        $data->map(function ($item) use ($existingPicRkms) {
+            $item->has_pic_penagihan = in_array($item->id_rkm, $existingPicRkms);
+            return $item;
+        });
+
+        return response()->json(['data' => $data]);
     }
 
     public function getOutstandingHutang(Request $request)
@@ -196,7 +240,7 @@ class OutstandingController extends Controller
         $user = auth()->user();
         $idSales = $user->jabatan == 'SPV Sales' ? '' : $user->id_sales;
 
-        $query = Outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')->where('status_pembayaran', '0')->whereYear('created_at', $tahun);
+        $query = outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')->where('status_pembayaran', '0')->whereYear('created_at', $tahun);
 
         if ($idSales) {
             $query->whereHas('rkm', function ($q) use ($idSales) {
@@ -209,16 +253,36 @@ class OutstandingController extends Controller
 
     public function getOutstandingRKM($year, $month)
     {
-        // Ambil semua id_rkm yang sudah ada di tabel outstanding
         $existingRKMs = Outstanding::pluck('id_rkm')->toArray();
         $user = auth()->user()->id_sales;
+
+        $query = RKM::with(['perusahaan', 'materi', 'approvalPendapatan'])
+            ->whereYear('tanggal_awal', $year)
+            ->whereMonth('tanggal_awal', $month)
+            ->whereNotIn('id', $existingRKMs);
+
         if ($user) {
-            // Ambil data RKM yang belum ada di tabel outstanding
-            $outstanding = RKM::with('perusahaan', 'materi')->whereYear('tanggal_awal', $year)->whereMonth('tanggal_awal', $month)->whereNotIn('id', $existingRKMs)->where('sales_key', $user)->get();
-        } else {
-            // Ambil data RKM yang belum ada di tabel outstanding
-            $outstanding = RKM::with('perusahaan', 'materi')->whereYear('tanggal_awal', $year)->whereMonth('tanggal_awal', $month)->whereNotIn('id', $existingRKMs)->get();
+            $query->where('sales_key', $user);
         }
+
+        $outstanding = $query->get()->map(function ($rkm) {
+            $approval = $rkm->approvalPendapatan;
+            $hargaNet = $approval ? ($approval->total_penjualan_sales ?? $rkm->harga_jual) : $rkm->harga_jual;
+            $pax = $approval ? ($approval->pax ?? $rkm->pax) : $rkm->pax;
+
+            return [
+                'id' => $rkm->id,
+                'materi' => $rkm->materi,
+                'perusahaan' => $rkm->perusahaan,
+                'pax' => $pax,
+                'harga_jual' => $rkm->harga_jual,
+                'harga_net' => $hargaNet,
+                'registrasi_form' => $rkm->registrasi_form ?? '-',
+                'sales_key' => $rkm->sales_key,
+                'cp' => $rkm->perusahaan?->cp ?? '-',
+                'total_net_sales' => $hargaNet * $pax,
+            ];
+        });
 
         return response()->json([
             'success' => true,
@@ -281,7 +345,7 @@ class OutstandingController extends Controller
 
         $dueDate = Carbon::parse($rkm->tanggal_akhir)->addMonths(6);
 
-        $outstanding = Outstanding::create([
+        $outstanding = outstanding::create([
             'id_rkm' => $request->id_rkm,
             'net_sales' => $request->net_sales,
             'status_pembayaran' => $request->status_pembayaran,
@@ -402,10 +466,14 @@ class OutstandingController extends Controller
 
     public function edit($id)
     {
-        $outstanding = Outstanding::with('rkm.perusahaan', 'rkm.materi')->findOrFail($id);
+        $outstanding = Outstanding::with('rkm.perusahaan', 'rkm.materi', 'rkm.approvalPendapatan')->findOrFail($id);
         $tracking_outstanding = trackingOutstanding::where('id_outstanding', $id)->first();
 
-        // Handle potongan
+        $approval = $outstanding->rkm->approvalPendapatan;
+        $hargaNet = $approval ? ($approval->total_penjualan_sales ?? $outstanding->rkm->harga_jual) : $outstanding->rkm->harga_jual;
+        $pax = $approval ? ($approval->pax ?? $outstanding->rkm->pax) : $outstanding->rkm->pax;
+        $totalNetSales = $hargaNet * $pax;
+
         $potongan = [];
         if (!empty($outstanding->jumlah_potongan)) {
             $potongan = is_string($outstanding->jumlah_potongan)
@@ -413,11 +481,8 @@ class OutstandingController extends Controller
                 : $outstanding->jumlah_potongan;
         }
 
-        // Tentukan current status dari tracking
         $currentStatus = '';
-
         if ($tracking_outstanding) {
-            // Cek dari yang tertinggi (pembayaran) ke terendah
             if ($tracking_outstanding->pembayaran == 1) {
                 $currentStatus = 'pembayaran';
             } elseif ($tracking_outstanding->konfir_pic == 1) {
@@ -437,7 +502,6 @@ class OutstandingController extends Controller
             }
         }
 
-        // Debug log
         Log::info('Edit Outstanding', [
             'id' => $id,
             'status_pembayaran' => $outstanding->status_pembayaran,
@@ -446,9 +510,9 @@ class OutstandingController extends Controller
             'currentStatus' => $currentStatus
         ]);
 
-        return view('outstanding.edit', compact('outstanding', 'tracking_outstanding', 'potongan', 'currentStatus'));
+        return view('outstanding.edit', compact('outstanding', 'tracking_outstanding', 'potongan', 'currentStatus', 'totalNetSales'));
     }
-
+        
     public function update(Request $request, $id)
     {
         // Validasi
@@ -468,7 +532,7 @@ class OutstandingController extends Controller
             'pembayaran' => 'nullable|file|mimes:pdf|max:2048',
         ]);
 
-        $post = Outstanding::findOrFail($id);
+        $post = outstanding::findOrFail($id);
 
         // Handle file uploads
         $fakturPath = $post->path_faktur_pajak;
@@ -836,7 +900,7 @@ class OutstandingController extends Controller
 
     public function dokumenGabungan($id)
     {
-        $outstanding = Outstanding::findOrFail($id);
+        $outstanding = outstanding::findOrFail($id);
         $invoice = Invoice::where('id_rkm', $outstanding->id_rkm)->first();
         $absensi = AbsensiPDF::where('id_rkm', $outstanding->id_rkm)->first();
 
@@ -1051,7 +1115,7 @@ class OutstandingController extends Controller
             'karyawan' => 'nullable|integer|exists:karyawan,id',
         ]);
 
-        $query = Outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice']);
+        $query = outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice']);
 
         $this->applyDateFilter($query, $request);
 

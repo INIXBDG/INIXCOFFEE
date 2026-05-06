@@ -295,17 +295,37 @@
             }
 
             let html = '';
-            employees.forEach(emp => {
-                let bgColor = emp.rata_rata_progress >= 75 ?
-                    'bg-primary bg-opacity-10 border-start border-4 border-primary' :
-                    (emp.rata_rata_progress < 50 ? 'bg-danger bg-opacity-10 border-start border-4 border-danger' :
-                        'bg-light');
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const isYearEnd = currentMonth === 12;
 
-                let badge = emp.rata_rata_progress >= 75 ?
-                    '<span class="badge bg-primary-subtle text-primary">Top</span>' :
-                    (emp.rata_rata_progress < 50 ?
-                        '<span class="badge bg-danger-subtle text-danger">Perlu Bimbingan</span>' :
-                        '<span class="badge bg-success-subtle text-success">Sedang Berjalan</span>');
+            employees.forEach(emp => {
+                let badge = '';
+                let bgColor = 'bg-light';
+
+                if (isYearEnd) {
+                    if (emp.rata_rata_progress >= 75) {
+                        badge = '<span class="badge bg-success-subtle text-success">Top</span>';
+                        bgColor = 'bg-success bg-opacity-10 border-start border-4 border-success';
+                    } else if (emp.rata_rata_progress < 50) {
+                        badge = '<span class="badge bg-danger-subtle text-danger">Kurang</span>';
+                        bgColor = 'bg-danger bg-opacity-10 border-start border-4 border-danger';
+                    } else {
+                        badge = '<span class="badge bg-warning-subtle text-warning">Cukup</span>';
+                    }
+                } else {
+                    if (emp.rata_rata_progress === 0) {
+                        if (currentMonth <= 3) {
+                            badge = '';
+                        } else {
+                            badge = '<span class="badge bg-danger-subtle text-danger">Perlu Bimbingan</span>';
+                            bgColor = 'bg-danger bg-opacity-10 border-start border-4 border-danger';
+                        }
+                    } else {
+                        badge = '<span class="badge bg-warning-subtle text-warning">Dalam Proses</span>';
+                        bgColor = 'bg-warning bg-opacity-10 border-start border-4 border-warning';
+                    }
+                }
 
                 html += `
                     <div class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} employee-card" data-employee-id="${emp.id_karyawan}" style="cursor: pointer;">
@@ -329,7 +349,7 @@
                                                     <a href="javascript:void(0)" class="dropdown-item btn-export"
                                                     data-type="excel" 
                                                     data-id="${emp.id_karyawan}" 
-                                                    data-tahun="${new Date().getFullYear()}">
+                                                    data-tahun="${now.getFullYear()}">
                                                         <i class="fas fa-file-excel me-1 text-success"></i> Excel
                                                     </a>
                                                 </li>
@@ -337,7 +357,7 @@
                                                     <a href="javascript:void(0)" class="dropdown-item btn-export"
                                                     data-type="pdf" 
                                                     data-id="${emp.id_karyawan}" 
-                                                    data-tahun="${new Date().getFullYear()}">
+                                                    data-tahun="${now.getFullYear()}">
                                                         <i class="fas fa-file-pdf me-1 text-danger"></i> PDF
                                                     </a>
                                                 </li>
@@ -353,7 +373,7 @@
 
             $('#employeeList').html(html);
         }
-
+            
         function handleClickCheck(id) {
             window.location.href = `/kpi-data/overview/index/personal/${id}`;
         }

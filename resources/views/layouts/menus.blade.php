@@ -2354,6 +2354,24 @@
                                                 <div class="card-body">
                                                     <h5 class="text-center card-title">Office</h5>
                                                     <div class="row">
+                                                    <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <img src="{{ asset('icon/file-text.svg') }}"
+                                                                        class="img-responsive" width="30px">
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="{{ route('office.dashboard') }}"
+                                                                        class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Dashboard Office
+                                                                        </h5>
+                                                                    </a>
+                                                                    <p class="card-text">Dashboard Office Inixindo.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                         @can('View Inventaris')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
@@ -2422,7 +2440,6 @@
                                                                 </div>
                                                             </div>
                                                         @endcan
-
                                                     </div>
                                                 </div>
                                             </div>

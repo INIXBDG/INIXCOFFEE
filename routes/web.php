@@ -4,6 +4,7 @@ use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\ActivityInstrukturController;
 use App\Http\Controllers\AdministrasiKaryawanController;
 use App\Http\Controllers\Api\RKMController;
+use App\Http\Controllers\ApprovalPendapatanController;
 use App\Http\Controllers\approvedNetSalesController;
 use App\Http\Controllers\CateringController;
 use App\Http\Controllers\colaboratorController;
@@ -88,6 +89,7 @@ use App\Http\Controllers\KlaimModulController;
 use App\Http\Controllers\KPI\DataTargetController;
 use App\Http\Controllers\LeadProjectController;
 use App\Http\Controllers\ReportSalesProjectController;
+use App\Http\Controllers\PicPenagihanController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 /*
@@ -497,6 +499,8 @@ Route::prefix('kpi-data/')
         //manual value
         route::post('/update-manual-value', [TargetKPIController::class, 'manualValue'])->name('manualValue');
         route::post('/update-gap-kompetensi', [TargetKPIController::class, 'updateGapKompetensi'])->name('updateGapKompetensi');
+
+        route::get('/cleaning-database', [TargetKPIController::class, 'cleaningDatabase'])->name('cleaningDatabase');
 
         //Target KPI karyawan
         route::prefix('karyawan/')
@@ -970,6 +974,19 @@ Route::prefix('office')->group(function () {
     Route::get('/analysis/download-quarter/{year}/{quarter}/{index}', [AnalysisReportController::class, 'downloadQuarter'])->name('download.quarter.analysis');
     Route::post('/analysis/update-annual', [AnalysisReportController::class, 'updateAnnualReport'])->name('update.annual.description.analysis');
     Route::get('/analysis/download-annual/{year}/{index}', [AnalysisReportController::class, 'downloadAnnual'])->name('download.annual.analysis');
+
+    Route::get('/pic/penagihan', [PicPenagihanController::class, 'index'])->name('picpenagihan.index');
+    Route::post('/pic/penagihan/store', [PicPenagihanController::class, 'store'])->name('picpenagihan.store');
+    Route::get('/pic/penagihan/data', [PicPenagihanController::class, 'getData'])->name('picpenagihan.data');
+    Route::put('/pic-penagihan/update/{id}', [PicPenagihanController::class, 'update'])->name('picpenagihan.update');
+    Route::delete('/pic-penagihan/delete/{id}', [PicPenagihanController::class, 'destroy'])->name('picpenagihan.delete');
+    Route::get('/pic-penagihan/pdf/{id}', [PicPenagihanController::class, 'exportPdf'])->name('picpenagihan.pdf');
+    Route::prefix('approval-pendapatan')->name('approvalPendapatan.')->group(function () {
+        Route::get('/index', [ApprovalPendapatanController::class, 'index'])->name('index');
+        Route::get('/get/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'get'])->name('get');
+        Route::post('update/{id}', [ApprovalPendapatanController::class, 'update'])->name('update');
+        Route::get('total-tahunan/{tahun}/{bulan}',[ApprovalPendapatanController::class, 'totalTahunan']);
+    });
 });
 
 Route::prefix('dashboard-sla/{team}')->group(function () {

@@ -3,7 +3,6 @@
 @section('contentKPI')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
@@ -234,6 +233,14 @@
                             data-bs-toggle="modal" data-bs-target="#modalBuatTarget">
                             <i class="fas fa-plus fa-2x"></i>  buat target baru
                         </button>
+                        @If (Auth()->user()->jabatan === "Koordinator ITSM")
+                            <a href="{{ route('kpi.cleaningDatabase') }}" 
+                                class="btn btn-danger me-2"
+                                onclick="return confirm('Apakah Anda BENAR-BENAR yakin ingin menghapus SELURUH data dari tabel database? Tindakan ini permanen dan tidak dapat dibatalkan!');">
+                                
+                                <i class="fas fa-brush fa-2x"></i> Database Cleaning
+                            </a>
+                        @endif
                         {{-- <button type="button" class="btn btn-success me-2"
                             data-bs-toggle="modal" data-bs-target="#ModalImport">
                             <i class="fas fa-file-import"></i>  Import
@@ -433,7 +440,6 @@
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-
                     <div class="modal-body" id="modal-content-form">
                         <div class="row">
                             <input type="hidden" name="id_pembuat" value="{{ auth()->user()->id }}">
@@ -809,7 +815,7 @@
                         response.jabatan_list.forEach(function(jab) {
                             jabatanSelect.append(`<option value="${jab}">${jab}</option>`);
                         });
-                        $('.select2').select2();
+                        jabatanSelect.trigger('change');
                     }
                 }
             });

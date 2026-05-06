@@ -58,10 +58,7 @@
                                                     <tr>
                                                         <td>{{ $index + 1 }}</td>
                                                         <td class="fw-bold">{{ $item->asistant_route }}</td>
-                                                        <td>
-                                                            <span
-                                                                class="badge bg-info text-dark">{{ $item->jangka_target }}</span>
-                                                        </td>
+                                                        <td><span class="badge bg-info text-dark">{{ $item->jangka_target }}</span></td>
                                                         <td>
                                                             @if ($item->tipe_target === 'angka')
                                                                 <span class="badge bg-secondary">Angka</span>
@@ -70,12 +67,14 @@
                                                             @else
                                                                 <span class="badge bg-warning text-dark">Persen</span>
                                                             @endif
-                                                        </td>
+                                                        </td>       
                                                         <td>
                                                             @if ($item->tipe_target === 'rupiah')
-                                                                {{ number_format($item->nilai_target, 0, ',', '.') }}
+                                                                Rp. {{ number_format($item->nilai_target, 0, ',', '.') }}
                                                             @elseif($item->tipe_target === 'persen')
                                                                 {{ $item->nilai_target }}%
+                                                            @elseif ($item->tipe_target === 'angka') 
+                                                                {{ $item->nilai_target }}
                                                             @else
                                                                 {{ number_format($item->nilai_target, 0, ',', '.') }}
                                                             @endif
@@ -203,25 +202,6 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-
-            $('#tableDataTarget').DataTable({
-                pageLength: 10,
-                lengthMenu: [5, 10, 25, 50, 100],
-                ordering: true,
-                searching: true,
-                responsive: true,
-                language: {
-                    search: "Cari:",
-                    lengthMenu: "Tampilkan _MENU_ data",
-                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    paginate: {
-                        next: "Next",
-                        previous: "Prev"
-                    },
-                    zeroRecords: "Data tidak ditemukan"
-                }
-            });
-
             $('#formImportData').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);

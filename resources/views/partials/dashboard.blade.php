@@ -19,7 +19,7 @@
     <div class="card-body">
         <div class="row">
             <div class="col-6 d-flex justify-content-start">
-                <p style="margin: 0">Total Saat ini adalah: <span id="totalSalesDisplay">Rp 0</span></p>
+                <p style="margin: 0">Total Hasil Penjualan Saat ini adalah: <span id="totalSalesDisplay">Rp 0</span></p>
             </div>
             <div class="col-6 d-flex justify-content-end">
 
@@ -2672,5 +2672,5 @@
         // Variable global untuk API URL Feedback Instruktur
         window.FEEDBACK_API_URL = "{{ route('office.feedback.get') }}";
     </script>
-    <script src="{{ asset('js/dashboard .js') }}"></script>
+    <script src="{{ asset('js/dashboard.js') }}"></script>
 @endpush

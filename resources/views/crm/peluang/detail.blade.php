@@ -432,8 +432,8 @@
 
                             <!-- Existing Fields -->
                             <div class="mb-3">
-                                <label for="materi" class="form-label">Materi</label>
-                                <select class="form-select" id="materi" name="materi" required>
+                                <label for="edit_id_materi" class="form-label">Materi</label>
+                                <select class="form-select" id="edit_id_materi" name="materi" required>
                                     <option value="">-- Pilih Materi --</option>
                                     @foreach ($materi as $item)
                                         <option value="{{ $item->id }}" {{ $item->id == $peluang->materi ? 'selected' : '' }}>
@@ -1267,6 +1267,7 @@
                 // Existing JavaScript for Select2 and input formatting
                 initContactSelect2();
                 initPerusahaanSelect2();
+                initMateriSelect2();
 
                 let peluang = @json($peluang);
                 console.log(peluang);
@@ -1391,6 +1392,21 @@
                 function initPerusahaanSelect2() {
                     // Ubah selektor menjadi #edit_id_perusahaan sesuai dengan ID elemen HTML
                     var $select = $('#edit_id_perusahaan');
+                    if (typeof $.fn.select2 !== 'function') {
+                        console.error('Select2 belum ter-load!');
+                        return;
+                    }
+                    var $closestModal = $select.closest('.modal');
+                    $select.select2({
+                        width: '100%',
+                        theme: 'bootstrap-5',
+                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                    });
+                }
+
+                function initMateriSelect2() {
+                    // Ubah selektor menjadi #edit_id_materi sesuai dengan ID elemen HTML
+                    var $select = $('#edit_id_materi');
                     if (typeof $.fn.select2 !== 'function') {
                         console.error('Select2 belum ter-load!');
                         return;

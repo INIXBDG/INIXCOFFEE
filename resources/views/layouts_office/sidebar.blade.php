@@ -213,6 +213,20 @@
                 </a>
             </li>
 
+            <li class="menu-item {{ request()->routeIs('pic-penagihan.index') ? 'active open' : '' }}">
+                <a href="{{ route('picpenagihan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-receipt"></i>
+                    <div class="text-truncate" data-i18n="contact">DB PIC Penagihan</div>
+                </a>
+            </li>
+            
+            <li class="menu-item {{ request()->routeIs('approvalPendapatan.index') ? 'active open' : '' }}">
+                <a href="{{ route('approvalPendapatan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-money"></i>
+                    <div class="text-truncate" data-i18n="contact">Approval Pendapatan</div>
+                </a>
+            </li>
+
             <li class="menu-item {{ request()->is('outstanding') ? 'active open' : '' }}">
                 <a href="/outstanding" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-task"></i>
