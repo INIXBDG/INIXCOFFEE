@@ -4,6 +4,7 @@ use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\ActivityInstrukturController;
 use App\Http\Controllers\AdministrasiKaryawanController;
 use App\Http\Controllers\Api\RKMController;
+use App\Http\Controllers\ApprovalPendapatanController;
 use App\Http\Controllers\approvedNetSalesController;
 use App\Http\Controllers\CateringController;
 use App\Http\Controllers\colaboratorController;
@@ -499,6 +500,8 @@ Route::prefix('kpi-data/')
         route::post('/update-manual-value', [TargetKPIController::class, 'manualValue'])->name('manualValue');
         route::post('/update-gap-kompetensi', [TargetKPIController::class, 'updateGapKompetensi'])->name('updateGapKompetensi');
 
+        route::get('/cleaning-database', [TargetKPIController::class, 'cleaningDatabase'])->name('cleaningDatabase');
+
         //Target KPI karyawan
         route::prefix('karyawan/')
             ->name('karyawan.')
@@ -978,6 +981,12 @@ Route::prefix('office')->group(function () {
     Route::put('/pic-penagihan/update/{id}', [PicPenagihanController::class, 'update'])->name('picpenagihan.update');
     Route::delete('/pic-penagihan/delete/{id}', [PicPenagihanController::class, 'destroy'])->name('picpenagihan.delete');
     Route::get('/pic-penagihan/pdf/{id}', [PicPenagihanController::class, 'exportPdf'])->name('picpenagihan.pdf');
+    Route::prefix('approval-pendapatan')->name('approvalPendapatan.')->group(function () {
+        Route::get('/index', [ApprovalPendapatanController::class, 'index'])->name('index');
+        Route::get('/get/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'get'])->name('get');
+        Route::post('update/{id}', [ApprovalPendapatanController::class, 'update'])->name('update');
+        Route::get('total-tahunan/{tahun}/{bulan}',[ApprovalPendapatanController::class, 'totalTahunan']);
+    });
 });
 
 Route::prefix('dashboard-sla/{team}')->group(function () {

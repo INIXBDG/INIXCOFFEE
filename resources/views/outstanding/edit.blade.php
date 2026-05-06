@@ -15,9 +15,9 @@
                             @csrf
                             @method('PUT')
 
-                            <!-- Pilih RKM -->
                             <div class="row mb-3">
-                                <label for="id_rkm" class="col-md-4 col-form-label text-md-start">{{ __('RKM') }}</label>
+                                <label for="id_rkm"
+                                    class="col-md-4 col-form-label text-md-start">{{ __('RKM') }}</label>
                                 <div class="col-md-6">
                                     <select name="id_rkm" id="id_rkm" class="form-select" disabled>
                                         <option value="{{ $outstanding->id_rkm }}">
@@ -29,16 +29,15 @@
                                 </div>
                             </div>
 
-                            <!-- Materi -->
                             <div class="row mb-3">
-                                <label for="materi" class="col-md-4 col-form-label text-md-start">{{ __('Materi') }}</label>
+                                <label for="materi"
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Materi') }}</label>
                                 <div class="col-md-6">
                                     <input disabled type="text" name="materi" id="materi" class="form-control"
                                         value="{{ $outstanding->rkm->materi->nama_materi }}">
                                 </div>
                             </div>
 
-                            <!-- Perusahaan -->
                             <div class="row mb-3">
                                 <label for="perusahaan"
                                     class="col-md-4 col-form-label text-md-start">{{ __('Perusahaan') }}</label>
@@ -58,14 +57,14 @@
                             </div>
 
                             <div class="row mb-3">
-                                <label for="pic" class="col-md-4 col-form-label text-md-start">{{ __('PIC') }}</label>
+                                <label for="pic"
+                                    class="col-md-4 col-form-label text-md-start">{{ __('PIC') }}</label>
                                 <div class="col-md-6">
                                     <input type="text" name="pic" id="pic" class="form-control"
                                         value="{{ old('pic', $outstanding->pic) }}">
                                 </div>
                             </div>
 
-                            <!-- Net Sales -->
                             <div class="row mb-3">
                                 <label for="net_sales"
                                     class="col-md-4 col-form-label text-md-start">{{ __('Net Sales') }}</label>
@@ -74,7 +73,7 @@
                                         <span class="input-group-text">Rp.</span>
                                         <input type="text" class="form-control @error('net_sales') is-invalid @enderror"
                                             name="net_sales" id="net_sales" placeholder="Net Sales"
-                                            value="{{ old('net_sales', number_format($outstanding->net_sales, 0, ',', '.')) }}"
+                                            value="{{ old('net_sales', number_format($totalNetSales ?? $outstanding->net_sales, 0, ',', '.')) }}"
                                             required>
                                     </div>
                                     @error('net_sales')
@@ -85,18 +84,19 @@
                                 </div>
                             </div>
 
-                            <!-- Status Pembayaran -->
                             <div class="row mb-3">
                                 <label for="status_pembayaran"
                                     class="col-md-4 col-form-label text-md-start">{{ __('Status Pembayaran') }}</label>
                                 <div class="col-md-6">
                                     <div class="btn-group" role="group" aria-label="Approval Options">
                                         <input type="radio" class="btn-check" name="status_pembayaran" id="approveYes"
-                                            value="1" autocomplete="off" {{ old('status_pembayaran', $outstanding->status_pembayaran) == '1' ? 'checked' : '' }}>
+                                            value="1" autocomplete="off"
+                                            {{ old('status_pembayaran', $outstanding->status_pembayaran) == '1' ? 'checked' : '' }}>
                                         <label class="btn btn-outline-primary" for="approveYes">Sudah</label>
 
                                         <input type="radio" class="btn-check" name="status_pembayaran" id="approveNo"
-                                            value="0" autocomplete="off" {{ old('status_pembayaran', $outstanding->status_pembayaran) == '0' ? 'checked' : '' }}>
+                                            value="0" autocomplete="off"
+                                            {{ old('status_pembayaran', $outstanding->status_pembayaran) == '0' ? 'checked' : '' }}>
                                         <label class="btn btn-outline-danger" for="approveNo">Belum</label>
                                     </div>
                                 </div>
@@ -123,8 +123,8 @@
                                                 value="Admin Transfer" readonly>
                                         </div>
                                         <div class="col-7">
-                                            <input type="text" name="jumlah_potongan[]" class="form-control jumlah-potongan"
-                                                placeholder="Jumlah Admin Transfer"
+                                            <input type="text" name="jumlah_potongan[]"
+                                                class="form-control jumlah-potongan" placeholder="Jumlah Admin Transfer"
                                                 value="{{ old('jumlah_potongan.0', isset($potongan[0]) ? number_format($potongan[0]['jumlah'], 0, ',', '.') : '') }}">
                                         </div>
                                     </div>
@@ -135,8 +135,8 @@
                                                 value="Nominal PPH23" readonly>
                                         </div>
                                         <div class="col-7">
-                                            <input type="text" name="jumlah_potongan[]" class="form-control jumlah-potongan"
-                                                placeholder="Jumlah PPH23"
+                                            <input type="text" name="jumlah_potongan[]"
+                                                class="form-control jumlah-potongan" placeholder="Jumlah PPH23"
                                                 value="{{ old('jumlah_potongan.1', isset($potongan[1]) ? number_format($potongan[1]['jumlah'], 0, ',', '.') : '') }}">
                                         </div>
                                     </div>
@@ -147,8 +147,8 @@
                                                 value="Nominal PPN" readonly>
                                         </div>
                                         <div class="col-7">
-                                            <input type="text" name="jumlah_potongan[]" class="form-control jumlah-potongan"
-                                                placeholder="Jumlah PPN"
+                                            <input type="text" name="jumlah_potongan[]"
+                                                class="form-control jumlah-potongan" placeholder="Jumlah PPN"
                                                 value="{{ old('jumlah_potongan.2', isset($potongan[2]) ? number_format($potongan[2]['jumlah'], 0, ',', '.') : '') }}">
                                         </div>
                                     </div>
@@ -156,7 +156,6 @@
                                 </div>
                             </div>
 
-                            <!-- Tenggat Waktu -->
                             <div class="row mb-3">
                                 <label for="due_date"
                                     class="col-md-4 col-form-label text-md-start">{{ __('Tenggat Waktu') }}</label>
@@ -193,61 +192,69 @@
                                 </div>
                             </div>
 
-                            <!-- Status Tracking -->
                             <div class="row mb-3">
                                 <label for="status_tracking"
                                     class="col-md-4 col-form-label text-md-start">{{ __('Status Tracking') }}</label>
                                 <div class="col-md-6">
-                                    @if($outstanding->status_pembayaran == '1')
-                                        <!-- Jika sudah lunas, tampilkan readonly -->
+                                    @if ($outstanding->status_pembayaran == '1')
                                         <input type="text" class="form-control"
                                             value="{{ ucfirst(str_replace('_', ' ', $currentStatus)) }}" readonly>
                                         <input type="hidden" name="status_tracking" value="{{ $currentStatus }}">
                                         <small class="text-danger">Status sudah selesai, tidak bisa diubah</small>
                                     @else
-                                        <!-- Jika belum lunas, tampilkan dropdown -->
                                         <select name="status_tracking" id="status_tracking" class="form-select">
                                             <option value="">Pilih Status</option>
-                                            <option value="invoice" {{ $currentStatus == 'invoice' ? 'selected' : '' }}>Invoice
+                                            <option value="invoice" {{ $currentStatus == 'invoice' ? 'selected' : '' }}>
+                                                Invoice
                                             </option>
-                                            <option value="faktur_pajak" {{ $currentStatus == 'faktur_pajak' ? 'selected' : '' }}>
+                                            <option value="faktur_pajak"
+                                                {{ $currentStatus == 'faktur_pajak' ? 'selected' : '' }}>
                                                 Faktur Pajak</option>
-                                            <option value="dokumen_tambahan" {{ $currentStatus == 'dokumen_tambahan' ? 'selected' : '' }}>Dokumen Tambahan</option>
-                                            <option value="konfir_cs" {{ $currentStatus == 'konfir_cs' ? 'selected' : '' }}>
+                                            <option value="dokumen_tambahan"
+                                                {{ $currentStatus == 'dokumen_tambahan' ? 'selected' : '' }}>Dokumen
+                                                Tambahan</option>
+                                            <option value="konfir_cs"
+                                                {{ $currentStatus == 'konfir_cs' ? 'selected' : '' }}>
                                                 Konfirmasi Pengiriman RPX</option>
-                                            <option value="no_resi" {{ $currentStatus == 'no_resi' ? 'selected' : '' }}>Nomor Resi
+                                            <option value="no_resi" {{ $currentStatus == 'no_resi' ? 'selected' : '' }}>
+                                                Nomor Resi
                                             </option>
-                                            <option value="tracking_dokumen" {{ $currentStatus == 'tracking_dokumen' ? 'selected' : '' }}>Tracking Dokumen</option>
-                                            <option value="konfir_pic" {{ $currentStatus == 'konfir_pic' ? 'selected' : '' }}>
+                                            <option value="tracking_dokumen"
+                                                {{ $currentStatus == 'tracking_dokumen' ? 'selected' : '' }}>Tracking
+                                                Dokumen</option>
+                                            <option value="konfir_pic"
+                                                {{ $currentStatus == 'konfir_pic' ? 'selected' : '' }}>
                                                 Konfirmasi PIC</option>
-                                            <option value="pembayaran" {{ $currentStatus == 'pembayaran' ? 'selected' : '' }}>
+                                            <option value="pembayaran"
+                                                {{ $currentStatus == 'pembayaran' ? 'selected' : '' }}>
                                                 Pembayaran</option>
                                         </select>
                                     @endif
                                 </div>
                             </div>
 
-                            @if($outstanding->status_pembayaran == '1')
+                            @if ($outstanding->status_pembayaran == '1')
                                 <div class="row mb-3" id="download_files_section">
                                     <label class="col-md-4 col-form-label text-md-start">{{ __('Lihat Dokumen') }}</label>
                                     <div class="col-md-6">
                                         <div class="d-flex flex-wrap gap-2">
-                                            @if(!empty($outstanding->path_faktur_pajak))
-                                                <a href="{{ asset('storage/' . $outstanding->path_faktur_pajak) }}" target="_blank"
-                                                    class="btn btn-sm btn-outline-primary">
+                                            @if (!empty($outstanding->path_faktur_pajak))
+                                                <a href="{{ asset('storage/' . $outstanding->path_faktur_pajak) }}"
+                                                    target="_blank" class="btn btn-sm btn-outline-primary">
                                                     Faktur Pajak
                                                 </a>
                                             @endif
 
-                                            @if(!empty($outstanding->path_dokumen_tambahan))
+                                            @if (!empty($outstanding->path_dokumen_tambahan))
                                                 <a href="{{ asset('storage/' . str_replace('public/', '', $outstanding->path_dokumen_tambahan)) }}"
                                                     target="_blank" class="btn btn-sm btn-outline-info">
                                                     Dokumen Tambahan
                                                 </a>
                                             @endif
 
-                                            @if(empty($outstanding->path_faktur_pajak) && empty($outstanding->path_dokumen_tambahan))
-                                                <small class="text-muted fst-italic">Tidak ada dokumen yang tersedia.</small>
+                                            @if (empty($outstanding->path_faktur_pajak) && empty($outstanding->path_dokumen_tambahan))
+                                                <small class="text-muted fst-italic">Tidak ada dokumen yang
+                                                    tersedia.</small>
                                             @endif
                                         </div>
                                     </div>
@@ -260,9 +267,10 @@
                                 <div class="col-md-6">
                                     <input type="file" name="faktur_pajak" id="faktur_pajak" class="form-control"
                                         accept="application/pdf">
-                                    @if(!empty($outstanding->path_faktur_pajak))
+                                    @if (!empty($outstanding->path_faktur_pajak))
                                         <small class="text-muted mt-1 d-block">
-                                            File saat ini: <a href="{{ asset('storage/' . $outstanding->path_faktur_pajak) }}"
+                                            File saat ini: <a
+                                                href="{{ asset('storage/' . $outstanding->path_faktur_pajak) }}"
                                                 target="_blank">Lihat PDF</a>
                                         </small>
                                     @endif
@@ -275,7 +283,7 @@
                                 <div class="col-md-6">
                                     <input type="file" name="dokumen_tambahan_files[]" id="dokumen_tambahan_files"
                                         class="form-control" accept="application/pdf" multiple>
-                                    @if(!empty($outstanding->path_dokumen_tambahan))
+                                    @if (!empty($outstanding->path_dokumen_tambahan))
                                         <small class="text-muted mt-1 d-block">
                                             File saat ini: <a
                                                 href="{{ asset('storage/' . $outstanding->path_dokumen_tambahan) }}"
@@ -312,7 +320,6 @@
                                 </div>
                             </div>
 
-                            <!-- Simpan Button -->
                             <div class="row mb-0">
                                 <div class="col-md-6 offset-md-4">
                                     <button type="submit" id="btnsubmit" class="btn click-primary">
@@ -329,23 +336,21 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        $(document).ready(function () {
-            // Initialize
+        $(document).ready(function() {
             setTimeout(() => {
                 toggleJumlahPembayaran();
                 togglePotongan();
                 statusTracking();
             }, 100);
 
-            // Submit Handler
-            $('#btnsubmit').on('click', function (e) {
+            $('#btnsubmit').on('click', function(e) {
                 e.preventDefault();
 
                 const net_sales = parseFloat(removeRupiahFormat($('#net_sales').val())) || 0;
-                const jumlah_pembayaran = parseFloat(removeRupiahFormat($('#jumlah_pembayaran').val())) || 0;
+                const jumlah_pembayaran = parseFloat(removeRupiahFormat($('#jumlah_pembayaran').val())) ||
+                0;
 
-                // Hapus format rupiah sebelum submit untuk semua input potongan
-                $('.jumlah-potongan').each(function () {
+                $('.jumlah-potongan').each(function() {
                     let rawVal = removeRupiahFormat($(this).val());
                     $(this).val(rawVal);
                 });
@@ -357,25 +362,24 @@
                 $('#formOutstanding').submit();
             });
 
-            // Event Listeners
             $('#status_tracking').on('change', statusTracking);
 
             $('input[name="status_pembayaran"]').on('change', toggleJumlahPembayaran);
 
-            $('#net_sales, #jumlah_pembayaran').on('input', function () {
+            $('#net_sales, #jumlah_pembayaran').on('input', function() {
                 let inputVal = $(this).val().replace(/[^,\d]/g, '');
                 $(this).val(formatRupiah(inputVal));
                 togglePotongan();
             });
 
-            $('#potongan_container').on('input', '.jumlah-potongan', function () {
+            $('#potongan_container').on('input', '.jumlah-potongan', function() {
                 let inputVal = $(this).val().replace(/[^,\d]/g, '');
                 $(this).val(formatRupiah(inputVal));
             });
 
             function toggleJumlahPembayaran() {
                 const status = $('input[name="status_pembayaran"]:checked').val();
-                if (status === '1') { // Sudah
+                if (status === '1') {
                     $('#jumlah_pembayaran_row').show();
                     togglePotongan();
                 } else {
@@ -399,7 +403,6 @@
             function statusTracking() {
                 const selectedValue = $('#status_tracking').val();
 
-                // Reset semua
                 $('#faktur_pajak_row, #dokumen_tambahan_row, #pembayaran_row').hide();
 
                 if (selectedValue === "faktur_pajak") {

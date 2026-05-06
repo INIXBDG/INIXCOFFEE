@@ -80,11 +80,18 @@ class HomeController extends Controller
     }
     private function getTotalSales($year)
     {
-        return DB::table('r_k_m_s')
-            ->where('status', '0') // Hanya data dengan status 0
-            ->whereYear('tanggal_awal', $year) // Tambahkan kondisi berdasarkan tahun
-            ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
-            ->value('total_sales');
+        if ($year === "2023" || $year === "2024" || $year === "2025") {
+            return DB::table('r_k_m_s')
+                ->where('status', '0') // Hanya data dengan status 0
+                ->whereYear('tanggal_awal', $year) // Tambahkan kondisi berdasarkan tahun
+                ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
+                ->value('total_sales');
+        } else {
+            return DB::table('approval_pendapatans')
+                ->whereYear('tanggal_mulai', $year)
+                ->select(DB::raw('SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
+                ->value('total_sales');
+        }
     }
 
     public function getYearSales($year)
