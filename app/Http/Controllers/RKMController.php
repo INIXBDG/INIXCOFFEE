@@ -1231,6 +1231,7 @@ class RKMController extends Controller
                 return '-';
         }
     }
+    
     public function getRKM($tahun, $bulan)
     {
         $query = RKM::with(['materi', 'perusahaan', 'sales']) // relasi yang dipake di blade

@@ -353,6 +353,9 @@ function excelDownloadAdmSales() {
                         html += '<th scope="col">Event</th>';
                         html += '<th scope="col">Ruang</th>';
                         html += '<th scope="col">Pax</th>';
+                        if (jabatan == 'Finance & Accounting') {
+                            html += '<th scope="col">Registrasi Form</th>';
+                        }
                         if (jabatan == 'Customer Care') {
                             html += '<th scope="col">Makanan</th>';
                         }
@@ -439,6 +442,9 @@ function excelDownloadAdmSales() {
                                     html += '<td>' + rkm.ruang + '</td>';
                                 }
                                 html += '<td>' + rkm.total_pax + '</td>';
+                                if (jabatan == 'Finance & Accounting') {
+                                    html += '<td>' + (rkm.registrasi_form ? 'Ada' : 'Tidak Ada') + '</td>';
+                                }
                                 if (jabatan == 'Customer Care') {
                                     html += '<td>';
                                     // Ambil nilai makanan pertama dari daftar GROUP_CONCAT
