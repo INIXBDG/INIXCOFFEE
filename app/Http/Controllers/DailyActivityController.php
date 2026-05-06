@@ -26,12 +26,10 @@ class DailyActivityController extends Controller
 
             $divisionName = $karyawan->divisi;
 
-            // Ambil task divisi
             $tasks = Task::whereHas('user.karyawan', function ($query) use ($divisionName) {
                 $query->where('divisi', $divisionName);
             })->orderBy('title')->get();
 
-            // Ambil aktivitas divisi
             $activities = DailyActivity::with(['user.karyawan', 'task.user.karyawan'])
                 ->whereHas('user.karyawan', function ($query) use ($divisionName) {
                     $query->where('divisi', $divisionName);
@@ -82,24 +80,19 @@ class DailyActivityController extends Controller
         $activities = collect();
 
         $userDivisionName = $karyawan->divisi;
-        $userJobTitle = $karyawan->jabatan; // Mendapatkan data jabatan user saat ini
+        $userJobTitle = $karyawan->jabatan;
 
         if (!empty($userDivisionName)) {
 
             $activities = DailyActivity::with(['user.karyawan', 'task'])
                 ->whereHas('user.karyawan', function ($query) use ($userDivisionName, $userJobTitle) {
 
-                    // 1. Filter dasar: Kesamaan Divisi
                     $query->where('divisi', $userDivisionName);
 
-                    // 2. Logika Khusus untuk 'IT Service Management'
                     if ($userDivisionName === 'IT Service Management') {
-
-                        // Cek grup jabatan: Koordinator ITSM & Programmer
                         if (in_array($userJobTitle, ['Koordinator ITSM', 'Programmer'])) {
                             $query->whereIn('jabatan', ['Koordinator ITSM', 'Programmer']);
                         } else {
-                            // Untuk jabatan lain di ITSM, filter per jabatan spesifik
                             $query->where('jabatan', $userJobTitle);
                         }
                     }
@@ -131,7 +124,7 @@ class DailyActivityController extends Controller
                     'start_date' => $activity->start_date->format('Y-m-d'),
                     'end_date' => $activity->end_date ? $activity->end_date->format('Y-m-d') : null,
                 ]
-            ]; 
+            ];
         }
 
         return response()->json($events);
@@ -139,7 +132,6 @@ class DailyActivityController extends Controller
 
     public function store(Request $request)
     {
-        // Validasi data array
         $validator = Validator::make($request->all(), [
             'id_task.*'     => 'nullable|exists:tasks,id',
             'activity.*'    => 'required|string',
@@ -156,10 +148,9 @@ class DailyActivityController extends Controller
         }
 
         $activitiesInput = $request->input('activity');
-        
-        // Iterasi untuk menyimpan setiap aktivitas
+
         foreach ($activitiesInput as $index => $activityText) {
-            
+
             $docPath = null;
             if ($request->hasFile("doc.{$index}")) {
                 $docPath = $request->file("doc.{$index}")->store('activity_docs', 'public');
@@ -191,7 +182,7 @@ class DailyActivityController extends Controller
         $karyawan = $currentUser->karyawan;
 
         $userDivisionName = null;
-        $tasks = collect(); // Default: koleksi kosong
+        $tasks = collect();
 
         if ($karyawan) {
             $userDivisionName = $karyawan->divisi;
@@ -221,9 +212,8 @@ class DailyActivityController extends Controller
         }
 
         $docPath = $dailyActivity->doc;
-        
+
         if ($request->hasFile('doc')) {
-            // Hapus dokumen lama jika ada
             if ($docPath && Storage::disk('public')->exists($docPath)) {
                 Storage::disk('public')->delete($docPath);
             }
@@ -232,7 +222,7 @@ class DailyActivityController extends Controller
 
         $dataToUpdate = [
             'end_date' => $request->input('end_date'),
-            'status'   => 'Selesai', // Otomatis disetel selesai
+            'status'   => 'Selesai',
             'doc'      => $docPath,
         ];
 
@@ -246,7 +236,7 @@ class DailyActivityController extends Controller
         }
     }
 
-    public function show(DailyActivity $dailyActivity) // Route Model Binding
+    public function show(DailyActivity $dailyActivity)
     {
         $dailyActivity->load(['task', 'user.karyawan']);
 
@@ -259,7 +249,7 @@ class DailyActivityController extends Controller
         $karyawan = $currentUser->karyawan;
 
         $userDivisionName = null;
-        $tasks = collect(); // Default: kosong
+        $tasks = collect();
 
         if ($karyawan) {
             $userDivisionName = $karyawan->divisi;
@@ -278,14 +268,13 @@ class DailyActivityController extends Controller
         return view('daily_activities.edit', compact('dailyActivity', 'tasks', 'statuses'));
     }
 
-    public function update(Request $request, DailyActivity $dailyActivity) // Route Model Binding
+    public function update(Request $request, DailyActivity $dailyActivity)
     {
-        // Validasi data yang masuk
          $validator = Validator::make($request->all(), [
             'id_task'       => 'nullable|exists:tasks,id',
             'activity'      => 'required|string',
             'description'   => 'nullable|string',
-            'doc'           => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:2048', // Validasi file baru
+            'doc'           => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:2048',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date',
         ]);
@@ -296,25 +285,19 @@ class DailyActivityController extends Controller
                         ->withInput();
         }
 
-        // Handle file upload baru (jika ada)
-        $docPath = $dailyActivity->doc; // Ambil path lama by default
+        $docPath = $dailyActivity->doc;
         if ($request->hasFile('doc')) {
-            // Hapus file lama jika ada dan file baru diupload
             if ($docPath && Storage::disk('public')->exists($docPath)) {
                 Storage::disk('public')->delete($docPath);
             }
-            // Simpan file baru
             $docPath = $request->file('doc')->store('activity_docs', 'public');
-        } elseif ($request->input('remove_doc') == '1') { // Cek jika ada checkbox untuk hapus doc
-             // Hapus file lama jika ada
+        } elseif ($request->input('remove_doc') == '1') {
             if ($docPath && Storage::disk('public')->exists($docPath)) {
                 Storage::disk('public')->delete($docPath);
             }
-            $docPath = null; // Set path jadi null
+            $docPath = null;
         }
 
-
-        // Siapkan data untuk diupdate
         $dataToUpdate = [
             'id_task'       => $request->input('id_task'),
             'activity'      => $request->input('activity'),
@@ -326,7 +309,6 @@ class DailyActivityController extends Controller
         ];
 
         try {
-            // Update data dasar
             $dailyActivity->update($dataToUpdate);
 
             return redirect()->route('daily-activities.index')
@@ -339,7 +321,7 @@ class DailyActivityController extends Controller
         }
     }
 
-    public function destroy(DailyActivity $dailyActivity) // Route Model Binding
+    public function destroy(DailyActivity $dailyActivity)
     {
         try {
             $docPath = $dailyActivity->doc;

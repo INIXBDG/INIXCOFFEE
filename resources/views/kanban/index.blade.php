@@ -536,7 +536,7 @@
             taskModal.classList.remove('hidden');
         }
 
-        function renderDailyActivities(activities, container, emptyHTML) {
+    function renderDailyActivities(activities, container, emptyHTML) {
             container.innerHTML = '';
             if (!activities || activities.length === 0) {
                 container.innerHTML = emptyHTML;
@@ -567,8 +567,9 @@
 
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'flex-1 min-w-0';
-                const dateObj = new Date(activity.activity_date);
-                const formattedDate = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year:'numeric' });
+
+                const dateObj = new Date(activity.created_at);
+                const formattedDate = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
                 let statusClass = 'bg-gray-100 text-gray-600';
                 switch (activity.status) {
@@ -581,24 +582,24 @@
 
                 let docLink = '';
                 if (activity.doc) {
-                    const fileUrl = `${storageBase}/${activity.doc}`; // Asumsi storage_path
+                    const fileUrl = `${storageBase}/${activity.doc}`;
                     docLink = `<a href="${fileUrl}" target="_blank" class="text-blue-500 hover:underline text-xs mt-1 inline-block"><i class="fas fa-file-alt mr-1"></i>Lihat Dokumen</a>`;
                 }
 
-
                 let timelineHtml = '';
                 const timelineEvents = [];
-                if (activity.on_progress_at) timelineEvents.push({ label: 'Mulai', time: activity.on_progress_at, color: 'blue' });
-                if (activity.on_progress_next_day_at) timelineEvents.push({ label: 'Lanjut Besok', time: activity.on_progress_next_day_at, color: 'yellow' });
-                if (activity.failed_at) timelineEvents.push({ label: 'Gagal', time: activity.failed_at, color: 'red' });
-                if (activity.completed_at) timelineEvents.push({ label: 'Selesai', time: activity.completed_at, color: 'green' });
+
+                if (activity.start_date) timelineEvents.push({ label: 'Tanggal Mulai', time: activity.start_date, color: 'blue' });
+                if (activity.end_date) timelineEvents.push({ label: 'Tanggal Selesai', time: activity.end_date, color: 'green' });
+
                 timelineEvents.sort((a, b) => new Date(a.time) - new Date(b.time));
 
                 if (timelineEvents.length > 0) {
                     timelineHtml = '<div class="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500 space-y-1">';
                     timelineEvents.forEach(event => {
                         const eventTime = new Date(event.time);
-                        const formattedTime = eventTime.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour:'2-digit', minute: '2-digit'});
+                        // Modifikasi: Penghapusan parameter hour dan minute
+                        const formattedTime = eventTime.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
                         timelineHtml += `
                             <div class="flex items-center">
                                 <span class="w-2 h-2 rounded-full bg-${event.color}-500 mr-2 flex-shrink-0" title="${event.label}"></span>
@@ -607,13 +608,32 @@
                         `;
                     });
                     timelineHtml += '</div>';
+                } else if (activity.status) {
+                    const fallbackTime = new Date(activity.updated_at || activity.created_at);
+                    // Modifikasi: Penghapusan parameter hour dan minute
+                    const formattedFallbackTime = fallbackTime.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+                    let fallbackColor = 'gray';
+                    if (activity.status === 'On Progres') fallbackColor = 'blue';
+                    if (activity.status === 'On Progres Dilanjutkan Besok') fallbackColor = 'yellow';
+                    if (activity.status === 'Selesai') fallbackColor = 'green';
+                    if (activity.status === 'Gagal') fallbackColor = 'red';
+
+                    timelineHtml = `
+                        <div class="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500 space-y-1">
+                            <div class="flex items-center italic">
+                                <span class="w-2 h-2 rounded-full bg-${fallbackColor}-500 mr-2 flex-shrink-0"></span>
+                                <span>${activity.status} - ${formattedFallbackTime}</span>
+                            </div>
+                        </div>
+                    `;
                 }
 
                 contentDiv.innerHTML = `
                     <div class="flex justify-between items-start mb-1">
                         <div>
                             <p class="text-sm text-gray-800 font-medium">${activityAuthor}</p>
-                            <p class="text-xs text-gray-500">${formattedDate}</p>
+                            <p class="text-xs text-gray-500">Dibuat: ${formattedDate}</p>
                         </div>
                         ${statusBadge}
                     </div>
