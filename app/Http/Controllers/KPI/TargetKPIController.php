@@ -69,6 +69,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Imports\KpiTargetImport;
+use App\Models\ApprovalPendapatan;
 use App\Models\DataTarget;
 use App\Models\HariLibur;
 use PhpOffice\PhpSpreadsheet\Chart\Chart;
@@ -163,6 +164,30 @@ class TargetKPIController extends Controller
         $dataTargets = DataTarget::whereIn('asistant_route', $availableRoutes)->get(['asistant_route', 'jangka_target', 'tipe_target', 'nilai_target']);
 
         return response()->json($dataTargets);
+    }
+
+    public function cleaningDatabase()
+    {
+        try {
+            DB::beginTransaction();
+
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            DB::table('target_k_p_i_s')->truncate();
+            DB::table('detail_target_k_p_i_s')->truncate();
+            DB::table('detail_person_k_p_i_s')->truncate();
+            DB::table('data_targets')->truncate();
+
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Seluruh data database berhasil dibersihkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()->with('error', 'Gagal membersihkan database: ' . $e->getMessage());
+        }
     }
 
     public function getDataTargetByRoute(Request $request)
@@ -1141,7 +1166,7 @@ class TargetKPIController extends Controller
             return 0;
         }
 
-        $totalSales = RKM::where('status', '0')->whereYear('tanggal_awal', $tahun)->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))->value('total_sales');
+        $totalSales = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)->select(DB::raw('SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))->value('total_sales');
 
         $totalSales = (float) ($totalSales ?? 0);
 
@@ -5049,10 +5074,9 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $sales = RKM::where('status', '0')
-            ->whereYear('tanggal_awal', $tahun)
-            ->select(DB::raw('tanggal_awal, SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total'))
-            ->groupBy('tanggal_awal')
+        $sales = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
+            ->select(DB::raw('tanggal_mulai, SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total'))
+            ->groupBy('tanggal_mulai')
             ->get();
 
         $totalSales = 0;
@@ -8737,134 +8761,175 @@ class TargetKPIController extends Controller
 
     //Tim Digital
     private function calculateKonsistensiCampaignDigitalDetail($itemDetail)
-	{
-		$details = $itemDetail->detailTargetKPI;
+    {
+        $details = $itemDetail->detailTargetKPI;
 
-		if ($details->isEmpty()) {
-			return [
-				'progress' => 0,
-				'consistency_score' => 0,
-				'productivity_score' => 0,
-				'gap' => 0,
-				'pie_chart' => ['above' => 0, 'below' => 0],
-				'monthly_data' => [],
-				'daily_breakdown_per_month' => [],
-			];
-		}
+        if ($details->isEmpty()) {
+            return [
+                'progress' => 0,
+                'consistency_score' => 0,
+                'productivity_score' => 0,
+                'gap' => 0,
+                'pie_chart' => [
+                    'above' => 0,
+                    'below' => 0
+                ],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
 
-		$tahun = (int) $details->first()->detail_jangka;
+        $tahun = (int) $details->first()->detail_jangka;
 
-		if ($tahun < 2000 || $tahun > now()->year + 1) {
-			$tahun = now()->year;
-		}
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return [
+                'progress' => 0,
+                'consistency_score' => 0,
+                'productivity_score' => 0,
+                'gap' => 0,
+                'pie_chart' => [
+                    'above' => 0,
+                    'below' => 0
+                ],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
 
-		$start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-		$end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        $response = Http::get("https://libur.deno.dev/api", [
+            'year' => $tahun
+        ]);
 
-		$contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
-			->whereNotNull('upload_date')
-			->get();
+        if ($response->successful()) {
+            foreach ($response->json() as $libur) {
+                HariLibur::updateOrCreate(
+                    ['tanggal' => $libur['date']],
+                    [
+                        'nama' => $libur['name'],
+                        'year' => $tahun,
+                        'tipe' => $libur['is_national_holiday'] ? 'national' : 'other'
+                    ]
+                );
+            }
+        }
 
-		if ($contentSchedules->isEmpty()) {
-			return [
-				'progress' => 0,
-				'consistency_score' => 0,
-				'productivity_score' => 0,
-				'gap' => 0,
-				'pie_chart' => ['above' => 0, 'below' => 0],
-				'monthly_data' => [],
-				'daily_breakdown_per_month' => [],
-			];
-		}
+        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-		$weeklyCounts = [];
-		$dailyBreakdownPerWeek = [];
+        $hariLibur = HariLibur::where('year', $tahun)
+            ->pluck('tanggal')
+            ->map(function ($tanggal) {
+                return Carbon::parse($tanggal)->toDateString();
+            })
+            ->toArray();
 
-		foreach ($contentSchedules as $schedule) {
+        $contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
+            ->whereNotNull('upload_date')
+            ->get()
+            ->filter(function ($item) use ($hariLibur) {
+                return !in_array(
+                    Carbon::parse($item->upload_date)->toDateString(),
+                    $hariLibur
+                );
+            });
 
-			$date = Carbon::parse($schedule->upload_date);
+        if ($contentSchedules->isEmpty()) {
+            return [
+                'progress' => 0,
+                'consistency_score' => 0,
+                'productivity_score' => 0,
+                'gap' => 0,
+                'pie_chart' => [
+                    'above' => 0,
+                    'below' => 0
+                ],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
 
-			$weekKey = $date->format('o-\WW'); // contoh: 2026-W14
-			$dayKey = $date->format('Y-m-d');
+        $weeklyCounts = [];
+        $dailyBreakdownPerWeek = [];
 
-			// Weekly count
-			$weeklyCounts[$weekKey] = ($weeklyCounts[$weekKey] ?? 0) + 1;
+        foreach ($contentSchedules as $schedule) {
+            $date = Carbon::parse($schedule->upload_date);
 
-			// Daily breakdown
-			if (!isset($dailyBreakdownPerWeek[$weekKey])) {
-				$dailyBreakdownPerWeek[$weekKey] = [];
-			}
+            $weekStart = $date->copy()->startOfWeek(Carbon::MONDAY);
+            $weekEnd = $date->copy()->endOfWeek(Carbon::SUNDAY);
 
-			$dailyBreakdownPerWeek[$weekKey][$dayKey] =
-				($dailyBreakdownPerWeek[$weekKey][$dayKey] ?? 0) + 1;
-		}
+            $weekKey = $weekStart->format('Y-m-d') . '_' . $weekEnd->format('Y-m-d');
+            $dayKey = $date->format('Y-m-d');
 
-		$targetMingguan = 3;
+            $weeklyCounts[$weekKey] = ($weeklyCounts[$weekKey] ?? 0) + 1;
 
-		// =====================
-		// ✅ CONSISTENCY SCORE
-		// =====================
-		$compliantWeeks = 0;
-		$totalWeeksWithData = 0;
+            if (!isset($dailyBreakdownPerWeek[$weekKey])) {
+                $dailyBreakdownPerWeek[$weekKey] = [];
+            }
 
-		foreach ($weeklyCounts as $count) {
-			if ($count >= 1) {
-				$totalWeeksWithData++;
+            $dailyBreakdownPerWeek[$weekKey][$dayKey] =
+                ($dailyBreakdownPerWeek[$weekKey][$dayKey] ?? 0) + 1;
+        }
 
-				if ($count >= $targetMingguan) {
-					$compliantWeeks++;
-				}
-			}
-		}
+        $targetMingguan = 3;
 
-		$CS = $totalWeeksWithData === 0 ? 0 : $compliantWeeks / $totalWeeksWithData;
+        $compliantWeeks = 0;
+        $totalWeeksWithData = 0;
 
-		// =====================
-		// ✅ PRODUCTIVITY SCORE
-		// =====================
-		$totalKonten = $contentSchedules->count();
-		$jumlahMinggu = Carbon::parse($start)->diffInWeeks($end) + 1;
+        foreach ($weeklyCounts as $count) {
+            if ($count >= 1) {
+                $totalWeeksWithData++;
 
-		$PS = $totalKonten / ($targetMingguan * $jumlahMinggu);
-		$PS = min($PS, 1); // biar max 100%
+                if ($count >= $targetMingguan) {
+                    $compliantWeeks++;
+                }
+            }
+        }
 
-		// =====================
-		// ✅ FINAL SCORE
-		// =====================
-		$finalScore = ($CS * 0.6) + ($PS * 0.4);
+        $CS = $totalWeeksWithData === 0 ? 0 : $compliantWeeks / $totalWeeksWithData;
 
-		$progress = round($finalScore * 100, 1);
-		$CSPercent = round($CS * 100, 1);
-		$PSPercent = round($PS * 100, 1);
+        $totalKonten = $contentSchedules->count();
 
-		$nilaiTarget = $details->pluck('nilai_target')->first() ?? 0;
-		$gap = round($progress - $nilaiTarget, 1);
+        $jumlahMinggu = 0;
+        $current = $start->copy()->startOfWeek(Carbon::MONDAY);
 
-		// =====================
-		// ✅ PIE CHART (HYBRID LOGIC)
-		// =====================
-		$expectedTotal = $targetMingguan * $jumlahMinggu;
+        while ($current <= $end) {
+            $jumlahMinggu++;
+            $current->addWeek();
+        }
 
-		$above = min($totalKonten, $expectedTotal);
-		$below = max($expectedTotal - $totalKonten, 0);
+        $PS = $totalKonten / ($targetMingguan * $jumlahMinggu);
+        $PS = min($PS, 1);
 
-		// Sort biar rapi di chart
-		ksort($weeklyCounts);
-		ksort($dailyBreakdownPerWeek);
+        $finalScore = ($CS * 0.6) + ($PS * 0.4);
 
-		return [
-			'progress' => $progress,
-			'consistency_score' => $CSPercent,
-			'productivity_score' => $PSPercent,
-			'gap' => $gap,
-			'pie_chart' => [
-				'above' => $above,
-				'below' => $below
-			],
-			'monthly_data' => $weeklyCounts,
-			'daily_breakdown_per_month' => $dailyBreakdownPerWeek,
-		];
-	}
+        $progress = round($finalScore * 100, 1);
+        $CSPercent = round($CS * 100, 1);
+        $PSPercent = round($PS * 100, 1);
+
+        $nilaiTarget = $details->pluck('nilai_target')->first() ?? 0;
+        $gap = round($progress - $nilaiTarget, 1);
+
+        $expectedTotal = $targetMingguan * $jumlahMinggu;
+
+        $above = min($totalKonten, $expectedTotal);
+        $below = max($expectedTotal - $totalKonten, 0);
+
+        ksort($weeklyCounts);
+        ksort($dailyBreakdownPerWeek);
+
+        return [
+            'progress' => $progress,
+            'consistency_score' => $CSPercent,
+            'productivity_score' => $PSPercent,
+            'gap' => $gap,
+            'pie_chart' => [
+                'above' => $above,
+                'below' => $below
+            ],
+            'monthly_data' => $weeklyCounts,
+            'daily_breakdown_per_month' => $dailyBreakdownPerWeek,
+        ];
+    }
 
     private function calculateEfektifitasDiitalMarketingDetail($itemDetail, $personId)
     {

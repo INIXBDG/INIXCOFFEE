@@ -500,6 +500,8 @@ Route::prefix('kpi-data/')
         route::post('/update-manual-value', [TargetKPIController::class, 'manualValue'])->name('manualValue');
         route::post('/update-gap-kompetensi', [TargetKPIController::class, 'updateGapKompetensi'])->name('updateGapKompetensi');
 
+        route::get('/cleaning-database', [TargetKPIController::class, 'cleaningDatabase'])->name('cleaningDatabase');
+
         //Target KPI karyawan
         route::prefix('karyawan/')
             ->name('karyawan.')

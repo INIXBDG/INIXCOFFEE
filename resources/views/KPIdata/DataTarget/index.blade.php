@@ -202,25 +202,6 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-
-            $('#tableDataTarget').DataTable({
-                pageLength: 10,
-                lengthMenu: [5, 10, 25, 50, 100],
-                ordering: true,
-                searching: true,
-                responsive: true,
-                language: {
-                    search: "Cari:",
-                    lengthMenu: "Tampilkan _MENU_ data",
-                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    paginate: {
-                        next: "Next",
-                        previous: "Prev"
-                    },
-                    zeroRecords: "Data tidak ditemukan"
-                }
-            });
-
             $('#formImportData').on('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);

@@ -2672,5 +2672,5 @@
         // Variable global untuk API URL Feedback Instruktur
         window.FEEDBACK_API_URL = "{{ route('office.feedback.get') }}";
     </script>
-    <script src="{{ asset('js/dashboard .js') }}"></script>
+    <script src="{{ asset('js/dashboard.js') }}"></script>
 @endpush
