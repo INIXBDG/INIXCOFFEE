@@ -53,7 +53,6 @@ class KanbanController extends Controller
     {
         $activities = $task->dailyActivities()
                            ->with('user.karyawan') // Load user dan karyawan terkait aktivitas
-                           ->latest('activity_date') // Urutkan tanggal terbaru
                            ->latest('created_at')    // Urutkan waktu input terbaru
                            ->get();
 
