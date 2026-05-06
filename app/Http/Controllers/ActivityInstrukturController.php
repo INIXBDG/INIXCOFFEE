@@ -67,6 +67,7 @@ class ActivityInstrukturController extends Controller
         $karyawan = karyawan::findOrFail($userId);
         $instructorId = $karyawan->kode_karyawan;
         $Eduman = 'AD';
+        $GM = 'HM';
 
         $start = Carbon::parse($request->start)->toDateString();
         $end   = Carbon::parse($request->end)->toDateString();
@@ -82,7 +83,7 @@ class ActivityInstrukturController extends Controller
         $manualQuery = ActivityInstruktur::whereNull('id_rkm')
             ->whereBetween('activity_date', [$start, $end]);
 
-        if ($instructorId !== $Eduman) {
+        if ($instructorId !== $Eduman && $instructorId !== $GM) {
             $manualQuery->where('user_id', $userId);
         }
 
@@ -129,7 +130,7 @@ class ActivityInstrukturController extends Controller
             ->where('tanggal_akhir', '>=', $start)
             ->with('materi');
 
-        if ($instructorId !== $Eduman) {
+        if ($instructorId !== $Eduman && $instructorId !== $GM) {
             $rkmQuery->where(function ($q) use ($instructorId) {
                 $q->where('instruktur_key', $instructorId)
                 ->orWhere('instruktur_key2', $instructorId);
@@ -215,7 +216,7 @@ class ActivityInstrukturController extends Controller
             ->where('tanggal_akhir', '>=', $start);
         // return $cutiQuery->get();
         // Jika bukan Eduman, hanya ambil data cuti diri sendiri
-        if ($instructorId !== $Eduman) {
+       if ($instructorId !== $Eduman && $instructorId !== $GM) {
             $cutiQuery->where('id_karyawan', $userId);
         }
         
@@ -273,7 +274,7 @@ class ActivityInstrukturController extends Controller
             ->whereBetween('tanggal', [$start, $end]);
 
         // Jika bukan Eduman, hanya ambil data diri sendiri
-        if ($instructorId !== $Eduman) {
+        if ($instructorId !== $Eduman && $instructorId !== $GM) {
             $izin3JamQuery->where('id_karyawan', $userId);
         }
         
@@ -494,6 +495,7 @@ class ActivityInstrukturController extends Controller
         $karyawan = karyawan::findOrFail($userId);
         $instructorId = $karyawan->kode_karyawan;
         $Eduman = 'AD';
+        $GM = 'HM';
 
         $start = Carbon::parse($request->start)->toDateString();
         $end   = Carbon::parse($request->end)->toDateString();
@@ -505,7 +507,7 @@ class ActivityInstrukturController extends Controller
             ->whereNull('id_rkm')
             ->whereBetween('activity_date', [$start, $end]);
 
-        if ($instructorId !== $Eduman) {
+        if ($instructorId === $Eduman || $instructorId === $GM) {
             $manualQuery->where('user_id', $userId);
         }
 
@@ -542,7 +544,7 @@ class ActivityInstrukturController extends Controller
             ->whereNotNull('instruktur_key')
             ->where('instruktur_key', '!=', '-');
 
-        if ($instructorId !== $Eduman) {
+        if ($instructorId === $Eduman || $instructorId === $GM) {
             $rkmQuery->where(function ($q) use ($instructorId) {
                 $q->where('instruktur_key', $instructorId)
                 ->orWhere('instruktur_key2', $instructorId);
@@ -615,7 +617,7 @@ class ActivityInstrukturController extends Controller
         }
 
         // Filter User Biasa
-        if ($instructorId !== $Eduman) {
+        if ($instructorId === $Eduman || $instructorId === $GM) {
             $myName = $karyawan->nama_lengkap; 
             $rkmDetails = array_intersect_key($rkmDetails, [$myName => 0]);
         }
@@ -635,7 +637,7 @@ class ActivityInstrukturController extends Controller
             ->where('tanggal_awal', '<=', $end)
             ->where('tanggal_akhir', '>=', $start);
 
-        if ($instructorId !== $Eduman) {
+        if ($instructorId === $Eduman || $instructorId === $GM) {
             $cutiQuery->where('id_karyawan', $userId);
         }
         
@@ -695,7 +697,7 @@ class ActivityInstrukturController extends Controller
             })
             ->whereBetween('tanggal', [$start, $end]);
 
-        if ($instructorId !== $Eduman) {
+        if ($instructorId === $Eduman || $instructorId === $GM) {
             $izinQuery->where('id_karyawan', $userId);
         }
 

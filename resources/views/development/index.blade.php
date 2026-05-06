@@ -1,6 +1,17 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $jabatan = auth()->user()->karyawan->jabatan ?? null;
+    $isManager = $jabatan === 'Education Manager';
+    $isGM = $jabatan === 'GM';
+
+    // GM hanya read only
+    $isReadOnly = $isGM;
+
+    // Yang boleh full akses
+    $isPrivileged = $isManager;
+@endphp
 <div class="container-fluid">
     {{-- Loading Modal --}}
     <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
@@ -484,9 +495,11 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h3 class="card-title">Data Sertifikasi</h3>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSertifikasiModal">
-                                    <img src="{{ asset('icon/plus.svg') }}" width="20px"> Tambah Sertifikasi
-                                </button>
+                                @if(!$isReadOnly)
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSertifikasiModal">
+                                        <img src="{{ asset('icon/plus.svg') }}" width="20px"> Tambah Sertifikasi
+                                    </button>
+                                @endif
                             </div>
 
                             <div class="table-responsive">
@@ -575,61 +588,62 @@
                                                             </a>
                                                             <li><hr class="dropdown-divider"></li>
                                                         @endif
-
-                                                        {{-- 2. Menu Bukti Sertifikat --}}
-                                                        @if($item->status_approval === 'approved' || $item->status_approval === 'sertifikasi')
-                                                            @if($item->bukti_sertifikasi)
-                                                                <a class="dropdown-item" href="{{ asset('storage/' . $item->bukti_sertifikasi) }}" target="_blank">
-                                                                    <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Lihat Bukti Sertifikat
-                                                                </a>
-                                                                @if(auth()->id() == $item->user_id)
-                                                                    <button class="dropdown-item" onclick="openUploadBuktiSertifikasiModal('{{ $item->id }}')">
-                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Ganti Bukti Sertifikat
-                                                                    </button>
-                                                                @endif
-                                                            @else
-                                                                @if(auth()->id() == $item->user_id)
-                                                                    <button class="dropdown-item" onclick="openUploadBuktiSertifikasiModal('{{ $item->id }}')">
-                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Upload Bukti Sertifikat
-                                                                    </button>
+                                                        @if(!$isReadOnly)
+                                                            {{-- 2. Menu Bukti Sertifikat --}}
+                                                            @if($item->status_approval === 'approved' || $item->status_approval === 'sertifikasi')
+                                                                @if($item->bukti_sertifikasi)
+                                                                    <a class="dropdown-item" href="{{ asset('storage/' . $item->bukti_sertifikasi) }}" target="_blank">
+                                                                        <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Lihat Bukti Sertifikat
+                                                                    </a>
+                                                                    @if(auth()->id() == $item->user_id)
+                                                                        <button class="dropdown-item" onclick="openUploadBuktiSertifikasiModal('{{ $item->id }}')">
+                                                                            <img src="{{ asset('icon/upload.svg') }}" width="16px"> Ganti Bukti Sertifikat
+                                                                        </button>
+                                                                    @endif
+                                                                @else
+                                                                    @if(auth()->id() == $item->user_id)
+                                                                        <button class="dropdown-item" onclick="openUploadBuktiSertifikasiModal('{{ $item->id }}')">
+                                                                            <img src="{{ asset('icon/upload.svg') }}" width="16px"> Upload Bukti Sertifikat
+                                                                        </button>
+                                                                    @endif
                                                                 @endif
                                                             @endif
-                                                        @endif
-
-                                                        {{-- 3. TOMBOL PERPANJANG --}}
-                                                        {{-- Hanya muncul jika status approved dan user adalah pemilik --}}
-                                                        @if($item->status_approval === 'approved' && auth()->id() == $item->user_id)
-                                                            <li><hr class="dropdown-divider"></li>
-                                                            <button class="dropdown-item" onclick='openRenewalModal(@json($item))'>
-                                                                <img src="{{ asset('icon/refresh.svg') }}" width="16px"> Perpanjang
-                                                            </button>
-                                                        @endif
-
-                                                        {{-- 4. Menu Approval Manager --}}
-                                                        @if(auth()->user()->karyawan->jabatan === 'Education Manager' && $item->status_approval === 'pending')
-                                                            <li><hr class="dropdown-divider"></li>
-                                                            @if($item->pelatihan)
-                                                                <span class="dropdown-item-text text-muted fst-italic" style="font-size: 11px; max-width: 200px; white-space: normal;">
-                                                                    <i class="bi bi-info-circle"></i> Approval wajib dilakukan via menu <strong>Pelatihan</strong>.
-                                                                </span>
-                                                            @else
-                                                                <button class="dropdown-item" onclick="openApproveModal('{{ route('sertifikasi.approve', $item->id) }}')">
-                                                                    <img src="{{ asset('icon/check-circle.svg') }}"> Approval
+                                                           
+                                                            {{-- 3. TOMBOL PERPANJANG --}}
+                                                            {{-- Hanya muncul jika status approved dan user adalah pemilik --}}
+                                                            @if($item->status_approval === 'approved' && auth()->id() == $item->user_id)
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                <button class="dropdown-item" onclick='openRenewalModal(@json($item))'>
+                                                                    <img src="{{ asset('icon/refresh.svg') }}" width="16px"> Perpanjang
                                                                 </button>
                                                             @endif
-                                                        @endif
 
-                                                        {{-- 5. Edit & Hapus --}}
-                                                        <li><hr class="dropdown-divider"></li>
-                                                        <button class="dropdown-item" onclick='openEditSertifikasi(@json($item))'>
-                                                            <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
-                                                        </button>
-                                                        <form action="{{ route('sertifikasi.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
-                                                            @csrf @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                                                            {{-- 4. Menu Approval Manager --}}
+                                                            @if(auth()->user()->karyawan->jabatan === 'Education Manager' && $item->status_approval === 'pending')
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                @if($item->pelatihan)
+                                                                    <span class="dropdown-item-text text-muted fst-italic" style="font-size: 11px; max-width: 200px; white-space: normal;">
+                                                                        <i class="bi bi-info-circle"></i> Approval wajib dilakukan via menu <strong>Pelatihan</strong>.
+                                                                    </span>
+                                                                @else
+                                                                    <button class="dropdown-item" onclick="openApproveModal('{{ route('sertifikasi.approve', $item->id) }}')">
+                                                                        <img src="{{ asset('icon/check-circle.svg') }}"> Approval
+                                                                    </button>
+                                                                @endif
+                                                            @endif
+
+                                                            {{-- 5. Edit & Hapus --}}
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <button class="dropdown-item" onclick='openEditSertifikasi(@json($item))'>
+                                                                <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
                                                             </button>
-                                                        </form>
+                                                            <form action="{{ route('sertifikasi.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
+                                                                @csrf @method('DELETE')
+                                                                <button type="submit" class="dropdown-item text-danger">
+                                                                    <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                                                                </button>
+                                                            </form>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </td>
@@ -648,9 +662,11 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h3 class="card-title">Data Pelatihan</h3>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPelatihanModal">
-                                    <img src="{{ asset('icon/plus.svg') }}" width="20px"> Tambah Pelatihan
-                                </button>
+                                @if(!$isReadOnly)
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPelatihanModal">
+                                        <img src="{{ asset('icon/plus.svg') }}" width="20px"> Tambah Pelatihan
+                                    </button>
+                                @endif
                             </div>
 
                             <div class="table-responsive">
@@ -706,39 +722,41 @@
                                                             </a>
                                                             <li><hr class="dropdown-divider"></li>
                                                         @endif
-                                                        @if($item->status_approval === 'approved')
-                                                            @if($item->bukti_pelatihan)
-                                                                <a class="dropdown-item" href="{{ asset('storage/' . $item->bukti_pelatihan) }}" target="_blank">
-                                                                    <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Lihat Bukti Pelatihan
-                                                                </a>
-                                                                @if(auth()->id() == $item->user_id)
-                                                                    <button class="dropdown-item" onclick="openUploadBuktiModal('{{ $item->id }}')">
-                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Ganti Bukti Pelatihan
-                                                                    </button>
+                                                        @if(!$isReadOnly)
+                                                            @if($item->status_approval === 'approved')
+                                                                @if($item->bukti_pelatihan)
+                                                                    <a class="dropdown-item" href="{{ asset('storage/' . $item->bukti_pelatihan) }}" target="_blank">
+                                                                        <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Lihat Bukti Pelatihan
+                                                                    </a>
+                                                                    @if(auth()->id() == $item->user_id)
+                                                                        <button class="dropdown-item" onclick="openUploadBuktiModal('{{ $item->id }}')">
+                                                                            <img src="{{ asset('icon/upload.svg') }}" width="16px"> Ganti Bukti Pelatihan
+                                                                        </button>
+                                                                    @endif
+                                                                @else
+                                                                    @if(auth()->id() == $item->user_id)
+                                                                        <button class="dropdown-item" onclick="openUploadBuktiModal('{{ $item->id }}')">
+                                                                            <img src="{{ asset('icon/upload.svg') }}" width="16px"> Upload Bukti Pelatihan
+                                                                        </button>
+                                                                    @endif
                                                                 @endif
-                                                            @else
-                                                                @if(auth()->id() == $item->user_id)
-                                                                    <button class="dropdown-item" onclick="openUploadBuktiModal('{{ $item->id }}')">
-                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Upload Bukti Pelatihan
-                                                                    </button>
-                                                                @endif
+                                                                <li><hr class="dropdown-divider"></li>
                                                             @endif
-                                                            <li><hr class="dropdown-divider"></li>
-                                                        @endif
-                                                        @if(auth()->user()->karyawan->jabatan === 'Education Manager' && $item->status_approval === 'pending')
-                                                            <button class="dropdown-item" onclick="openApproveModal('{{ route('pelatihan.approve', $item->id) }}')">
-                                                                <img src="{{ asset('icon/check-circle.svg') }}"> Approval
+                                                            @if(auth()->user()->karyawan->jabatan === 'Education Manager' && $item->status_approval === 'pending')
+                                                                <button class="dropdown-item" onclick="openApproveModal('{{ route('pelatihan.approve', $item->id) }}')">
+                                                                    <img src="{{ asset('icon/check-circle.svg') }}"> Approval
+                                                                </button>
+                                                            @endif
+                                                            <button class="dropdown-item" onclick='openEditPelatihan(@json($item))'>
+                                                                <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
                                                             </button>
+                                                            <form action="{{ route('pelatihan.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
+                                                                @csrf @method('DELETE')
+                                                                <button type="submit" class="dropdown-item text-danger">
+                                                                    <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                                                                </button>
+                                                            </form>
                                                         @endif
-                                                        <button class="dropdown-item" onclick='openEditPelatihan(@json($item))'>
-                                                            <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
-                                                        </button>
-                                                        <form action="{{ route('pelatihan.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
-                                                            @csrf @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
-                                                            </button>
-                                                        </form>
                                                     </div>
                                                 </div>
                                             </td>
@@ -757,9 +775,11 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h3 class="card-title">Data Specialization Area</h3>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSpecializationModal">
-                                    <img src="{{ asset('icon/plus.svg') }}" width="20px"> Tambah Area
-                                </button>
+                                @if(!$isReadOnly)
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSpecializationModal">
+                                        <img src="{{ asset('icon/plus.svg') }}" width="20px"> Tambah Area
+                                    </button>
+                                @endif
                             </div>
 
                             <div class="table-responsive">
@@ -771,7 +791,9 @@
                                             <th>Specialization</th>
                                             <th>Detail Specialization</th>
                                             <th>Tanggal Dibuat</th>
-                                            <th width="15%">Aksi</th>
+                                            @if(!$isReadOnly)
+                                                <th width="15%">Aksi</th>
+                                            @endif
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -784,22 +806,24 @@
                                             <td>{{ $item->specialization }}</td>
                                             <td>{{ $item->detail_specialization }}</td>
                                             <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
-                                                    <div class="dropdown-menu">
-                                                        <button class="dropdown-item" onclick='openEditSpecialization(@json($item))'>
-                                                            <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
-                                                        </button>
-                                                        <form action="{{ route('specialization.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
-                                                            @csrf @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                                            @if(!$isReadOnly)
+                                                <td>
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                                                        <div class="dropdown-menu">
+                                                            <button class="dropdown-item" onclick='openEditSpecialization(@json($item))'>
+                                                                <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
                                                             </button>
-                                                        </form>
+                                                            <form action="{{ route('specialization.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
+                                                                @csrf @method('DELETE')
+                                                                <button type="submit" class="dropdown-item text-danger">
+                                                                    <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                                                                </button>
+                                                            </form>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
+                                                </td>
+                                            @endif
                                         </tr>
                                         @endforeach
                                     </tbody>
