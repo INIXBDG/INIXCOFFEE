@@ -62,19 +62,31 @@ class CertificateController extends Controller
         $rkm = $query->orderBy('tanggal_awal', 'desc')
             ->paginate($request->per_page ?? 15);
 
-        $data = $rkm->through(function ($item) {
+        $grouped = $rkm->getCollection()->groupBy(function ($item) {
+            return $item->materi_id . '-' . $item->metode_kelas . '-' . $item->tanggal_awal . '-' . $item->tanggal_akhir;
+        });
+
+        $data = $grouped->map(function ($group) {
+            $first = $group->first();
+
             return [
-                'id'                => $item->id,
-                'materi_nama'       => $item->materi?->nama_materi ?? '-',
-                'materi_kode'       => $item->materi?->kode_materi ?? '',
-                'perusahaan_nama'   => $item->perusahaan?->nama_perusahaan ?? '-',
-                'tanggal_awal'      => \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y'),
-                'tanggal_akhir'     => \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y'),
+                'id' => $first->id,
+
+                'materi_nama' => $first->materi?->nama_materi ?? '-',
+                'materi_kode' => $first->materi?->kode_materi ?? '',
+                'perusahaan_nama' => $group->pluck('perusahaan.nama_perusahaan')
+                    ->filter()
+                    ->unique()
+                    ->implode(', '),
+                'tanggal_awal' => \Carbon\Carbon::parse($first->tanggal_awal)->format('d M Y'),
+                'tanggal_akhir' => \Carbon\Carbon::parse($first->tanggal_akhir)->format('d M Y'),
             ];
-        })->items();
+        })->values();
+
+        $rkm->setCollection($data);
 
         return response()->json([
-            'data'       => $data,
+            'data' => $rkm->items(),
             'pagination' => [
                 'total'        => $rkm->total(),
                 'from'         => $rkm->firstItem(),
@@ -102,6 +114,20 @@ class CertificateController extends Controller
                 $query->where('tentatif', 1);
             })
             ->pluck('id');
+        
+        $perusahaan = RKM::with('perusahaan')->where('materi_key', $rkm->materi_key)
+            ->whereBetween('tanggal_awal', [
+                $rkm->tanggal_awal,
+                $rkm->tanggal_akhir
+            ])            
+            ->whereDoesntHave('peluang', function ($query) {
+                $query->where('tentatif', 1);
+            })
+            ->get()
+            ->pluck('perusahaan.nama_perusahaan')
+            ->filter()
+            ->unique()
+            ->values();        
 
         $peserta = Registrasi::whereIn('id_rkm', $rkmIds)
             ->join('pesertas', 'pesertas.id', '=', 'registrasis.id_peserta')
@@ -129,7 +155,8 @@ class CertificateController extends Controller
         return view('office.certificate.detail', compact(
             'rkm',
             'peserta',
-            'certificateIds'
+            'certificateIds',
+            'perusahaan'
         ));
     }
 
@@ -137,7 +164,7 @@ class CertificateController extends Controller
     public function create($rkm_id, $peserta_id)
     {
         $rkm = RKM::with(['materi', 'perusahaan', 'peluang'])->findOrFail($rkm_id);
-        $peserta = Peserta::findOrFail($peserta_id);
+        $peserta = Peserta::with('perusahaan')->findOrFail($peserta_id);
 
         $isRegistered = Registrasi::where('id_rkm', $rkm_id)
             ->where('id_peserta', $peserta_id)

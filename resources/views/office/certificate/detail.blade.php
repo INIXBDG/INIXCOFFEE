@@ -40,12 +40,13 @@
                         <div class="col-md-3">
                             <div class="mb-3">
                                 <label class="text-muted small text-uppercase mb-1">Perusahaan</label>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar avatar-sm rounded-circle me-2">
-                                        <i class="bx bx-buildings text-info"></i>
-                                    </div>
-                                    <p class="mb-0 fw-semibold text-dark">{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</p>
-                                </div>
+                                <ul class="list-unstyled mb-0">
+                                    @foreach ($perusahaan as $item)
+                                        <li class="fw-semibold text-dark">
+                                            {{ $item }}
+                                        </li>
+                                    @endforeach
+                                </ul>
                             </div>
                         </div>
                         <div class="col-md-3">

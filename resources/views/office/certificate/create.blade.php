@@ -38,7 +38,7 @@
                                 <div class="avatar avatar-sm rounded-circle me-3">
                                     <i class="bx bx-buildings text-info"></i>
                                 </div>
-                                <p class="mb-0 fw-semibold text-dark">{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</p>
+                                <p class="mb-0 fw-semibold text-dark">{{ $peserta->perusahaan->nama_perusahaan ?? '-' }}</p>
                             </div>
                         </div>
 
