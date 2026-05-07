@@ -195,6 +195,11 @@ class CertificateController extends Controller
             ->with('success', 'Sertifikat berhasil di-generate!');
     }
 
+    public function delete($id){
+        Certificate::where('id_peserta', $id)->delete();
+        return back()->with('success', 'Sertifikat berhasil dihapus!');
+    }
+
     // Tampilkan detail sertifikat
     public function show($id)
     {

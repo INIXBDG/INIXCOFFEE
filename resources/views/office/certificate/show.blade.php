@@ -139,7 +139,7 @@
                                 class="btn btn-success shadow-sm hover-scale">
                                 <i class="bx bx-download me-1"></i>Download PDF
                             </a>
-                            <a href="{{ route('office.certificate.index') }}" class="btn btn-light shadow-sm">
+                            <a href="{{ route('office.certificate.detail', $certificate->rkm_id) }}" class="btn btn-light shadow-sm">
                                 <i class="bx bx-arrow-back me-1"></i>Kembali
                             </a>
                         </div>

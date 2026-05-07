@@ -160,6 +160,13 @@
                                            class="btn btn-sm btn-primary shadow-sm hover-scale">
                                             <i class="bx bx-file-blank me-1"></i>Generate +
                                         </a>
+                                        <form action="{{ route('office.certificate.delete', $p->id_peserta) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-danger shadow-sm hover-scale" onclick="return confirm('Apakah Anda yakin ingin menghapus sertifikat ini?')">
+                                                <i class="bx bx-trash me-1"></i>Hapus
+                                            </button>
+                                        </form>
                                         @else
                                         <!-- Tombol Generate -->
                                         <a href="{{ route('office.certificate.create', ['rkm_id' => $rkm->id, 'peserta_id' => $p->id_peserta]) }}" 
