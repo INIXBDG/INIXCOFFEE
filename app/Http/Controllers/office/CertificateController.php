@@ -86,32 +86,53 @@ class CertificateController extends Controller
         ]);
     }
 
-    // Detail RKM - List Peserta
     public function detail($rkm_id)
     {
-        $rkm = RKM::with(['materi', 'perusahaan'])->findOrFail($rkm_id);
+        $rkm = RKM::with([
+            'materi',
+            'perusahaan'
+        ])->findOrFail($rkm_id);
 
-        // Ambil id_peserta yang terdaftar di RKM ini
-        $pesertaIds = Registrasi::where('id_rkm', $rkm_id)
-            ->pluck('id_peserta')
-            ->toArray();
+        $rkmIds = RKM::where('materi_key', $rkm->materi_key)
+            ->whereBetween('tanggal_awal', [
+                $rkm->tanggal_awal,
+                $rkm->tanggal_akhir
+            ])
+            ->whereDoesntHave('peluang', function ($query) {
+                $query->where('tentatif', 1);
+            })
+            ->pluck('id');
 
-        // Ambil data peserta yang hanya ikut RKM ini
-        // 1. Ambil data registrasi peserta untuk RKM ini + join ambil nama peserta
-        $peserta = Registrasi::where('id_rkm', $rkm_id)
+        $peserta = Registrasi::whereIn('id_rkm', $rkmIds)
             ->join('pesertas', 'pesertas.id', '=', 'registrasis.id_peserta')
-            ->select('registrasis.id_peserta', 'pesertas.nama')
+            ->select(
+                'registrasis.id_peserta',
+                'registrasis.id_rkm',
+                'pesertas.nama',
+                'pesertas.email'
+            )
+            ->distinct()
             ->orderBy('pesertas.nama')
             ->get();
 
-        // 2. Ambil peserta yang sudah punya sertifikat untuk RKM ini
-        $certificateIds = Certificate::join('registrasis', 'registrasis.id_peserta', '=', 'certificates.id_peserta')
-            ->where('registrasis.id_rkm', $rkm_id)
+        $certificateIds = Certificate::join(
+                'registrasis',
+                'registrasis.id_peserta',
+                '=',
+                'certificates.id_peserta'
+            )
+            ->whereIn('registrasis.id_rkm', $rkmIds)
             ->pluck('registrasis.id_peserta')
+            ->unique()
             ->toArray();
 
-        return view('office.certificate.detail', compact('rkm', 'peserta', 'certificateIds'));
+        return view('office.certificate.detail', compact(
+            'rkm',
+            'peserta',
+            'certificateIds'
+        ));
     }
+
 
     public function create($rkm_id, $peserta_id)
     {
@@ -195,8 +216,8 @@ class CertificateController extends Controller
             ->with('success', 'Sertifikat berhasil di-generate!');
     }
 
-    public function delete($id){
-        Certificate::where('id_peserta', $id)->delete();
+    public function delete($rkm_id, $peserta_id){
+        Certificate::where('rkm_id', $rkm_id)->where('id_peserta', $peserta_id)->delete();
         return back()->with('success', 'Sertifikat berhasil dihapus!');
     }
 
