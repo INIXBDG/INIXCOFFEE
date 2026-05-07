@@ -180,7 +180,7 @@
                 });
         }
 
-        function renderTable(data, pagination) {
+   function renderTable(data, pagination) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
@@ -195,13 +195,25 @@
                 return;
             }
 
-            data.forEach((item, idx) => {
+            const seen = new Set();
+
+            const uniqueData = data.filter(item => {
+                const key = `${item.materi_nama}-${item.perusahaan_nama}-${item.tanggal_awal}`;
+
+                if (seen.has(key)) {
+                    return false;
+                }
+
+                seen.add(key);
+                return true;
+            });
+
+            uniqueData.forEach((item, idx) => {
                 const no = pagination.from + idx;
 
                 const row = `
                     <tr class="border-bottom hover-bg">
                         <td class="ps-4"><span class="fw-medium text-muted">${no}</span></td>
-
                         <td>
                             <div class="d-flex align-items-center">
                                 <div class="avatar avatar-sm bg-opacity-15 rounded-circle me-3">
@@ -213,21 +225,16 @@
                                 </div>
                             </div>
                         </td>
-
                         <td>
-                            <div class="text-truncate" style="max-width:200px"
-                                data-bs-toggle="tooltip"
-                                title="${item.perusahaan_nama}">
-                                ${item.perusahaan_nama}
+                            <div class="text-truncate" style="max-width:200px" data-bs-toggle="tooltip" title="${item.perusahaan_nama}">
+                                <i class="bx bx-buildings text-muted me-1"></i>${item.perusahaan_nama}
                             </div>
                         </td>
-
                         <td class="text-center">
                             <span class="text-muted small">
                                 ${item.tanggal_awal} → ${item.tanggal_akhir}
                             </span>
                         </td>
-
                         <td class="text-center pe-4">
                             <a href="/office/certificate/detail/${item.id}" 
                             class="btn btn-sm btn-info shadow-sm hover-scale">
@@ -235,10 +242,11 @@
                             </a>
                         </td>
                     </tr>`;
-                
+
                 tbody.innerHTML += row;
             });
         }
+
 
         function renderPagination(p) {
             let html = `<div class="d-flex justify-content-between align-items-center">
