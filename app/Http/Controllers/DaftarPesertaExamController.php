@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\DokumentasiExam;
+use App\Models\eksam;
+use App\Models\Perusahaan;
 use App\Models\Peserta;
+use App\Models\registexam;
 use App\Models\Registrasi;
 use App\Models\RKM;
-use App\Models\registexam;
-use App\Models\Perusahaan;
-use App\Models\eksam;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class DaftarPesertaExamController extends Controller
@@ -144,6 +145,7 @@ class DaftarPesertaExamController extends Controller
                 ->with('success', $message);
 
         } catch (\Exception $e) {
+            Log::info('Terjadi kesalahan: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }

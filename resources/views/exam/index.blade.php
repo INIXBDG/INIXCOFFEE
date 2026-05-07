@@ -100,6 +100,30 @@
                     </div>
                 </div>
 
+                @if (in_array(auth()->user()->jabatan, ['Technical Support', 'Admin Holding']))
+                    <div class="card m-4">
+                        <div class="card-body table-responsive">
+                            <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Exam BNSP - EC Council') }}</h3>
+                            <table class="table table-striped" id="examconditionaltable">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">No</th>
+                                        <th scope="col">Nama Materi</th>
+                                        <th scope="col">Tanggal Periode</th>
+                                        <th scope="col">Nama Perusahaan</th>
+                                        <th scope="col">Pax</th>
+                                        <th scope="col">sales</th>
+                                        <th scope="col">instruktur</th>
+                                        <th scope="col">created_at</th>
+                                        <th scope="col">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="card m-4">
                     <div class="card-body table-responsive">
                         <h3 class="card-title text-center my-1">{{ __('Data Histori Exam') }}</h3>
@@ -185,6 +209,7 @@
 
                 var tableIndex1 = 1;
                 var tableIndex2 = 1;
+                var tableIndex3 = 1;
 
                 $('#examtable').DataTable({
                     "ajax": {
@@ -238,6 +263,73 @@
                                 actions += '@else';
                                     actions += '<a href="/pengajuanExam/' + data.id + '" class="btn disabled btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
                                 actions += '@endif';
+                                return actions;
+                            }
+                        },
+                        {
+                            "data": null,
+                            "render": function (data, type, row) {
+                                return data.tanggal_akhir ? moment(data.tanggal_akhir).format('YYYY-MM-DD') : "";
+                            },
+                            "visible": false
+                        }
+                    ],
+                    "order": [[9, 'desc']],
+                    "initComplete": function () {
+                        this.api().columns(6).search(idInstruktur).draw();
+                        this.api().columns(5).search(idSales).draw();
+                    }
+                });
+
+                // exam dengan pengajuan khusus ts dan admin holding
+                $('#examconditionaltable').DataTable({
+                    "ajax": {
+                        "url": "{{ route('getExamKondisi') }}",
+                        "type": "GET",
+                        "beforeSend": function () {
+                            $('#loadingModal').modal('show');
+                            $('#loadingModal').on('show.bs.modal', function () {
+                                $('#loadingModal').removeAttr('inert');
+                            });
+                        },
+                        "complete": function () {
+                            setTimeout(() => {
+                                $('#loadingModal').modal('hide');
+                                $('#loadingModal').on('hidden.bs.modal', function () {
+                                    $('#loadingModal').attr('inert', true);
+                                });
+                            }, 1000);
+                        }
+                    },
+                    "columns": [
+                        { "data": null, "render": function (data) { return tableIndex3++; } },
+                        { "data": "materi.nama_materi" },
+                        {
+                            "data": null,
+                            "render": function (data, type, row) {
+                                if (data.tanggal_awal && data.tanggal_akhir) {
+                                    return moment(data.tanggal_awal).format('LL') + " s/d " + moment(data.tanggal_akhir).format('LL');
+                                } else {
+                                    return "";
+                                }
+                            }
+                        },
+                        { "data": "perusahaan.nama_perusahaan" },
+                        { "data": "pax" },
+                        { "data": "sales_key", "visible": false },
+                        { "data": "instruktur_key", "visible": false },
+                        {
+                            "data": null,
+                            "render": function (data, type, row) {
+                                return moment(data.created_at).format('LL');
+                            },
+                            "visible": false
+                        },
+                        {
+                            "data": null,
+                            "render": function (data, type, row) {
+                                var actions = "";
+                                actions += '<a href="/pengajuanExam/' + data.id + '" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
                                 return actions;
                             }
                         },
