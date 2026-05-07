@@ -1134,6 +1134,7 @@ Route::prefix('office')
             Route::get('/download/{id}', [CertificateController::class, 'download'])->name('download');
             Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
             Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
+            Route::delete('/delete/{id}', [CertificateController::class, 'delete'])->name('delete');
         });
 
         Route::prefix('vendor')->name('vendor.')->group(function () {
