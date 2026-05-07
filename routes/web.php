@@ -263,6 +263,7 @@ Route::get('getPerusahaanById', [App\Http\Controllers\PerusahaanController::clas
 Route::get('getRegistrasiall', [App\Http\Controllers\RegistrasiController::class, 'getRegistrasiall'])->name('getRegistrasiall');
 Route::get('getPesertaall', [App\Http\Controllers\PesertaController::class, 'getPesertaall'])->name('getPesertaall');
 Route::get('getExam', [App\Http\Controllers\examController::class, 'getExam'])->name('getExam');
+Route::get('getExamKondisi', [App\Http\Controllers\examController::class, 'getExamKondisi'])->name('getExamKondisi');
 Route::post('/exam/{id}/upload-invoice', [examController::class, 'uploadInvoice'])->name('exam.uploadInvoice');
 Route::post('/exam/{id}/update-tanggal', [examController::class, 'updateTanggal'])->name('exam.updateTanggal');
 Route::delete('/exam/{id}/delete-invoice/{filename}', [examController::class, 'deleteSpecificInvoice'])->name('exam.deleteSpecificInvoice');
