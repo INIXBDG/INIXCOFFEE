@@ -497,6 +497,7 @@ class PeluangController extends Controller
             }
 
             // Update RKM
+            $rkm->perusahaan_key = $request->id_perusahaan;
             $rkm->materi_key = $request->materi;
             $rkm->harga_jual = $request->harga;
             $rkm->tanggal_awal = $request->periode_mulai;
