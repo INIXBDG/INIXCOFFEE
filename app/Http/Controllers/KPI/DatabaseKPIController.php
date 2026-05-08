@@ -1579,6 +1579,88 @@ class DatabaseKPIController extends Controller
         }
     }
 
+    public function getTemplateList()
+    {
+        // Ambil satu record per kode_form untuk list
+        $templates = formPenilaian::with('karyawan')
+            ->select('kode_form', 'nama_penilaian', 'jenis_form', 'quartal', 'tahun', 'id_karyawan', 'created_at')
+            ->distinct()
+            ->orderBy('id_karyawan')
+            ->orderBy('tahun', 'desc')
+            ->orderBy('quartal', 'desc')
+            ->get();
+
+        // Group by karyawan
+        $grouped = $templates->groupBy(function ($item) {
+            return $item->karyawan ? $item->karyawan->nama_lengkap : 'Karyawan Tidak Ditemukan';
+        })->map->values();
+
+        return response()->json($grouped);
+    }
+
+    public function loadTemplate($kodeForm)
+    {
+        $forms = formPenilaian::where('kode_form', $kodeForm)->get();
+        
+        if ($forms->isEmpty()) {
+            return response()->json(['error' => 'Template tidak ditemukan'], 404);
+        }
+
+        // Ambil data pertama untuk info umum (jenis_form, quartal, tahun, dll)
+        $firstForm = $forms->first();
+
+        // Ambil semua kode_kategori yang unik
+        $kodeKategoriList = $forms->pluck('kode_kategori')->unique()->values();
+
+        // Load semua kategori dengan tipe dan relasinya dalam 1 query efisien
+        $subKriterias = kategoriKPI::whereIn('kode_kategori', $kodeKategoriList)
+            ->with('tipeKategoriTabels') // Eager load tipe
+            ->get();
+
+        $data = [
+            'jenis_form' => $firstForm->jenis_form,
+            'quartal' => $firstForm->quartal,
+            'tahun' => $firstForm->tahun,
+            'nama_penilaian' => $firstForm->nama_penilaian, // Ini yang sebelumnya hilang
+            'nama_evaluator' => $firstForm->nama_evaluator ?? '',
+            'tanggal' => $firstForm->tanggal ?? '',
+            'catatan' => $firstForm->catatan ?? '',
+            'kriteria' => []
+        ];
+
+        // Group sub_kriteria berdasarkan kode_kategori
+        foreach ($subKriterias as $sub) {
+            $kIdx = array_search($sub->kode_kategori, array_column($data['kriteria'], 'kode_kategori'));
+            
+            if ($kIdx === false) {
+                // Cari nama_penilaian dari form yang memiliki kode_kategori ini
+                $formWithCategory = $forms->firstWhere('kode_kategori', $sub->kode_kategori);
+                
+                $data['kriteria'][] = [
+                    'kode_kategori' => $sub->kode_kategori,
+                    'nama_penilaian' => $formWithCategory ? $formWithCategory->nama_penilaian : $firstForm->nama_penilaian,
+                    'sub_kriteria' => []
+                ];
+                $kIdx = count($data['kriteria']) - 1;
+            }
+
+            // Ambil dari eager loaded relationship
+            $tipes = $sub->tipeKategoriTabels;
+            
+            $data['kriteria'][$kIdx]['sub_kriteria'][] = [
+                'id_kategori' => $sub->id,
+                'judul_kategori' => $sub->judul_kategori,
+                'tipe_kategori' => $sub->tipe_kategori,
+                'bobot' => $sub->bobot,
+                'level' => $sub->level,
+                'ket_tipe' => $tipes->pluck('ket_tipe')->toArray(),
+                'nilai_ket_tipe' => $tipes->pluck('nilai_ket_tipe')->toArray()
+            ];
+        }
+
+        return response()->json($data);
+    }
+
         public function getFromPenilaian(Request $request, $kode_form, $id_karyawan)
         {
             $evaluatedEmployee = Karyawan::find($id_karyawan);

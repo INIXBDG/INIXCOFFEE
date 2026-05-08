@@ -545,6 +545,8 @@ Route::get('/createKategorikpi', [KPIDatabaseKPIController::class, 'createKatego
 Route::post('/storeKategorikpi', [KPIDatabaseKPIController::class, 'kategoriStore'])->name('ketegori.kpi.store');
 Route::get('/penilaian360/index/{id_karyawan}', [KPIDatabaseKPIController::class, 'index360'])->name('penilaian360');
 Route::get('/penilaian360/get/{id_karyawan}', [KPIDatabaseKPIController::class, 'get360'])->name('get360');
+Route::get('/template/list', [KPIDatabaseKPIController::class, 'getTemplateList'])->name('template.list');
+Route::get('/template/load/{kodeKategori}', [KPIDatabaseKPIController::class, 'loadTemplate'])->name('template.load');
 
 Route::post('/pengajuan-klaim/excel-download', [pengajuanKlaimController::class, 'pengajuanKlaimExcel'])->name('pengajuanklaim.excel');
 Route::post('/pengajuan-klaim/pdf-download', [pengajuanKlaimController::class, 'pengajuanKlaimPDF'])->name('pengajuanklaim.PDF');

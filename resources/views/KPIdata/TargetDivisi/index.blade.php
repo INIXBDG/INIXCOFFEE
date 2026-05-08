@@ -1462,7 +1462,7 @@
                     }
                 });
             });
-            
+
             $(document).on('click', '.buttonHapusTarget', function() {
                 let id = $(this).data('id');
                 Swal.fire({
@@ -1817,23 +1817,26 @@
         }
 
         function loadContentForm() {
+            const $contentTarget = $('#content_target');
+            $contentTarget.html('<tr><td colspan="10" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><span class="ms-2">Memuat data...</span></td></tr>');
+
             $.ajax({
                 url: '{{ route('kpi.getDataTarget') }}',
                 type: 'GET',
+                cache: false,
                 success: function(response) {
-                    const content_target = $('#content_target');
-                    content_target.empty();
+                    $contentTarget.empty();
 
-                    if (!response.detail || response.detail.length === 0) return;
+                    if (!response.detail || response.detail.length === 0) {
+                        $contentTarget.html('<tr><td colspan="10" class="text-center py-4 text-muted">Tidak ada data target</td></tr>');
+                        return;
+                    }
 
                     const groupedByPembuat = {};
                     response.detail.forEach(item => {
                         const idPembuat = item.id_pembuat;
                         if (!groupedByPembuat[idPembuat]) {
-                            groupedByPembuat[idPembuat] = {
-                                nama_pembuat: item.pembuat,
-                                targets: []
-                            };
+                            groupedByPembuat[idPembuat] = { nama_pembuat: item.pembuat, targets: [] };
                         }
                         groupedByPembuat[idPembuat].targets.push(item);
                     });
@@ -1851,6 +1854,8 @@
                         return color;
                     };
 
+                    let allRowsHtml = '';
+
                     Object.entries(groupedByPembuat).forEach(([idPembuat, group]) => {
                         group.targets.forEach(function(item) {
                             let formattedTarget = item.nilai_target;
@@ -1865,19 +1870,16 @@
                             }
 
                             let jabatanDisplay = '-';
-                            if (item.jabatan && item.jabatan.length > 0) {
-                                const jabatanList = item.jabatan;
-                                if (jabatanList.length === 1) {
-                                    jabatanDisplay = jabatanList[0];
-                                } else {
-                                    jabatanDisplay = jabatanList.map(j => j.substring(0, 4) + '...').join(', ');
+                            if (item.jabatan) {
+                                const jabatanList = Array.isArray(item.jabatan) ? item.jabatan : [item.jabatan];
+                                if (jabatanList.length > 0) {
+                                    jabatanDisplay = jabatanList.length === 1 ? jabatanList[0] : jabatanList.map(j => String(j).substring(0, 4) + '...').join(', ');
                                 }
                             }
 
                             let statusText = '';
                             let badgeClass = 'bg-secondary';
                             const nowDate = new Date();
-                            let lengthProgress;
                             let progressNumeric = parseFloat(item.progress) || 0;
                             let progressValueDisplay = progressNumeric + '%';
 
@@ -1892,11 +1894,11 @@
                                 }).format(progressRupiah);
                             }
 
-                            lengthProgress = Math.max(0, Math.min(progressNumeric, 100));
+                            const lengthProgress = Math.max(0, Math.min(progressNumeric, 100));
                             let isTargetReached = false;
 
                             if (item.tipe_target === 'angka') {
-                                isTargetReached = item.manual_value >= item.nilai_target;
+                                isTargetReached = (item.manual_value ?? 0) >= item.nilai_target;
                             } else if (item.tipe_target === 'rupiah') {
                                 isTargetReached = (parseFloat(item.progress) || 0) >= (parseFloat(item.nilai_target) || 0);
                             } else {
@@ -1934,7 +1936,7 @@
                                 buttonIsiForm = `
                                     <li>
                                         <button type="button" class="dropdown-item text-dark buttonForm"
-                                            data-id="${item.id}" data-value="${item.manual_value}" data-route="${item.asistant_route}"
+                                            data-id="${item.id}" data-value="${item.manual_value ?? 0}" data-route="${item.asistant_route}"
                                             data-bs-toggle="modal" data-bs-target="#modalFormManual">
                                             <i class="fa-solid fa-file-pen me-2"></i> Isi Data
                                         </button>
@@ -1943,29 +1945,23 @@
                             }
 
                             const routeUrl = (typeof assistantRouteUrlMap !== 'undefined' && assistantRouteUrlMap[item.asistant_route]) || '#';
+                            const progressBg = badgeClass === 'bg-success' ? '#28a745' : badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107';
+                            const jangkaDisplay = item.jangka_target.charAt(0).toUpperCase() + item.jangka_target.slice(1);
 
-                            $('#content_target').append(`
+                            allRowsHtml += `
                                 <tr>
-                                    <td class="fw-bold" style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.judul}</td>
-                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-                                        <span class="badge bg-light text-primary border border-primary">${item.jangka_target.charAt(0).toUpperCase() + item.jangka_target.slice(1)}</span>
-                                    </td>
-                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-                                        <span class="badge ${badgeClass}">${statusText}</span>
-                                    </td>
-                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${formattedTarget}</td>
-                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${jabatanDisplay}</td>
-                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.divisi || '-'}</td>
-                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">${item.pembuat || '-'}</td>
-                                    <td style="min-width:150px; cursor: pointer;" data-id="${item.id}" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-                                        <div class="progress" style="height: 12px;">
-                                            <div class="progress-bar" style="width: ${lengthProgress}%; background: ${badgeClass === 'bg-success' ? '#28a745' : badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'}"></div>
-                                        </div>
+                                    <td class="fw-bold buttonDetailTarget" data-id="${item.id}" style="cursor: pointer;">${item.judul}</td>
+                                    <td class="buttonDetailTarget" data-id="${item.id}" style="cursor: pointer;"><span class="badge bg-light text-primary border border-primary">${jangkaDisplay}</span></td>
+                                    <td class="buttonDetailTarget" data-id="${item.id}" style="cursor: pointer;"><span class="badge ${badgeClass}">${statusText}</span></td>
+                                    <td class="buttonDetailTarget" data-id="${item.id}" style="cursor: pointer;">${formattedTarget}</td>
+                                    <td class="buttonDetailTarget" data-id="${item.id}" style="cursor: pointer;">${jabatanDisplay}</td>
+                                    <td class="buttonDetailTarget" data-id="${item.id}" style="cursor: pointer;">${item.divisi || '-'}</td>
+                                    <td class="buttonDetailTarget" data-id="${item.id}" style="cursor: pointer;">${item.pembuat || '-'}</td>
+                                    <td class="buttonDetailTarget" data-id="${item.id}" style="cursor: pointer; min-width:150px;">
+                                        <div class="progress" style="height: 12px;"><div class="progress-bar" style="width: ${lengthProgress}%; background: ${progressBg}"></div></div>
                                         <small>${progressValueDisplay}</small>
                                     </td>
-                                    <td style="cursor: pointer;" data-id="${item.id}" class="buttonDetailTarget" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-                                        <small><i class="fa-solid fa-calendar-days me-1"></i> ${item.tenggat_waktu}</small>
-                                    </td>
+                                    <td class="buttonDetailTarget" data-id="${item.id}" style="cursor: pointer;"><small><i class="fa-solid fa-calendar-days me-1"></i> ${item.tenggat_waktu}</small></td>
                                     <td>
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Aksi</button>
@@ -1977,11 +1973,14 @@
                                         </div>
                                     </td>
                                 </tr>
-                            `);
+                            `;
                         });
                     });
+
+                    $contentTarget.html(allRowsHtml);
                 },
                 error: function(xhr) {
+                    $contentTarget.html('<tr><td colspan="10" class="text-center py-4 text-danger">Gagal memuat data</td></tr>');
                     Swal.fire('Error', 'Gagal memuat data: ' + (xhr.responseJSON?.message || 'Silakan coba lagi.'), 'error');
                 }
             });
