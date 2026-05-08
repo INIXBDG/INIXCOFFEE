@@ -325,7 +325,6 @@
                                         const loadTemplateBtn = document.getElementById('load-template-btn');
                                         const baseKriteriaBlock = document.querySelector('.form-kriteria-block[data-kriteria-index="0"]');
 
-                                        // 1. Muat & Kelompokkan Template
                                         fetch("{{ route('template.list') }}")
                                             .then(res => res.json())
                                             .then(data => {
@@ -348,55 +347,38 @@
                                                 templateSelect.innerHTML = '<option selected disabled>Gagal memuat template</option>';
                                             });
 
-                                        // 2. Fungsi Render Template ke Form
                                         function renderTemplateToForm(data) {
-                                            // Set header info
-                                            document.getElementById('jenis_form').value = data.jenis_form || '';
-                                            document.getElementById('template_quartal').value = data.quartal || '';
-                                            document.getElementById('template_tahun').value = data.tahun || '';
-                                            document.getElementById('template_nama_evaluator').value = data.nama_evaluator || '';
-                                            document.getElementById('template_tanggal').value = data.tanggal || '';
-
                                             const container = document.getElementById('kriteria-container');
                                             container.innerHTML = '<h5>Kriteria Penilaian</h5>';
                                             kriteriaMainIndex = 0;
                                             subKriteriaIndexes = {};
 
-                                            if (!baseKriteriaBlock) {
-                                                Swal.fire('Error', 'Template dasar tidak ditemukan di DOM.', 'error');
-                                                return;
-                                            }
-
-                                            // Render setiap kriteria
-                                            data.kriteria.forEach((kData, index) => {
+                                            data.kriteria.forEach((kData) => {
                                                 const kBlock = baseKriteriaBlock.cloneNode(true);
                                                 kBlock.setAttribute('data-kriteria-index', kriteriaMainIndex);
 
-                                                // Reset & update name attributes
-                                                kBlock.querySelectorAll('input, select').forEach(el => {
+                                                kBlock.querySelectorAll('input, select, textarea').forEach(el => {
                                                     const name = el.getAttribute('name');
                                                     if (name) {
-                                                        el.setAttribute('name', name.replace(/kriteria\[0\]/g,
-                                                            `kriteria[${kriteriaMainIndex}]`));
+                                                        const newName = name.replace(/kriteria\[\d+\]/g,
+                                                            `kriteria[${kriteriaMainIndex}]`);
+                                                        el.setAttribute('name', newName);
                                                     }
-                                                    if (el.tagName === 'SELECT') el.selectedIndex = 0;
-                                                    else el.value = '';
+                                                    if (el.type !== 'hidden') {
+                                                        if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                                                        else el.value = '';
+                                                    }
                                                 });
 
-                                                // Isi nama penilaian (INI YANG DIPERBAIKI)
                                                 const namaInput = kBlock.querySelector('.nama-penilaian-input');
-                                                if (namaInput) {
-                                                    namaInput.value = kData.nama_penilaian || '';
-                                                }
+                                                if (namaInput) namaInput.value = kData.nama_penilaian || '';
 
                                                 const subWrapper = kBlock.querySelector('.form-wrapper-sub-kriteria');
                                                 subWrapper.innerHTML = '';
 
-                                                // Render sub kriteria
+                                                subKriteriaIndexes[kriteriaMainIndex] = -1;
+
                                                 kData.sub_kriteria.forEach((sData) => {
-                                                    if (!subKriteriaIndexes[kriteriaMainIndex]) {
-                                                        subKriteriaIndexes[kriteriaMainIndex] = -1;
-                                                    }
                                                     subKriteriaIndexes[kriteriaMainIndex]++;
                                                     const newSubIdx = subKriteriaIndexes[kriteriaMainIndex];
 
@@ -404,83 +386,111 @@
                                                         .cloneNode(true);
                                                     subClone.setAttribute('data-sub-kriteria-index', newSubIdx);
 
-                                                    subClone.querySelectorAll('input, select').forEach(el => {
-                                                        const name = el.getAttribute('name');
+                                                    subClone.querySelectorAll('input, select, textarea').forEach(el => {
+                                                        let name = el.getAttribute('name');
                                                         if (name) {
-                                                            el.setAttribute('name', name
-                                                                .replace(/\[sub_kriteria\]\[\d+\]/,
-                                                                    `[sub_kriteria][${newSubIdx}]`)
-                                                                .replace(/\[kriteria\]\[\d+\]/,
-                                                                    `[kriteria][${kriteriaMainIndex}]`)
-                                                            );
+                                                            name = name.replace(/kriteria\[\d+\]/g,
+                                                                `kriteria[${kriteriaMainIndex}]`);
+                                                            name = name.replace(/\[sub_kriteria\]\[\d+\]/g,
+                                                                `[sub_kriteria][${newSubIdx}]`);
+                                                            el.setAttribute('name', name);
                                                         }
-                                                        if (el.tagName === 'SELECT') el.selectedIndex = 0;
-                                                        else el.value = '';
+                                                        if (el.type !== 'hidden') {
+                                                            if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                                                            else el.value = '';
+                                                        }
                                                     });
 
-                                                    // Isi nilai sub kriteria
                                                     const judulInput = subClone.querySelector(
-                                                    'input[name$="[judul_kategori]"]');
-                                                    if (judulInput) judulInput.value = sData.judul_kategori || '';
+                                                    'input[name*="[judul_kategori]"]');
+                                                    if (judulInput && sData.judul_kategori) {
+                                                        judulInput.value = sData.judul_kategori;
+                                                    }
 
                                                     const tipeSelect = subClone.querySelector('.tipe-kategori');
-                                                    if (tipeSelect) tipeSelect.value = sData.tipe_kategori || '';
+                                                    if (tipeSelect && sData.tipe_kategori) {
+                                                        tipeSelect.value = sData.tipe_kategori;
+                                                    }
 
-                                                    const bobotInput = subClone.querySelector('input[name$="[bobot]"]');
-                                                    if (bobotInput) bobotInput.value = sData.bobot || '';
+                                                    const bobotInput = subClone.querySelector('input[name*="[bobot]"]');
+                                                    if (bobotInput && sData.bobot) {
+                                                        bobotInput.value = sData.bobot;
+                                                    }
 
-                                                    const levelSelect = subClone.querySelector('select[name$="[level]"]');
-                                                    if (levelSelect) levelSelect.value = sData.level || 'required';
+                                                    const levelSelect = subClone.querySelector('select[name*="[level]"]');
+                                                    if (levelSelect && sData.level) {
+                                                        levelSelect.value = sData.level;
+                                                    }
 
-                                                    // Handle keterangan tipe
                                                     const ketWrapper = subClone.querySelector('.ket-tipe-wrapper');
                                                     const ketSection = subClone.querySelector('.ket-tipe-section');
-                                                    ketWrapper.innerHTML = '';
+
+                                                    if (ketWrapper) ketWrapper.innerHTML = '';
 
                                                     const showKet = ['radio', 'select', 'checkbox'];
                                                     if (showKet.includes(sData.tipe_kategori)) {
-                                                        ketSection.classList.remove('d-none');
-                                                        const ketArr = sData.ket_tipe || [];
-                                                        const nilaiArr = sData.nilai_ket_tipe || [];
+                                                        if (ketSection) ketSection.classList.remove('d-none');
+
+                                                        const ketArr = Array.isArray(sData.ket_tipe) ? sData.ket_tipe : [];
+                                                        const nilaiArr = Array.isArray(sData.nilai_ket_tipe) ? sData
+                                                            .nilai_ket_tipe : [];
 
                                                         if (ketArr.length > 0) {
                                                             ketArr.forEach((k, idx) => {
                                                                 const val = nilaiArr[idx] !== undefined ? nilaiArr[
                                                                     idx] : '';
-                                                                ketWrapper.insertAdjacentHTML('beforeend', `
-                                <div class="input-group mb-2">
-                                    <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][${newSubIdx}][ket_tipe][]" 
-                                        class="form-control" placeholder="Masukkan keterangan tipe" value="${k}">
-                                    <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][${newSubIdx}][nilai_ket_tipe][]" 
-                                        class="form-control" placeholder="Nilai tipe..." value="${val}">
-                                    <button type="button" class="btn btn-danger btn-sm remove-ket-tipe">
-                                        <i class="mdi mdi-trash-can"></i>
-                                    </button>
-                                </div>
-                            `);
+                                                                if (ketWrapper) {
+                                                                    ketWrapper.insertAdjacentHTML('beforeend', `
+                                                                        <div class="input-group mb-2">
+                                                                            <input type="text" 
+                                                                                name="kriteria[${kriteriaMainIndex}][sub_kriteria][${newSubIdx}][ket_tipe][]" 
+                                                                                class="form-control" 
+                                                                                placeholder="Masukkan keterangan tipe" 
+                                                                                value="${k || ''}">
+                                                                            <input type="text" 
+                                                                                name="kriteria[${kriteriaMainIndex}][sub_kriteria][${newSubIdx}][nilai_ket_tipe][]" 
+                                                                                class="form-control" 
+                                                                                placeholder="Nilai tipe..." 
+                                                                                value="${val || ''}">
+                                                                            <button type="button" class="btn btn-danger btn-sm remove-ket-tipe">
+                                                                                <i class="mdi mdi-trash-can"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    `);
+                                                                }
                                                             });
                                                         } else {
-                                                            // Default empty row
-                                                            ketWrapper.insertAdjacentHTML('beforeend', `
-                            <div class="input-group mb-2">
-                                <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][${newSubIdx}][ket_tipe][]" 
-                                    class="form-control" placeholder="Masukkan keterangan tipe">
-                                <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][${newSubIdx}][nilai_ket_tipe][]" 
-                                    class="form-control" placeholder="Nilai tipe...">
-                                <button type="button" class="btn btn-danger btn-sm remove-ket-tipe">
-                                    <i class="mdi mdi-trash-can"></i>
-                                </button>
-                            </div>
-                        `);
+                                                            if (ketWrapper) {
+                                                                ketWrapper.insertAdjacentHTML('beforeend', `
+                                                                    <div class="input-group mb-2">
+                                                                        <input type="text" 
+                                                                            name="kriteria[${kriteriaMainIndex}][sub_kriteria][${newSubIdx}][ket_tipe][]" 
+                                                                            class="form-control" 
+                                                                            placeholder="Masukkan keterangan tipe">
+                                                                        <input type="text" 
+                                                                            name="kriteria[${kriteriaMainIndex}][sub_kriteria][${newSubIdx}][nilai_ket_tipe][]" 
+                                                                            class="form-control" 
+                                                                            placeholder="Nilai tipe...">
+                                                                        <button type="button" class="btn btn-danger btn-sm remove-ket-tipe">
+                                                                            <i class="mdi mdi-trash-can"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                `);
+                                                            }
                                                         }
-                                                        ketWrapper.insertAdjacentHTML('beforeend',
-                                                            `<button type="button" class="btn btn-success text-end add-ket-tipe mt-2">Tambah Keterangan</button>`
-                                                        );
+
+                                                        if (ketWrapper) {
+                                                            ketWrapper.insertAdjacentHTML('beforeend',
+                                                                `<button type="button" class="btn btn-success text-end add-ket-tipe mt-2">Tambah Keterangan</button>`
+                                                            );
+                                                        }
                                                     } else {
-                                                        ketSection.classList.add('d-none');
+                                                        if (ketSection) ketSection.classList.add('d-none');
                                                     }
 
-                                                    subWrapper.appendChild(subClone);
+                                                    if (subWrapper) {
+                                                        subWrapper.appendChild(subClone);
+                                                    }
                                                 });
 
                                                 container.appendChild(kBlock);
@@ -489,7 +499,6 @@
                                             });
                                         }
 
-                                        // 3. Handle Load Template (Single atau Multi Select)
                                         loadTemplateBtn.addEventListener('click', () => {
                                             const selected = Array.from(templateSelect.selectedOptions).map(opt => opt.value);
                                             if (selected.length === 0) {
@@ -499,7 +508,6 @@
                                             const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
                                             loadingModal.show();
 
-                                            // Jika hanya 1 template dipilih, langsung load
                                             if (selected.length === 1) {
                                                 fetch("{{ route('template.load', ':kode') }}".replace(':kode', selected[0]))
                                                     .then(res => res.json())
@@ -519,7 +527,6 @@
                                                         Swal.fire('Error', 'Gagal memuat template.', 'error');
                                                     });
                                             } else {
-                                                // Multi select - merge semua template
                                                 Promise.all(selected.map(kode =>
                                                         fetch("{{ route('template.load', ':kode') }}".replace(':kode', kode)).then(
                                                             r => r.json())
@@ -536,7 +543,6 @@
                                                                 if (!existing) {
                                                                     mergedKriteria.push(k);
                                                                 } else {
-                                                                    // Merge sub_kriteria jika kode_kategori sama
                                                                     k.sub_kriteria.forEach(sk => {
                                                                         if (!existing.sub_kriteria.find(
                                                                                 es => es.judul_kategori ===
@@ -571,10 +577,51 @@
                                             }
                                         });
 
-                                        // 4. Event Binding Dinamis
+                                        document.querySelector('form[action="{{ route('ketegori.kpi.store') }}"]').addEventListener('submit',
+                                            function(e) {
+                                                const kriteriaBlocks = document.querySelectorAll(
+                                                    '.form-kriteria-block[data-kriteria-index]');
+
+                                                kriteriaBlocks.forEach(block => {
+                                                    const subItems = block.querySelectorAll(
+                                                        '.form-group-item[data-sub-kriteria-index]');
+
+                                                    subItems.forEach(sub => {
+                                                        const judulInput = sub.querySelector(
+                                                            'input[name$="[judul_kategori]"]');
+                                                        if (judulInput && !judulInput.value.trim()) {
+                                                            sub.remove();
+                                                        }
+                                                    });
+
+                                                    const remainingSubs = block.querySelectorAll(
+                                                        '.form-group-item[data-sub-kriteria-index]');
+                                                    if (remainingSubs.length === 0) {
+                                                        block.remove();
+                                                    }
+                                                });
+
+                                                const finalKriteria = document.querySelectorAll(
+                                                '.form-kriteria-block[data-kriteria-index]');
+                                                let hasValidSub = false;
+
+                                                finalKriteria.forEach(block => {
+                                                    const subs = block.querySelectorAll(
+                                                    '.form-group-item[data-sub-kriteria-index]');
+                                                    if (subs.length > 0) hasValidSub = true;
+                                                });
+
+                                                if (finalKriteria.length === 0 || !hasValidSub) {
+                                                    e.preventDefault();
+                                                    Swal.fire('Validasi', 'Minimal 1 kriteria dengan 1 sub kriteria harus diisi.',
+                                                        'warning');
+                                                    return false;
+                                                }
+                                            });
+
                                         function bindDynamicSubKriteriaEvents(kriteriaBlock) {
                                             const subKriteriaItems = kriteriaBlock.querySelectorAll(
-                                            '.form-group-item[data-sub-kriteria-index]');
+                                                '.form-group-item[data-sub-kriteria-index]');
                                             subKriteriaItems.forEach(container => {
                                                 const tipeSelect = container.querySelector('.tipe-kategori');
                                                 const ketTipeSection = container.querySelector('.ket-tipe-section');
@@ -600,16 +647,16 @@
                                                 if (addKeteranganBtn) {
                                                     addKeteranganBtn.onclick = () => {
                                                         ketTipeWrapper.insertAdjacentHTML('beforeend', `
-                        <div class="input-group mb-2">
-                            <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][ket_tipe][]" 
-                                class="form-control" placeholder="Masukkan keterangan tipe">
-                            <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][nilai_ket_tipe][]" 
-                                class="form-control" placeholder="Nilai tipe...">
-                            <button type="button" class="btn btn-danger btn-sm remove-ket-tipe">
-                                <i class="mdi mdi-trash-can"></i>
-                            </button>
-                        </div>
-                    `);
+                                                            <div class="input-group mb-2">
+                                                                <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][ket_tipe][]" 
+                                                                    class="form-control" placeholder="Masukkan keterangan tipe">
+                                                                <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][nilai_ket_tipe][]" 
+                                                                    class="form-control" placeholder="Nilai tipe...">
+                                                                <button type="button" class="btn btn-danger btn-sm remove-ket-tipe">
+                                                                    <i class="mdi mdi-trash-can"></i>
+                                                                </button>
+                                                            </div>
+                                                        `);
                                                     };
                                                 }
 
@@ -630,14 +677,11 @@
                                             });
                                         }
 
-                                        // Initialize first block
                                         if (baseKriteriaBlock) {
                                             bindDynamicSubKriteriaEvents(baseKriteriaBlock);
                                         }
 
-                                        // 5. Event Delegation untuk container
                                         document.getElementById('kriteria-container').addEventListener('click', function(e) {
-                                            // Add sub kriteria
                                             if (e.target.classList.contains('add-sub-kriteria-block')) {
                                                 const kriteriaBlock = e.target.closest('.form-kriteria-block');
                                                 const currentKriteriaIndex = kriteriaBlock.getAttribute('data-kriteria-index');
@@ -669,23 +713,22 @@
 
                                                 const ketWrapper = clone.querySelector('.ket-tipe-wrapper');
                                                 ketWrapper.innerHTML = `
-                <div class="input-group mb-2">
-                    <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][ket_tipe][]" 
-                        class="form-control" placeholder="Masukkan keterangan tipe">
-                    <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][nilai_ket_tipe][]" 
-                        class="form-control" placeholder="Nilai tipe...">
-                    <button type="button" class="btn btn-danger btn-sm remove-ket-tipe">
-                        <i class="mdi mdi-trash-can"></i>
-                    </button>
-                </div>
-                <button type="button" class="btn btn-success cl-blue add-ket-tipe mt-2">Tambah Keterangan</button>
-            `;
+                                                    <div class="input-group mb-2">
+                                                        <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][ket_tipe][]" 
+                                                            class="form-control" placeholder="Masukkan keterangan tipe">
+                                                        <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][nilai_ket_tipe][]" 
+                                                            class="form-control" placeholder="Nilai tipe...">
+                                                        <button type="button" class="btn btn-danger btn-sm remove-ket-tipe">
+                                                            <i class="mdi mdi-trash-can"></i>
+                                                        </button>
+                                                    </div>
+                                                    <button type="button" class="btn btn-success cl-blue add-ket-tipe mt-2">Tambah Keterangan</button>
+                                                `;
 
                                                 subWrapper.appendChild(clone);
                                                 bindDynamicSubKriteriaEvents(kriteriaBlock);
                                             }
 
-                                            // Remove sub kriteria
                                             if (e.target.closest('.remove-sub-kriteria-block')) {
                                                 const sub = e.target.closest('.form-group-item[data-sub-kriteria-index]');
                                                 const parent = sub.parentElement;
@@ -694,7 +737,6 @@
                                                 }
                                             }
 
-                                            // Remove kriteria block
                                             if (e.target.closest('.remove-kriteria-block')) {
                                                 const block = e.target.closest('.form-kriteria-block');
                                                 if (document.querySelectorAll('.form-kriteria-block').length > 1) {
@@ -703,7 +745,6 @@
                                             }
                                         });
 
-                                        // 6. Add main kriteria block
                                         document.getElementById('add-kriteria-main-block').addEventListener('click', () => {
                                             const container = document.getElementById('kriteria-container');
                                             const clone = baseKriteriaBlock.cloneNode(true);
@@ -721,7 +762,6 @@
                                                 else el.value = '';
                                             });
 
-                                            // Reset sub kriteria to 1 default item
                                             const subWrapper = clone.querySelector('.form-wrapper-sub-kriteria');
                                             const subItems = subWrapper.querySelectorAll('.form-group-item[data-sub-kriteria-index]');
                                             subItems.forEach((item, i) => {
@@ -733,17 +773,17 @@
                                                     });
                                                     const ketWrapper = item.querySelector('.ket-tipe-wrapper');
                                                     ketWrapper.innerHTML = `
-                    <div class="input-group mb-2">
-                        <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][ket_tipe][]" 
-                            class="form-control" placeholder="Masukkan keterangan tipe">
-                        <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][nilai_ket_tipe][]" 
-                            class="form-control" placeholder="Nilai tipe...">
-                        <button type="button" class="btn btn-danger btn-sm remove-ket-tipe">
-                            <i class="mdi mdi-trash-can"></i>
-                        </button>
-                    </div>
-                    <button type="button" class="btn btn-success cl-blue add-ket-tipe mt-2">Tambah Keterangan</button>
-                `;
+                                                        <div class="input-group mb-2">
+                                                            <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][ket_tipe][]" 
+                                                                class="form-control" placeholder="Masukkan keterangan tipe">
+                                                            <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][nilai_ket_tipe][]" 
+                                                                class="form-control" placeholder="Nilai tipe...">
+                                                            <button type="button" class="btn btn-danger btn-sm remove-ket-tipe">
+                                                                <i class="mdi mdi-trash-can"></i>
+                                                            </button>
+                                                        </div>
+                                                        <button type="button" class="btn btn-success cl-blue add-ket-tipe mt-2">Tambah Keterangan</button>
+                                                    `;
                                                 } else {
                                                     item.remove();
                                                 }
@@ -754,7 +794,6 @@
                                             kriteriaMainIndex++;
                                         });
 
-                                        // 7. Logic Karyawan
                                         const allKaryawan = @json($data);
 
                                         document.getElementById('form-karyawan').addEventListener('change', function(e) {

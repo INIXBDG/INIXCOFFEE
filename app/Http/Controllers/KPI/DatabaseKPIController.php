@@ -1480,34 +1480,62 @@ class DatabaseKPIController extends Controller
 
     public function kategoriStore(Request $request)
     {
+        // 1. Bersihkan input: hapus sub_kriteria yang benar-benar kosong
         $input = $request->all();
-
-        foreach ($input['kriteria'] ?? [] as $i => $kriteria) {
-            foreach ($kriteria['sub_kriteria'] ?? [] as $j => $sub) {
-                if (empty($input['kriteria'][$i]['sub_kriteria'][$j]['level'])) {
-                    $input['kriteria'][$i]['sub_kriteria'][$j]['level'] = '1';
+        
+        if (!empty($input['kriteria']) && is_array($input['kriteria'])) {
+            foreach ($input['kriteria'] as $i => $kriteria) {
+                if (!empty($kriteria['sub_kriteria']) && is_array($kriteria['sub_kriteria'])) {
+                    $cleanSub = [];
+                    foreach ($kriteria['sub_kriteria'] as $j => $sub) {
+                        // Hanya ambil sub_kriteria yang judul_kategori-nya terisi
+                        if (!empty($sub['judul_kategori']) && trim($sub['judul_kategori']) !== '') {
+                            // Set default level jika kosong
+                            if (empty($sub['level'])) {
+                                $sub['level'] = 'required';
+                            }
+                            $cleanSub[] = $sub;
+                        }
+                    }
+                    // Hanya simpan kriteria yang masih punya sub_kriteria valid
+                    if (!empty($cleanSub)) {
+                        $input['kriteria'][$i]['sub_kriteria'] = $cleanSub;
+                    } else {
+                        unset($input['kriteria'][$i]);
+                    }
                 }
             }
         }
-
+        
         $request->merge($input);
 
+        // 2. Validation dengan rules yang lebih fleksibel
         $request->validate([
             'id_karyawan'                                 => 'required|array|min:1',
             'kriteria'                                    => 'required|array|min:1',
-            'kriteria.*.nama_penilaian'                   => 'required|string',
+            'kriteria.*.nama_penilaian'                   => 'required|string|max:250',
+            
+            // Sub kriteria: hanya validasi jika array ada dan tidak kosong
             'kriteria.*.sub_kriteria'                     => 'required|array|min:1',
-            'kriteria.*.sub_kriteria.*.judul_kategori'    => 'required|string',
-            'kriteria.*.sub_kriteria.*.tipe_kategori'     => 'required|string',
-            'kriteria.*.sub_kriteria.*.level'             => 'required|string',
-            'kriteria.*.sub_kriteria.*.bobot'             => 'required|numeric',
+            'kriteria.*.sub_kriteria.*.judul_kategori'    => 'required|string|max:250',
+            'kriteria.*.sub_kriteria.*.tipe_kategori'     => 'required|in:text,radio,checkbox,number,range,textarea,select',
+            'kriteria.*.sub_kriteria.*.level'             => 'required|in:required,null',
+            'kriteria.*.sub_kriteria.*.bobot'             => 'required|numeric|min:0',
+            
+            // Ket_tipe & nilai: nullable, hanya divalidasi jika tipe membutuhkan
             'kriteria.*.sub_kriteria.*.ket_tipe'          => 'nullable|array',
-            'kriteria.*.sub_kriteria.*.ket_tipe.*'        => 'nullable|string',
+            'kriteria.*.sub_kriteria.*.ket_tipe.*'        => 'nullable|string|max:250',
             'kriteria.*.sub_kriteria.*.nilai_ket_tipe'    => 'nullable|array',
-            'kriteria.*.sub_kriteria.*.nilai_ket_tipe.*'  => 'nullable|string',
-            'jenis_form'                                  => 'required|string',
+            'kriteria.*.sub_kriteria.*.nilai_ket_tipe.*'  => 'nullable|string|max:250',
+            
+            'jenis_form'                                  => 'required|string|in:Rutin,Kontrak,Probation',
+        ], [
+            // Custom message jika perlu
+            'kriteria.*.sub_kriteria.*.judul_kategori.required' => 'Sub kriteria harus diisi',
+            'kriteria.*.sub_kriteria.*.bobot.numeric' => 'Bobot harus berupa angka',
         ]);
 
+        // 3. Proses simpan (sama seperti sebelumnya, tapi lebih aman)
         $id_karyawan_array   = $request->input('id_karyawan');
         $all_kriteria_data   = $request->input('kriteria');
         $kodeFormPenilaian   = Str::random(20);
@@ -1520,12 +1548,8 @@ class DatabaseKPIController extends Controller
             $month >= 4 && $month <= 6 => 'Q2',
             $month >= 7 && $month <= 9 => 'Q3',
             $month >= 10 && $month <= 12 => 'Q4',
-            default => null
+            default => 'Q1'
         };
-
-        if (!$quarterLabel) {
-            return redirect()->back()->with('error', 'Quarter tidak terdeteksi');
-        }
 
         DB::beginTransaction();
         try {
@@ -1558,11 +1582,11 @@ class DatabaseKPIController extends Controller
                             $nilai_ket_tipe_for_sub = $subKriteriaData['nilai_ket_tipe'] ?? [];
 
                             foreach ($ket_tipe_for_sub as $j => $ket) {
-                                if (!is_null($ket) && $ket !== '') {
+                                if (!is_null($ket) && $ket !== '' && isset($nilai_ket_tipe_for_sub[$j])) {
                                     $tipe = new tipeKategoriTabel();
                                     $tipe->id_kategori    = $kategori->id;
                                     $tipe->ket_tipe       = $ket;
-                                    $tipe->nilai_ket_tipe = array_key_exists($j, $nilai_ket_tipe_for_sub) ? $nilai_ket_tipe_for_sub[$j] : null;
+                                    $tipe->nilai_ket_tipe = $nilai_ket_tipe_for_sub[$j];
                                     $tipe->save();
                                 }
                             }
@@ -1572,10 +1596,11 @@ class DatabaseKPIController extends Controller
             }
 
             DB::commit();
-            return back()->with('success', 'Berhasil disimpan.');
+            return back()->with('success', '✅ Berhasil disimpan. Kode Form: '.$kodeFormPenilaian);
         } catch (\Throwable $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+            \Log::error('Error save form: '.$e->getMessage());
+            return back()->with('error', '❌ Gagal: '.$e->getMessage())->withInput();
         }
     }
 
