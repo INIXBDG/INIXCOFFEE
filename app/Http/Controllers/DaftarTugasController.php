@@ -13,6 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\DaftarTugasImport;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class DaftarTugasController extends Controller
 {
@@ -101,6 +102,74 @@ class DaftarTugasController extends Controller
         ]);
     }
 
+    public function chartData(Request $request)
+    {
+        $period = $request->get('period', 'monthly');
+        $karyawan = $request->get('karyawan', 'all');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+
+        $user = auth()->user();
+
+        $query = KontrolTugas::with('kategoriDaftarTugas')
+            ->when($user->jabatan !== 'HRD', fn($q) => $q->where('id_karyawan', $user->id))
+            ->when($karyawan !== 'all', fn($q) => $q->where('id_karyawan', $karyawan));
+
+        if ($startDate) {
+            $query->whereDate('Deadline_Date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->whereDate('Deadline_Date', '<=', $endDate);
+        }
+
+        $data = $query->get();
+
+        $groups = [];
+
+        foreach ($data as $item) {
+            $date = Carbon::parse($item->Deadline_Date);
+            $key = '';
+
+            switch ($period) {
+                case 'weekly':
+                    $key = $date->startOfWeek()->format('d M Y');
+                    break;
+                case 'monthly':
+                    $key = $date->format('F Y');
+                    break;
+                case 'quarterly':
+                    $quarter = ceil($date->month / 3);
+                    $key = "Q{$quarter} {$date->year}";
+                    break;
+                case 'yearly':
+                    $key = $date->format('Y');
+                    break;
+            }
+
+            if (!isset($groups[$key])) {
+                $groups[$key] = ['selesai' => 0, 'pending' => 0];
+            }
+
+            if ($item->status == 1) {
+                $groups[$key]['selesai']++;
+            } else {
+                $groups[$key]['pending']++;
+            }
+        }
+
+        ksort($groups);
+
+        $labels = array_keys($groups);
+        $dataSelesai = array_map(fn($v) => $v['selesai'], array_values($groups));
+        $dataPending = array_map(fn($v) => $v['pending'], array_values($groups));
+
+        return response()->json([
+            'labels' => $labels,
+            'dataSelesai' => $dataSelesai,
+            'dataPending' => $dataPending,
+        ]);
+    }
+
     public function aktifkanTugas(Request $request)
     {
         $request->validate(['kategori_ids' => 'required|array']);
@@ -182,7 +251,8 @@ class DaftarTugasController extends Controller
     {
         $request->validate([
             'tugas_id' => 'required|exists:kontrol_tugas,id',
-            'bukti_file' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
+            'bukti_before' => 'required|image|mimes:jpg,jpeg,png|max:5120',
+            'bukti_after' => 'required|image|mimes:jpg,jpeg,png|max:5120',
         ]);
 
         $tugas = KontrolTugas::findOrFail($request->tugas_id);
@@ -191,16 +261,19 @@ class DaftarTugasController extends Controller
             return response()->json(['message' => 'Tidak berhak mengupload bukti ini'], 403);
         }
 
-        if ($request->hasFile('bukti_file')) {
-            if ($tugas->bukti && Storage::disk('public')->exists($tugas->bukti)) {
-                Storage::disk('public')->delete($tugas->bukti);
-            }
+        $buktiData = ['before' => null, 'after' => null];
 
-            $path = $request->file('bukti_file')->store('bukti-tugas', 'public');
-            $tugas->update(['bukti' => $path]);
+        if ($request->hasFile('bukti_before')) {
+            $buktiData['before'] = $request->file('bukti_before')->store('bukti-tugas', 'public');
         }
 
-        return response()->json(['success' => true, 'message' => 'Bukti berhasil diupload']);
+        if ($request->hasFile('bukti_after')) {
+            $buktiData['after'] = $request->file('bukti_after')->store('bukti-tugas', 'public');
+        }
+
+        $tugas->update(['bukti' => json_encode($buktiData)]);
+
+        return response()->json(['success' => true, 'message' => 'Bukti Before dan After berhasil diupload']);
     }
 
     public function delete($id)
@@ -211,8 +284,12 @@ class DaftarTugasController extends Controller
             return response()->json(['message' => 'Tidak berhak menghapus tugas ini'], 403);
         }
 
-        if ($tugas->bukti && Storage::disk('public')->exists($tugas->bukti)) {
-            Storage::disk('public')->delete($tugas->bukti);
+        $buktiData = $this->parseBukti($tugas->bukti);
+        if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
+            Storage::disk('public')->delete($buktiData['before']);
+        }
+        if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
+            Storage::disk('public')->delete($buktiData['after']);
         }
 
         $tugas->delete();
@@ -242,8 +319,8 @@ class DaftarTugasController extends Controller
             'judul_kategori' => $request->judul_kategori,
             'Tipe' => $request->tipe,
             'tipe_turunan' => $tipe_turunan,
-            'id_user' => Auth()->user()->id,
-        ]);
+         ]);
+         
         return response()->json(['success' => true, 'message' => 'Kategori berhasil diperbarui']);
     }
 
@@ -286,8 +363,12 @@ class DaftarTugasController extends Controller
             return response()->json(['message' => 'Tidak berhak menghapus kategori ini'], 403);
         }
         KontrolTugas::where('id_DaftarTugas', $kategori->id)->each(function ($tugas) {
-            if ($tugas->bukti && Storage::disk('public')->exists($tugas->bukti)) {
-                Storage::disk('public')->delete($tugas->bukti);
+            $buktiData = $this->parseBukti($tugas->bukti);
+            if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
+                Storage::disk('public')->delete($buktiData['before']);
+            }
+            if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
+                Storage::disk('public')->delete($buktiData['after']);
             }
             $tugas->delete();
         });
@@ -348,7 +429,6 @@ class DaftarTugasController extends Controller
         } else {
             $query = \App\Models\KontrolTugas::with(['kategoriDaftarTugas', 'karyawan']);
 
-            // Filter tanggal berdasarkan Deadline_Date (bukan created_at)
             if ($request->start_date) {
                 $query->whereDate('Deadline_Date', '>=', $request->start_date);
             }
@@ -367,7 +447,6 @@ class DaftarTugasController extends Controller
             if ($request->karyawan) {
                 $query->where('id_karyawan', $request->karyawan);
             }
-            // HRD bisa melihat semua, non-HRD hanya data sendiri
             if ($user->jabatan !== 'HRD') {
                 $query->where('id_karyawan', $user->id);
             }
@@ -466,6 +545,19 @@ class DaftarTugasController extends Controller
                 ],
                 500,
             );
+        }
+    }
+
+    private function parseBukti($bukti)
+    {
+        if (!$bukti) return ['before' => null, 'after' => null];
+        try {
+            if (is_string($bukti) && str_starts_with($bukti, '{')) {
+                return json_decode($bukti, true);
+            }
+            return ['before' => $bukti, 'after' => null];
+        } catch (\Exception $e) {
+            return ['before' => $bukti, 'after' => null];
         }
     }
 }

@@ -115,7 +115,7 @@ class TargetKPIController extends Controller
     public function getAssistantRoutesByJabatan(Request $request)
     {
         $jabatanList = $request->input('jabatan', []);
-        
+
         if (!is_array($jabatanList)) {
             $jabatanList = [$jabatanList];
         }
@@ -124,44 +124,148 @@ class TargetKPIController extends Controller
             return response()->json([]);
         }
 
+        $jabatanList = array_map('strtolower', $jabatanList);
+
         $routeMapping = [
-            'GM' => ['Pemasukan Kotor', 'pemasukan bersih', 'Kepuasan Pelanggan', 'rasio biaya operasional terhadap revenue', 'performa KPI departemen'],
-            'Customer Care' => ['peserta puas dengan pelayanan dan fasilitas training', 'dorong inovasi pelayanan', 'penanganan komplain perseta', 'report persiapan kelas'],
-            'Finance & Accounting' => ['outstanding', 'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'laporan analisis keuangan', 'pencairan biaya operasional', 'penyelesaian tagihan perusahaan', 'akurasi pencatatan masuk'],
-            'HRD' => ['pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan', 'administrasi karyawan'],
-            'Driver' => ['perbaikan kendaraan', 'report kondisi kendaraan', 'kontrol pengeluaran transportasi', 'feedback kenyamanan berkendaran'],
-            'Office Boy' => ['feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian'],
-            'Koordinator ITSM' => ['meningkatkan kepuasan dan loyalitas peserta/client', 'availability sistem internal kritis'],
-            'Programmer' => ['ketepatan waktu penyelesaian fitur', 'mengukur kualitas aplikasi agar minim bug'],
-            'Tim Digital' => ['konsistensi campaign digital', 'efektifitas diital marketing'],
-            'Technical Support' => ['keberhasilan support memenuhi sla', 'kualitas layanan exam'],
-            'Instruktur' => ['presentase kinerja instruktur', 'kepuasan peserta pelatihan', 'upseling lanjutan materi', 'sertifikasi kompetensi internal', 'pelatihan kompetensi eksternal'],
-            'Education Manager' => ['pengembangan kurikulum pelatihan', 'peningkatan knowledge sharing', 'peningkatan kontribusi pelatihan', 'evaluasi kinerja instruktur'],
-            'Sales' => ['target penjualan tahunan', 'biaya akuisisi perclient'],
-            'SPV Sales' => ['meningkatkan revenue perusahaan', 'customer acquisition cost', 'evaluasi kinerja sales'],
-            'Adm Sales' => ['laporan mom', 'akurasi kelengkapan data penjualan', 'todo administrasi'],
-            'Admin Holding' => ['ketepatan waktu po', 'kualitas dokumentasi support dan proctor'],
+            'gm' => [
+                'pemasukan kotor',
+                'pemasukan bersih',
+                'kepuasan pelanggan',
+                'rasio biaya operasional terhadap revenue',
+                'performa kpi departemen'
+            ],
+
+            'customer care' => [
+                'peserta puas dengan pelayanan dan fasilitas training',
+                'dorong inovasi pelayanan',
+                'penanganan komplain perseta',
+                'report persiapan kelas'
+            ],
+
+            'finance & accounting' => [
+                'outstanding',
+                'inisiatif efisiensi keuangan',
+                'mengurangi manual work dan error',
+                'laporan analisis keuangan',
+                'pencairan biaya operasional',
+                'penyelesaian tagihan perusahaan',
+                'akurasi pencatatan masuk'
+            ],
+
+            'hrd' => [
+                'pelaksanaan kegiatan karyawan',
+                'pengeluaran biaya karyawan',
+                'administrasi karyawan'
+            ],
+
+            'driver' => [
+                'perbaikan kendaraan',
+                'report kondisi kendaraan',
+                'kontrol pengeluaran transportasi',
+                'feedback kenyamanan berkendaran'
+            ],
+
+            'office boy' => [
+                'feedback kebersihan dan kenyamanan',
+                'penyelesaian tugas harian'
+            ],
+
+            'koordinator itsm' => [
+                'meningkatkan kepuasan dan loyalitas peserta/client',
+                'availability sistem internal kritis'
+            ],
+
+            'programmer' => [
+                'ketepatan waktu penyelesaian fitur',
+                'mengukur kualitas aplikasi agar minim bug'
+            ],
+
+            'tim digital' => [
+                'konsistensi campaign digital',
+                'efektifitas diital marketing'
+            ],
+
+            'technical support' => [
+                'keberhasilan support memenuhi sla',
+                'kualitas layanan exam'
+            ],
+
+            'instruktur' => [
+                'presentase kinerja instruktur',
+                'kepuasan peserta pelatihan',
+                'upseling lanjutan materi',
+                'sertifikasi kompetensi internal',
+                'pelatihan kompetensi eksternal'
+            ],
+
+            'education manager' => [
+                'pengembangan kurikulum pelatihan',
+                'peningkatan knowledge sharing',
+                'peningkatan kontribusi pelatihan',
+                'evaluasi kinerja instruktur'
+            ],
+
+            'sales' => [
+                'target penjualan tahunan',
+                'biaya akuisisi perclient'
+            ],
+
+            'spv sales' => [
+                'meningkatkan revenue perusahaan',
+                'customer acquisition cost',
+                'evaluasi kinerja sales'
+            ],
+
+            'adm sales' => [
+                'laporan mom',
+                'akurasi kelengkapan data penjualan',
+                'todo administrasi'
+            ],
+
+            'admin holding' => [
+                'ketepatan waktu po',
+                'kualitas dokumentasi support dan proctor'
+            ],
         ];
 
-        $kombinasiIT = ['Programmer', 'Tim Digital', 'Technical Support'];
-        $kombinasiSales = ['Sales', 'SPV Sales', 'Adm Sales'];
-        
+        $kombinasiIT = ['programmer', 'tim digital', 'technical support'];
+        $kombinasiSales = ['sales', 'spv sales', 'adm sales'];
+
         $availableRoutes = [];
 
         if (count(array_intersect($jabatanList, $kombinasiIT)) === 3) {
-            $availableRoutes = ['kepuasan client ITSM', 'inovation adaption rate', 'persentase gap kompetensi tim terhadap standar skill'];
+            $availableRoutes = [
+                'kepuasan client itsm',
+                'inovation adaption rate',
+                'persentase gap kompetensi tim terhadap standar skill'
+            ];
         } elseif (count(array_intersect($jabatanList, $kombinasiSales)) === 3) {
-            $availableRoutes = ['peningkatan kemampuan kompetensi sales'];
+            $availableRoutes = [
+                'peningkatan kemampuan kompetensi sales'
+            ];
         } else {
             foreach ($jabatanList as $jabatan) {
                 if (isset($routeMapping[$jabatan])) {
-                    $availableRoutes = array_merge($availableRoutes, $routeMapping[$jabatan]);
+                    $availableRoutes = array_merge(
+                        $availableRoutes,
+                        $routeMapping[$jabatan]
+                    );
                 }
             }
+
             $availableRoutes = array_unique($availableRoutes);
         }
 
-        $dataTargets = DataTarget::whereIn('asistant_route', $availableRoutes)->get(['asistant_route', 'jangka_target', 'tipe_target', 'nilai_target']);
+        // Query database tanpa peduli huruf besar/kecil
+        $dataTargets = DataTarget::whereIn(
+            DB::raw('LOWER(asistant_route)'),
+            $availableRoutes
+        )->get([
+            'asistant_route',
+            'jangka_target',
+            'tipe_target',
+            'nilai_target'
+        ]);
 
         return response()->json($dataTargets);
     }
@@ -2461,7 +2565,6 @@ class TargetKPIController extends Controller
                     [
                         'nama' => $libur['name'],
                         'year' => $tahun,
-                        'tipe' => $libur['is_national_holiday'] ? 'national' : 'other'
                     ]
                 );
             }
@@ -8806,8 +8909,6 @@ class TargetKPIController extends Controller
                     ['tanggal' => $libur['date']],
                     [
                         'nama' => $libur['name'],
-                        'year' => $tahun,
-                        'tipe' => $libur['is_national_holiday'] ? 'national' : 'other'
                     ]
                 );
             }

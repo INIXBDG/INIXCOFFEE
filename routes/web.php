@@ -90,6 +90,7 @@ use App\Http\Controllers\KPI\DataTargetController;
 use App\Http\Controllers\LeadProjectController;
 use App\Http\Controllers\ReportSalesProjectController;
 use App\Http\Controllers\PicPenagihanController;
+use App\Http\Controllers\StockOpnameController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 /*
@@ -958,6 +959,7 @@ Route::prefix('office')->group(function () {
     // administrasi karyawan
     Route::get('data-administrasi/{id}', [AdministrasiKaryawanController::class, 'getData']);
     Route::get('administrasi-karyawan', [AdministrasiKaryawanController::class, 'index'])->name('administrasi.karyawan');
+    Route::get('administrasi-reload-data', [AdministrasiKaryawanController::class, 'reloadData'])->name('administrasi.karyawan.data.reload');
     Route::post('administrasi-karyawan/store', [AdministrasiKaryawanController::class, 'store'])->name('administrasi.karyawan.store');
     Route::get('administrasi-karyawan/{id}', [AdministrasiKaryawanController::class, 'edit'])->name('administrasi.karyawan.edit');
     Route::post('administrasi-karyawan/update/{id}', [AdministrasiKaryawanController::class, 'update'])->name('administrasi.karyawan.update');
@@ -1021,6 +1023,24 @@ Route::prefix('office')
             Route::get('action/terima/{id}', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
             Route::get('action/selesaikan/{id}', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])->name('action.selesaikan');
         });
+
+        Route::prefix('stock-opname')
+            ->name('stockOpname.')
+            ->group(function () {
+                Route::get('/', [StockOpnameController::class, 'index'])->name('index');
+                Route::get('/data', [StockOpnameController::class, 'getData'])->name('getData');
+                Route::post('/store', [StockOpnameController::class, 'store'])->name('store');
+                Route::post('/update', [StockOpnameController::class, 'update'])->name('update');
+                Route::post('/clean-log', [StockOpnameController::class, 'cleanLog'])->name('cleanLog');
+                Route::post('/inline-update', [StockOpnameController::class, 'inlineUpdate'])->name('inlineUpdate');
+                Route::post('/sync-baseline', [StockOpnameController::class, 'syncBaseline'])->name('syncBaseline');
+                Route::get('/delete/{id}', [StockOpnameController::class, 'delete'])->name('delete');
+                Route::get('/export/excel', [StockOpnameController::class, 'exportExcel'])->name('exportExcel');
+                Route::get('/export/pdf', [StockOpnameController::class, 'exportPdf'])->name('exportPdf');
+                Route::get('/export/log/excel', [StockOpnameController::class, 'exportLogExcel'])->name('exportLogExcel');
+                Route::get('/export/log/pdf', [StockOpnameController::class, 'exportLogPdf'])->name('exportLogPdf');
+                Route::get('/get-log', [StockOpnameController::class, 'getLog'])->name('getLog');
+            });
 
         Route::prefix('biaya-transportasi')
             ->name('biayaTransportasi.')
@@ -1095,6 +1115,7 @@ Route::prefix('office')
             Route::post('store', [DaftarTugasController::class, 'store'])->name('store');
             Route::get('data', [DaftarTugasController::class, 'get'])->name('get');
             Route::get('get/kategori', [DaftarTugasController::class, 'getKategori'])->name('getKategori');
+            Route::get('chart-data', [DaftarTugasController::class, 'chartData'])->name('chartData');
             Route::post('status/update', [DaftarTugasController::class, 'updateStatus'])->name('updateStatus');
             Route::post('bukti/upload', [DaftarTugasController::class, 'uploadBukti'])->name('uploadBukti');
             Route::delete('hapus/{id}', [DaftarTugasController::class, 'delete'])->name('delete');
@@ -1102,14 +1123,11 @@ Route::prefix('office')
             Route::get('/export/excel', [DaftarTugasController::class, 'exportExcel'])->name('export.excel');
             Route::get('/export/pdf', [DaftarTugasController::class, 'exportPdf'])->name('export.pdf');
 
-            // Update tugas periode
             Route::post('/aktifkan-tugas', [DaftarTugasController::class, 'aktifkanTugas'])->name('aktifkanTugas');
 
-            // Kategori
             Route::post('kategori/update', [DaftarTugasController::class, 'updateKategori'])->name('updateKategori');
             Route::post('kategori/hapus', [DaftarTugasController::class, 'deleteKategori'])->name('deleteKategori');
 
-            // [TAMBAHAN] Bulk update tipe turunan (Shift)
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
 
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');

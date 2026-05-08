@@ -164,6 +164,13 @@
                     <div class="text-truncate" data-i18n="contact">Daftar Tugas</div>
                 </a>
             </li>
+
+            <li class="menu-item {{ request()->routeIs('office.stockOpname.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.stockOpname.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-package"></i>
+                    <div class="text-truncate" data-i18n="contact">Stock Opname</div>
+                </a>
+            </li>
         @endif
 
         <li class="menu-header small text-uppercase">
