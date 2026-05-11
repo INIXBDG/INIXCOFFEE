@@ -937,6 +937,24 @@ Route::prefix('office')->group(function () {
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
     Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan']);
+    Route::get('/karyawan-information/{id}', [OfficeController::class, 'dataKaryawan']);
+    Route::get('/laporan/status-karyawan', [OfficeController::class, 'laporanStatusKaryawan'])->name('office.laporan.status-karyawan');
+    Route::get('/laporan/status-karyawan/detail', [OfficeController::class, 'detailKaryawanStatus'])->name('office.laporan.status-karyawan.detail');
+    Route::get('/laporan/trend-karyawan', [OfficeController::class, 'laporanTrendKaryawan'])->name('office.laporan.trend-karyawan');
+    
+    // Export
+    Route::get('/export/status-karyawan-pdf', [OfficeController::class, 'exportStatusKaryawanPdf'])
+        ->name('office.export.status-karyawan-pdf');
+
+    // Dashboard Tunjangan Office (AJAX)
+    Route::get('/dashboard/tunjangan', [OfficeController::class, 'getDashboardTunjanganOffice'])
+        ->name('office.dashboard.tunjangan');
+
+    // Export PDF Tunjangan
+    Route::get('/export/tunjangan-pdf', [OfficeController::class, 'exportTunjanganPdf'])
+        ->name('office.export.tunjangan.pdf');
+
+    Route::get('/export-gaji-pdf', [OfficeController::class, 'exportPdfGaji']);
 
     Route::post('/store-hari-libur', [OfficeController::class, 'storeHariLibur'])->name('storeHariLibur');
     Route::get('/data-hari-libur/{year}', [OfficeController::class, 'dataHariLibur']);
