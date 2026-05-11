@@ -54,6 +54,77 @@
             align-items: center;
             gap: 10px;
         }
+
+        .bukti-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .bukti-badge.both {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .bukti-badge.partial {
+            background: #fff3cd;
+            color: #664d03;
+        }
+
+        .bukti-badge.none {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .bukti-preview {
+            cursor: pointer;
+            transition: transform .2s;
+        }
+
+        .bukti-preview:hover {
+            transform: scale(1.05);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .chart-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .photo-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .photo-comparison .photo-box {
+            text-align: center;
+        }
+
+        .photo-comparison .photo-box img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+        }
+
+        .photo-comparison .photo-box .label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+        }
     </style>
     <div class="container-fluid py-4">
         @if (session('success'))
@@ -231,11 +302,41 @@
                                 <th class="border-0" style="width:15%">Shift</th>
                                 <th class="border-0" style="width:15%">Karyawan</th>
                                 <th class="border-0" style="width:15%">Deadline</th>
-                                <th class="border-0 text-center" style="width:20%">Aksi</th>
+                                <th class="border-0 text-center" style="width:20%">Bukti</th>
+                                <th class="border-0 text-center" style="width:15%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tbody"></tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 mt-4 glass-force">
+            <div class="card-header border-0 py-3">
+                <h5 class="mb-0 fw-semibold">Grafik Kinerja Tugas</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-filters">
+                    <select id="chartPeriod" class="form-select form-select-sm" style="width:auto">
+                        <option value="weekly">Per Minggu</option>
+                        <option value="monthly" selected>Per Bulan</option>
+                        <option value="quarterly">Per 3 Bulan</option>
+                        <option value="yearly">Per Tahun</option>
+                    </select>
+                    <select id="chartKaryawan" class="form-select form-select-sm" style="width:auto">
+                        <option value="all">Semua Karyawan</option>
+                        @foreach ($officeBoy as $ob)
+                            <option value="{{ $ob->id }}">{{ $ob->nama_lengkap }}</option>
+                        @endforeach
+                    </select>
+                    <input type="date" id="chartStartDate" class="form-control form-control-sm" style="width:auto">
+                    <input type="date" id="chartEndDate" class="form-control form-control-sm" style="width:auto">
+                    <button class="btn btn-primary btn-sm" id="btnLoadChart"><i class="bx bx-refresh"></i> Load
+                        Grafik</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="taskChart"></canvas>
                 </div>
             </div>
         </div>
@@ -253,7 +354,7 @@
                         @if (Auth::user()->jabatan === 'HRD')
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Penanggung Jawab</label>
-                                <select name="jabatan_pembuat" required class="form-select">
+                                <select name="jabatan_pembuat" class="form-select">
                                     <option value="" disabled selected>Pilih Karyawan</option>
                                     @foreach ($officeBoy as $data)
                                         <option value="{{ $data->id }}">{{ $data->nama_lengkap }}</option>
@@ -273,9 +374,6 @@
                                 <option value="Harian">Harian</option>
                                 <option value="Mingguan">Mingguan</option>
                                 <option value="Bulanan">Bulanan</option>
-                                {{-- <option value="Quartal">Quartal</option>
-                                <option value="Semester">Semester</option>
-                                <option value="Tahunan">Tahunan</option> --}}
                             </select>
                         </div>
                         <div class="mb-3 d-none" id="createTipeTurunanContainer">
@@ -401,7 +499,7 @@
                         @if (Auth::user()->jabatan === 'HRD')
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Penanggung Jawab</label>
-                                <select name="jabatan_pembuat" required class="form-select">
+                                <select name="jabatan_pembuat" class="form-select">
                                     <option value="" disabled selected>Pilih Karyawan</option>
                                     @foreach ($officeBoy as $data)
                                         <option value="{{ $data->id }}">{{ $data->nama_lengkap }}</option>
@@ -457,15 +555,24 @@
                                 type="text" id="uploadTugasNama" class="form-control-plaintext fw-bold" readonly>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">File Bukti <small class="text-muted">(Max:
-                                    5MB)</small></label>
-                            <input type="file" class="form-control" name="bukti_file" id="inputBuktiFile"
-                                accept="image/*,.pdf,.doc,.docx" required>
-                            <div class="form-text">Format: JPG, PNG, PDF, DOC, DOCX</div>
+                            <label class="form-label fw-semibold">Foto Before <small class="text-danger">*</small></label>
+                            <input type="file" class="form-control" name="bukti_before" id="inputBuktiBefore"
+                                accept="image/*" required>
+                            <div class="form-text">Format: JPG, PNG. Maksimal 5MB</div>
+                            <div id="previewBeforeContainer" class="d-none text-center mt-2">
+                                <img id="imagePreviewBefore" src="" class="img-fluid rounded shadow-sm"
+                                    style="max-height:150px">
+                            </div>
                         </div>
-                        <div id="previewContainer" class="d-none text-center mt-3 p-2 bg-light rounded border">
-                            <img id="imagePreview" src="" class="img-fluid rounded shadow-sm"
-                                style="max-height:200px">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Foto After <small class="text-danger">*</small></label>
+                            <input type="file" class="form-control" name="bukti_after" id="inputBuktiAfter"
+                                accept="image/*" required>
+                            <div class="form-text">Format: JPG, PNG. Maksimal 5MB</div>
+                            <div id="previewAfterContainer" class="d-none text-center mt-2">
+                                <img id="imagePreviewAfter" src="" class="img-fluid rounded shadow-sm"
+                                    style="max-height:150px">
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
@@ -480,18 +587,18 @@
     </div>
 
     <div class="modal fade" id="modalPreviewBukti" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" id="previewModalTitle">Detail Bukti</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body text-center bg-light p-5" id="previewModalBody" style="min-height:400px">
-                    <div class="spinner-border text-primary" role="status"></div>
+                <div class="modal-body" id="previewModalBody">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <a href="#" id="previewDownloadLink" target="_blank" class="btn btn-outline-primary btn-sm"><i
-                            class="bx bx-download me-1"></i>Download</a>
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
@@ -585,10 +692,16 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         $(document).ready(function() {
             const today = new Date().toISOString().split('T')[0];
             $('#filterTanggal').val(today);
+            $('#chartEndDate').val(today);
+            $('#chartStartDate').val(new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split(
+                'T')[0]);
+
+            let taskChart = null;
 
             function updateTitle() {
                 const t = $('#filterTipe').val();
@@ -598,6 +711,49 @@
                 $('#dynamicTitle').text(
                     `Tugas Aktif ${tipeText} - ${dt.toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'})}`
                 );
+            }
+
+            function parseBukti(bukti) {
+                if (!bukti) return {
+                    before: null,
+                    after: null
+                };
+                try {
+                    if (typeof bukti === 'string' && bukti.startsWith('{')) {
+                        return JSON.parse(bukti);
+                    }
+                    return {
+                        before: bukti,
+                        after: null
+                    };
+                } catch (e) {
+                    return {
+                        before: bukti,
+                        after: null
+                    };
+                }
+            }
+
+            function getBuktiStatus(bukti) {
+                const data = parseBukti(bukti);
+                if (data.before && data.after) return {
+                    class: 'both',
+                    text: 'Before + After',
+                    rowClass: '',
+                    canCheck: true
+                };
+                if (data.before || data.after) return {
+                    class: 'partial',
+                    text: '1 Foto',
+                    rowClass: 'table-warning',
+                    canCheck: false
+                };
+                return {
+                    class: 'none',
+                    text: 'Belum Ada',
+                    rowClass: 'table-danger',
+                    canCheck: false
+                };
             }
 
             function loadData() {
@@ -614,7 +770,7 @@
                         tb.empty();
                         if (!r.data || !r.data.length) {
                             tb.append(
-                                `<tr><td colspan="6" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas Aktif</h5><p class="text-muted small mb-3">Pilih tugas dari kategori yang tersedia untuk mulai mengerjakan</p></div></td></tr>`
+                                `<tr><td colspan="8" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas Aktif</h5><p class="text-muted small mb-3">Pilih tugas dari kategori yang tersedia untuk mulai mengerjakan</p></div></td></tr>`
                             );
                             return;
                         }
@@ -628,14 +784,99 @@
                             const chk = it.status == 1 ? 'checked' : '';
                             const done = it.status == 1 ?
                                 'text-decoration-line-through text-muted opacity-50' : '';
-                            const bukti = it.bukti ?
-                                `<button class="btn btn-success btn-sm btn-viewBukti" data-bukti="/storage/${it.bukti}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-show"></i>Lihat</button>` :
-                                `<button class="btn btn-primary btn-sm btn-uploadBukti" data-id="${it.id}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-upload"></i>Bukti</button>`;
+                            const buktiData = parseBukti(it.bukti);
+                            const buktiStatus = getBuktiStatus(it.bukti);
+                            const buktiBadge =
+                                `<span class="bukti-badge ${buktiStatus.class}">${buktiStatus.text}</span>`;
+                            const checkboxDisabled = !buktiStatus.canCheck ? 'disabled' : '';
+                            const checkboxTitle = !buktiStatus.canCheck ?
+                                'title="Upload foto Before dan After terlebih dahulu"' : '';
+                            const buktiBtn = buktiData.before || buktiData.after ?
+                                `<button class="btn btn-sm btn-outline-primary btn-viewBukti" data-bukti='${JSON.stringify(buktiData)}' data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-show"></i> Lihat</button>` :
+                                `<button class="btn btn-sm btn-primary btn-uploadBukti" data-id="${it.id}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-upload"></i> Upload</button>`;
                             tb.append(
-                                `<tr class="${done?'bg-light':''}"><td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done}"><span class="badge bg-info text-dark">${turunan}</span></td><td class="task-text ${done} small fw-semibold">${karyawan}</td>
-                                <td class="task-text ${done} small">${dl}</td><td class="text-center"><div class="btn-group"><button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button>${bukti}</div></td></tr>`
+                                `<tr class="${buktiStatus.rowClass} ${done?'bg-light':''}" data-id="${it.id}"><td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk} ${checkboxDisabled} ${checkboxTitle}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done}"><span class="badge bg-info text-dark">${turunan}</span></td><td class="task-text ${done} small fw-semibold">${karyawan}</td>
+                    <td class="task-text ${done} small">${dl}</td><td class="text-center">${buktiBadge}</td><td class="text-center"><div class="btn-group">${buktiBtn}<button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button></div></td></tr>`
                             );
                         });
+                    }
+                });
+            }
+
+
+            function loadChartData() {
+                const period = $('#chartPeriod').val();
+                const karyawan = $('#chartKaryawan').val();
+                const startDate = $('#chartStartDate').val();
+                const endDate = $('#chartEndDate').val();
+
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.chartData') }}",
+                    type: 'GET',
+                    data: {
+                        period,
+                        karyawan,
+                        start_date: startDate,
+                        end_date: endDate
+                    },
+                    success: function(r) {
+                        renderChart(r.labels, r.dataSelesai, r.dataPending);
+                    }
+                });
+            }
+
+            function renderChart(labels, dataSelesai, dataPending) {
+                const ctx = document.getElementById('taskChart').getContext('2d');
+                if (taskChart) taskChart.destroy();
+                taskChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                                label: 'Selesai',
+                                data: dataSelesai,
+                                backgroundColor: 'rgba(13, 189, 115, 0.7)',
+                                borderColor: 'rgba(13, 189, 115, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Pending',
+                                data: dataPending,
+                                backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                                borderColor: 'rgba(255, 193, 7, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                title: {
+                                    display: true,
+                                    text: 'Periode'
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Jumlah Tugas'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        }
                     }
                 });
             }
@@ -643,25 +884,19 @@
             $('#formImport input[name="file"]').on('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
-
-                const validTypes = [
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    'application/vnd.ms-excel',
-                    'text/csv'
+                const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'application/vnd.ms-excel', 'text/csv'
                 ];
-
                 if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
                     alert('Format file tidak didukung. Gunakan XLSX, XLS, atau CSV.');
                     $(this).val('');
                     return;
                 }
-
                 if (file.size > 10 * 1024 * 1024) {
                     alert('Ukuran file terlalu besar. Maksimal 10MB.');
                     $(this).val('');
                     return;
                 }
-
                 $('#importPreview').removeClass('d-none');
                 $('#previewList').html(
                     `<li>${file.name} <span class="text-muted">(${(file.size/1024).toFixed(1)} KB)</span></li>`
@@ -670,16 +905,13 @@
 
             $('#formImport').on('submit', function(e) {
                 e.preventDefault();
-
                 const formData = new FormData(this);
                 const btn = $('#btnSubmitImport');
                 const spinner = $('#importSpinner');
                 const btnText = $('#importBtnText');
-
                 btn.prop('disabled', true);
                 spinner.removeClass('d-none');
                 btnText.text('Memproses...');
-
                 $.ajax({
                     url: "{{ route('office.DaftarTugas.import') }}",
                     type: 'POST',
@@ -691,23 +923,19 @@
                     },
                     success: function(r) {
                         let msg = r.message;
-
                         if (r.warnings?.length) {
                             msg += `\n\n⚠️ Beberapa baris dilewati:`;
                             r.warnings.forEach(w => msg += `\n• ${w}`);
                         }
-
                         $('#formImport')[0].reset();
                         loadData();
                     },
                     error: function(xhr) {
                         let msg = xhr.responseJSON?.message || 'Import gagal';
-
                         if (xhr.responseJSON?.errors?.length) {
                             msg += `\n\n❌ Error validasi:`;
                             xhr.responseJSON.errors.forEach(e => msg += `\n• ${e}`);
                         }
-
                         showNotification('Import Gagal', msg, 'danger');
                     },
                     complete: function() {
@@ -742,6 +970,7 @@
 
             loadData();
             updateTitle();
+            loadChartData();
 
             $('#filterTipe,#filterTipeTurunan,#filterTanggal').on('change', function() {
                 updateTitle();
@@ -803,10 +1032,8 @@
                 $('#edit_judul').val(judul);
                 $('#edit_tipe').val(tipe);
                 $('#edit_tipe_turunan').val(turunan);
-
                 if (tipe === 'Harian') $('#editTipeTurunanContainer').removeClass('d-none');
                 else $('#editTipeTurunanContainer').addClass('d-none');
-
                 const modal = new bootstrap.Modal(document.getElementById('modalEditKategori'));
                 modal.show();
             });
@@ -923,34 +1150,53 @@
             $(document).on('click', '.btn-uploadBukti', function() {
                 $('#uploadTugasId').val($(this).data('id'));
                 $('#uploadTugasNama').val($(this).data('judul'));
-                $('#inputBuktiFile').val('');
-                $('#previewContainer').addClass('d-none');
+                $('#inputBuktiBefore').val('');
+                $('#inputBuktiAfter').val('');
+                $('#previewBeforeContainer, #previewAfterContainer').addClass('d-none');
                 new bootstrap.Modal(document.getElementById('modalUploadBukti')).show();
             });
 
-            $(document).on('change', '#inputBuktiFile', function(e) {
-                const f = e.target.files[0];
-                if (f && f.type.startsWith('image/')) {
-                    if (f.size > 5 * 1024 * 1024) {
+            function previewImage(input, previewContainer, previewImg) {
+                const file = input.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    if (file.size > 5 * 1024 * 1024) {
                         alert('Ukuran file terlalu besar! Maksimal 5MB.');
-                        $(this).val('');
-                        $('#previewContainer').addClass('d-none');
+                        input.value = '';
+                        previewContainer.addClass('d-none');
                         return;
                     }
-                    const r = new FileReader();
-                    r.onload = e => {
-                        $('#imagePreview').attr('src', e.target.result);
-                        $('#previewContainer').removeClass('d-none');
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImg.attr('src', e.target.result);
+                        previewContainer.removeClass('d-none');
                     };
-                    r.readAsDataURL(f);
+                    reader.readAsDataURL(file);
                 } else {
-                    $('#previewContainer').addClass('d-none');
+                    previewContainer.addClass('d-none');
                 }
+            }
+
+            $('#inputBuktiBefore').on('change', function() {
+                previewImage(this, $('#previewBeforeContainer'), $('#imagePreviewBefore'));
+            });
+
+            $('#inputBuktiAfter').on('change', function() {
+                previewImage(this, $('#previewAfterContainer'), $('#imagePreviewAfter'));
             });
 
             $('#formUploadBukti').on('submit', function(e) {
                 e.preventDefault();
-                const fd = new FormData(this);
+                const beforeFile = $('#inputBuktiBefore')[0].files[0];
+                const afterFile = $('#inputBuktiAfter')[0].files[0];
+                if (!beforeFile || !afterFile) {
+                    alert('Foto Before dan After wajib diupload!');
+                    return;
+                }
+                const fd = new FormData();
+                fd.append('_token', $('meta[name="csrf-token"]').attr('content'));
+                fd.append('tugas_id', $('#uploadTugasId').val());
+                fd.append('bukti_before', beforeFile);
+                fd.append('bukti_after', afterFile);
                 const btn = $('#btnSubmitUpload');
                 const sp = $('#uploadSpinner');
                 const txt = $('#btnUploadText');
@@ -980,28 +1226,50 @@
             });
 
             $(document).on('change', '.checkStatus', function() {
-                const id = $(this).data('id');
-                const st = $(this).is(':checked') ? 1 : 0;
-                const row = $(this).closest('tr');
+                const checkbox = $(this);
+                const row = checkbox.closest('tr');
+                const taskId = checkbox.data('id');
+
+                if (!checkbox.is(':checked')) {
+                    $.ajax({
+                        url: "{{ route('office.DaftarTugas.updateStatus') }}",
+                        method: 'POST',
+                        data: {
+                            id: taskId,
+                            status: 0,
+                            _token: $('meta[name="csrf-token"]').attr('content')
+                        }
+                    });
+                    const txt = row.find('.task-text');
+                    txt.removeClass('text-decoration-line-through text-muted opacity-50');
+                    row.removeClass('bg-light');
+                    return;
+                }
+
+                const buktiEl = row.find('.bukti-badge');
+                if (buktiEl.hasClass('none') || buktiEl.hasClass('partial')) {
+                    checkbox.prop('checked', false);
+                    showNotification('Peringatan',
+                        'Upload foto Before dan After terlebih dahulu sebelum menandai tugas selesai',
+                        'warning');
+                    return;
+                }
+
                 $.ajax({
                     url: "{{ route('office.DaftarTugas.updateStatus') }}",
                     method: 'POST',
                     data: {
-                        id: id,
-                        status: st,
+                        id: taskId,
+                        status: 1,
                         _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function() {
+                        const txt = row.find('.task-text');
+                        txt.addClass('text-decoration-line-through text-muted opacity-50');
+                        row.addClass('bg-light');
                     }
                 });
-                const txt = row.find('.task-text');
-                if (st === 1) {
-                    txt.addClass('text-decoration-line-through text-muted opacity-50');
-                    row.addClass('bg-light');
-                } else {
-                    txt.removeClass('text-decoration-line-through text-muted opacity-50');
-                    row.removeClass('bg-light');
-                }
             });
-
             $(document).on('click', '.btn-hapus', function() {
                 const btn = $(this);
                 const id = btn.data('id');
@@ -1036,25 +1304,44 @@
                 const judul = $(this).data('judul');
                 $('#previewModalTitle').text(judul);
                 const body = $('#previewModalBody');
-                body.html('<div class="spinner-border text-primary" role="status"></div>');
                 const modal = new bootstrap.Modal(document.getElementById('modalPreviewBukti'));
                 modal.show();
-                const ext = bukti.split('.').pop().toLowerCase();
-                if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+                try {
+                    const data = typeof bukti === 'string' ? JSON.parse(bukti) : bukti;
+                    const beforeUrl = data.before ? `/storage/${data.before}` : null;
+                    const afterUrl = data.after ? `/storage/${data.after}` : null;
+                    let html = '<div class="photo-comparison">';
+                    html += `<div class="photo-box"><div class="label text-primary">Before</div>`;
+                    if (beforeUrl) {
+                        const ext = beforeUrl.split('.').pop().toLowerCase();
+                        if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+                            html +=
+                                `<img src="${beforeUrl}" class="img-fluid rounded shadow bukti-preview" alt="Before">`;
+                        } else {
+                            html +=
+                                `<div class="alert alert-secondary small">File: ${beforeUrl.split('/').pop()}</div>`;
+                        }
+                    } else {
+                        html += `<div class="alert alert-warning small">Foto Before tidak tersedia</div>`;
+                    }
+                    html += `</div><div class="photo-box"><div class="label text-success">After</div>`;
+                    if (afterUrl) {
+                        const ext = afterUrl.split('.').pop().toLowerCase();
+                        if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+                            html +=
+                                `<img src="${afterUrl}" class="img-fluid rounded shadow bukti-preview" alt="After">`;
+                        } else {
+                            html +=
+                                `<div class="alert alert-secondary small">File: ${afterUrl.split('/').pop()}</div>`;
+                        }
+                    } else {
+                        html += `<div class="alert alert-warning small">Foto After tidak tersedia</div>`;
+                    }
+                    html += `</div></div>`;
+                    body.html(html);
+                } catch (e) {
                     body.html(
-                        `<img src="${bukti}" class="img-fluid rounded shadow" style="max-height:500px">`
-                    );
-                    $('#previewDownloadLink').attr('href', bukti).show();
-                } else if (ext === 'pdf') {
-                    body.html(
-                        `<iframe src="${bukti}" width="100%" height="400px" class="border rounded"></iframe>`
-                    );
-                    $('#previewDownloadLink').attr('href', bukti).show();
-                } else {
-                    body.html(
-                        `<div class="d-flex flex-column align-items-center gap-3"><i class="bx bx-file text-primary" style="font-size:3rem"></i><p class="mb-0">File: ${bukti.split('/').pop()}</p></div>`
-                    );
-                    $('#previewDownloadLink').attr('href', bukti).show();
+                        '<div class="alert alert-danger">Gagal memuat bukti. Silakan coba lagi.</div>');
                 }
             });
 
@@ -1129,19 +1416,15 @@
                         ids.push($(this).val());
                     }
                 });
-
                 if (ids.length === 0) {
                     showNotification('Peringatan', 'Pilih minimal satu kategori Harian untuk diupdate',
                         'warning');
                     return;
                 }
-
                 const shift = $('#bulkShiftSelect').val();
                 const btn = $(this);
                 const origText = btn.text();
-
                 btn.prop('disabled', true).text('Memproses...');
-
                 $.ajax({
                     url: "{{ route('office.DaftarTugas.bulkUpdateTipeTurunan') }}",
                     type: 'POST',
@@ -1175,6 +1458,14 @@
             $('#edit_tipe').on('change', function() {
                 if ($(this).val() === 'Harian') $('#editTipeTurunanContainer').removeClass('d-none');
                 else $('#editTipeTurunanContainer').addClass('d-none');
+            });
+
+            $('#btnLoadChart').on('click', function() {
+                loadChartData();
+            });
+
+            $('#chartPeriod, #chartKaryawan, #chartStartDate, #chartEndDate').on('change', function() {
+                loadChartData();
             });
         });
     </script>

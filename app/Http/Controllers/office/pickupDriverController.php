@@ -41,7 +41,7 @@ class pickupDriverController extends Controller
             ->pluck('perbaikan_kendaraans.kendaraan');
 
         if ($kendaraan->isEmpty()) {
-            $kendaraan = collect(['H1', 'Innova']);
+            $kendaraan = collect(['H1', 'Innova', 'Mobil Direksi']);
         }
 
         if ($kendaraan->contains('Innova')) {
@@ -74,7 +74,7 @@ class pickupDriverController extends Controller
 
         $kendaraanSedangDipakai = pickupDriver::where('status_apply', 1)->whereNotNull('kendaraan')->where('kendaraan', '!=', '')->pluck('kendaraan')->unique();
 
-        $allKendaraan = collect(['H1', 'Innova']);
+        $allKendaraan = collect(['H1', 'Innova', 'Mobil Direksi']);
 
         $kendaraanTersedia = $allKendaraan->diff($kendaraanSedangDipakai);
 
