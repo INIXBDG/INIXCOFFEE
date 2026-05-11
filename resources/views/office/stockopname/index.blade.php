@@ -164,95 +164,6 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($barang as $item)
-                                <tr>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $item->kode_barang }}</td>
-                                    <td class="editable" contenteditable="true" data-id="{{ $item->id }}"
-                                        data-field="nama_barang">
-                                        {{ $item->nama_barang }}
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-light text-dark border">
-                                            {{ number_format($item->stock_awal) }}
-                                        </span>
-                                    </td>
-                                    <td class="editable" contenteditable="true" data-id="{{ $item->id }}"
-                                        data-field="stock_masuk" data-placeholder="Isi stock masuk">
-                                        {{ $item->stock_masuk }}
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-secondary text-white">
-                                            {{ number_format($item->stock_keluar) }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary">
-                                            {{ number_format($item->stock_sekarang) }}
-                                        </span>
-                                    </td>
-                                    <td class="editable" contenteditable="true" data-id="{{ $item->id }}"
-                                        data-field="kategori">
-                                        {{ $item->kategori }}
-                                    </td>
-                                    <td class="editable" contenteditable="true" data-id="{{ $item->id }}"
-                                        data-field="satuan">
-                                        {{ $item->satuan }}
-                                    </td>
-                                    <td class="editable" style="min-width: 300px; max-width: 300px; white-space: normal;"
-                                        contenteditable="true" data-id="{{ $item->id }}" data-field="notes"
-                                        data-placeholder="Kosong">
-                                        {{ $item->notes }}
-                                    </td>
-                                    <td>
-                                        {{ optional($item->picData)->nama_lengkap }}
-                                    </td>
-                                    <td>
-                                        {{ $item->updated_at->diffForHumans() }}
-                                    </td>
-                                    <td>
-                                        <div class="input-group mb-3">
-                                            <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                                                data-bs-toggle="dropdown" aria-expanded="false">Action</button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <button type="button" class="dropdown-item btnEdit"
-                                                        data-bs-toggle="modal" data-bs-target="#modalEditBarang"
-                                                        data-id="{{ $item->id }}" data-kode="{{ $item->kode_barang }}"
-                                                        data-nama="{{ $item->nama_barang }}"
-                                                        data-stock_awal="{{ $item->stock_awal }}"
-                                                        data-stock_masuk="{{ $item->stock_masuk }}"
-                                                        data-stock_keluar="{{ $item->stock_keluar }}"
-                                                        data-kategori="{{ $item->kategori }}"
-                                                        data-satuan="{{ $item->satuan }}" data-notes="{{ $item->notes }}"
-                                                        data-pic="{{ $item->pic }}">
-                                                        <i class="fas fa-edit"></i> Edit
-                                                    </button>
-                                                </li>
-                                                <li>
-                                                    <button type="button" class="dropdown-item btnSyncBaseline"
-                                                        data-id="{{ $item->id }}"
-                                                        data-stock="{{ $item->stock_awal }}">
-                                                        <i class="fas fa-sync"></i> Jadikan Baseline
-                                                    </button>
-                                                </li>
-                                                <li>
-                                                    <button type="button" class="dropdown-item btnDelete"
-                                                        data-id="{{ $item->id }}">
-                                                        <i class="fas fa-trash"></i> Hapus
-                                                    </button>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="13" class="text-center py-5">
-                                        <div class="text-muted">Belum ada data stock opname</div>
-                                    </td>
-                                </tr>
-                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -284,8 +195,7 @@
                             </li>
 
                             <li>
-                                <a href="{{ route('office.stockOpname.exportLogPdf') }}"
-                                    class="dropdown-item text-danger">
+                                <a href="{{ route('office.stockOpname.exportLogPdf') }}" class="dropdown-item text-danger">
                                     <i class="fas fa-file-pdf me-2"></i> Export Log PDF
                                 </a>
                             </li>
@@ -343,29 +253,22 @@
                                     <td>
                                         <select name="barang_id[]" class="form-select select-barang" required>
                                             <option value="">-- Pilih Barang --</option>
-                                            @foreach($barang as $b)
-                                                <option value="{{ $b->id }}" 
-                                                        data-stock="{{ $b->stock_sekarang }}"
-                                                        data-nama="{{ $b->nama_barang }}">
-                                                    {{ $b->nama_barang }}
-                                                </option>
-                                            @endforeach
                                         </select>
                                     </td>
                                     <td>
                                         <span class="badge bg-light text-dark current-stock">0</span>
                                     </td>
                                     <td>
-                                        <input type="number" name="qty_keluar[]" class="form-control qty-input" 
+                                        <input type="number" name="qty_keluar[]" class="form-control qty-input"
                                             min="1" placeholder="0" required>
                                     </td>
                                     <td>
-                                        <input type="text" name="notes_keluar[]" class="form-control" 
+                                        <input type="text" name="notes_keluar[]" class="form-control"
                                             placeholder="Opsional">
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row" 
-                                                title="Hapus baris">
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row"
+                                            title="Hapus baris">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </td>
@@ -558,6 +461,10 @@
         </div>
     </div>
 
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
     <div id="toastNotification" class="toast-notification"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
@@ -608,37 +515,43 @@
                     type: 'GET',
                     success: function(response) {
                         let html = '';
-                        response.forEach(function(item, index) {
-                            html += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${item.kode_barang}</td>
-                            <td class="editable" contenteditable="true" data-id="${item.id}" data-field="nama_barang">${item.nama_barang}</td>
-                            <td><span class="badge bg-light text-dark border">${numberFormat(item.stock_awal)}</span></td>
-                            <td class="editable" contenteditable="true" data-id="${item.id}" data-field="stock_masuk" data-placeholder="Isi stock masuk">${item.stock_masuk}</td>
-                            <td><span class="badge bg-secondary text-white">${numberFormat(item.stock_keluar)}</span></td>
-                            <td><span class="badge bg-primary">${numberFormat(item.stock_sekarang)}</span></td>
-                            <td class="editable" contenteditable="true" data-id="${item.id}" data-field="kategori">${item.kategori}</td>
-                            <td class="editable" contenteditable="true" data-id="${item.id}" data-field="satuan">${item.satuan}</td>
-                            <td class="editable" style="min-width: 300px; max-width: 300px; white-space: normal;" contenteditable="true" data-id="${item.id}" data-field="notes" data-placeholder="Kosong">${item.notes || ''}</td>
-                            <td>${item.picData?.nama_lengkap || ''}</td>
-                            <td>${item.updated_at ? moment(item.updated_at).locale('id').fromNow() : '-'}</td>
-                            <td>
-                                <div class="input-group mb-3">
-                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Action</button>
-                                    <ul class="dropdown-menu">
-                                        <li><button type="button" class="dropdown-item btnEdit" data-bs-toggle="modal" data-bs-target="#modalEditBarang" data-id="${item.id}" data-kode="${item.kode_barang}" data-nama="${item.nama_barang}" data-stock_awal="${item.stock_awal}" data-stock_masuk="${item.stock_masuk}" data-stock_keluar="${item.stock_keluar}" data-kategori="${item.kategori}" data-satuan="${item.satuan}" data-notes="${item.notes}" data-pic="${item.pic}"><i class="fas fa-edit"></i> Edit</button></li>
-                                        <li><button type="button" class="dropdown-item btnSyncBaseline" data-id="${item.id}" data-stock="${item.stock_awal}"><i class="fas fa-sync"></i> Jadikan Baseline</button></li>
-                                        <li><button type="button" class="dropdown-item btnDelete" data-id="${item.id}"><i class="fas fa-trash"></i> Hapus</button></li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                        });
+
+                        if (response.length === 0) {
+                            html =
+                                `<tr><td colspan="13" class="text-center py-5 text-muted">Belum ada data stock opname</td></tr>`;
+                        } else {
+                            response.forEach(function(item, index) {
+                                html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${item.kode_barang}</td>
+                                <td class="editable" contenteditable="true" data-id="${item.id}" data-field="nama_barang">${item.nama_barang}</td>
+                                <td><span class="badge bg-light text-dark border">${numberFormat(item.stock_awal)}</span></td>
+                                <td class="editable" contenteditable="true" data-id="${item.id}" data-field="stock_masuk" data-placeholder="Isi stock masuk">${item.stock_masuk}</td>
+                                <td><span class="badge bg-secondary text-white">${numberFormat(item.stock_keluar)}</span></td>
+                                <td><span class="badge bg-primary">${numberFormat(item.stock_sekarang)}</span></td>
+                                <td class="editable" contenteditable="true" data-id="${item.id}" data-field="kategori">${item.kategori}</td>
+                                <td class="editable" contenteditable="true" data-id="${item.id}" data-field="satuan">${item.satuan}</td>
+                                <td class="editable" style="min-width: 300px; max-width: 300px; white-space: normal;" contenteditable="true" data-id="${item.id}" data-field="notes" data-placeholder="Kosong">${item.notes || ''}</td>
+                                <td>${item.picData?.nama_lengkap || ''}</td>
+                                <td>${item.updated_at ? moment(item.updated_at).locale('id').fromNow() : '-'}</td>
+                                <td>
+                                    <div class="input-group mb-3">
+                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Action</button>
+                                        <ul class="dropdown-menu">
+                                            <li><button type="button" class="dropdown-item btnEdit" data-bs-toggle="modal" data-bs-target="#modalEditBarang" data-id="${item.id}" data-kode="${item.kode_barang}" data-nama="${item.nama_barang}" data-stock_awal="${item.stock_awal}" data-stock_masuk="${item.stock_masuk}" data-stock_keluar="${item.stock_keluar}" data-kategori="${item.kategori}" data-satuan="${item.satuan}" data-notes="${item.notes}" data-pic="${item.pic}"><i class="fas fa-edit"></i> Edit</button></li>
+                                            <li><button type="button" class="dropdown-item btnSyncBaseline" data-id="${item.id}" data-stock="${item.stock_awal}"><i class="fas fa-sync"></i> Jadikan Baseline</button></li>
+                                            <li><button type="button" class="dropdown-item btnDelete" data-id="${item.id}"><i class="fas fa-trash"></i> Hapus</button></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                            });
+                        }
 
                         if ($.fn.DataTable.isDataTable('#tableStock')) {
-                            tableStock.destroy();
+                            $('#tableStock').DataTable().destroy();
                         }
 
                         $('#tableStock tbody').html(html);
@@ -647,6 +560,7 @@
                             pageLength: 10,
                             responsive: true,
                             ordering: true,
+                            destroy: true,
                             language: {
                                 search: "Cari:",
                                 lengthMenu: "Tampilkan _MENU_ data",
@@ -741,22 +655,6 @@
                     }
                 });
             }
-
-            tableStock = $('#tableStock').DataTable({
-                pageLength: 10,
-                responsive: true,
-                ordering: true,
-                language: {
-                    search: "Cari:",
-                    lengthMenu: "Tampilkan _MENU_ data",
-                    info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
-                    paginate: {
-                        previous: "Sebelumnya",
-                        next: "Selanjutnya"
-                    },
-                    zeroRecords: "Data tidak ditemukan"
-                }
-            });
 
             bindEditableEvents();
             initTooltips();
@@ -906,10 +804,10 @@
                         let html = '';
 
                         response.forEach(function(item, index) {
-                            const jenisLabel = item.jenis_transaksi === 'masuk' ? 
-                                '<span class="badge bg-success">Masuk</span>' : 
+                            const jenisLabel = item.jenis_transaksi === 'masuk' ?
+                                '<span class="badge bg-success">Masuk</span>' :
                                 '<span class="badge bg-danger">Keluar</span>';
-                            
+
                             html += `
                     <tr>
                         <td>${index + 1}</td>
@@ -958,178 +856,170 @@
                 });
             }
 
-            loadLog();
-
             $('#profile-tab, #keluar-tab').on('shown.bs.tab', function() {
                 loadLog();
             });
 
-            // Tambah baris baru
-$('#btnAddRow').on('click', function() {
-    const newRow = `
-        <tr class="row-keluar">
-            <td>
-                <select name="barang_id[]" class="form-select select-barang" required>
-                    <option value="">-- Pilih Barang --</option>
-                    @foreach($barang as $b)
-                        <option value="{{ $b->id }}" 
-                                data-stock="{{ $b->stock_sekarang }}"
-                                data-nama="{{ $b->nama_barang }}">
-                            {{ $b->nama_barang }}
-                        </option>
-                    @endforeach
-                </select>
-            </td>
-            <td><span class="badge bg-light text-dark current-stock">0</span></td>
-            <td>
-                <input type="number" name="qty_keluar[]" class="form-control qty-input" 
-                       min="1" placeholder="0" required>
-            </td>
-            <td>
-                <input type="text" name="notes_keluar[]" class="form-control" placeholder="Opsional">
-            </td>
-            <td>
-                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `;
-    $('#tableKeluar tbody').append(newRow);
-    bindSelectEvent();
-    bindRemoveEvent();
-});
-
-// Hapus baris
-function bindRemoveEvent() {
-    $(document).off('click', '.btn-remove-row').on('click', '.btn-remove-row', function() {
-        const rows = $('#tableKeluar tbody tr');
-        if (rows.length > 1) {
-            $(this).closest('tr').fadeOut(200, function() {
-                $(this).remove();
+            $('#btnAddRow').on('click', function() {
+                const newRow = `
+                    <tr class="row-keluar">
+                        <td>
+                            <select name="barang_id[]" class="form-select select-barang" required>
+                                <option value="">-- Pilih Barang --</option>
+                            </select>
+                        </td>
+                        <td><span class="badge bg-light text-dark current-stock">0</span></td>
+                        <td>
+                            <input type="number" name="qty_keluar[]" class="form-control qty-input" 
+                                   min="1" placeholder="0" required>
+                        </td>
+                        <td>
+                            <input type="text" name="notes_keluar[]" class="form-control" placeholder="Opsional">
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                $('#tableKeluar tbody').append(newRow);
+                populateSelects();
+                bindSelectEvent();
+                bindRemoveEvent();
             });
-        } else {
-            showToast('Minimal harus ada 1 baris', 'warning');
-        }
-    });
-}
 
-// Update display stock saat barang dipilih
-function bindSelectEvent() {
-    $(document).off('change', '.select-barang').on('change', '.select-barang', function() {
-        const option = $(this).find('option:selected');
-        const stock = option.data('stock') ?? 0;
-        $(this).closest('tr').find('.current-stock').text(numberFormat(stock));
-        
-        // Reset qty jika barang diganti
-        $(this).closest('tr').find('.qty-input').val('');
-    });
-}
+            function populateSelects() {
+                const options =
+                    `@foreach ($barang as $b)<option value="{{ $b->id }}" data-stock="{{ $b->stock_sekarang }}" data-nama="{{ $b->nama_barang }}">{{ $b->nama_barang }}</option>@endforeach`;
+                $('.select-barang').each(function() {
+                    const currentVal = $(this).val();
+                    $(this).html('<option value="">-- Pilih Barang --</option>' + options);
+                    if (currentVal) $(this).val(currentVal);
+                });
+            }
 
-// Reset form
-$('#btnResetForm').on('click', function() {
-    $('#tableKeluar tbody').html(`
-        <tr class="row-keluar">
-            <td>
-                <select name="barang_id[]" class="form-select select-barang" required>
-                    <option value="">-- Pilih Barang --</option>
-                    @foreach($barang as $b)
-                        <option value="{{ $b->id }}" 
-                                data-stock="{{ $b->stock_sekarang }}"
-                                data-nama="{{ $b->nama_barang }}">
-                            {{ $b->nama_barang }}
-                        </option>
-                    @endforeach
-                </select>
-            </td>
-            <td><span class="badge bg-light text-dark current-stock">0</span></td>
-            <td>
-                <input type="number" name="qty_keluar[]" class="form-control qty-input" 
-                       min="1" placeholder="0" required>
-            </td>
-            <td>
-                <input type="text" name="notes_keluar[]" class="form-control" placeholder="Opsional">
-            </td>
-            <td>
-                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `);
-    bindSelectEvent();
-    bindRemoveEvent();
-});
+            function bindRemoveEvent() {
+                $(document).off('click', '.btn-remove-row').on('click', '.btn-remove-row', function() {
+                    const rows = $('#tableKeluar tbody tr');
+                    if (rows.length > 1) {
+                        $(this).closest('tr').fadeOut(200, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        showToast('Minimal harus ada 1 baris', 'warning');
+                    }
+                });
+            }
 
-// Submit multi barang
-$('#formStockKeluar').off('submit').on('submit', function(e) {
-    e.preventDefault();
-    
-    const rows = $('#tableKeluar tbody tr');
-    let isValid = true;
-    let items = [];
+            function bindSelectEvent() {
+                $(document).off('change', '.select-barang').on('change', '.select-barang', function() {
+                    const option = $(this).find('option:selected');
+                    const stock = option.data('stock') ?? 0;
+                    $(this).closest('tr').find('.current-stock').text(numberFormat(stock));
+                    $(this).closest('tr').find('.qty-input').val('');
+                });
+            }
 
-    rows.each(function() {
-        const barangId = $(this).find('select[name="barang_id[]"]').val();
-        const qty = parseInt($(this).find('input[name="qty_keluar[]"]').val());
-        const notes = $(this).find('input[name="notes_keluar[]"]').val() || '';
-        const currentStock = parseInt($(this).find('.current-stock').text().replace(/\./g, '')) || 0;
+            $('#btnResetForm').on('click', function() {
+                $('#tableKeluar tbody').html(`
+                    <tr class="row-keluar">
+                        <td>
+                            <select name="barang_id[]" class="form-select select-barang" required>
+                                <option value="">-- Pilih Barang --</option>
+                            </select>
+                        </td>
+                        <td><span class="badge bg-light text-dark current-stock">0</span></td>
+                        <td>
+                            <input type="number" name="qty_keluar[]" class="form-control qty-input" 
+                                   min="1" placeholder="0" required>
+                        </td>
+                        <td>
+                            <input type="text" name="notes_keluar[]" class="form-control" placeholder="Opsional">
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+                populateSelects();
+                bindSelectEvent();
+                bindRemoveEvent();
+            });
 
-        if (!barangId) {
-            isValid = false;
-            showToast('Pilih barang terlebih dahulu', 'warning');
-            return false;
-        }
+            $('#formStockKeluar').off('submit').on('submit', function(e) {
+                e.preventDefault();
 
-        if (!qty || qty <= 0) {
-            isValid = false;
-            showToast('Qty keluar harus diisi dan lebih dari 0', 'warning');
-            return false;
-        }
+                const rows = $('#tableKeluar tbody tr');
+                let isValid = true;
+                let items = [];
 
-        if (qty > currentStock) {
-            showToast('Qty keluar melebihi stock tersedia', 'error');
-            isValid = false;
-            return false;
-        }
+                rows.each(function() {
+                    const barangId = $(this).find('select[name="barang_id[]"]').val();
+                    const qty = parseInt($(this).find('input[name="qty_keluar[]"]').val());
+                    const notes = $(this).find('input[name="notes_keluar[]"]').val() || '';
+                    const currentStock = parseInt($(this).find('.current-stock').text().replace(
+                        /\./g, '')) || 0;
 
-        items.push({
-            barang_id: barangId,
-            qty_keluar: qty,
-            notes_keluar: notes
-        });
-    });
+                    if (!barangId) {
+                        isValid = false;
+                        showToast('Pilih barang terlebih dahulu', 'warning');
+                        return false;
+                    }
 
-    if (!isValid || items.length === 0) return;
+                    if (!qty || qty <= 0) {
+                        isValid = false;
+                        showToast('Qty keluar harus diisi dan lebih dari 0', 'warning');
+                        return false;
+                    }
 
-    showLoading();
+                    if (qty > currentStock) {
+                        showToast('Qty keluar melebihi stock tersedia', 'error');
+                        isValid = false;
+                        return false;
+                    }
 
-    $.ajax({
-        url: "{{ route('office.stockOpname.storeKeluar') }}",
-        type: "POST",
-        contentType: 'application/json',
-        data: JSON.stringify({
-            _token: $('meta[name="csrf-token"]').attr('content'),
-            items: items
-        }),
-        success: function(response) {
-            showToast(response.message || 'Stock keluar berhasil dicatat', 'success');
-            $('#btnResetForm').trigger('click');
+                    items.push({
+                        barang_id: barangId,
+                        qty_keluar: qty,
+                        notes_keluar: notes
+                    });
+                });
+
+                if (!isValid || items.length === 0) return;
+
+                showLoading();
+
+                $.ajax({
+                    url: "{{ route('office.stockOpname.storeKeluar') }}",
+                    type: "POST",
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        items: items
+                    }),
+                    success: function(response) {
+                        showToast(response.message || 'Stock keluar berhasil dicatat',
+                            'success');
+                        $('#btnResetForm').trigger('click');
+                        reloadTableStock();
+                        reloadLogTable();
+                    },
+                    error: function(xhr) {
+                        showToast(xhr.responseJSON?.error || xhr.responseJSON?.message ||
+                            'Gagal mencatat stock keluar', 'error');
+                        hideLoading();
+                    }
+                });
+            });
+
             reloadTableStock();
-            reloadLogTable();
-        },
-        error: function(xhr) {
-            showToast(xhr.responseJSON?.error || xhr.responseJSON?.message || 'Gagal mencatat stock keluar', 'error');
-            hideLoading();
-        }
-    });
-});
-
-// Init event binding saat document ready
-$(document).ready(function() {
-    bindSelectEvent();
-    bindRemoveEvent();
-});
+            loadLog();
+            populateSelects();
+            bindSelectEvent();
+            bindRemoveEvent();
         });
     </script>
 @endsection

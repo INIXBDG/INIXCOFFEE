@@ -45,6 +45,8 @@ class karyawan extends Model
         'religion',
         'provinsi',
         'kota',
+        'resigned_at',
+        'alasan_resign'
     ];
 
     public function user()

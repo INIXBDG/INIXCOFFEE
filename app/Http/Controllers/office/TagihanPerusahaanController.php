@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\office;
 
 use App\Http\Controllers\Controller;
+use App\Models\karyawan;
 use App\Models\tagihanPerusahaan;
 use App\Models\trackingTagihanPerusahaan;
 use Carbon\Carbon;
@@ -16,8 +17,8 @@ class TagihanPerusahaanController extends Controller
 
         return view('office.tagihanPerusahaan.index', compact('trackingTagihanPerusahaans'));
     }
-    
-    public function storeTagihanPerusahaan(Request $request) 
+
+    public function storeTagihanPerusahaan(Request $request)
     {
         $request->validate([
             'kegiatan' => 'required|string',
@@ -27,14 +28,14 @@ class TagihanPerusahaanController extends Controller
             'tanggal_perkiraan_selesai' => 'nullable|date|after_or_equal:tanggal_perkiraan_mulai',
             'keterangan' => 'nullable|string',
         ]);
-        
+
         $tagihan = tagihanPerusahaan::create([
             'kegiatan' => $request->kegiatan,
             'tipe' => $request->tipe,
             'nominal' => $request->nominal ?? null,
             'tanggal_perkiraan_mulai' => $request->tanggal_perkiraan_mulai,
             'tanggal_perkiraan_selesai' => $request->tanggal_perkiraan_selesai ?? $request->tanggal_perkiraan_mulai,
-            'last_generate' => now()
+            'last_generate' => now(),
         ]);
 
         trackingTagihanPerusahaan::create([
@@ -58,7 +59,7 @@ class TagihanPerusahaanController extends Controller
         return view('office.tagihanPerusahaan.detail', compact('tagihan'));
     }
 
-    public function hapusTagihanPerusahaan($id) 
+    public function hapusTagihanPerusahaan($id)
     {
         $tracking = trackingTagihanPerusahaan::findOrFail($id);
         tagihanPerusahaan::where('id', $tracking->id_tagihan_perusahaan)->delete();
@@ -97,7 +98,7 @@ class TagihanPerusahaanController extends Controller
         // set status otomatis
         $dueDate = null;
 
-        if($tracking->tanggal_perkiraan_selesai) {
+        if ($tracking->tanggal_perkiraan_selesai) {
             $dueDate = Carbon::parse($tracking->tanggal_perkiraan_selesai);
         } else {
             $dueDate = Carbon::parse($tracking->tanggal_perkiraan_mulai);
@@ -106,7 +107,7 @@ class TagihanPerusahaanController extends Controller
         if ($request->tanggal_selesai !== null && $dueDate < $request->tanggal_selesai && !in_array($request->status, ['selesai', 'pending'])) {
             $tracking->status = 'telat';
             $tracking->save();
-        } else if ($request->tanggal_selesai !== null && $dueDate >= $request->tanggal_selesai && $tracking->status) {
+        } elseif ($request->tanggal_selesai !== null && $dueDate >= $request->tanggal_selesai && $tracking->status) {
             $tracking->status = 'selesai';
             $tracking->save();
         }
@@ -114,7 +115,7 @@ class TagihanPerusahaanController extends Controller
         return back()->with('success_tagihan', 'Tagihan berhasil diperbaharui.');
     }
 
-    public function dataTagihan($id) 
+    public function dataTagihan($id)
     {
         $tagihan = trackingTagihanPerusahaan::with('tagihanPerusahaan')->findOrFail($id);
 
@@ -130,7 +131,7 @@ class TagihanPerusahaanController extends Controller
                 'tanggal_selesai' => $tagihan->tanggal_selesai,
                 'tanggal_perkiraan_mulai' => $tagihan->tanggal_perkiraan_mulai,
                 'tanggal_perkiraan_selesai' => $tagihan->tanggal_perkiraan_selesai,
-            ]
+            ],
         ];
 
         return response()->json($data);
