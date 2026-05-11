@@ -1036,6 +1036,7 @@ Route::prefix('office')
                 Route::post('/clean-log', [StockOpnameController::class, 'cleanLog'])->name('cleanLog');
                 Route::post('/inline-update', [StockOpnameController::class, 'inlineUpdate'])->name('inlineUpdate');
                 Route::post('/sync-baseline', [StockOpnameController::class, 'syncBaseline'])->name('syncBaseline');
+                Route::post('/store-keluar', [StockOpnameController::class, 'storeKeluar'])->name('storeKeluar');
                 Route::get('/delete/{id}', [StockOpnameController::class, 'delete'])->name('delete');
                 Route::get('/export/excel', [StockOpnameController::class, 'exportExcel'])->name('exportExcel');
                 Route::get('/export/pdf', [StockOpnameController::class, 'exportPdf'])->name('exportPdf');

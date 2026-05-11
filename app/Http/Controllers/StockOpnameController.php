@@ -54,6 +54,8 @@ class StockOpnameController extends Controller
             'kategori' => $request->kategori,
             'satuan' => $request->satuan,
             'stock_awal' => $request->stock_awal,
+            'stock_masuk' => 0,
+            'stock_keluar' => 0,
             'stock_sekarang' => $request->stock_awal,
             'pic' => $request->pic,
         ]);
@@ -65,42 +67,87 @@ class StockOpnameController extends Controller
     {
         $request->validate([
             'id' => 'required|exists:stock_opnames,id',
-            'field' => 'required|in:nama_barang,stock_sekarang,kategori,satuan,notes',
+            'field' => 'required|in:nama_barang,stock_masuk,kategori,satuan,notes',
             'value' => 'required',
         ]);
 
         $barang = StockOpname::findOrFail($request->id);
-        $oldStock = (int) $barang->stock_sekarang;
+        $oldValue = (int) $barang->{$request->field};
         $barang->{$request->field} = $request->value;
 
-        if ($request->field == 'stock_sekarang') {
-            $newStock = (int) $request->value;
+        if ($request->field == 'stock_masuk') {
+            $newValue = (int) $request->value;
 
-            if ($newStock < 0) {
-                return response()->json(['error' => 'Stock tidak boleh negatif'], 400);
+            if ($newValue < 0) {
+                return response()->json(['error' => 'Stock masuk tidak boleh negatif'], 400);
             }
 
-            $selisih = $newStock - $oldStock;
+            $selisih = $newValue - $oldValue;
 
             $karyawan = karyawan::where('id', Auth()->user()->id)->first();
 
             StockOpnameLog::create([
                 'barang_id' => $barang->id,
                 'tanggal' => now()->toDateString(),
-                'stock_sebelumnya' => $oldStock,
-                'stock_hari_ini' => $newStock,
+                'jenis_transaksi' => 'masuk',
+                'stock_sebelumnya' => $oldValue,
+                'stock_hari_ini' => $newValue,
                 'selisih' => $selisih,
                 'notes' => $barang->notes,
                 'updated_by' => $karyawan->kode_karyawan,
             ]);
-
-            $barang->stock_awal = $newStock;
         }
 
+        $barang->stock_sekarang = $barang->stock_awal + $barang->stock_masuk - $barang->stock_keluar;
         $barang->save();
-        return response()->json(['success' => true, 'new_baseline' => $barang->stock_awal]);
+        return response()->json(['success' => true, 'stock_sekarang' => $barang->stock_sekarang]);
     }
 
+    public function storeKeluar(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.barang_id' => 'required|exists:stock_opnames,id',
+            'items.*.qty_keluar' => 'required|integer|min:1',
+            'items.*.notes_keluar' => 'nullable|string|max:255',
+        ]);
+
+        $karyawan = karyawan::where('id', Auth()->user()->id)->first();
+        $processed = 0;
+
+        foreach ($request->items as $item) {
+            $barang = StockOpname::findOrFail($item['barang_id']);
+            $qtyKeluar = (int) $item['qty_keluar'];
+            $currentKeluar = (int) $barang->stock_keluar;
+            $newKeluar = $currentKeluar + $qtyKeluar;
+            $stockSekarang = $barang->stock_awal + $barang->stock_masuk - $newKeluar;
+
+            StockOpnameLog::create([
+                'barang_id' => $barang->id,
+                'tanggal' => now()->toDateString(),
+                'jenis_transaksi' => 'keluar',
+                'stock_sebelumnya' => $currentKeluar,
+                'stock_hari_ini' => $newKeluar,
+                'selisih' => $qtyKeluar,
+                'notes' => $item['notes_keluar'],
+                'updated_by' => $karyawan?->kode_karyawan,
+            ]);
+
+            $barang->update([
+                'stock_keluar' => $newKeluar,
+                'stock_sekarang' => $stockSekarang,
+            ]);
+
+            $processed++;
+        }
+
+        return response()->json([
+            'success' => true, 
+            'message' => "{$processed} barang berhasil dicatat",
+            'processed' => $processed
+        ]);
+    }
+    
     public function syncBaseline(Request $request)
     {
         $request->validate([
@@ -110,6 +157,7 @@ class StockOpnameController extends Controller
 
         $barang = StockOpname::findOrFail($request->id);
         $barang->stock_awal = $request->stock_awal;
+        $barang->stock_sekarang = $barang->stock_awal + $barang->stock_masuk - $barang->stock_keluar;
         $barang->save();
 
         return response()->json(['success' => true]);
@@ -121,7 +169,6 @@ class StockOpnameController extends Controller
             'id' => 'required|exists:stock_opnames,id',
             'nama_barang' => 'required',
             'stock_awal' => 'required|integer|min:0',
-            'stock_sekarang' => 'required|integer|min:0',
             'kategori' => 'required',
             'satuan' => 'required',
         ]);
@@ -131,12 +178,14 @@ class StockOpnameController extends Controller
             'kode_barang' => $request->kode_barang,
             'nama_barang' => $request->nama_barang,
             'stock_awal' => $request->stock_awal,
-            'stock_sekarang' => $request->stock_sekarang,
             'kategori' => $request->kategori,
             'satuan' => $request->satuan,
             'notes' => $request->notes,
             'pic' => $request->pic,
         ]);
+
+        $barang->stock_sekarang = $barang->stock_awal + $barang->stock_masuk - $barang->stock_keluar;
+        $barang->save();
 
         return response()->json(['success' => true, 'message' => 'Data berhasil diupdate']);
     }
