@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\KPI;
 
+use App\Exports\KpiTargetTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Models\AbsensiKaryawan;
 use App\Models\ActivityInstruktur;
@@ -72,6 +73,7 @@ use App\Imports\KpiTargetImport;
 use App\Models\ApprovalPendapatan;
 use App\Models\DataTarget;
 use App\Models\HariLibur;
+use Maatwebsite\Excel\Validators\ValidationException;
 use PhpOffice\PhpSpreadsheet\Chart\Chart;
 use PhpOffice\PhpSpreadsheet\Chart\DataSeries;
 use PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues;
@@ -172,7 +174,8 @@ class TargetKPIController extends Controller
 
             'koordinator itsm' => [
                 'meningkatkan kepuasan dan loyalitas peserta/client',
-                'availability sistem internal kritis'
+                'availability sistem internal kritis',
+                'persentase gap kompetensi tim terhadap standar skill'
             ],
 
             'programmer' => [
@@ -182,7 +185,7 @@ class TargetKPIController extends Controller
 
             'tim digital' => [
                 'konsistensi campaign digital',
-                'efektifitas diital marketing'
+                'efektifitas digital marketing'
             ],
 
             'technical support' => [
@@ -405,6 +408,7 @@ class TargetKPIController extends Controller
             ]);
 
             $file = $request->file('file');
+
             $options = [
                 'skip_duplicate' => $request->boolean('skip_duplicate'),
                 'dry_run' => $request->boolean('dry_run'),
@@ -414,88 +418,208 @@ class TargetKPIController extends Controller
                 return $this->previewImport($file, $options);
             }
 
-            $import = new \App\Imports\KpiTargetImport($options);
+            DB::beginTransaction();
+
+            $import = new KpiTargetImport($options);
+
             Excel::import($import, $file);
-            
+
             $summary = $import->getSummary();
 
+            if (!empty($summary['errors'])) {
+                DB::rollBack();
+
+                Log::warning('Import KPI dengan error', [
+                    'user_id' => auth()->id(),
+                    'error_count' => count($summary['errors']),
+                    'sample_errors' => array_slice($summary['errors'], 0, 10)
+                ]);
+
+                return response()->json([
+                    'errors' => [
+                        'file' => array_slice($summary['errors'], 0, 50)
+                    ]
+                ], 422);
+            }
+
+            DB::commit();
+
             $messages = [];
+
             if ($summary['imported'] > 0) {
                 $messages[] = "✅ {$summary['imported']} data berhasil diimport.";
             }
+
             if ($summary['skipped'] > 0) {
                 $messages[] = "⏭️ {$summary['skipped']} data dilewati (duplikat).";
             }
-            if (!empty($summary['errors'])) {
-                $messages[] = "❌ " . count($summary['errors']) . " error ditemukan.";
-            }
 
-            if (!empty($summary['errors'])) {
-                Log::warning("Import KPI dengan error", [
-                    'user_id' => auth()->id(),
-                    'errors' => array_slice($summary['errors'], 0, 20)
-                ]);
-            }
+            return response()->json([
+                'success' => implode(' ', $messages) ?: 'Import selesai',
+                'summary' => $summary
+            ], 201);
 
-            return back()->with([
-                'success' => implode(' ', $messages),
-                'import_errors' => $summary['errors'],
-            ]);
+        } catch (ValidationException $e) {
+            DB::rollBack();
 
-        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-            $failures = $e->failures();
-            $errorList = [];
-            
-            foreach ($failures as $failure) {
-                $field = $failure->attribute();
-                $errors = implode(', ', $failure->errors());
-                $errorList[] = "Baris #{$failure->row()} [{$field}]: {$errors}";
-            }
+            $errorList = collect($e->failures())
+                ->map(function ($failure) {
+                    return "Baris #{$failure->row()} [{$failure->attribute()}]: " . implode(', ', $failure->errors());
+                })
+                ->take(20);
 
-            return back()->withInput()->withErrors([
-                'file' => "Validasi gagal:\n" . implode("\n", array_slice($errorList, 0, 10))
-                        . (count($errorList) > 10 ? "\n...dan " . (count($errorList) - 10) . " error lainnya" : '')
-            ]);
+            return response()->json([
+                'errors' => [
+                    'file' => $errorList->toArray()
+                ]
+            ], 422);
 
         } catch (\Exception $e) {
-            Log::error("Import KPI failed", [
+            DB::rollBack();
+
+            Log::error('Import KPI failed', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'user_id' => auth()->id(),
             ]);
 
-            return back()->withInput()->withErrors([
-                'file' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-            ]);
+            return response()->json([
+                'errors' => [
+                    'file' => [
+                        'Terjadi kesalahan sistem: ' . $e->getMessage()
+                    ]
+                ]
+            ], 500);
         }
     }
 
     private function previewImport($file, array $options)
     {
-        $import = new \App\Imports\KpiTargetImport($options);
-        
         try {
+            $import = new KpiTargetImport($options);
+
             Excel::toCollection($import, $file);
-            
+
             $summary = $import->getSummary();
-            
+
             if (!empty($summary['errors'])) {
-                return back()->withErrors([
-                    'file' => "Preview gagal:\n" . implode("\n", array_slice($summary['errors'], 0, 10))
-                ]);
+                return response()->json([
+                    'errors' => [
+                        'preview' => array_slice($summary['errors'], 0, 20)
+                    ]
+                ], 422);
             }
-            
-            return back()->with('success', '✅ Preview: Semua data valid! Siap untuk diimport.');
-            
-        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-            $errors = collect($e->failures())->map(function ($failure) {
-                return "Baris #{$failure->row()} [{$failure->attribute()}]: " . implode(', ', $failure->errors());
-            })->take(10);
-            
-            return back()->withErrors([
-                'file' => "Validasi preview:\n" . implode("\n", $errors->toArray())
+
+            return response()->json([
+                'success' => '✅ Preview: Semua data valid!',
+                'summary' => $summary,
+                'message' => 'Siap untuk diimport. Klik "Import Sekarang" untuk menyimpan ke database.'
             ]);
+
+        } catch (ValidationException $e) {
+            $errors = collect($e->failures())
+                ->map(function ($failure) {
+                    return "Baris #{$failure->row()} [{$failure->attribute()}]: " . implode(', ', $failure->errors());
+                })
+                ->take(20);
+
+            return response()->json([
+                'errors' => [
+                    'preview' => $errors->toArray()
+                ]
+            ], 422);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'errors' => [
+                    'preview' => [
+                        'Error preview: ' . $e->getMessage()
+                    ]
+                ]
+            ], 500);
         }
+    }
+
+    public function downloadTemplate()
+    {
+        $allRoutes = DataTarget::pluck('asistant_route')->unique()->sort()->values();
+        
+        $routeMapping = $this->getRouteMapping();
+        
+        return Excel::download(
+            new KpiTargetTemplateExport($allRoutes, $routeMapping),
+            'template_import_kpi_' . date('Y-m-d') . '.xlsx'
+        );
+    }
+
+    private function getRouteMapping(): array
+    {
+        return [
+            'gm' => [
+                'pemasukan kotor', 'pemasukan bersih', 'kepuasan pelanggan',
+                'rasio biaya operasional terhadap revenue', 'performa kpi departemen'
+            ],
+            'customer care' => [
+                'peserta puas dengan pelayanan dan fasilitas training',
+                'dorong inovasi pelayanan', 'penanganan komplain perseta',
+                'report persiapan kelas'
+            ],
+            'finance & accounting' => [
+                'outstanding', 'inisiatif efisiensi keuangan',
+                'mengurangi manual work dan error', 'laporan analisis keuangan',
+                'pencairan biaya operasional', 'penyelesaian tagihan perusahaan',
+                'akurasi pencatatan masuk'
+            ],
+            'hrd' => [
+                'pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan',
+                'administrasi karyawan'
+            ],
+            'driver' => [
+                'perbaikan kendaraan', 'report kondisi kendaraan',
+                'kontrol pengeluaran transportasi', 'feedback kenyamanan berkendaran'
+            ],
+            'office boy' => [
+                'feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian'
+            ],
+            'koordinator itsm' => [
+                'meningkatkan kepuasan dan loyalitas peserta/client',
+                'availability sistem internal kritis',
+                'persentase gap kompetensi tim terhadap standar skill'
+            ],
+            'programmer' => [
+                'ketepatan waktu penyelesaian fitur',
+                'mengukur kualitas aplikasi agar minim bug'
+            ],
+            'tim digital' => [
+                'konsistensi campaign digital', 'efektifitas digital marketing'
+            ],
+            'technical support' => [
+                'keberhasilan support memenuhi sla', 'kualitas layanan exam'
+            ],
+            'instruktur' => [
+                'presentase kinerja instruktur', 'kepuasan peserta pelatihan',
+                'upseling lanjutan materi', 'sertifikasi kompetensi internal',
+                'pelatihan kompetensi eksternal'
+            ],
+            'education manager' => [
+                'pengembangan kurikulum pelatihan', 'peningkatan knowledge sharing',
+                'peningkatan kontribusi pelatihan', 'evaluasi kinerja instruktur'
+            ],
+            'sales' => [
+                'target penjualan tahunan', 'biaya akuisisi perclient'
+            ],
+            'spv sales' => [
+                'meningkatkan revenue perusahaan', 'customer acquisition cost',
+                'evaluasi kinerja sales'
+            ],
+            'adm sales' => [
+                'laporan mom', 'akurasi kelengkapan data penjualan',
+                'todo administrasi'
+            ],
+            'admin holding' => [
+                'ketepatan waktu po', 'kualitas dokumentasi support dan proctor'
+            ],
+        ];
     }
 
     public function updateGapKompetensi(Request $request)
@@ -956,14 +1080,12 @@ class TargetKPIController extends Controller
             $divisiUser = $karyawan->divisi;
         }
 
-        if ($jabatan_pembuat === 'GM' || $jabatan_pembuat === 'HRD' || $jabatan_pembuat === 'Direktur Utama') {
-            $jabatanKhusus = ['SPV Sales', 'Koordinator ITSM', 'Education Manager', 'GM'];
-            $dataJabatan = karyawan::where(function ($q) use ($jabatanKhusus) {
-                $q->whereIn('jabatan', $jabatanKhusus)->orWhere('divisi', 'Office');
-            })
-            ->whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
-            ->distinct()
-            ->pluck('jabatan');
+        $superRoles = ['GM', 'HRD', 'Direktur Utama'];
+
+        if (in_array($user->jabatan, $superRoles)) {
+            $dataJabatan = karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
+                ->distinct()
+                ->pluck('jabatan');
         } else {
             $dataJabatan = karyawan::where('divisi', $divisiUser)
                 ->whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
@@ -981,7 +1103,7 @@ class TargetKPIController extends Controller
             $query->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($idUser) {
                 $q->where('id_karyawan', $idUser);
             });
-        } elseif ($jabatan_pembuat !== 'GM') {
+        } elseif (!in_array($jabatan_pembuat, $superRoles)) {
             $query->where('id_pembuat', $id_pembuat);
         }
 
@@ -996,7 +1118,7 @@ class TargetKPIController extends Controller
                     }
 
                     $tenggat_waktu = null;
-                    $jangka = strtolower( $detail->dataTarget?->jangka_target ?? '');
+                    $jangka = strtolower($detail->dataTarget?->jangka_target ?? '');
                     $detailJangka = $detail->detail_jangka;
 
                     switch ($jangka) {
@@ -1018,7 +1140,7 @@ class TargetKPIController extends Controller
                         'jabatan' => $item->detailTargetKPI->pluck('jabatan')->unique()->values(),
                         'divisi' => $item->detailTargetKPI->pluck('divisi')->unique()->values(),
                         'asistant_route' => $detail->dataTarget?->asistant_route,
-                        'jangka_target' =>  $detail->dataTarget?->jangka_target,
+                        'jangka_target' => $detail->dataTarget?->jangka_target,
                         'detail_jangka' => $detail->detail_jangka,
                         'tipe_target' => $detail->dataTarget?->tipe_target,
                         'nilai_target' => $detail->dataTarget?->nilai_target,
@@ -1053,7 +1175,7 @@ class TargetKPIController extends Controller
             $progress = $this->calculatePemasukanBersih($item, $personId);
         } elseif ($asistantRoute === 'rasio biaya operasional terhadap revenue') {
             $progress = $this->calculateRasioBiayaOperasionalTerhadapRevenue($item, $personId);
-        } elseif ($asistantRoute === 'performa KPI departemen') {
+        } elseif ($asistantRoute === 'performa kpi departemen') {
             $progress = $this->calculatePerformaKPIDepartemen($item, $personId);
         }
         elseif ($asistantRoute === 'peserta puas dengan pelayanan dan fasilitas training') {
@@ -1106,7 +1228,7 @@ class TargetKPIController extends Controller
         } elseif ($asistantRoute === 'penyelesaian tugas harian') {
             $progress = $this->calculatePenyelesaianTugasHarian($item, $personId);
         }
-        elseif ($asistantRoute === 'kepuasan client ITSM') {
+        elseif ($asistantRoute === 'kepuasan client itsm') {
             $progress = $this->calculateProgressKepuasanClientITSM($item, $personId);
         } elseif ($asistantRoute === 'inovation adaption rate') {
             $progress = $this->calculateInovationAdaptionRate($item, $personId);
@@ -1125,7 +1247,7 @@ class TargetKPIController extends Controller
         }
         elseif ($asistantRoute === 'konsistensi campaign digital') {
             $progress = $this->calculateKonsistensiCampaignDigital($item, $personId);
-        } elseif ($asistantRoute === 'efektifitas diital marketing') {
+        } elseif ($asistantRoute === 'efektifitas digital marketing') {
             $progress = $this->calculateEfektifitasDiitalMarketing($item, $personId);
         }
         elseif ($asistantRoute === 'keberhasilan support memenuhi sla') {
@@ -1375,60 +1497,60 @@ class TargetKPIController extends Controller
 
         foreach ($allTargets as $target) {
             $details = $target->detailTargetKPI;
-            if (!$details || $details->isEmpty()) {
-                continue;
-            }
+            if (!$details || $details->isEmpty()) continue;
 
             $divisions = $details->pluck('divisi')->unique()->filter();
 
             foreach ($divisions as $divisi) {
-                if (!isset($targetsByDivisi[$divisi])) {
-                    $targetsByDivisi[$divisi] = [];
-                }
                 $targetsByDivisi[$divisi][] = $target;
             }
         }
 
         $divisionAverages = [];
 
-        foreach ($targetsByDivisi as $divisi => $targets) {
+        foreach ($targetsByDivisi as $divisi => $items) {
             $progresses = [];
 
-            foreach ($targets as $targetItem) {
-                if ($targetItem->asistant_route === 'performa KPI departemen') {
-                    continue;
+            foreach ($items as $itemTarget) {
+                $detail = $itemTarget->detailTargetKPI->first();
+                if (!$detail) continue;
+
+                $route = strtolower($detail->dataTarget?->asistant_route ?? '');
+
+                if ($route === 'performa kpi departemen') continue;
+
+                $progress = $this->resolveProgress($itemTarget, $personId);
+
+                if ($detail->tipe_target === 'rupiah') {
+                    $targetVal = $detail->nilai_target;
+
+                    if ($route === 'pemasukan kotor') {
+                        $data = $this->calculatePemasukanKotor($itemTarget, $personId);
+                        $progress = $targetVal > 0 ? max(0, min(100, round(($data / $targetVal) * 100, 1))) : 0;
+
+                    } elseif ($route === 'meningkatkan revenue perusahaan') {
+                        $data = $this->calculateMeningkatkanRevenuePerusahaan($itemTarget, $personId);
+                        $progress = $targetVal > 0 ? max(0, min(100, round(($data / $targetVal) * 100, 1))) : 0;
+
+                    } elseif ($route === 'laporan mom') {
+                        $progress = $this->calculateLaporanMOM($itemTarget);
+                    }
                 }
 
-                $progress = null;
-
-                if ($targetItem->asistant_route === 'Pemasukan Kotor') {
-                    $dataRupiah = $this->calculatePemasukanKotor($targetItem, $personId);
-                    $detail = $targetItem->detailTargetKPI->first();
-                    $targetValue = $detail ? (float) $detail->nilai_target : 0;
-                    $progress = $targetValue > 0 ? max(0, min(100, round(($dataRupiah / $targetValue) * 100, 1))) : 0;
-                } elseif ($targetItem->asistant_route === 'meningkatkan revenue perusahaan') {
-                    $dataRupiah = $this->calculateMeningkatkanRevenuePerusahaan($targetItem, $personId);
-                    $detail = $targetItem->detailTargetKPI->first();
-                    $targetValue = $detail ? (float) $detail->nilai_target : 0;
-                    $progress = $targetValue > 0 ? max(0, min(100, round(($dataRupiah / $targetValue) * 100, 1))) : 0;
-                } else {
-                    $progress = $this->resolveProgress($targetItem, $personId);
-                }
-
-                if ($progress !== null && is_numeric($progress)) {
+                if (is_numeric($progress)) {
                     $progresses[] = $progress;
                 }
             }
 
             if (!empty($progresses)) {
-                $divisionAvg = array_sum($progresses) / count($progresses);
-                $divisionAverages[] = $divisionAvg;
+                $avg = array_sum($progresses) / count($progresses);
+                $divisionAverages[] = round($avg, 1);
             }
         }
 
         if (!empty($divisionAverages)) {
-            $finalProgress = array_sum($divisionAverages) / count($divisionAverages);
-            return round($finalProgress, 1);
+            $progress = array_sum($divisionAverages) / count($divisionAverages);
+            return round($progress, 1);
         }
 
         return 0;
@@ -2384,7 +2506,7 @@ class TargetKPIController extends Controller
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
-            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            Log::warning("Tidak ada detail jangka untuk target ID: {$item->id}");
             return 0;
         }
 
@@ -2428,7 +2550,6 @@ class TargetKPIController extends Controller
 
             $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
 
-            // Konversi ke skala 1 - 4
             $skor = 1 + ($totalBaris * 3) / 100;
 
             $allScores[] = $skor;
@@ -4620,7 +4741,7 @@ class TargetKPIController extends Controller
         // --- Tim Digital ---
         elseif ($route === 'konsistensi campaign digital') {
             return $this->calculateKonsistensiCampaignDigitalDetail($itemDetail);
-        } elseif ($route === 'efektifitas diital marketing') {
+        } elseif ($route === 'efektifitas digital marketing') {
             return $this->calculateEfektifitasDiitalMarketingDetail($itemDetail, $personId);
         }
 

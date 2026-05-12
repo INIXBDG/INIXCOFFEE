@@ -488,7 +488,6 @@ Route::prefix('kpi-data/')
         //Target Departement
         route::get('/table-data', [TargetKPIController::class, 'kpiIndex'])->name('index');
         route::post('/create-target', [TargetKPIController::class, 'createTarget'])->name('createTarget');
-        route::post('/import-target', [TargetKPIController::class, 'importTarget'])->name('importTarget');
         route::get('/get-data-target', [TargetKPIController::class, 'getDataTarget'])->name('getDataTarget');
         route::get('/detail-data-target', [TargetKPIController::class, 'detailData'])->name('detail');
         route::delete('/hapus-data-target/{id}', [TargetKPIController::class, 'hapusTarget'])->name('hapus');
@@ -497,6 +496,10 @@ Route::prefix('kpi-data/')
         route::get('get-karyawan-by-jabatan', [TargetKPIController::class, 'getKaryawanByJabatan'])->name('getKaryawanByJabatan');
         route::get('get-dashboard', [TargetKPIController::class, 'getProgressDashboard'])->name('getProgressDasboard');
         route::get('get-statistika', [TargetKPIController::class, 'getChartStatistics']);
+
+        Route::post('/import-target', [TargetKPIController::class, 'importTarget'])->name('importTarget');
+        Route::get('/download-template', [TargetKPIController::class, 'downloadTemplate'])->name('downloadTemplate');
+        Route::get('/assistant-routes', [TargetKPIController::class, 'getAssistantRoutesByJabatan'])->name('assistantRoutes');
 
         //manual value
         route::post('/update-manual-value', [TargetKPIController::class, 'manualValue'])->name('manualValue');
