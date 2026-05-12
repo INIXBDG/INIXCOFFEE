@@ -52,7 +52,7 @@ class ApprovalPendapatanController extends Controller
 
         $hariIni = now();
 
-        $rkm = RKM::with(['materi', 'perusahaan', 'sales', 'instruktur', 'outstanding'])
+        $rkm = RKM::with(['materi', 'perusahaan', 'sales', 'instruktur', 'outstanding', 'eksam'])
             ->whereYear('tanggal_akhir', $tahun)
             ->whereMonth('tanggal_akhir', $bulan)
             ->whereDate('tanggal_akhir', '<=', $hariIni)
@@ -120,14 +120,17 @@ class ApprovalPendapatanController extends Controller
                 'tanggal_mulai' => $valid?->tanggal_mulai ? Carbon::parse($valid->tanggal_mulai)->format('Y-m-d') : Carbon::parse($item->tanggal_awal)->format('Y-m-d'),
                 'tanggal_selesai' => $valid?->tanggal_selesai ? Carbon::parse($valid->tanggal_selesai)->format('Y-m-d') : Carbon::parse($item->tanggal_akhir)->format('Y-m-d'),
                 'perusahaan_id' => $valid?->perusahaan ?? $item->perusahaan_key,
+                'exam' => $item->eksam 
+                    ? 'Rp ' . number_format((float) $item->eksam->total, 0, ',', '.') 
+                    : '-',
+                'exam_value' => $item->eksam ? (float) $item->eksam->total : 0,
             ];
         }
 
         $footerBulanan = ApprovalPendapatan::whereYear('tanggal_selesai', $tahun)
             ->whereMonth('tanggal_selesai', $bulan)
             ->where('status', 'valid')
-            ->selectRaw(
-                "
+            ->selectRaw("
                 SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_penjualan,
                 SUM(CAST(total_diskon AS UNSIGNED)) as total_diskon,
                 SUM(CAST(total_pa AS UNSIGNED)) as total_pa,
@@ -141,14 +144,22 @@ class ApprovalPendapatanController extends Controller
                 SUM(CAST(jumlah_pembayaran AS UNSIGNED)) as jumlah_pembayaran,
                 SUM(CAST(biaya_admin AS UNSIGNED)) as biaya_admin,
                 SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport
-            ",
-            )
+            ")
             ->first();
+
+        $examBulanan = RKM::with('eksam')
+            ->whereYear('tanggal_akhir', $tahun)
+            ->whereMonth('tanggal_akhir', $bulan)
+            ->get()
+            ->sum(function ($item) {
+                return (float) ($item->eksam?->total ?? 0);
+            });
+
+        $footerBulanan->total_exam = $examBulanan;
 
         $footerTahunan = ApprovalPendapatan::whereYear('tanggal_selesai', $tahun)
             ->where('status', 'valid')
-            ->selectRaw(
-                "
+            ->selectRaw("
                 SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_penjualan,
                 SUM(CAST(total_diskon AS UNSIGNED)) as total_diskon,
                 SUM(CAST(total_pa AS UNSIGNED)) as total_pa,
@@ -162,9 +173,17 @@ class ApprovalPendapatanController extends Controller
                 SUM(CAST(jumlah_pembayaran AS UNSIGNED)) as jumlah_pembayaran,
                 SUM(CAST(biaya_admin AS UNSIGNED)) as biaya_admin,
                 SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport
-            ",
-            )
+            ")
             ->first();
+
+        $examTahunan = RKM::with('eksam')
+            ->whereYear('tanggal_akhir', $tahun)
+            ->get()
+            ->sum(function ($item) {
+                return (float) ($item->eksam?->total ?? 0);
+            });
+
+        $footerTahunan->total_exam = $examTahunan;
 
         return response()->json([
             'groupedData' => array_values($groupedData),

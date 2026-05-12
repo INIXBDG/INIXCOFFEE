@@ -257,6 +257,27 @@ class examController extends Controller
         ]);
     }
 
+    public function getExamKondisi()
+    {
+        $existingRKMs = eksam::pluck('id_rkm')->toArray();
+
+        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
+            ->where('exam', '0')
+            ->whereHas( 'materi', function ($query) {
+                $query->where('vendor', 'EC-Council')
+                    ->orWhere('nama_materi', 'like', '%BNSP%');
+            })
+            ->whereNotIn('id', $existingRKMs)
+            ->orderBy('tanggal_awal', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List Registrasi',
+            'data' => $rkm,
+        ]);
+    }
+
     public function getHistoriExam()
     {
         $rkm = eksam::with([
@@ -426,7 +447,7 @@ class examController extends Controller
                     'instruktur_key2' => $rkmSource->instruktur_key2,
                     'asisten_key' => $rkmSource->asisten_key,
                     'status' => $rkmSource->status,
-                    'exam' => '1',
+                    'exam' => $rkmSource->exam,
                     'authorize' => $rkmSource->authorize,
                     'registrasi_form' => $rkmSource->registrasi_form,
                     'quartal' => $rkmSource->quartal,
@@ -454,14 +475,26 @@ class examController extends Controller
                     'invoice' => $invoice
                 ]);
 
-                approvalexam::create([
-                    'id_exam' => $exam->id,
-                    'sales' => $newRkm->sales_key,
-                    'spv_sales' => false,
-                    'technical_support' => false,
-                    'office_manager' => false,
-                    'status' => $status,
-                ]);
+                // untuk exam bnsp dan ec-council, skip approval spv sales dan office manager
+                if ($rkmSource->materi->vendor == 'EC-Council' || str_contains($rkmSource->materi->nama_materi, 'BNSP')) {
+                    approvalexam::create([
+                        'id_exam' => $exam->id,
+                        'sales' => $newRkm->sales_key,
+                        'spv_sales' => true,
+                        'technical_support' => false,
+                        'office_manager' => true,
+                        'status' => 'Menunggu Konfirmasi oleh Technical Support'
+                    ]);
+                } else {
+                    approvalexam::create([
+                        'id_exam' => $exam->id,
+                        'sales' => $newRkm->sales_key,
+                        'spv_sales' => false,
+                        'technical_support' => false,
+                        'office_manager' => false,
+                        'status' => $status,
+                    ]);
+                }
             });
 
             $data = [
@@ -491,9 +524,12 @@ class examController extends Controller
 
             $path = '/exam/' . eksam::latest()->first()->id;
 
-            foreach ($users as $user) {
-                $receiverId = $user->id;
-                NotificationFacade::send($user, new PengajuanexamNotification($data, $path, $receiverId));
+            // selain rkm dengan exam "ya" maka skip notifikasi
+            if ($rkmSource->exam === '1') {
+                foreach ($users as $user) {
+                    $receiverId = $user->id;
+                    NotificationFacade::send($user, new PengajuanexamNotification($data, $path, $receiverId));
+                }
             }
 
             return redirect()->route('exam.index')->with(['success' => 'Data Berhasil Disimpan!']);
@@ -740,41 +776,45 @@ class examController extends Controller
                 'status' => $status,
                 'ttd_ts' => $kode_karyawan,
             ]);
-            $data = eksam::findOrfail($id);
-            $users = array_map(function ($user) {
-                return $user === '-' ? null : $user;
-            }, [
-                $approval->sales
-            ]);
 
-            $users = User::whereHas('karyawan', function ($query) use ($users) {
-                $query->whereIn('kode_karyawan', array_filter($users));
-            })->get();
-
-            $path = '/exam/' . $id;
-
-            foreach ($users as $user) {
-                $receiverId = $user->id;
-                NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
-            }
-
-            $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
-            $users = array_map(function ($user) {
-                return $user === '-' ? null : $user;
-            }, [
-                $approval->ttd_ts,
-                $finance->kode_karyawan
-            ]);
-
-            $users = User::whereHas('karyawan', function ($query) use ($users) {
-                $query->whereIn('kode_karyawan', array_filter($users));
-            })->get();
-
-            $path = '/exam/' . $id;
-
-            foreach ($users as $user) {
-                $receiverId = $user->id;
-                NotificationFacade::send($user, new BayarExamNotification($data, $path, $receiverId));
+            // skip kirim notif jika exam != 1
+            if ($exam->rkm->exam === '1') {
+                $data = eksam::findOrfail($id);
+                $users = array_map(function ($user) {
+                    return $user === '-' ? null : $user;
+                }, [
+                    $approval->sales
+                ]);
+    
+                $users = User::whereHas('karyawan', function ($query) use ($users) {
+                    $query->whereIn('kode_karyawan', array_filter($users));
+                })->get();
+    
+                $path = '/exam/' . $id;
+    
+                foreach ($users as $user) {
+                    $receiverId = $user->id;
+                    NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
+                }
+    
+                $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
+                $users = array_map(function ($user) {
+                    return $user === '-' ? null : $user;
+                }, [
+                    $approval->ttd_ts,
+                    $finance->kode_karyawan
+                ]);
+    
+                $users = User::whereHas('karyawan', function ($query) use ($users) {
+                    $query->whereIn('kode_karyawan', array_filter($users));
+                })->get();
+    
+                $path = '/exam/' . $id;
+    
+                foreach ($users as $user) {
+                    $receiverId = $user->id;
+                    NotificationFacade::send($user, new BayarExamNotification($data, $path, $receiverId));
+                }
             }
         }
 

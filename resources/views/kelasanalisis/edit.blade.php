@@ -351,7 +351,7 @@
                                         <div class="row mb-3" id="tanggal_awal-row">
                                             <label for="tanggal_awal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Awal') }}</label>
                                             <div class="col-md-6">
-                                                <input readonly type="date" class="form-control" value="{{$post->rkm->tanggal_awal}}" name="tanggal_awal" id="tanggal_awal">
+                                                <input readonly type="date" class="form-control" value="{{ $post->rkm->tanggal_awal ? \Carbon\Carbon::parse($post->rkm->tanggal_awal)->format('Y-m-d') : '' }}" name="tanggal_awal" id="tanggal_awal">
                                                 @error('tanggal_awal')
                                                     <span class="invalid-feedback" role="alert">
                                                         <strong>{{ $message }}</strong>
@@ -363,7 +363,7 @@
                                         <div class="row mb-3" id="tanggal_akhir-row">
                                             <label for="tanggal_akhir" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Akhir') }}</label>
                                             <div class="col-md-6">
-                                                <input readonly type="date" class="form-control" value="{{$post->rkm->tanggal_akhir}}" name="tanggal_akhir" id="tanggal_akhir">
+                                                <input readonly type="date" class="form-control" value="{{ $post->rkm->tanggal_akhir ? \Carbon\Carbon::parse($post->rkm->tanggal_akhir)->format('Y-m-d') : '' }}" name="tanggal_akhir" id="tanggal_akhir">
                                                 @error('tanggal_akhir')
                                                     <span class="invalid-feedback" role="alert">
                                                         <strong>{{ $message }}</strong>
@@ -431,6 +431,21 @@
                                                     <input type="text"  value="{{$post->total_harga_jual}}" step="0.01" class="form-control @error('total_harga_jual') is-invalid @enderror" name="total_harga_jual" value="" id="total_harga_jual" required>
                                                 </div>
                                                 @error('total_harga_jual')
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $message }}</strong>
+                                                    </span>
+                                                @enderror
+                                            </div>
+                                        </div>
+    
+                                        <div class="row mb-3">
+                                            <label for="validasi_approval_pendapatan" class="col-md-4 col-form-label text-md-start">{{ __('Validasi Approval Netsales') }}</label>
+                                            <div class="col-md-6">
+                                                <div class="input-group">
+                                                    <span class="input-group-text" id="currency-symbol">Rp.</span>
+                                                    <input type="text"  value="{{$post->rkm->approvalPendapatan->total_penjualan_sales}}" step="0.01" class="form-control @error('validasi_approval_pendapatan') is-invalid @enderror" name="validasi_approval_pendapatan" value="" id="validasi_approval_pendapatan" readonly  required>
+                                                </div>
+                                                @error('validasi_approval_pendapatan')
                                                     <span class="invalid-feedback" role="alert">
                                                         <strong>{{ $message }}</strong>
                                                     </span>
@@ -510,6 +525,11 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function () {
+        let validasiApproval = $('#validasi_approval_netsales').val();
+
+        if (validasiApproval && validasiApproval !== 'Belum diisi') {
+            $('#validasi_approval_netsales').val(formatRupiah(validasiApproval.toString()));
+        }
         let hargaJual = $('#harga_jual').val();
         var kelas = $('#kelas').val();
         if (hargaJual) {
@@ -691,6 +711,7 @@
     //     $('#pa_hotel').val(formatRupiah(pa_hotel.toString()));
     // }
     function totalSemua() {
+        const validasi_approval_pendapatan = parseFloat(removeRupiahFormat($('#validasi_approval_pendapatan').val())) || 0;
         const total_fee_instruktur = parseFloat(removeRupiahFormat($('#total_fee_instruktur').val())) || 0;
         const exam = parseFloat(removeRupiahFormat($('#exam').val())) || 0;
         const pc = parseFloat(removeRupiahFormat($('#pc').val())) || 0;
@@ -704,7 +725,7 @@
         const total_harga_jual = parseFloat(removeRupiahFormat($('#total_harga_jual').val())) || 0;
         const durasi = parseInt($('#durasi').val(), 10) || 0;
         const pax = parseInt($('#pax').val(), 10) || 0;
-        var nett_penjualan = total_harga_jual - (total_fee_instruktur + pc + souvenir + (transportasi * durasi * pax) + konsumsi + biaya_modul_regular + biaya_modul_regular_dollar + alat + pa_hotel + exam);
+        var nett_penjualan = validasi_approval_pendapatan - (total_fee_instruktur + pc + souvenir + (transportasi * durasi * pax) + konsumsi + biaya_modul_regular + biaya_modul_regular_dollar + alat + pa_hotel + exam);
 
         // Debugging check to see the raw value of nett_penjualan
         console.log('Nett Penjualan before formatting:', nett_penjualan);

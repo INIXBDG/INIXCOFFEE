@@ -40,12 +40,13 @@
                         <div class="col-md-3">
                             <div class="mb-3">
                                 <label class="text-muted small text-uppercase mb-1">Perusahaan</label>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar avatar-sm rounded-circle me-2">
-                                        <i class="bx bx-buildings text-info"></i>
-                                    </div>
-                                    <p class="mb-0 fw-semibold text-dark">{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</p>
-                                </div>
+                                <ul class="list-unstyled mb-0">
+                                    @foreach ($perusahaan as $item)
+                                        <li class="fw-semibold text-dark">
+                                            {{ $item }}
+                                        </li>
+                                    @endforeach
+                                </ul>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -117,7 +118,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($peserta as $index => $p)
+                            @forelse($peserta as $index => $p)
                                 @php
                                     $hasCertificate = in_array($p->id_peserta, $certificateIds);
                                 @endphp
@@ -152,17 +153,24 @@
                                     <td class="text-center pe-4">
                                         @if($hasCertificate)
                                         <!-- Tombol Download -->
-                                        <a href="{{ route('office.certificate.downloadByPeserta', ['rkm_id' => $rkm->id, 'peserta_id' => $p->id_peserta]) }}" 
+                                        <a href="{{ route('office.certificate.downloadByPeserta', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}" 
                                            class="btn btn-sm btn-success shadow-sm hover-scale">
                                             <i class="bx bx-download me-1"></i>Download PDF
                                         </a>
-                                        <a href="{{ route('office.certificate.create', ['rkm_id' => $rkm->id, 'peserta_id' => $p->id_peserta]) }}" 
+                                        <a href="{{ route('office.certificate.create', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}" 
                                            class="btn btn-sm btn-primary shadow-sm hover-scale">
                                             <i class="bx bx-file-blank me-1"></i>Generate +
                                         </a>
+                                        <form action="{{ route('office.certificate.delete', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-danger shadow-sm hover-scale" onclick="return confirm('Apakah Anda yakin ingin menghapus sertifikat ini?')">
+                                                <i class="bx bx-trash me-1"></i>Hapus
+                                            </button>
+                                        </form>
                                         @else
                                         <!-- Tombol Generate -->
-                                        <a href="{{ route('office.certificate.create', ['rkm_id' => $rkm->id, 'peserta_id' => $p->id_peserta]) }}" 
+                                        <a href="{{ route('office.certificate.create', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}" 
                                            class="btn btn-sm btn-primary shadow-sm hover-scale">
                                             <i class="bx bx-file-blank me-1"></i>Generate
                                         </a>
@@ -178,7 +186,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                @endforelse
+                            @endforelse
                             </tbody>
                         </table>
                     </div>

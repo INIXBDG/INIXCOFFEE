@@ -264,6 +264,7 @@ Route::get('getPerusahaanById', [App\Http\Controllers\PerusahaanController::clas
 Route::get('getRegistrasiall', [App\Http\Controllers\RegistrasiController::class, 'getRegistrasiall'])->name('getRegistrasiall');
 Route::get('getPesertaall', [App\Http\Controllers\PesertaController::class, 'getPesertaall'])->name('getPesertaall');
 Route::get('getExam', [App\Http\Controllers\examController::class, 'getExam'])->name('getExam');
+Route::get('getExamKondisi', [App\Http\Controllers\examController::class, 'getExamKondisi'])->name('getExamKondisi');
 Route::post('/exam/{id}/upload-invoice', [examController::class, 'uploadInvoice'])->name('exam.uploadInvoice');
 Route::post('/exam/{id}/update-tanggal', [examController::class, 'updateTanggal'])->name('exam.updateTanggal');
 Route::delete('/exam/{id}/delete-invoice/{filename}', [examController::class, 'deleteSpecificInvoice'])->name('exam.deleteSpecificInvoice');
@@ -1176,6 +1177,7 @@ Route::prefix('office')
             Route::get('/download/{id}', [CertificateController::class, 'download'])->name('download');
             Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
             Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
+            Route::delete('/delete/{rkm_id}/{peserta_id}', [CertificateController::class, 'delete'])->name('delete');
         });
 
         Route::prefix('vendor')->name('vendor.')->group(function () {

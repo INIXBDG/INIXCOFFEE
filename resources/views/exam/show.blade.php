@@ -260,35 +260,39 @@
                                                 <h4>Approval Exam</h4>
                                                 <table class="table table-bordered">
                                                     <thead>
-                                                        <th>SPV Sales</th>
-                                                        <th>Accounting</th>
+                                                        @if ($rkm->rkm->exam === '1')
+                                                            <th>SPV Sales</th>
+                                                            <th>Accounting</th>
+                                                        @endif
                                                         <th>Technical Support</th>
                                                         <th>Status</th>
                                                     </thead>
                                                     <tbody>
                                                         @if($approvalexam)
-                                                            @if (auth()->user()->jabatan == 'SPV Sales')
-                                                                @if ($approvalexam->spv_sales == '0')
-                                                                    <td><a href="{{ route('approvalexam', $approvalexam->id_exam) }}" class="btn btn-primary">Approval</a></td>
-                                                                @elseif ($approvalexam->spv_sales == '1')
-                                                                    <td>Approve</td>
+                                                            @if ($rkm->rkm->exam === '1')
+                                                                @if (auth()->user()->jabatan == 'SPV Sales')
+                                                                    @if ($approvalexam->spv_sales == '0')
+                                                                        <td><a href="{{ route('approvalexam', $approvalexam->id_exam) }}" class="btn btn-primary">Approval</a></td>
+                                                                    @elseif ($approvalexam->spv_sales == '1')
+                                                                        <td>Approve</td>
+                                                                    @else
+                                                                        <td>{{ $approvalexam->spv_sales ? 'Approve' : 'Belum' }}</td>
+                                                                    @endif
                                                                 @else
                                                                     <td>{{ $approvalexam->spv_sales ? 'Approve' : 'Belum' }}</td>
                                                                 @endif
-                                                            @else
-                                                                <td>{{ $approvalexam->spv_sales ? 'Approve' : 'Belum' }}</td>
-                                                            @endif
 
-                                                            @if (auth()->user()->jabatan == 'Finance & Accounting')
-                                                                @if ($approvalexam->spv_sales == '1' && $approvalexam->office_manager == '0')
-                                                                    <td><a href="{{ route('approvalexam', $approvalexam->id_exam) }}" class="btn btn-primary">Konfirmasi</a></td>
-                                                                @elseif ($approvalexam->office_manager == '1')
-                                                                    <td>Dikonfirmasi</td>
+                                                                @if (auth()->user()->jabatan == 'Finance & Accounting')
+                                                                    @if ($approvalexam->spv_sales == '1' && $approvalexam->office_manager == '0')
+                                                                        <td><a href="{{ route('approvalexam', $approvalexam->id_exam) }}" class="btn btn-primary">Konfirmasi</a></td>
+                                                                    @elseif ($approvalexam->office_manager == '1')
+                                                                        <td>Dikonfirmasi</td>
+                                                                    @else
+                                                                        <td>Belum</td>
+                                                                    @endif
                                                                 @else
-                                                                    <td>Belum</td>
+                                                                    <td>{{ $approvalexam->office_manager ? 'Dikonfirmasi' : 'Belum' }}</td>
                                                                 @endif
-                                                            @else
-                                                                <td>{{ $approvalexam->office_manager ? 'Dikonfirmasi' : 'Belum' }}</td>
                                                             @endif
 
                                                             @if (auth()->user()->jabatan == 'Technical Support')

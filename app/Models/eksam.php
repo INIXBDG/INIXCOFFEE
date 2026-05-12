@@ -33,10 +33,7 @@ class eksam extends Model
         'mata_uang',
         'deleted_at',
         'deleted_by',
-    ];
-
-    protected $casts = [
-        'file_invoice' => 'array',
+        
     ];
 
     public function rkm()

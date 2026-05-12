@@ -207,7 +207,7 @@ class RegistrasiController extends Controller
         $rkm = RKM::where('id', $post->id_rkm)->first();
 
         // Increment isi_pax by 1
-        $rkm->increment('isi_pax');
+        //$rkm->increment('isi_pax');
 
         if(!$feedback){
             $post->delete();
