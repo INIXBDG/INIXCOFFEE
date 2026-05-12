@@ -232,6 +232,11 @@
                                                     <input type="number" class="form-control" id="PPH"
                                                         name="PPH">
                                                 </div>
+                                                <div class="col-12">
+                                                    <label class="form-label text-muted small">Exam</label>
+                                                    <input type="text" class="form-control bg-light" id="exam" readonly>
+                                                    <input type="hidden" id="exam_value">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -344,7 +349,8 @@
                 parseNumber($('#total_uang_saku').val()) +
                 parseNumber($('#total_akomodasi').val()) +
                 parseNumber($('#biaya_transport').val()) +
-                parseNumber($('#oleh_oleh').val());
+                parseNumber($('#oleh_oleh').val()) +
+                parseNumber($('#exam_value').val());
 
             let totalPenjualanSales = Math.max(0, total - deductions);
             $('#total_penjualan_sales').val(totalPenjualanSales);
@@ -412,6 +418,7 @@
                                     <td class="text-end">${formatRupiah(item.oleh_oleh || 0)}</td>
                                     <td>${escapeHtml(item.jenis_transport || '-')}</td>
                                     <td class="text-end">${formatRupiah(item.biaya_transport || 0)}</td>
+                                    <td>${item.exam}</td>
                                     <td class="text-end">${formatRupiah(item.total_penjualan_sales || 0)}</td>
                                     <td class="text-end">${formatRupiah(item.PPN || 0)}</td>
                                     <td class="text-end">${formatRupiah(item.PPH || 0)}</td>
@@ -441,7 +448,10 @@
                                         <td class="text-end">${formatRupiah(footerBulanan.total_akomodasi || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerBulanan.oleh_oleh || 0)}</td>
                                         <td class="text-end">-</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.biaya_transport || 0)}</td>                                        
+                                        <td class="text-end">${formatRupiah(footerBulanan.biaya_transport || 0)}</td>
+                                        <td class="text-end">
+                                            ${formatRupiah(footerBulanan.total_exam || 0)}
+                                        </td>                                     
                                         <td class="text-end">${formatRupiah(footerBulanan.total_penjualan_sales || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerBulanan.total_ppn || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerBulanan.total_pph || 0)}</td>
@@ -464,6 +474,9 @@
                                         <td class="text-end">${formatRupiah(footerTahunan.oleh_oleh || 0)}</td>
                                         <td class="text-end">-</td>
                                         <td class="text-end">${formatRupiah(footerTahunan.biaya_transport || 0)}</td>
+                                        <td class="text-end">
+                                            ${formatRupiah(footerTahunan.total_exam || 0)}
+                                        </td>
                                         <td class="text-end">${formatRupiah(footerTahunan.total_penjualan_sales || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerTahunan.total_ppn || 0)}</td>
                                         <td class="text-end">${formatRupiah(footerTahunan.total_pph || 0)}</td>
@@ -510,6 +523,7 @@
                                                     <th>Oleh-Oleh peserta</th>
                                                     <th>Jenis Transport</th>
                                                     <th>Biaya Transport</th>
+                                                    <th>Exam</th>
                                                     <th>Total Penjualan Sales (Bersih)</th>
                                                     <th>PPN</th>
                                                     <th>PPH</th>
@@ -578,6 +592,8 @@
             $('#jumlah_pembayaran').val(item.jumlah_pembayaran ?? '');
             $('#tanggal_pembayaran').val(item.tanggal_pembayaran ?? '');
             $('#biaya_admin').val(item.biaya_admin ?? '');
+            $('#exam').val(item.exam ?? '-');
+            $('#exam_value').val(item.exam_value ?? 0);
 
             if (['Pesawat', 'Kereta', 'Bus', 'Mobil', 'Travel', 'Lainnya'].includes(item.jenis_transport)) {
                 $('#transportasi_select').val(item.jenis_transport);
