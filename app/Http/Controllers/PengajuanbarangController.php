@@ -144,7 +144,7 @@ class PengajuanBarangController extends Controller
         $karyawan = karyawan::findOrFail($user);
         return view('pengajuanbarang.create', compact('karyawan'));
     }
-    
+
     /**
      * Menyimpan Pengajuan Barang baru ke dalam database.
      */
@@ -230,7 +230,7 @@ class PengajuanBarangController extends Controller
         $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
         $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
         $GM = karyawan::where('jabatan', 'GM')->first();
-        $users = []; 
+        $users = [];
         switch ($jabatan) {
             case 'SPV Sales':
             case 'Office Manager':
@@ -268,7 +268,7 @@ class PengajuanBarangController extends Controller
             'id_karyawan' => $request->id_karyawan,
             'tipe' => $request->tipe,
             'tanggal_pengajuan' => now(),
-            'id_pengajuan' => $PengajuanBarang->id, 
+            'id_pengajuan' => $PengajuanBarang->id,
         ];
         $type = 'Mengajukan Permintaan Barang';
         $path = '/pengajuanbarang';
@@ -307,7 +307,7 @@ class PengajuanBarangController extends Controller
      * Memperbarui Pengajuan Barang di dalam database.
      */
     public function update(Request $request, $id)
-    {   
+    {
         // dd($request->all());
         $data = PengajuanBarang::with('karyawan')->findOrFail($id);
         $detail = detailPengajuanBarang::where('id_pengajuan_barang', $id)->get();
@@ -318,8 +318,8 @@ class PengajuanBarangController extends Controller
 
         if ($request->approval == '1' && $jabatan == 'Finance & Accounting') {
             $status = $request->status;
-            
-            
+
+
             $e = tracking_pengajuan_barang::create([
                 'id_pengajuan_barang' => $id,
                 'tracking' => $status,
@@ -441,7 +441,7 @@ class PengajuanBarangController extends Controller
             return redirect()
                 ->route('pengajuanbarang.index')
                 ->with(['success' => 'Data berhasil diperbarui!']);
-                
+
         } elseif ($request->approval == '2') {
             $status = 'Pengajuan ditolak dikarenakan ' . $request->alasan;
             $e = tracking_pengajuan_barang::create([
@@ -678,7 +678,7 @@ class PengajuanBarangController extends Controller
                     ];
                 } else {
                     $detail = detailPengajuanBarang::findOrFail($detailId);
-                    
+
                     $isChanged = false;
                     $perubahanItem = [];
 
