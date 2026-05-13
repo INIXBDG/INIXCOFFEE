@@ -11,7 +11,9 @@ use App\Models\ChecklistKeperluan;
 use App\Models\eksam;
 use App\Models\Feedback;
 use App\Models\HariLibur;
+use App\Models\JenisTunjangan;
 use App\Models\karyawan;
+use App\Models\LogGaji;
 use App\Models\Nilaifeedback;
 use App\Models\outstanding;
 use App\Models\pengajuancuti;
@@ -20,12 +22,14 @@ use App\Models\RKM;
 use App\Models\tagihanPerusahaan;
 use App\Models\Tickets;
 use App\Models\trackingTagihanPerusahaan;
+use App\Models\TunjanganKaryawan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Http\JsonResponse;
 
 use function PHPUnit\Framework\matches;
 
@@ -1129,5 +1133,375 @@ class OfficeController extends Controller
         ]);
 
         return redirect()->back()->with('success_exam', 'Exam berhasil di selesaikan');
+    }
+  
+    public function laporanStatusKaryawan(Request $request)
+    {
+        $tahun = $request->tahun ?? now()->year;
+        $bulan = $request->bulan;
+
+        $base = Karyawan::whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi');
+
+        $aktifBase = (clone $base)->where('status_aktif', '1');
+        $resignBase = (clone $base)->where('status_aktif', '0')->whereNotNull('resigned_at');
+
+        // Helper untuk apply filter tahun & bulan ke kolom spesifik
+        $applyDateFilter = function($query, $column) use ($tahun, $bulan) {
+            if ($tahun) $query->whereYear($column, $tahun);
+            if ($bulan) $query->whereMonth($column, $bulan);
+            return $query;
+        };
+
+        $kontrak = (clone $aktifBase)->whereNotNull(['awal_kontrak', 'akhir_kontrak'])->whereNull(['awal_tetap', 'akhir_tetap']);
+        $kontrakCount = $applyDateFilter($kontrak, 'awal_kontrak')->count();
+
+        $tetap = (clone $aktifBase)->whereNotNull(['awal_tetap', 'akhir_tetap']);
+        $tetapCount = $applyDateFilter($tetap, 'awal_tetap')->count();
+
+        $probation = (clone $aktifBase)->whereNotNull(['awal_probation', 'akhir_probation'])->whereNull(['awal_kontrak', 'akhir_kontrak']);
+        $probationCount = $applyDateFilter($probation, 'awal_probation')->count();
+
+        $resign = clone $resignBase;
+        $resignCount = $applyDateFilter($resign, 'resigned_at')->count();
+
+        return response()->json([
+            'kontrak' => $kontrakCount,
+            'tetap' => $tetapCount,
+            'probation' => $probationCount,
+            'resign' => $resignCount,
+        ]);
+    }
+
+    public function detailKaryawanStatus(Request $request)
+    {
+        $status = $request->status;
+        $tahun = $request->tahun ?? now()->year;
+        $bulan = $request->bulan;
+        $search = $request->search ?? '';
+
+        $query = Karyawan::whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi');
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'LIKE', "%{$search}%")
+                ->orWhere('nip', 'LIKE', "%{$search}%")
+                ->orWhere('divisi', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $dateColumn = null;
+        switch ($status) {
+            case 'kontrak':
+                $query->where('status_aktif', '1')->whereNotNull(['awal_kontrak', 'akhir_kontrak'])->whereNull(['awal_tetap', 'akhir_tetap']);
+                $dateColumn = 'awal_kontrak';
+                break;
+            case 'tetap':
+                $query->where('status_aktif', '1')->whereNotNull(['awal_tetap', 'akhir_tetap']);
+                $dateColumn = 'awal_tetap';
+                break;
+            case 'probation':
+                $query->where('status_aktif', '1')->whereNotNull(['awal_probation', 'akhir_probation'])->whereNull(['awal_kontrak', 'akhir_kontrak']);
+                $dateColumn = 'awal_probation';
+                break;
+            case 'resign':
+                $query->where('status_aktif', '0')->whereNotNull('resigned_at');
+                $dateColumn = 'resigned_at';
+                break;
+        }
+
+        // Apply filter tanggal sesuai status
+        if ($dateColumn) {
+            if ($tahun) $query->whereYear($dateColumn, $tahun);
+            if ($bulan) $query->whereMonth($dateColumn, $bulan);
+        }
+
+        return response()->json($query->orderBy('nama_lengkap')->paginate(10));
+    }
+
+    public function laporanTrendKaryawan(Request $request)
+    {
+        $tahun = $request->tahun ?? now()->year;
+        $labels = $kontrak = $tetap = $probation = [];
+
+        // Base query yang sama untuk semua status aktif
+        $base = Karyawan::whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi')
+            ->where('status_aktif', '1');
+
+        // Gunakan copy() agar tidak merusak instance Carbon di iterasi berikutnya
+        $baseDate = now()->year($tahun);
+
+        for ($i = 5; $i >= 0; $i--) {
+            $date = $baseDate->copy()->subMonths($i);
+            $labels[] = $date->translatedFormat('M Y');
+            
+            $start = $date->copy()->startOfMonth();
+            $end = $date->copy()->endOfMonth();
+
+            // Filter berdasarkan kolom tanggal spesifik masing-masing status
+            $kontrak[] = (clone $base)
+                ->whereNotNull(['awal_kontrak', 'akhir_kontrak'])
+                ->whereNull(['awal_tetap', 'akhir_tetap'])
+                ->whereBetween('awal_kontrak', [$start, $end])
+                ->count();
+
+            $tetap[] = (clone $base)
+                ->whereNotNull(['awal_tetap', 'akhir_tetap'])
+                ->whereBetween('awal_tetap', [$start, $end])
+                ->count();
+
+            $probation[] = (clone $base)
+                ->whereNotNull(['awal_probation', 'akhir_probation'])
+                ->whereNull(['awal_kontrak', 'akhir_kontrak'])
+                ->whereBetween('awal_probation', [$start, $end])
+                ->count();
+        }
+
+        return response()->json([
+            'labels' => $labels, 
+            'kontrak' => $kontrak, 
+            'tetap' => $tetap, 
+            'probation' => $probation
+        ]);
+    }
+
+    public function exportStatusKaryawanPdf(Request $request)
+    {
+        $tahun = $request->input('tahun', now()->year);
+        $bulan = $request->input('bulan');
+
+        // Base query karyawan aktif (exclude jabatan tertentu)
+        $baseQuery = Karyawan::where('status_aktif', '1')
+            ->whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi');
+
+        // Helper untuk filter tahun & bulan
+        $applyDateFilter = function ($query, $column) use ($tahun, $bulan) {
+            $query->whereYear($column, $tahun);
+            if ($bulan) {
+                $query->whereMonth($column, $bulan);
+            }
+        };
+
+        // 1. KARYAWAN KONTRAK (filter berdasarkan awal_kontrak)
+        $kontrak = (clone $baseQuery)
+            ->whereNotNull('awal_kontrak')->whereNull('awal_tetap')
+            ->tap(fn($q) => $applyDateFilter($q, 'awal_kontrak'))
+            ->select('nip', 'nama_lengkap', 'divisi', 'jabatan', 'awal_kontrak as tgl_periode', 'akhir_kontrak as tgl_akhir', 'alasan_resign')
+            ->orderBy('awal_kontrak', 'desc')
+            ->get();
+
+        // 2. KARYAWAN TETAP (filter berdasarkan awal_tetap)
+        $tetap = (clone $baseQuery)
+            ->whereNotNull('awal_tetap')
+            ->tap(fn($q) => $applyDateFilter($q, 'awal_tetap'))
+            ->select('nip', 'nama_lengkap', 'divisi', 'jabatan', 'awal_tetap as tgl_periode', 'akhir_tetap as tgl_akhir', 'alasan_resign')
+            ->orderBy('awal_tetap', 'desc')
+            ->get();
+
+        // 3. KARYAWAN PROBATION (filter berdasarkan awal_probation)
+        $probation = (clone $baseQuery)
+            ->whereNotNull('awal_probation')->whereNull('awal_kontrak')
+            ->tap(fn($q) => $applyDateFilter($q, 'awal_probation'))
+            ->select('nip', 'nama_lengkap', 'divisi', 'jabatan', 'awal_probation as tgl_periode', 'akhir_probation as tgl_akhir', 'alasan_resign')
+            ->orderBy('awal_probation', 'desc')
+            ->get();
+
+        // 4. KARYAWAN RESIGN (filter berdasarkan resigned_at)
+        $resign = Karyawan::where('status_aktif', '0')->whereNotNull('resigned_at')
+            ->tap(fn($q) => $applyDateFilter($q, 'resigned_at'))
+            ->select('nip', 'nama_lengkap', 'divisi', 'jabatan', 'resigned_at as tgl_periode', 'alasan_resign')
+            ->orderBy('resigned_at', 'desc')
+            ->get();
+
+        $data = compact('tahun', 'bulan', 'kontrak', 'tetap', 'probation', 'resign');
+
+        $pdf = Pdf::loadView('reports.status_karyawan_pdf', compact('data'))
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'defaultFont' => 'DejaVu Sans',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'dpi' => 96
+            ]);
+
+        $periodeLabel = $bulan ? "Bulan-{$bulan}" : "Tahun-{$tahun}";
+        return $pdf->download("Laporan_Status_Karyawan_{$periodeLabel}_" . now()->format('Y-m-d_His') . '.pdf');
+    }
+
+    public function getDashboardTunjanganOffice(Request $request)
+    {
+        try {
+            $bulan = (int) $request->month;
+            $tahun = (int) $request->year;
+
+            $excludedJabatan = [
+                'Direktur',
+                'Direktur Utama'
+            ];
+
+            $eligibleKaryawan = Karyawan::query()
+                ->select([
+                    'id',
+                    'nama_lengkap',
+                    'kode_karyawan',
+                    'divisi',
+                    'jabatan',
+                    'gaji',
+                    'status_aktif'
+                ])
+                ->where('status_aktif', '1')
+                ->whereNotIn('jabatan', $excludedJabatan)
+                ->where(function ($query) {
+                    $query->whereNull('kode_karyawan')
+                        ->orWhere('kode_karyawan', 'not like', '%OL%');
+                })
+                ->whereRaw('LOWER(jabatan) != ?', ['outsource'])
+                ->orderBy('nama_lengkap')
+                ->get();
+
+            $eligibleIds = $eligibleKaryawan->pluck('id')->toArray();
+
+            $tunjanganData = TunjanganKaryawan::with([
+                    'jenistunjangan:id,nama_tunjangan,tipe'
+                ])
+                ->whereIn('id_karyawan', $eligibleIds)
+                ->byPeriod($bulan, $tahun)
+                ->get()
+                ->groupBy('id_karyawan');
+
+            $allKaryawan = $eligibleKaryawan->map(function ($karyawan) use ($tunjanganData) {
+                $items = $tunjanganData->get($karyawan->id, collect());
+
+                $totalTunjangan = $items
+                    ->where('jenistunjangan.tipe', 'Tunjangan')
+                    ->sum('total');
+
+                $totalPotongan = $items
+                    ->where('jenistunjangan.tipe', 'Potongan')
+                    ->sum('total');
+
+                return [
+                    'id' => $karyawan->id,
+                    'nama_lengkap' => $karyawan->nama_lengkap,
+                    'kode_karyawan' => $karyawan->kode_karyawan,
+                    'divisi' => $karyawan->divisi ?? '-',
+                    'jabatan' => $karyawan->jabatan ?? '-',
+                    'gaji_pokok' => (float) ($karyawan->gaji ?? 0),
+
+                    'status_tunjangan' => $items->isNotEmpty()
+                        ? 'Sudah Ada'
+                        : 'Belum Ada',
+
+                    'jumlah_item' => $items->count(),
+
+                    'total_tunjangan' => (float) $totalTunjangan,
+                    'total_potongan' => (float) $totalPotongan,
+
+                    'total_bersih' => (float) (
+                        $totalTunjangan + $totalPotongan
+                    ),
+
+                    'details' => $items->map(function ($item) {
+                        return [
+                            'id_tunjangan' => $item->id,
+                            'nama_tunjangan' => optional($item->jenistunjangan)->nama_tunjangan,
+                            'tipe' => optional($item->jenistunjangan)->tipe,
+                            'keterangan' => $item->keterangan,
+                            'total' => (float) $item->total
+                        ];
+                    })->values()
+                ];
+            })->values();
+
+            $sudahAdaTunjangan = $allKaryawan
+                ->where('status_tunjangan', 'Sudah Ada')
+                ->count();
+
+            $belumAdaTunjangan = $allKaryawan
+                ->where('status_tunjangan', 'Belum Ada')
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dashboard tunjangan berhasil diambil',
+                'data' => [
+                    'period' => [
+                        'month' => $bulan,
+                        'year' => $tahun,
+                        'display' => Carbon::createFromFormat(
+                            'm-Y',
+                            $bulan . '-' . $tahun
+                        )->format('F Y')
+                    ],
+
+                    'summary' => [
+                        'total_karyawan' => $eligibleKaryawan->count(),
+                        'sudah_ada_tunjangan' => $sudahAdaTunjangan,
+                        'belum_ada_tunjangan' => $belumAdaTunjangan,
+
+                        'grand_total_tunjangan' => (float) $allKaryawan->sum('total_tunjangan'),
+                        'grand_total_potongan' => (float) $allKaryawan->sum('total_potongan'),
+                        'grand_total_bersih' => (float) $allKaryawan->sum('total_bersih')
+                    ],
+
+                    'all_karyawan' => $allKaryawan
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil dashboard tunjangan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function exportPdfGaji(Request $request)
+    {
+        $bulan = (int) $request->bulan;
+        $tahun = (int) $request->tahun;
+
+        $excludedJabatan = [
+            'Direktur',
+            'Direktur Utama'
+        ];
+
+        $data = LogGaji::with('karyawan')
+            ->where('bulan', $bulan)
+            ->where('tahun', $tahun)
+            ->whereHas('karyawan', function ($query) use ($excludedJabatan) {
+                $query->where('status_aktif', 1)
+                    ->whereNotIn('jabatan', $excludedJabatan)
+                    ->whereRaw('LOWER(jabatan) != ?', ['outsource']);
+            })
+            ->get();
+
+        $totalGaji = $data->sum('gaji');
+
+        $pdf = Pdf::loadView('exports.gaji-pdf', [
+            'data' => $data,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'totalGaji' => $totalGaji
+        ]);
+
+        return $pdf->download(
+            'laporan_gaji_'.$bulan.'_'.$tahun.'.pdf'
+        );
     }
 }

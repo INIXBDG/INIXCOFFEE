@@ -119,7 +119,7 @@ class KelasAnalisisController extends Controller
 
     public function create($id)
     {
-        $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
+        $rkm = RKM::with('perusahaan', 'materi', 'approvalPendapatan')->findOrFail($id);
         $exam = eksam::where('id_rkm', $rkm->id)->first();
         if (!$exam) {
             $exam = null;
@@ -174,7 +174,7 @@ class KelasAnalisisController extends Controller
     }
     public function edit($id)
     {
-        $post = kelasanalisis::with('rkm.materi', 'rkm.perusahaan')->where('id_rkm', $id)->first();
+        $post = kelasanalisis::with('rkm.materi', 'rkm.perusahaan', 'rkm.approvalPendapatan')->where('id_rkm', $id)->first();
         $post->total_harga_jual = (float) $post->total_harga_jual;
         $post->harga_modul_regular = (float) $post->harga_modul_regular;
         $post->harga_modul_regular_dollar = (float) $post->harga_modul_regular_dollar;

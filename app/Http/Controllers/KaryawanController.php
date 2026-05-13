@@ -13,6 +13,8 @@ use App\Models\TunjanganKaryawan;
 use Vinkla\Hashids\Facades\Hashids;
 use Carbon\Carbon;
 use App\Models\EducationalBackground;
+use App\Models\LogGaji;
+use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Month;
 
 class KaryawanController extends Controller
 {
@@ -102,11 +104,25 @@ class KaryawanController extends Controller
 
                 // --- Educational Background ---
                 'educations' => ['nullable', 'array'],
-                'educations.*.name' => $contactRules, ['string']
+                'educations.*.name' => $contactRules, ['string'],
+
+                'alasan_resign' => ['nullable', 'string', 'max:500'],
+                'is_resign' => ['nullable', 'boolean'],
             ]);
 
         $karyawanData = collect($data)->except(['educations'])->toArray();
+
         $karyawan->update($karyawanData);
+
+        if ($request->status_aktif === '0') {
+            $karyawan->resigned_at = now();
+            $karyawan->alasan_resign = $request->is_resign ? $request->alasan_resign : null;
+            $karyawan->save();
+        } else {
+            $karyawan->resigned_at = null;
+            $karyawan->alasan_resign = null;
+            $karyawan->save();
+        }
 
         $targetKodeKaryawan = $karyawan->kode_karyawan;
 
@@ -141,6 +157,7 @@ class KaryawanController extends Controller
         $user->status_akun = $data['status_aktif'];
         $user->id_instruktur = $id_instruktur;
         $user->id_sales = $id_sales;
+
         $user->save();
 
         if (auth()->user()->jabatan == "HRD") {
@@ -210,6 +227,13 @@ class KaryawanController extends Controller
 
         $karyawan = Karyawan::findOrFail($id);
         $karyawan->update(['gaji' => $request->jumlah_gaji]);
+
+        $logGaji = new LogGaji();
+        $logGaji->id_karyawan = $id;
+        $logGaji->gaji = $request->jumlah_gaji;
+        $logGaji->tahun = Carbon::now()->year;
+        $logGaji->bulan = Carbon::now()->month;
+        $logGaji->save();
 
         return redirect()->route('gaji.index')->with('success', 'Gaji berhasil diperbarui.');
     }

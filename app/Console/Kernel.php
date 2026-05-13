@@ -112,15 +112,18 @@ class Kernel extends ConsoleKernel
 
         $schedule->call(function () {
             try {
-                activityLog::whereNotIn('status', [
-                    'login',
-                    'logout',
-                    'Absen Masuk',
-                    'Absen Keluar',
-                    'visit'
-                ])->delete();
+                $deleted = activityLog::query()
+                    ->whereIn('status', [
+                        'visit',
+                        'login',
+                        'logout',
+                        'Absen Masuk',
+                        'Absen Keluar'
+                    ])
+                    ->delete();
 
-                Log::info("Data activityLog dengan status 'visit' berhasil dihapus oleh scheduler.");
+                Log::info("Berhasil menghapus {$deleted} activity log dari status visit/login/logout/absen.");
+                
             } catch (\Throwable $e) {
                 Log::error("Schedule gagal: " . $e->getMessage());
             }
@@ -228,7 +231,6 @@ class Kernel extends ConsoleKernel
 
 
         $schedule->command('assign:shift2')->dailyAt('17.30');
-
 
         // Di dalam method schedule(Schedule $schedule)
         $schedule->call(function () {

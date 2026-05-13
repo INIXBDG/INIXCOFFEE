@@ -6,7 +6,7 @@
         <div class="d-flex justify-content-end align-items-center mb-5">
             <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
         </div>
-         @if (session('success_administrasi'))
+        @if (session('success_administrasi'))
             <div class="alert alert-success">{{ session('success_administrasi') }}</div>
         @endif
 
@@ -35,7 +35,8 @@
                             </div>
 
                             <div class="mb-3">
-                                <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
+                                <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari
+                                    sistem</small>
                                 <label class="form-label">Status</label>
                                 <select name="status" class="form-select">
                                     <option value="pending">Pending</option>
@@ -44,7 +45,7 @@
                                     <option value="terlambat" disabled hidden>Terlambat</option>
                                 </select>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <label class="form-label">Bukti Transfer</label>
                                 <small id="pathBuktiTransfer" class="text-muted"></small>
@@ -112,7 +113,20 @@
                                         <select name="bulan" id="eksportBulananAdminis" class="form-select">
                                             <option value="" selected>Pilih Bulan</option>
                                             @php
-                                                $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                                $nama_bulan = [
+                                                    'Januari',
+                                                    'Februari',
+                                                    'Maret',
+                                                    'April',
+                                                    'Mei',
+                                                    'Juni',
+                                                    'Juli',
+                                                    'Agustus',
+                                                    'September',
+                                                    'Oktober',
+                                                    'November',
+                                                    'Desember',
+                                                ];
                                                 for ($bulan = 1; $bulan <= 12; $bulan++) {
                                                     echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
                                                 }
@@ -161,6 +175,47 @@
             </div>
         </div>
 
+        {{-- Administrasi Karyawan --}}
+        <!-- Modal Tambah -->
+        <div class="modal fade" id="modalTambahAdministrasiKaryawan" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form method="post" action="{{ route('administrasi.karyawan.store') }}"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Nama Administrasi <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" name="nama_administrasi" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Dateline</label>
+                                <input type="date" name="dateline" class="form-control col-md-6 mb-2">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>
+                                <textarea class="form-control" name="keterangan"></textarea>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
@@ -170,9 +225,17 @@
                             Administrasi Karyawan
                         </h4>
                         <div class="d-flex gap-4 align-items-center">
+                            <button class="btn btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#modalTambahAdministrasiKaryawan">
+                                Tambah Administrasi Karyawan
+                            </button> 
+                            <a href="{{ route('administrasi.karyawan.data.reload') }}" class="btn btn-primary">
+                                Reload Data
+                            </a>
                             <h6 class="mb-0">Export : </h6>
-                            <button type="button" data-bs-toggle="modal" data-bs-target="#modalEksportAdministrasi" class="btn btn-outline-secondary btn-sm pdfBtn">
-                            PDF
+                            <button type="button" data-bs-toggle="modal" data-bs-target="#modalEksportAdministrasi"
+                                class="btn btn-outline-secondary btn-sm pdfBtn">
+                                PDF
                             </button>
                         </div>
                     </div>
@@ -195,11 +258,14 @@
                                     @forelse($administrasis as $administrasi)
                                         <tr class="border-bottom ">
                                             @if ($administrasi->status === 'selesai')
-                                                <td class="text-center ps-4"><input class="custom-check" type="checkbox" checked disabled></td>
+                                                <td class="text-center ps-4"><input class="custom-check" type="checkbox"
+                                                        checked disabled></td>
                                             @elseif ($administrasi->status === 'terlambat')
-                                                <td class="text-center ps-4"><input class="custom-fail" type="checkbox" checked disabled></td>
+                                                <td class="text-center ps-4"><input class="custom-fail" type="checkbox"
+                                                        checked disabled></td>
                                             @else
-                                                <td class="text-center ps-4"><input class="check-blue edit-administrasi" data-id="{{ $administrasi->id }}" type="checkbox"></td>
+                                                <td class="text-center ps-4"><input class="check-blue edit-administrasi"
+                                                        data-id="{{ $administrasi->id }}" type="checkbox"></td>
                                             @endif
                                             <td>
                                                 {{ $administrasi->nama_administrasi }}
@@ -208,7 +274,7 @@
                                                 {{ \Carbon\Carbon::parse($administrasi->dateline)->format('l, d F Y') }}
                                             </td>
                                             <td>
-                                                {{ $administrasi->tanggal_selesai ? \Carbon\Carbon::parse($administrasi->tanggal_selesai)->format('l, d F Y') : '-'}}
+                                                {{ $administrasi->tanggal_selesai ? \Carbon\Carbon::parse($administrasi->tanggal_selesai)->format('l, d F Y') : '-' }}
                                             </td>
                                             <td class="text-center pe-4">
                                                 @php
@@ -244,8 +310,12 @@
                                             <td class="text-center pe-4">
                                                 @php
                                                     if ($administrasi->tanggal_selesai) {
-                                                        $diff = \Carbon\Carbon::parse($administrasi->dateline)
-                                                            ->diffInDays(\Carbon\Carbon::parse($administrasi->tanggal_selesai), false);
+                                                        $diff = \Carbon\Carbon::parse(
+                                                            $administrasi->dateline,
+                                                        )->diffInDays(
+                                                            \Carbon\Carbon::parse($administrasi->tanggal_selesai),
+                                                            false,
+                                                        );
 
                                                         if ($diff <= 0 || $administrasi->status === 'selesai') {
                                                             $progress = 100;
@@ -266,45 +336,46 @@
                                                     }
                                                 @endphp
 
-                                                <span class="badge bg-{{ $color }}-subtle text-{{ $color }}">
+                                                <span
+                                                    class="badge bg-{{ $color }}-subtle text-{{ $color }}">
                                                     {{ $progress }}%
                                                 </span>
                                             </td>
                                             <td class="text-center pe-4 position-relative">
                                                 <div class="dropdown">
                                                     <button class="btn btn-sm btn-outline-primary dropdown-toggle"
-                                                            type="button"
-                                                            data-bs-toggle="dropdown"
-                                                            data-bs-boundary="viewport"
-                                                            aria-expanded="false">
+                                                        type="button" data-bs-toggle="dropdown"
+                                                        data-bs-boundary="viewport" aria-expanded="false">
                                                         Aksi
                                                     </button>
 
                                                     <ul class="dropdown-menu dropdown-menu-end">
                                                         <li>
                                                             <button class="dropdown-item edit-administrasi"
-                                                                    data-id="{{ $administrasi->id }}"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#modalEditAdministrasi">
+                                                                data-id="{{ $administrasi->id }}" data-bs-toggle="modal"
+                                                                data-bs-target="#modalEditAdministrasi">
                                                                 Edit
                                                             </button>
                                                         </li>
 
-                                                       <li>
-                                                            @if($administrasi->bukti_transfer)
-                                                                <a class="dropdown-item" href="{{ asset('storage/'.$administrasi->bukti_transfer) }}" target="_blank">
+                                                        <li>
+                                                            @if ($administrasi->bukti_transfer)
+                                                                <a class="dropdown-item"
+                                                                    href="{{ asset('storage/' . $administrasi->bukti_transfer) }}"
+                                                                    target="_blank">
                                                                     Lihat Bukti Transfer
                                                                 </a>
                                                             @endif
                                                         </li>
                                                         <li>
                                                             <a class="dropdown-item"
-                                                            href="{{ route('administrasi.karyawan.edit', $administrasi->id) }}">
+                                                                href="{{ route('administrasi.karyawan.edit', $administrasi->id) }}">
                                                                 Detail
                                                             </a>
                                                         </li>
                                                         <li>
-                                                            <form action="{{ route('administrasi.karyawan.destroy', $administrasi->id) }}"
+                                                            <form
+                                                                action="{{ route('administrasi.karyawan.destroy', $administrasi->id) }}"
                                                                 method="POST"
                                                                 onsubmit="return confirm('Yakin ingin menghapus administrasi ini?')">
                                                                 @csrf
@@ -418,7 +489,8 @@
 
                                                 <div class="col-6">
                                                     <div class="border rounded py-2">
-                                                        <h6 class="mb-0 fw-bold" style="color:#fd7e14;" id="count60">0</h6>
+                                                        <h6 class="mb-0 fw-bold" style="color:#fd7e14;" id="count60">0
+                                                        </h6>
                                                         <small class="text-muted">60%</small>
                                                     </div>
                                                 </div>
@@ -460,63 +532,67 @@
         </div>
     </div>
 
-<style>
-    .custom-check {
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        border: 2px solid #71DD37;
-        border-radius: 5px;
-        position: relative;
-    }
-    .check-blue {
-        width: 20px;
-        height: 20px;
-        border: 2px solid #5B73E8;
-        border-radius: 5px;
-        position: relative;
-    }
+    <style>
+        .custom-check {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #71DD37;
+            border-radius: 5px;
+            position: relative;
+        }
 
-    .custom-check:checked {
-        background-color: #71DD37;
-    }
+        .check-blue {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #5B73E8;
+            border-radius: 5px;
+            position: relative;
+        }
 
-    .custom-check:checked::after {
-        content: '✓';
-        color: white;
-        font-weight: bold;
-        position: absolute;
-        left: 2px;
-        top: -2px;
-    }
-    .custom-fail:checked::after {
-        content: '✖';
-        color: white;
-        font-weight: bold;
-        position: absolute;
-        left: 2px;
-        top: -2px;
-    }
-    .custom-fail:checked {
-        background-color: #FF3E1D;
-    }
-    .custom-fail {
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        border: 2px solid #FF3E1D;
-        border-radius: 5px;
-        position: relative;
-    }
-</style>
+        .custom-check:checked {
+            background-color: #71DD37;
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        .custom-check:checked::after {
+            content: '✓';
+            color: white;
+            font-weight: bold;
+            position: absolute;
+            left: 2px;
+            top: -2px;
+        }
+
+        .custom-fail:checked::after {
+            content: '✖';
+            color: white;
+            font-weight: bold;
+            position: absolute;
+            left: 2px;
+            top: -2px;
+        }
+
+        .custom-fail:checked {
+            background-color: #FF3E1D;
+        }
+
+        .custom-fail {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #FF3E1D;
+            border-radius: 5px;
+            position: relative;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {  
-            $(document).on('click', '.edit-administrasi', function () {
+        document.addEventListener('DOMContentLoaded', function() {
+            $(document).on('click', '.edit-administrasi', function() {
                 let id = $(this).data('id');
 
                 // reset checkbox supaya tidak tercentang
@@ -533,26 +609,32 @@
                     success: function(res) {
 
                         // set action form
-                        $('#formEditAdministrasi').attr('action', '/office/administrasi-karyawan/update/' + id);
+                        $('#formEditAdministrasi').attr('action',
+                            '/office/administrasi-karyawan/update/' + id);
 
                         // isi input
-                        $('#modalEditAdministrasi input[name="nama_administrasi"]').val(res.nama_administrasi);
-                        $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline).attr("disabled", "disabled");
+                        $('#modalEditAdministrasi input[name="nama_administrasi"]').val(res
+                            .nama_administrasi);
+                        $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline)
+                            .attr("disabled", "disabled");
                         $('#modalEditAdministrasi select[name="status"]').val(res.status);
-                        $('#modalEditAdministrasi input[name="tanggal_selesai"]').val(res.tanggal_selesai);
-                        $('#modalEditAdministrasi textarea[name="keterangan"]').val(res.keterangan);
+                        $('#modalEditAdministrasi input[name="tanggal_selesai"]').val(res
+                            .tanggal_selesai);
+                        $('#modalEditAdministrasi textarea[name="keterangan"]').val(res
+                            .keterangan);
 
-                        if (res.status === 'selesai' || res.status === 'terlambat' ) {
-                            $('#modalEditAdministrasi select[name="status"]').attr("disabled", "disabled");
+                        if (res.status === 'selesai' || res.status === 'terlambat') {
+                            $('#modalEditAdministrasi select[name="status"]').attr("disabled",
+                                "disabled");
                         }
-                        
-                        if(res.bukti_transfer){
+
+                        if (res.bukti_transfer) {
                             $('#pathBuktiTransfer').html(
                                 `<a href="/storage/${res.bukti_transfer}" target="_blank">
                                     Lihat Bukti Transfer
                                 </a>`
                             );
-                        }else{
+                        } else {
                             $('#pathBuktiTransfer').html(
                                 `<span class="text-muted">Tidak ada bukti transfer</span>`
                             );
@@ -617,11 +699,11 @@
 
             }
 
-            $('#eksportTahunanAdminis, #eksportBulananAdminis, #eksportQuartalAdminis').on('change', function () {
+            $('#eksportTahunanAdminis, #eksportBulananAdminis, #eksportQuartalAdminis').on('change', function() {
                 handleFilter();
             });
 
-            $('input[name="start_date"], input[name="end_date"]').on('change', function () {
+            $('input[name="start_date"], input[name="end_date"]').on('change', function() {
                 handleFilter();
             });
 
@@ -633,7 +715,7 @@
 
             const labels = Object.keys(grouped);
             const values = Object.values(grouped);
-            
+
             function groupProgress(data) {
                 let result = {
                     '100%': 0,
@@ -692,7 +774,10 @@
             });
 
             function hitungSummary(data) {
-                let count100 = 0, count80 = 0, count60 = 0, count0 = 0;
+                let count100 = 0,
+                    count80 = 0,
+                    count60 = 0,
+                    count0 = 0;
                 let total = data.length;
 
                 data.forEach(item => {
@@ -712,5 +797,5 @@
 
             hitungSummary(@json($progressData));
         });
-</script>
+    </script>
 @endsection

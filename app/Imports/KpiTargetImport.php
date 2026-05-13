@@ -2,235 +2,211 @@
 
 namespace App\Imports;
 
-use App\Models\karyawan;
-use App\Models\DataTarget;
 use App\Models\targetKPI;
 use App\Models\DetailTargetKPI;
 use App\Models\detailPersonKPI;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Maatwebsite\Excel\Concerns\ToModel;
+use App\Models\karyawan;
+use App\Models\DataTarget;
+use Maatwebsite\Excel\Concerns\OnEachRow;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\WithStartRow;
-use Maatwebsite\Excel\Concerns\Importable;
+use Maatwebsite\Excel\Concerns\SkipsOnError;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Row;
+use Maatwebsite\Excel\Validators\Failure;
+use Throwable;
+use Illuminate\Support\Facades\DB;
 
-class KpiTargetImport implements ToModel, WithHeadingRow, WithValidation, WithBatchInserts, WithChunkReading, WithStartRow
+class KpiTargetImport implements OnEachRow, WithHeadingRow, WithValidation, WithBatchInserts, WithChunkReading, SkipsOnError, SkipsOnFailure, SkipsEmptyRows
 {
-    use Importable;
-
     protected $options;
+
     protected $summary = [
         'imported' => 0,
         'skipped' => 0,
         'errors' => [],
     ];
 
-    protected $routeMapping = [
-        'GM' => ['Pemasukan Kotor', 'pemasukan bersih', 'Kepuasan Pelanggan', 'rasio biaya operasional terhadap revenue', 'performa KPI departemen'],
-        'Customer Care' => ['peserta puas dengan pelayanan dan fasilitas training', 'dorong inovasi pelayanan', 'penanganan komplain perseta', 'report persiapan kelas'],
-        'Finance & Accounting' => ['outstanding', 'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'laporan analisis keuangan', 'pencairan biaya operasional', 'penyelesaian tagihan perusahaan', 'akurasi pencatatan masuk'],
-        'HRD' => ['pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan', 'administrasi karyawan'],
-        'Driver' => ['perbaikan kendaraan', 'report kondisi kendaraan', 'kontrol pengeluaran transportasi', 'feedback kenyamanan berkendaran'],
-        'Office Boy' => ['feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian'],
-        'Koordinator ITSM' => ['meningkatkan kepuasan dan loyalitas peserta/client', 'availability sistem internal kritis'],
-        'Programmer' => ['ketepatan waktu penyelesaian fitur', 'mengukur kualitas aplikasi agar minim bug'],
-        'Tim Digital' => ['konsistensi campaign digital', 'efektifitas diital marketing'],
-        'Technical Support' => ['keberhasilan support memenuhi sla', 'kualitas layanan exam'],
-        'Instruktur' => ['presentase kinerja instruktur', 'kepuasan peserta pelatihan', 'upseling lanjutan materi', 'sertifikasi kompetensi internal', 'pelatihan kompetensi eksternal'],
-        'Education Manager' => ['pengembangan kurikulum pelatihan', 'peningkatan knowledge sharing', 'peningkatan kontribusi pelatihan', 'evaluasi kinerja instruktur'],
-        'Sales' => ['target penjualan tahunan', 'biaya akuisisi perclient'],
-        'SPV Sales' => ['meningkatkan revenue perusahaan', 'customer acquisition cost', 'evaluasi kinerja sales'],
-        'Adm Sales' => ['laporan mom', 'akurasi kelengkapan data penjualan', 'todo administrasi'],
-        'Admin Holding' => ['ketepatan waktu po', 'kualitas dokumentasi support dan proctor'],
-    ];
+    protected $processedKeys = [];
 
     public function __construct(array $options = [])
     {
         $this->options = $options;
     }
 
-    public function startRow(): int
+    public function onRow(Row $row)
     {
-        return 1;
-    }
+        $rowData = $row->toArray();
 
-    public function sheet(): string
-    {
-        return 'Import';
-    }
+        if (!$this->isDataRow($rowData)) {
+            return;
+        }
 
-    public function rules(): array
-    {
-        return [
-            'judul_kpi' => 'required|string|max:255',
-            'deskripsi_kpi' => 'nullable|string|max:500',
-            'jabatan' => 'required|string',
-            'karyawan' => 'nullable|string',
-            'asistant_route' => 'required|string',
-            'detail_jangka' => 'nullable|string',
-        ];
-    }
-
-    public function model(array $row)
-    {
         try {
-            if (empty(array_filter($row))) {
-                return null;
-            }
+            $this->validateRow($rowData);
 
-            $judul = trim($row['judul_kpi'] ?? '');
-            $deskripsi = trim($row['deskripsi_kpi'] ?? '');
-            $jabatanRaw = trim($row['jabatan'] ?? '');
-            $karyawanRaw = trim($row['karyawan'] ?? '');
-            $asistantRoute = trim($row['asistant_route'] ?? '');
-            $detailJangkaInput = trim($row['detail_jangka'] ?? '');
-
-            if (empty($judul) || empty($jabatanRaw) || empty($asistantRoute)) {
-                if (empty($judul) && empty($jabatanRaw) && empty($asistantRoute)) {
-                    return null;
-                }
-                throw new \Exception('Judul, Jabatan, dan Assistant Route wajib diisi');
-            }
+            $judul = $this->getValue($rowData, ['judul_kpi', 'judul kpi', 'judul']);
+            $deskripsi = $this->getValue($rowData, ['deskripsi', 'deskripsi_kpi']);
+            $jabatanRaw = $this->getValue($rowData, ['jabatan']);
+            $karyawanRaw = $this->getValue($rowData, ['karyawan']);
+            $assistantRoute = $this->getValue($rowData, ['assistant_route', 'asistant_route', 'assistant route', 'route']);
+            $detailJangka = $this->getValue($rowData, ['detail_jangka', 'detail jangka']);
 
             $jabatanList = array_filter(array_map('trim', explode(',', $jabatanRaw)));
+
             if (empty($jabatanList)) {
-                throw new \Exception('Format jabatan tidak valid');
+                throw new \Exception('Jabatan tidak boleh kosong');
             }
 
-            $dataTarget = DataTarget::where('asistant_route', $asistantRoute)->first();
+            $dataTarget = DataTarget::whereRaw('LOWER(asistant_route) = ?', [strtolower($assistantRoute)])->first();
+
             if (!$dataTarget) {
-                throw new \Exception("Assistant Route '{$asistantRoute}' tidak ditemukan dalam konfigurasi sistem");
+                throw new \Exception("Assistant Route '{$assistantRoute}' tidak ditemukan dalam konfigurasi");
             }
 
-            $isValidRoute = $this->validateRouteForJabatan($jabatanList, $asistantRoute);
-            if (!$isValidRoute) {
-                throw new \Exception("Assistant Route '{$asistantRoute}' tidak valid untuk jabatan: " . implode(', ', $jabatanList));
-            }
+            $idPembuat = auth()->id() ?? 1;
 
-            $jangkaTarget = $dataTarget->jangka_target;
-            $tipeTarget = $dataTarget->tipe_target;
-            $nilaiTarget = $dataTarget->nilai_target;
+            if ($this->options['skip_duplicate'] ?? false) {
+                $uniqueKey = md5(strtolower($judul) . '|' . $idPembuat . '|' . implode('|', $jabatanList) . '|' . strtolower($assistantRoute));
 
-            if ($jangkaTarget === 'Tahunan') {
-                if (empty($detailJangkaInput)) {
-                    throw new \Exception('Detail Jangka wajib diisi untuk target Tahunan (contoh: 2026)');
-                }
-                if (!preg_match('/^\d{4}$/', $detailJangkaInput)) {
-                    throw new \Exception('Format Detail Jangka harus 4 digit tahun (contoh: 2026)');
-                }
-            }
-            $detailJangkaValue = $jangkaTarget === 'Tahunan' ? $detailJangkaInput : null;
-
-            if ($this->options['dry_run'] ?? false) {
-                $this->summary['imported']++;
-                return null;
-            }
-
-            return DB::transaction(function () use ($judul, $deskripsi, $jabatanList, $karyawanRaw, $asistantRoute, $dataTarget, $tipeTarget, $nilaiTarget, $jangkaTarget, $detailJangkaValue) {
-                $idPembuat = Auth::id();
-
-                if ($this->options['skip_duplicate'] ?? false) {
-                    $exists = targetKPI::where('judul', $judul)->where('id_pembuat', $idPembuat)->where('asistant_route', $asistantRoute)->exists();
-
-                    if ($exists) {
-                        $this->summary['skipped']++;
-                        return null;
-                    }
+                if (in_array($uniqueKey, $this->processedKeys)) {
+                    $this->summary['skipped']++;
+                    return;
                 }
 
-                $targetKPI = targetKPI::create([
+                $this->processedKeys[] = $uniqueKey;
+            }
+
+            DB::transaction(function () use ($judul, $deskripsi, $jabatanList, $karyawanRaw, $dataTarget, $detailJangka, $idPembuat) {
+                $createTarget = targetKPI::create([
                     'id_pembuat' => $idPembuat,
                     'id_data_target' => $dataTarget->id,
                     'judul' => $judul,
-                    'deskripsi' => $deskripsi,
-                    'asistant_route' => $asistantRoute,
+                    'deskripsi' => $deskripsi ?: null,
                     'status' => '0',
                 ]);
 
                 foreach ($jabatanList as $jabatan) {
-                    $dataDivisi = karyawan::where('jabatan', $jabatan)->where('divisi', '!=', 'Direksi')->value('divisi');
+                    $jabatanLower = strtolower($jabatan);
 
-                    $detailTarget = DetailTargetKPI::create([
-                        'id_targetKPI' => $targetKPI->id,
+                    $dataDivisi = karyawan::whereRaw('LOWER(jabatan) = ?', [$jabatanLower])
+                        ->where('divisi', '!=', 'Direksi')
+                        ->value('divisi');
+
+                    $detailJangkaValue = null;
+
+                    if ($dataTarget->jangka_target === 'Tahunan' && !empty($detailJangka)) {
+                        if (!preg_match('/^\d{4}$/', $detailJangka)) {
+                            throw new \Exception('Detail Jangka harus format 4 digit tahun (contoh: 2024)');
+                        }
+                        $detailJangkaValue = $detailJangka;
+                    }
+
+                    $detailStore = DetailTargetKPI::create([
+                        'id_targetKPI' => $createTarget->id,
                         'jabatan' => $jabatan,
                         'divisi' => $dataDivisi,
                         'id_data_target' => $dataTarget->id,
-                        'jangka_target' => $jangkaTarget,
+                        'jangka_target' => $dataTarget->jangka_target,
                         'detail_jangka' => $detailJangkaValue,
-                        'tipe_target' => $tipeTarget,
-                        'nilai_target' => $nilaiTarget,
+                        'tipe_target' => $dataTarget->tipe_target,
+                        'nilai_target' => $dataTarget->nilai_target,
                     ]);
 
-                    $karyawanIds = $this->resolveKaryawanIds($karyawanRaw, $jabatan);
+                    $karyawanRawList = array_filter(array_map('trim', explode(',', $karyawanRaw)));
+
+                    if (!empty($karyawanRawList)) {
+                        $karyawanIds = karyawan::whereIn('nama_lengkap', $karyawanRawList)
+                            ->whereRaw('LOWER(jabatan) = ?', [$jabatanLower])
+                            ->where('status_aktif', '1')
+                            ->where('jabatan', '!=', 'Outsource')
+                            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+                            ->where('jabatan', '!=', 'Pilih Jabatan')
+                            ->whereNotNull('nip')
+                            ->where('divisi', '!=', 'Direksi')
+                            ->pluck('id')
+                            ->toArray();
+                    } else {
+                        $karyawanIds = karyawan::whereRaw('LOWER(jabatan) = ?', [$jabatanLower])
+                            ->where('status_aktif', '1')
+                            ->where('jabatan', '!=', 'Outsource')
+                            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+                            ->where('jabatan', '!=', 'Pilih Jabatan')
+                            ->whereNotNull('nip')
+                            ->where('divisi', '!=', 'Direksi')
+                            ->pluck('id')
+                            ->toArray();
+                    }
+
                     foreach ($karyawanIds as $karyawanId) {
                         detailPersonKPI::create([
-                            'id_target' => $targetKPI->id,
-                            'detailTargetKey' => $detailTarget->id,
+                            'id_target' => $createTarget->id,
+                            'detailTargetKey' => $detailStore->id,
                             'id_karyawan' => $karyawanId,
                         ]);
                     }
                 }
-
-                $this->summary['imported']++;
-                return $targetKPI;
             });
+
+            $this->summary['imported']++;
         } catch (\Exception $e) {
-            $this->summary['errors'][] = "Error: {$e->getMessage()}";
-            return null;
+            $this->summary['errors'][] = 'Baris #' . $row->getIndex() . ': ' . $e->getMessage();
         }
     }
 
-    protected function validateRouteForJabatan(array $jabatanList, string $route): bool
+    private function isDataRow(array $row): bool
     {
-        $kombinasiIT = ['Programmer', 'Tim Digital', 'Technical Support'];
-        $kombinasiSales = ['Sales', 'SPV Sales', 'Adm Sales'];
-
-        if (count(array_intersect($jabatanList, $kombinasiIT)) === 3) {
-            $allowed = ['kepuasan client ITSM', 'inovation adaption rate', 'persentase gap kompetensi tim terhadap standar skill'];
-            return in_array($route, $allowed);
-        }
-
-        if (count(array_intersect($jabatanList, $kombinasiSales)) === 3) {
-            return $route === 'peningkatan kemampuan kompetensi sales';
-        }
-
-        foreach ($jabatanList as $jabatan) {
-            if (isset($this->routeMapping[$jabatan]) && in_array($route, $this->routeMapping[$jabatan])) {
+        $inputColumns = ['judul_kpi', 'judul kpi', 'judul', 'deskripsi', 'jabatan', 'karyawan', 'assistant_route', 'asistant_route', 'assistant route', 'route', 'detail_jangka', 'detail jangka'];
+        
+        foreach ($inputColumns as $col) {
+            if (isset($row[$col]) && trim((string) $row[$col]) !== '') {
                 return true;
             }
         }
-
+        
         return false;
     }
 
-    protected function resolveKaryawanIds(?string $karyawanRaw, string $jabatan): array
+    private function getValue(array $row, array $keys): string
     {
-        if (empty($karyawanRaw)) {
-            return karyawan::where('jabatan', $jabatan)->where('divisi', '!=', 'Direksi')->where('status_aktif', '1')->pluck('id')->toArray();
-        }
-
-        $namaList = array_filter(array_map('trim', explode(',', $karyawanRaw)));
-        $ids = [];
-
-        foreach ($namaList as $nama) {
-            $k = karyawan::where('nama_lengkap', 'LIKE', "%{$nama}%")
-                ->where('jabatan', $jabatan)
-                ->where('status_aktif', '1')
-                ->first();
-            if ($k) {
-                $ids[] = $k->id;
+        foreach ($keys as $key) {
+            if (isset($row[$key]) && trim((string) $row[$key]) !== '') {
+                return trim((string) $row[$key]);
             }
         }
-
-        return empty($ids) ? karyawan::where('jabatan', $jabatan)->where('status_aktif', '1')->pluck('id')->toArray() : $ids;
+        return '';
     }
 
-    public function getSummary(): array
+    private function validateRow(array $row)
     {
-        return $this->summary;
+        $judul = $this->getValue($row, ['judul_kpi', 'judul kpi', 'judul']);
+        $jabatan = $this->getValue($row, ['jabatan']);
+        $assistantRoute = $this->getValue($row, ['assistant_route', 'asistant_route', 'assistant route', 'route']);
+
+        if (empty($judul)) {
+            throw new \Exception("Kolom 'Judul KPI' wajib diisi");
+        }
+
+        if (empty($jabatan)) {
+            throw new \Exception("Kolom 'Jabatan' wajib diisi");
+        }
+
+        if (empty($assistantRoute)) {
+            throw new \Exception("Kolom 'Assistant Route' wajib diisi");
+        }
+
+        $detailJangka = $this->getValue($row, ['detail_jangka', 'detail jangka']);
+        if (!empty($detailJangka) && !preg_match('/^\d{4}$/', $detailJangka)) {
+            throw new \Exception("Detail Jangka harus format 4 digit tahun (contoh: 2024)");
+        }
+    }
+
+    public function rules(): array
+    {
+        return [];
     }
 
     public function batchSize(): int
@@ -241,5 +217,19 @@ class KpiTargetImport implements ToModel, WithHeadingRow, WithValidation, WithBa
     public function chunkSize(): int
     {
         return 100;
+    }
+
+    public function onError(Throwable $e) {}
+
+    public function onFailure(Failure ...$failures)
+    {
+        foreach ($failures as $failure) {
+            $this->summary['errors'][] = "Baris #{$failure->row()} [{$failure->attribute()}]: " . implode(', ', $failure->errors());
+        }
+    }
+
+    public function getSummary(): array
+    {
+        return $this->summary;
     }
 }

@@ -34,7 +34,8 @@
             @foreach ($divisiStats as $index => $divisi)
                 <div class="col-xl-3 col-md-6">
                     <div class="card border-0 shadow-sm h-100 hover-card rounded-3 overflow-hidden glass-force"
-                        data-bs-toggle="modal" data-bs-target="#modalDivisi{{ $index }}" role="button" tabindex="0">
+                        data-bs-toggle="modal" data-bs-target="#modalDivisi{{ $index }}" role="button"
+                        tabindex="0">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="flex-shrink-0">
@@ -66,11 +67,13 @@
                         </div>
 
                         <div class="modal-body">
-                            <form method="post" action="{{ route('storeTagihanPerusahaan') }}" enctype="multipart/form-data">
+                            <form method="post" action="{{ route('storeTagihanPerusahaan') }}"
+                                enctype="multipart/form-data">
                                 @csrf
 
                                 <div class="mb-3">
-                                    <label class="form-label col-form-label">Kegiatan <span class="text-danger">*</span></label>
+                                    <label class="form-label col-form-label">Kegiatan <span
+                                            class="text-danger">*</span></label>
                                     <input type="text" name="kegiatan" class="form-control">
                                 </div>
                                 <div class="mb-3">
@@ -101,11 +104,12 @@
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label col-form-label">Nominal <span class="text-danger">*</span></label>
+                                    <label class="form-label col-form-label">Nominal <span
+                                            class="text-danger">*</span></label>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text">Rp.</span>
-                                        <input type="text" name="nominal" id="nominal" class="form-control format-rupiah"
-                                            autocomplete="off">
+                                        <input type="text" name="nominal" id="nominal"
+                                            class="form-control format-rupiah" autocomplete="off">
                                     </div>
                                 </div>
 
@@ -173,11 +177,13 @@
                                                 Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
                                             <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang
                                                 Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
-                                            <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi
+                                            <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve
+                                                Direksi
                                             </option>
                                             <option value="Diajukan dan Sedang Ditinjau oleh Finance">Diajukan dan Sedang
                                                 Ditinjau oleh Finance</option>
-                                            <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur
+                                            <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke
+                                                Direktur
                                                 Utama</option>
                                             <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam
                                                 proses Pencairan</option>
@@ -198,7 +204,8 @@
 
                                     {{-- Keterangan --}}
                                     <div class="mb-3">
-                                        <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>
+                                        <label for="keterangan" class="col-md-5 col-form-label">Keterangan
+                                            (Optional)</label>
                                         <textarea class="form-control" name="keterangan"></textarea>
                                     </div>
 
@@ -249,17 +256,20 @@
                                         @forelse($trackingTagihanPerusahaans as $tagihan)
                                             <tr class="border-bottom ">
                                                 @if ($tagihan->status === 'selesai')
-                                                    <td class="text-center ps-4"><input class="custom-check" type="checkbox" checked
-                                                            disabled></td>
+                                                    <td class="text-center ps-4"><input class="custom-check"
+                                                            type="checkbox" checked disabled></td>
                                                 @elseif ($tagihan->status === 'telat')
-                                                    <td class="text-center ps-4"><input class="custom-fail" type="checkbox" checked
-                                                            disabled></td>
+                                                    <td class="text-center ps-4"><input class="custom-fail"
+                                                            type="checkbox" checked disabled></td>
                                                 @else
-                                                    <td class="text-center ps-4"><input class="check-blue" data-id="{{ $tagihan->id }}"
-                                                            type="checkbox" id="edit-tagihan"></td>
+                                                    <td class="text-center ps-4"><input class="check-blue"
+                                                            data-id="{{ $tagihan->id }}" type="checkbox"
+                                                            id="edit-tagihan"></td>
                                                 @endif
                                                 <td>
-                                                    @if ($tagihan->tanggal_perkiraan_mulai === $tagihan->tanggal_perkiraan_selesai || $tagihan->tanggal_perkiraan_selesai === null)
+                                                    @if (
+                                                        $tagihan->tanggal_perkiraan_mulai === $tagihan->tanggal_perkiraan_selesai ||
+                                                            $tagihan->tanggal_perkiraan_selesai === null)
                                                         <div class="small">
                                                             {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_mulai)->format('d F') }}
                                                         </div>
@@ -319,41 +329,54 @@
                                                 </td>
                                                 <td class="text-center pe-4 position-relative">
                                                     <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
-                                                            data-bs-toggle="dropdown" data-bs-boundary="viewport"
-                                                            aria-expanded="false">
+                                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle"
+                                                            type="button" data-bs-toggle="dropdown"
+                                                            data-bs-boundary="viewport" aria-expanded="false">
                                                             Aksi
                                                         </button>
 
                                                         <ul class="dropdown-menu dropdown-menu-end">
                                                             <li>
-                                                                <button class="dropdown-item" data-id="{{ $tagihan->id }}"
-                                                                    data-bs-toggle="modal" id="edit-tagihan"
-                                                                    data-bs-target="#modalEditTagihan">
+                                                                <button class="dropdown-item"
+                                                                    data-id="{{ $tagihan->id }}" data-bs-toggle="modal"
+                                                                    id="edit-tagihan" data-bs-target="#modalEditTagihan">
                                                                     Edit
                                                                 </button>
                                                             </li>
 
                                                             <li>
-                                                                <button class="dropdown-item text-success btn-ajukan-tagihan" data-id="{{ $tagihan->id }}">
+                                                                <button
+                                                                    class="dropdown-item text-success btn-ajukan-tagihan"
+                                                                    data-id="{{ $tagihan->id }}">
                                                                     Ajukan Tagihan
                                                                 </button>
 
-                                                                <form id="form-ajukan-{{ $tagihan->id }}" method="POST" style="display:none;">
+                                                                <form id="form-ajukan-{{ $tagihan->id }}" method="POST"
+                                                                    style="display:none;">
                                                                     @csrf
                                                                     @php
                                                                         $user = auth()->user();
                                                                         $karyawan = $user->karyawan;
                                                                     @endphp
-                                                                    <input type="hidden" name="id_tagihan" value="{{ $tagihan->id }}">
-                                                                    <input name="id_karyawan" value="{{ $karyawan->id }}">
-                                                                    <input id="nama_karyawan" type="text" name="nama_karyawan" value="{{ $karyawan->nama_lengkap }}">
-                                                                    <input id="divisi" type="text" name="divisi" value="{{ $karyawan->divisi }}">
-                                                                    <input type="text" name="tipe" value="Tagihan Perusahaan">  
-                                                                    <input type="text" name="barang[nama_barang][]" value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan->kegiatan }}">
-                                                                    <input type="number" name="barang[qty][]" value="1"> 
-                                                                    <input type="text" name="barang[harga_barang][]" value="{{ $tagihan->nominal ?? null }}">  
-                                                                    <input type="text" name="barang[keterangan][]" value="{{ $tagihan->keterangan ?? null }}">
+                                                                    <input type="hidden" name="id_tagihan"
+                                                                        value="{{ $tagihan->id }}">
+                                                                    <input name="id_karyawan"
+                                                                        value="{{ $karyawan->id }}">
+                                                                    <input id="nama_karyawan" type="text"
+                                                                        name="nama_karyawan"
+                                                                        value="{{ $karyawan->nama_lengkap }}">
+                                                                    <input id="divisi" type="text" name="divisi"
+                                                                        value="{{ $karyawan->divisi }}">
+                                                                    <input type="text" name="tipe"
+                                                                        value="Tagihan Perusahaan">
+                                                                    <input type="text" name="barang[nama_barang][]"
+                                                                        value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan->kegiatan }}">
+                                                                    <input type="number" name="barang[qty][]"
+                                                                        value="1">
+                                                                    <input type="text" name="barang[harga_barang][]"
+                                                                        value="{{ $tagihan->nominal ?? null }}">
+                                                                    <input type="text" name="barang[keterangan][]"
+                                                                        value="{{ $tagihan->keterangan ?? null }}">
                                                                 </form>
                                                             </li>
 
@@ -365,11 +388,13 @@
                                                             </li>
 
                                                             <li>
-                                                                <form action="{{ route('hapusTagihanPerusahaan', $tagihan->id) }}"
+                                                                <form
+                                                                    action="{{ route('hapusTagihanPerusahaan', $tagihan->id) }}"
                                                                     method="POST"
                                                                     onsubmit="return confirm('Yakin ingin menghapus?')">
                                                                     @csrf
-                                                                    <button type="submit" class="dropdown-item text-danger">
+                                                                    <button type="submit"
+                                                                        class="dropdown-item text-danger">
                                                                         Hapus
                                                                     </button>
                                                                 </form>
@@ -382,7 +407,8 @@
                                             <tr>
                                                 <td colspan="8" class="text-center py-5">
                                                     <div class="d-flex flex-column align-items-center">
-                                                        <i class="bx bx-message-square-x text-muted" style="font-size: 3rem;"></i>
+                                                        <i class="bx bx-message-square-x text-muted"
+                                                            style="font-size: 3rem;"></i>
                                                         <p class="text-muted mt-3 mb-0">Tidak ada tagihan untuk
                                                             ditampilkan
                                                         </p>
@@ -403,7 +429,8 @@
                     <div class="col-12">
                         <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
                             <!-- Card Header -->
-                            <div class="card-header border-bottom-0 py-4 d-flex justify-content-between align-items-center">
+                            <div
+                                class="card-header border-bottom-0 py-4 d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                                     <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
                                     Data Outstanding
@@ -411,7 +438,8 @@
                             </div>
 
                             <div class="px-4 py-3 border-bottom">
-                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                <div
+                                    class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                                     <div class="w-md-25">
                                         <input type="text" id="searchOutstanding" class="form-control"
                                             placeholder="Cari data outstanding..." autocomplete="off">
@@ -451,7 +479,8 @@
                                 class="card-footer py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                                 <div id="paginationInfo" class="text-muted small"></div>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-secondary" id="prevPage" disabled>Sebelumnya</button>
+                                    <button class="btn btn-sm btn-outline-secondary" id="prevPage"
+                                        disabled>Sebelumnya</button>
                                     <span id="pageInfo" class="align-self-center"></span>
                                     <button class="btn btn-sm btn-outline-secondary" id="nextPage">Selanjutnya</button>
                                 </div>
@@ -473,7 +502,8 @@
                                 <label for="filterTahun" class="form-label mb-0 text-secondary fw-medium">Tahun :</label>
                                 <select id="filterTahun" class="form-select w-auto">
                                     @for ($i = 0; $i < 6; $i++)
-                                        <option value="{{ now()->year - $i }}" {{ (now()->year - $i) == now()->year ? 'selected' : '' }}>
+                                        <option value="{{ now()->year - $i }}"
+                                            {{ now()->year - $i == now()->year ? 'selected' : '' }}>
                                             {{ now()->year - $i }}
                                         </option>
                                     @endfor
@@ -490,7 +520,8 @@
                                 <div class="chart-wrapper position-relative" style="height: 380px;">
                                     <canvas id="grafikOutstanding"></canvas>
 
-                                    <div id="outstandingEmpty" class="d-none position-absolute top-50 start-50 translate-middle
+                                    <div id="outstandingEmpty"
+                                        class="d-none position-absolute top-50 start-50 translate-middle
                                                 d-flex flex-column align-items-center text-center w-100">
                                         <i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i>
                                         <p class="text-muted mt-2 mb-0">
@@ -565,7 +596,8 @@
                                     :</label>
                                 <select id="filterTahunKetepatan" class="form-select w-auto">
                                     @for ($i = 0; $i < 6; $i++)
-                                        <option value="{{ now()->year - $i }}" {{ (now()->year - $i) == now()->year ? 'selected' : '' }}>
+                                        <option value="{{ now()->year - $i }}"
+                                            {{ now()->year - $i == now()->year ? 'selected' : '' }}>
                                             {{ now()->year - $i }}
                                         </option>
                                     @endfor
@@ -579,7 +611,8 @@
                             <div class="col-lg-8">
                                 <div class="chart-wrapper position-relative" style="height: 380px;">
                                     <canvas id="grafikKetepatanWaktu"></canvas>
-                                    <div id="ketepatanWaktuEmpty" class="d-none position-absolute top-50 start-50 translate-middle
+                                    <div id="ketepatanWaktuEmpty"
+                                        class="d-none position-absolute top-50 start-50 translate-middle
                                                 d-flex flex-column align-items-center text-center w-100">
                                         <i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i>
                                         <p class="text-muted mt-2 mb-0">
@@ -784,7 +817,8 @@
                                     <input type="text" name="nama" class="form-control" autocomplete="off">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label col-form-label">Tanggal <span class="text-danger">*</span></label>
+                                    <label class="form-label col-form-label">Tanggal <span
+                                            class="text-danger">*</span></label>
                                     <input type="date" name="tanggal" class="form-control">
                                 </div>
 
@@ -841,7 +875,8 @@
                                 <i class="bx bx-calendar text-primary me-2" style="font-size: 1.5rem;"></i>
                                 Hari Libur
                             </h5>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahHariLibur">
+                            <button class="btn btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#modalTambahHariLibur">
                                 Tambah Hari Libur
                             </button>
                         </div>
@@ -866,11 +901,13 @@
                                     class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden d-flex flex-column glass-force">
                                     <div class="card-header border-bottom-0 pb-0">
                                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
-                                            <i class="bx bx-calendar-check text-success me-2" style="font-size: 1.5rem;"></i>
+                                            <i class="bx bx-calendar-check text-success me-2"
+                                                style="font-size: 1.5rem;"></i>
                                             Hari Libur Bulan Ini
                                         </h5>
                                     </div>
-                                    <div class="card-body p-4 flex-grow-1 d-flex flex-column" style="height: auto; gap: 12px;">
+                                    <div class="card-body p-4 flex-grow-1 d-flex flex-column"
+                                        style="height: auto; gap: 12px;">
                                         <div id="holiday-list" style="flex: 1; min-height: 200px; overflow-y: auto;">
                                             <div class="text-center py-4">
                                                 <div class="spinner-border spinner-border-sm text-primary" role="status">
@@ -896,6 +933,301 @@
 
             </div>
 
+            <div class="card glass-force mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Tunjangan Karyawan</h5>
+
+                    <div class="d-flex gap-2">
+                        <select id="filterBulan" class="form-select">
+                            @for ($i = 1; $i <= 12; $i++)
+                                <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">
+                                    {{ \Carbon\Carbon::create()->month($i)->format('F') }}
+                                </option>
+                            @endfor
+                        </select>
+
+                        <select id="filterTahun" class="form-select">
+                            @for ($i = now()->year; $i >= 2023; $i--)
+                                <option value="{{ $i }}">{{ $i }}</option>
+                            @endfor
+                        </select>
+
+                        <button id="btnFilter" class="btn btn-primary">
+                            Filter
+                        </button>
+
+                        <button id="exportGaji" class="btn btn-secondary">
+                            Export Gaji
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div id="tunjanganLoading" class="text-center py-5">
+                        Loading...
+                    </div>
+
+                    <div id="tunjanganContent" class="d-none">
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="card glass-force">
+                                    <div class="card-body">
+                                        <h6>Total Karyawan</h6>
+                                        <h4 id="totalKaryawan">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="card glass-force">
+                                    <div class="card-body">
+                                        <h6>Sudah Ada Tunjangan</h6>
+                                        <h4 id="sudahAdaTunjangan">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="card glass-force">
+                                    <div class="card-body">
+                                        <h6>Belum Ada Tunjangan</h6>
+                                        <h4 id="belumAdaTunjangan">0</h4>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="card glass-force">
+                                    <div class="card-body">
+                                        <h6>Total Tunjangan</h6>
+                                        <h4 id="grandTotalTunjangan">Rp 0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <input
+                                type="text"
+                                id="searchTunjangan"
+                                class="form-control"
+                                placeholder="Cari nama, kode, divisi, jabatan..."
+                            >
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama</th>
+                                        <th>Kode</th>
+                                        <th>Divisi</th>
+                                        <th>Jabatan</th>
+                                        <th>Status</th>
+                                        <th>Total Tunjangan</th>
+                                        <th>Total Potongan</th>
+                                        <th>Total Bersih</th>
+                                        <th>Detail</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tunjanganDetailBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div id="tunjanganPagination" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modalDetailTunjangan">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5>Detail Tunjangan</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Nama:</strong>
+                                    <span id="modalNama"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <strong>Kode:</strong>
+                                    <span id="modalKode"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <strong>Divisi:</strong>
+                                    <span id="modalDivisi"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <strong>Jabatan:</strong>
+                                    <span id="modalJabatan"></span>
+                                </div>
+                            </div>
+
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Tunjangan</th>
+                                        <th>Tipe</th>
+                                        <th>Keterangan</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modalDetailBody"></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="3">Total Bersih</th>
+                                        <th id="modalTotalBersih"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-5">
+                <div class="col-12">
+                    <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                        <div
+                            class="card-header border-bottom-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                                <i class="bx bx-user-pin text-primary me-2" style="font-size: 1.5rem;"></i>
+                                Laporan Status Karyawan
+                            </h5>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <select id="filterStatusTahun" class="form-select form-select-sm w-auto">
+                                    @for ($y = now()->year; $y >= 2020; $y--)
+                                        <option value="{{ $y }}">{{ $y }}</option>
+                                    @endfor
+                                </select>
+                                <select id="filterStatusBulan" class="form-select form-select-sm w-auto">
+                                    <option value="">Semua Bulan</option>
+                                    @php $bln = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']; @endphp
+                                    @foreach ($bln as $idx => $b)
+                                        <option value="{{ $idx + 1 }}">{{ $b }}</option>
+                                    @endforeach
+                                </select>
+                                <button id="btnFilterStatus" class="btn btn-primary btn-sm">
+                                    <i class="bx bx-filter-alt me-1"></i> Terapkan
+                                </button>
+                                <button id="exportStatusPdf" class="btn btn-secondary">Export PDF</button>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- Summary Cards -->
+                            <div class="row g-4 mb-4">
+                                @foreach (['kontrak' => ['label' => 'Kontrak', 'color' => 'primary', 'icon' => 'bx-briefcase'], 'tetap' => ['label' => 'Tetap', 'color' => 'success', 'icon' => 'bx-user-check'], 'probation' => ['label' => 'Probation', 'color' => 'warning', 'icon' => 'bx-time-five'], 'resign' => ['label' => 'Resign', 'color' => 'danger', 'icon' => 'bx-user-x']] as $key => $cfg)
+                                    <div class="col-xl-3 col-md-6">
+                                        <div class="card border-0 shadow-sm h-100 hover-card rounded-3 cursor-pointer"
+                                            data-bs-toggle="tooltip" title="Klik untuk lihat detail"
+                                            onclick="openDetailModal('{{ $key }}')">
+                                            <div class="card-body p-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div
+                                                        class="avatar avatar-md bg-{{ $cfg['color'] }} bg-opacity-15 rounded-circle">
+                                                        <i class="bx {{ $cfg['icon'] }} text-{{ $cfg['color'] }}"
+                                                            style="font-size: 1.5rem;"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <h6 class="text-muted mb-1 small text-uppercase">Karyawan
+                                                            {{ $cfg['label'] }}</h6>
+                                                        <h3 class="mb-0 fw-bold text-{{ $cfg['color'] }}"
+                                                            id="total{{ ucfirst($key) }}">0</h3>
+                                                    </div>
+                                                    <i class="bx bx-chevron-right fs-4 text-muted"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <!-- Charts -->
+                            <div class="row g-4">
+                                <div class="col-lg-6">
+                                    <h6 class="fw-semibold mb-3">Distribusi Status</h6>
+                                    <div class="chart-wrapper position-relative" style="height: 280px;">
+                                        <canvas id="statusPieChart"></canvas>
+                                        <div id="pieEmpty"
+                                            class="d-none position-absolute top-50 start-50 translate-middle text-center">
+                                            <i class="bx bx-pie-chart-alt text-muted" style="font-size: 3rem;"></i>
+                                            <p class="text-muted mt-2 mb-0">Tidak ada data</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <h6 class="fw-semibold mb-3">Trend 6 Bulan Terakhir</h6>
+                                    <div class="chart-wrapper position-relative" style="height: 280px;">
+                                        <canvas id="statusTrendChart"></canvas>
+                                        <div id="trendEmpty"
+                                            class="d-none position-absolute top-50 start-50 translate-middle text-center">
+                                            <i class="bx bx-line-chart text-muted" style="font-size: 3rem;"></i>
+                                            <p class="text-muted mt-2 mb-0">Tidak ada data</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Detail Karyawan -->
+            <div class="modal fade" id="modalDetailKaryawan" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-light">
+                            <h5 class="modal-title fw-semibold">
+                                <i class="bx bx-list-ul text-primary me-2"></i>
+                                Detail Karyawan <span id="modalStatusBadge" class="badge bg-primary ms-2">-</span>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-0">
+                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center gap-2">
+                                <input type="text" id="searchDetailKaryawan" class="form-control form-control-sm"
+                                    placeholder="Cari nama/NIP/Divisi..." style="max-width: 300px;">
+                                <span class="text-muted small" id="detailTotalInfo">Total: 0</span>
+                            </div>
+                            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th class="ps-4" width="50">No</th>
+                                            <th>Nama Lengkap</th>
+                                            <th>NIP</th>
+                                            <th>Divisi</th>
+                                            <th>Jabatan</th>
+                                            <th>Tgl Masuk/Periode</th>
+                                            <th>Tgl Resign/Nonaktif</th>
+                                            <th>Alasan Resign</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detailKaryawanBody">
+                                        <tr>
+                                            <td colspan="8" class="text-center py-4">
+                                                <div class="spinner-border text-primary"></div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light">
+                            <nav id="detailPagination" class="mb-0"></nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {{-- Administrasi Karyawan --}}
             <!-- Modal Tambah -->
@@ -1042,9 +1374,23 @@
                                             <select name="bulan" id="eksportBulananAdminis" class="form-select">
                                                 <option value="" selected>Pilih Bulan</option>
                                                 @php
-                                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                                    $nama_bulan = [
+                                                        'Januari',
+                                                        'Februari',
+                                                        'Maret',
+                                                        'April',
+                                                        'Mei',
+                                                        'Juni',
+                                                        'Juli',
+                                                        'Agustus',
+                                                        'September',
+                                                        'Oktober',
+                                                        'November',
+                                                        'Desember',
+                                                    ];
                                                     for ($bulan = 1; $bulan <= 12; $bulan++) {
-                                                        echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
+                                                        echo "<option value=\"$bulan\">{$nama_bulan[$bulan -
+            1]}</option>";
                                                     }
                                                 @endphp
                                             </select>
@@ -1106,7 +1452,8 @@
                                 </button>
                                 <div class="d-flex gap-4 align-items-center">
                                     <h6 class="mb-0">Export : </h6>
-                                    <button type="button" data-bs-toggle="modal" data-bs-target="#modalEksportAdministrasi"
+                                    <button type="button" data-bs-toggle="modal"
+                                        data-bs-target="#modalEksportAdministrasi"
                                         class="btn btn-outline-secondary btn-sm pdfBtn">
                                         PDF
                                     </button>
@@ -1137,13 +1484,14 @@
                                         @forelse($administrasis as $administrasi)
                                             <tr class="border-bottom ">
                                                 @if ($administrasi->status === 'selesai')
-                                                    <td class="text-center ps-4"><input class="custom-check" type="checkbox" checked
-                                                            disabled></td>
+                                                    <td class="text-center ps-4"><input class="custom-check"
+                                                            type="checkbox" checked disabled></td>
                                                 @elseif ($administrasi->status === 'terlambat')
-                                                    <td class="text-center ps-4"><input class="custom-fail" type="checkbox" checked
-                                                            disabled></td>
+                                                    <td class="text-center ps-4"><input class="custom-fail"
+                                                            type="checkbox" checked disabled></td>
                                                 @else
-                                                    <td class="text-center ps-4"><input class="check-blue edit-administrasi"
+                                                    <td class="text-center ps-4"><input
+                                                            class="check-blue edit-administrasi"
                                                             data-id="{{ $administrasi->id }}" type="checkbox"></td>
                                                 @endif
                                                 <td>
@@ -1153,7 +1501,7 @@
                                                     {{ \Carbon\Carbon::parse($administrasi->dateline)->format('l, d F Y') }}
                                                 </td>
                                                 <td>
-                                                    {{ $administrasi->tanggal_selesai ? \Carbon\Carbon::parse($administrasi->tanggal_selesai)->format('l, d F Y') : '-'}}
+                                                    {{ $administrasi->tanggal_selesai ? \Carbon\Carbon::parse($administrasi->tanggal_selesai)->format('l, d F Y') : '-' }}
                                                 </td>
                                                 <td class="text-center pe-4">
                                                     @php
@@ -1189,8 +1537,12 @@
                                                 <td class="text-center pe-4">
                                                     @php
                                                         if ($administrasi->tanggal_selesai) {
-                                                            $diff = \Carbon\Carbon::parse($administrasi->dateline)
-                                                                ->diffInDays(\Carbon\Carbon::parse($administrasi->tanggal_selesai), false);
+                                                            $diff = \Carbon\Carbon::parse(
+                                                                $administrasi->dateline,
+                                                            )->diffInDays(
+                                                                \Carbon\Carbon::parse($administrasi->tanggal_selesai),
+                                                                false,
+                                                            );
 
                                                             if ($diff <= 0 || $administrasi->status === 'selesai') {
                                                                 $progress = 100;
@@ -1211,29 +1563,31 @@
                                                         }
                                                     @endphp
 
-                                                    <span class="badge bg-{{ $color }}-subtle text-{{ $color }}">
+                                                    <span
+                                                        class="badge bg-{{ $color }}-subtle text-{{ $color }}">
                                                         {{ $progress }}%
                                                     </span>
                                                 </td>
                                                 <td class="text-center pe-4 position-relative">
                                                     <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
-                                                            data-bs-toggle="dropdown" data-bs-boundary="viewport"
-                                                            aria-expanded="false">
+                                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle"
+                                                            type="button" data-bs-toggle="dropdown"
+                                                            data-bs-boundary="viewport" aria-expanded="false">
                                                             Aksi
                                                         </button>
 
                                                         <ul class="dropdown-menu dropdown-menu-end">
                                                             <li>
                                                                 <button class="dropdown-item edit-administrasi"
-                                                                    data-id="{{ $administrasi->id }}" data-bs-toggle="modal"
+                                                                    data-id="{{ $administrasi->id }}"
+                                                                    data-bs-toggle="modal"
                                                                     data-bs-target="#modalEditAdministrasi">
                                                                     Edit
                                                                 </button>
                                                             </li>
 
                                                             <li>
-                                                                @if($administrasi->bukti_transfer)
+                                                                @if ($administrasi->bukti_transfer)
                                                                     <a class="dropdown-item"
                                                                         href="{{ asset('storage/' . $administrasi->bukti_transfer) }}"
                                                                         target="_blank">
@@ -1255,7 +1609,8 @@
                                                                     @csrf
                                                                     @method('DELETE')
 
-                                                                    <button type="submit" class="dropdown-item text-danger">
+                                                                    <button type="submit"
+                                                                        class="dropdown-item text-danger">
                                                                         <i class="bx bx-trash me-2"></i> Hapus
                                                                     </button>
                                                                 </form>
@@ -1269,7 +1624,8 @@
                                             <tr>
                                                 <td colspan="8" class="text-center py-5">
                                                     <div class="d-flex flex-column align-items-center">
-                                                        <i class="bx bx-message-square-x text-muted" style="font-size: 3rem;"></i>
+                                                        <i class="bx bx-message-square-x text-muted"
+                                                            style="font-size: 3rem;"></i>
                                                         <p class="text-muted mt-3 mb-0">Tidak ada administrasi untuk
                                                             ditampilkan
                                                         </p>
@@ -1378,7 +1734,8 @@
                         </div>
                     </div>
                     <div class="card-body pe-5 mt-5" style="height: 320px;">
-                        <div class="chart-container d-flex align-items-center" style="position: relative; height: 100%;">
+                        <div class="chart-container d-flex align-items-center"
+                            style="position: relative; height: 100%;">
                             <canvas id="dataCuti"></canvas>
                             <div id="cutiEmpty" class="d-none d-flex flex-column align-items-center container-fluid">
                                 <i class="bx bx-x-circle text-muted" style="font-size: 3rem;"></i>
@@ -1406,7 +1763,20 @@
                                     <option value="default" disabled selected>Berdasarkan Bulan</option>
                                     @php
                                         $bulan_sekarang = now()->month;
-                                        $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                        $nama_bulan = [
+                                            'Januari',
+                                            'Februari',
+                                            'Maret',
+                                            'April',
+                                            'Mei',
+                                            'Juni',
+                                            'Juli',
+                                            'Agustus',
+                                            'September',
+                                            'Oktober',
+                                            'November',
+                                            'Desember',
+                                        ];
                                         for ($bulan = 1; $bulan <= 12; $bulan++) {
                                             echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
                                         }
@@ -1439,7 +1809,8 @@
                         </h5>
                         <div class="d-flex gap-4 align-items-center">
                             <h6 class="mb-0">Export : </h6>
-                            <button type="button" id="exportTotalMengajar" class="btn btn-outline-secondary btn-sm pdfBtn">
+                            <button type="button" id="exportTotalMengajar"
+                                class="btn btn-outline-secondary btn-sm pdfBtn">
                                 PDF
                             </button>
                         </div>
@@ -1464,7 +1835,20 @@
                                     <option value="default" disabled selected>Berdasarkan Bulan</option>
                                     @php
                                         $bulan_sekarang = now()->month;
-                                        $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                        $nama_bulan = [
+                                            'Januari',
+                                            'Februari',
+                                            'Maret',
+                                            'April',
+                                            'Mei',
+                                            'Juni',
+                                            'Juli',
+                                            'Agustus',
+                                            'September',
+                                            'Oktober',
+                                            'November',
+                                            'Desember',
+                                        ];
                                         for ($bulan = 1; $bulan <= 12; $bulan++) {
                                             echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
                                         }
@@ -1513,7 +1897,8 @@
                     </h5>
                     <div class="d-flex gap-4 align-items-center">
                         <h6 class="mb-0">Export : </h6>
-                        <button type="button" id="exportFeedbackInstruktur" class="btn btn-outline-secondary btn-sm pdfBtn">
+                        <button type="button" id="exportFeedbackInstruktur"
+                            class="btn btn-outline-secondary btn-sm pdfBtn">
                             PDF
                         </button>
                     </div>
@@ -1551,7 +1936,20 @@
                                 <option value="default" disabled selected>Berdasarkan Bulan</option>
                                 @php
                                     $bulan_sekarang = now()->month;
-                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                    $nama_bulan = [
+                                        'Januari',
+                                        'Februari',
+                                        'Maret',
+                                        'April',
+                                        'Mei',
+                                        'Juni',
+                                        'Juli',
+                                        'Agustus',
+                                        'September',
+                                        'Oktober',
+                                        'November',
+                                        'Desember',
+                                    ];
                                     for ($bulan = 1; $bulan <= 12; $bulan++) {
                                         echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
                                     }
@@ -1607,44 +2005,63 @@
                                     <table class="table table-hover align-middle mb-0" style="table-layout: auto;">
                                         <thead class="table-light sticky-top">
                                             <tr>
-                                                <th scope="col" rowspan="2" class="border-0 ps-4" style="min-width: 50px;">
+                                                <th scope="col" rowspan="2" class="border-0 ps-4"
+                                                    style="min-width: 50px;">
                                                     No</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 250px;">
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 250px;">
                                                     Materi</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Harga
-                                                </th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">
-                                                    Tanggal Training</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">
-                                                    Perusahaan</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Kode
-                                                    Sales</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">
-                                                    Instruktur</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Ruang
-                                                </th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Pax
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 150px;">Harga
                                                 </th>
                                                 <th scope="col" rowspan="2" class="border-0"
-                                                    class="border-0 text-center pe-4" style="min-width: 100px;">Exam</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 120px;">
+                                                    style="min-width: 170px;">
+                                                    Tanggal Training</th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 170px;">
+                                                    Perusahaan</th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 100px;">Kode
+                                                    Sales</th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 100px;">
+                                                    Instruktur</th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 150px;">Ruang
+                                                </th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 100px;">Pax
+                                                </th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    class="border-0 text-center pe-4" style="min-width: 100px;">Exam
+                                                </th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 120px;">
                                                     Makanan</th>
                                                 {{-- CheckList --}}
-                                                <th scope="col" colspan="7" class="border-bottom border-dark text-center"
+                                                <th scope="col" colspan="7"
+                                                    class="border-bottom border-dark text-center"
                                                     style="min-width: 300px;">Checklist</th>
 
                                                 <th scope="col" rowspan="2" class="border-0">Eksport</th>
                                             </tr>
                                             <tr class="text-center">
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Tanggal Keperluan
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Tanggal
+                                                    Keperluan
                                                 </th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Materi</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Kelas</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Coffe Break</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Makan Siang</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Keperluan Kelas
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Materi
                                                 </th>
-                                                <th scope="col" class="border-0 text-center pe-4" style="min-width: 120px;">
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Kelas
+                                                </th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Coffe
+                                                    Break</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Makan
+                                                    Siang</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">
+                                                    Keperluan Kelas
+                                                </th>
+                                                <th scope="col" class="border-0 text-center pe-4"
+                                                    style="min-width: 120px;">
                                                     Status</th>
                                             </tr>
                                         </thead>
@@ -1654,12 +2071,13 @@
                                                     $checklists = $detail_rkm->checklists ?? [];
                                                     $rowspan = count($checklists) > 0 ? count($checklists) : 1;
                                                 @endphp
-                                                @if(count($checklists) > 0)
+                                                @if (count($checklists) > 0)
                                                     @foreach ($checklists as $tanggal => $item)
                                                         <tr class="border-bottom">
 
                                                             @if ($loop->first)
-                                                                <td class="ps-4" rowspan="{{ $rowspan }}">{{ $loop->parent->iteration }}
+                                                                <td class="ps-4" rowspan="{{ $rowspan }}">
+                                                                    {{ $loop->parent->iteration }}
                                                                 </td>
 
                                                                 <td rowspan="{{ $rowspan }}">
@@ -1668,7 +2086,8 @@
 
                                                                 <td rowspan="{{ $rowspan }}">
                                                                     <span class="text-success fw-semibold">
-                                                                        Rp {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
+                                                                        Rp
+                                                                        {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
                                                                     </span>
                                                                 </td>
 
@@ -1688,25 +2107,30 @@
                                                                     @endforeach
                                                                 </td>
 
-                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->sales_all }}</td>
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    {{ $detail_rkm->sales_all }}</td>
                                                                 <td rowspan="{{ $rowspan }}">
                                                                     {{ implode(', ', array_filter([$detail_rkm->instruktur_key, $detail_rkm->instruktur_key2, $detail_rkm->asisten_key])) }}
                                                                 </td>
-                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    {{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}
                                                                 </td>
                                                                 <td rowspan="{{ $rowspan }}">
-                                                                    <span class="badge bg-info-subtle text-info px-3 py-2">
+                                                                    <span
+                                                                        class="badge bg-info-subtle text-info px-3 py-2">
                                                                         {{ number_format($detail_rkm->pax, 0, ',', '.') }}
                                                                     </span>
                                                                 </td>
 
                                                                 <td rowspan="{{ $rowspan }}">
                                                                     @if ($detail_rkm->exam == '1')
-                                                                        <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                                        <span
+                                                                            class="badge bg-success-subtle text-success px-3 py-2">
                                                                             Ya
                                                                         </span>
                                                                     @else
-                                                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                                                        <span
+                                                                            class="badge bg-secondary-subtle text-secondary px-3 py-2">
                                                                             Tidak
                                                                         </span>
                                                                     @endif
@@ -1714,8 +2138,13 @@
 
                                                                 <td rowspan="{{ $rowspan }}">
                                                                     @php
-                                                                        $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
-                                                                        $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
+                                                                        $makananList = $detail_rkm->makanan
+                                                                            ? explode(', ', $detail_rkm->makanan)
+                                                                            : [];
+                                                                        $makananValue =
+                                                                            count($makananList) > 0
+                                                                                ? $makananList[0]
+                                                                                : 'Tidak Ada';
                                                                     @endphp
 
                                                                     @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
@@ -1735,28 +2164,34 @@
                                                             </td>
 
                                                             <td class="text-center">
-                                                                <input type="checkbox" class="custom-check" {{ $item->materi ? 'checked' : '' }} disabled>
+                                                                <input type="checkbox" class="custom-check"
+                                                                    {{ $item->materi ? 'checked' : '' }} disabled>
                                                             </td>
 
                                                             <td class="text-center">
                                                                 @if ($detail_rkm->metode_kelas === 'Offline')
-                                                                    <input type="checkbox" class="custom-check" {{ $item->kelas ? 'checked' : '' }} disabled>
+                                                                    <input type="checkbox" class="custom-check"
+                                                                        {{ $item->kelas ? 'checked' : '' }} disabled>
                                                                 @else
                                                                     -
                                                                 @endif
                                                             </td>
 
                                                             <td class="text-center">
-                                                                <input type="checkbox" class="custom-check" {{ $item->cb ? 'checked' : '' }} disabled>
+                                                                <input type="checkbox" class="custom-check"
+                                                                    {{ $item->cb ? 'checked' : '' }} disabled>
                                                             </td>
 
                                                             <td class="text-center">
-                                                                <input type="checkbox" class="custom-check" {{ $item->maksi ? 'checked' : '' }} disabled>
+                                                                <input type="checkbox" class="custom-check"
+                                                                    {{ $item->maksi ? 'checked' : '' }} disabled>
                                                             </td>
 
                                                             <td class="text-center">
                                                                 @if ($detail_rkm->metode_kelas === 'Offline')
-                                                                    <input type="checkbox" class="custom-check" {{ $item->keperluan_kelas ? 'checked' : '' }} disabled>
+                                                                    <input type="checkbox" class="custom-check"
+                                                                        {{ $item->keperluan_kelas ? 'checked' : '' }}
+                                                                        disabled>
                                                                 @else
                                                                     -
                                                                 @endif
@@ -1766,13 +2201,16 @@
                                                                 {{ $item->progress ?? 0 }}%
                                                             </td>
                                                             @if ($loop->first)
-                                                                <td rowspan="{{ $rowspan }}" class="text-center align-middle">
+                                                                <td rowspan="{{ $rowspan }}"
+                                                                    class="text-center align-middle">
                                                                     <a href="{{ route('export.pdf.checklist', $detail_rkm->id) }}"
-                                                                        id="exportPdfRkm" class="btn btn-outline-danger btn-sm mb-1">
+                                                                        id="exportPdfRkm"
+                                                                        class="btn btn-outline-danger btn-sm mb-1">
                                                                         PDF
                                                                     </a>
                                                                     <a href="{{ route('export.excel.checklist', $detail_rkm->id) }}"
-                                                                        id="exportExcelRkm" class="btn btn-outline-success btn-sm">
+                                                                        id="exportExcelRkm"
+                                                                        class="btn btn-outline-success btn-sm">
                                                                         Excel
                                                                     </a>
                                                                 </td>
@@ -1789,7 +2227,8 @@
 
                                                         <td>
                                                             <span class="text-success fw-semibold">
-                                                                Rp {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
+                                                                Rp
+                                                                {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
                                                             </span>
                                                         </td>
 
@@ -1821,11 +2260,13 @@
 
                                                         <td>
                                                             @if ($detail_rkm->exam == '1')
-                                                                <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                                <span
+                                                                    class="badge bg-success-subtle text-success px-3 py-2">
                                                                     Ya
                                                                 </span>
                                                             @else
-                                                                <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                                                <span
+                                                                    class="badge bg-secondary-subtle text-secondary px-3 py-2">
                                                                     Tidak
                                                                 </span>
                                                             @endif
@@ -1833,8 +2274,13 @@
 
                                                         <td>
                                                             @php
-                                                                $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
-                                                                $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
+                                                                $makananList = $detail_rkm->makanan
+                                                                    ? explode(', ', $detail_rkm->makanan)
+                                                                    : [];
+                                                                $makananValue =
+                                                                    count($makananList) > 0
+                                                                        ? $makananList[0]
+                                                                        : 'Tidak Ada';
                                                             @endphp
 
                                                             @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
@@ -1880,7 +2326,8 @@
                                         <i class="bx bx-support text-primary me-2"></i>
                                         Ticketing
                                     </h5>
-                                    <span class="badge bg-primary-subtle text-primary">{{ count($ticket) }} Ticket</span>
+                                    <span class="badge bg-primary-subtle text-primary">{{ count($ticket) }}
+                                        Ticket</span>
                                 </div>
                             </div>
                             <div class="card-body p-0">
@@ -1910,7 +2357,8 @@
                                                     <td>
                                                         <div class="d-flex align-items-center">
                                                             <div class="text-truncate" style="max-width: 150px;"
-                                                                data-bs-toggle="tooltip" title="{{ $item->nama_karyawan }}">
+                                                                data-bs-toggle="tooltip"
+                                                                title="{{ $item->nama_karyawan }}">
                                                                 {{ $item->nama_karyawan }}
                                                             </div>
                                                         </div>
@@ -1935,7 +2383,8 @@
                                                     </td>
                                                     <td>
                                                         <div class="text-truncate" style="max-width: 250px;"
-                                                            data-bs-toggle="tooltip" title="{{ $item->detail_kendala }}">
+                                                            data-bs-toggle="tooltip"
+                                                            title="{{ $item->detail_kendala }}">
                                                             {{ $item->detail_kendala }}
                                                         </div>
                                                     </td>
@@ -2005,8 +2454,8 @@
 
         <!-- Modals untuk setiap Divisi -->
         @foreach ($divisiStats as $index => $divisi)
-            <div class="modal fade" id="modalDivisi{{ $index }}" tabindex="-1" aria-labelledby="modalLabel{{ $index }}"
-                aria-hidden="true">
+            <div class="modal fade" id="modalDivisi{{ $index }}" tabindex="-1"
+                aria-labelledby="modalLabel{{ $index }}" aria-hidden="true">
                 <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
                     <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
                         <div class="modal-header bg-{{ $divisi['color'] }} bg-opacity-10 border-bottom-0">
@@ -2040,7 +2489,8 @@
                                                     <td class="ps-4 fw-medium">{{ $key + 1 }}</td>
                                                     <td class="ps-4">
                                                         <div class="d-flex align-items-center">
-                                                            <div class="avatar avatar-sm bg-opacity-15 rounded-circle me-3">
+                                                            <div
+                                                                class="avatar avatar-sm bg-opacity-15 rounded-circle me-3">
                                                                 <span class="text-{{ $divisi['color'] }} fw-bold small">
                                                                     {{ strtoupper(substr($karyawan->nama_lengkap, 0, 1)) }}
                                                                 </span>
@@ -2388,7 +2838,7 @@
         <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function() {
                 const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
                 if (!ctx) return;
 
@@ -2451,7 +2901,7 @@
                                 displayColors: false,
                                 padding: 12,
                                 callbacks: {
-                                    afterLabel: function (context) {
+                                    afterLabel: function(context) {
                                         const hadir = context.parsed.y;
                                         const tidakHadir = totalKaryawan - hadir;
                                         return [
@@ -2544,7 +2994,7 @@
                             value: value,
                             tahun: tahun,
                         },
-                        success: function (res) {
+                        success: function(res) {
 
                             if (cutiChart) {
                                 cutiChart.data.labels = res.labelCuti;
@@ -2600,32 +3050,32 @@
                             currentFilterCuti.tahun = tahun;
                             currentFilterCuti.rentangWaktu = res.rentangWaktu;
                         },
-                        error: function (xhr) {
+                        error: function(xhr) {
                             console.error(xhr.responseText);
                         }
                     });
                 }
 
                 // reset filter per tahun
-                $('#filterCutiTahun').change(function () {
+                $('#filterCutiTahun').change(function() {
                     $('#filterCutiBulan, #filterCutiTriwulan').val('default');
                     loadDataCuti('tahun', $(this).val());
                 });
 
                 // reset Filter per bulan
-                $('#filterCutiBulan').change(function () {
+                $('#filterCutiBulan').change(function() {
                     $('#filterCutiTriwulan').val('default');
                     loadDataCuti('bulan', $(this).val());
                 });
 
                 // reset filter per triwulan
-                $('#filterCutiTriwulan').change(function () {
+                $('#filterCutiTriwulan').change(function() {
                     $('#filterCutiBulan').val('default');
                     loadDataCuti('triwulan', $(this).val());
                 });
 
                 // Export cuti
-                $('#exportCuti').click(function () {
+                $('#exportCuti').click(function() {
 
                     $.ajax({
                         url: '/office/data-cuti',
@@ -2639,7 +3089,7 @@
                         xhrFields: {
                             responseType: 'blob'
                         },
-                        success: function (blob) {
+                        success: function(blob) {
 
                             const url = window.URL.createObjectURL(blob);
                             const a = document.createElement('a');
@@ -2652,7 +3102,7 @@
                             a.remove();
                             window.URL.revokeObjectURL(url);
                         },
-                        error: function (err) {
+                        error: function(err) {
                             alert('Gagal export PDF' + err);
                         }
                     });
@@ -2684,12 +3134,12 @@
                             value: value,
                             tahun: tahun
                         },
-                        success: function (res) {
+                        success: function(res) {
                             let tabelMengajar = $('#tabelTotalMengajar tbody');
                             tabelMengajar.empty();
                             let data = res.dataMengajar;
 
-                            $.each(data, function (index, item) {
+                            $.each(data, function(index, item) {
                                 tabelMengajar.append(`
                                         <tr>
                                             <td>${index + 1}</td>
@@ -2725,7 +3175,7 @@
                             currentFilterMengajar.tahun = tahun;
                             currentFilterMengajar.rentangWaktu = res.rentangWaktu;
                         },
-                        error: function (err) {
+                        error: function(err) {
                             alert(err);
                         }
                     });
@@ -2745,18 +3195,20 @@
                                 page: page,
                                 search: search
                             },
-                            success: function (res) {
+                            success: function(res) {
                                 let rows = '';
 
                                 currentPage = res.current_page;
                                 lastPage = res.last_page;
 
                                 if (res.data.length === 0) {
-                                    rows = `<tr><td colspan="12" class="text-center">Tidak ada data</td></tr>`;
+                                    rows =
+                                        `<tr><td colspan="12" class="text-center">Tidak ada data</td></tr>`;
                                 } else {
                                     res.data.forEach((item, index) => {
                                         const safeFormat = (val) => {
-                                            if (val === '-' || val === null || val === undefined || val === '' || Number(val) === 0) {
+                                            if (val === '-' || val === null || val ===
+                                                undefined || val === '' || Number(val) === 0) {
                                                 return '-';
                                             }
                                             return 'Rp ' + formatRupiah(val);
@@ -2801,13 +3253,13 @@
                         });
                     }
 
-                    $('#nextPage').click(function () {
+                    $('#nextPage').click(function() {
                         if (currentPage < lastPage) {
                             loadOutstanding(currentPage + 1, currentSearch);
                         }
                     });
 
-                    $('#prevPage').click(function () {
+                    $('#prevPage').click(function() {
                         if (currentPage > 1) {
                             loadOutstanding(currentPage - 1, currentSearch);
                         }
@@ -2815,7 +3267,7 @@
 
 
                     let debounceTimer;
-                    $('#searchOutstanding').on('keyup', function () {
+                    $('#searchOutstanding').on('keyup', function() {
                         clearTimeout(debounceTimer);
                         let value = $(this).val();
 
@@ -2905,16 +3357,17 @@
                                 let analysis = "";
 
                                 if (progress >= 90) {
-                                    analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${progress}% dari target 100%.`;
-                                }
-                                else if (progress >= 70) {
-                                    analysis = `Kinerja cukup baik. Anda mencapai KPI ${progress}% dari target 100%, masih ada ruang peningkatan.`;
-                                }
-                                else if (progress >= 50) {
-                                    analysis = `Kinerja sedang. Baru mencapai KPI ${progress}% dari target 100%, perlu perbaikan.`;
-                                }
-                                else {
-                                    analysis = `Kinerja rendah. Baru ${progress}% dari target 100%, perlu tindakan segera.`;
+                                    analysis =
+                                        `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${progress}% dari target 100%.`;
+                                } else if (progress >= 70) {
+                                    analysis =
+                                        `Kinerja cukup baik. Anda mencapai KPI ${progress}% dari target 100%, masih ada ruang peningkatan.`;
+                                } else if (progress >= 50) {
+                                    analysis =
+                                        `Kinerja sedang. Baru mencapai KPI ${progress}% dari target 100%, perlu perbaikan.`;
+                                } else {
+                                    analysis =
+                                        `Kinerja rendah. Baru ${progress}% dari target 100%, perlu tindakan segera.`;
                                 }
 
                                 document.getElementById('kpiAnalysis').innerText = analysis;
@@ -2969,11 +3422,13 @@
                                             tooltip: {
                                                 callbacks: {
 
-                                                    label: function (context) {
+                                                    label: function(context) {
 
                                                         const value = context.raw;
-                                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                                        const percent = ((value / total) * 100).toFixed(1);
+                                                        const total = context.dataset.data.reduce((a,
+                                                            b) => a + b, 0);
+                                                        const percent = ((value / total) * 100).toFixed(
+                                                            1);
 
                                                         return `${context.label}: ${percent}% (${value})`;
                                                     }
@@ -2989,7 +3444,7 @@
 
                     loadChartOutstanding(new Date().getFullYear());
 
-                    document.getElementById('filterTahun').addEventListener('change', function () {
+                    document.getElementById('filterTahun').addEventListener('change', function() {
                         loadChartOutstanding(this.value);
                     });
 
@@ -3015,21 +3470,23 @@
                                 document.getElementById('kpiProgressKetepatan').innerText = `${persen}%`;
                                 document.getElementById('totalDataKetepatan').innerText = total;
                                 document.getElementById('lblSesuaiKetepatan').innerText = `${sesuai}`;
-                                document.getElementById('lblTidakSesuaiKetepatan').innerText = `${data.data[1] || 0}`;
+                                document.getElementById('lblTidakSesuaiKetepatan').innerText =
+                                    `${data.data[1] || 0}`;
 
 
                                 let analysis = "";
                                 if (persen >= 90) {
-                                    analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${persen}% dari target 100%.`;
-                                }
-                                else if (persen >= 70) {
-                                    analysis = `Kinerja cukup baik. Anda mencapai KPI ${persen}% dari target 100%, masih ada ruang peningkatan.`;
-                                }
-                                else if (persen >= 50) {
-                                    analysis = `Kinerja sedang. Baru mencapai KPI ${persen}% dari target 100%, perlu perbaikan.`;
-                                }
-                                else {
-                                    analysis = `Kinerja rendah. Baru ${persen}% dari target 100%, perlu tindakan segera.`;
+                                    analysis =
+                                        `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${persen}% dari target 100%.`;
+                                } else if (persen >= 70) {
+                                    analysis =
+                                        `Kinerja cukup baik. Anda mencapai KPI ${persen}% dari target 100%, masih ada ruang peningkatan.`;
+                                } else if (persen >= 50) {
+                                    analysis =
+                                        `Kinerja sedang. Baru mencapai KPI ${persen}% dari target 100%, perlu perbaikan.`;
+                                } else {
+                                    analysis =
+                                        `Kinerja rendah. Baru ${persen}% dari target 100%, perlu tindakan segera.`;
                                 }
                                 document.getElementById('kpiAnalysisKetepatan').innerText = analysis;
 
@@ -3050,7 +3507,7 @@
                                             data: data.data,
                                             backgroundColor: [
                                                 '#198754', // Hijau untuk Sesuai
-                                                '#dc3545'  // Merah untuk Tidak Sesuai
+                                                '#dc3545' // Merah untuk Tidak Sesuai
                                             ]
                                         }]
                                     },
@@ -3063,10 +3520,12 @@
                                             },
                                             tooltip: {
                                                 callbacks: {
-                                                    label: function (context) {
+                                                    label: function(context) {
                                                         const value = context.raw;
-                                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                                        const percent = ((value / total) * 100).toFixed(1);
+                                                        const total = context.dataset.data.reduce((a,
+                                                            b) => a + b, 0);
+                                                        const percent = ((value / total) * 100).toFixed(
+                                                            1);
 
                                                         return `${context.label}: ${percent}% (${value})`;
                                                     }
@@ -3085,32 +3544,32 @@
 
                     loadChartKetepatan(new Date().getFullYear());
 
-                    document.getElementById('filterTahunKetepatan').addEventListener('change', function () {
+                    document.getElementById('filterTahunKetepatan').addEventListener('change', function() {
                         loadChartKetepatan(this.value);
                     });
 
                 }
 
                 // reset filter per tahun
-                $('#filterMengajarPerTahun').change(function () {
+                $('#filterMengajarPerTahun').change(function() {
                     $('#filterMengajarPerBulan, #filterMengajarPerTriwulan').val('default');
                     loadDataMengajar('tahun', $(this).val());
                 });
 
                 // reset Filter per bulan
-                $('#filterMengajarPerBulan').change(function () {
+                $('#filterMengajarPerBulan').change(function() {
                     $('#filterMengajarPerTriwulan').val('default');
                     loadDataMengajar('bulan', $(this).val());
                 });
 
                 // reset filter per triwulan
-                $('#filterMengajarPerTriwulan').change(function () {
+                $('#filterMengajarPerTriwulan').change(function() {
                     $('#filterMengajarPerBulan').val('default');
                     loadDataMengajar('triwulan', $(this).val());
                 });
 
                 // Export Total Mengajar
-                $('#exportTotalMengajar').click(function () {
+                $('#exportTotalMengajar').click(function() {
 
                     $.ajax({
                         url: '/office/data-mengajar',
@@ -3124,27 +3583,28 @@
                         xhrFields: {
                             responseType: 'blob'
                         },
-                        success: function (blob) {
+                        success: function(blob) {
 
                             const url = window.URL.createObjectURL(blob);
                             const a = document.createElement('a');
 
                             a.href = url;
-                            a.download = `Laporan_Total_Mengajar_${currentFilterMengajar.rentangWaktu}.pdf`;
+                            a.download =
+                                `Laporan_Total_Mengajar_${currentFilterMengajar.rentangWaktu}.pdf`;
                             document.body.appendChild(a);
                             a.click();
 
                             a.remove();
                             window.URL.revokeObjectURL(url);
                         },
-                        error: function (xhr, status, error) {
+                        error: function(xhr, status, error) {
                             console.log(xhr);
                         }
                     });
                 });
 
                 // Load semua AJAX
-                $(document).ready(function () {
+                $(document).ready(function() {
                     loadDataCuti('bulan', new Date().getMonth() + 1);
                     loadDataMengajar('bulan', new Date().getMonth() + 1);
                     loadOutstanding();
@@ -3154,27 +3614,26 @@
                 // Script Chart Feedback
                 let feedbackChart = null;
 
-                $(document).ready(function () {
+                $(document).ready(function() {
                     initFeedbackChart();
                     loadFeedback();
 
                     // Event listener untuk filter
-                    $('#filterFeedbackTahun').change(function () {
+                    $('#filterFeedbackTahun').change(function() {
                         resetSelect('#filterFeedbackBulan', '#filterFeedbackTriwulan');
                         loadFeedback('tahun', $(this).val());
                     });
 
-                    $('#filterFeedbackBulan').change(function () {
+                    $('#filterFeedbackBulan').change(function() {
                         resetSelect('#filterFeedbackTriwulan');
                         loadFeedback('bulan', $(this).val());
                     });
 
-                    $('#filterFeedbackTriwulan').change(function () {
+                    $('#filterFeedbackTriwulan').change(function() {
                         resetSelect('#filterFeedbackBulan');
                         loadFeedback('triwulan', $(this).val());
                     });
                 });
-
                 // Inisialisasi Chart Bar dengan styling baru
                 function initFeedbackChart() {
                     const ctx = document.getElementById('feedbackChart')?.getContext('2d');
@@ -3209,13 +3668,17 @@
                                 },
                                 tooltip: {
                                     callbacks: {
-                                        label: function (context) {
+                                        label: function(context) {
                                             return `Nilai: ${context.raw} (${context.label})`;
                                         }
                                     },
                                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                    titleFont: { size: 14 },
-                                    bodyFont: { size: 13 }
+                                    titleFont: {
+                                        size: 14
+                                    },
+                                    bodyFont: {
+                                        size: 13
+                                    }
                                 }
                             },
                             scales: {
@@ -3224,13 +3687,16 @@
                                     max: 4,
                                     ticks: {
                                         stepSize: 0.4,
-                                        font: { size: 12 }
+                                        font: {
+                                            size: 12
+                                        }
                                     },
                                     grid: {
-                                        color: function (context) {
-                                            return context.tick.value === 3.2
-                                                ? 'rgba(255, 0, 0, 0.3)'  // Highlight garis di nilai 3.2
-                                                : 'rgba(0, 0, 0, 0.05)';
+                                        color: function(context) {
+                                            return context.tick.value === 3.2 ?
+                                                'rgba(255, 0, 0, 0.3)' // Highlight garis di nilai 3.2
+                                                :
+                                                'rgba(0, 0, 0, 0.05)';
                                         }
                                     }
                                 },
@@ -3239,9 +3705,13 @@
                                         autoSkip: false,
                                         maxRotation: 30,
                                         minRotation: 15,
-                                        font: { size: 11 }
+                                        font: {
+                                            size: 11
+                                        }
                                     },
-                                    grid: { display: false }
+                                    grid: {
+                                        display: false
+                                    }
                                 }
                             },
                             animation: {
@@ -3264,17 +3734,21 @@
                             value: value,
                             tahun: tahun !== 'default' ? tahun : null
                         },
-                        beforeSend: function () {
+                        beforeSend: function() {
                             $('#nilaiInstrukturEmpty')
-                                .html('<i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i><p class="text-muted mt-2 mb-0">Memuat data...</p>')
+                                .html(
+                                    '<i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i><p class="text-muted mt-2 mb-0">Memuat data...</p>'
+                                )
                                 .removeClass('d-none');
                         },
-                        success: function (res) {
+                        success: function(res) {
                             // === DATA KOSONG ===
                             if (!res || !Array.isArray(res) || res.length === 0) {
                                 resetChart();
                                 $('#nilaiInstrukturEmpty')
-                                    .html('<i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i><p class="text-muted mt-2 mb-0">Tidak ada data Nilai Instruktur</p>')
+                                    .html(
+                                        '<i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i><p class="text-muted mt-2 mb-0">Tidak ada data Nilai Instruktur</p>'
+                                    )
                                     .removeClass('d-none');
                                 $('#exportFeedbackInstruktur').prop('disabled', true);
                                 return;
@@ -3307,11 +3781,13 @@
                                 $('#nilaiInstrukturEmpty').removeClass('d-none');
                             }
                         },
-                        error: function (xhr) {
+                        error: function(xhr) {
                             console.error('AJAX Error:', xhr.status);
                             resetChart();
                             $('#nilaiInstrukturEmpty')
-                                .html('<i class="bx bx-error-circle text-danger" style="font-size:3rem;"></i><p class="text-danger mt-2 mb-0">Gagal memuat data</p>')
+                                .html(
+                                    '<i class="bx bx-error-circle text-danger" style="font-size:3rem;"></i><p class="text-danger mt-2 mb-0">Gagal memuat data</p>'
+                                )
                                 .removeClass('d-none');
                         }
                     });
@@ -3336,7 +3812,7 @@
                 }
 
                 // === EXPORT PDF ===
-                $('#exportFeedbackInstruktur').on('click', function () {
+                $('#exportFeedbackInstruktur').on('click', function() {
                     let tahun = $('#filterFeedbackTahun').val();
                     let bulan = $('#filterFeedbackBulan').val();
                     let triwulan = $('#filterFeedbackTriwulan').val();
@@ -3355,7 +3831,8 @@
                         value = tahun;
                     }
 
-                    let url = `{{ route('office.feedbackinstrukturpdf') }}?filter=${filter}&value=${value}&tahun=${tahun}`;
+                    let url =
+                        `{{ route('office.feedbackinstrukturpdf') }}?filter=${filter}&value=${value}&tahun=${tahun}`;
                     window.open(url, '_blank');
                 });
                 // End Script Chart Feedback
@@ -3375,7 +3852,7 @@
                 }
 
                 // Format saat ngetik (fix cursor & bug 5 digit)
-                $(document).on('input', '.format-rupiah', function (e) {
+                $(document).on('input', '.format-rupiah', function(e) {
                     let cursorPos = this.selectionStart;
                     let value = this.value;
 
@@ -3398,17 +3875,17 @@
 
                 // Bersihkan sebelum submit
                 function bersihkanFormat(form) {
-                    form.find('.format-rupiah').each(function () {
+                    form.find('.format-rupiah').each(function() {
                         this.value = unformatRupiah(this.value);
                     });
                 }
 
-                $('#modalTambahTagihan form').on('submit', function () {
+                $('#modalTambahTagihan form').on('submit', function() {
                     bersihkanFormat($(this));
                 });
 
                 // Reset modal
-                $(document).on('hidden.bs.modal', '.modal', function () {
+                $(document).on('hidden.bs.modal', '.modal', function() {
                     const form = $(this).find('form');
 
                     if (form.length) {
@@ -3422,7 +3899,7 @@
                 });
 
                 // form edit tagihan
-                $(document).on('click', '#edit-tagihan', function () {
+                $(document).on('click', '#edit-tagihan', function() {
                     let id = $(this).data('id');
 
                     // jika yang diklik checkbox → buka modal manual
@@ -3434,7 +3911,7 @@
                     $.ajax({
                         url: '/office/data-tagihan/' + id,
                         type: 'GET',
-                        success: function (res) {
+                        success: function(res) {
                             let nominal = formatRupiah(parseInt(res.data.nominal))
                             // set action form
                             $('#formEditTagihan').attr('action', '/office/update-tagihan/' + id);
@@ -3442,13 +3919,18 @@
                             // set value input
                             $('#modalEditTagihan select[name="status"]').val(res.data.status);
                             $('#modalEditTagihan select[name="tracking"]').val(res.data.tracking);
-                            $('#modalEditTagihan input[name="tanggal_selesai"]').val(res.data.tanggal_selesai);
-                            $('#modalEditTagihan textarea[name="keterangan"]').val(res.data.keterangan);
+                            $('#modalEditTagihan input[name="tanggal_selesai"]').val(res.data
+                                .tanggal_selesai);
+                            $('#modalEditTagihan textarea[name="keterangan"]').val(res.data
+                                .keterangan);
 
                             if (res.data.status === 'selesai' || res.data.status === 'telat') {
-                                $('#modalEditTagihan select[name="status"]').attr('disabled', 'disabled');
-                            } else if (res.data.status === 'pending' || res.data.status === 'proses') {
-                                $('#modalEditTagihan select[name="status"]').attr('disabled', false);
+                                $('#modalEditTagihan select[name="status"]').attr('disabled',
+                                    'disabled');
+                            } else if (res.data.status === 'pending' || res.data.status ===
+                                'proses') {
+                                $('#modalEditTagihan select[name="status"]').attr('disabled',
+                                    false);
                             }
 
                             // format rupiah jika ada function
@@ -3458,7 +3940,7 @@
                 });
 
 
-                $(document).on('click', '.edit-administrasi', function () {
+                $(document).on('click', '.edit-administrasi', function() {
                     let id = $(this).data('id');
 
                     // reset checkbox supaya tidak tercentang
@@ -3472,20 +3954,26 @@
                         url: '/office/data-administrasi/' + id,
                         type: 'GET',
 
-                        success: function (res) {
+                        success: function(res) {
 
                             // set action form
-                            $('#formEditAdministrasi').attr('action', '/office/administrasi-karyawan/update/' + id);
+                            $('#formEditAdministrasi').attr('action',
+                                '/office/administrasi-karyawan/update/' + id);
 
                             // isi input
-                            $('#modalEditAdministrasi input[name="nama_administrasi"]').val(res.nama_administrasi);
-                            $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline).attr("disabled", "disabled");
+                            $('#modalEditAdministrasi input[name="nama_administrasi"]').val(res
+                                .nama_administrasi);
+                            $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline)
+                                .attr("disabled", "disabled");
                             $('#modalEditAdministrasi select[name="status"]').val(res.status);
-                            $('#modalEditAdministrasi input[name="tanggal_selesai"]').val(res.tanggal_selesai);
-                            $('#modalEditAdministrasi textarea[name="keterangan"]').val(res.keterangan);
+                            $('#modalEditAdministrasi input[name="tanggal_selesai"]').val(res
+                                .tanggal_selesai);
+                            $('#modalEditAdministrasi textarea[name="keterangan"]').val(res
+                                .keterangan);
 
                             if (res.status === 'selesai' || res.status === 'terlambat') {
-                                $('#modalEditAdministrasi select[name="status"]').attr("disabled", "disabled");
+                                $('#modalEditAdministrasi select[name="status"]').attr("disabled",
+                                    "disabled");
                             }
 
                             if (res.bukti_transfer) {
@@ -3511,7 +3999,7 @@
                     url: '/office/data-hari-libur/' + new Date().getFullYear(),
                     type: 'GET',
                     dataType: 'json',
-                    success: function (holidays) {
+                    success: function(holidays) {
                         let currentDisplayMonth = new Date().getMonth();
                         let currentDisplayYear = new Date().getFullYear();
 
@@ -3567,11 +4055,17 @@
                                 next: 'Next >>',
                             },
                             events: events,
-                            eventClick: function (info) {
+                            eventClick: function(info) {
                                 let data = info.event.extendedProps;
                                 const dateObj = new Date(data.date);
-                                const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'long' });
-                                const formattedDate = dateObj.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+                                const dayName = dateObj.toLocaleDateString('id-ID', {
+                                    weekday: 'long'
+                                });
+                                const formattedDate = dateObj.toLocaleDateString('id-ID', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                });
 
                                 const typeClass = typeClassMap[data.type] || {
                                     badge: 'bg-secondary-subtle text-secondary',
@@ -3597,7 +4091,7 @@
                                     `;
                                 $('#holiday-detail').html(detailHtml);
                             },
-                            datesSet: function (info) {
+                            datesSet: function(info) {
                                 const currentDate = info.view.currentStart;
 
                                 currentDisplayMonth = currentDate.getMonth();
@@ -3610,11 +4104,16 @@
                         function updateHolidayList() {
                             const monthHolidays = holidays.filter(h => {
                                 const date = new Date(h.tanggal);
-                                return date.getMonth() === currentDisplayMonth && date.getFullYear() === currentDisplayYear;
+                                return date.getMonth() === currentDisplayMonth && date
+                                    .getFullYear() === currentDisplayYear;
                             }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-                            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                            ];
+                            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat',
+                                'Sabtu'
+                            ];
 
                             if (monthHolidays.length === 0) {
                                 const emptyHtml = `
@@ -3627,7 +4126,8 @@
                                 return;
                             }
 
-                            let html = `<div class="mb-2"><span class="badge bg-success-subtle text-success px-3 py-2">${monthHolidays.length} Hari Libur - ${monthNames[currentDisplayMonth]}</span></div>`;
+                            let html =
+                                `<div class="mb-2"><span class="badge bg-success-subtle text-success px-3 py-2">${monthHolidays.length} Hari Libur - ${monthNames[currentDisplayMonth]}</span></div>`;
 
                             monthHolidays.forEach(holiday => {
                                 const date = new Date(holiday.tanggal);
@@ -3677,7 +4177,7 @@
                             $('#holiday-list').html(html);
                         }
 
-                        $(document).on('click', '.btn-edit-libur', function (e) {
+                        $(document).on('click', '.btn-edit-libur', function(e) {
                             e.preventDefault();
 
                             const id = $(this).data('id');
@@ -3685,10 +4185,11 @@
                             $.ajax({
                                 url: `/office/data-hari-libur/edit/${id}`,
                                 type: 'GET',
-                                success: function (res) {
+                                success: function(res) {
 
                                     // set action
-                                    $('#formEditHariLibur').attr('action', '/office/data-hari-libur/update/' + id);
+                                    $('#formEditHariLibur').attr('action',
+                                        '/office/data-hari-libur/update/' + id);
 
                                     // isi form
                                     $('#id').val(res.id);
@@ -3698,13 +4199,13 @@
                                     // tampilkan modal
                                     $('#modalEditHariLibur').modal('show');
                                 },
-                                error: function () {
+                                error: function() {
                                     alert('Gagal mengambil data hari libur');
                                 }
                             });
                         });
 
-                        $(document).on('click', '.btn-delete-libur', function (e) {
+                        $(document).on('click', '.btn-delete-libur', function(e) {
                             e.preventDefault();
 
                             const id = $(this).data('id');
@@ -3715,16 +4216,16 @@
                                 data: {
                                     _token: $('meta[name="csrf-token"]').attr('content')
                                 },
-                                success: function (res) {
+                                success: function(res) {
                                     location.reload();
                                 },
-                                error: function (error) {
+                                error: function(error) {
                                     console.log(error)
                                 },
                             });
                         });
 
-                        $(document).on('click', '.notifikasiLibur', function (e) {
+                        $(document).on('click', '.notifikasiLibur', function(e) {
                             e.preventDefault();
 
                             const id = $(this).data('id');
@@ -3736,10 +4237,10 @@
                                     _token: $('meta[name="csrf-token"]').attr('content'),
                                     id: id
                                 },
-                                success: function (res) {
+                                success: function(res) {
                                     location.reload();
                                 },
-                                error: function (error) {
+                                error: function(error) {
                                     console.log(error)
                                 },
                             })
@@ -3748,7 +4249,7 @@
                         calendar.render();
                         updateHolidayList();
                     },
-                    error: function (xhr, status, error) {
+                    error: function(xhr, status, error) {
                         console.error('Error loading holidays:', error);
                         $('#holiday-list').html('<p class="text-danger small">Gagal memuat data libur</p>');
                     }
@@ -3808,11 +4309,11 @@
 
                 }
 
-                $('#eksportTahunanAdminis, #eksportBulananAdminis, #eksportQuartalAdminis').on('change', function () {
+                $('#eksportTahunanAdminis, #eksportBulananAdminis, #eksportQuartalAdminis').on('change', function() {
                     handleFilter();
                 });
 
-                $('input[name="start_date"], input[name="end_date"]').on('change', function () {
+                $('input[name="start_date"], input[name="end_date"]').on('change', function() {
                     handleFilter();
                 });
 
@@ -3820,7 +4321,7 @@
 
 
                 // pengajuan tagihan perusahaan ke pengajuan barang
-                $(document).on('click', '.btn-ajukan-tagihan', function () {
+                $(document).on('click', '.btn-ajukan-tagihan', function() {
                     let id = $(this).data('id');
                     let form = $('#form-ajukan-' + id);
 
@@ -3831,11 +4332,11 @@
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
-                        success: function (response) {
+                        success: function(response) {
                             alert("Berhasil membuat pengajuan barang!");
                             location.reload();
                         },
-                        error: function (xhr) {
+                        error: function(xhr) {
                             alert('Terjadi kesalahan');
                             console.log(xhr.responseText);
                         }
@@ -4070,5 +4571,489 @@
                     });
                 }
             });
+
+            window.statusPieChart = null;
+            window.statusTrendChart = null;
+            window.currentDetailStatus = '';
+            window.currentFilter = {
+                tahun: '{{ now()->year }}',
+                bulan: ''
+            };
+
+            // === 2. DEFINISI FUNGSI GLOBAL (Pastikan scope window) ===
+            window.loadLaporanStatus = function() {
+                $.get("{{ route('office.laporan.status-karyawan') }}", {
+                    tahun: window.currentFilter.tahun,
+                    bulan: window.currentFilter.bulan
+                }, function(res) {
+                    $('#totalKontrak').text(res.kontrak || 0);
+                    $('#totalTetap').text(res.tetap || 0);
+                    $('#totalProbation').text(res.probation || 0);
+                    $('#totalResign').text(res.resign || 0);
+
+                    const ctx = document.getElementById('statusPieChart')?.getContext('2d');
+                    if (!ctx) return;
+
+                    if (window.statusPieChart) window.statusPieChart.destroy();
+                    const total = (res.kontrak || 0) + (res.tetap || 0) + (res.probation || 0) + (res.resign || 0);
+
+                    if (total === 0) {
+                        $('#pieEmpty').removeClass('d-none');
+                        return;
+                    }
+                    $('#pieEmpty').addClass('d-none');
+
+                    window.statusPieChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Kontrak', 'Tetap', 'Probation', 'Resign'],
+                            datasets: [{
+                                data: [res.kontrak || 0, res.tetap || 0, res.probation || 0, res
+                                    .resign || 0
+                                ],
+                                backgroundColor: ['rgba(91,115,232,0.8)', 'rgba(113,221,55,0.8)',
+                                    'rgba(255,193,7,0.8)', 'rgba(220,53,69,0.8)'
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            };
+
+            window.loadTrendChart = function() {
+                $.get("{{ route('office.laporan.trend-karyawan') }}", {
+                    tahun: window.currentFilter.tahun
+                }, function(res) {
+                    const ctx = document.getElementById('statusTrendChart')?.getContext('2d');
+                    if (!ctx) return;
+
+                    if (window.statusTrendChart) window.statusTrendChart.destroy();
+                    const hasData = res.kontrak.some(v => v > 0) || res.tetap.some(v => v > 0) || res.probation
+                        .some(v => v > 0);
+                    if (!hasData) {
+                        $('#trendEmpty').removeClass('d-none');
+                        return;
+                    }
+                    $('#trendEmpty').addClass('d-none');
+
+                    window.statusTrendChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: res.labels,
+                            datasets: [{
+                                    label: 'Kontrak',
+                                    data: res.kontrak,
+                                    borderColor: '#5b73e8',
+                                    backgroundColor: 'rgba(91,115,232,0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                },
+                                {
+                                    label: 'Tetap',
+                                    data: res.tetap,
+                                    borderColor: '#71DD37',
+                                    backgroundColor: 'rgba(113,221,55,0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                },
+                                {
+                                    label: 'Probation',
+                                    data: res.probation,
+                                    borderColor: '#ffc107',
+                                    backgroundColor: 'rgba(255,193,7,0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            };
+
+            window.openDetailModal = function(status) {
+                window.currentDetailStatus = status;
+                const titles = {
+                    kontrak: 'Kontrak',
+                    tetap: 'Tetap',
+                    probation: 'Probation',
+                    resign: 'Resign'
+                };
+                const colors = {
+                    kontrak: 'primary',
+                    tetap: 'success',
+                    probation: 'warning',
+                    resign: 'danger'
+                };
+                $('#modalStatusBadge').text(titles[status]).removeClass().addClass(`badge bg-${colors[status]} ms-2`);
+                $('#modalDetailKaryawan').modal('show');
+                window.loadDetailKaryawan(status, 1);
+            };
+
+            window.loadDetailKaryawan = function(status, page = 1) {
+                const search = $('#searchDetailKaryawan').val();
+                $('#detailKaryawanBody').html(
+                    '<tr><td colspan="8" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>'
+                );
+
+                $.get("{{ route('office.laporan.status-karyawan.detail') }}", {
+                    status: status,
+                    page: page,
+                    search: search,
+                    tahun: window.currentFilter.tahun,
+                    bulan: window.currentFilter.bulan
+                }, function(res) {
+                    let rows = '';
+                    if (res.data.length === 0) {
+                        rows =
+                            '<tr><td colspan="8" class="text-center py-4 text-muted">Tidak ada data ditemukan</td></tr>';
+                    } else {
+                        res.data.forEach((item, i) => {
+                            let tglPeriode = '-';
+                            let tglResign = item.resigned_at || item.tanggal_nonaktif ?
+                                new Date(item.resigned_at || item.tanggal_nonaktif).toLocaleDateString(
+                                    'id-ID', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric'
+                                    }) : '-';
+
+                            if (status === 'kontrak') tglPeriode = item.awal_kontrak ? new Date(item
+                                .awal_kontrak).toLocaleDateString('id-ID') : '-';
+                            if (status === 'tetap') tglPeriode = item.awal_tetap ? new Date(item.awal_tetap)
+                                .toLocaleDateString('id-ID') : '-';
+                            if (status === 'probation') tglPeriode = item.awal_probation ? new Date(item
+                                .awal_probation).toLocaleDateString('id-ID') : '-';
+                            if (status === 'resign') tglPeriode = item.created_at ? new Date(item
+                                .created_at).toLocaleDateString('id-ID') : '-';
+
+                            rows += `
+                <tr>
+                    <td class="ps-4">${(res.current_page - 1) * res.per_page + i + 1}</td>
+                    <td class="fw-medium">${item.nama_lengkap || '-'}</td>
+                    <td><code class="small">${item.nip || '-'}</code></td>
+                    <td><span class="badge bg-light text-dark">${item.divisi || '-'}</span></td>
+                    <td>${item.jabatan || '-'}</td>
+                    <td>${tglPeriode}</td>
+                    <td>${status === 'resign' ? tglResign : '-'}</td>
+                    <td class="text-muted small text-truncate" style="max-width: 200px;" title="${item.alasan_resign || ''}">${item.alasan_resign || '-'}</td>
+                </tr>`;
+                        });
+                    }
+                    $('#detailKaryawanBody').html(rows);
+                    $('#detailTotalInfo').text(`Total: ${res.total} karyawan`);
+                    window.renderDetailPagination(res, page, search);
+                });
+            };
+
+            window.renderDetailPagination = function(res, page, search) {
+                if (res.last_page <= 1) {
+                    $('#detailPagination').html('');
+                    return;
+                }
+                let html = '<ul class="pagination pagination-sm mb-0 justify-content-center">';
+                html +=
+                    `<li class="page-item ${page===1?'disabled':''}"><a class="page-link" href="javascript:void(0)" onclick="window.loadDetailKaryawan('${window.currentDetailStatus}', ${page-1})">&laquo; Prev</a></li>`;
+                let start = Math.max(1, page - 2);
+                let end = Math.min(res.last_page, page + 2);
+                if (start > 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                for (let i = start; i <= end; i++) {
+                    html +=
+                        `<li class="page-item ${i===page?'active':''}"><a class="page-link" href="javascript:void(0)" onclick="window.loadDetailKaryawan('${window.currentDetailStatus}', ${i})">${i}</a></li>`;
+                }
+                if (end < res.last_page) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                html +=
+                    `<li class="page-item ${page===res.last_page?'disabled':''}"><a class="page-link" href="javascript:void(0)" onclick="window.loadDetailKaryawan('${window.currentDetailStatus}', ${page+1})">Next &raquo;</a></li>`;
+                html += '</ul>';
+                $('#detailPagination').html(html);
+            };
+
+            // === 3. EVENT LISTENERS & INIT ===
+            $(document).ready(function() {
+                window.loadLaporanStatus();
+                window.loadTrendChart();
+
+                $('#btnFilterStatus').click(function() {
+                    window.currentFilter.tahun = $('#filterStatusTahun').val();
+                    window.currentFilter.bulan = $('#filterStatusBulan').val();
+                    window.loadLaporanStatus();
+                    window.loadTrendChart();
+                    if ($('#modalDetailKaryawan').hasClass('show')) {
+                        window.loadDetailKaryawan(window.currentDetailStatus, 1);
+                    }
+                });
+
+                $('#searchDetailKaryawan').on('keyup', function() {
+                    window.loadDetailKaryawan(window.currentDetailStatus, 1);
+                });
+            });
+
+            $('#exportStatusPdf').on('click', function(e) {
+                e.preventDefault();
+                const tahun = $('#filterStatusTahun').val() || new Date().getFullYear();
+                const bulan = $('#filterStatusBulan').val() || '';
+
+                const baseUrl = "{{ route('office.export.status-karyawan-pdf') }}";
+                const url = bulan ? `${baseUrl}?tahun=${tahun}&bulan=${bulan}` : `${baseUrl}?tahun=${tahun}`;
+
+                window.open(url, '_blank');
+            });
+
+            let tunjanganAllData = [];
+            let tunjanganCurrentPage = 1;
+            let tunjanganPerPage = 10;
+
+            function formatRupiahIDR(amount) {
+                const num = parseFloat(amount || 0);
+                return 'Rp ' + num.toLocaleString('id-ID');
+            }
+
+            function formatRupiahSigned(amount) {
+                const num = parseFloat(amount || 0);
+                const abs = Math.abs(num).toLocaleString('id-ID');
+
+                if (num < 0) {
+                    return '- Rp ' + abs;
+                }
+
+                if (num > 0) {
+                    return '+ Rp ' + abs;
+                }
+
+                return 'Rp 0';
+            }
+
+            function loadTunjanganDashboard(bulan, tahun) {
+                $('#tunjanganLoading').removeClass('d-none');
+                $('#tunjanganContent').addClass('d-none');
+
+                $.ajax({
+                    url: "{{ route('office.dashboard.tunjangan') }}",
+                    type: "GET",
+                    data: {
+                        month: bulan,
+                        year: tahun
+                    },
+                    success: function(res) {
+                        if (!res.success) {
+                            alert(res.message);
+                            return;
+                        }
+
+                        const data = res.data;
+
+                        tunjanganAllData = data.all_karyawan;
+                        tunjanganCurrentPage = 1;
+
+                        $('#totalKaryawan').text(data.summary.total_karyawan);
+                        $('#sudahAdaTunjangan').text(data.summary.sudah_ada_tunjangan);
+                        $('#belumAdaTunjangan').text(data.summary.belum_ada_tunjangan);
+                        $('#grandTotalTunjangan').text(
+                            formatRupiahIDR(data.summary.grand_total_tunjangan)
+                        );
+
+                        renderDetailTable();
+
+                        $('#tunjanganLoading').addClass('d-none');
+                        $('#tunjanganContent').removeClass('d-none');
+                    },
+                    error: function(xhr) {
+                        $('#tunjanganLoading').addClass('d-none');
+                        alert('Terjadi kesalahan');
+                    }
+                });
+            }
+
+            function renderDetailTable() {
+                const tbody = $('#tunjanganDetailBody');
+                tbody.empty();
+
+                const keyword = $('#searchTunjangan').val().toLowerCase();
+
+                const filtered = tunjanganAllData.filter(item =>
+                    item.nama_lengkap.toLowerCase().includes(keyword) ||
+                    (item.kode_karyawan || '').toLowerCase().includes(keyword) ||
+                    item.divisi.toLowerCase().includes(keyword) ||
+                    item.jabatan.toLowerCase().includes(keyword)
+                );
+
+                const totalPages = Math.ceil(filtered.length / tunjanganPerPage);
+                const start = (tunjanganCurrentPage - 1) * tunjanganPerPage;
+                const end = start + tunjanganPerPage;
+
+                const paginated = filtered.slice(start, end);
+
+                if (paginated.length === 0) {
+                    tbody.html(`
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                Tidak ada data
+                            </td>
+                        </tr>
+                    `);
+                    $('#tunjanganPagination').html('');
+                    return;
+                }
+
+                paginated.forEach((item, index) => {
+                    tbody.append(`
+                        <tr>
+                            <td>${start + index + 1}</td>
+                            <td>${item.nama_lengkap}</td>
+                            <td>${item.kode_karyawan || '-'}</td>
+                            <td>${item.divisi}</td>
+                            <td>${item.jabatan}</td>
+                            <td>
+                                <span class="badge ${
+                                    item.status_tunjangan === 'Sudah Ada'
+                                        ? 'bg-success'
+                                        : 'bg-danger'
+                                }">
+                                    ${item.status_tunjangan}
+                                </span>
+                            </td>
+                            <td class="text-end">${formatRupiahIDR(item.total_tunjangan)}</td>
+                            <td class="text-end">${formatRupiahSigned(item.total_potongan)}</td>
+                            <td class="text-end fw-bold">${formatRupiahIDR(item.total_bersih)}</td>
+                            <td>
+                                <button 
+                                    class="btn btn-sm btn-primary"
+                                    onclick="openDetailModal(${item.id})"
+                                >
+                                    Detail
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                });
+
+                renderPagination(totalPages);
+            }
+
+            function renderPagination(totalPages) {
+                let html = '';
+
+                for (let i = 1; i <= totalPages; i++) {
+                    html += `
+                        <button 
+                            class="btn btn-sm ${
+                                i === tunjanganCurrentPage
+                                    ? 'btn-primary'
+                                    : 'btn-outline-primary'
+                            } me-1"
+                            onclick="changePage(${i})"
+                        >
+                            ${i}
+                        </button>
+                    `;
+                }
+
+                $('#tunjanganPagination').html(html);
+            }
+
+            function changePage(page) {
+                tunjanganCurrentPage = page;
+                renderDetailTable();
+            }
+
+            function openDetailModal(id) {
+                const data = tunjanganAllData.find(item => item.id === id);
+
+                if (!data) return;
+
+                $('#modalNama').text(data.nama_lengkap);
+                $('#modalKode').text(data.kode_karyawan || '-');
+                $('#modalDivisi').text(data.divisi);
+                $('#modalJabatan').text(data.jabatan);
+
+                let html = '';
+
+                data.details.forEach(detail => {
+                    html += `
+                        <tr>
+                            <td>${detail.nama_tunjangan}</td>
+                            <td>${detail.tipe}</td>
+                            <td>${detail.keterangan || '-'}</td>
+                            <td class="text-end">
+                                ${formatRupiahSigned(detail.total)}
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                $('#modalDetailBody').html(html);
+                $('#modalTotalBersih').text(
+                    formatRupiahIDR(data.total_bersih)
+                );
+
+                $('#modalDetailTunjangan').modal('show');
+            }
+
+            $(document).ready(function() {
+                loadTunjanganDashboard(
+                    $('#filterBulan').val(),
+                    $('#filterTahun').val()
+                );
+
+                $('#exportGaji').click(function () {
+                    let bulan = $('#filterBulan').val();
+                    let tahun = $('#filterTahun').val();
+
+                    if (!bulan || !tahun) {
+                        alert('Pilih bulan dan tahun terlebih dahulu');
+                        return;
+                    }
+
+                    window.location.href =
+                        `/office/export-gaji-pdf?bulan=${bulan}&tahun=${tahun}`;
+                });
+
+                $('#btnFilter').click(function() {
+                    loadTunjanganDashboard(
+                        $('#filterBulan').val(),
+                        $('#filterTahun').val()
+                    );
+                });
+
+                $('#searchTunjangan').on('keyup', function() {
+                    tunjanganCurrentPage = 1;
+                    renderDetailTable();
+                });
+            });
         </script>
-@endsection
+    @endsection

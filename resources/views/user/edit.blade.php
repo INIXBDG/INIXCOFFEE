@@ -64,7 +64,8 @@
                                             <option value="">Pilih Gender</option>
                                             <option value="Laki-laki" {{ $users->gender == 'Laki-laki' ? 'selected' : '' }}>
                                                 Laki-laki</option>
-                                            <option value="Perempuan" {{ $users->gender == 'Perempuan' ? 'selected' : '' }}>
+                                            <option value="Perempuan"
+                                                {{ $users->gender == 'Perempuan' ? 'selected' : '' }}>
                                                 Perempuan</option>
                                         </select>
                                         @error('gender')
@@ -84,7 +85,8 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <input type="text" class="form-control @error('tempat_lahir') is-invalid @enderror"
+                                        <input type="text"
+                                            class="form-control @error('tempat_lahir') is-invalid @enderror"
                                             name="tempat_lahir" value="{{ old('tempat_lahir', $users->tempat_lahir) }}">
                                         @error('tempat_lahir')
                                             <span class="invalid-feedback" role="alert">
@@ -103,7 +105,8 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <input type="date" class="form-control @error('tanggal_lahir') is-invalid @enderror"
+                                        <input type="date"
+                                            class="form-control @error('tanggal_lahir') is-invalid @enderror"
                                             name="tanggal_lahir" value="{{ old('tanggal_lahir', $users->tanggal_lahir) }}">
                                         @error('tanggal_lahir')
                                             <span class="invalid-feedback" role="alert">
@@ -124,8 +127,9 @@
                                     <div class="col-md-7 col-sm-7 col-xs-7">
                                         <select class="form-select @error('religion') is-invalid @enderror" name="religion">
                                             <option value="">Pilih Agama</option>
-                                            @foreach(['Islam', 'Kristen Protestan', 'Kristen Katolik', 'Hindu', 'Buddha', 'Konghucu'] as $agama)
-                                                <option value="{{ $agama }}" {{ $users->religion == $agama ? 'selected' : '' }}>
+                                            @foreach (['Islam', 'Kristen Protestan', 'Kristen Katolik', 'Hindu', 'Buddha', 'Konghucu'] as $agama)
+                                                <option value="{{ $agama }}"
+                                                    {{ $users->religion == $agama ? 'selected' : '' }}>
                                                     {{ $agama }}
                                                 </option>
                                             @endforeach
@@ -147,9 +151,7 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <textarea class="form-control @error('alamat_lengkap') is-invalid @enderror"
-                                            name="alamat_lengkap"
-                                            rows="3">{{ old('alamat_lengkap', $users->alamat_lengkap) }}</textarea>
+                                        <textarea class="form-control @error('alamat_lengkap') is-invalid @enderror" name="alamat_lengkap" rows="3">{{ old('alamat_lengkap', $users->alamat_lengkap) }}</textarea>
                                         @error('alamat_lengkap')
                                             <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
@@ -206,11 +208,13 @@
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
                                         @if (auth()->user()->can('Edit DataKaryawan'))
-                                            <input id="nip" type="text" placeholder="Masukan Nomor Induk Pegawai Anda"
+                                            <input id="nip" type="text"
+                                                placeholder="Masukan Nomor Induk Pegawai Anda"
                                                 class="form-control @error('nip') is-invalid @enderror" name="nip"
                                                 value="{{ old('nip', $users->nip) }}" autocomplete="nip">
                                         @else
-                                            <input readonly id="nip" type="text" placeholder="Masukan Nomor Induk Pegawai Anda"
+                                            <input readonly id="nip" type="text"
+                                                placeholder="Masukan Nomor Induk Pegawai Anda"
                                                 class="form-control @error('nip') is-invalid @enderror" name="nip"
                                                 value="{{ old('nip', $users->nip) }}" autocomplete="nip">
                                         @endif
@@ -232,15 +236,18 @@
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
                                         @if (auth()->user()->can('Edit DataKaryawan'))
-                                            <input id="kode_karyawan" type="text" placeholder="Masukan Kode Karyawan Anda"
+                                            <input id="kode_karyawan" type="text"
+                                                placeholder="Masukan Kode Karyawan Anda"
                                                 class="form-control @error('kode_karyawan') is-invalid @enderror"
-                                                name="kode_karyawan" value="{{ old('kode_karyawan', $users->kode_karyawan) }}"
+                                                name="kode_karyawan"
+                                                value="{{ old('kode_karyawan', $users->kode_karyawan) }}"
                                                 autocomplete="kode_karyawan">
                                         @else
                                             <input readonly id="kode_karyawan" type="text"
                                                 placeholder="Masukan Kode Karyawan Anda"
                                                 class="form-control @error('kode_karyawan') is-invalid @enderror"
-                                                name="kode_karyawan" value="{{ old('kode_karyawan', $users->kode_karyawan) }}"
+                                                name="kode_karyawan"
+                                                value="{{ old('kode_karyawan', $users->kode_karyawan) }}"
                                                 autocomplete="kode_karyawan">
                                         @endif
                                         @error('kode_karyawan')
@@ -261,23 +268,27 @@
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
                                         @if (auth()->user()->can('Edit DataKaryawan'))
-                                            <select class="form-select @error('jabatan') is-invalid @enderror" name="jabatan"
-                                                value="{{ old('jabatan', $users->jabatan) }}" required autocomplete="jabatan">
+                                            <select class="form-select @error('jabatan') is-invalid @enderror"
+                                                name="jabatan" value="{{ old('jabatan', $users->jabatan) }}" required
+                                                autocomplete="jabatan">
                                                 <option selected>Pilih Jabatan</option>
                                                 @foreach ($jabatan as $jabatans)
-                                                    <option value="{{ $jabatans->nama_jabatan }}" @if ($users->jabatan == $jabatans->nama_jabatan) selected @endif>
+                                                    <option value="{{ $jabatans->nama_jabatan }}"
+                                                        @if ($users->jabatan == $jabatans->nama_jabatan) selected @endif>
                                                         {{ $jabatans->nama_jabatan }}
                                                     </option>
                                                 @endforeach
                                             </select>
                                         @else
-                                            <input type="hidden" name="jabatan" value="{{ old('jabatan', $users->jabatan) }}">
+                                            <input type="hidden" name="jabatan"
+                                                value="{{ old('jabatan', $users->jabatan) }}">
                                             <select disabled class="form-select @error('jabatan') is-invalid @enderror"
                                                 name="jabatan" value="{{ old('jabatan', $users->jabatan) }}" required
                                                 autocomplete="jabatan">
                                                 <option selected>Pilih Jabatan</option>
                                                 @foreach ($jabatan as $jabatans)
-                                                    <option value="{{ $jabatans->nama_jabatan }}" @if ($users->jabatan == $jabatans->nama_jabatan) selected @endif>
+                                                    <option value="{{ $jabatans->nama_jabatan }}"
+                                                        @if ($users->jabatan == $jabatans->nama_jabatan) selected @endif>
                                                         {{ $jabatans->nama_jabatan }}
                                                     </option>
                                                 @endforeach
@@ -301,37 +312,44 @@
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
                                         @if (auth()->user()->can('Edit DataKaryawan'))
-                                            <select class="form-select @error('divisi') is-invalid @enderror" name="divisi"
-                                                value="{{ old('divisi', $users->divisi) }}" required autocomplete="divisi">
+                                            <select class="form-select @error('divisi') is-invalid @enderror"
+                                                name="divisi" value="{{ old('divisi', $users->divisi) }}" required
+                                                autocomplete="divisi">
                                                 <option selected>Pilih Divisi</option>
                                                 <option value="Direksi" @if ($users->divisi == 'Direksi') selected @endif>
                                                     Direksi</option>
-                                                <option value="Education" @if ($users->divisi == 'Education') selected @endif>
+                                                <option value="Education"
+                                                    @if ($users->divisi == 'Education') selected @endif>
                                                     Education</option>
-                                                <option value="Sales & Marketing" @if ($users->divisi == 'Sales & Marketing')
-                                                selected @endif>Sales & Marketing
+                                                <option value="Sales & Marketing"
+                                                    @if ($users->divisi == 'Sales & Marketing') selected @endif>Sales & Marketing
                                                 </option>
                                                 <option value="Office" @if ($users->divisi == 'Office') selected @endif>
                                                     Office</option>
-                                                <option value="IT Service Management" @if ($users->divisi == 'IT Service Management') selected @endif>IT Service
+                                                <option value="IT Service Management"
+                                                    @if ($users->divisi == 'IT Service Management') selected @endif>IT Service
                                                     Management</option>
                                             </select>
                                         @else
-                                            <input type="hidden" name="jabatan" value="{{ old('divisi', $users->divisi) }}">
+                                            <input type="hidden" name="jabatan"
+                                                value="{{ old('divisi', $users->divisi) }}">
                                             <select disabled class="form-select @error('divisi') is-invalid @enderror"
                                                 name="divisi" value="{{ old('divisi', $users->divisi) }}" required
                                                 autocomplete="divisi">
                                                 <option selected>Pilih Divisi</option>
-                                                <option value="Direksi" @if ($users->divisi == 'Direksi') selected @endif>Direksi
+                                                <option value="Direksi"
+                                                    @if ($users->divisi == 'Direksi') selected @endif>Direksi
                                                 </option>
-                                                <option value="Education" @if ($users->divisi == 'Education') selected @endif>
+                                                <option value="Education"
+                                                    @if ($users->divisi == 'Education') selected @endif>
                                                     Education</option>
-                                                <option value="Sales & Marketing" @if ($users->divisi == 'Sales & Marketing')
-                                                selected @endif>Sales & Marketing
+                                                <option value="Sales & Marketing"
+                                                    @if ($users->divisi == 'Sales & Marketing') selected @endif>Sales & Marketing
                                                 </option>
                                                 <option value="Office" @if ($users->divisi == 'Office') selected @endif>
                                                     Office</option>
-                                                <option value="IT Service Management" @if ($users->divisi == 'IT Service Management') selected @endif>IT Service
+                                                <option value="IT Service Management"
+                                                    @if ($users->divisi == 'IT Service Management') selected @endif>IT Service
                                                     Management</option>
                                             </select>
                                         @endif
@@ -353,7 +371,8 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <input id="rekening_maybank" placeholder="Masukan Rekening Maybank Anda" type="text"
+                                        <input id="rekening_maybank" placeholder="Masukan Rekening Maybank Anda"
+                                            type="text"
                                             class="form-control @error('rekening_maybank') is-invalid @enderror"
                                             name="rekening_maybank"
                                             value="{{ old('rekening_maybank', $users->rekening_maybank) }}"
@@ -458,8 +477,9 @@
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
                                         <select class="form-select @error('status_aktif') is-invalid @enderror"
-                                            name="status_aktif" value="{{ old('status_aktif', $users->status_aktif) }}"
-                                            required autocomplete="status_aktif">
+                                            name="status_aktif" id="status_aktif"
+                                            value="{{ old('status_aktif', $users->status_aktif) }}" required
+                                            autocomplete="status_aktif">
                                             <option selected>Pilih status</option>
                                             <option @if ($users->status_aktif == '1') selected @endif value="1">
                                                 Aktif</option>
@@ -474,6 +494,49 @@
                                     </div>
                                 </div>
 
+                                {{-- === KONFIRMASI RESIGN (Baru) === --}}
+                                <div class="row" id="resign-section" style="display: none;">
+                                    <div class="col-md-4 col-sm-4 col-xs-4">
+                                        <p>Apakah Resign?</p>
+                                    </div>
+                                    <div class="col-md-1 col-sm-1 col-xs-1">
+                                        <p>:</p>
+                                    </div>
+                                    <div class="col-md-7 col-sm-7 col-xs-7">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="is_resign"
+                                                id="is_resign" value="1"
+                                                {{ old('is_resign', $users->is_resign ?? '') == '1' ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="is_resign">
+                                                Ya, karyawan ini resign
+                                            </label>
+                                        </div>
+                                        @error('is_resign')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                {{-- === ALASAN RESIGN (Baru) === --}}
+                                <div class="row" id="alasan-resign-section" style="display: none;">
+                                    <div class="col-md-4 col-sm-4 col-xs-4">
+                                        <p>Alasan Resign</p>
+                                    </div>
+                                    <div class="col-md-1 col-sm-1 col-xs-1">
+                                        <p>:</p>
+                                    </div>
+                                    <div class="col-md-7 col-sm-7 col-xs-7">
+                                        <textarea class="form-control mb-2 @error('alasan_resign') is-invalid @enderror" name="alasan_resign" id="alasan_resign"
+                                            rows="3" placeholder="Jelaskan alasan resign...">{{ old('alasan_resign', $users->alasan_resign ?? '') }}</textarea>
+                                        @error('alasan_resign')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                </div>
                                 {{-- === AWAL PROBATION === --}}
                                 <div class="row">
                                     <div class="col-md-4 col-sm-4 col-xs-4">
@@ -546,12 +609,14 @@
                                         @if (auth()->user()->can('Edit DataKaryawan'))
                                             <input id="awal_kontrak" type="date"
                                                 class="form-control @error('awal_kontrak') is-invalid @enderror"
-                                                name="awal_kontrak" value="{{ old('awal_kontrak', $users->awal_kontrak) }}"
+                                                name="awal_kontrak"
+                                                value="{{ old('awal_kontrak', $users->awal_kontrak) }}"
                                                 autocomplete="awal_kontrak">
                                         @else
                                             <input readonly id="awal_kontrak" type="date"
                                                 class="form-control @error('awal_kontrak') is-invalid @enderror"
-                                                name="awal_kontrak" value="{{ old('awal_kontrak', $users->awal_kontrak) }}"
+                                                name="awal_kontrak"
+                                                value="{{ old('awal_kontrak', $users->awal_kontrak) }}"
                                                 autocomplete="awal_kontrak">
                                         @endif
                                         @error('awal_kontrak')
@@ -574,12 +639,14 @@
                                         @if (auth()->user()->can('Edit DataKaryawan'))
                                             <input id="akhir_kontrak" type="date"
                                                 class="form-control @error('akhir_kontrak') is-invalid @enderror"
-                                                name="akhir_kontrak" value="{{ old('akhir_kontrak', $users->akhir_kontrak) }}"
+                                                name="akhir_kontrak"
+                                                value="{{ old('akhir_kontrak', $users->akhir_kontrak) }}"
                                                 autocomplete="akhir_kontrak">
                                         @else
                                             <input readonly id="akhir_kontrak" type="date"
                                                 class="form-control @error('akhir_kontrak') is-invalid @enderror"
-                                                name="akhir_kontrak" value="{{ old('akhir_kontrak', $users->akhir_kontrak) }}"
+                                                name="akhir_kontrak"
+                                                value="{{ old('akhir_kontrak', $users->akhir_kontrak) }}"
                                                 autocomplete="akhir_kontrak">
                                         @endif
                                         @error('akhir_kontrak')
@@ -601,12 +668,14 @@
                                     <div class="col-md-7 col-sm-7 col-xs-7">
                                         @if (auth()->user()->can('Edit DataKaryawan'))
                                             <input id="awal_tetap" type="date"
-                                                class="form-control @error('awal_tetap') is-invalid @enderror" name="awal_tetap"
-                                                value="{{ old('awal_tetap', $users->awal_tetap) }}" autocomplete="awal_tetap">
+                                                class="form-control @error('awal_tetap') is-invalid @enderror"
+                                                name="awal_tetap" value="{{ old('awal_tetap', $users->awal_tetap) }}"
+                                                autocomplete="awal_tetap">
                                         @else
                                             <input readonly id="awal_tetap" type="date"
-                                                class="form-control @error('awal_tetap') is-invalid @enderror" name="awal_tetap"
-                                                value="{{ old('awal_tetap', $users->awal_tetap) }}" autocomplete="awal_tetap">
+                                                class="form-control @error('awal_tetap') is-invalid @enderror"
+                                                name="awal_tetap" value="{{ old('awal_tetap', $users->awal_tetap) }}"
+                                                autocomplete="awal_tetap">
                                         @endif
                                         @error('awal_tetap')
                                             <span class="invalid-feedback" role="alert">
@@ -654,8 +723,9 @@
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
                                         <input id="keterangan" placeholder="Keterangan" type="text"
-                                            class="form-control @error('keterangan') is-invalid @enderror" name="keterangan"
-                                            value="{{ old('keterangan', $users->keterangan) }}" autocomplete="keterangan">
+                                            class="form-control @error('keterangan') is-invalid @enderror"
+                                            name="keterangan" value="{{ old('keterangan', $users->keterangan) }}"
+                                            autocomplete="keterangan">
                                         @error('keterangan')
                                             <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
@@ -702,10 +772,11 @@
                                     {{-- Kolom Input (Container Dinamis) --}}
                                     <div class="col-md-7 col-sm-7 col-xs-7">
                                         <div id="education_container">
-                                            @if($users->educations->count() > 0)
-                                                @foreach($users->educations as $index => $edu)
+                                            @if ($users->educations->count() > 0)
+                                                @foreach ($users->educations as $index => $edu)
                                                     <div class="education-item mb-2" style="display: flex; gap: 10px;">
-                                                        <input type="text" name="educations[{{ $index }}][name]"
+                                                        <input type="text"
+                                                            name="educations[{{ $index }}][name]"
                                                             class="form-control" value="{{ $edu->name }}">
                                                         <button type="button" class="btn btn-danger btn-sm remove-row"
                                                             style="width: 40px;">X</button>
@@ -739,14 +810,14 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             let container = document.getElementById('education_container');
             let addButton = document.getElementById('add_education');
 
             // Hitung index awal berdasarkan jumlah item yang ada
             let educationIndex = {{ $users->educations->count() > 0 ? $users->educations->count() : 1 }};
 
-            addButton.addEventListener('click', function () {
+            addButton.addEventListener('click', function() {
                 let row = document.createElement('div');
                 // Gunakan class dan style yang konsisten dengan elemen di Blade
                 row.classList.add('education-item', 'mb-2');
@@ -764,7 +835,7 @@
             });
 
             // Event delegation untuk tombol hapus
-            container.addEventListener('click', function (e) {
+            container.addEventListener('click', function(e) {
                 if (e.target.classList.contains('remove-row')) {
                     let row = e.target.closest('.education-item');
                     // Jika baris lebih dari 1, hapus elemennya
@@ -776,6 +847,67 @@
                     }
                 }
             });
+
+            const statusAktif = document.getElementById('status_aktif');
+            const resignSection = document.getElementById('resign-section');
+            const alasanResignSection = document.getElementById('alasan-resign-section');
+            const isResignCheckbox = document.getElementById('is_resign');
+            const alasanResignTextarea = document.getElementById('alasan_resign');
+
+            function toggleResignSection() {
+                if (!statusAktif) return;
+
+                // Tampilkan section resign jika status = Tidak Aktif (0)
+                if (statusAktif.value === '0') {
+                    resignSection.style.display = 'flex';
+
+                    // Jika sudah dicentang resign, tampilkan textarea alasan
+                    if (isResignCheckbox && isResignCheckbox.checked) {
+                        alasanResignSection.style.display = 'flex';
+                        alasanResignTextarea?.setAttribute('required', 'required');
+                    } else {
+                        alasanResignSection.style.display = 'none';
+                        alasanResignTextarea?.removeAttribute('required');
+                    }
+                } else {
+                    // Jika status Aktif, sembunyikan semua section resign
+                    resignSection.style.display = 'none';
+                    alasanResignSection.style.display = 'none';
+                    isResignCheckbox?.removeAttribute('checked');
+                    alasanResignTextarea?.removeAttribute('required');
+
+                    // Reset value agar tidak terkirim jika tidak relevan
+                    if (isResignCheckbox) isResignCheckbox.checked = false;
+                    if (alasanResignTextarea) alasanResignTextarea.value = '';
+                }
+            }
+
+            function toggleAlasanResign() {
+                if (isResignCheckbox?.checked) {
+                    alasanResignSection.style.display = 'flex';
+                    alasanResignTextarea?.setAttribute('required', 'required');
+                } else {
+                    alasanResignSection.style.display = 'none';
+                    alasanResignTextarea?.removeAttribute('required');
+                    if (alasanResignTextarea) alasanResignTextarea.value = '';
+                }
+            }
+
+            // Event listeners
+            if (statusAktif) {
+                statusAktif.addEventListener('change', toggleResignSection);
+            }
+            if (isResignCheckbox) {
+                isResignCheckbox.addEventListener('change', toggleAlasanResign);
+            }
+
+            // === INIT: Jalankan saat halaman load (untuk mode edit) ===
+            toggleResignSection();
+
+            // Jika dalam mode edit dan sudah ada data resign, pastikan tampilan sesuai
+            if (statusAktif?.value === '0' && isResignCheckbox?.checked) {
+                toggleAlasanResign();
+            }
         });
     </script>
 
@@ -802,7 +934,7 @@
         }
     </style>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const requiredJabatan = ['Instruktur', 'Education Manager'];
 
             const jabatanSelect = document.querySelector('select[name="jabatan"]');

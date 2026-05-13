@@ -90,6 +90,7 @@ use App\Http\Controllers\KPI\DataTargetController;
 use App\Http\Controllers\LeadProjectController;
 use App\Http\Controllers\ReportSalesProjectController;
 use App\Http\Controllers\PicPenagihanController;
+use App\Http\Controllers\StockOpnameController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 /*
@@ -487,7 +488,6 @@ Route::prefix('kpi-data/')
         //Target Departement
         route::get('/table-data', [TargetKPIController::class, 'kpiIndex'])->name('index');
         route::post('/create-target', [TargetKPIController::class, 'createTarget'])->name('createTarget');
-        route::post('/import-target', [TargetKPIController::class, 'importTarget'])->name('importTarget');
         route::get('/get-data-target', [TargetKPIController::class, 'getDataTarget'])->name('getDataTarget');
         route::get('/detail-data-target', [TargetKPIController::class, 'detailData'])->name('detail');
         route::delete('/hapus-data-target/{id}', [TargetKPIController::class, 'hapusTarget'])->name('hapus');
@@ -496,6 +496,10 @@ Route::prefix('kpi-data/')
         route::get('get-karyawan-by-jabatan', [TargetKPIController::class, 'getKaryawanByJabatan'])->name('getKaryawanByJabatan');
         route::get('get-dashboard', [TargetKPIController::class, 'getProgressDashboard'])->name('getProgressDasboard');
         route::get('get-statistika', [TargetKPIController::class, 'getChartStatistics']);
+
+        Route::post('/import-target', [TargetKPIController::class, 'importTarget'])->name('importTarget');
+        Route::get('/download-template', [TargetKPIController::class, 'downloadTemplate'])->name('downloadTemplate');
+        Route::get('/assistant-routes', [TargetKPIController::class, 'getAssistantRoutesByJabatan'])->name('assistantRoutes');
 
         //manual value
         route::post('/update-manual-value', [TargetKPIController::class, 'manualValue'])->name('manualValue');
@@ -545,6 +549,8 @@ Route::get('/createKategorikpi', [KPIDatabaseKPIController::class, 'createKatego
 Route::post('/storeKategorikpi', [KPIDatabaseKPIController::class, 'kategoriStore'])->name('ketegori.kpi.store');
 Route::get('/penilaian360/index/{id_karyawan}', [KPIDatabaseKPIController::class, 'index360'])->name('penilaian360');
 Route::get('/penilaian360/get/{id_karyawan}', [KPIDatabaseKPIController::class, 'get360'])->name('get360');
+Route::get('/template/list', [KPIDatabaseKPIController::class, 'getTemplateList'])->name('template.list');
+Route::get('/template/load/{kodeKategori}', [KPIDatabaseKPIController::class, 'loadTemplate'])->name('template.load');
 
 Route::post('/pengajuan-klaim/excel-download', [pengajuanKlaimController::class, 'pengajuanKlaimExcel'])->name('pengajuanklaim.excel');
 Route::post('/pengajuan-klaim/pdf-download', [pengajuanKlaimController::class, 'pengajuanKlaimPDF'])->name('pengajuanklaim.PDF');
@@ -934,6 +940,24 @@ Route::prefix('office')->group(function () {
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
     Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan']);
+    Route::get('/karyawan-information/{id}', [OfficeController::class, 'dataKaryawan']);
+    Route::get('/laporan/status-karyawan', [OfficeController::class, 'laporanStatusKaryawan'])->name('office.laporan.status-karyawan');
+    Route::get('/laporan/status-karyawan/detail', [OfficeController::class, 'detailKaryawanStatus'])->name('office.laporan.status-karyawan.detail');
+    Route::get('/laporan/trend-karyawan', [OfficeController::class, 'laporanTrendKaryawan'])->name('office.laporan.trend-karyawan');
+    
+    // Export
+    Route::get('/export/status-karyawan-pdf', [OfficeController::class, 'exportStatusKaryawanPdf'])
+        ->name('office.export.status-karyawan-pdf');
+
+    // Dashboard Tunjangan Office (AJAX)
+    Route::get('/dashboard/tunjangan', [OfficeController::class, 'getDashboardTunjanganOffice'])
+        ->name('office.dashboard.tunjangan');
+
+    // Export PDF Tunjangan
+    Route::get('/export/tunjangan-pdf', [OfficeController::class, 'exportTunjanganPdf'])
+        ->name('office.export.tunjangan.pdf');
+
+    Route::get('/export-gaji-pdf', [OfficeController::class, 'exportPdfGaji']);
 
     Route::post('/store-hari-libur', [OfficeController::class, 'storeHariLibur'])->name('storeHariLibur');
     Route::get('/data-hari-libur/{year}', [OfficeController::class, 'dataHariLibur']);
@@ -963,6 +987,7 @@ Route::prefix('office')->group(function () {
     // administrasi karyawan
     Route::get('data-administrasi/{id}', [AdministrasiKaryawanController::class, 'getData']);
     Route::get('administrasi-karyawan', [AdministrasiKaryawanController::class, 'index'])->name('administrasi.karyawan');
+    Route::get('administrasi-reload-data', [AdministrasiKaryawanController::class, 'reloadData'])->name('administrasi.karyawan.data.reload');
     Route::post('administrasi-karyawan/store', [AdministrasiKaryawanController::class, 'store'])->name('administrasi.karyawan.store');
     Route::get('administrasi-karyawan/{id}', [AdministrasiKaryawanController::class, 'edit'])->name('administrasi.karyawan.edit');
     Route::post('administrasi-karyawan/update/{id}', [AdministrasiKaryawanController::class, 'update'])->name('administrasi.karyawan.update');
@@ -1026,6 +1051,25 @@ Route::prefix('office')
             Route::get('action/terima/{id}', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
             Route::get('action/selesaikan/{id}', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])->name('action.selesaikan');
         });
+
+        Route::prefix('stock-opname')
+            ->name('stockOpname.')
+            ->group(function () {
+                Route::get('/', [StockOpnameController::class, 'index'])->name('index');
+                Route::get('/data', [StockOpnameController::class, 'getData'])->name('getData');
+                Route::post('/store', [StockOpnameController::class, 'store'])->name('store');
+                Route::post('/update', [StockOpnameController::class, 'update'])->name('update');
+                Route::post('/clean-log', [StockOpnameController::class, 'cleanLog'])->name('cleanLog');
+                Route::post('/inline-update', [StockOpnameController::class, 'inlineUpdate'])->name('inlineUpdate');
+                Route::post('/sync-baseline', [StockOpnameController::class, 'syncBaseline'])->name('syncBaseline');
+                Route::post('/store-keluar', [StockOpnameController::class, 'storeKeluar'])->name('storeKeluar');
+                Route::get('/delete/{id}', [StockOpnameController::class, 'delete'])->name('delete');
+                Route::get('/export/excel', [StockOpnameController::class, 'exportExcel'])->name('exportExcel');
+                Route::get('/export/pdf', [StockOpnameController::class, 'exportPdf'])->name('exportPdf');
+                Route::get('/export/log/excel', [StockOpnameController::class, 'exportLogExcel'])->name('exportLogExcel');
+                Route::get('/export/log/pdf', [StockOpnameController::class, 'exportLogPdf'])->name('exportLogPdf');
+                Route::get('/get-log', [StockOpnameController::class, 'getLog'])->name('getLog');
+            });
 
         Route::prefix('biaya-transportasi')
             ->name('biayaTransportasi.')
@@ -1100,6 +1144,7 @@ Route::prefix('office')
             Route::post('store', [DaftarTugasController::class, 'store'])->name('store');
             Route::get('data', [DaftarTugasController::class, 'get'])->name('get');
             Route::get('get/kategori', [DaftarTugasController::class, 'getKategori'])->name('getKategori');
+            Route::get('chart-data', [DaftarTugasController::class, 'chartData'])->name('chartData');
             Route::post('status/update', [DaftarTugasController::class, 'updateStatus'])->name('updateStatus');
             Route::post('bukti/upload', [DaftarTugasController::class, 'uploadBukti'])->name('uploadBukti');
             Route::delete('hapus/{id}', [DaftarTugasController::class, 'delete'])->name('delete');
@@ -1107,14 +1152,11 @@ Route::prefix('office')
             Route::get('/export/excel', [DaftarTugasController::class, 'exportExcel'])->name('export.excel');
             Route::get('/export/pdf', [DaftarTugasController::class, 'exportPdf'])->name('export.pdf');
 
-            // Update tugas periode
             Route::post('/aktifkan-tugas', [DaftarTugasController::class, 'aktifkanTugas'])->name('aktifkanTugas');
 
-            // Kategori
             Route::post('kategori/update', [DaftarTugasController::class, 'updateKategori'])->name('updateKategori');
             Route::post('kategori/hapus', [DaftarTugasController::class, 'deleteKategori'])->name('deleteKategori');
 
-            // [TAMBAHAN] Bulk update tipe turunan (Shift)
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
 
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');

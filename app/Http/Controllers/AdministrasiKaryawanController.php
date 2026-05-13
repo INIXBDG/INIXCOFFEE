@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdministrasiKaryawan;
+use App\Models\karyawan;
+use App\Models\TunjanganKaryawan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -94,6 +96,12 @@ class AdministrasiKaryawanController extends Controller
         $administrasi = AdministrasiKaryawan::findOrFail($id)->delete();
 
         return back()->with('success_administrasi', 'Administrasi Karyawan berhasil dihapus.');
+    }
+
+    public function reloadData() {
+        $datatunjangan = TunjanganKaryawan::get();
+        $karyawanKontrak = karyawan::where('akhir_probation', '>=', now())->where('')->get();
+        $karyawanTetap = karyawan::where('akhir_kontrak', '>=', now())->where('')->get();
     }
 
     public function getData($id)
