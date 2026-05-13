@@ -6,7 +6,9 @@ use App\Exports\ChecklistRkmExport;
 use App\Http\Controllers\Controller;
 use App\Models\AbsensiKaryawan;
 use App\Models\AdministrasiKaryawan;
+use App\Models\ChecklistEksam;
 use App\Models\ChecklistKeperluan;
+use App\Models\eksam;
 use App\Models\Feedback;
 use App\Models\HariLibur;
 use App\Models\karyawan;
@@ -305,6 +307,21 @@ class OfficeController extends Controller
         $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')
             ->get();
 
+        
+        // get data exam
+        $exams = eksam::with([
+            'materi',
+            'perusahaan',
+            'rkm.materi',
+            'rkm.perusahaan',
+            'approvalexam',
+            'checklistEksam'
+        ])
+        ->whereHas('approvalexam', function ($q) {
+            $q->where('office_manager', '1');
+        })
+        ->orderBy('created_at', 'desc')->get();
+
         return view('office.dashboard', compact(
             'total_karyawan',
             'divisiStats',
@@ -315,7 +332,8 @@ class OfficeController extends Controller
             'jumlahInstruktur',
             'rkms',
             'trackingTagihanPerusahaans',
-            'administrasis'
+            'administrasis',
+            'exams'
         ));
     }
 
@@ -1044,5 +1062,72 @@ class OfficeController extends Controller
     public function exportChecklistExcel($id)
     {
         return Excel::download(new ChecklistRkmExport($id), 'Checklist_Keperluan.xlsx');
+    }
+
+    // get data checklist exam
+    public function getAllExam(Request $request)
+    {
+        $search = $request->search;
+
+        $exams = eksam::with([
+                'materi',
+                'perusahaan',
+                'rkm.materi',
+                'rkm.perusahaan',
+                'rkm.sales',
+                'approvalexam',
+                'checklistEksam'
+            ])
+            ->when($search, function ($q) use ($search) {
+
+                $q->where('perusahaan', 'like', "%{$search}%")
+                ->orWhereHas('rkm.materi', function ($qr) use ($search) {
+
+                        $qr->where(
+                            'nama_materi',
+                            'like',
+                            "%{$search}%"
+                        );
+                });
+            })
+            ->latest()
+            
+            ->paginate(10);
+
+        return response()->json($exams);
+    }
+
+    public function getExam($id) {
+        $exam = eksam::with([
+            'materi',
+            'perusahaan',
+            'rkm.materi',
+            'rkm.perusahaan',
+            'rkm.sales',
+            'approvalexam',
+            'checklistEksam'
+        ])
+        ->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List Exam',
+            'data' => $exam,
+        ]);
+    }
+
+    // store Checklist exam
+    public function storeChecklistExam(Request $request)
+    {
+        $request->validate([
+            'id_exam' => 'required'
+        ]);
+
+        ChecklistEksam::create([
+            'id_exam' => $request->id_exam,
+            'status' => 1
+        ]);
+
+        return redirect()->back()->with('success_exam', 'Exam berhasil di selesaikan');
     }
 }
