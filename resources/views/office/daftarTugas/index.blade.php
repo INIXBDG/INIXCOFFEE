@@ -544,42 +544,57 @@
     <div class="modal fade" id="modalUploadBukti" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <form id="formUploadBukti" enctype="multipart/form-data">@csrf
+                <form id="formUploadBukti" enctype="multipart/form-data">
+                    @csrf
                     <div class="modal-header">
                         <h5 class="modal-title fw-bold"><i class="bx bx-paperclip me-2"></i>Upload Bukti Pelaksanaan</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <input type="hidden" name="tugas_id" id="uploadTugasId">
-                        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Tugas</label><input
-                                type="text" id="uploadTugasNama" class="form-control-plaintext fw-bold" readonly>
-                        </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Foto Before <small class="text-danger">*</small></label>
-                            <input type="file" class="form-control" name="bukti_before" id="inputBuktiBefore"
-                                accept="image/*" required>
-                            <div class="form-text">Format: JPG, PNG. Maksimal 5MB</div>
-                            <div id="previewBeforeContainer" class="d-none text-center mt-2">
-                                <img id="imagePreviewBefore" src="" class="img-fluid rounded shadow-sm"
-                                    style="max-height:150px">
+                            <label class="form-label fw-semibold small text-muted">Tugas</label>
+                            <input type="text" id="uploadTugasNama" class="form-control-plaintext fw-bold" readonly>
+                        </div>
+                        
+                        <!-- Foto Before -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Foto Before <small class="text-muted">(Wajib untuk mulai)</small></label>
+                            <input type="file" class="form-control" name="bukti_before" id="inputBuktiBefore" 
+                                accept="image/*" capture="environment">
+                            <div class="form-text">Klik untuk buka kamera • JPG/PNG • Max 5MB</div>
+                            <div id="previewBeforeContainer" class="d-none text-center mt-2 position-relative">
+                                <img id="imagePreviewBefore" src="" class="img-fluid rounded shadow-sm" style="max-height:200px">
+                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle" 
+                                    onclick="clearPreview('before')" style="width:28px;height:28px;padding:0">✕</button>
                             </div>
                         </div>
+                        
+                        <!-- Foto After -->
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Foto After <small class="text-danger">*</small></label>
-                            <input type="file" class="form-control" name="bukti_after" id="inputBuktiAfter"
-                                accept="image/*" required>
-                            <div class="form-text">Format: JPG, PNG. Maksimal 5MB</div>
-                            <div id="previewAfterContainer" class="d-none text-center mt-2">
-                                <img id="imagePreviewAfter" src="" class="img-fluid rounded shadow-sm"
-                                    style="max-height:150px">
+                            <label class="form-label fw-semibold">Foto After <small class="text-muted">(auto selesai)</small></label>
+                            <input type="file" class="form-control" name="bukti_after" id="inputBuktiAfter" 
+                                accept="image/*" capture="environment">
+                            <div class="form-text">Upload Foto Before terlebih dahulu sebelum mengambil foto selesai</div>
+                            <div id="previewAfterContainer" class="d-none text-center mt-2 position-relative">
+                                <img id="imagePreviewAfter" src="" class="img-fluid rounded shadow-sm" style="max-height:200px">
+                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle" 
+                                    onclick="clearPreview('after')" style="width:28px;height:28px;padding:0">✕</button>
                             </div>
+                        </div>
+                        
+                        <div class="alert alert-info small mb-0">
+                            <i class="bx bx-info-circle me-1"></i>
+                            <strong>Tips:</strong> Foto akan langsung diambil dari kamera dan diupload. 
+                            Jika After diupload, tugas otomatis ditandai <strong>Selesai</strong>.
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary" id="btnSubmitUpload"><span
-                                class="spinner-border spinner-border-sm d-none" id="uploadSpinner"></span><span
-                                id="btnUploadText">Upload Bukti</span></button>
+                        <button type="submit" class="btn btn-primary" id="btnSubmitUpload">
+                            <span class="spinner-border spinner-border-sm d-none" id="uploadSpinner"></span>
+                            <span id="btnUploadText">Upload Bukti</span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -736,23 +751,42 @@
 
             function getBuktiStatus(bukti) {
                 const data = parseBukti(bukti);
-                if (data.before && data.after) return {
-                    class: 'both',
-                    text: 'Before + After',
-                    rowClass: '',
-                    canCheck: true
-                };
-                if (data.before || data.after) return {
-                    class: 'partial',
-                    text: '1 Foto',
-                    rowClass: 'table-warning',
-                    canCheck: false
-                };
+                const hasBefore = !!data.before;
+                const hasAfter = !!data.after;
+                
+                if (hasBefore && hasAfter) {
+                    return {
+                        class: 'both',
+                        text: 'Before + After',
+                        rowClass: '',
+                        canCheck: true,
+                        canView: true,
+                        isComplete: true,
+                        hasBefore: true,
+                        hasAfter: true
+                    };
+                }
+                if (hasBefore || hasAfter) {
+                    return {
+                        class: 'partial',
+                        text: '1 Foto',
+                        rowClass: 'table-warning',
+                        canCheck: false,
+                        canView: false,
+                        isComplete: false,
+                        hasBefore: hasBefore,
+                        hasAfter: hasAfter
+                    };
+                }
                 return {
                     class: 'none',
                     text: 'Belum Ada',
                     rowClass: 'table-danger',
-                    canCheck: false
+                    canCheck: false,
+                    canView: false,
+                    isComplete: false,
+                    hasBefore: false,
+                    hasAfter: false
                 };
             }
 
@@ -791,10 +825,20 @@
                             const checkboxDisabled = !buktiStatus.canCheck ? 'disabled' : '';
                             const checkboxTitle = !buktiStatus.canCheck ?
                                 'title="Upload foto Before dan After terlebih dahulu"' : '';
-                            const buktiBtn = buktiData.before || buktiData.after ?
-                                `<button class="btn btn-sm btn-outline-primary btn-viewBukti" data-bukti='${JSON.stringify(buktiData)}' data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-show"></i> Lihat</button>` :
-                                `<button class="btn btn-sm btn-primary btn-uploadBukti" data-id="${it.id}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-upload"></i> Upload</button>`;
-                            tb.append(
+                            const buktiBtn = buktiStatus.canView ? 
+                                `<button class="btn btn-sm btn-outline-primary btn-viewBukti" 
+                                    data-bukti='${JSON.stringify(buktiData)}' 
+                                    data-judul="${kat.replace(/"/g,'&quot;')}">
+                                    <i class="bx bx-show"></i> Lihat
+                                </button>` :
+                                `<button class="btn btn-sm btn-primary btn-uploadBukti" 
+                                    data-id="${it.id}" 
+                                    data-judul="${kat.replace(/"/g,'&quot;')}"
+                                    data-bukti='${JSON.stringify(buktiData)}'>
+                                    <i class="bx bx-upload"></i> ${buktiStatus.hasBefore || buktiStatus.hasAfter ? 'Lengkapi' : 'Upload'}
+                                </button>`;
+
+                                tb.append(
                                 `<tr class="${buktiStatus.rowClass} ${done?'bg-light':''}" data-id="${it.id}"><td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk} ${checkboxDisabled} ${checkboxTitle}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done}"><span class="badge bg-info text-dark">${turunan}</span></td><td class="task-text ${done} small fw-semibold">${karyawan}</td>
                     <td class="task-text ${done} small">${dl}</td><td class="text-center">${buktiBadge}</td><td class="text-center"><div class="btn-group">${buktiBtn}<button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button></div></td></tr>`
                             );
@@ -1148,23 +1192,74 @@
             });
 
             $(document).on('click', '.btn-uploadBukti', function() {
-                $('#uploadTugasId').val($(this).data('id'));
-                $('#uploadTugasNama').val($(this).data('judul'));
-                $('#inputBuktiBefore').val('');
-                $('#inputBuktiAfter').val('');
+                const taskId = $(this).data('id');
+                const judul = $(this).data('judul');
+                const existingBukti = $(this).data('bukti') || { before: null, after: null };
+                
+                // Reset form
+                $('#uploadTugasId').val(taskId);
+                $('#uploadTugasNama').val(judul);
+                $('#inputBuktiBefore').val('').prop('disabled', false);
+                $('#inputBuktiAfter').val('').prop('disabled', false);
                 $('#previewBeforeContainer, #previewAfterContainer').addClass('d-none');
+                $('#imagePreviewBefore, #imagePreviewAfter').attr('src', '');
+                
+                // === HANDLE EXISTING BEFORE ===
+                if (existingBukti.before) {
+                    $('#imagePreviewBefore').attr('src', `/storage/${existingBukti.before}`);
+                    $('#previewBeforeContainer').removeClass('d-none');
+                    $('#inputBuktiBefore').prop('disabled', true);
+                    $('#inputBuktiBefore').closest('.mb-3').find('.form-text')
+                        .html('✅ Foto Before sudah terupload <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="removeExistingBukti(\'before\')">Ganti</button>');
+                } else {
+                    $('#inputBuktiBefore').prop('disabled', false);
+                    $('#inputBuktiBefore').closest('.mb-3').find('.form-text')
+                        .text('Klik untuk buka kamera • JPG/PNG • Max 5MB');
+                }
+                
+                // === HANDLE EXISTING AFTER ===
+                if (existingBukti.after) {
+                    $('#imagePreviewAfter').attr('src', `/storage/${existingBukti.after}`);
+                    $('#previewAfterContainer').removeClass('d-none');
+                    $('#inputBuktiAfter').prop('disabled', true);
+                    $('#inputBuktiAfter').closest('.mb-3').find('.form-text')
+                        .html('✅ Foto After sudah terupload <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="removeExistingBukti(\'after\')">Ganti</button>');
+                } else {
+                    // Enable After only if Before exists (either new or existing)
+                    const canEnableAfter = existingBukti.before || ($('#inputBuktiBefore')[0].files?.length > 0);
+                    $('#inputBuktiAfter').prop('disabled', !canEnableAfter);
+                    $('#inputBuktiAfter').closest('.mb-3').find('.form-text')
+                        .text(canEnableAfter ? 'Klik untuk buka kamera • JPG/PNG • Max 5MB' : 'Upload Foto Before terlebih dahulu untuk mengaktifkan');
+                }
+                
+                // Show modal
                 new bootstrap.Modal(document.getElementById('modalUploadBukti')).show();
             });
+
+            // Global function to remove existing proof
+            window.removeExistingBukti = function(type) {
+                if (type === 'before') {
+                    $('#inputBuktiBefore').prop('disabled', false).val('');
+                    $('#previewBeforeContainer').addClass('d-none');
+                    $('#imagePreviewBefore').attr('src', '');
+                    $('#inputBuktiBefore').closest('.mb-3').find('.form-text')
+                        .text('Klik untuk buka kamera • JPG/PNG • Max 5MB');
+                    // Enable after input if before is now empty but after exists
+                    if ($('#inputBuktiAfter')[0].disabled && !$('#imagePreviewAfter').attr('src')) {
+                        $('#inputBuktiAfter').prop('disabled', true);
+                    }
+                } else {
+                    $('#inputBuktiAfter').prop('disabled', false).val('');
+                    $('#previewAfterContainer').addClass('d-none');
+                    $('#imagePreviewAfter').attr('src', '');
+                    $('#inputBuktiAfter').closest('.mb-3').find('.form-text')
+                        .text('Klik untuk buka kamera • JPG/PNG • Max 5MB');
+                }
+            };
 
             function previewImage(input, previewContainer, previewImg) {
                 const file = input.files[0];
                 if (file && file.type.startsWith('image/')) {
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert('Ukuran file terlalu besar! Maksimal 5MB.');
-                        input.value = '';
-                        previewContainer.addClass('d-none');
-                        return;
-                    }
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         previewImg.attr('src', e.target.result);
@@ -1176,53 +1271,213 @@
                 }
             }
 
+            function clearPreview(type) {
+                if (type === 'before') {
+                    $('#inputBuktiBefore').val('');
+                    $('#previewBeforeContainer').addClass('d-none');
+                    $('#imagePreviewBefore').attr('src', '');
+                    $('#inputBuktiAfter').prop('disabled', true).val('');
+                    $('#previewAfterContainer').addClass('d-none');
+                    $('#imagePreviewAfter').attr('src', '');
+                } else {
+                    $('#inputBuktiAfter').val('');
+                    $('#previewAfterContainer').addClass('d-none');
+                    $('#imagePreviewAfter').attr('src', '');
+                }
+            }
+            window.clearPreview = clearPreview;
+
             $('#inputBuktiBefore').on('change', function() {
-                previewImage(this, $('#previewBeforeContainer'), $('#imagePreviewBefore'));
+                const file = this.files[0];
+                if (file) {
+                    previewImage(this, $('#previewBeforeContainer'), $('#imagePreviewBefore'));
+                    $('#inputBuktiAfter').prop('disabled', false);
+                    $('#inputBuktiAfter').closest('.mb-3').find('.form-text')
+                        .text('Klik untuk buka kamera • JPG/PNG • Max 5MB');
+                } else {
+                    $('#previewBeforeContainer').addClass('d-none');
+                    $('#inputBuktiAfter').prop('disabled', true).val('');
+                    $('#previewAfterContainer').addClass('d-none');
+                }
             });
 
             $('#inputBuktiAfter').on('change', function() {
-                previewImage(this, $('#previewAfterContainer'), $('#imagePreviewAfter'));
+                const file = this.files[0];
+                if (file) {
+                    previewImage(this, $('#previewAfterContainer'), $('#imagePreviewAfter'));
+                } else {
+                    $('#previewAfterContainer').addClass('d-none');
+                }
             });
 
-            $('#formUploadBukti').on('submit', function(e) {
+            $('#formUploadBukti').off('submit');
+
+            $('#formUploadBukti').on('submit', async function(e) {
                 e.preventDefault();
-                const beforeFile = $('#inputBuktiBefore')[0].files[0];
-                const afterFile = $('#inputBuktiAfter')[0].files[0];
-                if (!beforeFile || !afterFile) {
-                    alert('Foto Before dan After wajib diupload!');
-                    return;
+                
+                const beforeInput = $('#inputBuktiBefore')[0];
+                const afterInput = $('#inputBuktiAfter')[0];
+                const rawBeforeFile = beforeInput?.files[0];
+                const rawAfterFile = afterInput?.files[0];
+                
+                const hasExistingBefore = $('#imagePreviewBefore').attr('src')?.includes('/storage/');
+                const hasExistingAfter = $('#imagePreviewAfter').attr('src')?.includes('/storage/');
+                
+                if (!rawBeforeFile && !rawAfterFile) {
+                    if (!hasExistingBefore || !hasExistingAfter) {
+                        const missing = !hasExistingBefore ? 'Before' : 'After';
+                        showNotification('Peringatan', `Foto ${missing} wajib diupload untuk melengkapi bukti!`, 'warning');
+                        return;
+                    }
                 }
-                const fd = new FormData();
-                fd.append('_token', $('meta[name="csrf-token"]').attr('content'));
-                fd.append('tugas_id', $('#uploadTugasId').val());
-                fd.append('bukti_before', beforeFile);
-                fd.append('bukti_after', afterFile);
+                
                 const btn = $('#btnSubmitUpload');
                 const sp = $('#uploadSpinner');
                 const txt = $('#btnUploadText');
+                
                 btn.prop('disabled', true);
                 sp.removeClass('d-none');
-                txt.text('Mengupload...');
-                $.ajax({
-                    url: "{{ route('office.DaftarTugas.uploadBukti') }}",
-                    method: 'POST',
-                    data: fd,
-                    processData: false,
-                    contentType: false,
-                    success: function() {
-                        $('#modalUploadBukti').modal('hide');
-                        loadData();
-                        showNotification('Berhasil!', 'Bukti berhasil diupload.', 'success');
-                    },
-                    error: function(x) {
-                        showNotification('Gagal', x.responseJSON?.message, 'danger');
-                    },
-                    complete: function() {
-                        btn.prop('disabled', false);
-                        sp.addClass('d-none');
-                        txt.text('Upload Bukti');
+                txt.text('Memproses...');
+                
+                try {
+                    let processedBefore = null;
+                    let processedAfter = null;
+                    
+                    if (rawBeforeFile) {
+                        txt.text('Mengompres Foto Before...');
+                        processedBefore = await compressImage(rawBeforeFile, 1280, 0.85);
+                        console.log(`🗜️ Before: ${(rawBeforeFile.size/1024).toFixed(1)}KB → ${(processedBefore.size/1024).toFixed(1)}KB`);
                     }
+                    
+                    if (rawAfterFile) {
+                        if (!processedBefore && !hasExistingBefore) {
+                            throw new Error('Foto Before wajib diupload terlebih dahulu sebelum mengupload Foto After');
+                        }
+                        txt.text('Mengompres Foto After...');
+                        processedAfter = await compressImage(rawAfterFile, 1280, 0.85);
+                        console.log(`🗜️ After: ${(rawAfterFile.size/1024).toFixed(1)}KB → ${(processedAfter.size/1024).toFixed(1)}KB`);
+                    }
+                    
+                    const fd = new FormData();
+                    fd.append('_token', $('meta[name="csrf-token"]').attr('content'));
+                    fd.append('tugas_id', $('#uploadTugasId').val());
+                    
+                    if (processedBefore) {
+                        fd.append('bukti_before', processedBefore);
+                    }
+                    if (processedAfter) {
+                        fd.append('bukti_after', processedAfter);
+                    }
+                    
+                    txt.text('Mengupload ke Server...');
+                    
+                    const response = await $.ajax({
+                        url: "{{ route('office.DaftarTugas.uploadBukti') }}",
+                        method: 'POST',
+                        data: fd,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                    });
+                    
+                    $('#modalUploadBukti').modal('hide');
+                    loadData(); // Refresh table
+                    
+                    let msg = 'Bukti berhasil diupdate.';
+                    if (response.status == 1) {
+                        msg += 'Tugas otomatis ditandai <strong>Selesai</strong>.';
+                    }
+                    if ((rawBeforeFile && processedBefore?.size < rawBeforeFile.size) || 
+                        (rawAfterFile && processedAfter?.size < rawAfterFile.size)) {
+                        msg += 'Gambar telah dikompresi.';
+                    }
+                    
+                    showNotification('Berhasil!', msg, 'success');
+                    
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    const msg = error.responseJSON?.message || error.message || 'Gagal mengupdate bukti';
+                    showNotification('Gagal', msg, 'danger');
+                } finally {
+                    btn.prop('disabled', false);
+                    sp.addClass('d-none');
+                    txt.text('Upload Bukti');
+                }
+            });
+
+            function compressImage(file, maxWidth = 1280, quality = 0.8) {
+                return new Promise((resolve, reject) => {
+                    if (!file || !file.type.startsWith('image/')) {
+                        resolve(file);
+                        return;
+                    }
+
+                    const img = new Image();
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const objectURL = URL.createObjectURL(file);
+                    
+                    img.onload = function() {
+                        try {
+                            let width = img.width;
+                            let height = img.height;
+                            
+                            if (width > maxWidth) {
+                                height = Math.round((maxWidth / width) * height);
+                                width = maxWidth;
+                            }
+                            
+                            canvas.width = width;
+                            canvas.height = height;
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            canvas.toBlob((blob) => {
+                                URL.revokeObjectURL(objectURL);
+                                
+                                if (!blob) {
+                                    reject(new Error('Gagal mengkompresi gambar'));
+                                    return;
+                                }
+                                
+                                const compressedFile = new File(
+                                    [blob], 
+                                    file.name.replace(/\.[^/.]+$/, '.jpg'), 
+                                    { 
+                                        type: 'image/jpeg', 
+                                        lastModified: Date.now() 
+                                    }
+                                );
+                                resolve(compressedFile);
+                                
+                            }, 'image/jpeg', quality);
+                            
+                        } catch (error) {
+                            URL.revokeObjectURL(objectURL);
+                        }
+                    };
+                    
+                    img.onerror = function(e) {
+                        URL.revokeObjectURL(objectURL);
+                        console.error('Image load error:', e);
+                        reject(new Error('Gagal memuat gambar untuk kompresi'));
+                    };
+                    
+                    img.src = objectURL;
                 });
+            }
+
+            $('#modalUploadBukti').on('hidden.bs.modal', function() {
+                $('#inputBuktiBefore').val('').prop('disabled', false);
+                $('#inputBuktiAfter').val('').prop('disabled', true);
+                $('#previewBeforeContainer, #previewAfterContainer').addClass('d-none');
+                $('#imagePreviewBefore, #imagePreviewAfter').attr('src', '');
+                $('#inputBuktiBefore').closest('.mb-3').find('.form-text')
+                    .text('Klik untuk buka kamera • JPG/PNG • Max 5MB');
+                $('#inputBuktiAfter').closest('.mb-3').find('.form-text')
+                    .text('Upload Foto Before terlebih dahulu untuk mengaktifkan');
             });
 
             $(document).on('change', '.checkStatus', function() {
