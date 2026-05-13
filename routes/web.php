@@ -221,7 +221,7 @@ Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
 Route::resource('/pengajuansouvenir', \App\Http\Controllers\PengajuanSouvenirController::class);
 Route::resource('/daily-activities', DailyActivityController::class);
-Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas']);
+Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas'])->except(['show']);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
 Route::resource('penambahansouvenir', \App\Http\Controllers\PenambahanSouvenirController::class);
@@ -478,7 +478,7 @@ Route::prefix('kpi-data/')
 
             Route::get('departement/export/excel', [TargetKPIController::class, 'exportDeptExcel'])
                 ->name('departement.export.excel');
-                
+
             Route::get('departement/export/pdf', [TargetKPIController::class, 'exportDeptPdf'])
                 ->name('departement.export.pdf');
 
@@ -912,6 +912,7 @@ Route::patch('/daily-activities/{dailyActivity}/quick-update', [DailyActivityCon
 // RegistryFeature
 Route::patch('/registry/{tugas}/start', [App\Http\Controllers\RegistryFeatureController::class, 'startTask'])->name('registry.start');
 Route::patch('/registry/{tugas}/finish', [App\Http\Controllers\RegistryFeatureController::class, 'finishTask'])->name('registry.finish');
+Route::get('/registry/data', [\App\Http\Controllers\RegistryFeatureController::class, 'getRegistry'])->name('registry.data');
 
 route::get('activity-log', [KPIDatabaseKPIController::class, 'activityLog'])->name('activity.log');
 route::get('activity-log/data', [KPIDatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');

@@ -7,15 +7,12 @@
             <div class="card">
                 <div class="card-body" id="card">
 
-                    {{-- Tombol Back/Kembali --}}
                     <a href="{{ route('registry.index') }}" class="btn btn-outline-secondary my-2">
                         <i class="fas fa-arrow-left me-1"></i> Kembali
                     </a>
 
-                    {{-- Judul --}}
                     <h5 class="card-title text-center mb-4">{{ __('Buat Tugas Baru') }}</h5>
 
-                    {{-- Menampilkan Error Validasi --}}
                     @if ($errors->any())
                         <div class="alert alert-danger shadow-sm">
                             <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Validasi Gagal!</h5>
@@ -31,8 +28,28 @@
                     <form method="POST" action="{{ route('registry.store') }}">
                         @csrf
 
-                        {{-- Input tersembunyi untuk pengerja_id (user yang login) --}}
                         <input type="hidden" name="pengerja_id" value="{{ Auth::id() }}">
+
+                        <div class="row mb-3">
+                            <label for="ticket_id" class="col-md-4 col-form-label text-md-start">Nomor Ticket</label>
+                            <div class="col-md-6">
+                                <select name="ticket_id" id="ticket_id" class="form-select @error('ticket_id') is-invalid @enderror">
+                                    <option value="" selected data-detail="" data-divisi="" data-kategori="">-- Pilih Nomor Ticket (Opsional) --</option>
+                                    @foreach($tickets as $ticket)
+                                        <option value="{{ $ticket->ticket_id }}"
+                                                data-detail="{{ str_replace(["\r", "\n"], ' ', $ticket->detail_kendala) }}"
+                                                data-divisi="{{ $ticket->divisi }}"
+                                                data-kategori="{{ $ticket->kategori }}"
+                                                {{ old('ticket_id') == $ticket->ticket_id ? 'selected' : '' }}>
+                                            {{ $ticket->ticket_id }} - {{ \Illuminate\Support\Str::limit($ticket->detail_kendala, 60) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('ticket_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
 
                         <div class="row mb-3">
                             <label for="tugas" class="col-md-4 col-form-label text-md-start">Nama Tugas</label>
@@ -66,13 +83,7 @@
                         <div class="row mb-3">
                             <label for="tipe" class="col-md-4 col-form-label text-md-start">Tipe</label>
                             <div class="col-md-6">
-                                <select name="tipe" id="tipe" class="form-select @error('tipe') is-invalid @enderror" required>
-                                    <option value="" disabled selected>-- Pilih Tipe --</option>
-                                    <option value="Request" {{ old('tipe') == 'Request' ? 'selected' : '' }}>Request</option>
-                                    <option value="Error" {{ old('tipe') == 'Error' ? 'selected' : '' }}>Error</option>
-                                    <option value="Online" {{ old('tipe') == 'Online' ? 'selected' : '' }}>Online</option>
-                                    <option value="Lainnya" {{ old('tipe') == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
-                                </select>
+                                <input type="text" name="tipe" id="tipe" class="form-control @error('tipe') is-invalid @enderror" value="{{ old('tipe') }}" placeholder="cth: Request" required>
                                 @error('tipe')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -82,62 +93,63 @@
                         <div class="row mb-3">
                             <label for="pemilik" class="col-md-4 col-form-label text-md-start">Pemilik</label>
                             <div class="col-md-6">
-                                <select name="pemilik" id="pemilik" class="form-select @error('pemilik') is-invalid @enderror" required>
-                                    <option value="" disabled selected>-- Pilih Jabatan --</option>
-                                    <option value="Instruktur" {{ old('pemilik') == 'Instruktur' ? 'selected' : '' }}>Instruktur</option>
-                                    <option value="Direktur Utama" {{ old('pemilik') == 'Direktur Utama' ? 'selected' : '' }}>Direktur Utama</option>
-                                    <option value="Direktur" {{ old('pemilik') == 'Direktur' ? 'selected' : '' }}>Direktur</option>
-                                    <option value="Education Manager" {{ old('pemilik') == 'Education Manager' ? 'selected' : '' }}>Education Manager</option>
-                                    <option value="Technical Support" {{ old('pemilik') == 'Technical Support' ? 'selected' : '' }}>Technical Support</option>
-                                    <option value="GM" {{ old('pemilik') == 'GM' ? 'selected' : '' }}>GM</option>
-                                    <option value="SPV Sales" {{ old('pemilik') == 'SPV Sales' ? 'selected' : '' }}>SPV Sales</option>
-                                    <option value="Tim Digital" {{ old('pemilik') == 'Tim Digital' ? 'selected' : '' }}>Tim Digital</option>
-                                    <option value="Sales" {{ old('pemilik') == 'Sales' ? 'selected' : '' }}>Sales</option>
-                                    <option value="Office Manager" {{ old('pemilik') == 'Office Manager' ? 'selected' : '' }}>Office Manager</option>
-                                    <option value="Finance & Accounting" {{ old('pemilik') == 'Finance & Accounting' ? 'selected' : '' }}>Finance & Accounting</option>
-                                    <option value="Koordinator Office" {{ old('pemilik') == 'Koordinator Office' ? 'selected' : '' }}>Koordinator Office</option>
-                                    <option value="Admin Holding" {{ old('pemilik') == 'Admin Holding' ? 'selected' : '' }}>Admin Holding</option>
-                                    <option value="Customer Care" {{ old('pemilik') == 'Customer Care' ? 'selected' : '' }}>Customer Care</option>
-                                    <option value="Koordinator ITSM" {{ old('pemilik') == 'Koordinator ITSM' ? 'selected' : '' }}>Koordinator ITSM</option>
-                                    <option value="Office Boy" {{ old('pemilik') == 'Office Boy' ? 'selected' : '' }}>Office Boy</option>
-                                    <option value="Driver" {{ old('pemilik') == 'Driver' ? 'selected' : '' }}>Driver</option>
-                                    <option value="Outsource" {{ old('pemilik') == 'Outsource' ? 'selected' : '' }}>Outsource</option>
-                                    <option value="HRD" {{ old('pemilik') == 'HRD' ? 'selected' : '' }}>HRD</option>
-                                    <option value="Adm Sales" {{ old('pemilik') == 'Adm Sales' ? 'selected' : '' }}>Adm Sales</option>
-                                    <option value="Programmer" {{ old('pemilik') == 'Programmer' ? 'selected' : '' }}>Programmer</option>
-                                </select>
+                                <input type="text" name="pemilik" id="pemilik" class="form-control @error('pemilik') is-invalid @enderror" value="{{ old('pemilik') }}" placeholder="cth: IT Service Management" required>
                                 @error('pemilik')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
 
-                        {{-- <div class="row mb-3">
-                            <label for="status" class="col-md-4 col-form-label text-md-start">Status</label>
-                            <div class="col-md-6">
-                                <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
-                                    <option value="Antrian" {{ old('status', 'Antrian') == 'Antrian' ? 'selected' : '' }}>Antrian</option>
-                                    <option value="Sedang Dikerjakan" {{ old('status') == 'Sedang Dikerjakan' ? 'selected' : '' }}>Sedang Dikerjakan</option>
-                                    <option value="Sudah Selesai namun Menunggu Hasil" {{ old('status') == 'Sudah Selesai namun Menunggu Hasil' ? 'selected' : '' }}>Sudah Selesai namun Menunggu Hasil</option>
-                                    <option value="Selesai" {{ old('status') == 'Selesai' ? 'selected' : '' }}>Selesai</option>
-                                </select>
-                                @error('status')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div> --}}
-
                         <div class="row mb-3">
-                            <label for="catatan" class="col-md-4 col-form-label text-md-start">Catatan (Opsional)</label>
+                            <label for="fakta" class="col-md-4 col-form-label text-md-start">Fakta</label>
                             <div class="col-md-6">
-                                <textarea name="catatan" id="catatan"
-                                          class="form-control @error('catatan') is-invalid @enderror"
-                                          rows="3" placeholder="Tambahkan catatan jika perlu...">{{ old('catatan') }}</textarea>
-                                @error('catatan')
+                                <textarea name="fakta" id="fakta" class="form-control @error('fakta') is-invalid @enderror" rows="3" placeholder="Masukkan fakta saat ini..." required>{{ old('fakta') }}</textarea>
+                                @error('fakta')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
+
+                        <div class="row mb-3">
+                            <label for="harapan" class="col-md-4 col-form-label text-md-start">Harapan</label>
+                            <div class="col-md-6">
+                                <textarea name="harapan" id="harapan" class="form-control @error('harapan') is-invalid @enderror" rows="3" placeholder="Masukkan harapan sistem/fitur..." required>{{ old('harapan') }}</textarea>
+                                @error('harapan')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        @if(auth()->check() && optional(auth()->user()->karyawan)->jabatan == 'Koordinator ITSM')
+                            <div class="row mb-3">
+                                <label for="waktu_perkiraan" class="col-md-4 col-form-label text-md-start">Waktu Perkiraan (Menit)</label>
+                                <div class="col-md-6">
+                                    <input type="number" name="waktu_perkiraan" id="waktu_perkiraan" class="form-control @error('waktu_perkiraan') is-invalid @enderror" value="{{ old('waktu_perkiraan') }}" placeholder="cth: 120" min="1">
+                                    @error('waktu_perkiraan')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <label for="catatan" class="col-md-4 col-form-label text-md-start">Catatan (Opsional)</label>
+                                <div class="col-md-6">
+                                    <textarea name="catatan" id="catatan" class="form-control @error('catatan') is-invalid @enderror" rows="3" placeholder="Tambahkan catatan jika perlu...">{{ old('catatan') }}</textarea>
+                                    @error('catatan')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        @else
+                            <!-- Memberikan informasi untuk pengguna selain Koordinator ITSM -->
+                            <div class="row mb-3">
+                                <div class="col-md-6 offset-md-4">
+                                    <div class="alert alert-info py-2 mb-0" style="font-size: 0.85rem;">
+                                        <i class="fas fa-info-circle me-1"></i> <strong>Waktu Perkiraan</strong> dan <strong>Catatan</strong> akan ditambahkan oleh Koordinator ITSM setelah tugas ini diajukan.
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
 
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">
@@ -153,4 +165,40 @@
         </div>
     </div>
 </div>
+@push('js')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#ticket_id').on('change', function() {
+            var selectedOption = $(this).find(':selected');
+
+            var detailKendala = selectedOption.data('detail');
+            var divisi = selectedOption.data('divisi');
+            var kategori = selectedOption.data('kategori');
+
+            if (detailKendala) {
+                $('#tugas').val(detailKendala);
+            } else {
+                $('#tugas').val('');
+            }
+
+            if (divisi) {
+                $('#pemilik').val(divisi);
+            } else {
+                $('#pemilik').val('');
+            }
+
+            if (kategori) {
+                $('#tipe').val(kategori);
+            } else {
+                $('#tipe').val('');
+            }
+        });
+
+        if ($('#ticket_id').val() !== '') {
+            $('#ticket_id').trigger('change');
+        }
+    });
+</script>
+@endpush
 @endsection
