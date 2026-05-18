@@ -19,6 +19,7 @@ use App\Models\PushSubscription;
 use App\Models\JurnalAkuntansi;
 use App\Models\HistoriPerubahanBarang;
 use App\Models\PerbaikanKendaraan;
+use Illuminate\Support\Facades\Log;
 
 class PengajuanBarangController extends Controller
 {
@@ -355,22 +356,58 @@ class PengajuanBarangController extends Controller
                         ]);
                     }
 
-                    $totalPengeluaran = 0;
-                    foreach ($detail as $item) {
-                        $qtyValue = (int) $item->qty;
-                        $harga = explode('.', $item->harga);
-                        $hargaValue = (float) $harga[0];
-                        $totalPengeluaran += ($qtyValue * $hargaValue);
-                    }
-                    // Cek apakah jurnal untuk pengajuan ini sudah ada agar tidak duplikat
-                    $jurnalExist = JurnalAkuntansi::where('id_pengajuan_barang', $id)->first();
-                    if (!$jurnalExist) {
-                        JurnalAkuntansi::create([
-                            'id_pengajuan_barang' => $id,
-                            'tanggal_transaksi' => now(),
-                            'keterangan' => 'Pengeluaran untuk Pengajuan Barang ID: ' . $id . ' (' . $data->tipe . ')',
-                            'debit' => $totalPengeluaran,
-                            'kredit' => 0,
+                    try {
+                        Log::info('Mulai proses jurnal', ['id_pengajuan' => $id]);
+
+                        $totalPengeluaran = 0;
+
+                        foreach ($detail as $item) {
+                            $qtyValue = (int) $item->qty;
+
+                            $hargaValue = (float) $item->harga;
+
+                            $subtotal = $qtyValue * $hargaValue;
+
+                            $totalPengeluaran += $subtotal;
+                        }
+
+                        $nomorKK = $request->no_kk;
+                        $jurnalExist = JurnalAkuntansi::where('nomor_kk', $nomorKK)->first();
+
+                        if ($jurnalExist) {
+                            $currentIds = is_array($jurnalExist->id_pengajuan_barang) 
+                                        ? $jurnalExist->id_pengajuan_barang 
+                                        : [];
+
+                            if (!in_array($id, $currentIds)) {
+                                $currentIds[] = (int)$id; 
+                                
+                                
+                                $jurnalExist->update([
+                                    'id_pengajuan_barang' => $currentIds,
+                                    'kredit' => $jurnalExist->kredit + $totalPengeluaran,
+                                    'keterangan' => 'Pengeluaran untuk pengajuan barang'
+                                ]);
+                                
+                                Log::info('Jurnal diupdate (ditambah ke KK yang sama)', ['jurnal_id' => $jurnalExist->id]);
+                            }
+                        } else {
+
+                            $jurnal = JurnalAkuntansi::create([
+                                'nomor_kk' => $nomorKK,
+                                'id_pengajuan_barang' => [(int)$id], // Simpan sebagai array
+                                'tanggal_transaksi' => now(),
+                                'keterangan' => 'Pengeluaran untuk Pengajuan Barang ID: ' . $id . ' (' . $data->tipe . ')',
+                                'kredit' => $totalPengeluaran,
+                                'debit' => 0,
+                            ]);
+
+                            Log::info('Jurnal baru berhasil dibuat', ['jurnal_id' => $jurnal->id]);
+                        }
+
+                    } catch (\Exception $ex) {
+                        Log::error('Gagal memproses jurnal', [
+                            'message' => $ex->getMessage()
                         ]);
                     }
 

@@ -578,14 +578,23 @@
                         return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
                     }
                 },
-                {"data": "keterangan"},
                 {
-                    "data": "no_accounting",
+                    "data": "keterangan",
                     "render": function(data, type, row) {
-                        var actions = "";
-                        actions +=  data.no + ' - ' + data.nama_akun;
-                        console.log(data);
-                        return actions;
+                        let info = data;
+                        if (row.list_pengajuan && row.list_pengajuan.length > 0) {
+                            let ids = row.list_pengajuan.map(p => p.id).join(', ');
+                            info += `<br><small class="text-muted">ID Pengajuan: ${ids}</small>`;
+                        }
+                        return info;
+                    }
+                },
+               {
+                    "data": "no_accounting",
+                    "render": function(data) {
+                        return data
+                            ? `${data.no ?? '-'} - ${data.nama_akun ?? '-'}`
+                            : '-';
                     }
                 },
                 {
@@ -652,7 +661,6 @@
         // --- Penanganan Event Klik pada Baris Tabel ---
         // --- Penanganan Event Klik pada Baris Tabel ---
         $('#jurnaltable tbody').on('click', 'tr', function (e) {
-            // Mencegah modal terbuka jika pengguna mengklik tombol Aksi atau Dropdown
             if ($(e.target).closest('button, a, .dropdown-menu, .btn-group').length) {
                 return;
             }
@@ -660,10 +668,10 @@
             var data = table.row(this).data();
             if (!data) return;
 
-            var akunText = data.no_accounting ? (data.no_accounting.no + ' - ' + data.no_accounting.nama_akun) : data.no_akun;
+            var akunText = data.no_accounting ? (data.no_accounting.no + ' - ' + data.no_accounting.nama_akun) : (data.no_akun || '-');
             var tglTransaksi = new Date(data.tanggal_transaksi).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
             
-            // 1. Merender Informasi Dasar Jurnal Akuntansi
+            // 1. Informasi Utama Jurnal
             var html = '<h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="fas fa-file-invoice-dollar me-2"></i>Informasi Utama Transaksi</h6>';
             html += '<table class="table table-bordered table-striped table-sm mb-4">';
             html += `<tr><th width="35%" class="bg-light">Nomor KK</th><td>${data.nomor_kk || '-'}</td></tr>`;
@@ -674,87 +682,67 @@
             html += `<tr><th class="bg-light">Kredit</th><td class="text-danger fw-bold">${formatRupiah(data.kredit)}</td></tr>`;
             html += '</table>';
 
-            // --- Fungsi Pembantu Tingkat Lanjut untuk Merender Objek Relasi ---
-            function renderDetailedTable(obj, titlePrefix, colorClass, iconClass) {
-                const ignoredKeys = ['id', 'created_at', 'updated_at', 'deleted_at', 'deleted_by', 'id_rkm', 'id_tracking', 'id_pengajuan_barang', 'id_perhitungan_net_sales'];
-                const currencyKeys = ['cashback', 'transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'fresh_money', 'entertaint', 'souvenir', 'sewa_laptop', 'nominal_pengajuan', 'total_biaya'];
-
-                let tableHtml = `<h6 class="fw-bold text-${colorClass} border-bottom pb-2 mt-4 mb-3"><i class="${iconClass} me-2"></i>Detail Referensi: ${titlePrefix}</h6>`;
-                tableHtml += '<table class="table table-bordered table-sm mb-4"><tbody>';
+            // 2. Render Pengajuan Barang (Jika ada array list_pengajuan)
+            if (data.list_pengajuan && data.list_pengajuan.length > 0) {
+                html += `<h6 class="fw-bold text-success border-bottom pb-2 mt-4 mb-3"><i class="fas fa-box-open me-2"></i>Detail Referensi: Pengajuan Barang (${data.list_pengajuan.length})</h6>`;
                 
-                let hasValidData = false;
-                let childTableHtml = ''; // Variabel penampung sub-tabel rincian item
-
-                for (let key in obj) {
-                    if(ignoredKeys.includes(key)) continue; 
-                    if(obj[key] === null || obj[key] === '') continue;
-
-                    // Logika Penanganan Array (Rincian Detail Pengajuan Barang)
-                    if (Array.isArray(obj[key])) {
-                        if (obj[key].length > 0 && key === 'detail') {
-                            childTableHtml += '<h6 class="fw-bold text-secondary mt-3 mb-2"><i class="fas fa-list me-2"></i>Rincian Item Pengajuan</h6>';
-                            childTableHtml += '<table class="table table-bordered table-sm mb-4 align-middle text-center"><thead><tr class="bg-light">';
-                            childTableHtml += '<th>Nama Barang</th><th>Qty</th><th>Harga</th><th>Keterangan</th>';
-                            childTableHtml += '</tr></thead><tbody>';
-                            
-                            obj[key].forEach(function(item) {
-                                childTableHtml += `<tr>
-                                    <td class="text-start">${item.nama_barang || '-'}</td>
-                                    <td>${item.qty || '-'}</td>
-                                    <td class="text-end">${formatRupiah(item.harga || 0)}</td>
-                                    <td class="text-start" style="white-space: pre-wrap;">${item.keterangan || '-'}</td>
-                                </tr>`;
-                            });
-                            childTableHtml += '</tbody></table>';
-                        }
-                        continue; // Lewati perulangan utama agar array tidak dirender sebagai string biasa
+                data.list_pengajuan.forEach((pengajuan, index) => {
+                    // Header pemisah jika pengajuan lebih dari satu
+                    if(data.list_pengajuan.length > 1) {
+                        html += `<div class="bg-light p-2 mb-2 border-start border-success border-4 fw-bold">Pengajuan #${index + 1} (ID: ${pengajuan.id})</div>`;
                     }
-
-                    hasValidData = true;
-
-                    let formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    let val = obj[key];
-
-                    // Logika Penanganan Tautan Berkas Invoice
-                    if (key === 'invoice') {
-                        val = `<a href="{{ asset('storage') }}/${val}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-external-link-alt me-1"></i>Lihat Invoice</a>`;
+                    
+                    html += '<table class="table table-bordered table-sm mb-3">';
+                    html += `<tr><th width="35%" class="bg-light">Pemohon</th><td>${pengajuan.karyawan.nama_lengkap ?? '-'}</td></tr>`;
+                    html += `<tr><th width="35%" class="bg-light">Tipe</th><td>${pengajuan.tipe || '-'}</td></tr>`;
+                    html += `<tr><th class="bg-light">Tgl Pencairan</th><td>${pengajuan.tanggal_pencairan || '-'}</td></tr>`;
+                    if(pengajuan.invoice) {
+                        html += `<tr><th class="bg-light">Invoice</th><td><a href="/storage/${pengajuan.invoice}" target="_blank" class="btn btn-xs btn-primary py-0">Lihat File</a></td></tr>`;
                     }
-                    // Deteksi tanggal otomatis (Format YYYY-MM-DD)
-                    else if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                        val = new Date(val).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-                    }
-                    // Deteksi dan format mata uang berdasarkan daftar kunci
-                    else if (currencyKeys.includes(key)) {
-                        val = `<span class="fw-bold">${formatRupiah(val)}</span>`;
-                    }
+                    html += '</table>';
 
-                    tableHtml += `<tr><th width="35%" class="bg-light">${formattedKey}</th><td>${val}</td></tr>`;
+                    // Sub-tabel Detail Barang
+                    if (pengajuan.detail && pengajuan.detail.length > 0) {
+                        html += '<div class="ms-3 mb-4"><table class="table table-bordered table-sm align-middle text-center" style="font-size:0.85rem;">';
+                        html += '<thead class="table-secondary"><tr><th>Nama Barang</th><th>Qty</th><th>Harga</th><th>Total</th></tr></thead><tbody>';
+                        pengajuan.detail.forEach(det => {
+                            let subtotal = parseFloat(det.qty) * parseFloat(det.harga);
+                            html += `<tr>
+                                <td class="text-start">${det.nama_barang}</td>
+                                <td>${det.qty}</td>
+                                <td class="text-end">${formatRupiah(det.harga)}</td>
+                                <td class="text-end fw-bold">${formatRupiah(subtotal)}</td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table></div>';
+                    }
+                });
+            }
+
+            // 3. Render Net Sales (Jika ada objek net_sales)
+            if (data.net_sales) {
+                html += `<h6 class="fw-bold text-info border-bottom pb-2 mt-4 mb-3"><i class="fas fa-chart-line me-2"></i>Detail Referensi: Perhitungan Net Sales</h6>`;
+                html += '<table class="table table-bordered table-sm mb-4"><tbody>';
+                
+                const currencyKeys = ['transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'fresh_money', 'entertaint', 'souvenir', 'cashback', 'sewa_laptop'];
+                
+                // Loop properti net sales
+                for (let key in data.net_sales) {
+                    let val = data.net_sales[key];
+                    if (!val || key === 'id' || key.includes('id_')) continue;
+
+                    let label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    
+                    if (currencyKeys.includes(key)) {
+                        val = `<span class="fw-bold text-dark">${formatRupiah(val)}</span>`;
+                    }
+                    
+                    html += `<tr><th width="35%" class="bg-light">${label}</th><td>${val}</td></tr>`;
                 }
-                
-                tableHtml += '</tbody></table>';
-                
-                // Menyisipkan sub-tabel rincian item di bawah tabel utama relasi
-                tableHtml += childTableHtml;
-
-                if (!hasValidData) {
-                    tableHtml = `<h6 class="fw-bold text-${colorClass} border-bottom pb-2 mt-4 mb-3"><i class="${iconClass} me-2"></i>Detail Referensi: ${titlePrefix}</h6>`;
-                    tableHtml += `<div class="alert alert-secondary small py-2"><i class="fas fa-info-circle me-2"></i>Tidak ada atribut data tambahan yang terisi.</div>`;
-                }
-
-                return tableHtml;
+                html += '</tbody></table>';
             }
 
-            // 2. Merender Detail Pengajuan Barang
-            if (data.pengajuan_barang && Object.keys(data.pengajuan_barang).length > 0) {
-                html += renderDetailedTable(data.pengajuan_barang, 'Pengajuan Barang', 'success', 'fas fa-box-open');
-            }
-
-            // 3. Merender Detail Perhitungan Net Sales
-            if (data.net_sales && Object.keys(data.net_sales).length > 0) {
-                html += renderDetailedTable(data.net_sales, 'Perhitungan Net Sales', 'info', 'fas fa-chart-line');
-            }
-
-            // Menyuntikkan HTML ke dalam Modal dan menampilkannya
+            // Tampilkan Modal
             $('#detailJurnalBody').html(html);
             $('#detailJurnalModal').modal('show');
         });
@@ -1051,22 +1039,26 @@
             });
         });
 
+        // function formatRupiah(angka) {
+        //     // Memastikan angka dikonversi menjadi integer untuk menghindari bug pada nilai desimal
+        //     let parsedAngka = Math.round(parseFloat(angka));
+        //     if (isNaN(parsedAngka)) return '0';
+
+        //     let number_string = parsedAngka.toString(),
+        //         sisa = number_string.length % 3,
+        //         rupiah = number_string.substr(0, sisa),
+        //         ribuan = number_string.substr(sisa).match(/\d{3}/g);
+
+        //     if (ribuan) {
+        //         let separator = sisa ? '.' : '';
+        //         rupiah += separator + ribuan.join('.');
+        //     }
+
+        //     return rupiah;
+        // }
+
         function formatRupiah(angka) {
-            // Memastikan angka dikonversi menjadi integer untuk menghindari bug pada nilai desimal
-            let parsedAngka = Math.round(parseFloat(angka));
-            if (isNaN(parsedAngka)) return '0';
-
-            let number_string = parsedAngka.toString(),
-                sisa = number_string.length % 3,
-                rupiah = number_string.substr(0, sisa),
-                ribuan = number_string.substr(sisa).match(/\d{3}/g);
-
-            if (ribuan) {
-                let separator = sisa ? '.' : '';
-                rupiah += separator + ribuan.join('.');
-            }
-
-            return rupiah;
+            return Number(angka).toLocaleString('id-ID');
         }
 
         // Event listener untuk membuka Modal Import Excel

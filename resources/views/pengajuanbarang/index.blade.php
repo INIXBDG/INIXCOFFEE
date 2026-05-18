@@ -59,7 +59,7 @@
                             <div id="finance_extra_inputs" style="display: none;">
                                 <div class="mb-3">
                                     <label for="no_kk" class="form-label">No KK</label>
-                                    <input type="text" class="form-control" name="no_kk" id="no_kk">
+                                    <input type="text" class="form-control" name="no_kk" id="no_kk" value="KK-">
                                 </div>
                             </div>
                         @endif
@@ -575,13 +575,13 @@ function tableFinance(){
             $('#loadingModal').modal('hide');
             console.log(data.data);
             var dataSelesai = data.data.filter(item =>
-                item.tracking.tracking === 'Selesai' || item.tracking.tracking.includes("tolak")
+                item.tracking.tracking.includes("Selesai") || item.tracking.tracking.includes("tolak")
             );
 
             var dataHasInvoice = data.data.filter(item =>
-                item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
+                item.invoice && !item.tracking.tracking.includes('Selesai') && !item.tracking.tracking.includes("tolak")
             );
-
+            
             var dataBelum = data.data.filter(item =>
                 !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
             );
@@ -1138,6 +1138,7 @@ function toggleFinanceInputs(status) {
             success: function(res) {
                 $('#loadingModal').modal('hide');
                 $('#approveModal').modal('hide');
+                $('#approveForm')[0].reset();
 
                 if ($.fn.DataTable.isDataTable('#barangTable')) {
                     $('#barangTable').DataTable().ajax.reload(null, false);
