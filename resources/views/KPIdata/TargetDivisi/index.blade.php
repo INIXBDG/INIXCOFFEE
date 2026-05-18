@@ -620,11 +620,11 @@
 
         const assistantRouteUrlMap = {
             // GM
-            "Pemasukan Kotor": "/rkm",
+            "kemasukan kotor": "/rkm",
             "pemasukan bersih": "/office/analysis",
-            "Kepuasan Pelanggan": "/feedback",
+            "kepuasan pelanggan": "/feedback",
             "rasio biaya operasional terhadap revenue": "/kpi-data/table-data",
-            "performa KPI departemen": "/kpi-data/table-data",
+            "performa kpi departemen": "/kpi-data/table-data",
 
             // Customer Care
             "peserta puas dengan pelayanan dan fasilitas training": "/feedback",
@@ -702,7 +702,7 @@
             "todo administrasi": "/crm/todo-administrasi",
 
             // ADM Holding
-            "ketepatan waktu po": "/modul/index",
+            "ketepatan waktu po": "/office/modul/index",
             "kualitas dokumentasi support dan proctor": "/daftar-peserta-exam"
         };
 
@@ -1034,12 +1034,12 @@
                         }).join('') || '<div class="text-muted small">Tidak ada karyawan</div>';
 
                         const allowedAssistantRoutes = ['dorong inovasi pelayanan', 'rasio biaya operasional terhadap revenue', 'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'pengeluaran biaya karyawan'];
-                        const allowedAssistantRoutesForRupiah = ['Pemasukan Kotor', 'meningkatkan revenue perusahaan', 'target penjualan tahunan'];
+                        const allowedAssistantRoutesForRupiah = ['pemasukan kotor', 'meningkatkan revenue perusahaan', 'target penjualan tahunan'];
                         const allowedAssistantRoutesForPresentaseGapKompetensi = ['persentase gap kompetensi tim terhadap standar skill'];
-                        const allowedAssistantRoutesForTargetPenjualanTahunan = ['target penjualan tahunan', 'Pemasukan Kotor'];
+                        const allowedAssistantRoutesForTargetPenjualanTahunan = ['target penjualan tahunan', 'pemasukan kotor'];
                         const allowedAssistantRoutesForPeningkatanKontribusiPelatihan = ['peningkatan kontribusi pelatihan'];
                         const allowedAssistantRoutesForPemasukanBersih = ['pemasukan bersih'];
-                        const allowedAssistantRoutesForPerformaKPIDepartemen = ['performa KPI departemen'];
+                        const allowedAssistantRoutesForPerformaKPIDepartemen = ['performa kpi departemen'];
                         const allowedAssistantRoutesForKepuasanPelanggan = ['Kepuasan Pelanggan'];
                         const allowedAssistantRoutesForLaporanAnalisisKeuangan = ['laporan analisis keuangan'];
 

@@ -48,12 +48,12 @@ class KpiTargetImport implements OnEachRow, WithHeadingRow, WithValidation, With
         try {
             $this->validateRow($rowData);
 
-            $judul = $this->getValue($rowData, ['judul_kpi', 'judul kpi', 'judul']);
+            $judul = $this->getValue($rowData, ['judul_kpi', 'judul_kpi_', 'judul kpi', 'judul']);
             $deskripsi = $this->getValue($rowData, ['deskripsi', 'deskripsi_kpi']);
-            $jabatanRaw = $this->getValue($rowData, ['jabatan']);
-            $karyawanRaw = $this->getValue($rowData, ['karyawan']);
-            $assistantRoute = $this->getValue($rowData, ['assistant_route', 'asistant_route', 'assistant route', 'route']);
-            $detailJangka = $this->getValue($rowData, ['detail_jangka', 'detail jangka']);
+            $jabatanRaw = $this->getValue($rowData, ['jabatan', 'jabatan_']);
+            $karyawanRaw = $this->getValue($rowData, ['karyawan', 'karyawan_opsional']);
+            $assistantRoute = $this->getValue($rowData, ['assistant_route', 'assistant_route_', 'asistant_route', 'assistant route', 'route']);
+            $detailJangka = $this->getValue($rowData, ['detail_jangka', 'detail_jangka_jika_tahunan', 'detail_jangka_jika_tahunan_', 'detail jangka']);
 
             $jabatanList = array_filter(array_map('trim', explode(',', $jabatanRaw)));
 
@@ -97,8 +97,9 @@ class KpiTargetImport implements OnEachRow, WithHeadingRow, WithValidation, With
                         ->value('divisi');
 
                     $detailJangkaValue = null;
+                    $isTahunan = strtolower(trim($dataTarget->jangka_target)) === 'tahunan';
 
-                    if ($dataTarget->jangka_target === 'Tahunan' && !empty($detailJangka)) {
+                    if ($isTahunan && !empty($detailJangka)) {
                         if (!preg_match('/^\d{4}$/', $detailJangka)) {
                             throw new \Exception('Detail Jangka harus format 4 digit tahun (contoh: 2024)');
                         }
@@ -159,14 +160,14 @@ class KpiTargetImport implements OnEachRow, WithHeadingRow, WithValidation, With
 
     private function isDataRow(array $row): bool
     {
-        $inputColumns = ['judul_kpi', 'judul kpi', 'judul', 'deskripsi', 'jabatan', 'karyawan', 'assistant_route', 'asistant_route', 'assistant route', 'route', 'detail_jangka', 'detail jangka'];
-        
+        $inputColumns = ['judul_kpi', 'judul_kpi_', 'judul kpi', 'judul', 'deskripsi', 'jabatan', 'jabatan_', 'karyawan', 'karyawan_opsional', 'assistant_route', 'assistant_route_', 'asistant_route', 'assistant route', 'route', 'detail_jangka', 'detail_jangka_jika_tahunan', 'detail_jangka_jika_tahunan_', 'detail jangka'];
+
         foreach ($inputColumns as $col) {
             if (isset($row[$col]) && trim((string) $row[$col]) !== '') {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -182,9 +183,9 @@ class KpiTargetImport implements OnEachRow, WithHeadingRow, WithValidation, With
 
     private function validateRow(array $row)
     {
-        $judul = $this->getValue($row, ['judul_kpi', 'judul kpi', 'judul']);
-        $jabatan = $this->getValue($row, ['jabatan']);
-        $assistantRoute = $this->getValue($row, ['assistant_route', 'asistant_route', 'assistant route', 'route']);
+        $judul = $this->getValue($row, ['judul_kpi', 'judul_kpi_', 'judul kpi', 'judul']);
+        $jabatan = $this->getValue($row, ['jabatan', 'jabatan_']);
+        $assistantRoute = $this->getValue($row, ['assistant_route', 'assistant_route_', 'asistant_route', 'assistant route', 'route']);
 
         if (empty($judul)) {
             throw new \Exception("Kolom 'Judul KPI' wajib diisi");
@@ -198,9 +199,9 @@ class KpiTargetImport implements OnEachRow, WithHeadingRow, WithValidation, With
             throw new \Exception("Kolom 'Assistant Route' wajib diisi");
         }
 
-        $detailJangka = $this->getValue($row, ['detail_jangka', 'detail jangka']);
+        $detailJangka = $this->getValue($row, ['detail_jangka', 'detail_jangka_jika_tahunan', 'detail_jangka_jika_tahunan_', 'detail jangka']);
         if (!empty($detailJangka) && !preg_match('/^\d{4}$/', $detailJangka)) {
-            throw new \Exception("Detail Jangka harus format 4 digit tahun (contoh: 2024)");
+            throw new \Exception('Detail Jangka harus format 4 digit tahun (contoh: 2024)');
         }
     }
 
