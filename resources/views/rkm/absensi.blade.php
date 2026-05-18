@@ -19,6 +19,21 @@
     {{-- <link rel="stylesheet" href="css/app.css"> --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <style>
+        @media print {
+            table {
+                border-collapse: collapse !important;
+            }
+
+            table, th, td {
+                border: 1px solid #000 !important;
+            }
+
+            th, td {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+        
         .table-outer-border {
             border: 1px solid black;
             /* Border di luar tabel */
