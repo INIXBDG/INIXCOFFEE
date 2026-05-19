@@ -22,4 +22,9 @@ class ApprovalPendapatan extends Model
     {
         return $this->belongsTo(Perusahaan::class, 'perusahaan', 'id');
     }
+
+    public function rkm()
+    {
+        return $this->belongsTo(Rkm::class, 'id_rkm');
+    }
 }
