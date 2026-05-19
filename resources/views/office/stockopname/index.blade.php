@@ -309,23 +309,37 @@
                         </div>
                         <div class="form-group mt-3">
                             <label>Kategori</label>
-                            <select name="kategori" class="form-select" required>
-                                <option value="">Pilih Kategori</option>
-                                <option value="Kebutuhan Kantor">Kebutuhan Kantor</option>
-                                <option value="Perlengkapan Dapur">Perlengkapan Dapur</option>
-                                <option value="Mobil">Mobil</option>
-                            </select>
+
+                            <input type="text"
+                                name="kategori"
+                                class="form-control"
+                                list="kategoriList"
+                                placeholder="Pilih atau ketik kategori"
+                                required>
+
+                            <datalist id="kategoriList">
+                                <option value="Kebutuhan Kantor">
+                                <option value="Perlengkapan Dapur">
+                                <option value="Mobil">
+                            </datalist>
                         </div>
                         <div class="form-group mt-3">
                             <label>Satuan</label>
-                            <select name="satuan" class="form-select" required>
-                                <option value="">Pilih Satuan</option>
-                                <option value="Pcs">Pcs</option>
-                                <option value="Renceng">Renceng</option>
-                                <option value="Pack">Pack</option>
-                                <option value="Botol">Botol</option>
-                                <option value="Lusin">Lusin</option>
-                            </select>
+
+                            <input type="text"
+                                name="satuan"
+                                class="form-control"
+                                list="satuanList"
+                                placeholder="Pilih atau ketik satuan"
+                                required>
+
+                            <datalist id="satuanList">
+                                <option value="Pcs">
+                                <option value="Renceng">
+                                <option value="Pack">
+                                <option value="Botol">
+                                <option value="Lusin">
+                            </datalist>
                         </div>
                         <div class="form-group mt-3">
                             <label>PIC</label>
@@ -385,21 +399,39 @@
                         </div>
                         <div class="form-group mt-3">
                             <label>Kategori</label>
-                            <select name="kategori" id="edit_kategori" class="form-select" required>
-                                <option value="Kebutuhan Kantor">Kebutuhan Kantor</option>
-                                <option value="Perlengkapan Dapur">Perlengkapan Dapur</option>
-                                <option value="Mobil">Mobil</option>
-                            </select>
+
+                            <input type="text"
+                                name="kategori"
+                                id="edit_kategori"
+                                class="form-control"
+                                list="editKategoriList"
+                                placeholder="Pilih atau ketik kategori"
+                                required>
+
+                            <datalist id="editKategoriList">
+                                <option value="Kebutuhan Kantor">
+                                <option value="Perlengkapan Dapur">
+                                <option value="Mobil">
+                            </datalist>
                         </div>
                         <div class="form-group mt-3">
                             <label>Satuan</label>
-                            <select name="satuan" id="edit_satuan" class="form-select" required>
-                                <option value="Pcs">Pcs</option>
-                                <option value="Renceng">Renceng</option>
-                                <option value="Pack">Pack</option>
-                                <option value="Botol">Botol</option>
-                                <option value="Lusin">Lusin</option>
-                            </select>
+
+                            <input type="text"
+                                name="satuan"
+                                id="edit_satuan"
+                                class="form-control"
+                                list="editSatuanList"
+                                placeholder="Pilih atau ketik satuan"
+                                required>
+
+                            <datalist id="editSatuanList">
+                                <option value="Pcs">
+                                <option value="Renceng">
+                                <option value="Pack">
+                                <option value="Botol">
+                                <option value="Lusin">
+                            </datalist>
                         </div>
                         <div class="form-group mt-3">
                             <label>Notes</label>

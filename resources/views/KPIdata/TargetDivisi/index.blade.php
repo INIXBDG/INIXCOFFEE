@@ -620,7 +620,7 @@
 
         const assistantRouteUrlMap = {
             // GM
-            "kemasukan kotor": "/rkm",
+            "pemasukan kotor": "/rkm",
             "pemasukan bersih": "/office/analysis",
             "kepuasan pelanggan": "/feedback",
             "rasio biaya operasional terhadap revenue": "/kpi-data/table-data",
@@ -690,6 +690,7 @@
             // Sales
             "target penjualan tahunan": "/rkm",
             "biaya akuisisi perclient": "/crm/peluang/index",
+            "peningkatan kemampuan kompetensi sales": "https://elearning.inixindobdg.co.id/login/index.php?loginredirect=1",
 
             // SPV Sales
             "meningkatkan revenue perusahaan": "/rkm",
@@ -2412,7 +2413,6 @@
                                 <label for="detail_jangka" class="form-label">Tahun Pelaksanaan <span class="text-danger">*</span></label>
                                 <select name="detail_jangka" id="detail_jangka" class="form-select" required>
                                     <option value="${tahunIni}" selected>${tahunIni}</option>
-                                    <option value="${tahunIni + 1}">${tahunIni + 1}</option>
                                 </select>
                             </div>
                         `;
