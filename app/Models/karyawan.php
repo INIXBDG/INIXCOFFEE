@@ -125,4 +125,8 @@ class karyawan extends Model
     {
         return $this->hasMany(CatatanMeetingSales::class);
     }
+    public function administrasiKaryawan()
+    {
+        return $this->hasMany(AdministrasiKaryawan::class, 'id_karyawan');   
+    }
 }
