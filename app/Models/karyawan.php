@@ -135,4 +135,9 @@ class karyawan extends Model
     {
         return $this->hasMany(pengajuancuti::class, 'id_karyawan', 'id');
     }
+  
+    public function administrasiKaryawan()
+    {
+        return $this->hasMany(AdministrasiKaryawan::class, 'id_karyawan');   
+    }
 }

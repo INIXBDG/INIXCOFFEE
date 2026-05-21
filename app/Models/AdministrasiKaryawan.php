@@ -11,10 +11,16 @@ class AdministrasiKaryawan extends Model
 
     protected $fillable = [
         'nama_administrasi',
+        'id_karyawan',
         'status',
         'dateline',
         'tanggal_selesai',
         'keterangan',
         'bukti_transfer'
     ];
+
+    public function karyawan()
+    {
+        return $this->belongsTo(karyawan::class, 'id_karyawan');
+    }
 }

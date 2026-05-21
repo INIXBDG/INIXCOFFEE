@@ -35,9 +35,8 @@
                             </div>
 
                             <div class="mb-3">
-                                <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari
-                                    sistem</small>
-                                <label class="form-label">Status</label>
+                                <label class="form-label">Status</label><br>
+                                <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
                                 <select name="status" class="form-select">
                                     <option value="pending">Pending</option>
                                     <option value="proses">Proses</option>
@@ -229,9 +228,6 @@
                                 data-bs-target="#modalTambahAdministrasiKaryawan">
                                 Tambah Administrasi Karyawan
                             </button> 
-                            <a href="{{ route('administrasi.karyawan.data.reload') }}" class="btn btn-primary">
-                                Reload Data
-                            </a>
                             <h6 class="mb-0">Export : </h6>
                             <button type="button" data-bs-toggle="modal" data-bs-target="#modalEksportAdministrasi"
                                 class="btn btn-outline-secondary btn-sm pdfBtn">

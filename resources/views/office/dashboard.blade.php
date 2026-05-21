@@ -2,6 +2,17 @@
 
 @section('office_contents')
     <div class="container-fluid py-4">
+        <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="cube">
+                    <div class="cube_item cube_x"></div>
+                    <div class="cube_item cube_y"></div>
+                    <div class="cube_item cube_x"></div>
+                    <div class="cube_item cube_z"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
             <h4 class="mb-0 fw-bold text-dark">Dashboard Office</h4>
@@ -282,7 +293,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div class="text-truncate" style="max-width: 150px;">
-                                                            {{ $tagihan->tagihanPerusahaan->kegiatan ?? $tagihan->kegiatan }}
+                                                            {{ $tagihan->tagihanPerusahaan?->kegiatan ?? $tagihan->kegiatan }}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -370,7 +381,7 @@
                                                                     <input type="text" name="tipe"
                                                                         value="Tagihan Perusahaan">
                                                                     <input type="text" name="barang[nama_barang][]"
-                                                                        value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan->kegiatan }}">
+                                                                        value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan?->kegiatan }}">
                                                                     <input type="number" name="barang[qty][]"
                                                                         value="1">
                                                                     <input type="text" name="barang[harga_barang][]"
@@ -662,6 +673,138 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Checklist exam --}}
+            <div id="sectionExam">
+                <div class="modal fade" id="modalDetailExam" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-sm rounded-4">
+                            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 w-100">
+                                    <div>
+                                        <h5 class="modal-title fw-semibold mb-0">Informasi Exam</h5>
+                                        <small class="text-muted">Detail pengajuan exam</small>
+                                    </div>
+                                    <div id="selesaiExamBtn">
+                                    </div>
+                                </div>
+    
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+    
+                            <div class="modal-body p-4">
+                                <div class="bg-light rounded-4 p-4 border">
+                                    <div class="row g-4">
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Materi</small>
+    
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div>
+                                                    <div class="fw-semibold text-dark" id="detail_nama_materi">-</div>
+                                                </div>
+                                            </div>
+                                        </div>
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Perusahaan</small>
+                                            <div class="fw-semibold text-dark" id="detail_nama_perusahaan">-</div>
+                                        </div>
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Status</small>
+                                            <span id="detail_status">-</span>
+                                        </div>
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Tanggal Pengajuan</small>
+                                            <div class="fw-semibold text-dark" id="detail_tanggal_pengajuan">-</div>
+                                        </div>
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Sales</small>
+                                            <div class="fw-semibold text-dark" id="detail_sales">-</div>
+                                        </div>
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Pax</small>
+                                            <div class="fw-semibold text-dark" id="detail_pax">-</div>
+                                        </div>
+    
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="row g-4 mb-5">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden  glass-force">
+                            <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
+                                <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                                    <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
+                                    Daftar Exam
+                                </h5>
+                                <div class="px-4 py-3 border-bottom">
+                                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    
+                                        <div class="w-md-25">
+                                            <input type="text"
+                                                id="searchExam"
+                                                class="form-control"
+                                                placeholder="Cari exam..."
+                                                autocomplete="off">
+                                        </div>
+    
+                                        <div id="examPaginationInfo" class="text-muted small"></div>
+    
+                                    </div>
+                                </div>
+                            </div>
+                            @if (session('success_exam'))
+                                <div class="alert alert-success">{{ session('success_exam') }}</div>
+                            @endif
+                            <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
+    
+                                {{-- Table Exam --}}
+                                <div class="table-responsive mb-4" style="max-height: 800px; overflow-y: auto;">
+                                    <table id="tabelEksam" class="table table-hover align-middle mb-0">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th class="border-0 ps-4">Selesai</th>
+                                                <th class="border-0">Nama Materi</th>
+                                                <th class="border-0">Tanggal Pengajuan</th>
+                                                <th class="border-0">Nama Perusahaan</th>
+                                                <th class="border-0">Pax</th>
+                                                <th class="border-0 text-center pe-4">Status</th>
+                                                <th class="border-0">Sales</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="examTableBody">
+                                        </tbody>
+                                    </table>
+                                    <div class="card-footer py-3 d-flex flex-column flex-md-row justify-content-end align-items-center gap-3">
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-secondary"
+                                                id="prevExamPage"
+                                                disabled>
+                                                Sebelumnya
+                                            </button>
+                                            <span id="examPageInfo" class="align-self-center"></span>
+                                            <button class="btn btn-sm btn-outline-secondary"
+                                                id="nextExamPage">
+                                                Selanjutnya
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         @endif
 
         @if (Auth::user()->jabatan === 'HRD')
@@ -867,9 +1010,8 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari
-                                        sistem</small>
-                                    <label class="form-label">Status</label>
+                                    <label class="form-label">Status</label><br>
+                                    <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
                                     <select name="status" class="form-select">
                                         <option value="pending">Pending</option>
                                         <option value="proses">Proses</option>
@@ -3896,6 +4038,7 @@
                 $(document).on('click', '.btn-ajukan-tagihan', function() {
                     let id = $(this).data('id');
                     let form = $('#form-ajukan-' + id);
+                    $('#loadingModal').modal('show');
 
                     $.ajax({
                         url: "{{ route('pengajuanbarang.store') }}",
@@ -3905,16 +4048,243 @@
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
                         success: function(response) {
+                            $('#loadingModal').modal('hide');
                             alert("Berhasil membuat pengajuan barang!");
                             location.reload();
                         },
                         error: function(xhr) {
+                            $('#loadingModal').modal('hide');
                             alert('Terjadi kesalahan');
                             console.log(xhr.responseText);
                         }
                     });
                 });
                 // end pengajuan tagihan perusahaan ke pengajuan barang
+
+                //load table exam
+                if ($('#sectionExam').length) {
+                    let currentExamPage = 1;
+                    let lastExamPage = 1;
+                    let currentExamSearch = '';
+    
+                    function loadExam(page = 1, search = '') {
+    
+                        $.ajax({
+                            url: "{{ route('office.table.exam') }}",
+                            type: "GET",
+    
+                            data: {
+                                page: page,
+                                search: search
+                            },
+    
+                            success: function(res) {
+                                let rows = '';
+    
+                                currentExamPage = res.current_page;
+                                lastExamPage = res.last_page;
+    
+                                if (res.data.length === 0) {
+    
+                                    rows = `
+                                        <tr>
+                                            <td colspan="8" class="text-center py-5">
+                                                <div class="d-flex flex-column align-items-center">
+                                                    <i class="bx bx-message-square-x text-muted" style="font-size: 3rem;"></i>
+    
+                                                    <p class="text-muted mt-3 mb-0">
+                                                        Tidak ada exam untuk ditampilkan
+                                                    </p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `;
+    
+                                } else {
+    
+                                    res.data.forEach((exam) => {
+    
+                                        let checkbox = '';
+    
+                                        if (exam.checklist_eksam?.status === 1) {
+    
+                                            checkbox = `
+                                                <input class="custom-check"
+                                                    type="checkbox"
+                                                    checked
+                                                    disabled>
+                                            `;
+    
+                                        } else {
+    
+                                            checkbox = `
+                                                <input class="check-blue checkExam"
+                                                    type="checkbox">
+                                            `;
+                                        }
+    
+                                        let badge = '';
+    
+                                        if (exam.rkm?.status === '3') {
+    
+                                            badge = `
+                                                <span class="badge bg-info">
+                                                    Exam Only
+                                                </span>
+                                            `;
+    
+                                        } else {
+    
+                                            badge = `
+                                                <span class="badge bg-primary">
+                                                    Regular Exam
+                                                </span>
+                                            `;
+                                        }
+    
+                                        rows += `
+                                            <tr data-id="${exam.id}" id="examDetail">
+    
+                                                <td class="text-center ps-4">
+                                                    ${checkbox}
+                                                </td>
+    
+                                                <td>
+                                                    <div class="text-truncate" style="max-width: 350px;">
+                                                        ${exam.rkm?.materi?.nama_materi ?? '-'}
+                                                    </div>
+                                                </td>
+    
+                                                <td>
+                                                    ${formatDate(exam.tanggal_pengajuan)}
+                                                </td>
+    
+                                                <td>
+                                                    ${exam.rkm?.perusahaan.nama_perusahaan ?? '-'}
+                                                </td>
+    
+                                                <td>
+                                                    ${exam.rkm?.pax ?? '-'}
+                                                </td>
+    
+                                                <td>
+                                                    ${badge}
+                                                </td>
+    
+                                                <td>
+                                                    ${exam.rkm?.sales_key ?? '-'}
+                                                </td>
+    
+                                            </tr>
+                                        `;
+                                    });
+                                }
+    
+                                $('#examTableBody').html(rows);
+    
+                                $('#examPageInfo').text(
+                                    `Page ${currentExamPage} / ${lastExamPage}`
+                                );
+    
+                                $('#prevExamPage').prop(
+                                    'disabled',
+                                    currentExamPage === 1
+                                );
+    
+                                $('#nextExamPage').prop(
+                                    'disabled',
+                                    currentExamPage === lastExamPage
+                                );
+                            }
+                        });
+                    }
+    
+                    $('#nextExamPage').click(function () {
+                        if (currentExamPage < lastExamPage) {
+                            loadExam(
+                                currentExamPage + 1,
+                                currentExamSearch
+                            );
+                        }
+                    });
+    
+                    $('#prevExamPage').click(function () {
+                        if (currentExamPage > 1) {
+                            loadExam(
+                                currentExamPage - 1,
+                                currentExamSearch
+                            );
+                        }
+                    });
+    
+                    let examDebounce;
+    
+                    $('#searchExam').on('keyup', function () {
+                        clearTimeout(examDebounce);
+                        currentExamSearch = $(this).val();
+    
+                        examDebounce = setTimeout(() => {
+                            loadExam(1, currentExamSearch);
+                        }, 400);
+                    });
+    
+                    loadExam();
+    
+                    // form edit exam
+                    $(document).on('click', '#examDetail', function () {
+                        let id = $(this).data('id');
+                        $('#modalDetailExam').modal('show');
+                        $('.checkExam').prop('checked', false);
+    
+                        $.ajax({
+                            url: '/office/checklist-exam/' + id,
+                            type: 'GET',
+                            success: function (res) {
+                                $('#detail_nama_materi').text(
+                                    res.data.rkm?.materi?.nama_materi ?? '-'
+                                );
+                                $('#detail_nama_perusahaan').text(
+                                    res.data.rkm?.perusahaan?.nama_perusahaan ?? '-'
+                                );
+                                $('#detail_tanggal_pengajuan').text(
+                                    res.data.tanggal_pengajuan ?? '-'
+                                );
+                                $('#detail_sales').text(
+                                    res.data.rkm?.sales?.nama_lengkap ?? '-'
+                                );
+                                $('#detail_pax').text(
+                                    res.data.pax ?? '-'
+                                );
+    
+                                $('#detail_status').removeClass();
+                                if (res.data.rkm?.status === '3') {
+                                    $('#detail_status').text(
+                                        'Exam Only'
+                                    ).addClass('rounded px-3 py-2 text-success bg-success-subtle');
+                                } else {
+                                    $('#detail_status').text(
+                                        'Regular Exam'
+                                    ).addClass('rounded px-3 py-2 text-primary bg-primary-subtle');
+                                };
+    
+                                let selesaiBtn = $('#selesaiExamBtn');
+                                selesaiBtn.empty();
+    
+                                if (!res.data.checklist_eksam || res.data.checklist_eksam.status === '0'){
+                                    selesaiBtn.html(`
+                                        <form action="/office/checklist-exam/store" method="POST">
+                                            @csrf @method("POST")
+                                            <input type="text" id="id_exam" name="id_exam" hidden value="${id}">
+                                            <button type="submit" class="btn btn-success">Tandai Selesai</button>
+                                        </form>
+                                    `);
+                                } else {
+                                    selesaiBtn.empty();
+                                };
+                            }
+                        });
+                    });
+                }
             });
 
             window.statusPieChart = null;
