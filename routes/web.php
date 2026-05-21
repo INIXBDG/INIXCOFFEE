@@ -988,7 +988,6 @@ Route::prefix('office')->group(function () {
     // administrasi karyawan
     Route::get('data-administrasi/{id}', [AdministrasiKaryawanController::class, 'getData']);
     Route::get('administrasi-karyawan', [AdministrasiKaryawanController::class, 'index'])->name('administrasi.karyawan');
-    Route::get('administrasi-reload-data', [AdministrasiKaryawanController::class, 'reloadData'])->name('administrasi.karyawan.data.reload');
     Route::post('administrasi-karyawan/store', [AdministrasiKaryawanController::class, 'store'])->name('administrasi.karyawan.store');
     Route::get('administrasi-karyawan/{id}', [AdministrasiKaryawanController::class, 'edit'])->name('administrasi.karyawan.edit');
     Route::post('administrasi-karyawan/update/{id}', [AdministrasiKaryawanController::class, 'update'])->name('administrasi.karyawan.update');

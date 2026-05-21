@@ -2,6 +2,17 @@
 
 @section('office_contents')
     <div class="container-fluid py-4">
+        <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="cube">
+                    <div class="cube_item cube_x"></div>
+                    <div class="cube_item cube_y"></div>
+                    <div class="cube_item cube_x"></div>
+                    <div class="cube_item cube_z"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
             <h4 class="mb-0 fw-bold text-dark">Dashboard Office</h4>
@@ -282,7 +293,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div class="text-truncate" style="max-width: 150px;">
-                                                            {{ $tagihan->tagihanPerusahaan->kegiatan ?? $tagihan->kegiatan }}
+                                                            {{ $tagihan->tagihanPerusahaan?->kegiatan ?? $tagihan->kegiatan }}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -370,7 +381,7 @@
                                                                     <input type="text" name="tipe"
                                                                         value="Tagihan Perusahaan">
                                                                     <input type="text" name="barang[nama_barang][]"
-                                                                        value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan->kegiatan }}">
+                                                                        value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan?->kegiatan }}">
                                                                     <input type="number" name="barang[qty][]"
                                                                         value="1">
                                                                     <input type="text" name="barang[harga_barang][]"
@@ -1295,9 +1306,8 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari
-                                        sistem</small>
-                                    <label class="form-label">Status</label>
+                                    <label class="form-label">Status</label><br>
+                                    <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
                                     <select name="status" class="form-select">
                                         <option value="pending">Pending</option>
                                         <option value="proses">Proses</option>
@@ -4324,6 +4334,7 @@
                 $(document).on('click', '.btn-ajukan-tagihan', function() {
                     let id = $(this).data('id');
                     let form = $('#form-ajukan-' + id);
+                    $('#loadingModal').modal('show');
 
                     $.ajax({
                         url: "{{ route('pengajuanbarang.store') }}",
@@ -4333,10 +4344,12 @@
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
                         success: function(response) {
+                            $('#loadingModal').modal('hide');
                             alert("Berhasil membuat pengajuan barang!");
                             location.reload();
                         },
                         error: function(xhr) {
+                            $('#loadingModal').modal('hide');
                             alert('Terjadi kesalahan');
                             console.log(xhr.responseText);
                         }
@@ -4401,9 +4414,8 @@
                                         } else {
     
                                             checkbox = `
-                                                <input class="check-blue"
-                                                    type="checkbox"
-                                                    id="checkExam">
+                                                <input class="check-blue checkExam"
+                                                    type="checkbox">
                                             `;
                                         }
     
@@ -4518,8 +4530,7 @@
                     $(document).on('click', '#examDetail', function () {
                         let id = $(this).data('id');
                         $('#modalDetailExam').modal('show');
-                        $('#checkExam').prop('checked', false);
-                        console.log(id);
+                        $('.checkExam').prop('checked', false);
     
                         $.ajax({
                             url: '/office/checklist-exam/' + id,
