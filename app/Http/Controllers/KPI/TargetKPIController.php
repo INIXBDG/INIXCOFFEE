@@ -4045,39 +4045,41 @@ class TargetKPIController extends Controller
     private function calculateMeningkatkanRevenuePerusahaan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
+
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
+
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
-        
-        $nilaiTarget = (float) $detail->nilai_target;
-
-        $peluang = Peluang::with('rkm.perhitunganNetSales')->whereYear('created_at', $tahun)->get();
 
         $progress = 0;
 
-        foreach ($peluang as $p) {
-            $kotor = $p->harga * $p->pax;
+        $peluang = Peluang::with(['rkm.perhitunganNetSales'])
+            ->whereYear('created_at', $tahun)
+            ->get();
 
-            $perhitungan = $p->rkm->perhitunganNetSales;
+        foreach ($peluang as $p) {
+            $kotor = ((float) $p->harga) * ((float) $p->pax);
 
             $totalBiaya = 0;
-            if ($perhitungan) {
+
+            if ($p->rkm && $p->rkm->perhitunganNetSales) {
                 foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
-                    $totalBiaya += $perhitungan->transportasi
-                        + $perhitungan->akomodasi_peserta
-                        + $perhitungan->akomodasi_tim
-                        + $perhitungan->fresh_money
-                        + $perhitungan->entertaint
-                        + $perhitungan->souvenir
-                        + $perhitungan->cashback
-                        + $perhitungan->sewa_laptop;
+                    $totalBiaya +=
+                        ((float) $perhitungan->transportasi) +
+                        ((float) $perhitungan->akomodasi_peserta) +
+                        ((float) $perhitungan->akomodasi_tim) +
+                        ((float) $perhitungan->fresh_money) +
+                        ((float) $perhitungan->entertaint) +
+                        ((float) $perhitungan->souvenir) +
+                        ((float) $perhitungan->cashback) +
+                        ((float) $perhitungan->sewa_laptop);
                 }
             }
 
@@ -4172,13 +4174,12 @@ class TargetKPIController extends Controller
             ->whereYear('created_at', $tahun)
             ->get();
 
-        // dd($peluang->toArray());
         $actualCAC = 0;
-        $targetTahunan = $this->calculatePemasukanKotor($item, $personId); // 9M
+        $targetTahunan = $this->calculatePemasukanKotor($item, $personId);
 
         foreach ($peluang as $p) {
             if ($p->tahap === 'merah') {
-                if ($p->rkm->perhitunganNetSales) {
+                if ($p->rkm && $p->rkm->perhitunganNetSales) {
                     foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
                         $actualCAC +=
                             ($perhitungan->transportasi ?? 0) +
@@ -12299,26 +12300,29 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $peluangs = Peluang::with('rkm.perhitunganNetSales')->whereYear('created_at', $tahun)->get();
+        $peluangs = Peluang::with(['rkm.perhitunganNetSales'])
+            ->whereYear('created_at', $tahun)
+            ->get();
 
         $progress = 0;
         $dailyBreakdownPerMonth = [];
 
         foreach ($peluangs as $p) {
-            $kotor = $p->harga * $p->pax;
+            $kotor = ((float) $p->harga) * ((float) $p->pax);
 
             $totalBiaya = 0;
-            $perhitungan = $p->rkm ? $p->rkm->perhitunganNetSales : null;
-            if ($perhitungan) {
+
+            if ($p->rkm && $p->rkm->perhitunganNetSales) {
                 foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
-                    $totalBiaya += $perhitungan->transportasi
-                        + $perhitungan->akomodasi_peserta
-                        + $perhitungan->akomodasi_tim
-                        + $perhitungan->fresh_money
-                        + $perhitungan->entertaint
-                        + $perhitungan->souvenir
-                        + $perhitungan->cashback
-                        + $perhitungan->sewa_laptop;
+                    $totalBiaya +=
+                        ((float) $perhitungan->transportasi) +
+                        ((float) $perhitungan->akomodasi_peserta) +
+                        ((float) $perhitungan->akomodasi_tim) +
+                        ((float) $perhitungan->fresh_money) +
+                        ((float) $perhitungan->entertaint) +
+                        ((float) $perhitungan->souvenir) +
+                        ((float) $perhitungan->cashback) +
+                        ((float) $perhitungan->sewa_laptop);
                 }
             }
 
@@ -12333,15 +12337,19 @@ class TargetKPIController extends Controller
             if (!isset($dailyBreakdownPerMonth[$monthKey])) {
                 $dailyBreakdownPerMonth[$monthKey] = [];
             }
+
             if (!isset($dailyBreakdownPerMonth[$monthKey][$dateKey])) {
                 $dailyBreakdownPerMonth[$monthKey][$dateKey] = 0;
             }
+
             $dailyBreakdownPerMonth[$monthKey][$dateKey] += $bersih;
         }
 
         $monthlyData = [];
+
         foreach ($dailyBreakdownPerMonth as $month => $days) {
             $dailySums = array_values($days);
+
             $monthlyData[$month] = count($dailySums) > 0
                 ? round(array_sum($dailySums) / count($dailySums), 1)
                 : 0;
@@ -12354,7 +12362,9 @@ class TargetKPIController extends Controller
         $dailyProgressPerMonth = [];
 
         foreach ($monthlyData as $month => $value) {
-            $monthlyProgress[$month] = $nilaiTarget > 0 ? round(($value / $nilaiTarget) * 100, 1) : 0;
+            $monthlyProgress[$month] = $nilaiTarget > 0
+                ? round(($value / $nilaiTarget) * 100, 1)
+                : 0;
         }
 
         foreach ($dailyBreakdownPerMonth as $month => $days) {
@@ -12362,7 +12372,10 @@ class TargetKPIController extends Controller
                 if (!isset($dailyProgressPerMonth[$month])) {
                     $dailyProgressPerMonth[$month] = [];
                 }
-                $dailyProgressPerMonth[$month][$day] = $nilaiTarget > 0 ? round(($value / $nilaiTarget) * 100, 1) : 0;
+
+                $dailyProgressPerMonth[$month][$day] = $nilaiTarget > 0
+                    ? round(($value / $nilaiTarget) * 100, 1)
+                    : 0;
             }
         }
 
@@ -12370,7 +12383,7 @@ class TargetKPIController extends Controller
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         return [
-            'progress' => $progress,
+            'progress' => round($progress, 1),
             'gap' => $gap,
             'pie_chart' => ['above' => 0, 'below' => 0],
             'monthly_data' => $monthlyData,
@@ -12379,7 +12392,7 @@ class TargetKPIController extends Controller
             'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
     }
-
+    
     private function calculateEvaluasiKinerjaSalesDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();

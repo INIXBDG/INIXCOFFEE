@@ -31,6 +31,7 @@ use App\Http\Controllers\examController;
 use App\Http\Controllers\feedbackController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\HRController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\InstructorDevelopmentController;
 use App\Http\Controllers\InventarisController;
@@ -944,20 +945,6 @@ Route::prefix('office')->group(function () {
     Route::get('/laporan/status-karyawan', [OfficeController::class, 'laporanStatusKaryawan'])->name('office.laporan.status-karyawan');
     Route::get('/laporan/status-karyawan/detail', [OfficeController::class, 'detailKaryawanStatus'])->name('office.laporan.status-karyawan.detail');
     Route::get('/laporan/trend-karyawan', [OfficeController::class, 'laporanTrendKaryawan'])->name('office.laporan.trend-karyawan');
-    
-    // Export
-    Route::get('/export/status-karyawan-pdf', [OfficeController::class, 'exportStatusKaryawanPdf'])
-        ->name('office.export.status-karyawan-pdf');
-
-    // Dashboard Tunjangan Office (AJAX)
-    Route::get('/dashboard/tunjangan', [OfficeController::class, 'getDashboardTunjanganOffice'])
-        ->name('office.dashboard.tunjangan');
-
-    // Export PDF Tunjangan
-    Route::get('/export/tunjangan-pdf', [OfficeController::class, 'exportTunjanganPdf'])
-        ->name('office.export.tunjangan.pdf');
-
-    Route::get('/export-gaji-pdf', [OfficeController::class, 'exportPdfGaji']);
 
     Route::post('/store-hari-libur', [OfficeController::class, 'storeHariLibur'])->name('storeHariLibur');
     Route::get('/data-hari-libur/{year}', [OfficeController::class, 'dataHariLibur']);
@@ -1029,6 +1016,45 @@ Route::prefix('office')
     ->name('office.')
     ->middleware(['auth'])
     ->group(function () {
+
+        //HR routes
+        Route::prefix('HR-infomation')
+            ->name('HR.')
+            ->group(function () {
+            Route::prefix('employee')
+                ->name('employee.')
+                ->group(function () {
+                Route::get('/index', [HRController::class, 'newActive'])->name('newActive');
+                Route::get('/category', [HRController::class, 'getEmployeesByCategory'])->name('category');
+                Route::get('/data', [HRController::class, 'getEmployeeData'])->name('data');
+                Route::get('/headcount/trend', [HRController::class, 'getHeadcountTrend'])->name('trend');
+                Route::get('/headcount/breakdown', [HRController::class, 'getHeadcountBreakdown'])->name('breakdown');
+                
+                Route::get('/export/trend/csv', [HRController::class, 'exportHeadcountTrendCsv'])->name('trend.export.csv');
+                Route::get('/export/trend/pdf', [HRController::class, 'exportHeadcountTrendPdf'])->name('trend.export.pdf');
+                Route::get('/export/breakdown/csv', [HRController::class, 'exportHeadcountBreakdownCsv'])->name('breakdown.export.csv');
+                Route::get('/export/breakdown/pdf', [HRController::class, 'exportHeadcountBreakdownPdf'])->name('breakdown.export.pdf');
+            });
+
+             Route::prefix('payroll')
+                ->name('payroll.')
+                ->group(function () {
+                    Route::get('/index', [HRController::class, 'payrollIndex'])->name('payrollIndex');
+                    Route::get('/dashboard', [HRController::class, 'getPayrollDashboard'])->name('dashboard');
+                    Route::get('/export/csv', [HRController::class, 'exportPayrollCsv'])->name('export.csv');
+                    Route::get('/export/pdf', [HRController::class, 'exportPayrollPdf'])->name('export.pdf');
+            });
+
+            Route::prefix('absensi')->name('absensi.')->group(function () {
+                Route::get('/', [HRController::class, 'kehadiranIndex'])->name('kehadiranIndex');
+                Route::get('/analytics', [HRController::class, 'getAttendanceAnalytics'])->name('analytics');
+                Route::get('/export', [HRController::class, 'exportAttendanceReport'])->name('export');
+                Route::get('/division-stats', [HRController::class, 'getDivisionDailyStats'])->name('division.stats');
+                Route::get('/top-late', [HRController::class, 'getTopLateEmployees'])->name('top.late');
+                Route::get('/calendar', [HRController::class, 'getAttendanceCalendar'])->name('calendar');
+            });
+        });
+
         //pickup driver routes
         Route::prefix('pickup-driver')
             ->name('pickupDriver.')
