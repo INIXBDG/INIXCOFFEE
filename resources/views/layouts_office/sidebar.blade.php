@@ -63,17 +63,45 @@
         </li>
 
         @if (Auth::user()->jabatan === 'Finance & Accounting')
-        <li class="menu-item {{ request()->routeIs('office.tagihanPerusahaan.index') ? 'active open' : '' }}">
-            <a href="{{ route('office.tagihanPerusahaan.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-dollar-circle"></i>
-                <div class="text-truncate" data-i18n="contact">Tagihan Perusahaan</div>
-            </a>
-        </li>
+            <li class="menu-item {{ request()->routeIs('office.tagihanPerusahaan.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.tagihanPerusahaan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-dollar-circle"></i>
+                    <div class="text-truncate" data-i18n="contact">Tagihan Perusahaan</div>
+                </a>
+            </li>
         @endif
 
-        @if (Auth::user()->jabatan === 'HRD')
-            <li class="menu-item {{ request()->routeIs('office.indexKegiatan') ? 'active open' : '' }}">
-                <a href="{{ route('office.indexKegiatan') }}" class="menu-link">
+
+        @if (Auth::user()->jabatan === 'HRD' || Auth::user()->jabatan === 'GM')
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Karyawan</span>
+            </li>
+            <li class="menu-item {{ request()->routeIs('office.HR.employee.newActive') ? 'active open' : '' }}">
+                <a href="{{ route('office.HR.employee.newActive') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-group"></i>
+                    <div class="text-truncate" data-i18n="contact">Informasi Karyawan</div>
+                </a>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('office.HR.payroll.payrollIndex') ? 'active open' : '' }}">
+                <a href="{{ route('office.HR.payroll.payrollIndex') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-wallet"></i>
+                    <div class="text-truncate" data-i18n="contact">Payroll</div>
+                </a>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('office.HR.absensi.kehadiranIndex') ? 'active open' : '' }}">
+                <a href="{{ route('office.HR.absensi.kehadiranIndex') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-calendar-check"></i>
+                    <div class="text-truncate" data-i18n="contact">Kehadiran</div>
+                </a>
+            </li>
+
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Administrasi</span>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('office.indexKegiatan') ? 'active open' : '' }}">               <a href="{{ route('office.indexKegiatan') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-group"></i>
                     <div class="text-truncate" data-i18n="contact">Pengajuan Kegiatan</div>
                 </a>
@@ -198,7 +226,9 @@
             </a>
         </li>
 
-        @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM', 'HRD', 'Driver']))
+        @if (auth()->check() &&
+                isset(auth()->user()->karyawan) &&
+                in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM', 'HRD', 'Driver']))
             <li class="menu-item {{ request()->routeIs('office.indexPerbaikanKendaraan') ? 'active open' : '' }}">
                 <a href="{{ route('office.indexPerbaikanKendaraan') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-wrench"></i>
@@ -207,8 +237,9 @@
             </li>
         @endif
 
-        @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM']))
-
+        @if (auth()->check() &&
+                isset(auth()->user()->karyawan) &&
+                in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM']))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Accounting</span>
             </li>
@@ -226,7 +257,7 @@
                     <div class="text-truncate" data-i18n="contact">DB PIC Penagihan</div>
                 </a>
             </li>
-            
+
             <li class="menu-item {{ request()->routeIs('approvalPendapatan.index') ? 'active open' : '' }}">
                 <a href="{{ route('approvalPendapatan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-money"></i>
@@ -240,7 +271,6 @@
                     <div class="text-truncate" data-i18n="contact">Outstanding</div>
                 </a>
             </li>
-
         @endif
 
         <li class="menu-header mt-4 pb-3" style="padding-left: 12px; padding-right: 12px;">
