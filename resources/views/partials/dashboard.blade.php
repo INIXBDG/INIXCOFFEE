@@ -108,23 +108,28 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales-tab-pane"
-                    type="button" role="tab" aria-controls="sales-tab-pane" aria-selected="true" {{ $salesDisabled ? '' : 'disabled' }}>Sales</button>
+                    type="button" role="tab" aria-controls="sales-tab-pane" aria-selected="true"
+                    {{ $salesDisabled ? '' : 'disabled' }}>Sales</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="office-tab" data-bs-toggle="tab" data-bs-target="#office-tab-pane"
-                    type="button" role="tab" aria-controls="office-tab-pane" aria-selected="false" {{ $officeDisabled ? '' : 'disabled' }}>Office</button>
+                    type="button" role="tab" aria-controls="office-tab-pane" aria-selected="false"
+                    {{ $officeDisabled ? '' : 'disabled' }}>Office</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="instruktur-tab" data-bs-toggle="tab" data-bs-target="#instruktur-tab-pane"
-                    type="button" role="tab" aria-controls="instruktur-tab-pane" aria-selected="false" {{ $instrukturDisabled ? '' : 'disabled' }}>Instruktur</button>
+                    type="button" role="tab" aria-controls="instruktur-tab-pane" aria-selected="false"
+                    {{ $instrukturDisabled ? '' : 'disabled' }}>Instruktur</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="itsm-tab" data-bs-toggle="tab" data-bs-target="#itsm-tab-pane"
-                    type="button" role="tab" aria-controls="itsm-tab-pane" aria-selected="false" {{ $itsmDisable ? '' : 'disabled' }}>ITSM</button>
+                    type="button" role="tab" aria-controls="itsm-tab-pane" aria-selected="false"
+                    {{ $itsmDisable ? '' : 'disabled' }}>ITSM</button>
             </li>
         </ul>
         <div class="tab-content" id="chartContent" style="">
-            <div class="tab-pane fade" id="inix-tab-pane" role="tabpanel" aria-labelledby="inix-tab" tabindex="0">
+            <div class="tab-pane fade" id="inix-tab-pane" role="tabpanel" aria-labelledby="inix-tab"
+                tabindex="0">
                 <div class="container-fluid">
                     <div class="row my-1">
                         <div class="col-md-12" style="height: auto; padding:0">
@@ -214,8 +219,9 @@
                                             class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
                                             <div class="card_foto">
                                                 <div class="imgbox">
-                                                    <img src="{{ asset('images/download.png') }}" alt="Instruktur Image"
-                                                        class="dynamic-image" id="foto_instruktur">
+                                                    <img src="{{ asset('images/download.png') }}"
+                                                        alt="Instruktur Image" class="dynamic-image"
+                                                        id="foto_instruktur">
                                                 </div>
                                                 <div class="details">
                                                     <span class="caption mb-30">Instruktur Terbaik</span>
@@ -359,8 +365,9 @@
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-perquartal-tab" data-bs-toggle="pill"
-                            data-bs-target="#pills-perquartal" type="button" role="tab" aria-controls="pills-perquartal"
-                            aria-selected="true">Penjualan Per Sales Per Triwulan</button>
+                            data-bs-target="#pills-perquartal" type="button" role="tab"
+                            aria-controls="pills-perquartal" aria-selected="true">Penjualan Per Sales Per
+                            Triwulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-bulan-tab" data-bs-toggle="pill"
@@ -389,7 +396,8 @@
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade" id="office-tab-pane" role="tabpanel" aria-labelledby="office-tab" tabindex="0">
+            <div class="tab-pane fade" id="office-tab-pane" role="tabpanel" aria-labelledby="office-tab"
+                tabindex="0">
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-analisiskelas-tab" data-bs-toggle="pill"
@@ -408,8 +416,8 @@
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-souvenir-tab" data-bs-toggle="pill"
-                            data-bs-target="#pills-souvenir" type="button" role="tab" aria-controls="pills-souvenir"
-                            aria-selected="false">Rekap Souvenir</button>
+                            data-bs-target="#pills-souvenir" type="button" role="tab"
+                            aria-controls="pills-souvenir" aria-selected="false">Rekap Souvenir</button>
                     </li>
                 </ul>
                 <div class="tab-content" id="pills-tabContent">
@@ -468,111 +476,111 @@
                 tabindex="0">
                 <div class="row m-2">
                     {{-- <div class="card"> --}}
-                        {{-- <div class="card-body"> --}}
-                            <!-- From Uiverse.io by Yaya12085 -->
-                            <div class="card-dash">
-                                <div class="title-dash">
-                                    <span>
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
-                                            <path
-                                                d="M171.5 38.8C192.3 4 236.5-10 274 7.6l7.2 3.8C316 32.3 330 76.5 312.4 114l0 0-14.1 30 109.7 0 7.4 .4c36.3 3.7 64.6 34.4 64.6 71.6 0 13.2-3.6 25.4-9.8 36 6.1 10.6 9.7 22.8 9.8 36 0 18.3-6.9 34.8-18 47.5 1.3 5.3 2 10.8 2 16.5 0 25.1-12.9 47-32.2 59.9-1.9 35.5-29.4 64.2-64.4 67.7l-7.4 .4-104.1 0c-18 0-35.9-3.4-52.6-9.9l-7.1-3-.7-.3-6.6-3.2-.7-.3-12.2-6.5c-12.3-6.5-23.3-14.7-32.9-24.1-4.1 26.9-27.3 47.4-55.3 47.4l-32 0c-30.9 0-56-25.1-56-56L0 200c0-30.9 25.1-56 56-56l32 0c10.8 0 20.9 3.1 29.5 8.5l50.1-106.5 .6-1.2 2.7-5 .6-.9zM56 192c-4.4 0-8 3.6-8 8l0 224c0 4.4 3.6 8 8 8l32 0c4.4 0 8-3.6 8-8l0-224c0-4.4-3.6-8-8-8l-32 0zM253.6 51c-14.8-6.9-32.3-1.6-40.7 12l-2.2 4-56.8 120.9c-3.5 7.5-5.5 15.5-6 23.7l-.1 4.2 0 112.9 .2 7.9c2.4 32.7 21.4 62.1 50.7 77.7l11.5 6.1 6.3 3.1c12.4 5.6 25.8 8.5 39.4 8.5l104.1 0 2.4-.1c12.1-1.2 21.6-11.5 21.6-23.9l-.2-2.6c-.1-.9-.2-1.7-.4-2.6-2.7-12.1 4.3-24.2 16-28 9.7-3.1 16.6-12.2 16.6-22.8 0-4.3-1.1-8.2-3.1-11.8-6.3-11.1-2.8-25.2 8-32 6.8-4.3 11.2-11.8 11.2-20.2 0-7.1-3.1-13.5-8.2-18-5.2-4.6-8.2-11.1-8.2-18s3-13.4 8.2-18c5.1-4.5 8.2-10.9 8.2-18l-.1-2.4c-1.1-11.3-10.1-20.3-21.4-21.4l-2.4-.1-147.5 0c-8.2 0-15.8-4.2-20.2-11.1-4.4-6.9-5-15.7-1.5-23.1L269 93.6c7-15 1.4-32.7-12.5-41L253.6 51z" />
-                                        </svg>
-                                    </span>
-                                    <p class="title-text-dash">
-                                        Skor CSAT
-                                    </p>
-                                </div>
-                                <div class="data-dash">
-                                    <p class="datacsat" id="csatValue">-</p>
-                                    <div class="range-dash">
-                                        <div class="fill-dash" id="csatBar"></div>
-                                    </div>
+                    {{-- <div class="card-body"> --}}
+                    <!-- From Uiverse.io by Yaya12085 -->
+                    <div class="card-dash">
+                        <div class="title-dash">
+                            <span>
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+                                    <path
+                                        d="M171.5 38.8C192.3 4 236.5-10 274 7.6l7.2 3.8C316 32.3 330 76.5 312.4 114l0 0-14.1 30 109.7 0 7.4 .4c36.3 3.7 64.6 34.4 64.6 71.6 0 13.2-3.6 25.4-9.8 36 6.1 10.6 9.7 22.8 9.8 36 0 18.3-6.9 34.8-18 47.5 1.3 5.3 2 10.8 2 16.5 0 25.1-12.9 47-32.2 59.9-1.9 35.5-29.4 64.2-64.4 67.7l-7.4 .4-104.1 0c-18 0-35.9-3.4-52.6-9.9l-7.1-3-.7-.3-6.6-3.2-.7-.3-12.2-6.5c-12.3-6.5-23.3-14.7-32.9-24.1-4.1 26.9-27.3 47.4-55.3 47.4l-32 0c-30.9 0-56-25.1-56-56L0 200c0-30.9 25.1-56 56-56l32 0c10.8 0 20.9 3.1 29.5 8.5l50.1-106.5 .6-1.2 2.7-5 .6-.9zM56 192c-4.4 0-8 3.6-8 8l0 224c0 4.4 3.6 8 8 8l32 0c4.4 0 8-3.6 8-8l0-224c0-4.4-3.6-8-8-8l-32 0zM253.6 51c-14.8-6.9-32.3-1.6-40.7 12l-2.2 4-56.8 120.9c-3.5 7.5-5.5 15.5-6 23.7l-.1 4.2 0 112.9 .2 7.9c2.4 32.7 21.4 62.1 50.7 77.7l11.5 6.1 6.3 3.1c12.4 5.6 25.8 8.5 39.4 8.5l104.1 0 2.4-.1c12.1-1.2 21.6-11.5 21.6-23.9l-.2-2.6c-.1-.9-.2-1.7-.4-2.6-2.7-12.1 4.3-24.2 16-28 9.7-3.1 16.6-12.2 16.6-22.8 0-4.3-1.1-8.2-3.1-11.8-6.3-11.1-2.8-25.2 8-32 6.8-4.3 11.2-11.8 11.2-20.2 0-7.1-3.1-13.5-8.2-18-5.2-4.6-8.2-11.1-8.2-18s3-13.4 8.2-18c5.1-4.5 8.2-10.9 8.2-18l-.1-2.4c-1.1-11.3-10.1-20.3-21.4-21.4l-2.4-.1-147.5 0c-8.2 0-15.8-4.2-20.2-11.1-4.4-6.9-5-15.7-1.5-23.1L269 93.6c7-15 1.4-32.7-12.5-41L253.6 51z" />
+                                </svg>
+                            </span>
+                            <p class="title-text-dash">
+                                Skor CSAT
+                            </p>
+                        </div>
+                        <div class="data-dash">
+                            <p class="datacsat" id="csatValue">-</p>
+                            <div class="range-dash">
+                                <div class="fill-dash" id="csatBar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-dash">
+                        <div class="title-dash">
+                            <span>
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+                                    <path
+                                        d="M464 256a208 208 0 1 0 -416 0 208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0zm372.2 46.3c11.8-3.6 23.7 6.1 19.6 17.8-19.8 55.9-73.1 96-135.8 96-62.7 0-116-40-135.8-95.9-4.1-11.6 7.8-21.4 19.6-17.8 34.7 10.6 74.2 16.5 116.1 16.5 42 0 81.5-6 116.3-16.6zM144 208a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
+                                </svg>
+                            </span>
+                            <p class="title-text-dash">
+                                Rekomendasi Materi
+                            </p>
+                        </div>
+                        <div class="data-dash">
+                            <p class="datacsat" id="rekomendasiValue">-</p>
+                            <div class="range-dash">
+                                <div class="fill-dash" id="rekomendasiBar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-dash">
+                        <div class="title-dash">
+                            <span>
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 576 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+                                    <path
+                                        d="M96 64c-35.3 0-64 28.7-64 64l0 256c-17.7 0-32 14.3-32 32s14.3 32 32 32l512 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-256c0-35.3-28.7-64-64-64L96 64zM480 384l-64 0 0-32c0-17.7-14.3-32-32-32l-96 0c-17.7 0-32 14.3-32 32l0 32-160 0 0-256 384 0 0 256z" />
+                                </svg>
+                            </span>
+                            <p class="title-text-dash">
+                                Sesi Sharing Knowledge
+                            </p>
+                        </div>
+                        <div class="data-dash">
+                            <p class="datacsat" id="sharingValue">-</p>
+                            <div class="range-dash">
+                                <div class="fill-dash" id="sharingBar">
                                 </div>
                             </div>
-                            <div class="card-dash">
-                                <div class="title-dash">
-                                    <span>
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
-                                            <path
-                                                d="M464 256a208 208 0 1 0 -416 0 208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0zm372.2 46.3c11.8-3.6 23.7 6.1 19.6 17.8-19.8 55.9-73.1 96-135.8 96-62.7 0-116-40-135.8-95.9-4.1-11.6 7.8-21.4 19.6-17.8 34.7 10.6 74.2 16.5 116.1 16.5 42 0 81.5-6 116.3-16.6zM144 208a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
-                                        </svg>
-                                    </span>
-                                    <p class="title-text-dash">
-                                        Rekomendasi Materi
-                                    </p>
-                                </div>
-                                <div class="data-dash">
-                                    <p class="datacsat" id="rekomendasiValue">-</p>
-                                    <div class="range-dash">
-                                        <div class="fill-dash" id="rekomendasiBar"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-dash">
-                                <div class="title-dash">
-                                    <span>
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 576 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
-                                            <path
-                                                d="M96 64c-35.3 0-64 28.7-64 64l0 256c-17.7 0-32 14.3-32 32s14.3 32 32 32l512 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-256c0-35.3-28.7-64-64-64L96 64zM480 384l-64 0 0-32c0-17.7-14.3-32-32-32l-96 0c-17.7 0-32 14.3-32 32l0 32-160 0 0-256 384 0 0 256z" />
-                                        </svg>
-                                    </span>
-                                    <p class="title-text-dash">
-                                        Sesi Sharing Knowledge
-                                    </p>
-                                </div>
-                                <div class="data-dash">
-                                    <p class="datacsat" id="sharingValue">-</p>
-                                    <div class="range-dash">
-                                        <div class="fill-dash" id="sharingBar">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-dash">
-                                <div class="title-dash">
-                                    <span>
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 576 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
-                                            <path
-                                                d="M96 64c-35.3 0-64 28.7-64 64l0 256c-17.7 0-32 14.3-32 32s14.3 32 32 32l512 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-256c0-35.3-28.7-64-64-64L96 64zM480 384l-64 0 0-32c0-17.7-14.3-32-32-32l-96 0c-17.7 0-32 14.3-32 32l0 32-160 0 0-256 384 0 0 256z" />
-                                        </svg>
-                                    </span>
-                                    <p class="title-text-dash">
-                                        Materi Baru
-                                    </p>
-                                </div>
-                                <div class="data-dash">
-                                    <p class="datacsat" id="materiValue">-</p>
-                                    <div class="range-dash">
-                                        <div class="fill-dash" id="materiBar">
+                        </div>
+                    </div>
+                    <div class="card-dash">
+                        <div class="title-dash">
+                            <span>
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 576 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+                                    <path
+                                        d="M96 64c-35.3 0-64 28.7-64 64l0 256c-17.7 0-32 14.3-32 32s14.3 32 32 32l512 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-256c0-35.3-28.7-64-64-64L96 64zM480 384l-64 0 0-32c0-17.7-14.3-32-32-32l-96 0c-17.7 0-32 14.3-32 32l0 32-160 0 0-256 384 0 0 256z" />
+                                </svg>
+                            </span>
+                            <p class="title-text-dash">
+                                Materi Baru
+                            </p>
+                        </div>
+                        <div class="data-dash">
+                            <p class="datacsat" id="materiValue">-</p>
+                            <div class="range-dash">
+                                <div class="fill-dash" id="materiBar">
 
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
-                            <div class="card-dash">
-                                <div class="title-dash">
-                                    <span>
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
-                                            <path
-                                                d="M96 64c-35.3 0-64 28.7-64 64l0 256c-17.7 0-32 14.3-32 32s14.3 32 32 32l512 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-256c0-35.3-28.7-64-64-64L96 64zM480 384l-64 0 0-32c0-17.7-14.3-32-32-32l-96 0c-17.7 0-32 14.3-32 32l0 32-160 0 0-256 384 0 0 256z" />
-                                        </svg>
-                                    </span>
-                                    <p class="title-text-dash">Silabus Baru</p>
-                                </div>
-                                <div class="data-dash">
-                                    <p class="datacsat" id="silabusValue">-</p>
-                                    <div class="range-dash">
-                                        <div class="fill-dash" id="silabusBar"></div>
-                                    </div>
-                                </div>
+                        </div>
+                    </div>
+                    <div class="card-dash">
+                        <div class="title-dash">
+                            <span>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                                    <path
+                                        d="M96 64c-35.3 0-64 28.7-64 64l0 256c-17.7 0-32 14.3-32 32s14.3 32 32 32l512 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-256c0-35.3-28.7-64-64-64L96 64zM480 384l-64 0 0-32c0-17.7-14.3-32-32-32l-96 0c-17.7 0-32 14.3-32 32l0 32-160 0 0-256 384 0 0 256z" />
+                                </svg>
+                            </span>
+                            <p class="title-text-dash">Silabus Baru</p>
+                        </div>
+                        <div class="data-dash">
+                            <p class="datacsat" id="silabusValue">-</p>
+                            <div class="range-dash">
+                                <div class="fill-dash" id="silabusBar"></div>
                             </div>
-                            {{--
+                        </div>
+                    </div>
+                    {{--
                         </div> --}}
-                        {{-- </div> --}}
+                    {{-- </div> --}}
                 </div>
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item mx-1" role="presentation">
@@ -584,7 +592,8 @@
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-totalmengajar-tab" data-bs-toggle="pill"
                             data-bs-target="#pills-totalmengajar" type="button" role="tab"
-                            aria-controls="pills-totalmengajar" aria-selected="false">Total Mengajar Per Bulan</button>
+                            aria-controls="pills-totalmengajar" aria-selected="false">Total Mengajar Per
+                            Bulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-totalMateri-tab" data-bs-toggle="pill"
@@ -594,7 +603,8 @@
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-totalMengajarPerMateri-tab" data-bs-toggle="pill"
                             data-bs-target="#pills-totalMengajarPerMateri" type="button" role="tab"
-                            aria-controls="pills-totalMengajarPerMateri" aria-selected="false">Total Mengajar Per Materi
+                            aria-controls="pills-totalMengajarPerMateri" aria-selected="false">Total Mengajar Per
+                            Materi
                             Per Bulan</button>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-jumlahUpdateMateriPerbulan-tab" data-bs-toggle="pill"
@@ -631,7 +641,8 @@
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasNilaiFeedback">
                                 <label for="bulan" class="form-label">Pilih Bulan:</label>
-                                <select class="form-select" id="bulan" onchange="updateChartNilaiFeedback(this.value)">
+                                <select class="form-select" id="bulan"
+                                    onchange="updateChartNilaiFeedback(this.value)">
                                     <option value="1">Januari</option>
                                     <option value="2">Februari</option>
                                     <option value="3">Maret</option>
@@ -838,13 +849,14 @@
                 </div>
 
             </div>
-            <div class="tab-pane fade" id="itsm-tab-pane" role="tabpanel" aria-labelledby="itsm-tab" tabindex="0">
+            <div class="tab-pane fade" id="itsm-tab-pane" role="tabpanel" aria-labelledby="itsm-tab"
+                tabindex="0">
                 <ul class="nav nav-pills mb-3" id="itsm-pills-tab" role="tablist">
 
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-jumlah-pic-tab" data-bs-toggle="pill"
-                            data-bs-target="#pills-jumlah-pic" type="button" role="tab" aria-controls="pills-jumlah-pic"
-                            aria-selected="false">Jumlah PIC</button>
+                            data-bs-target="#pills-jumlah-pic" type="button" role="tab"
+                            aria-controls="pills-jumlah-pic" aria-selected="false">Jumlah PIC</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-jumlah-ticketing-tab" data-bs-toggle="pill"
@@ -883,30 +895,31 @@
                         </button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link sla-tab-trigger" id="pills-sla-tech-support-tab" data-bs-toggle="pill"
-                            data-bs-target="#pills-sla-tech-support" type="button" role="tab"
-                            aria-controls="pills-sla-tech-support" aria-selected="false" data-team="tech-support"
-                            data-loaded="false">SLA Technical Support
+                        <button class="nav-link sla-tab-trigger" id="pills-sla-tech-support-tab"
+                            data-bs-toggle="pill" data-bs-target="#pills-sla-tech-support" type="button"
+                            role="tab" aria-controls="pills-sla-tech-support" aria-selected="false"
+                            data-team="tech-support" data-loaded="false">SLA Technical Support
                         </button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link sla-tab-trigger" id="pills-sla-event-tab" data-bs-toggle="pill"
-                            data-bs-target="#pills-sla-event" type="button" role="tab" aria-controls="pills-sla-event"
-                            aria-selected="false" data-loaded="false">
+                            data-bs-target="#pills-sla-event" type="button" role="tab"
+                            aria-controls="pills-sla-event" aria-selected="false" data-loaded="false">
                             SLA Webinar
                         </button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link sla-tab-trigger" id="pills-sla-digital-tab" data-bs-toggle="pill"
-                            data-bs-target="#pills-sla-digital" type="button" role="tab"
+                            data-bs-target="#pills-sla-digital" data-team="digital" type="button" role="tab"
                             aria-controls="pills-sla-digital" aria-selected="false" data-loaded="false">
                             SLA Digital
                         </button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link sla-tab-trigger" id="pills-uptime-presentase-tab" data-bs-toggle="pill"
-                            data-bs-target="#pills-uptime-presentase" type="button" role="tab"
-                            aria-controls="pills-uptime-presentase" aria-selected="false" data-loaded="false">
+                        <button class="nav-link sla-tab-trigger" id="pills-uptime-presentase-tab"
+                            data-bs-toggle="pill" data-bs-target="#pills-uptime-presentase" type="button"
+                            role="tab" aria-controls="pills-uptime-presentase" aria-selected="false"
+                            data-loaded="false">
                             Presentase Uptime
                         </button>
                     </li>
@@ -961,8 +974,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-permintaan" role="tabpanel"
-                        aria-labelledby="pills-jumlah-permintaan" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-permintaan"
+                        role="tabpanel" aria-labelledby="pills-jumlah-permintaan" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasPermintaanPerbulan">
                                 <h3>Jumlah Permintaan Per Bulan</h3>
@@ -1064,7 +1077,8 @@
                                                     </thead>
                                                     <tbody id="sla-user-table-body">
                                                         <tr>
-                                                            <td colspan="6" class="text-center">Memuat data...</td>
+                                                            <td colspan="6" class="text-center">Memuat data...
+                                                            </td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -1085,7 +1099,8 @@
                                                     <div class="card card-body text-center h-100 shadow-sm">
                                                         <h6 class="card-title text-muted text-uppercase small">SLA
                                                             Resolusi Kritis</h6>
-                                                        <div class="fs-2 fw-bold" id="kritis-sla-resolution">...</div>
+                                                        <div class="fs-2 fw-bold" id="kritis-sla-resolution">...
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
@@ -1099,14 +1114,16 @@
                                                     <div class="card card-body text-center h-100 shadow-sm">
                                                         <h6 class="card-title text-muted text-uppercase small">Avg.
                                                             Waktu Resolusi</h6>
-                                                        <div class="fs-2 fw-bold" id="kritis-avg-resolution">...</div>
+                                                        <div class="fs-2 fw-bold" id="kritis-avg-resolution">...
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
                                                         <h6 class="card-title text-muted text-uppercase small">Total
                                                             Insiden</h6>
-                                                        <div class="fs-2 fw-bold" id="kritis-total-insiden">...</div>
+                                                        <div class="fs-2 fw-bold" id="kritis-total-insiden">...
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1126,7 +1143,8 @@
                                                     </thead>
                                                     <tbody id="sla-kritis-table-body">
                                                         <tr>
-                                                            <td colspan="6" class="text-center">Memuat data...</td>
+                                                            <td colspan="6" class="text-center">Memuat data...
+                                                            </td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -1164,7 +1182,8 @@
                                                     <div class="card card-body text-center h-100 shadow-sm">
                                                         <h6 class="card-title text-muted text-uppercase small">SLA
                                                             Resolusi</h6>
-                                                        <div class="fs-2 fw-bold" id="ts-tim-sla-resolution">...</div>
+                                                        <div class="fs-2 fw-bold" id="ts-tim-sla-resolution">...
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
@@ -1178,14 +1197,16 @@
                                                     <div class="card card-body text-center h-100 shadow-sm">
                                                         <h6 class="card-title text-muted text-uppercase small">Avg.
                                                             Waktu Resolusi</h6>
-                                                        <div class="fs-2 fw-bold" id="ts-tim-avg-resolution">...</div>
+                                                        <div class="fs-2 fw-bold" id="ts-tim-avg-resolution">...
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
                                                         <h6 class="card-title text-muted text-uppercase small">Total
                                                             Tiket</h6>
-                                                        <div class="fs-2 fw-bold" id="ts-tim-total-tickets">...</div>
+                                                        <div class="fs-2 fw-bold" id="ts-tim-total-tickets">...
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1220,7 +1241,8 @@
                                                     </thead>
                                                     <tbody id="ts-sla-user-table-body">
                                                         <tr>
-                                                            <td colspan="6" class="text-center">Memuat data...</td>
+                                                            <td colspan="6" class="text-center">Memuat data...
+                                                            </td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -1249,7 +1271,8 @@
                                                     <div class="card card-body text-center h-100 shadow-sm">
                                                         <h6 class="card-title text-muted text-uppercase small">SLA
                                                             Respon Kritis</h6>
-                                                        <div class="fs-2 fw-bold" id="ts-kritis-sla-response">...</div>
+                                                        <div class="fs-2 fw-bold" id="ts-kritis-sla-response">...
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
@@ -1264,7 +1287,8 @@
                                                     <div class="card card-body text-center h-100 shadow-sm">
                                                         <h6 class="card-title text-muted text-uppercase small">Total
                                                             Insiden</h6>
-                                                        <div class="fs-2 fw-bold" id="ts-kritis-total-insiden">...</div>
+                                                        <div class="fs-2 fw-bold" id="ts-kritis-total-insiden">...
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1283,7 +1307,8 @@
                                                     </thead>
                                                     <tbody id="ts-sla-kritis-table-body">
                                                         <tr>
-                                                            <td colspan="6" class="text-center">Memuat data...</td>
+                                                            <td colspan="6" class="text-center">Memuat data...
+                                                            </td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -1303,7 +1328,7 @@
                                     <label class="form-label fw-bold">Pilih Bulan Webinar:</label>
                                     <select id="eventSlaFilter" class="form-select">
                                         <option value="" selected disabled>-- Pilih Event --</option>
-                                        @foreach(\App\Models\YearMapping::where('year', date('Y'))->orderBy('month')->get() as $map)
+                                        @foreach (\App\Models\YearMapping::where('year', date('Y'))->orderBy('month')->get() as $map)
                                             <option value="{{ $map->id }}">
                                                 Bulan
                                                 {{ \Carbon\Carbon::createFromDate(null, $map->month)->translatedFormat('F') }}
@@ -1329,7 +1354,8 @@
                                                 <h4 class="alert-heading mb-0 fs-5" id="event-title">...</h4>
                                                 <small id="event-date" class="font-monospace">...</small>
                                             </div>
-                                            <span class="badge bg-light text-dark border">Target: H-Min Timeline</span>
+                                            <span class="badge bg-light text-dark border">Target: H-Min
+                                                Timeline</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1404,8 +1430,9 @@
 
                     <div class="tab-pane fade" style="height:auto;" id="pills-sla-digital" role="tabpanel"
                         aria-labelledby="pills-sla-digital-tab" tabindex="0">
-                        <div class="container-fluid" id="sla-digital-container">
-
+                        <div class="container-fluid" id="sla-digital-container"
+                            data-url="{{ \Illuminate\Support\Facades\Route::has('dashboard.digital') ? route('dashboard.digital') : url('/dashboard/digital') }}"
+                             data-team="digital">
                             <div class="row mb-3">
                                 <div class="col-md-12">
                                     <div class="alert alert-info" role="alert">
@@ -1420,7 +1447,8 @@
                                 <div class="col-lg-6 mb-4">
                                     <div class="card shadow-sm h-100 border-primary border-start border-4">
                                         <div class="card-header bg-white fw-bold">
-                                            <i class="bi bi-camera-reels-fill me-2 text-primary"></i> SLA Jadwal Konten
+                                            <i class="bi bi-camera-reels-fill me-2 text-primary"></i> SLA Jadwal
+                                            Konten
                                         </div>
                                         <div class="card-body">
                                             <div class="row text-center">
@@ -1432,7 +1460,8 @@
                                                 <div class="col-md-6 mb-3">
                                                     <h6 class="text-muted small text-uppercase">Total Konten Uploaded
                                                     </h6>
-                                                    <div class="fs-1 fw-bold text-dark" id="digital-content-total">...
+                                                    <div class="fs-1 fw-bold text-dark" id="digital-content-total">
+                                                        ...
                                                     </div>
                                                 </div>
                                                 <div class="col-12">
@@ -1465,7 +1494,8 @@
                                                 </div>
                                                 <div class="col-md-4 mb-3">
                                                     <h6 class="text-muted small text-uppercase">Avg Resolusi</h6>
-                                                    <div class="fs-2 fw-bold text-secondary" id="digital-ticket-avg">...
+                                                    <div class="fs-2 fw-bold text-secondary"
+                                                        id="digital-ticket-avg">...
                                                     </div>
                                                 </div>
                                             </div>
@@ -1493,7 +1523,8 @@
                                                     </thead>
                                                     <tbody id="digital-weekly-table-body">
                                                         <tr>
-                                                            <td colspan="4" class="text-center py-3">Memuat data...</td>
+                                                            <td colspan="4" class="text-center py-3">Memuat
+                                                                data...</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
