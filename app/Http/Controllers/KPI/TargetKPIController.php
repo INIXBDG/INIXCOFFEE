@@ -211,7 +211,8 @@ class TargetKPIController extends Controller
 
             'sales' => [
                 'target penjualan tahunan',
-                'biaya akuisisi perclient'
+                'biaya akuisisi perclient',
+                'peningkatan kemampuan kompetensi sales'
             ],
 
             'spv sales' => [
@@ -607,7 +608,7 @@ class TargetKPIController extends Controller
                 'peningkatan kontribusi pelatihan', 'evaluasi kinerja instruktur'
             ],
             'sales' => [
-                'target penjualan tahunan', 'biaya akuisisi perclient'
+                'target penjualan tahunan', 'biaya akuisisi perclient', 'peningkatan kemampuan kompetensi sales'
             ],
             'spv sales' => [
                 'meningkatkan revenue perusahaan', 'customer acquisition cost',
@@ -789,7 +790,7 @@ class TargetKPIController extends Controller
             return empty($jenisTotalRaw) ? 0 : round(array_sum($jenisTotalRaw), 2);
         };
 
-        $calculateEmployeeTargetKpi = function ($empId, $yr) {
+        $calculateEmployeeAverageKPI = function ($empId, $yr) {
             $listKPI = targetKPI::with(['detailTargetKPI'])
                 ->whereYear('created_at', $yr)
                 ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($empId) {
@@ -797,7 +798,7 @@ class TargetKPIController extends Controller
                 })
                 ->get();
 
-            $progressList = [];
+            $allProgressValues = [];
 
             foreach ($listKPI as $item) {
                 $detail = $item->detailTargetKPI->first();
@@ -806,21 +807,20 @@ class TargetKPIController extends Controller
                 $result = $this->getCalculationByRoute($item, $empId);
                 if (!isset($result['progress'])) continue;
 
-                $progress = $result['progress'];
+                $progress = (float)$result['progress'];
 
-                if ($detail->tipe_target === 'rupiah') {
-                    $progress = $detail->nilai_target > 0
-                        ? ($progress / $detail->nilai_target) * 100
-                        : 0;
+                if ($detail->tipe_target === 'rupiah' && $detail->nilai_target > 0) {
+                    $progress = ($progress / $detail->nilai_target) * 100;
+                } elseif ($detail->tipe_target === 'angka' && $detail->nilai_target > 0) {
+                    $progress = ($progress / $detail->nilai_target) * 100;
                 }
 
-                if (is_numeric($progress)) {
-                    $progressList[] = $progress;
-                }
+                $progress = min($progress, 100);
+                $allProgressValues[] = round($progress, 2);
             }
 
-            return count($progressList) > 0
-                ? round(array_sum($progressList) / count($progressList), 2)
+            return count($allProgressValues) > 0
+                ? round(array_sum($allProgressValues) / count($allProgressValues), 2)
                 : 0;
         };
 
@@ -835,7 +835,7 @@ class TargetKPIController extends Controller
             ->whereYear('created_at', $currentYear)
             ->get();
 
-        $progressList = [];
+        $allProgressValues = [];
         $monthly_progress = [];
         $daily_progress_per_month = [];
 
@@ -846,37 +846,38 @@ class TargetKPIController extends Controller
             $result = $this->getCalculationByRoute($item, $targetEmployeeId);
             if (!isset($result['progress'])) continue;
 
-            $progress = $result['progress'];
+            $progress = (float)$result['progress'];
 
-            if ($detail->tipe_target === 'rupiah') {
-                $progress = $detail->nilai_target > 0
-                    ? ($progress / $detail->nilai_target) * 100
-                    : 0;
+            if ($detail->tipe_target === 'rupiah' && $detail->nilai_target > 0) {
+                $progress = ($progress / $detail->nilai_target) * 100;
+            } elseif ($detail->tipe_target === 'angka' && $detail->nilai_target > 0) {
+                $progress = ($progress / $detail->nilai_target) * 100;
             }
 
-            if ($progress > 0) {
-                $progressList[] = $progress;
+            $progress = min($progress, 100);
+            $progressRounded = round($progress, 2);
 
-                $monthKey = $item->created_at->format('Y-m');
-                $dayKey = $item->created_at->format('Y-m-d');
+            $allProgressValues[] = $progressRounded;
 
-                if (!isset($monthly_progress[$monthKey])) {
-                    $monthly_progress[$monthKey] = [];
-                }
-                $monthly_progress[$monthKey][] = $progress;
+            $monthKey = $item->created_at->format('Y-m');
+            $dayKey = $item->created_at->format('Y-m-d');
 
-                if (!isset($daily_progress_per_month[$monthKey])) {
-                    $daily_progress_per_month[$monthKey] = [];
-                }
-                if (!isset($daily_progress_per_month[$monthKey][$dayKey])) {
-                    $daily_progress_per_month[$monthKey][$dayKey] = [];
-                }
-                $daily_progress_per_month[$monthKey][$dayKey][] = $progress;
+            if (!isset($monthly_progress[$monthKey])) {
+                $monthly_progress[$monthKey] = [];
             }
+            $monthly_progress[$monthKey][] = $progressRounded;
+
+            if (!isset($daily_progress_per_month[$monthKey])) {
+                $daily_progress_per_month[$monthKey] = [];
+            }
+            if (!isset($daily_progress_per_month[$monthKey][$dayKey])) {
+                $daily_progress_per_month[$monthKey][$dayKey] = [];
+            }
+            $daily_progress_per_month[$monthKey][$dayKey][] = $progressRounded;
         }
 
-        $avgTargetYearly = count($progressList) > 0
-            ? round(array_sum($progressList) / count($progressList), 2)
+        $avgTargetYearly = count($allProgressValues) > 0
+            ? round(array_sum($allProgressValues) / count($allProgressValues), 2)
             : 0;
 
         $avgPenilaianYearly = $calculatePenilaianScore($allNilaiKPI);
@@ -885,7 +886,7 @@ class TargetKPIController extends Controller
             $nilaiKpiAnda = 0;
             $titleGetData = 'Tidak ada data';
         } elseif ($avgTargetYearly == 0) {
-            $nilaiKpiAnda = $avgPenilaianYearly * 0.4;
+            $nilaiKpiAnda = round($avgPenilaianYearly * 0.4, 2);
             $titleGetData = 'Dari Penilaian';
         } elseif ($avgPenilaianYearly == 0) {
             $nilaiKpiAnda = $avgTargetYearly;
@@ -928,68 +929,31 @@ class TargetKPIController extends Controller
         $currentUser = karyawan::find($id_pembuat);
 
         if ($currentUser && !empty($currentUser->divisi)) {
-            $teamMembers = karyawan::where('divisi', $currentUser->divisi)->get();
+            $teamMembers = karyawan::where('divisi', $currentUser->divisi)->where('status_aktif', '1')->whereNot('jabatan', 'Outsource')
+                ->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi')->get();
 
             foreach ($teamMembers as $member) {
-                $listKPITeam = targetKPI::with(['detailTargetKPI'])
-                    ->whereYear('created_at', $currentYear)
-                    ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($member) {
-                        $q->where('id_karyawan', $member->id);
-                    })
-                    ->get();
-
+                $avgTargetTeam = $calculateEmployeeAverageKPI($member->id, $currentYear);
+                
                 $allNilaiKPITeam = nilaiKPI::where('id_evaluated', $member->id)
                     ->whereYear('created_at', $currentYear)
                     ->get();
+                
+                $avgPenilaianTeam = $calculatePenilaianScore($allNilaiKPITeam);
 
-                $progressListTeam = [];
-                $monthly_progress_team = [];
-
-                foreach ($listKPITeam as $item) {
-                    $detail = $item->detailTargetKPI->first();
-                    if (!$detail) continue;
-
-                    $result = $this->getCalculationByRoute($item, $member->id);
-                    if (!isset($result['progress'])) continue;
-
-                    $progress = $result['progress'];
-
-                    if ($detail->tipe_target === 'rupiah') {
-                        $progress = $detail->nilai_target > 0
-                            ? ($progress / $detail->nilai_target) * 100
-                            : 0;
-                    }
-
-                    if ($progress > 0) {
-                        $progressListTeam[] = $progress;
-
-                        $monthKey = $item->created_at->format('Y-m');
-                        if (!isset($monthly_progress_team[$monthKey])) {
-                            $monthly_progress_team[$monthKey] = [];
-                        }
-                        $monthly_progress_team[$monthKey][] = $progress;
-                    }
-                }
-
-                $avgTargetYearlyTeam = count($progressListTeam) > 0
-                    ? round(array_sum($progressListTeam) / count($progressListTeam), 2)
-                    : 0;
-
-                $avgPenilaianYearlyTeam = $calculatePenilaianScore($allNilaiKPITeam);
-
-                if ($avgTargetYearlyTeam == 0 && $avgPenilaianYearlyTeam == 0) {
+                if ($avgTargetTeam == 0 && $avgPenilaianTeam == 0) {
                     $nilaiKpiTeam = 0;
-                } elseif ($avgTargetYearlyTeam == 0) {
-                    $nilaiKpiTeam = $avgPenilaianYearlyTeam * 0.4;
-                } elseif ($avgPenilaianYearlyTeam == 0) {
-                    $nilaiKpiTeam = $avgTargetYearlyTeam;
+                } elseif ($avgTargetTeam == 0) {
+                    $nilaiKpiTeam = round($avgPenilaianTeam * 0.4, 2);
+                } elseif ($avgPenilaianTeam == 0) {
+                    $nilaiKpiTeam = $avgTargetTeam;
                 } else {
-                    $nilaiKpiTeam = round($avgTargetYearlyTeam * 0.6 + $avgPenilaianYearlyTeam * 0.4, 2);
+                    $nilaiKpiTeam = round($avgTargetTeam * 0.6 + $avgPenilaianTeam * 0.4, 2);
                 }
 
                 $divisionTeamData[] = [
                     'nama_karyawan' => $member->nama_lengkap,
-                    'jabatan' => $member->divisi,
+                    'jabatan' => $member->jabatan,
                     'nilaitargetkpi' => $nilaiKpiTeam,
                     'performance' => 0,
                     'performance_title' => 'Stabil',
@@ -1005,41 +969,49 @@ class TargetKPIController extends Controller
             ->pluck('divisi');
 
         foreach ($divisions as $divisi) {
-            $employees = karyawan::where('divisi', $divisi)->where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi')->pluck('id');
+            $employees = karyawan::where('divisi', $divisi)
+                ->where('status_aktif', '1')
+                ->whereNot('jabatan', 'Outsource')
+                ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+                ->whereNot('jabatan', 'Pilih Jabatan')
+                ->whereNotNull('nip')
+                ->whereNot('divisi', 'Direksi')
+                ->pluck('id');
 
-            $listKPIDiv = targetKPI::with(['detailTargetKPI'])
-                ->whereYear('created_at', $currentYear)
-                ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($employees) {
-                    $q->whereIn('id_karyawan', $employees);
-                })
-                ->get();
+            if ($employees->isEmpty()) continue;
 
-            $progressListDiv = [];
+            $allDivisionProgress = [];
 
-            foreach ($listKPIDiv as $item) {
-                foreach ($employees as $empId) {
+            foreach ($employees as $empId) {
+                $listKPIDiv = targetKPI::with(['detailTargetKPI'])
+                    ->whereYear('created_at', $currentYear)
+                    ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($empId) {
+                        $q->where('id_karyawan', $empId);
+                    })
+                    ->get();
+
+                foreach ($listKPIDiv as $item) {
                     $detail = $item->detailTargetKPI->first();
                     if (!$detail) continue;
 
                     $result = $this->getCalculationByRoute($item, $empId);
                     if (!isset($result['progress'])) continue;
 
-                    $progress = $result['progress'];
+                    $progress = (float)$result['progress'];
 
-                    if ($detail->tipe_target === 'rupiah') {
-                        $progress = $detail->nilai_target > 0
-                            ? ($progress / $detail->nilai_target) * 100
-                            : 0;
+                    if ($detail->tipe_target === 'rupiah' && $detail->nilai_target > 0) {
+                        $progress = ($progress / $detail->nilai_target) * 100;
+                    } elseif ($detail->tipe_target === 'angka' && $detail->nilai_target > 0) {
+                        $progress = ($progress / $detail->nilai_target) * 100;
                     }
 
-                    if (is_numeric($progress) && $progress > 0) {
-                        $progressListDiv[] = $progress;
-                    }
+                    $progress = min($progress, 100);
+                    $allDivisionProgress[] = round($progress, 2);
                 }
             }
 
-            $avgKpiValue = count($progressListDiv) > 0
-                ? round(array_sum($progressListDiv) / count($progressListDiv), 2)
+            $avgKpiValue = count($allDivisionProgress) > 0
+                ? round(array_sum($allDivisionProgress) / count($allDivisionProgress), 2)
                 : 0;
 
             $divisionKpiData[] = [
@@ -1288,7 +1260,7 @@ class TargetKPIController extends Controller
         } elseif ($asistantRoute === 'evaluasi kinerja sales') {
             $progress = $this->calculateEvaluasiKinerjaSales($item, $personId);
         }
-        elseif ($asistantRoute === 'biaya akuisisi client') {
+        elseif ($asistantRoute === 'biaya akuisisi perclient') {
             $progress = $this->calculateBiayaAkuisisiClient($item, $personId);
         }
         elseif ($asistantRoute === 'laporan mom') {
@@ -1962,12 +1934,14 @@ class TargetKPIController extends Controller
     private function calculatePenyelesaianTagihanPerusahaan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
+
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
+
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
@@ -1978,17 +1952,24 @@ class TargetKPIController extends Controller
 
         $foreignKey = 'id_tagihan_perusahaan';
 
-        $latestIds = trackingTagihanPerusahaan::whereBetween('tanggal_perkiraan_mulai', [$start, $end])
-            ->when($personId !== null, function ($q) use ($personId) {
-                $q->where('id_karyawan', $personId);
-            })
+        $latestIds = trackingTagihanPerusahaan::whereBetween(
+                'tanggal_perkiraan_mulai',
+                [$start, $end]
+            )
             ->selectRaw("{$foreignKey}, MAX(id) as latest_id")
             ->groupBy($foreignKey)
-            ->pluck('latest_id');
+            ->pluck('latest_id')
+            ->filter()       // buang null
+            ->unique()
+            ->values();
+
+        if ($latestIds->isEmpty()) {
+            return 0;
+        }
 
         $totalTagihan = $latestIds->count();
 
-        if ($totalTagihan === 0) {
+        if ($totalTagihan <= 0) {
             return 0;
         }
 
@@ -1997,7 +1978,7 @@ class TargetKPIController extends Controller
             ->where('tracking', 'Selesai')
             ->count();
 
-        $progress = ($tagihanSelesai / $totalTagihan) * 100;
+        $progress = ($tagihanSelesai / max($totalTagihan, 1)) * 100;
 
         return round($progress, 1);
     }
@@ -2250,40 +2231,45 @@ class TargetKPIController extends Controller
     private function calculatePerbaikanKendaraan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
+
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
+
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
-        
+
         $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $hariIni = now()->startOfDay();
+        $totalQuery = PerbaikanKendaraan::whereBetween('created_at', [$start, $end]);
+        $selesaiQuery = PerbaikanKendaraan::whereBetween('created_at', [$start, $end])
+            ->where('status', 'Selesai');
+
         if ($personId !== null) {
-            $totalData = PerbaikanKendaraan::whereBetween('created_at', [$start, $end])
-                ->where('id_user', $personId)
-                ->count();
-        } else {
-            $totalData = PerbaikanKendaraan::whereBetween('created_at', [$start, $end])->count();
+            $totalQuery->where('id_user', $personId);
+            $selesaiQuery->where('id_user', $personId);
         }
 
-        $dataDiperbaiki = PerbaikanKendaraan::whereBetween('created_at', [$start, $end])
-            ->where('status', 'Selesai')
-            ->count();
+        $totalData = $totalQuery->count();
+        $dataDiperbaiki = $selesaiQuery->count();
+
+        if ($totalData <= 0) {
+            return 0;
+        }
 
         $presentase = ($dataDiperbaiki / $totalData) * 100;
 
         return round($presentase, 1);
     }
-
+    
     private function calculateKontrolPengeluaranTransportasi($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
@@ -4037,7 +4023,11 @@ class TargetKPIController extends Controller
                 ->value('total_sales');
         }
 
-            $dataTarget = targetKPI::with('detailTargetKPI')->where('asistant_route', 'Pemasukan Kotor')->first() ?? null;
+            $dataTarget = targetKPI::with('detailTargetKPI')
+                ->whereHas('dataTarget', fn($q) => 
+                    $q->where('asistant_route', 'pemasukan kotor')
+                )
+                ->first();
             $targetGM   = ModelsTarget::where('quartal', 'All')->first() ?? null;
 
             $target = $dataTarget->detailTargetKPI->first()->nilai_target
@@ -4055,39 +4045,41 @@ class TargetKPIController extends Controller
     private function calculateMeningkatkanRevenuePerusahaan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
+
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
+
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
-        
-        $nilaiTarget = (float) $detail->nilai_target;
-
-        $peluang = Peluang::with('rkm.perhitunganNetSales')->whereYear('created_at', $tahun)->get();
 
         $progress = 0;
 
-        foreach ($peluang as $p) {
-            $kotor = $p->harga * $p->pax;
+        $peluang = Peluang::with(['rkm.perhitunganNetSales'])
+            ->whereYear('created_at', $tahun)
+            ->get();
 
-            $perhitungan = $p->rkm->perhitunganNetSales;
+        foreach ($peluang as $p) {
+            $kotor = ((float) $p->harga) * ((float) $p->pax);
 
             $totalBiaya = 0;
-            if ($perhitungan) {
+
+            if ($p->rkm && $p->rkm->perhitunganNetSales) {
                 foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
-                    $totalBiaya += $perhitungan->transportasi
-                        + $perhitungan->akomodasi_peserta
-                        + $perhitungan->akomodasi_tim
-                        + $perhitungan->fresh_money
-                        + $perhitungan->entertaint
-                        + $perhitungan->souvenir
-                        + $perhitungan->cashback
-                        + $perhitungan->sewa_laptop;
+                    $totalBiaya +=
+                        ((float) $perhitungan->transportasi) +
+                        ((float) $perhitungan->akomodasi_peserta) +
+                        ((float) $perhitungan->akomodasi_tim) +
+                        ((float) $perhitungan->fresh_money) +
+                        ((float) $perhitungan->entertaint) +
+                        ((float) $perhitungan->souvenir) +
+                        ((float) $perhitungan->cashback) +
+                        ((float) $perhitungan->sewa_laptop);
                 }
             }
 
@@ -4182,13 +4174,12 @@ class TargetKPIController extends Controller
             ->whereYear('created_at', $tahun)
             ->get();
 
-        // dd($peluang->toArray());
         $actualCAC = 0;
-        $targetTahunan = $this->calculatePemasukanKotor($item, $personId); // 9M
+        $targetTahunan = $this->calculatePemasukanKotor($item, $personId);
 
         foreach ($peluang as $p) {
             if ($p->tahap === 'merah') {
-                if ($p->rkm->perhitunganNetSales) {
+                if ($p->rkm && $p->rkm->perhitunganNetSales) {
                     foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
                         $actualCAC +=
                             ($perhitungan->transportasi ?? 0) +
@@ -4887,7 +4878,7 @@ class TargetKPIController extends Controller
             return $this->calculateEvaluasiKinerjaSalesDetail($itemDetail);
         }
 
-        elseif ($route === 'biaya akuisisi client') {
+        elseif ($route === 'biaya akuisisi perclient') {
             return $this->calculateBiayaAkuisisiClientDetail($itemDetail);
         }
 
@@ -5359,51 +5350,61 @@ class TargetKPIController extends Controller
         $details = $itemDetail->detailTargetKPI;
         $detail = $details->first();
 
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-                'triwulan_data' => [],
-                'sales_performance' => null,
-                'dataManual' => ['manual_document' => $detail->manual_document ?? null],
-            ];
+        $defaultResponse = [
+            'progress' => 0,
+            'gap' => 0,
+            'pie_chart' => [
+                'above' => 0,
+                'below' => 0
+            ],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
+            'monthly_progress' => [],
+            'daily_progress_per_month' => [],
+            'triwulan_data' => [],
+            'sales_performance' => null,
+            'dataManual' => [
+                'manual_document' => $detail->manual_document ?? null
+            ],
+        ];
+
+        if (
+            !$detail ||
+            !is_numeric($detail->detail_jangka) ||
+            !is_numeric($detail->nilai_target)
+        ) {
+            return $defaultResponse;
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-                'triwulan_data' => [],
-                'sales_performance' => null,
-                'dataManual' => ['manual_document' => $detail->manual_document ?? null],
-            ];
+            return $defaultResponse;
         }
 
-        $sales = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
-            ->select(DB::raw('tanggal_mulai, SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total'))
+        $sales = ApprovalPendapatan::query()
+            ->whereYear('tanggal_mulai', $tahun)
+            ->selectRaw('
+                tanggal_mulai,
+                SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total
+            ')
             ->groupBy('tanggal_mulai')
             ->get();
 
         $totalSales = 0;
         $dailyBreakdownPerMonth = [];
         $monthlyDataTemp = [];
-        $triwulanDataTemp = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+        $triwulanDataTemp = [
+            1 => 0,
+            2 => 0,
+            3 => 0,
+            4 => 0
+        ];
 
         foreach ($sales as $row) {
             $date = Carbon::parse($row->tanggal_mulai);
+
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
             $total = (int) round($row->total ?? 0);
@@ -5411,126 +5412,164 @@ class TargetKPIController extends Controller
             $totalSales += $total;
 
             $dailyBreakdownPerMonth[$monthKey][$dateKey] = $total;
-            $monthlyDataTemp[$monthKey] = ($monthlyDataTemp[$monthKey] ?? 0) + $total;
+            $monthlyDataTemp[$monthKey] =
+                ($monthlyDataTemp[$monthKey] ?? 0) + $total;
 
-            $month = (int) $date->format('m');
-            $triwulan = (int) ceil($month / 3);
-            if (isset($triwulanDataTemp[$triwulan])) {
-                $triwulanDataTemp[$triwulan] += $total;
-            }
+            $triwulan = ceil($date->month / 3);
+
+            $triwulanDataTemp[$triwulan] += $total;
         }
 
-        $monthlyData = array_map(fn($v) => (int) round($v), $monthlyDataTemp);
-        ksort($monthlyData);
+        $monthlyData = collect($monthlyDataTemp)
+            ->sortKeys()
+            ->map(fn($v) => (int) round($v))
+            ->toArray();
+
         ksort($dailyBreakdownPerMonth);
 
-        $triwulanData = [];
-        for ($i = 1; $i <= 4; $i++) {
-            $triwulanData['Triwulan_' . $i] = (int) round($triwulanDataTemp[$i]);
-        }
+        $triwulanData = collect($triwulanDataTemp)
+            ->mapWithKeys(fn($value, $key) => [
+                'Triwulan_' . $key => (int) round($value)
+            ])
+            ->toArray();
 
         $progressGlobal = (int) round($totalSales);
         $gap = (int) round($progressGlobal - $nilaiTarget);
+
         $above = $totalSales >= $nilaiTarget ? 1 : 0;
-        $below = 1 - $above;
+        $below = $above ? 0 : 1;
 
         $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
-        $runningTotalMonth = 0;
-        foreach ($monthlyData as $month => $total) {
-            $runningTotalMonth += $total;
-            $monthlyProgress[$month] = $nilaiTarget > 0 ? (int) round(($runningTotalMonth / $nilaiTarget) * 100) : 0;
+        $runningMonth = 0;
+
+        foreach ($monthlyData as $month => $value) {
+            $runningMonth += $value;
+
+            $monthlyProgress[$month] = $nilaiTarget > 0
+                ? round(($runningMonth / $nilaiTarget) * 100)
+                : 0;
         }
 
-        $runningTotalDay = 0;
+        $dailyProgressPerMonth = [];
+        $runningDay = 0;
+
         foreach ($dailyBreakdownPerMonth as $month => $days) {
             foreach ($days as $day => $value) {
-                $runningTotalDay += $value;
-                $dailyProgressPerMonth[$month][$day] = $nilaiTarget > 0 ? (int) round(($runningTotalDay / $nilaiTarget) * 100) : 0;
+                $runningDay += $value;
+
+                $dailyProgressPerMonth[$month][$day] = $nilaiTarget > 0
+                    ? round(($runningDay / $nilaiTarget) * 100)
+                    : 0;
             }
         }
-        ksort($monthlyProgress);
-        ksort($dailyProgressPerMonth);
 
-        $allKaryawan = Karyawan::where(function($q) {
+        $allKaryawan = Karyawan::query()
+            ->where(function ($q) {
                 $q->where('status_aktif', '1')
-                ->whereNot('jabatan', 'Outsource')
-                ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-                ->whereNot('jabatan', 'Pilih Jabatan')
-                ->whereNotNull('nip')
-                ->whereNot('divisi', 'Direksi')
-                ->orWhereNull('status_aktif');
+                    ->where('jabatan', '!=', 'Outsource')
+                    ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+                    ->where('jabatan', '!=', 'Pilih Jabatan')
+                    ->whereNotNull('nip')
+                    ->where('divisi', '!=', 'Direksi')
+                    ->orWhereNull('status_aktif');
             })
-            ->where(function($q) {
-                $q->where('jabatan', 'Sales')->where('status_aktif', '1')
-                ->orWhereNull('jabatan');
+            ->where(function ($q) {
+                $q->where('jabatan', 'Sales')
+                    ->orWhereNull('jabatan');
             })
             ->get();
 
-        $revenueBySalesKey = DB::table('approval_pendapatans')
-            ->join('rkm', 'approval_pendapatans.id_rkm', '=', 'rkm.id')
-            ->whereYear('approval_pendapatans.tanggal_mulai', $tahun)
-            ->whereNotNull('rkm.sales_key')
-            ->groupBy('rkm.sales_key')
-            ->select('rkm.sales_key', DB::raw('SUM(approval_pendapatans.total_penjualan_sales) as total_revenue'))
+        $revenueBySalesKey = ApprovalPendapatan::with('rkm')
+            ->whereYear('tanggal_mulai', $tahun)
             ->get()
-            ->pluck('total_revenue', 'sales_key')
-            ->map(fn($val) => $val ?? 0)
+            ->filter(function ($item) {
+                return $item->rkm && $item->rkm->sales_key;
+            })
+            ->groupBy(function ($item) {
+                return $item->rkm->sales_key;
+            })
+            ->map(function ($items) {
+                return $items->sum('total_penjualan_sales');
+            })
             ->toArray();
 
-        $targetPenjualanTahunan = targetKPI::whereHas('detailTargetKPI.dataTarget', function ($q) {
-            $q->where('asistant_route', 'Target Penjualan Tahunan');
-        })->first();
+        $targetPenjualanTahunan = targetKPI::whereHas(
+            'detailTargetKPI.dataTarget',
+            function ($q) {
+                $q->where(
+                    'asistant_route',
+                    'target penjualan tahunan'
+                );
+            }
+        )->first();
 
-        $idTargetToUse = $targetPenjualanTahunan ? $targetPenjualanTahunan->id : $itemDetail->id;
+        $idTargetToUse = $targetPenjualanTahunan
+            ? $targetPenjualanTahunan->id
+            : $itemDetail->id;
 
-        $detailPersons = DetailPersonKPI::where('id_target', $idTargetToUse)
+        $detailPersons = DetailPersonKPI::query()
+            ->where('id_target', $idTargetToUse)
             ->whereIn('id_karyawan', $allKaryawan->pluck('id'))
             ->get()
             ->keyBy('id_karyawan');
 
         $allSalesData = [];
+
         foreach ($allKaryawan as $karyawan) {
             $salesKey = $karyawan->kode_karyawan;
-            if (!$salesKey) continue;
 
-            $salesRevenue = (int) round($revenueBySalesKey[$salesKey] ?? 0);
+            if (!$salesKey) {
+                continue;
+            }
+
+            $salesRevenue = (int) round(
+                $revenueBySalesKey[$salesKey] ?? 0
+            );
 
             $detailPerson = $detailPersons->get($karyawan->id);
-            $presentaseKemampuan = $detailPerson ? (int) round($detailPerson->presentase_kemampuan ?? 0) : 0;
-            $idDetailPerson = $detailPerson ? $detailPerson->id : null;
 
-            $percentage = $presentaseKemampuan > 0 ? (int) round(($salesRevenue / $presentaseKemampuan) * 100) : 0;
+            $presentaseKemampuan = $detailPerson
+                ? (int) round($detailPerson->presentase_kemampuan ?? 0)
+                : 0;
+
+            $percentage = $presentaseKemampuan > 0
+                ? round(($salesRevenue / $presentaseKemampuan) * 100)
+                : 0;
 
             $allSalesData[] = [
-                'kode_karyawan' => (string) $salesKey,
-                'nama' => (string) ($karyawan->nama_lengkap ?? $karyawan->nama ?? $salesKey),
+                'kode_karyawan' => $salesKey,
+                'nama' => $karyawan->nama_lengkap
+                    ?? $karyawan->nama
+                    ?? $salesKey,
                 'revenue' => $salesRevenue,
-                'id_detailPerson' => $idDetailPerson,
+                'id_detailPerson' => $detailPerson?->id,
                 'presentase_kemampuan' => $presentaseKemampuan,
                 'percentage' => $percentage,
-                'status' => $salesRevenue >= $presentaseKemampuan ? 'achieved' : 'pending'
+                'status' => $salesRevenue >= $presentaseKemampuan
+                    ? 'achieved'
+                    : 'pending'
             ];
         }
-
-        $salesPerformance = [
-            'type' => 'all',
-            'data' => $allSalesData
-        ];
 
         return [
             'progress' => $progressGlobal,
             'gap' => $gap,
             'dataManual' => [
-                'manual_document' => $detail->manual_document ?? null,
+                'manual_document' => $detail->manual_document ?? null
             ],
-            'pie_chart' => ['above' => $above, 'below' => $below],
+            'pie_chart' => [
+                'above' => $above,
+                'below' => $below
+            ],
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgress,
             'daily_progress_per_month' => $dailyProgressPerMonth,
             'triwulan_data' => $triwulanData,
-            'sales_performance' => $salesPerformance,
+            'sales_performance' => [
+                'type' => 'all',
+                'data' => $allSalesData
+            ]
         ];
     }
 
@@ -7093,7 +7132,10 @@ class TargetKPIController extends Controller
             return [
                 'progress' => 0,
                 'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
+                'pie_chart' => [
+                    'above' => 0,
+                    'below' => 0
+                ],
                 'monthly_data' => [],
                 'daily_breakdown_per_month' => [],
                 'monthly_progress' => [],
@@ -7107,7 +7149,10 @@ class TargetKPIController extends Controller
             return [
                 'progress' => 0,
                 'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
+                'pie_chart' => [
+                    'above' => 0,
+                    'below' => 0
+                ],
                 'monthly_data' => [],
                 'daily_breakdown_per_month' => [],
                 'monthly_progress' => [],
@@ -7119,17 +7164,36 @@ class TargetKPIController extends Controller
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
         $latestIds = trackingTagihanPerusahaan::whereBetween('tanggal_perkiraan_mulai', [$start, $end])
-            ->when($personId !== null, fn($q) => $q->where('id_karyawan', $personId))
             ->selectRaw('id_tagihan_perusahaan, MAX(id) as latest_id')
             ->groupBy('id_tagihan_perusahaan')
             ->pluck('latest_id');
 
+        if ($latestIds->isEmpty()) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => [
+                    'above' => 0,
+                    'below' => 0
+                ],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
+        }
+
         $dataTagihan = trackingTagihanPerusahaan::whereIn('id', $latestIds)->get();
 
         $totalTagihan = $dataTagihan->count();
-        $tagihanSelesai = $dataTagihan->filter(fn($row) => $row->status === 'selesai' && $row->tracking === 'Selesai')->count();
 
-        $progress = $totalTagihan > 0 ? round(($tagihanSelesai / $totalTagihan) * 100, 1) : 0;
+        $tagihanSelesai = $dataTagihan->filter(function ($row) {
+            return $row->status === 'selesai' && $row->tracking === 'Selesai';
+        })->count();
+
+        $progress = $totalTagihan > 0
+            ? round(($tagihanSelesai / $totalTagihan) * 100, 1)
+            : 0;
 
         $nilaiTarget = (float) $detail->nilai_target;
         $gapRaw = $progress - $nilaiTarget;
@@ -7144,49 +7208,86 @@ class TargetKPIController extends Controller
         $dailyProgressPerMonth = [];
 
         foreach ($dataTagihan as $tagihan) {
+            if (!$tagihan->tanggal_perkiraan_mulai) {
+                continue;
+            }
+
             $date = Carbon::parse($tagihan->tanggal_perkiraan_mulai);
+
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
-            $isSelesai = ($tagihan->status === 'selesai' && $tagihan->tracking === 'Selesai') ? 1 : 0;
+            $isSelesai = (
+                $tagihan->status === 'selesai' &&
+                $tagihan->tracking === 'Selesai'
+            ) ? 1 : 0;
+
             $pct = $isSelesai * 100;
 
-            $monthlyData[$monthKey]['total'] = ($monthlyData[$monthKey]['total'] ?? 0) + 1;
-            $monthlyData[$monthKey]['selesai'] = ($monthlyData[$monthKey]['selesai'] ?? 0) + $isSelesai;
-            $monthlyProgress[$monthKey]['total'] = ($monthlyProgress[$monthKey]['total'] ?? 0) + 1;
-            $monthlyProgress[$monthKey]['selesai'] = ($monthlyProgress[$monthKey]['selesai'] ?? 0) + $pct;
+            $monthlyData[$monthKey]['total'] =
+                ($monthlyData[$monthKey]['total'] ?? 0) + 1;
 
-            $dailyBreakdownPerMonth[$monthKey][$dayKey]['total'] = ($dailyBreakdownPerMonth[$monthKey][$dayKey]['total'] ?? 0) + 1;
-            $dailyBreakdownPerMonth[$monthKey][$dayKey]['selesai'] = ($dailyBreakdownPerMonth[$monthKey][$dayKey]['selesai'] ?? 0) + $isSelesai;
-            $dailyProgressPerMonth[$monthKey][$dayKey]['total'] = ($dailyProgressPerMonth[$monthKey][$dayKey]['total'] ?? 0) + 1;
-            $dailyProgressPerMonth[$monthKey][$dayKey]['selesai'] = ($dailyProgressPerMonth[$monthKey][$dayKey]['selesai'] ?? 0) + $pct;
+            $monthlyData[$monthKey]['selesai'] =
+                ($monthlyData[$monthKey]['selesai'] ?? 0) + $isSelesai;
+
+            $monthlyProgress[$monthKey]['total'] =
+                ($monthlyProgress[$monthKey]['total'] ?? 0) + 1;
+
+            $monthlyProgress[$monthKey]['selesai'] =
+                ($monthlyProgress[$monthKey]['selesai'] ?? 0) + $pct;
+
+            $dailyBreakdownPerMonth[$monthKey][$dayKey]['total'] =
+                ($dailyBreakdownPerMonth[$monthKey][$dayKey]['total'] ?? 0) + 1;
+
+            $dailyBreakdownPerMonth[$monthKey][$dayKey]['selesai'] =
+                ($dailyBreakdownPerMonth[$monthKey][$dayKey]['selesai'] ?? 0) + $isSelesai;
+
+            $dailyProgressPerMonth[$monthKey][$dayKey]['total'] =
+                ($dailyProgressPerMonth[$monthKey][$dayKey]['total'] ?? 0) + 1;
+
+            $dailyProgressPerMonth[$monthKey][$dayKey]['selesai'] =
+                ($dailyProgressPerMonth[$monthKey][$dayKey]['selesai'] ?? 0) + $pct;
         }
 
         $monthlyAverages = [];
         $monthlyProgressAverages = [];
 
         foreach ($monthlyData as $month => $data) {
-            $monthlyAverages[$month] = $data['total'] > 0
-                ? round(($data['selesai'] / $data['total']) * 100, 1)
+            $total = (int) ($data['total'] ?? 0);
+            $selesai = (int) ($data['selesai'] ?? 0);
+
+            $monthlyAverages[$month] = $total > 0
+                ? round(($selesai / $total) * 100, 1)
                 : 0;
         }
+
         foreach ($monthlyProgress as $month => $data) {
-            $monthlyProgressAverages[$month] = $data['total'] > 0
-                ? round(($data['selesai'] / $data['total']), 1)
+            $total = (int) ($data['total'] ?? 0);
+            $selesai = (float) ($data['selesai'] ?? 0);
+
+            $monthlyProgressAverages[$month] = $total > 0
+                ? round(($selesai / $total), 1)
                 : 0;
         }
 
         foreach ($dailyBreakdownPerMonth as $month => $days) {
             foreach ($days as $day => $data) {
-                $dailyBreakdownPerMonth[$month][$day] = $data['total'] > 0
-                    ? round(($data['selesai'] / $data['total']) * 100, 1)
+                $total = (int) ($data['total'] ?? 0);
+                $selesai = (int) ($data['selesai'] ?? 0);
+
+                $dailyBreakdownPerMonth[$month][$day] = $total > 0
+                    ? round(($selesai / $total) * 100, 1)
                     : 0;
             }
         }
+
         foreach ($dailyProgressPerMonth as $month => $days) {
             foreach ($days as $day => $data) {
-                $dailyProgressPerMonth[$month][$day] = $data['total'] > 0
-                    ? round(($data['selesai'] / $data['total']), 1)
+                $total = (int) ($data['total'] ?? 0);
+                $selesai = (float) ($data['selesai'] ?? 0);
+
+                $dailyProgressPerMonth[$month][$day] = $total > 0
+                    ? round(($selesai / $total), 1)
                     : 0;
             }
         }
@@ -7665,6 +7766,9 @@ class TargetKPIController extends Controller
 
         $dataDiperbaiki = $allRepairs->where('status', 'Selesai')->count();
         $dataBelumDiperbaiki = $totalData - $dataDiperbaiki;
+        if ($totalData <= 0) {
+            return 0;
+        }
 
         $presentase = ($dataDiperbaiki / $totalData) * 100;
         $progress = round($presentase, 1);
@@ -10803,7 +10907,12 @@ class TargetKPIController extends Controller
         $monthlyAverages = [];
         $monthlyProgress = [];
         foreach ($monthlyDataRaw as $month => $data) {
-            $rate = $data['total'] > 0 ? ($data['rekom'] / $data['total']) * 100 : 0;
+            $rekom = $data['rekom'] ?? 0;
+
+            $rate = $data['total'] > 0
+                ? ($rekom / $data['total']) * 100
+                : 0;
+
             $monthlyAverages[$month] = round($rate, 1);
             $monthlyProgress[$month] = round($rate, 1);
         }
@@ -10817,7 +10926,12 @@ class TargetKPIController extends Controller
             $dateObj = Carbon::parse($dayKey);
             $monthKey = $dateObj->format('Y-m');
 
-            $rate = $data['total'] > 0 ? ($data['rekom'] / $data['total']) * 100 : 0;
+            $rekom = $data['rekom'] ?? 0;
+
+            $rate = $data['total'] > 0
+                ? ($rekom / $data['total']) * 100
+                : 0;
+
             $roundedRate = round($rate, 1);
 
             $dailyBreakdownPerMonth[$monthKey][$dayKey] = $roundedRate;
@@ -12186,26 +12300,29 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $peluangs = Peluang::with('rkm.perhitunganNetSales')->whereYear('created_at', $tahun)->get();
+        $peluangs = Peluang::with(['rkm.perhitunganNetSales'])
+            ->whereYear('created_at', $tahun)
+            ->get();
 
         $progress = 0;
         $dailyBreakdownPerMonth = [];
 
         foreach ($peluangs as $p) {
-            $kotor = $p->harga * $p->pax;
+            $kotor = ((float) $p->harga) * ((float) $p->pax);
 
             $totalBiaya = 0;
-            $perhitungan = $p->rkm ? $p->rkm->perhitunganNetSales : null;
-            if ($perhitungan) {
+
+            if ($p->rkm && $p->rkm->perhitunganNetSales) {
                 foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
-                    $totalBiaya += $perhitungan->transportasi
-                        + $perhitungan->akomodasi_peserta
-                        + $perhitungan->akomodasi_tim
-                        + $perhitungan->fresh_money
-                        + $perhitungan->entertaint
-                        + $perhitungan->souvenir
-                        + $perhitungan->cashback
-                        + $perhitungan->sewa_laptop;
+                    $totalBiaya +=
+                        ((float) $perhitungan->transportasi) +
+                        ((float) $perhitungan->akomodasi_peserta) +
+                        ((float) $perhitungan->akomodasi_tim) +
+                        ((float) $perhitungan->fresh_money) +
+                        ((float) $perhitungan->entertaint) +
+                        ((float) $perhitungan->souvenir) +
+                        ((float) $perhitungan->cashback) +
+                        ((float) $perhitungan->sewa_laptop);
                 }
             }
 
@@ -12220,15 +12337,19 @@ class TargetKPIController extends Controller
             if (!isset($dailyBreakdownPerMonth[$monthKey])) {
                 $dailyBreakdownPerMonth[$monthKey] = [];
             }
+
             if (!isset($dailyBreakdownPerMonth[$monthKey][$dateKey])) {
                 $dailyBreakdownPerMonth[$monthKey][$dateKey] = 0;
             }
+
             $dailyBreakdownPerMonth[$monthKey][$dateKey] += $bersih;
         }
 
         $monthlyData = [];
+
         foreach ($dailyBreakdownPerMonth as $month => $days) {
             $dailySums = array_values($days);
+
             $monthlyData[$month] = count($dailySums) > 0
                 ? round(array_sum($dailySums) / count($dailySums), 1)
                 : 0;
@@ -12241,7 +12362,9 @@ class TargetKPIController extends Controller
         $dailyProgressPerMonth = [];
 
         foreach ($monthlyData as $month => $value) {
-            $monthlyProgress[$month] = $nilaiTarget > 0 ? round(($value / $nilaiTarget) * 100, 1) : 0;
+            $monthlyProgress[$month] = $nilaiTarget > 0
+                ? round(($value / $nilaiTarget) * 100, 1)
+                : 0;
         }
 
         foreach ($dailyBreakdownPerMonth as $month => $days) {
@@ -12249,7 +12372,10 @@ class TargetKPIController extends Controller
                 if (!isset($dailyProgressPerMonth[$month])) {
                     $dailyProgressPerMonth[$month] = [];
                 }
-                $dailyProgressPerMonth[$month][$day] = $nilaiTarget > 0 ? round(($value / $nilaiTarget) * 100, 1) : 0;
+
+                $dailyProgressPerMonth[$month][$day] = $nilaiTarget > 0
+                    ? round(($value / $nilaiTarget) * 100, 1)
+                    : 0;
             }
         }
 
@@ -12257,7 +12383,7 @@ class TargetKPIController extends Controller
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         return [
-            'progress' => $progress,
+            'progress' => round($progress, 1),
             'gap' => $gap,
             'pie_chart' => ['above' => 0, 'below' => 0],
             'monthly_data' => $monthlyData,
@@ -12266,7 +12392,7 @@ class TargetKPIController extends Controller
             'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
     }
-
+    
     private function calculateEvaluasiKinerjaSalesDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
@@ -13305,11 +13431,18 @@ class TargetKPIController extends Controller
         $tahunFilter = $request->tahun;
 
         if (!$divisiFilter || !$tahunFilter) {
-            return response()->json(['message' => 'Divisi dan tahun harus diisi'], 400);
+            return response()->json([
+                'message' => 'Divisi dan tahun harus diisi'
+            ], 400);
         }
 
         $karyawanDiDivisi = karyawan::where('divisi', $divisiFilter)
-            ->where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi')
+            ->where('status_aktif', '1')
+            ->where('jabatan', '!=', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->where('jabatan', '!=', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->where('divisi', '!=', 'Direksi')
             ->get();
 
         $karyawanIds = $karyawanDiDivisi->pluck('id')->toArray();
@@ -13322,227 +13455,195 @@ class TargetKPIController extends Controller
                 'kpi_selesai' => 0,
                 'karyawan_departemen' => [],
                 'statistik_karyawan' => [],
-                'distribusi_nilai' => [
-                    'Sangat Baik' => 0,
-                    'Baik' => 0,
-                    'Cukup' => 0,
-                    'Kurang' => 0,
-                    'Sangat Kurang' => 0,
-                ],
-                'daftar_target_kpi' => [],
+                'distribusi_nilai' => [],
+                'daftar_target_kpi' => []
             ]);
         }
 
-        $allTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan', 'detailTargetKPI.dataTarget'])
-            ->whereYear('created_at', $tahunFilter)
-            ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
-                $q->whereIn('id_karyawan', $karyawanIds);
-            })
-            ->get();
+        $allTargets = targetKPI::with([
+            'karyawan',
+            'detailTargetKPI.detailPersonKPI.karyawan',
+            'detailTargetKPI.dataTarget'
+        ])
+        ->whereYear('created_at', $tahunFilter)
+        ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
+            $q->whereIn('id_karyawan', $karyawanIds);
+        })
+        ->get();
 
-        $targetAggregates = $allTargets->map(function ($target) {
-            $detail = $target->detailTargetKPI->first();
-            if (!$detail) return null;
-
-            $personIds = $detail->detailPersonKPI->pluck('id_karyawan')->toArray();
-            if (empty($personIds)) return null;
-
-            $progressValues = collect($personIds)->map(function ($personId) use ($target, $detail) {
-                $result = $this->getCalculationByRoute($target, $personId);
-                if (!$result || !isset($result['progress'])) return null;
-                
-                $progress = $result['progress'];
-                
-                if ($detail->tipe_target === 'rupiah' && $detail->nilai_target > 0) {
-                    return ($progress / $detail->nilai_target) * 100;
-                }
-                
-                return $progress;
-            })->filter(fn($val) => $val !== null && $val >= 0)->values();
-
-            if ($progressValues->isEmpty()) return null;
-
-            $avg = $progressValues->sum() / $progressValues->count();
-            return [
-                'judul' => $target->judul,
-                'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                'target' => $detail->nilai_target,
-                'progress' => round($avg, 2),
-                'status' => $avg >= 100 ? 'Selesai' : 'Belum Selesai',
-                'avg_raw' => $avg,
-            ];
-        })->filter()->values();
+        $daftarTargetKPI = [];
+        $allDivisionProgress = collect();
+        $employeeProgressMap = [];
+        $employeeTargetStatusMap = [];
 
         $distribusi = [
-            'Sangat Baik' => 0, 
-            'Baik' => 0, 
-            'Cukup' => 0, 
-            'Kurang' => 0, 
+            'Sangat Baik' => 0,
+            'Baik' => 0,
+            'Cukup' => 0,
+            'Kurang' => 0,
             'Sangat Kurang' => 0
         ];
 
-        foreach ($targetAggregates as $agg) {
-            $val = $agg['avg_raw'];
-            if ($val >= 100) {
-                $distribusi['Sangat Baik']++;
-            } elseif ($val >= 80) {
-                $distribusi['Baik']++;
-            } elseif ($val >= 70) {
-                $distribusi['Cukup']++;
-            } elseif ($val >= 60) {
-                $distribusi['Kurang']++;
-            } else {
-                $distribusi['Sangat Kurang']++;
+        foreach ($allTargets as $target) {
+            $detail = $target->detailTargetKPI->first();
+
+            if (!$detail) {
+                continue;
             }
-        }
 
-        $daftarTargetKPI = $targetAggregates->map(fn($t) => collect($t)->except('avg_raw')->toArray())->values();
-        $kpiAktif = $targetAggregates->where('status', 'Belum Selesai')->count();
-        $kpiSelesai = $targetAggregates->where('status', 'Selesai')->count();
-        $rataRataProgress = $daftarTargetKPI->isNotEmpty() ? round(collect($daftarTargetKPI)->pluck('progress')->sum() / $daftarTargetKPI->count(), 2) : 0;
+            $assignedIds = $detail->detailPersonKPI
+                ->pluck('id_karyawan')
+                ->unique()
+                ->toArray();
 
-        $persentaseJenis = [
-            'General Manager' => 35,
-            'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
-            'Rekan Kerja (Satu Divisi)' => 20,
-            'Pekerja (Beda Divisi)' => 10,
-            'Self Apprisial' => 5,
-        ];
-
-        $calculatePenilaianScore = function ($collectionNilaiKPI) use ($persentaseJenis) {
-            $jenisTotalRaw = [];
-            foreach ($persentaseJenis as $jenis => $bobot) {
-                $nilaiForJenis = $collectionNilaiKPI->where('jenis_penilaian', $jenis)
-                    ->pluck('nilai')
-                    ->filter(fn($n) => is_numeric($n));
-
-                if ($nilaiForJenis->isNotEmpty()) {
-                    $avgNilai = $nilaiForJenis->avg();
-                    $jenisTotalRaw[$jenis] = ($avgNilai * $bobot) / 100;
-                }
+            if (empty($assignedIds)) {
+                continue;
             }
-            return empty($jenisTotalRaw) ? 0 : round(array_sum($jenisTotalRaw), 2);
-        };
 
-        $karyawanDepartemen = $karyawanDiDivisi->map(function ($karyawan) use ($allTargets, $calculatePenilaianScore) {
-            $progressList = [];
-            $targetBelumTercapai = 0;
-            $daily_progress_per_month = [];
+            $targetProgressPercentages = collect();
 
-            $employeeTargets = $allTargets->filter(fn($t) => $t->detailTargetKPI->first()?->detailPersonKPI->pluck('id_karyawan')->contains($karyawan->id));
-
-            foreach ($employeeTargets as $target) {
-                $detail = $target->detailTargetKPI->first();
-                if (!$detail) continue;
-
-                $result = $this->getCalculationByRoute($target, $karyawan->id);
-                $progress = 0;
-                if ($result && isset($result['progress'])) {
-                    $progress = $result['progress'];
-                    if ($detail->tipe_target === 'rupiah') {
-                        $progress = (float)$detail->nilai_target > 0 ? ($progress / $detail->nilai_target) * 100 : 0;
-                    }
+            foreach ($assignedIds as $personId) {
+                if (!in_array($personId, $karyawanIds)) {
+                    continue;
                 }
 
-                $progressList[] = $progress;
+                $result = $this->getCalculationByRoute($target, $personId);
 
-                if ($progress > 0) {
-                    $monthKey = $target->created_at->format('Y-m');
-                    $dayKey = $target->created_at->format('Y-m-d');
+                if (!$result || !isset($result['progress'])) {
+                    continue;
+                }
 
-                    if (!isset($daily_progress_per_month[$monthKey])) {
-                        $daily_progress_per_month[$monthKey] = [];
-                    }
-                    if (!isset($daily_progress_per_month[$monthKey][$dayKey])) {
-                        $daily_progress_per_month[$monthKey][$dayKey] = [];
-                    }
-                    $daily_progress_per_month[$monthKey][$dayKey][] = $progress;
+                $rawProgress = $this->normalizeNumber($result['progress']);
+                $nilaiTarget = $this->normalizeNumber($detail->nilai_target);
+
+                $percent = $nilaiTarget > 0
+                    ? ($rawProgress / $nilaiTarget) * 100
+                    : 0;
+
+                $percent = max(0, min(100, round($percent, 2)));
+
+                if (!isset($employeeProgressMap[$personId])) {
+                    $employeeProgressMap[$personId] = [];
+                    $employeeTargetStatusMap[$personId] = ['aktif' => 0, 'selesai' => 0];
                 }
                 
-                if ($progress < 100) $targetBelumTercapai++;
+                $employeeProgressMap[$personId][] = $percent;
+                
+                if ($percent < 100) {
+                    $employeeTargetStatusMap[$personId]['aktif']++;
+                } else {
+                    $employeeTargetStatusMap[$personId]['selesai']++;
+                }
+
+                $targetProgressPercentages->push($percent);
+                $allDivisionProgress->push($percent);
             }
 
-            $avgTarget = !empty($progressList) ? round(array_sum($progressList) / count($progressList), 2) : 0;
+            $avgTarget = $targetProgressPercentages->isNotEmpty()
+                ? round($targetProgressPercentages->avg(), 2)
+                : 0;
 
-            $allNilaiKPI = nilaiKPI::where('id_evaluated', $karyawan->id)
-                ->whereYear('created_at', now()->year) 
-                ->get();
-            
-            $avgPenilaian = $calculatePenilaianScore($allNilaiKPI);
+            $status = $avgTarget >= 100 ? 'Selesai' : 'Belum Selesai';
 
-            $finalScore = 0;
-            if ($avgTarget == 0 && $avgPenilaian == 0) {
-                $finalScore = 0;
-            } elseif ($avgTarget == 0) {
-                $finalScore = $avgPenilaian * 0.4;
-            } elseif ($avgPenilaian == 0) {
-                $finalScore = $avgTarget;
-            } else {
-                $finalScore = round($avgTarget * 0.6 + $avgPenilaian * 0.4, 2);
+            if ($avgTarget > 0) {
+                if ($avgTarget >= 100) {
+                    $distribusi['Sangat Baik']++;
+                } elseif ($avgTarget >= 80) {
+                    $distribusi['Baik']++;
+                } elseif ($avgTarget >= 70) {
+                    $distribusi['Cukup']++;
+                } elseif ($avgTarget >= 60) {
+                    $distribusi['Kurang']++;
+                } else {
+                    $distribusi['Sangat Kurang']++;
+                }
             }
+
+            $daftarTargetKPI[] = [
+                'judul' => $target->judul,
+                'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
+                'target' => $detail->nilai_target,
+                'progress' => $avgTarget,
+                'status' => $status
+            ];
+        }
+
+        $rataRataProgress = $allDivisionProgress->isNotEmpty()
+            ? round($allDivisionProgress->avg(), 2)
+            : 0;
+
+        $kpiAktif = collect($daftarTargetKPI)
+            ->where('status', 'Belum Selesai')
+            ->count();
+
+        $kpiSelesai = collect($daftarTargetKPI)
+            ->where('status', 'Selesai')
+            ->count();
+
+        $karyawanDepartemen = $karyawanDiDivisi->map(function ($karyawan) use ($employeeProgressMap, $employeeTargetStatusMap) {
+            $progressList = $employeeProgressMap[$karyawan->id] ?? [];
+            $statusData = $employeeTargetStatusMap[$karyawan->id] ?? ['aktif' => 0, 'selesai' => 0];
+
+            $avgTarget = !empty($progressList)
+                ? round(array_sum($progressList) / count($progressList), 2)
+                : 0;
 
             return [
                 'id_karyawan' => $karyawan->id,
                 'nama' => $karyawan->nama_lengkap,
                 'jabatan' => $karyawan->jabatan,
-                'total_target_belum_tercapai' => $targetBelumTercapai,
-                'rata_rata_progress' => $avgTarget,
-                'nilai_penilaian_360' => $avgPenilaian,
-                'nilai_akhir_kpi' => $finalScore,
-                'daily_progress_per_month' => $daily_progress_per_month,
+                'total_target_belum_tercapai' => $statusData['aktif'],
+                'rata_rata_progress' => $avgTarget
             ];
         })->values();
 
         return response()->json([
-            'total_target' => $allTargets->count(),
+            'total_target' => count($daftarTargetKPI),
             'rata_rata_progress' => $rataRataProgress,
             'kpi_aktif' => $kpiAktif,
             'kpi_selesai' => $kpiSelesai,
             'karyawan_departemen' => $karyawanDepartemen,
-            'statistik_karyawan' => $this->getEmployeeStatistics($tahunFilter, $karyawanIds, $divisiFilter),
+            'statistik_karyawan' => $this->getEmployeeStatistics(
+                $karyawanIds,
+                $employeeProgressMap,
+                $employeeTargetStatusMap
+            ),
             'distribusi_nilai' => $distribusi,
-            'daftar_target_kpi' => $daftarTargetKPI,
+            'daftar_target_kpi' => collect($daftarTargetKPI)->values()
         ]);
     }
-    private function getEmployeeStatistics($tahun, $karyawanIds, $divisi)
+
+    private function normalizeNumber($value)
     {
-        return karyawan::whereIn('id', $karyawanIds)->get()->map(function ($karyawan) use ($tahun) {
-            $detailPersons = detailPersonKPI::whereHas('detailTargetKPI.targetKPI', fn($q) => $q->whereYear('created_at', $tahun))
-                ->where('id_karyawan', $karyawan->id)
-                ->with(['detailTargetKPI.targetKPI', 'detailTargetKPI.dataTarget'])
-                ->get();
+        if ($value === null || $value === '') {
+            return 0;
+        }
 
-            $progressList = [];
-            $targetAktif = 0;
-            $targetSelesai = 0;
+        return (float) str_replace(',', '', $value);
+    }
 
-            $detailPersons->each(function ($dp) use ($karyawan, &$progressList, &$targetAktif, &$targetSelesai) {
-                $target = $dp->detailTargetKPI->targetKPI ?? null;
-                $detail = $target?->detailTargetKPI->first();
-                if (!$target || !$detail) return;
-
-                $progress = $this->resolveProgress($target, $karyawan->id);
-                if ($progress === null) return;
-
-                if ($detail->tipe_target === 'rupiah') {
-                    $progress = (float)$detail->nilai_target > 0 ? ($progress / $detail->nilai_target) * 100 : 0;
-                }
-
-                if ($progress > 0) $progressList[] = $progress;
-                $progress < 100 ? $targetAktif++ : $targetSelesai++;
-            });
+    private function getEmployeeStatistics($karyawanIds, $employeeProgressMap, $employeeTargetStatusMap)
+    {
+        return karyawan::whereIn('id', $karyawanIds)->get()->map(function ($karyawan) use ($employeeProgressMap, $employeeTargetStatusMap) {
+            $progressList = $employeeProgressMap[$karyawan->id] ?? [];
+            $statusData = $employeeTargetStatusMap[$karyawan->id] ?? ['aktif' => 0, 'selesai' => 0];
+            
+            $totalTarget = count($progressList);
+            $rataRataProgress = !empty($progressList)
+                ? round(array_sum($progressList) / count($progressList), 2)
+                : 0;
 
             return [
                 'nama' => explode(' ', $karyawan->nama_lengkap)[0],
                 'jabatan' => $karyawan->jabatan,
-                'total_target' => $detailPersons->count(),
-                'target_aktif' => $targetAktif,
-                'target_selesai' => $targetSelesai,
-                'rata_rata_progress' => !empty($progressList) ? round(array_sum($progressList) / count($progressList), 2) : 0,
+                'total_target' => $totalTarget,
+                'target_aktif' => $statusData['aktif'],
+                'target_selesai' => $statusData['selesai'],
+                'rata_rata_progress' => $rataRataProgress,
             ];
         })->values();
     }
-
+    
     private function hitungJamKerja($startAt, $endAt)
     {
         $start = $startAt->copy();
@@ -13847,8 +13948,7 @@ class TargetKPIController extends Controller
         }
 
         $allPersen = array_column($tabelTarget, 'progress_persen');
-        $filteredPersen = array_filter($allPersen, fn($v) => $v > 0);
-        $avgProgressAllKPI = count($filteredPersen) > 0 ? round(array_sum($filteredPersen)/count($filteredPersen), 2) : 0;
+        $avgProgressAllKPI = count($allPersen) > 0 ? round(array_sum($allPersen)/count($allPersen), 2) : 0;
 
         $rekapPerBulan  = array_fill(1, 12, []); 
         $rupiahPerBulan = array_fill(1, 12, 0);
@@ -13886,9 +13986,7 @@ class TargetKPIController extends Controller
                     $rupiahPerBulan[$bulan] += $rawMonthly;
                 }
 
-                if ($persen > 0) {
-                    $rekapPerBulan[$bulan][] = $persen;
-                }
+                $rekapPerBulan[$bulan][] = $persen;
             }
         }
 
@@ -13924,9 +14022,8 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $filteredMonthly = array_filter($allMonthlyPersen, fn($v) => $v > 0);
-        $totalKumulatif = count($filteredMonthly) > 0 
-            ? round(array_sum($filteredMonthly) / count($filteredMonthly), 2) 
+        $totalKumulatif = count($allMonthlyPersen) > 0 
+            ? round(array_sum($allMonthlyPersen) / count($allMonthlyPersen), 2) 
             : 0;
 
         if ($totalKumulatif === 0 && $avgProgressAllKPI > 0) {
@@ -14456,8 +14553,9 @@ class TargetKPIController extends Controller
         $sheet->getStyle($cell)->getFont()->getColor()->setARGB('FFFFFFFF');
         $sheet->getStyle($cell)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFFFFFF');
     }
+
     //export departement
-    public function exportDeptExcel(Request $request)
+   public function exportDeptExcel(Request $request)
     {
         return $this->handleDeptExport($request, 'excel');
     }
@@ -14490,25 +14588,19 @@ class TargetKPIController extends Controller
                 return back()->withErrors(['export' => 'Tidak ada karyawan aktif di departemen ini.']);
             }
 
-            // 2. Siapkan Struktur Data Agregat
             $allEmployeesData = [];
-            $totalTargetDivisi = 0;
+            $allTargetPercentages = []; // Kumpulkan SEMUA persentase target individual
             $totalSelesaiDivisi = 0;
             $totalGagalDivisi = 0;
-            $totalProgressDivisi = 0;
             $countKaryawan = $karyawanList->count();
 
             $namaBulan = [1=>'Jan', 2=>'Feb', 3=>'Mar', 4=>'Apr', 5=>'Mei', 6=>'Jun', 7=>'Jul', 8=>'Ags', 9=>'Sep', 10=>'Okt', 11=>'Nov', 12=>'Des'];
             
-            // Array untuk menampung rata-rata divisi per bulan
-            $deptMonthlyAvg = array_fill(1, 12, 0);
-            $deptMonthlyCount = array_fill(1, 12, 0);
+            $deptMonthlyAllValues = array_fill(1, 12, []); // Simpan semua nilai per bulan untuk avg yang akurat
 
             foreach ($karyawanList as $karyawan) {
                 $personId = $karyawan->id;
                 
-                // Ambil Target KPI yang relevan dengan Person ID via DetailPersonKPI
-                // Menggunakan eager loading yang tepat seperti contoh referensi
                 $targets = targetKPI::with([
                     'detailTargetKPI.detailPersonKPI', 
                     'detailTargetKPI.dataTarget'
@@ -14519,19 +14611,11 @@ class TargetKPIController extends Controller
                 })
                 ->get();
 
-                $empTotalTarget = 0;
-                $empTotalProgress = 0;
+                $empTargetPercentages = []; // Simpan persentase setiap target karyawan ini
                 $empStatusCounts = ['Selesai' => 0, 'Dalam Progress' => 0, 'Belum Dimulai' => 0, 'Gagal' => 0];
-                $empMonthlyProgress = array_fill(1, 12, []); // Menyimpan array progress per bulan untuk avg nanti
+                $empMonthlyValues = array_fill(1, 12, []);
 
                 foreach ($targets as $item) {
-                    // PERBAIKAN: Ambil detailTargetKPI dengan aman
-                    // Karena kita sudah filter whereHas di query utama, seharusnya ada datanya,
-                    // tapi kita tetap gunakan first() dengan pengecekan atau ambil dari koleksi jika relasi hasMany
-                    // Asumsi: targetKPI hasMany detailTargetKPI. Kita ambil yang pertama atau loop jika perlu.
-                    // Biasanya 1 target punya 1 detail utama untuk konteks ini, atau kita ambil yang match personId.
-                    
-                    // Cara aman: Cari detail yang memiliki relasi ke personId ini
                     $detail = $item->detailTargetKPI->filter(function($dt) use ($personId) {
                         return $dt->detailPersonKPI->contains('id_karyawan', $personId);
                     })->first();
@@ -14546,9 +14630,8 @@ class TargetKPIController extends Controller
                     
                     $calc = $this->getCalculationByRoute($item, $personId);
                     
-                    // Fallback jika route tidak dikenali atau null
                     if (!$calc) {
-                         $calc = [
+                        $calc = [
                             'progress' => 0, 
                             'monthly_progress' => [], 
                             'daily_progress_per_month' => []
@@ -14559,30 +14642,32 @@ class TargetKPIController extends Controller
                     $progressPersen = 0;
                     
                     if ($tipe === 'rupiah' && $nilaiTarget > 0) {
-                        $progressPersen = round(($progressRaw / $nilaiTarget) * 100, 2);
+                        $progressPersen = ($progressRaw / $nilaiTarget) * 100;
                     } elseif ($tipe === 'angka' && $nilaiTarget > 0) {
-                         $progressPersen = round(($progressRaw / $nilaiTarget) * 100, 2);
+                        $progressPersen = ($progressRaw / $nilaiTarget) * 100;
                     } else {
-                        // Asumsi tipe persen langsung
-                        $progressPersen = round($progressRaw, 2);
+                        $progressPersen = $progressRaw;
                     }
 
-                    // Tentukan Status
+                    // Batasi max 100% untuk perhitungan yang wajar
+                    $progressPersen = min($progressPersen, 100);
+                    $progressPersen = round($progressPersen, 2);
+
                     $tenggat = $this->formatTenggatWaktuExport($dataTarget->jangka_target, $detail->detail_jangka);
                     $status = $this->hitungStatusExport($progressPersen, $nilaiTarget, $tipe, $progressRaw, $tenggat);
 
-                    $empTotalTarget++;
-                    $empTotalProgress += $progressPersen;
+                    // Simpan persentase target ini ke array karyawan dan global
+                    $empTargetPercentages[] = $progressPersen;
+                    $allTargetPercentages[] = $progressPersen;
+                    
                     if (isset($empStatusCounts[$status])) {
                         $empStatusCounts[$status]++;
                     }
 
-                    // Aggregasi Bulanan untuk Dept Average
-                    // Gunakan monthly_progress dari hasil calc (realtime progress per bulan)
+                    // Agregasi bulanan
                     $monthlyProg = $calc['monthly_progress'] ?? [];
                     
                     foreach ($monthlyProg as $key => $val) {
-                        // Parse key bulan (bisa '2026-01' atau '1')
                         $bulan = null;
                         if (preg_match('/^\d{4}-(\d{2})$/', (string)$key, $m)) {
                             $bulan = (int)$m[1];
@@ -14590,71 +14675,77 @@ class TargetKPIController extends Controller
                             $bulan = (int)$key;
                         }
 
-                        if ($bulan) {
+                        if ($bulan !== null) {
                             $valFloat = (float)$val;
-                            // Simpan nilai persen tersebut ke array bulanan karyawan ini
-                            $empMonthlyProgress[$bulan][] = $valFloat;
+                            // Konversi ke persen jika perlu
+                            if ($tipe === 'rupiah' && $nilaiTarget > 0) {
+                                $valFloat = ($valFloat / $nilaiTarget) * 100;
+                            } elseif ($tipe === 'angka' && $nilaiTarget > 0) {
+                                $valFloat = ($valFloat / $nilaiTarget) * 100;
+                            }
+                            $valFloat = min($valFloat, 100);
+                            $empMonthlyValues[$bulan][] = round($valFloat, 2);
                         }
                     }
                     
-                    // Jika tidak ada data bulanan spesifik, distribusikan progress total merata (fallback)
-                    // Ini penting agar grafik trend tidak kosong jika data hanya tahunan
-                    if (empty($monthlyProg) && $progressPersen > 0) {
-                         $avgMonth = $progressPersen / 12;
-                         for($b=1; $b<=12; $b++) {
-                             $empMonthlyProgress[$b][] = $avgMonth;
-                         }
+                    // Fallback distribusi merata jika tidak ada data bulanan
+                    if (empty($monthlyProg) && count($empTargetPercentages) > 0) {
+                        $lastProgress = $empTargetPercentages[count($empTargetPercentages) - 1];
+                        $avgMonth = $lastProgress / 12;
+                        for($b=1; $b<=12; $b++) {
+                            $empMonthlyValues[$b][] = round($avgMonth, 2);
+                        }
                     }
                 }
 
-                $empAvgKPI = $empTotalTarget > 0 ? round($empTotalProgress / $empTotalTarget, 2) : 0;
+                // Hitung rata-rata KPI karyawan dari semua targetnya
+                $empAvgKPI = count($empTargetPercentages) > 0 
+                    ? round(array_sum($empTargetPercentages) / count($empTargetPercentages), 2) 
+                    : 0;
+                
                 $empGrade = $this->getGradeLabel($empAvgKPI);
 
-                // Simpan data per karyawan untuk tabel ranking
                 $allEmployeesData[] = [
                     'nama' => $karyawan->nama_lengkap,
                     'jabatan' => $karyawan->jabatan,
                     'avg_kpi' => $empAvgKPI,
                     'grade' => $empGrade,
-                    'target_count' => $empTotalTarget,
+                    'target_count' => count($empTargetPercentages),
                     'status_counts' => $empStatusCounts,
-                    'monthly_contributions' => $empMonthlyProgress // Digunakan untuk hitung avg dept
+                    'monthly_values' => $empMonthlyValues
                 ];
 
-                // Update Global Stats
-                $totalTargetDivisi += $empTotalTarget;
-                $totalProgressDivisi += $empTotalProgress;
                 $totalSelesaiDivisi += $empStatusCounts['Selesai'];
                 $totalGagalDivisi += $empStatusCounts['Gagal'];
                 
                 // Akumulasi untuk rata-rata bulanan departemen
                 for ($b = 1; $b <= 12; $b++) {
-                    if (!empty($empMonthlyProgress[$b])) {
-                        // Rata-rata progress karyawan ini di bulan b
-                        $karyawanAvgBulan = array_sum($empMonthlyProgress[$b]) / count($empMonthlyProgress[$b]);
-                        $deptMonthlyAvg[$b] += $karyawanAvgBulan;
-                        $deptMonthlyCount[$b]++;
+                    if (!empty($empMonthlyValues[$b])) {
+                        foreach ($empMonthlyValues[$b] as $val) {
+                            $deptMonthlyAllValues[$b][] = $val;
+                        }
                     }
                 }
             }
 
-            // Hitung Rata-Rata Departemen Per Bulan
+            // Hitung rata-rata departemen dari SEMUA target individual
+            $totalTargetDivisi = count($allTargetPercentages);
+            $totalProgressSum = array_sum($allTargetPercentages);
+            $avgKPIDivisi = $totalTargetDivisi > 0 ? round($totalProgressSum / $totalTargetDivisi, 2) : 0;
+            $targetSelesaiPersen = $totalTargetDivisi > 0 ? round(($totalSelesaiDivisi / $totalTargetDivisi) * 100, 2) : 0;
+
+            // Hitung rata-rata bulanan departemen
             $deptMonthlyFinal = [];
             for ($b = 1; $b <= 12; $b++) {
-                $deptMonthlyFinal[$b] = $deptMonthlyCount[$b] > 0 
-                    ? round($deptMonthlyAvg[$b] / $deptMonthlyCount[$b], 2) 
+                $deptMonthlyFinal[$b] = count($deptMonthlyAllValues[$b]) > 0 
+                    ? round(array_sum($deptMonthlyAllValues[$b]) / count($deptMonthlyAllValues[$b]), 2) 
                     : 0;
             }
 
-            $avgKPIDivisi = $totalTargetDivisi > 0 ? round($totalProgressDivisi / $totalTargetDivisi, 2) : 0;
-            $targetSelesaiPersen = $totalTargetDivisi > 0 ? round(($totalSelesaiDivisi / $totalTargetDivisi) * 100, 2) : 0;
-
-            // Sorting Ranking
             usort($allEmployeesData, function($a, $b) {
                 return $b['avg_kpi'] <=> $a['avg_kpi'];
             });
 
-            // Prepare Data for View/Export
             $exportData = [
                 'divisi' => $divisi,
                 'tahun' => $tahun,
@@ -14721,21 +14812,17 @@ class TargetKPIController extends Controller
         $spreadsheet = new Spreadsheet();
         $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(10);
 
-        // --- SHEET 1: EXECUTIVE SUMMARY ---
         $s1 = $spreadsheet->getActiveSheet()->setTitle('Executive Summary');
         
-        // Colors
         $C_HDR = '1F2937'; $C_SUB = '2563EB'; $C_WH = 'FFFFFF'; 
         $C_ODD = 'F3F4F6'; $C_GRN = '10B981'; $C_RED = 'EF4444'; $C_YEL = 'F59E0B';
         $C_DRK = '111827';
 
-        // Header Title
         $s1->mergeCells("A1:F1");
         $s1->setCellValue("A1", "EXECUTIVE SUMMARY KPI DIVISI " . strtoupper($data['divisi']));
         $this->xlStyle($s1, "A1:F1", $C_HDR, $C_WH, 14, true, 'center');
         $s1->getRowDimension(1)->setRowHeight(30);
 
-        // Summary Stats
         $r = 3;
         $s1->setCellValue("A$r", "Total Karyawan");
         $s1->setCellValue("B$r", ": " . $data['total_karyawan']);
@@ -14755,7 +14842,6 @@ class TargetKPIController extends Controller
         $s1->getStyle("D{$r}:E{$r}")->getFont()->setBold(true);
         $r += 2;
 
-        // Insight Box
         $s1->mergeCells("A{$r}:F{$r}");
         $s1->setCellValue("A{$r}", "INSIGHT OTOMATIS");
         $this->xlStyle($s1, "A{$r}:F{$r}", $C_SUB, $C_WH, 11, true, 'center');
@@ -14767,7 +14853,6 @@ class TargetKPIController extends Controller
         $s1->getRowDimension($r)->setRowHeight(60);
         $r += 2;
 
-        // Ranking Table Header
         $s1->mergeCells("A{$r}:F{$r}");
         $s1->setCellValue("A{$r}", "RANKING KARYAWAN");
         $this->xlStyle($s1, "A{$r}:F{$r}", $C_HDR, $C_WH, 12, true, 'center');
@@ -14781,13 +14866,11 @@ class TargetKPIController extends Controller
         $this->xlStyle($s1, "A{$r}:F{$r}", '374151', $C_WH, 10, true, 'center');
         $r++;
 
-        // Ranking Rows
         foreach ($data['ranking_karyawan'] as $idx => $emp) {
             $rank = $idx + 1;
             $bg = ($idx % 2 == 0) ? $C_WH : $C_ODD;
             
-            // Top 3 Highlight
-            if ($rank <= 3) $bg = 'D1FAE5'; // Light Green
+            if ($rank <= 3) $bg = 'D1FAE5';
 
             $s1->setCellValue("A{$r}", $rank);
             $s1->setCellValue("B{$r}", $emp['nama']);
@@ -14802,23 +14885,19 @@ class TargetKPIController extends Controller
             $s1->getStyle("B{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             $s1->getStyle("C{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             
-            // Color code Avg %
             $color = $emp['avg_kpi'] >= 80 ? $C_GRN : ($emp['avg_kpi'] >= 50 ? $C_YEL : $C_RED);
             $s1->getStyle("D{$r}")->getFont()->getColor()->setARGB("FF{$color}");
             $s1->getStyle("D{$r}")->getFont()->setBold(true);
             
-            // Color code Status
             $s1->getStyle("F{$r}")->getFont()->getColor()->setARGB("FF{$color}");
             $s1->getStyle("F{$r}")->getFont()->setBold(true);
 
             $r++;
         }
 
-        // --- SHEET 2: DEEP ANALYSIS ---
         $s2 = $spreadsheet->createSheet()->setTitle('Deep Analysis');
         $r2 = 1;
 
-        // Risk Distribution
         $s2->mergeCells("A{$r2}:D{$r2}");
         $s2->setCellValue("A{$r2}", "DISTRIBUSI KINERJA & RISIKO");
         $this->xlStyle($s2, "A{$r2}:D{$r2}", $C_HDR, $C_WH, 12, true, 'center');
@@ -14845,7 +14924,6 @@ class TargetKPIController extends Controller
         }
         $r2 += 2;
 
-        // Monthly Trend
         $s2->mergeCells("A{$r2}:C{$r2}");
         $s2->setCellValue("A{$r2}", "TREND PERFORMA BULANAN");
         $this->xlStyle($s2, "A{$r2}:C{$r2}", $C_HDR, $C_WH, 12, true, 'center');
@@ -14862,14 +14940,10 @@ class TargetKPIController extends Controller
             $s2->setCellValue("A{$r2}", $data['nama_bulan'][$bln]);
             $s2->setCellValue("B{$r2}", $avg);
             $this->xlStyle($s2, "A{$r2}:B{$r2}", ($bln%2==0)?$C_ODD:$C_WH, $C_DRK, 10, false, 'center');
-            
-            // Conditional Formatting Bar Simulation (Simple Text Bar or just rely on Chart later)
-            // For Excel Chart, we need hidden data usually, but here we show it.
             $r2++;
         }
         $chartEndRow = $r2 - 1;
 
-        // Add Chart to Sheet 2
         $s2Title = $s2->getTitle();
         $xValues = new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING, "'{$s2Title}'!\$A\$" . $chartStartRow . ":\$A\$" . $chartEndRow, null, 12);
         $yValues = new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_NUMBER, "'{$s2Title}'!\$B\$" . $chartStartRow . ":\$B\$" . $chartEndRow, null, 12);
@@ -14890,7 +14964,6 @@ class TargetKPIController extends Controller
         $chart->setBottomRightPosition('L20');
         $s2->addChart($chart);
 
-        // --- SHEET 3: VISUALISASI GRAFIK ---
         $s3 = $spreadsheet->createSheet()->setTitle('Visualisasi Grafik');
         $r3 = 1;
         
@@ -14899,7 +14972,6 @@ class TargetKPIController extends Controller
         $this->xlStyle($s3, "A{$r3}:D{$r3}", $C_HDR, $C_WH, 12, true, 'center');
         $r3++;
 
-        // Prepare Pie Chart Data
         $grades = ['Sangat Baik', 'Baik', 'Cukup', 'Kurang', 'Sangat Kurang'];
         $gradeCounts = [0,0,0,0,0];
         foreach ($data['ranking_karyawan'] as $emp) {
@@ -14925,7 +14997,6 @@ class TargetKPIController extends Controller
         }
         $pieEnd = $r3 - 1;
 
-        // Add Pie Chart
         $s3Title = $s3->getTitle();
         $pieLabels = new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING, "'{$s3Title}'!\$A\$" . $pieStart . ":\$A\$" . $pieEnd, null, 5);
         $pieValues = new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_NUMBER, "'{$s3Title}'!\$B\$" . $pieStart . ":\$B\$" . $pieEnd, null, 5);
@@ -14946,7 +15017,6 @@ class TargetKPIController extends Controller
         $pieChart->setBottomRightPosition('J20');
         $s3->addChart($pieChart);
 
-        // Output
         $filename = 'KPI_Dept_' . str_replace(' ', '_', $data['divisi']) . '_' . $data['tahun'] . '.xlsx';
         $writer = new Xlsx($spreadsheet);
         $writer->setIncludeCharts(true);

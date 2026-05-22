@@ -80,6 +80,25 @@
             transform: scale(0.9);
         }
 
+        #contentKPIDivisi::-webkit-scrollbar {
+            height: 6px;
+        }
+        #contentKPIDivisi::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        #contentKPIDivisi::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        #contentKPIDivisi::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        #contentKPIDivisi {
+            -webkit-overflow-scrolling: touch;
+        }
+
         .progress-vertical {
             display: flex;
             align-items: flex-end;
@@ -456,7 +475,6 @@
                     </div>
                     <div class="card border-0 shadow-sm">
                         <div class="card-body p-4 p-lg-5">
-
                             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
                                 <div>
                                     <h4 class="fw-bold mb-1">Progress Divisi</h4>
@@ -464,22 +482,18 @@
                                 </div>
                             </div>
 
-                            <div class="row g-4" id="contentKPIDivisi">
-                                <div
-                                    class="d-flex flex-column justify-content-center align-items-center h-100 text-center py-5">
-
-                                    <div class="spinner-border text-secondary mb-3" role="status"
-                                        style="width:2rem;height:2rem;">
-                                    </div>
-
-                                    <div class="small text-muted">
-                                        Memuat data KPI...
-                                    </div>
-
+                            <!-- Container scroll horizontal -->
+                            <div id="contentKPIDivisi" class="d-flex flex-nowrap overflow-x-auto pb-3 gap-3" style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
+                                <div class="d-flex justify-content-center align-items-center w-100 text-muted py-4">
+                                    <div class="spinner-border text-secondary me-2" style="width:1.5rem;height:1.5rem;"></div>
+                                    <span class="small">Memuat data...</span>
                                 </div>
-
                             </div>
 
+                            <!-- Scroll indicator (opsional) -->
+                            <div id="scrollHint" class="text-center small text-muted mt-2" style="display:none;">
+                                <i class="bi bi-arrow-left-right me-1"></i> Geser untuk melihat divisi lain
+                            </div>
                         </div>
                     </div>
                 @else
@@ -1316,48 +1330,65 @@
                             `);
                         });
 
-                        let datacontentKPIDivisi = response.output_3;
-                        const contentKPIDivisi = $('#contentKPIDivisi');
-                        contentKPIDivisi.empty();
+                        const dataDivisi = response.output_3 || [];
+                        const container = $('#contentKPIDivisi');
+                        const scrollHint = $('#scrollHint');
 
-                        datacontentKPIDivisi.forEach(item => {
-                            let nilai = parseFloat(item.nilai_kpi ?? 0).toFixed(0);
-                            let performance = parseFloat(item.performance ?? 0).toFixed(0);
+                        if (!Array.isArray(dataDivisi) || dataDivisi.length === 0) {
+                            container.html(`
+                                <div class="d-flex justify-content-center align-items-center w-100 text-muted py-4">
+                                    <span class="small">Belum ada data divisi.</span>
+                                </div>
+                            `);
+                            scrollHint.hide();
+                        } else {
+                            // Wrapper horizontal scrollable
+                            let htmlContent = '';
+                            const cardWidth = Math.max(260, Math.min(300, ($(window).width() / 4) - 20)); // Responsif: 4 kartu terlihat, min 260px
+                            
+                            dataDivisi.forEach(item => {
+                                const nilai = parseFloat(item.nilai_kpi ?? 0);
+                                const nilaiDisplay = nilai.toFixed(1);
+                                
+                                let colorClass = 'danger';
+                                if (nilai >= 80) colorClass = 'success';
+                                else if (nilai >= 50) colorClass = 'warning';
 
-                            let colorClass = 'secondary';
-                            let icon = '→';
-
-                            if (performance > 0) {
-                                colorClass = 'success';
-                                icon = '↑';
-                            } else if (performance < 0) {
-                                colorClass = 'danger';
-                                icon = '↓';
-                            } else {
-                                colorClass = 'warning';
-                                icon = '→';
-                            }
-
-                            const html = `
-                                <div class="col-12 col-md-6">
-                                    <div class="border rounded-4 p-4 h-100 bg-light">
-                                        <div class="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                                <h6 class="fw-semibold mb-1">${item.divisi ?? '-'}</h6>
-                                                <small class="text-muted">${item.performance_title ?? '-'}</small>
+                                htmlContent += `
+                                    <div class="flex-shrink-0" style="width: ${cardWidth}px;">
+                                        <div class="card border-0 shadow-sm h-100">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="fw-semibold mb-1 text-dark lh-sm text-truncate" style="max-width: 65%;" title="${item.divisi}">
+                                                        ${item.divisi ?? 'Divisi'}
+                                                    </h6>
+                                                    <span class="badge bg-${colorClass} bg-opacity-10 text-${colorClass} fw-bold ms-2 py-1 px-2" style="white-space: nowrap;">
+                                                        ${nilaiDisplay}%
+                                                    </span>
+                                                </div>
+                                                
+                                                <div class="progress mb-2" style="height: 8px; border-radius: 4px; background-color: #e9ecef;">
+                                                    <div class="progress-bar bg-${colorClass}" style="width: ${nilai}%;" role="progressbar"></div>
+                                                </div>
+                                                
+                                                <small class="text-muted fw-medium" style="font-size: 0.8rem;">
+                                                    ${item.performance_title || 'Stabil'}
+                                                </small>
                                             </div>
-                                            <div class="text-end">
-                                                <h2 class="fw-bold mb-0 counter" data-value="${nilai}">${item.nilai_kpi}%</h2>
-                                            </div>
-                                        </div>
-                                        <div class="progress" style="height:6px;">
-                                            <div class="progress-bar bg-${colorClass} progress-animated" data-value="${nilai}" style="width:${item.nilai_kpi}%"></div>
                                         </div>
                                     </div>
-                                </div>
-                            `;
-                            contentKPIDivisi.append(html);
-                        });
+                                `;
+                            });
+
+                            container.html(htmlContent);
+
+                            // Tampilkan scroll hint jika konten melebihi lebar container
+                            if (container[0].scrollWidth > container[0].clientWidth) {
+                                scrollHint.fadeIn();
+                            } else {
+                                scrollHint.hide();
+                            }
+                        }
                     }
                 });
             }
