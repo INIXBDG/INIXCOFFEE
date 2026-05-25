@@ -1142,6 +1142,15 @@ class examController extends Controller
                 'kurs' => $request->update_kurs,
                 'kurs_dollar' => $request->kurs_admin,
             ]);
+
+            $change = changeexam::where('id_exam', $eksam->id)->latest()->first();
+            changeexam::create([
+                'id_exam' => $eksam->id,
+                'keterangan' => $change->keterangan,
+                'status' => 'Update Kurs',
+                'kode_karyawan' => auth()->user()->karyawan->kode_karyawan,
+            ]);
+
         } catch (Expectation $e) {
             return back()->with('error', 'Kurs gagal diupdate');
         }
