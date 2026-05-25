@@ -783,6 +783,7 @@ class PeluangController extends Controller
             'tgl_pa' => 'required|date',
             'tipe_pembayaran' => 'required|string',
             'deskripsi_tambahan' => 'nullable|string',
+            'bukti' => 'nullable|file|mimetypes:image/jpeg,image/png,application/pdf|max:5120',
         ]);
 
         Log::info("[PA] Validation passed");
@@ -819,23 +820,30 @@ class PeluangController extends Controller
         $netSales = new perhitunganNetSales();
         $netSales->id_rkm = $request->id_rkm;
 
-        $netSales->transportasi = $request->transportasi;
+        $netSales->transportasi = $request->transportasi ?: null;
         $netSales->jenis_transportasi = $request->jenis_transportasi;
 
-        $netSales->akomodasi_peserta = $request->akomodasi_peserta;
-        $netSales->akomodasi_tim = $request->akomodasi_tim;
-        $netSales->keterangan_akomodasi_tim = $request->keterangan_akomodasi_tim;
+        $netSales->akomodasi_peserta = $request->akomodasi_peserta ?: null;
+        $netSales->akomodasi_tim = $request->akomodasi_tim ?: null;
+        $netSales->keterangan_akomodasi_tim = $request->keterangan_akomodasi_tim ?: null;
 
-        $netSales->fresh_money = $request->fresh_money;
-        $netSales->entertaint = $request->entertaint;
-        $netSales->keterangan_entertaint = $request->keterangan_entertaint;
-        $netSales->souvenir = $request->souvenir;
-        $netSales->cashback = $request->cashback;
+        $netSales->fresh_money = $request->fresh_money ?: null;
+        $netSales->entertaint = $request->entertaint ?: null;
+        $netSales->keterangan_entertaint = $request->keterangan_entertaint ?: null;
+        $netSales->souvenir = $request->souvenir ?: null;
+        $netSales->cashback = $request->cashback ?: null;
 
-        $netSales->sewa_laptop = $request->sewa_laptop;
+        $netSales->sewa_laptop = $request->sewa_laptop ?: null;
         $netSales->tipe_pembayaran = $request->tipe_pembayaran;
         $netSales->tgl_pa = $request->tgl_pa;
         $netSales->deskripsi_tambahan = $request->deskripsi_tambahan;
+
+        if ($request->hasFile('bukti')) {
+            $file = $request->file('bukti');
+            $filename = 'bukti_pembayaran_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('bukti_pa', $filename, 'public');
+            $netSales->bukti = $path;
+        }
 
         $netSales->id_tracking = $idTracking;
         $netSales->save();

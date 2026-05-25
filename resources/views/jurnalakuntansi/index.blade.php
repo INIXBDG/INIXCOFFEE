@@ -292,6 +292,38 @@
             </div>
         </div>
     </div>
+        <div class="modal fade" id="otomatisasiJurnalModal" tabindex="-1" aria-labelledby="otomatisasiJurnalModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="otomatisasiJurnalModalLabel">Otomatisasi Jurnal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="otomatisasiJurnalForm">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="otomatisasi_waktu" class="form-label">Waktu</label>
+                            <input type="month" class="form-control" id="otomatisasi_waktu" name="waktu" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tipe_otomatisasi" class="form-label">Jurnal</label>
+                            <select class="form-control" id="tipe_otomatisasi" name="tipe_otomatisasi" required>
+                                <option value="">Pilih Jurnal</option>
+                                <option value="pengajuan_barang">Pengajuan Barang</option>
+                                <option value="net_sales">Net Sales</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success" id="btn-otomatisasi">Otomatisasi</button>
+                </div>
+            </div>  
+        </div>
+    </div>
     <div class="modal fade" id="detailJurnalModal" tabindex="-1" aria-labelledby="detailJurnalModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
@@ -324,6 +356,9 @@
                 <button type="button" class="btn click-primary ms-2" id="btn-master-no-akun">
                    Master No Akun
                 </button>
+                <button type="button" class="btn click-primary ms-2" id="btn-otomatisasi-jurnal">
+                   Otomatisasi Jurnal
+                </button>
             </div>
             <div class="card m-4">
                 <div class="card-body">
@@ -350,6 +385,7 @@
                                 <thead>
                                     <tr>
                                         <th scope="col">No</th>
+                                        <th scope="col">No Pengajuan</th>
                                         <th scope="col">Tanggal</th>
                                         <th scope="col">Keterangan</th>
                                         <th scope="col">Cat.</th>
@@ -572,6 +608,17 @@
                     }
                 },
                 {
+                    "data": "",
+                    "render": function (data, type, row, meta) {
+                        let info = "";
+                        if (row.list_pengajuan && row.list_pengajuan.length > 0) {
+                            let ids = row.list_pengajuan.map(p => p.no_kk).join(', ');
+                            info += `<span class="badge bg-info text-dark" style="max-width:150px">${ids}</span>`;
+                        }
+                        return info;           
+                    }
+                },
+                {
                     "data": "tanggal_transaksi",
                     "render": function(data, type, row) {
                         var date = new Date(data);
@@ -699,6 +746,9 @@
                     if(pengajuan.invoice) {
                         html += `<tr><th class="bg-light">Invoice</th><td><a href="/storage/${pengajuan.invoice}" target="_blank" class="btn btn-xs btn-primary py-0">Lihat File</a></td></tr>`;
                     }
+                    if(pengajuan.bukti) {
+                        html += `<tr><th class="bg-light">Bukti</th><td><a href="/storage/${pengajuan.bukti}" target="_blank" class="btn btn-xs btn-primary py-0">Lihat File</a></td></tr>`;
+                    }
                     html += '</table>';
 
                     // Sub-tabel Detail Barang
@@ -729,7 +779,7 @@
                 // Loop properti net sales
                 for (let key in data.net_sales) {
                     let val = data.net_sales[key];
-                    if (!val || key === 'id' || key.includes('id_')) continue;
+                    if (!val || key === 'id' || key.includes('id_') || key === 'bukti') continue;
 
                     let label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                     
@@ -738,6 +788,12 @@
                     }
                     
                     html += `<tr><th width="35%" class="bg-light">${label}</th><td>${val}</td></tr>`;
+                }
+                if (data.net_sales.bukti) {
+                    html += `<tr>
+                        <th width="35%" class="bg-light">Bukti Transaksi</th>
+                        <td><a href="/storage/${data.net_sales.bukti}" target="_blank" class="btn btn-sm btn-info">Lihat File</a></td>
+                    </tr>`;
                 }
                 html += '</tbody></table>';
             }
@@ -1000,6 +1056,45 @@
             table.ajax.reload();
         });
 
+        // Event listener untuk membuka Modal Otomatisasi Jurnal
+        $('#btn-otomatisasi-jurnal').click(function() {
+            $('#otomatisasiJurnalForm')[0].reset(); // Reset form
+            $('#otomatisasiJurnalModal').modal('show');
+        });
+
+
+        $('#btn-otomatisasi').click(function() {
+            var url = "{{ route('jurnalakuntansi.otomatisasiJurnal') }}";
+            var formData = $('#otomatisasiJurnalForm').serialize();
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                beforeSend: function() {
+                    $('#otomatisasiJurnalModal').modal('hide');
+                    $('#loadingModal').modal('show');
+                    $('#loadingModal').removeAttr('inert');
+                },
+                success: function(response) {
+                    $('#loadingModal').modal('hide');
+                    $('#loadingModal').attr('inert', true);
+                    
+                    if (response.success) {
+                        alert(response.message);
+                        table.ajax.reload(null, false);
+                    } else {
+                        alert('Gagal menyimpan data.');
+                    }
+                },
+                error: function(xhr) {
+                    $('#loadingModal').modal('hide');
+                    $('#loadingModal').attr('inert', true);
+                    alert('Terjadi kesalahan validasi atau sistem saat menyimpan data.');
+                }
+            });
+        });
+
         // Event listener untuk membuka Modal Tambah Kas Kecil
         $('#btn-tambah-pettycash').click(function() {
             $('#tambahPettyCashForm')[0].reset(); // Reset form
@@ -1026,7 +1121,7 @@
                     
                     if (response.success) {
                         alert(response.message);
-                        table.ajax.reload(null, false); // Memperbarui tabel jurnal akuntansi
+                        table.ajax.reload(null, false);
                     } else {
                         alert('Gagal menyimpan data.');
                     }

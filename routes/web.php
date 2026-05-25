@@ -1263,6 +1263,7 @@ Route::get('/jurnalakuntansi/belum-jurnal-netsales', [JurnalAkuntansiController:
 Route::post('/jurnalakuntansi/store-manual-netsales/{id}', [JurnalAkuntansiController::class, 'storeManualNetSales']);
 Route::get('/jurnalakuntansi/export', [App\Http\Controllers\JurnalAkuntansiController::class, 'export'])->name('jurnalakuntansi.export');
 Route::get('/jurnalakuntansi/pdf/{id}', [JurnalAkuntansiController::class, 'eksportPdf'])->name('jurnalakuntansi.pdf');
+Route::post('/jurnalakuntansi/otomatisasi/data', [JurnalAkuntansiController::class, 'otomatisasiJurnal'])->name('jurnalakuntansi.otomatisasiJurnal');
 
 Route::middleware(['auth'])->group(function () {
     // Route Administrasi Project

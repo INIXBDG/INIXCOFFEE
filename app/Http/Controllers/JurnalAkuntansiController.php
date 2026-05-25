@@ -64,7 +64,6 @@ class JurnalAkuntansiController extends Controller
         $data = $query->latest()->get();
 
         $data->transform(function ($jurnal) {
-            // Ambil data pengajuan barang berdasarkan array ID di JSON
             if (is_array($jurnal->id_pengajuan_barang) && count($jurnal->id_pengajuan_barang) > 0) {
                 $jurnal->list_pengajuan = PengajuanBarang::with('karyawan')->whereIn('id', $jurnal->id_pengajuan_barang)
                                             ->with('detail') // Muat detail barangnya juga
@@ -127,9 +126,26 @@ class JurnalAkuntansiController extends Controller
      */
     public function getBelumJurnalNetSales()
     {
-        $data = perhitunganNetSales::with(['karyawan', 'trackingNetSales', 'rkm.materi', 'rkm.perusahaan'])
-            ->whereDoesntHave('jurnalAkuntansi')
-            ->get();
+$data = perhitunganNetSales::with([
+        'karyawan',
+        'approvedNetSales',
+        'rkm.materi',
+        'rkm.perusahaan'
+    ])
+    ->whereDoesntHave('jurnalAkuntansi')
+    ->whereHas('approvedNetSales', function ($query) {
+        $query->whereIn('keterangan', [
+                'Selesai',
+                'Pencairan Sudah Selesai'
+            ])
+            ->whereRaw('id = (
+                SELECT MAX(ans.id)
+                FROM approved_net_sales ans
+                WHERE ans.id_rkm = approved_net_sales.id_rkm
+            )');
+    })
+    ->get();
+
         // return $data;
         $formattedData = $data->map(function($item) {
             // Kalkulasi total pengeluaran Net Sales
@@ -139,6 +155,7 @@ class JurnalAkuntansiController extends Controller
 
             return [
                 'id' => $item->id,
+                'id_rkm' => $item->id_rkm,
                 'nama_materi' => $item->rkm->materi->nama_materi ?? '-',
                 'nama_perusahaan' => $item->rkm->perusahaan->nama_perusahaan ?? '-',
                 'tipe' => 'Payment Advanced',
@@ -190,8 +207,8 @@ class JurnalAkuntansiController extends Controller
             'id_pengajuan_barang' => [], 
             'tanggal_transaksi' => now(),
             'keterangan' => $keterangan,
-            'debit' => $totalPengeluaran,
-            'kredit' => 0,
+            'kredit' => $totalPengeluaran,
+            'debit' => 0,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Jurnal Net Sales berhasil dibuat!']);
@@ -446,10 +463,9 @@ class JurnalAkuntansiController extends Controller
 
     public function eksportPdf($id) 
     {
-        $jurnalAkuntansi = JurnalAkuntansi::findOrFail($id);
+        $jurnalAkuntansi = JurnalAkuntansi::with('netSales')->findOrFail($id);
 
         $listPengajuan = $jurnalAkuntansi->ListPengajuan(); 
-        // dd($listPengajuan);
     
         $firstPengajuan = $listPengajuan->first();
         $finance = null;
@@ -469,9 +485,61 @@ class JurnalAkuntansiController extends Controller
         }
         
         $gm = karyawan::where('jabatan', 'GM')->latest()->first();
-        $pdf = Pdf::loadView('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'gm', 'finance', 'listPengajuan'))
+
+        $netSales = null;
+            if ($jurnalAkuntansi->id_perhitungan_net_sales) {
+                $netSales = perhitunganNetSales::with('rkm')->find($jurnalAkuntansi->id_perhitungan_net_sales);
+            }
+        $sales = karyawan::where('kode_karyawan', $netSales->rkm->sales_key)->first();
+        $manager = karyawan::where('jabatan', 'SPV Sales')->where('status_aktif', "1")->latest()->first();
+        $gm = karyawan::where('jabatan', 'GM')->where('status_aktif', "1")->latest()->first();
+        $dirut = karyawan::where('jabatan', 'Direktur Utama')->where('status_aktif', "1")->latest()->first();
+        $finance = karyawan::where('jabatan', 'Finance & Accounting')->where('status_aktif', "1")->latest()->first();
+        $pdf = Pdf::loadView('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'gm', 'finance', 'listPengajuan', 'netSales', 'sales', 'manager', 'dirut', 'finance'))
             ->setPaper('A4', 'portrait');
 
         return $pdf->download('laporan-jurnal-' . $jurnalAkuntansi->nomor_kk . '.pdf');
     }
+
+    public function otomatisasiJurnal(Request $request)
+    {
+        $request->validate([
+            'waktu' => ['required', 'date_format:Y-m'],
+            'tipe_otomatisasi' => ['required'],
+        ]);
+
+        [$tahun, $bulan] = explode('-', $request->waktu);
+        
+        if ($request->tipe_otomatisasi === 'pengajuan_barang') {
+            $pengajuanBarang = PengajuanBarang::with('detail', 'karyawan')
+                ->whereYear('created_at', $tahun)
+                ->whereMonth('created_at', $bulan)
+                ->whereHas('tracking', function($query) {
+                    $query->whereIn('tracking', ['Selesai', 'Pencairan Sudah Selesai']);
+                })
+                ->get();
+
+            foreach ($pengajuanBarang as $pengajuan) {
+                if (!$pengajuan->jurnalAkuntansi) {
+                    $this->storeManual($pengajuan->id);
+                }
+            }
+        } elseif ($request->tipe_otomatisasi === 'net_sales') {
+            $netSalesList = perhitunganNetSales::with('rkm.materi', 'rkm.perusahaan')
+                ->whereYear('created_at', $tahun)
+                ->whereMonth('created_at', $bulan)
+                ->whereDoesntHave('jurnalAkuntansi')
+                ->get();
+
+            foreach ($netSalesList as $netSales) {
+                $this->storeManualNetSales($netSales->id);
+            }
+        }
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Data Jurnal Akuntansi berhasil ditambahkan melalui otomatisasi.'
+        ]);
+    }
+
 }

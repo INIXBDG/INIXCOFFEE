@@ -211,8 +211,13 @@
 
 
 <!-- ================= PAGE 2: FORM PERMINTAAN BARANG (GABUNGAN) ================= -->
-<div class="page-body">
+@php
+    $isNetSales = empty($jurnalAkuntansi->id_pengajuan_barang);
+    $isPengajuanBarang = empty($jurnalAkuntansi->id_perhitungan_net_sales);
+@endphp
 
+@if($isPengajuanBarang)
+<div class="page-body">
     <table class="no-border">
         <tr>
             <td>
@@ -224,9 +229,7 @@
             </td>
         </tr>
     </table>
-
     <h3 class="text-center" style="font-size: 14px; margin-top: 10px;">Form Permintaan Barang</h3>
-
     <table class="no-border">
         <tr>
             <td width="25%">Hari / Tanggal</td>
@@ -238,16 +241,14 @@
         </tr>
         <tr>
             <td>Ref. Pengajuan ID</td>
-            <td>: 
+            <td>:
                 @foreach ($listPengajuan as $p)
                     #{{ $p->id }}{{ !$loop->last ? ', ' : '' }}
                 @endforeach
             </td>
         </tr>
     </table>
-
     <br>
-
     <!-- TABEL BARANG GABUNGAN -->
     <table>
         <thead>
@@ -263,16 +264,14 @@
             @foreach ($listPengajuan as $pengajuan)
                 @foreach ($pengajuan->detail as $item)
                     @php
-                        $subtotal = $item->qty * $item->harga;
+                        $subtotal = ($item->qty ?? 1) * ($item->harga_barang ?? $item->harga ?? 0);
                         $totalGabungan += $subtotal;
                     @endphp
                     <tr>
-                        <td class="text-center">{{ $item->qty }}</td>
-                        <td>{{ $item->nama_barang }}</td>
-                        <td class="text-right">{{ formatRupiah($item->harga) }}</td>
-                        <td>
-                            {{ $item->keterangan ?? '-' }}
-                        </td>
+                        <td class="text-center">{{ $item->qty ?? 1 }}</td>
+                        <td>{{ $item->nama_barang ?? '-' }}</td>
+                        <td class="text-right">{{ formatRupiah($item->harga_barang ?? $item->harga ?? 0) }}</td>
+                        <td>{{ $item->keterangan ?? '-' }}</td>
                     </tr>
                 @endforeach
             @endforeach
@@ -284,9 +283,7 @@
             </tr>
         </tfoot>
     </table>
-
     <br><br>
-
     <!-- TTD FORM PERMINTAAN -->
     <table class="no-border text-center">
         <tr>
@@ -318,22 +315,261 @@
             <td>{{ $gm->nama_lengkap ?? '_________________' }}</td>
         </tr>
     </table>
-
 </div>
+@endif
 
+@if($isNetSales && isset($netSales))
+    <div class="page-body">
+        <table class="no-border">
+            <tr>
+                <td>
+                    @if(file_exists(public_path('css/logo.png')))
+                        <img src="{{ public_path('css/logo.png') }}" class="logo-box"><br>
+                    @endif
+                    INIXINDO BANDUNG<br>
+                    <small>Jl. Cipaganti no.95 Bandung</small>
+                </td>
+            </tr>
+        </table>
 
-<!-- ================= SECTION INVOICE (DI BAWAH) ================= -->
-@foreach ($listPengajuan as $invoiceData)
-    @if ($invoiceData->invoice && file_exists(public_path('storage/' . $invoiceData->invoice)))
+        <h3 class="text-center" style="font-size: 14px; margin-top: 10px;">
+            Form Net Sales
+        </h3>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 15px;">
+            
+            <div style="flex: 1; min-width: 200px; padding: 10px; border-radius: 5px;">
+                <p style="margin: 0 0 8px 0;">
+                    <strong style="display: inline-block; width: 120px;">Hari / Tanggal</strong>
+                    : {{ \Carbon\Carbon::parse($netSales->tgl_pa)->translatedFormat('l, d F Y') }}
+                </p>
+                
+                @if(isset($netSales->rkm->perusahaan->nama_perusahaan))
+                <p style="margin: 0 0 8px 0;">
+                    <strong style="display: inline-block; width: 120px;">Perusahaan</strong>
+                    : {{ $netSales->rkm->perusahaan->nama_perusahaan }}
+                </p>
+                @endif
+                
+                @if(isset($netSales->rkm->materi->nama_materi))
+                <p style="margin: 0 0 8px 0;">
+                    <strong style="display: inline-block; width: 120px;">Materi</strong>
+                    : {{ $netSales->rkm->materi->nama_materi }}
+                </p>
+                @endif
+
+                @if(isset($netSales->rkm->tanggal_awal) && isset($netSales->rkm->tanggal_akhir))
+                <p style="margin: 0 0 8px 0;">
+                    <strong style="display: inline-block; width: 120px;">Tgl Pelatihan</strong>
+                   : {{ \Carbon\Carbon::parse($netSales->rkm->tanggal_awal)->translatedFormat('d F Y') }} 
+                    - 
+                    {{ \Carbon\Carbon::parse($netSales->rkm->tanggal_akhir)->translatedFormat('d F Y') }}
+                </p>
+                @endif
+            </div>
+            
+            <div style="flex: 2; min-width: 250px;">
+                <table class="table table-bordered" width="100%" cellspacing="0" cellpadding="5">
+                    {{-- Tipe Pembayaran --}}
+                    @if($netSales->tipe_pembayaran)
+                    <tr>
+                        <th width="35%" style="background-color: #f2f2f2;">Tipe Pembayaran</th>
+                            <td>{{ strtoupper($netSales->tipe_pembayaran) }}</td>
+                        </tr>
+                    @endif
+
+                    {{-- Transportasi --}}
+                    @if($netSales->transportasi)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Transportasi</th>
+                        <td>{{ formatRupiah($netSales->transportasi) }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Jenis Transportasi --}}
+                    @if($netSales->jenis_transportasi)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Jenis Transportasi</th>
+                        <td>{{ $netSales->jenis_transportasi }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Akomodasi Peserta --}}
+                    @if($netSales->akomodasi_peserta)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Akomodasi Peserta</th>
+                        <td>{{ formatRupiah($netSales->akomodasi_peserta) }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Akomodasi Tim --}}
+                    @if($netSales->akomodasi_tim)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Akomodasi Tim</th>
+                        <td>{{ formatRupiah($netSales->akomodasi_tim) }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Keterangan Akomodasi Tim --}}
+                    @if($netSales->keterangan_akomodasi_tim)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Keterangan Akomodasi Tim</th>
+                        <td>{{ $netSales->keterangan_akomodasi_tim }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Fresh Money --}}
+                    @if($netSales->fresh_money)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Fresh Money</th>
+                        <td>{{ formatRupiah($netSales->fresh_money) }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Entertaint --}}
+                    @if($netSales->entertaint)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Entertaint</th>
+                        <td>{{ formatRupiah($netSales->entertaint) }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Keterangan Entertaint --}}
+                    @if($netSales->keterangan_entertaint)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Keterangan Entertaint</th>
+                        <td>{{ $netSales->keterangan_entertaint }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Souvenir --}}
+                    @if($netSales->souvenir)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Souvenir</th>
+                        <td>{{ formatRupiah($netSales->souvenir) }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Cashback --}}
+                    @if($netSales->cashback)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Cashback</th>
+                        <td>{{ formatRupiah($netSales->cashback) }}</td>
+                    </tr>
+                    @endif
+
+                    {{-- Sewa Laptop --}}
+                    @if($netSales->sewa_laptop)
+                    <tr>
+                        <th style="background-color: #f2f2f2;">Sewa Laptop</th>
+                        <td>{{ formatRupiah($netSales->sewa_laptop) }}</td>
+                    </tr>
+                    @endif
+                </table>
+                @php
+                    $approvals = [
+                        ['label' => 'Requested by:', 'person' => $sales ?? null],
+                        ['label' => 'Manager:', 'person' => $manager ?? null],
+                        ['label' => 'General Manager:', 'person' => $gm ?? null],
+                        ['label' => 'Director:', 'person' => $dirut ?? null],
+                    ];
+                @endphp
+
+                <table class="no-border" style="margin-top: 40px; width: 100%;">
+                    <tr>
+                        <td class="no-border" colspan="3"><strong>APPROVALS</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="no-border" style="width: 35%; vertical-align: top;">
+                            <table style="width: 55%; text-align: left;" cellspacing="0" cellpadding="5">
+                                @foreach($approvals as $approval)
+                                <tr>
+                                    <th style="text-align: left; max-height: 40px; max-width: 120px; border-right: none;">
+                                        {{ $approval['label'] }}
+                                    </th>
+                                    <th style="border-left: none;">
+                                        @if($approval['person'] && $approval['person']->ttd)
+                                            <img src="{{ public_path('storage/ttd/' . $approval['person']->ttd) }}" style="max-width: 45px; max-height: 40px; margin-top: 5px;">
+                                        @endif
+                                    </th>
+                                </tr>
+                                @endforeach
+                            </table>
+                        </td>
+                        <td class="no-border" style="width: 15%;"></td>
+                        <td class="no-border" style="width: 50%; vertical-align: top;">
+                            <table style="width: 60%; text-align: left;" cellspacing="0" cellpadding="5">
+                                <tr>
+                                    <th style="text-align: left; max-height: 40px; border-right: 1px solid black;" colspan="2">
+                                        For Finance & Administration only
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th style="text-align: left; max-height: 40px; border-right: 1px solid black;" colspan="2">
+                                        Status: Lengkap
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th style="text-align: left; max-height: 40px; border-right: none;">
+                                        Verified by:
+                                    </th>
+                                    <th style="border-left: none;">
+                                        @if($finance && $finance->ttd)
+                                            <img src="{{ public_path('storage/ttd/' . $approval['person']->ttd) }}" style="max-width: 45px; max-height: 40px; margin-top: 5px;">
+                                        @endif
+                                    </th>                                
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        @if($netSales->deskripsi_tambahan)
+            <div style="margin-top: 20px; padding: 10px; border: 1px solid #000; border-radius: 5px;">
+                <strong>Catatan Tambahan:</strong><br>
+                {{ $netSales->deskripsi_tambahan }}
+            </div>
+        @endif
+
+        <br>
+    </div>
+@endif
+
+<!-- ================= SECTION INVOICE/BUKTI (PALING BAWAH) ================= -->
+@if($isNetSales && isset($netSales))
+    @if($netSales->bukti && file_exists(public_path('storage/' . $netSales->bukti)))
         <div class="page-break"></div>
         <div class="page-body">
-            <h4 class="text-center" style="margin-bottom: 15px;">Lampiran Berkas / Invoice (ID Pengajuan: #{{ $invoiceData->id }})</h4>
+            <h4 class="text-center" style="margin-bottom: 15px;">Lampiran Bukti</h4>
             <div class="text-center">
-                <img src="{{ public_path('storage/' . $invoiceData->invoice) }}" class="invoice-img">
+                <img src="{{ public_path('storage/' . $netSales->bukti) }}" class="invoice-img">
             </div>
         </div>
     @endif
-@endforeach
+@elseif($isPengajuanBarang && isset($listPengajuan))
+    @foreach ($listPengajuan as $invoiceData)
+        @if ($invoiceData->invoice && file_exists(public_path('storage/' . $invoiceData->invoice)))
+            <div class="page-break"></div>
+            <div class="page-body">
+                <h4 class="text-center" style="margin-bottom: 15px;">Lampiran Berkas / Invoice (ID Pengajuan: #{{ $invoiceData->id }})</h4>
+                <div class="text-center">
+                    <img src="{{ public_path('storage/' . $invoiceData->invoice) }}" class="invoice-img">
+                </div>
+            </div>
+        @endif
+        @if ($invoiceData->bukti && file_exists(public_path('storage/' . $invoiceData->bukti)))
+            <div class="page-break"></div>
+            <div class="page-body">
+                <h4 class="text-center" style="margin-bottom: 15px;">Lampiran Bukti (ID Pengajuan: #{{ $invoiceData->id }})</h4>
+                <div class="text-center">
+                    <img src="{{ public_path('storage/' . $invoiceData->bukti) }}" class="invoice-img">
+                </div>
+            </div>
+        @endif
+    @endforeach
+@endif
 
 </body>
 </html>
