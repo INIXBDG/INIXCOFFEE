@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Unique;
 use App\Mail\mailPenilaian;
 use App\Models\AbsensiKaryawan;
+use App\Models\AdministrasiKaryawan;
 use App\Models\izinTigaJam;
 use App\Models\Nilaifeedback;
 use App\Models\PengajuanBarang;
@@ -1600,6 +1601,28 @@ class DatabaseKPIController extends Controller
             }
 
             DB::commit();
+
+            // update administrasi karyawan
+            $queryAdminis = AdministrasiKaryawan::whereYear('created_at', $year)
+                                ->whereNotIn('status', ['selesai', 'terlambat'])
+                                ->orderBy('created_at', 'desc');
+            if ($request->jenis_form === 'Rutin') {
+                if (in_array($quarterLabel, ['Q1', 'Q2'])) {
+                    $queryAdminis->where('nama_administrasi', 'like', '%Penilaian 360 Rutin Semester 1%');
+                } else {
+                    $queryAdminis->where('nama_administrasi', 'like', '%Penilaian 360 Rutin Semester 2%');
+                }
+            }
+
+            $administrasi = $queryAdminis->first();
+
+            if ($administrasi) {
+                $administrasi->update([
+                    'status' => 'selesai',
+                    'tanggal_selesai' => now(),
+                    'updated_at' => now()
+                ]);
+            }
 
             return back()->with('success', 'Berhasil disimpan');
         } catch (\Throwable $e) {

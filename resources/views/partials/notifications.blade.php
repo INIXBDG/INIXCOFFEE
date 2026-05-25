@@ -61,7 +61,7 @@
                             @endif
                         @endforeach
                     </ul>
-                @endif  
+                @endif
             </p>
             <br>
             <div class="d-flex">
@@ -1875,6 +1875,49 @@
                     <button type="submit" class="btn btn-sm btn-outline-secondary">
                         Tandai Dibaca
                     </button>
+                </form>
+            </div>
+        </div>
+    @endif
+    @if ($tipePesan == 'Mengajukan Tugas Baru')
+        <div class="notification mb-3">
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah {{ $notification->data['message']['tipe'] ?? '-' }}.</p>
+            <ul class="mb-2 list-unstyled">
+                <li><strong>Ticket ID:</strong> {{ $notification->data['message']['data']['ticket_id'] ?? '-' }}</li>
+                <li><strong>Nama Tugas:</strong> {{ $notification->data['message']['data']['tugas'] ?? '-' }}</li>
+                <li><strong>Fitur/Modul:</strong> {{ $notification->data['message']['data']['fitur'] ?? '-' }}</li>
+                <li><strong>Tipe:</strong> {{ $notification->data['message']['data']['tipe'] ?? '-' }}</li>
+                <li><strong>Pemilik:</strong> {{ $notification->data['message']['data']['pemilik'] ?? '-' }}</li>
+            </ul>
+            <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+            <div class="d-flex mt-2">
+                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm me-2">Lihat Selengkapnya</a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm">Tandai sebagai Dibaca</button>
+                </form>
+            </div>
+        </div>
+    @endif
+    @if ($tipePesan == 'Tugas Telah Direview Koordinator ITSM')
+        <div class="notification mb-3">
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah memberikan evaluasi pada tugas Anda.</p>
+
+            <div class="p-2 mb-2 bg-light border rounded border-start border-4 border-success" style="font-size: 0.85rem;">
+                <strong>Nama Tugas:</strong> {{ $notification->data['message']['data_tugas']['tugas'] ?? '-' }}<br>
+                <strong>Waktu Perkiraan:</strong> <span class="text-primary fw-bold">{{ $notification->data['message']['data_tugas']['waktu_perkiraan'] ?? '-' }} Menit</span><br>
+                <strong>Status Review:</strong> <span class="text-success fw-bold">{{ $notification->data['message']['status'] ?? '-' }}</span><br>
+                <strong>Catatan Koordinator:</strong> {{ $notification->data['message']['data_tugas']['catatan'] ?? 'Tidak ada catatan khusus.' }}
+            </div>
+
+            <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+            <div class="d-flex mt-2">
+                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm me-2">Lihat Registry</a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm">Tandai sebagai Dibaca</button>
                 </form>
             </div>
         </div>

@@ -234,6 +234,13 @@ class KendaraanController extends Controller
             'vendor' => 'nullable',
 
             'bukti' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi|max:20480',
+        ], [
+            'kendaraan.required' => 'Kendaraan wajib diisi.',
+            'type_condition.required' => 'Tipe kondisi wajib diisi.',
+            'type_vehicle_condition.required' => 'Tingkat kerusakan wajib diisi.',
+            'type_repair.required' => 'Jenis Perbaikan wajib diisi.',
+            'estimasi.required' => 'Estimasi harga wajib diisi.',
+            'deskripsi_kondisi.required' => 'Deskripsi kondisi wajib diisi.',
         ]);
 
         $perbaikan = new PerbaikanKendaraan();
@@ -307,6 +314,13 @@ class KendaraanController extends Controller
             'vendor' => 'nullable',
 
             'invoice' => 'nullable'
+        ], [
+            'kendaraan.required' => 'Kendaraan wajib diisi.',
+            'type_condition.required' => 'Tipe kondisi wajib diisi.',
+            'type_vehicle_condition.required' => 'Tingkat kerusakan wajib diisi.',
+            'type_repair.required' => 'Jenis Perbaikan wajib diisi.',
+            'estimasi.required' => 'Estimasi harga wajib diisi.',
+            'deskripsi_kondisi.required' => 'Deskripsi kondisi wajib diisi.',
         ]);
 
         $perbaikan->kendaraan = $request->kendaraan;

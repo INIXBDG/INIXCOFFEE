@@ -533,7 +533,7 @@
             margin-bottom: 10px;
             overflow: hidden;
         }
-        
+
         #progress-bar-project {
             width: 0%;
             height: 100%;
@@ -544,7 +544,7 @@
             position: absolute;
             transition: width 10s ease; /* 🔥 ini juga dibenerin */
         }
-        
+
         #car-project {
             width: 110px;
             height: 110px;
@@ -556,7 +556,7 @@
             z-index: 2;
             transition: left 10s ease-in-out;
         }
-        
+
         .target-label-right-project {
             position: absolute;
             top: 0;
@@ -565,21 +565,21 @@
             color: #000;
             z-index: 1;
         }
-        
+
         .horizontal-ruler-labels-project {
             position: relative;
             width: 100%;
             height: 20px;
             margin-top: 10px;
         }
-        
+
         .horizontal-ruler-labels-project .label {
             position: absolute;
             font-size: 14px;
             transform: translateX(-50%);
             white-space: nowrap;
         }
-        
+
         .tab-pane {
             position: relative;
             transition: opacity 0.5s ease-in-out;
@@ -1693,6 +1693,25 @@
                                                                     <h5 class="card-title">Rekap Penilaian Exam</h5>
                                                                 </a>
                                                                 <p class="card-text">melihat penilaian pelayanan exam.
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endcan
+                                            @can('Fitur Registry Feature')
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa-solid fa-book-bookmark" style="font-size: 30px;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="{{ route('registry.index') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Registry Feature</h5>
+                                                                </a>
+                                                                <p class="card-text">feature registry.
                                                                 </p>
                                                             </div>
                                                         </div>
