@@ -515,8 +515,17 @@ Route::prefix('kpi-data/')
             ->name('karyawan.')
             ->middleware(['auth'])
             ->group(function () {
-                route::get('/get', [TargetKPIController::class, 'getDataTarget'])->name('get');
-            });
+            route::get('/get', [TargetKPIController::class, 'getDataTarget'])->name('get');
+        });
+
+        Route::get('/dashboard', [TargetKPIController::class, 'executiveDashboard'])->name('executive.dashboard');
+        Route::get('/executive/analytics', [TargetKPIController::class, 'executiveDashboard'])->name('executive.analytics');
+        Route::get('/executive/analytics/export', [TargetKPIController::class, 'exportExecutiveReport'])->name('executive.analytics.export');
+        Route::get('/executive/analytics/trend', [TargetKPIController::class, 'getExecutiveTrend'])->name('executive.analytics.trend');
+        Route::get('/executive/analytics/prediction', [TargetKPIController::class, 'getPredictiveAnalysis'])->name('executive.analytics.prediction');
+        Route::get('/executive/analytics/matrix', [TargetKPIController::class, 'getPotentialMatrix'])->name('executive.analytics.matrix');
+        Route::get('/detail-data', [TargetKPIController::class, 'detailData'])->name('detail.data');
+        Route::get('/progress-dashboard', [TargetKPIController::class, 'getProgressDashboard'])->name('progress.dashboard');
     });
 
 //Project KPI
@@ -1183,6 +1192,8 @@ Route::prefix('office')
 
             Route::post('kategori/update', [DaftarTugasController::class, 'updateKategori'])->name('updateKategori');
             Route::post('kategori/hapus', [DaftarTugasController::class, 'deleteKategori'])->name('deleteKategori');
+
+            Route::get('/available-categories', [DaftarTugasController::class, 'getAvailableCategories'])->name('availableCategories');
 
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
 
