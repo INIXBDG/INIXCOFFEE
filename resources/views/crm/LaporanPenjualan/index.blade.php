@@ -593,6 +593,7 @@
                                                     <th>Deskripsi Tambahan</th>
                                                     <th>Tanggal PA</th>
                                                     <th>Tipe Pembayaran</th>
+                                                    <th>Bukti</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -615,6 +616,7 @@
                                             <td>${item.deskripsi_tambahan ?? '-'}</td>
                                             <td>${item.tgl_pa ? moment(item.tgl_pa).format('DD MMMM YYYY') : '-'}</td>
                                             <td>${item.tipe_pembayaran ? item.tipe_pembayaran.toUpperCase() : '-'}</td>
+                                            <td>${item.bukti ? `<a href="/storage/${item.bukti}" target="_blank">Lihat Bukti</a>` : '-'}</td>
                                         </tr>`;
                                             });
 

@@ -236,6 +236,7 @@
                                         data-bs-target="#detailPAModal">
                                         <i class="bi bi-credit-card"></i> Detail PA
                                     </button>
+                                    <a class="btn btn-info btn-sm" href="/crm/edit/{{$netsales->id_rkm}}/pa" target="_blank"> Edit PA</a>
                                 </div>
                             @endif
                         </div>
@@ -731,7 +732,7 @@
         <div class="modal fade" id="paymentAdvanceModal" tabindex="-1" aria-labelledby="paymentAdvanceModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
-                <form action="{{ route('store.payment.advance') }}" method="POST" id="StorePA">
+                <form action="{{ route('store.payment.advance') }}" method="POST" id="StorePA" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-content">
                         <div class="modal-header">
@@ -795,7 +796,7 @@
                             <!-- SOUVENIR -->
                             <div class="mb-3">
                                 <label class="form-label">Souvenir</label>
-                                <input type="text" class="form-control rupiah" name="Souvenir">
+                                <input type="text" class="form-control rupiah" name="souvenir">
                             </div>
 
                             <!-- CASHBACK -->
@@ -830,6 +831,13 @@
                                     <option value="cash">Cash</option>
                                     <option value="transfer">Transfer</option>
                                 </select>
+                            </div>
+
+                            <!-- Bukti -->
+                            <div class="mb-3">
+                                <label class="form-label">Bukti Pembayaran</label>
+                                <input type="file" class="form-control" name="bukti" required accept=".jpg,.jpeg,.png,.pdf">
+                                <small class="form-text text-muted">Format file: JPG, PNG, PDF (Max 2MB)</small>
                             </div>
 
                         </div>
@@ -876,6 +884,7 @@
                                             <th>Deskripsi Tambahan</th>
                                             <th>Tanggal PA</th>
                                             <th>Tipe Pembayaran</th>
+                                            <th>Bukti</th>
                                         </tr>
                                     </thead>
 
@@ -910,6 +919,11 @@
                                             </td>
 
                                             <td>{{ ucfirst($netsales->tipe_pembayaran) }}</td>
+                                            @if ($netsales->bukti)
+                                                <td><a href="/storage/{{ $netsales->bukti }}" target="_blank">Lihat Bukti</a></td>
+                                            @else
+                                                <td class="text-muted">—</td>
+                                            @endif
                                         </tr>
                                     </tbody>
                                 </table>

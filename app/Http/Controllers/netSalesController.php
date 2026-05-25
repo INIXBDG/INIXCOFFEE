@@ -312,6 +312,7 @@ class netSalesController extends Controller
                 'sewa_laptop' => $netSale->sewa_laptop,
                 'tgl_pa' => $netSale->tgl_pa,
                 'tipe_pembayaran' => $netSale->tipe_pembayaran,
+                'bukti' => $netSale->bukti ?? null,
                 // 'peserta' => $netSale->peserta->nama,
                 'deskripsi_tambahan' => $netSale->deskripsi_tambahan,
                 'total' => $total,
