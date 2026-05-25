@@ -41,6 +41,7 @@ class LoginController extends Controller
     {
         $now = Carbon::now();
         $today = $now->toDateString();
+        $todayDate = $now->day;
 
         $shift1TakenByOther = KontrolTugas::whereDate('Deadline_Date', $today)
             ->where('id_karyawan', '!=', $karyawanId)
@@ -57,10 +58,8 @@ class LoginController extends Controller
             ->exists();
 
         $targetShift = null;
-        $skipHarian = false;
-
         if ($userAlreadyHasShift2) {
-            $skipHarian = true;
+            $targetShift = 'Shift 2';
         } elseif ($shift1TakenByOther) {
             $targetShift = 'Shift 2';
         } else {
@@ -70,9 +69,9 @@ class LoginController extends Controller
         $isEndOfWeek = $now->isSaturday() || $now->isSunday();
         $isEndOfMonth = $now->day == $now->daysInMonth;
 
+        $tipeAktif = [];
         if ($isEndOfMonth && $isEndOfWeek) {
             $tipeAktif = ['Bulanan', 'Mingguan', 'Harian'];
-            $skipHarian = true;
         } elseif ($isEndOfMonth) {
             $tipeAktif = ['Bulanan', 'Harian'];
         } elseif ($isEndOfWeek) {
@@ -81,58 +80,91 @@ class LoginController extends Controller
             $tipeAktif = ['Harian'];
         }
 
-        $kategoriQuery = KategoriDaftarTugas::whereIn('Tipe', $tipeAktif);
-
-        if (!$skipHarian && in_array('Harian', $tipeAktif)) {
-            $kategoriQuery->where(function ($q) use ($targetShift) {
-                $q->where('Tipe', '!=', 'Harian')->orWhere(function ($sub) use ($targetShift) {
-                    if ($targetShift === 'Shift 1') {
-                        $sub->whereNull('tipe_turunan')->orWhere('tipe_turunan', 'Shift 1');
-                    } elseif ($targetShift === 'Shift 2') {
-                        $sub->whereNull('tipe_turunan')->orWhere('tipe_turunan', 'Shift 2');
-                    } else {
-                        $sub->whereNull('tipe_turunan');
-                    }
-                });
-            });
-        } elseif (in_array('Harian', $tipeAktif)) {
-            $kategoriQuery->where('Tipe', '!=', 'Harian');
-        }
-
-        $kategori = $kategoriQuery->get();
+        $kategori = KategoriDaftarTugas::whereIn('Tipe', $tipeAktif)->get();
 
         foreach ($kategori as $kat) {
-            $deadline = $this->hitungDeadline($kat->Tipe);
-
-            $query = KontrolTugas::where('id_karyawan', $karyawanId)->where('id_DaftarTugas', $kat->id);
+            $shouldActivate = false;
+            $deadline = null;
 
             if ($kat->Tipe === 'Harian') {
-                $query->whereDate('Deadline_Date', $today);
-            } else {
-                $query->where('status', 0)->whereDate('Deadline_Date', $deadline);
+                if (empty($kat->tipe_turunan) || $kat->tipe_turunan === $targetShift) {
+                    $shouldActivate = true;
+                    $deadline = $today;
+                }
+            } elseif ($kat->Tipe === 'Bulanan') {
+                $targetDate = $kat->tipe_turunan ? (int) $kat->tipe_turunan : 1;
+                if ($todayDate == $targetDate) {
+                    $shouldActivate = true;
+                    $deadline = $now->copy()->setDay($targetDate)->toDateString();
+                }
+            } elseif ($kat->Tipe === 'Mingguan') {
+                $hariMap = ['Saturday' => 'Sabtu', 'Sunday' => 'Minggu'];
+                $hariIni = $now->dayName;
+                $shiftHariIni = $hariMap[$hariIni] ?? null;
+
+                if (empty($kat->tipe_turunan) || $kat->tipe_turunan === $shiftHariIni) {
+                    $shouldActivate = true;
+                    $deadline = $this->hitungDeadlineMingguan($kat->tipe_turunan);
+                }
             }
 
-            if (!$query->exists()) {
-                KontrolTugas::create([
-                    'id_karyawan' => $karyawanId,
-                    'id_DaftarTugas' => $kat->id,
-                    'status' => 0,
-                    'Deadline_Date' => $deadline,
-                ]);
+            if ($shouldActivate) {
+                $exists = KontrolTugas::where('id_karyawan', $karyawanId)->where('id_DaftarTugas', $kat->id)->whereDate('Deadline_Date', $deadline)->exists();
+
+                if (!$exists) {
+                    KontrolTugas::create([
+                        'id_karyawan' => $karyawanId,
+                        'id_DaftarTugas' => $kat->id,
+                        'status' => 0,
+                        'Deadline_Date' => $deadline,
+                    ]);
+                }
             }
         }
     }
 
-    private function hitungDeadline($tipe)
+    private function hitungDeadline($tipe, $tipe_turunan = null)
     {
+        $now = now();
+
         return match ($tipe) {
-            'Harian' => now()->toDateString(),
-            'Mingguan' => now()->endOfWeek()->toDateString(),
-            'Bulanan' => now()->endOfMonth()->toDateString(),
-            'Quartal' => now()->addMonths(3)->endOfMonth()->toDateString(),
-            'Semester' => now()->addMonths(6)->endOfMonth()->toDateString(),
-            'Tahunan' => now()->endOfYear()->toDateString(),
-            default => now()->toDateString(),
+            'Harian' => $now->toDateString(),
+
+            'Mingguan' => $this->hitungDeadlineMingguan($tipe_turunan),
+
+            'Bulanan' => $this->hitungDeadlineBulanan($tipe_turunan),
+
+            'Quartal' => $now->addMonths(3)->endOfMonth()->toDateString(),
+            'Semester' => $now->addMonths(6)->endOfMonth()->toDateString(),
+            'Tahunan' => $now->endOfYear()->toDateString(),
+            default => $now->toDateString(),
         };
+    }
+
+    private function hitungDeadlineMingguan($shift = null)
+    {
+        $now = now();
+
+        if ($shift === 'Sabtu') {
+            return $now->copy()->next(Carbon::SATURDAY)->toDateString();
+        }
+
+        if ($shift === 'Minggu') {
+            return $now->copy()->next(Carbon::SUNDAY)->toDateString();
+        }
+
+        return $now->copy()->endOfWeek()->toDateString();
+    }
+
+    private function hitungDeadlineBulanan($tanggal = null)
+    {
+        $now = now();
+        $targetDate = $tanggal ? (int) $tanggal : 1;
+
+        if ($now->day > $targetDate) {
+            return $now->copy()->addMonth()->setDay($targetDate)->toDateString();
+        }
+
+        return $now->copy()->setDay($targetDate)->toDateString();
     }
 }
