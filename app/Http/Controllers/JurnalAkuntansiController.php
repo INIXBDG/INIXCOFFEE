@@ -487,10 +487,11 @@ $data = perhitunganNetSales::with([
         $gm = karyawan::where('jabatan', 'GM')->latest()->first();
 
         $netSales = null;
+        $sales = null;
             if ($jurnalAkuntansi->id_perhitungan_net_sales) {
                 $netSales = perhitunganNetSales::with('rkm')->find($jurnalAkuntansi->id_perhitungan_net_sales);
+                $sales = karyawan::where('kode_karyawan', $netSales->rkm->sales_key)->first();
             }
-        $sales = karyawan::where('kode_karyawan', $netSales->rkm->sales_key)->first();
         $manager = karyawan::where('jabatan', 'SPV Sales')->where('status_aktif', "1")->latest()->first();
         $gm = karyawan::where('jabatan', 'GM')->where('status_aktif', "1")->latest()->first();
         $dirut = karyawan::where('jabatan', 'Direktur Utama')->where('status_aktif', "1")->latest()->first();
