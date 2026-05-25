@@ -327,6 +327,9 @@
                             <button type="submit" class="btn btn-primary px-4">
                                 <i class="fas fa-save"></i> Simpan Perubahan
                             </button>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save"></i> Kirim Langsung Pengajuan
+                            </button>
                         </div>
                     @else
                         <div class="alert alert-secondary mt-4 mb-0 text-center">

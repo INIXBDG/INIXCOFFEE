@@ -52,11 +52,8 @@
                     <div class="col-md-3 text-end">
                         <div class="dropup w-100">
 
-                            <button class="btn btn-success btn-sm dropdown-toggle w-100"
-                                type="button"
-                                id="exportDropup"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
+                            <button class="btn btn-success btn-sm dropdown-toggle w-100" type="button" id="exportDropup"
+                                data-bs-toggle="dropdown" aria-expanded="false">
                                 Export
                             </button>
 
@@ -74,22 +71,16 @@
                             </ul>
                         </div>
 
-                        <form id="exportExcelForm"
-                            action="{{ route('office.excelExportPerbaikan') }}"
-                            method="GET"
-                            target="_blank"
-                            style="display:none">
+                        <form id="exportExcelForm" action="{{ route('office.excelExportPerbaikan') }}" method="GET"
+                            target="_blank" style="display:none">
 
                             <input type="hidden" name="from" id="exportFrom">
                             <input type="hidden" name="to" id="exportTo">
 
                         </form>
 
-                        <form id="exportPdfForm"
-                            action="{{ route('office.pdfExportPerbaikan') }}"
-                            method="GET"
-                            target="_blank"
-                            style="display:none">
+                        <form id="exportPdfForm" action="{{ route('office.pdfExportPerbaikan') }}" method="GET"
+                            target="_blank" style="display:none">
 
                             <input type="hidden" name="from" id="exportFrom">
                             <input type="hidden" name="to" id="exportTo">
@@ -110,7 +101,7 @@
                                 <th>Pengguna / Driver</th>
                                 <th>Kendaraan</th>
                                 <th>Kondisi</th>
-                                <th>Tanggal Kejadian</th>
+                                <th>Tanggal Perbaikan</th>
                                 <th>Status</th>
                                 <th class="text-center" style="width: 15%">Aksi</th>
                             </tr>
@@ -129,8 +120,9 @@
                                             {{ $item->type_condition }}
                                         </span>
                                     </td>
-                                    <td data-order="{{ $item->tanggal_kejadian ? \Carbon\Carbon::parse($item->tanggal_kejadian)->format('Y-m-d') : '' }}">
-                                        {{ $item->tanggal_kejadian ? \Carbon\Carbon::parse($item->tanggal_kejadian)->format('d M Y') : '-' }}
+                                    <td
+                                        data-order="{{ $item->tanggal_perbaikan ? \Carbon\Carbon::parse($item->tanggal_perbaikan)->format('Y-m-d') : '' }}">
+                                        {{ $item->tanggal_perbaikan ? \Carbon\Carbon::parse($item->tanggal_perbaikan)->format('d M Y') : '-' }}
                                     </td>
                                     <td>
                                         {{ $item->status }}
@@ -143,52 +135,86 @@
                                         @endif
                                     </td>
                                     <td class="text-center">
-                                        <div class="btn-group" role="group">
-                                            <a href="{{ route('office.detailPerbaikanKendaraan', $item->id) }}"
-                                                class="btn btn-sm btn-info text-white" style="margin-right: 3px">
-                                                Detail
-                                            </a>
+                                        <div class="dropdown">
+                                            <button class="btn btn-secondary btn-sm dropdown-toggle" type="button"
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                Aksi
+                                            </button>
 
-                                            @if (Auth::user()->jabatan === 'Driver')
-                                                <form action="{{ route('office.deletePerbaikanKendaraan', $item->id) }}"
-                                                    method="POST" class="d-inline"
-                                                    onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger me-1">
-                                                        Hapus
-                                                    </button>
-                                                </form>
-                                            @endif
-                                            @if ($item->status === 'Diajukan')
-                                                @if (Auth::user()->jabatan === 'GM')
-                                                    <button type="button" class="btn btn-primary btnUpdateStatus"
-                                                        data-bs-toggle="modal" data-bs-target="#ModalUpdateStatus"
-                                                        data-id="{{ $item->id }}">
-                                                        Approve
-                                                    </button>
+                                            <ul class="dropdown-menu">
+
+                                                {{-- Detail --}}
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                        href="{{ route('office.detailPerbaikanKendaraan', $item->id) }}">
+                                                        Detail
+                                                    </a>
+                                                </li>
+
+                                                {{-- Hapus --}}
+                                                @if (Auth::user()->jabatan === 'Driver')
+                                                    <li>
+                                                        <form
+                                                            action="{{ route('office.deletePerbaikanKendaraan', $item->id) }}"
+                                                            method="POST"
+                                                            onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
+
+                                                            @csrf
+                                                            @method('DELETE')
+
+                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                Hapus
+                                                            </button>
+                                                        </form>
+                                                    </li>
                                                 @endif
-                                            @elseif (Auth::user()->jabatan === 'Finance & Accounting' &&
-                                                    !in_array($item->status, ['Diajukan', 'Selesai', 'Ditolak Oleh GM']))
-                                                <button type="button" class="btn btn-primary btnUpdateStatus"
-                                                    data-bs-toggle="modal" data-bs-target="#ModalUpdateStatus"
-                                                    data-id="{{ $item->id }}">
-                                                    Update
-                                                </button>
-                                            @elseif ($item->status === 'Selesai' && $item->invoice)
-                                                <button type="button" class="btn btn-primary btnViewInvoice"
-                                                    data-bs-toggle="modal" data-bs-target="#ModalViewInvoice"
-                                                    data-id="{{ $item->id }}">
-                                                    Invoice
-                                                </button>
-                                            @elseif (in_array(Auth::user()->jabatan, ['Driver']) && $item->status != 'Ditolak Oleh GM')
-                                                <button type="button" class="btn btn-success btnSelesaiPerbaikan"
-                                                    {{ in_array($item->status, ['Diajukan', 'Selesai', 'Ditolak Oleh GM']) ? 'disabled' : '' }}
-                                                    data-bs-toggle="modal" data-bs-target="#modalSelesaiPerbaikan"
-                                                    data-id="{{ $item->id }}">
-                                                    Selesaikan
-                                                </button>
-                                            @endif
+
+                                                {{-- Approve --}}
+                                                @if ($item->status === 'Diajukan')
+                                                    @if (Auth::user()->jabatan === 'GM')
+                                                        <li>
+                                                            <button type="button" class="dropdown-item btnUpdateStatus"
+                                                                data-bs-toggle="modal" data-bs-target="#ModalUpdateStatus"
+                                                                data-id="{{ $item->id }}">
+                                                                Approve
+                                                            </button>
+                                                        </li>
+                                                    @endif
+
+                                                    {{-- Update --}}
+                                                @elseif (Auth::user()->jabatan === 'Finance & Accounting' &&
+                                                        !in_array($item->status, ['Diajukan', 'Selesai', 'Ditolak Oleh GM']))
+                                                    <li>
+                                                        <button type="button" class="dropdown-item btnUpdateStatus"
+                                                            data-bs-toggle="modal" data-bs-target="#ModalUpdateStatus"
+                                                            data-id="{{ $item->id }}">
+                                                            Update
+                                                        </button>
+                                                    </li>
+
+                                                    {{-- Invoice --}}
+                                                @elseif ($item->status === 'Selesai' && $item->invoice)
+                                                    <li>
+                                                        <button type="button" class="dropdown-item btnViewInvoice"
+                                                            data-bs-toggle="modal" data-bs-target="#ModalViewInvoice"
+                                                            data-id="{{ $item->id }}">
+                                                            Invoice
+                                                        </button>
+                                                    </li>
+
+                                                    {{-- Selesaikan --}}
+                                                @elseif (in_array(Auth::user()->jabatan, ['Driver']) && $item->status != 'Ditolak Oleh GM')
+                                                    <li>
+                                                        <button type="button" class="dropdown-item btnSelesaiPerbaikan"
+                                                            {{ in_array($item->status, ['Diajukan', 'Selesai', 'Ditolak Oleh GM']) ? 'disabled' : '' }}
+                                                            data-bs-toggle="modal" data-bs-target="#modalSelesaiPerbaikan"
+                                                            data-id="{{ $item->id }}">
+                                                            Selesaikan
+                                                        </button>
+                                                    </li>
+                                                @endif
+
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>

@@ -46,4 +46,28 @@ class PerbaikanKendaraan extends Model
     {
         return $this->belongsTo(PengajuanBarang::class, 'pengajuanbarangs_id');
     }
+
+     public function getSyncedStatus()
+    {
+        if (!$this->pengajuanbarangs_id) {
+            return $this->status;
+        }
+
+        $latestTracking = \App\Models\tracking_pengajuan_barang::where('id_pengajuan_barang', $this->pengajuanbarangs_id)
+            ->latest('id') 
+            ->first();
+
+        return $latestTracking ? $latestTracking->tracking : $this->status;
+    }
+
+    public function syncStatusFromPengajuan()
+    {
+        $syncedStatus = $this->getSyncedStatus();
+        
+        if ($syncedStatus !== $this->status) {
+            $this->update(['status' => $syncedStatus]);
+            return true;
+        }
+        return false;
+    }
 }

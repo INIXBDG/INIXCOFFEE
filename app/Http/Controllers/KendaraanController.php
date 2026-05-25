@@ -215,7 +215,7 @@ class KendaraanController extends Controller
 
     public function detailPerbaikan($id)
     {
-        $perbaikan = PerbaikanKendaraan::with('user.karyawan','vendor')->findOrFail($id);
+        $perbaikan = PerbaikanKendaraan::with('user.karyawan', 'vendor')->findOrFail($id);
         $dataVendor = vendorBengkel::all();
         return view('office.kendaraan.updatePerbaikan', compact('perbaikan', 'dataVendor'));
     }
@@ -330,8 +330,8 @@ class KendaraanController extends Controller
         $perbaikan->estimasi = $request->estimasi;
         $perbaikan->deskripsi_kondisi = $request->deskripsi_kondisi;
         $perbaikan->deskripsi_perbaikan = $request->deskripsi_perbaikan;
-        $perbaikan->tanggal_perbaikan = $request->tanggal_perbaikan ;
-        $perbaikan->id_vendor = $request->vendor ;
+        $perbaikan->tanggal_perbaikan = $request->tanggal_perbaikan;
+        $perbaikan->id_vendor = $request->vendor;
 
         if ($request->type_condition === 'Kecelakaan') {
             $perbaikan->tanggal_kejadian = $request->tanggal_kejadian;
@@ -385,109 +385,133 @@ class KendaraanController extends Controller
     public function updateStatusPerbaikan(Request $request)
     {
         $data = PerbaikanKendaraan::findOrFail($request->id);
-        $statusChange = $request->status_tracking;
-        if ($request->status_tracking === 'setujui') {
-            $statusChange = 'Telah Disetujui GM';
-
-        } elseif ($request->status_tracking === 'tolak') {
-            $statusChange = 'Ditolak Oleh GM';
-        } 
 
         if ($data->pengajuanbarangs_id) {
-            $PengajuanBarang = PengajuanBarang::where('id', $data->pengajuanbarangs_id)->with('tracking')->latest()->first();
+            $latestTracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $data->pengajuanbarangs_id)
+                ->latest('id')
+                ->first();
 
-            $e = tracking_pengajuan_barang::create([
-                'id_pengajuan_barang' => $PengajuanBarang->id,
-                'tracking' => $statusChange,
-                'tanggal' => now(),
-            ]);
-            $PengajuanBarang->update([
-                'id_tracking' => $e->id,
-            ]);
-        } else if (!$data->pengajuanbarangs_id && $request->status_tracking === 'setujui') {
-            $PengajuanBarang = PengajuanBarang::create([
-                'tipe' => $request->tipe,
-                'id_karyawan' => $data->id_user,
-                'tipe' => 'Bengkel'
-            ]);
-
-            $detailPengajuanBarang = detailPengajuanBarang::create([
-                'id_pengajuan_barang' => $PengajuanBarang->id,
-                'nama_barang' => $data->type_condition . ' Mobil ' . $data->kendaraan,
-                'qty' => '1',
-                'harga' => $data->estimasi
-            ]);
-
-            if ($data->type_condition === 'Kecelakaan') {
-                $detailPengajuanBarang->keterangan = 'Urgent';
+            $statusChange = $latestTracking ? $latestTracking->tracking : $data->status;
+        } else {
+            $statusChange = $request->status_tracking;
+            if ($request->status_tracking === 'setujui') {
+                $statusChange = 'Telah Disetujui GM';
+            } elseif ($request->status_tracking === 'tolak') {
+                $statusChange = 'Ditolak Oleh GM';
             }
-
-            $tracking_pengajuan_barang = tracking_pengajuan_barang::create([
-                'id_pengajuan_barang' => $PengajuanBarang->id,
-                'tracking' => $statusChange,
-                'tanggal' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $PengajuanBarang->update([
-                'id_tracking' => $tracking_pengajuan_barang->id,
-            ]);
-
-            $data->pengajuanbarangs_id = $PengajuanBarang->id;
-            $data->status = $statusChange;
-
-            $detailPengajuanBarang->save();
-            $PengajuanBarang->save();
         }
 
-        $data->status = $statusChange;
-        $data->save();
+        $data->update(['status' => $statusChange]);
 
-        return back()->with('success', 'Status berhasil diperbarui');
+        $users = [$data->user->karyawan->kode_karyawan ?? null];
+        $to = $data->user->karyawan->nama_lengkap ?? 'Driver';
+        $path = '/office/kendaraan/detail/perbaikan/' . $data->id;
+        $type = 'Update Status Perbaikan Kendaraan';
+
+        if (str_contains($statusChange, 'Pencairan Sudah Selesai')) {
+            $type = 'Pengajuan Perbaikan - Pencairan Selesai';
+            if ($data->invoice) {
+                $type = 'Pengajuan Perbaikan - Pencairan Selesai & Invoice Sudah Diunggah';
+            } else {
+                $type = 'Segera Upload Bukti Pembelian/Invoice';
+            }
+        } elseif (str_contains($statusChange, 'Finance')) {
+            $type = 'Sedang Diproses Finance';
+            $finance = \App\Models\Karyawan::where('jabatan', 'Finance & Accounting')->first();
+            if ($finance) $users[] = $finance->kode_karyawan;
+        }
+
+        $notifData = [
+            'tanggal' => now(),
+            'status' => $statusChange,
+            'kendaraan' => $data->kendaraan,
+        ];
+
+        $userObjs = \App\Models\User::whereHas('karyawan', function ($query) use ($users) {
+            $query->whereIn('kode_karyawan', array_filter($users));
+        })->get();
+
+        foreach ($userObjs as $user) {
+            \Illuminate\Support\Facades\Notification::send(
+                $user,
+                new \App\Notifications\NotificationPerbaikanKendaraan($notifData, $path, $type, $user->id)
+            );
+        }
+
+        return back()->with('success', 'Status berhasil diperbarui mengikuti tracking pengajuan barang.');
     }
 
     public function SelesaiPerbaikan(Request $request)
     {
         $data = PerbaikanKendaraan::findOrFail($request->id);
-        $data->status = 'Selesai';
-        $data->tanggal_perbaikan = $request->tanggal_perbaikan;
-        $data->deskripsi_perbaikan = $request->deskripsi_perbaikan;
 
-        // update untuk pengajuan barang
-        $PengajuanBarang = PengajuanBarang::where('id', $data->pengajuanbarangs_id)->first();
-        $e = tracking_pengajuan_barang::create([
-            'id_pengajuan_barang' => $PengajuanBarang->id,
-            'tracking' => 'Selesai',
-            'tanggal' => now(),
-        ]);
-        $PengajuanBarang->update([
-            'id_tracking' => $e->id,
-        ]);
+        // ✅ Ambil status "Selesai" dari tracking PengajuanBarang jika ada
+        if ($data->pengajuanbarangs_id) {
+            $latestTracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $data->pengajuanbarangs_id)
+                ->where('tracking', 'selesai')
+                ->latest('id')
+                ->first();
 
+            // Jika tracking 'selesai' sudah ada di pengajuan barang, gunakan itu
+            $statusFinal = $latestTracking ? $latestTracking->tracking : 'Selesai';
+        } else {
+            $statusFinal = 'Selesai';
+        }
+
+        // ✅ Update data perbaikan
+        $updateData = [
+            'status' => $statusFinal,
+            'tanggal_perbaikan' => $request->tanggal_perbaikan,
+            'deskripsi_perbaikan' => $request->deskripsi_perbaikan,
+        ];
+
+        // ✅ Handle upload invoice
         if ($request->hasFile('invoice')) {
-            if ($data->invoice && Storage::disk('public')->exists($data->invoice)) {
-                Storage::disk('public')->delete($data->invoice);
+            if ($data->invoice && \Storage::disk('public')->exists($data->invoice)) {
+                \Storage::disk('public')->delete($data->invoice);
             }
-
             $file = $request->file('invoice');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('perbaikan/invoice', $filename, 'public');
+            $updateData['invoice'] = $path;
 
-            $data->invoice = $path;
-            $PengajuanBarang->invoice = $path;
+            // ✅ Sync invoice ke PengajuanBarang jika ada relasi
+            if ($data->pengajuanbarangs_id) {
+                $pengajuanBarang = \App\Models\PengajuanBarang::find($data->pengajuanbarangs_id);
+                if ($pengajuanBarang) {
+                    $pengajuanBarang->update(['invoice' => $path]);
+                }
+            }
         }
 
-        $data->save();
-        $PengajuanBarang->save();
+        $data->update($updateData);
+
+        $to = $data->user->karyawan->nama_lengkap ?? 'Driver';
+        $path = '/office/kendaraan/detail/perbaikan/' . $data->id;
+        $type = 'Perbaikan Kendaraan Selesai';
+        $notifData = [
+            'tanggal' => now(),
+            'status' => $statusFinal,
+            'kendaraan' => $data->kendaraan,
+        ];
+
+        $userObjs = \App\Models\User::whereHas('karyawan', function ($query) use ($data) {
+            $query->where('kode_karyawan', $data->user->karyawan->kode_karyawan ?? null);
+        })->get();
+
+        foreach ($userObjs as $user) {
+            \Illuminate\Support\Facades\Notification::send(
+                $user,
+                new \App\Notifications\NotificationPerbaikanKendaraan($notifData, $path, $type, $user->id)
+            );
+        }
 
         return back()->with('success', 'Perbaikan kendaraan berhasil diselesaikan.');
     }
-
     public function pdfExport(Request $request)
     {
-        $from = $request->from; 
-        $to   = $request->to ?? Carbon::now();   
+        $from = $request->from;
+        $to   = $request->to ?? Carbon::now();
 
         $query = PerbaikanKendaraan::with(['user.karyawan', 'vendor']);
 
@@ -515,8 +539,8 @@ class KendaraanController extends Controller
 
     public function excelExport(Request $request)
     {
-        $from = $request->get('from');     
-        $to   = $request->get('to');   
+        $from = $request->get('from');
+        $to   = $request->get('to');
 
         $export = new PerbaikanKendaraanExport($from, $to);
 
