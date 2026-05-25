@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('jurnal_akuntansis', function (Blueprint $table) {
             $table->id();
-            $table->json('id_pengajuan_barang')->nullable();
+            $table->unsignedBigInteger('id_pengajuan_barang')->nullable();
             $table->date('tanggal_transaksi');
             $table->string('keterangan');
             $table->decimal('debit', 15, 2)->default(0);
