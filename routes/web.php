@@ -10,6 +10,7 @@ use App\Http\Controllers\CateringController;
 use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\Crm\AktivitasController;
 use App\Http\Controllers\Crm\CatatanSalesController;
+use App\Http\Controllers\crm\checklistRKMController;
 use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CRMController;
 use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
@@ -716,6 +717,14 @@ Route::prefix('crm')->group(function () {
     Route::get('/contact/data', [ContactController::class, 'getPerusahaan'])->name('contact.data');
     Route::put('/update/pic', [PicController::class, 'updatePIC'])->name('pic.update');
     Route::delete('/delete/pic/{id}', [PicController::class, 'deletePIC'])->name('pic.delete');
+
+    //cheklist RKM admin sales
+    Route::prefix('checklist-rkm')->name('crm.checklist-rkm.')->group(function () {
+        Route::get('/', [checklistRKMController::class, 'index'])->name('index');
+        Route::get('/data', [checklistRKMController::class, 'getData'])->name('data');
+        Route::patch('/{id}/checklist', [checklistRKMController::class, 'updateChecklist'])->name('checklist.update');
+        Route::patch('/{id}/checklists', [checklistRKMController::class, 'updateMultiple'])->name('checklist.update-multiple');
+    });
 
     // Peluang CRM
     Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
