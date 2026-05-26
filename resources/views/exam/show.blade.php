@@ -221,7 +221,11 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-6 col-sm-6 col-xs-6">
-                                        <p>$ {{ $rkm->biaya_admin }}</p>
+                                        @if ($rkm->mata_uang === 'Rupiah')
+                                            <p>{{ formatRupiah(floatval($rkm->biaya_admin)) }}</p>
+                                        @else
+                                            <p>$ {{ $rkm->biaya_admin }}</p>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="row">
