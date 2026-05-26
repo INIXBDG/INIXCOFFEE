@@ -586,9 +586,6 @@
 
             function setupDateValidation() {
                 const today = new Date();
-                const nextWeek = new Date();
-
-                $('#tanggalPembelian').attr('min', nextWeek.toISOString().split('T')[0]);
 
                 $('#tanggalPembelian').on('change', function() {
                     const selected = new Date($(this).val());

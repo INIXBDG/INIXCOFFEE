@@ -108,7 +108,7 @@ class CateringController extends Controller
             'barang.harga.*' => 'required',
             'barang.keterangan.*' => 'nullable|string|max:500',
             'status_pembelian' => 'nullable|string|max:255',
-            'tanggal_pembelian' => 'nullable|date|after_or_equal:today',
+            'tanggal_pembelian' => 'nullable|date',
         ]);
 
         if ($request->filled('status_pembelian') && $request->filled('tanggal_pembelian')) {
