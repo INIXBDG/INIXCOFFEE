@@ -41,7 +41,7 @@
 
                 <div class="row g-4 justify-content-center" id="ruangList">
                     @php
-                        $ruangs = ['1', '2', '3', '4', '5', '6', 'ADOC', 'Meeting-Kecil'];
+                        $ruangs = ['1', '2', '3', '4', '5', '6', 'ADOC', 'Meeting-Kecil', 'Meeting-Besar'];
                     @endphp
                     @foreach($ruangs as $r)
                         <div id="container-ruang-{{ $r }}" class="col-md-4 col-sm-6 ruang-container">
