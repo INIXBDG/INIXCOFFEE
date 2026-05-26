@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Tickets;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Mockery\Expectation;
 
 class examController extends Controller
 {
@@ -1102,5 +1103,58 @@ class examController extends Controller
         }
 
         return redirect()->back()->with(['success' => 'Pengajuan berhasil dibuat, alur tiket dan notifikasi ganda telah dijalankan.']);
+    }
+
+    public function getKurs($id) {
+        $eksam = eksam::findOrFail($id);
+
+        if (!$eksam) {
+            return response()->json([
+                'message' => 'error'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'success',
+            'kurs' => (int) $eksam->kurs,
+            'kurs_admin' => (int) $eksam->kurs_dollar 
+        ]);
+    }
+    public function updateKurs($id, Request $request) {
+        $eksam = eksam::findOrFail($id);
+
+        $request->validate([
+            'update_kurs' => 'required',
+            'kurs_admin' => 'required',
+        ]);
+
+        try {
+            $harga = (int) $eksam->harga;
+            $biaya_admin = (int) $eksam->biaya_admin;
+            $pax = $eksam->pax;
+
+            $total = ($harga * $request->update_kurs) + ($biaya_admin * $request->kurs_admin);
+            $totalHarga = $total * $pax;
+
+            $eksam->update([
+                'harga_rupiah' => $harga,
+                'total' => $totalHarga,
+                'kurs' => $request->update_kurs,
+                'kurs_dollar' => $request->kurs_admin,
+            ]);
+
+            $change = changeexam::where('id_exam', $eksam->id)->latest()->first();
+            changeexam::create([
+                'id_exam' => $eksam->id,
+                'keterangan' => $change->keterangan,
+                'status' => 'Update Kurs',
+                'kode_karyawan' => auth()->user()->karyawan->kode_karyawan,
+            ]);
+
+        } catch (Expectation $e) {
+            return back()->with('error', 'Kurs gagal diupdate');
+        }
+
+        return back()->with('success', 'Kurs berhasil diupdate');
     }
 }

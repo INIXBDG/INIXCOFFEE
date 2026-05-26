@@ -59,7 +59,20 @@
                             <div id="finance_extra_inputs" style="display: none;">
                                 <div class="mb-3">
                                     <label for="no_kk" class="form-label">No KK</label>
-                                    <input type="text" class="form-control" name="no_kk" id="no_kk">
+                                    <input type="text" class="form-control" name="no_kk" id="no_kk" value="KK-">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="no_akun" class="form-label">Akun</label>
+                                    <select class="form-control" name="no_akun" id="no_akun">
+                                        <option value=""> -- Pilih Nomor Akun -- </option>
+                                        @foreach ($nomorAkun as $item)
+                                            <option value="{{$item->no}}">{{$item->no}} {{$item->nama_akun}}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="tanggal_pencairan" class="form-label">Tanggal Pencairan</label>
+                                    <input type="date" class="form-control" name="tanggal_pencairan" id="tanggal_pencairan">
                                 </div>
                             </div>
                         @endif
@@ -327,6 +340,8 @@
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
  $(document).ready(function(){
     var userRole = '{{ auth()->user()->jabatan}}';
@@ -352,6 +367,11 @@
         tableKaryawan();
     }
 
+    $('#no_akun').select2({
+        placeholder: 'Pilih akun',
+        width: '100%',
+        dropdownParent: $('#approveModal')
+    });
     
 });
 
@@ -575,13 +595,13 @@ function tableFinance(){
             $('#loadingModal').modal('hide');
             console.log(data.data);
             var dataSelesai = data.data.filter(item =>
-                item.tracking.tracking === 'Selesai' || item.tracking.tracking.includes("tolak")
+                item.tracking.tracking.includes("Selesai") || item.tracking.tracking.includes("tolak")
             );
 
             var dataHasInvoice = data.data.filter(item =>
-                item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
+                item.invoice && !item.tracking.tracking.includes('Selesai') && !item.tracking.tracking.includes("tolak")
             );
-
+            
             var dataBelum = data.data.filter(item =>
                 !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
             );
@@ -686,21 +706,32 @@ function tableFinance(){
                         }
                     },
                     // KOLOM BARU: SLA (LOGIKA HITUNG 7 HARI)
-                    {
+                   {
                         "data": null,
                         "render": function(data, type, row) {
-                            if (row.tanggal_pencairan && row.tanggal_terima_finance) {
-                                let tglFinance = moment(row.tanggal_terima_finance);
-                                let tglCair = moment(row.tanggal_pencairan);
-                                let selisihHari = tglCair.diff(tglFinance, 'days');
-
-                                if (selisihHari <= 7) {
-                                    return `<span class="badge bg-success">Berhasil (${selisihHari} Hari)</span>`;
-                                } else {
-                                    return `<span class="badge bg-danger">Gagal (${selisihHari} Hari)</span>`;
-                                }
+                            if (!row.tanggal_pencairan) {
+                                return '-';
                             }
-                            return '<span class="badge bg-secondary">Data Tidak Lengkap</span>';
+
+                            var tglCair = moment(row.tanggal_pencairan);
+                            var batasAwal = moment('2026-06-01');
+
+                            if (tglCair.isBefore(batasAwal)) {
+                                return '-';
+                            }
+
+                            if (!row.tanggal_terima_finance) {
+                                return '<span class="badge bg-secondary">Data Tidak Lengkap</span>';
+                            }
+
+                            let tglFinance = moment(row.tanggal_terima_finance);
+                            let selisihHari = tglCair.diff(tglFinance, 'days');
+
+                            if (selisihHari <= 7) {
+                                return `<span class="badge bg-success">Berhasil (${selisihHari} Hari)</span>`;
+                            } else {
+                                return `<span class="badge bg-danger">Gagal (${selisihHari} Hari)</span>`;
+                            }
                         }
                     },
                     {
@@ -969,7 +1000,11 @@ function tableFinance(){
                                         ${row.invoice ? `
                                         <a class="dropdown-item" href="/storage/${row.invoice}" target="_blank">
                                             <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
-                                        </a>` : ''}
+                                        </a>
+                                        <a class="dropdown-item" href="/storage/${row.bukti}" target="_blank">
+                                            <img src="{{ asset('icon/file-text.svg') }}"> Lihat Bukti
+                                        </a>
+                                        ` : ''}
 
                                         ${(userRole == 'Finance &amp; Accounting' && (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses') || trackingStatus.includes('Selesai'))) 
                                             ? `<button type="button" class="dropdown-item" onclick="openApproveModal(${row.id}, 'Manager')">
@@ -1138,6 +1173,7 @@ function toggleFinanceInputs(status) {
             success: function(res) {
                 $('#loadingModal').modal('hide');
                 $('#approveModal').modal('hide');
+                $('#approveForm')[0].reset();
 
                 if ($.fn.DataTable.isDataTable('#barangTable')) {
                     $('#barangTable').DataTable().ajax.reload(null, false);

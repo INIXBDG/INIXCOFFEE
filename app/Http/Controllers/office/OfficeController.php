@@ -304,9 +304,9 @@ class OfficeController extends Controller
 
         // Tagihan Perusaaan
         $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')
-            ->whereBetween('tanggal_perkiraan_selesai', [$startOfThisWeek, $endOfNextWeek])
             ->orderByDesc('created_at')
             ->get();
+            // dd($trackingTagihanPerusahaans);
 
         $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')
             ->get();

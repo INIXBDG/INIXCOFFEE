@@ -282,6 +282,8 @@
                                 <option value="all" selected>Semua Shift</option>
                                 <option value="Shift 1">Shift 1</option>
                                 <option value="Shift 2">Shift 2</option>
+                                <option value="Sabtu">Sabtu</option>
+                                <option value="Minggu">Minggu</option>
                             </select>
                             <input type="date" id="filterTanggal" class="form-control form-control-sm"
                                 style="width:auto" value="{{ now()->format('Y-m-d') }}">
@@ -340,6 +342,67 @@
                 </div>
             </div>
         </div>
+
+        @if (Auth()->user()->jabatan === 'Office Boy')
+                        
+        @endif
+        <div class="card border-0 shadow-sm rounded-4 mt-4 glass-force">
+            <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="bx bx-list-plus me-2"></i>Kategori Tersedia
+                </h5>
+                <span class="badge bg-secondary" id="availableCount">0</span>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info small mb-3">
+                    <i class="bx bx-info-circle me-1"></i>
+                    Pilih kategori di bawah untuk diaktifkan sebagai tugas hari ini.
+                    Tugas yang sudah aktif tidak akan muncul di sini.
+                </div>
+
+                <!-- Filter mini -->
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <select id="filterAvailableTipe" class="form-select form-select-sm" style="width:auto">
+                        <option value="all">Semua Tipe</option>
+                        <option value="Harian">Harian</option>
+                        <option value="Mingguan">Mingguan</option>
+                        <option value="Bulanan">Bulanan</option>
+                        <option value="Quartal">Quartal</option>
+                        <option value="Semester">Semester</option>
+                        <option value="Tahunan">Tahunan</option>
+                    </select>
+                    <button class="btn btn-outline-primary btn-sm" id="btnRefreshAvailable">
+                        <i class="bx bx-refresh"></i> Refresh
+                    </button>
+                </div>
+
+                <!-- Loading state -->
+                <div id="availableLoading" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted small mt-2 mb-0">Memuat kategori...</p>
+                </div>
+
+                <!-- List kategori -->
+                <div id="availableList" style="max-height:400px; overflow-y:auto;">
+                    <div class="text-center text-muted py-4">
+                        <i class="bx bx-folder-open" style="font-size:2rem"></i>
+                        <p class="mt-2 mb-0 small">Klik "Refresh" untuk memuat kategori tersedia</p>
+                    </div>
+                </div>
+
+                <!-- Bulk action -->
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" id="availableActions"
+                    style="display:none">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="checkAllAvailable">
+                        <label class="form-check-label small" for="checkAllAvailable">Pilih Semua</label>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="btnActivateSelected">
+                        <i class="bx bx-play-circle me-1"></i>Aktifkan Tugas Terpilih (<span id="selectedCount">0</span>)
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal fade" id="createModal" tabindex="-1" data-bs-backdrop="static">
@@ -374,14 +437,15 @@
                                 <option value="Harian">Harian</option>
                                 <option value="Mingguan">Mingguan</option>
                                 <option value="Bulanan">Bulanan</option>
+                                <option value="Quartal">Quartal</option>
+                                <option value="Semester">Semester</option>
+                                <option value="Tahunan">Tahunan</option>
                             </select>
                         </div>
                         <div class="mb-3 d-none" id="createTipeTurunanContainer">
-                            <label class="form-label fw-semibold">Tipe Turunan (Shift)</label>
+                            <label class="form-label fw-semibold" id="createTipeTurunanLabel">Tipe Turunan</label>
                             <select name="tipe_turunan" class="form-select">
-                                <option selected disabled>Pilih Tipe Turunan</option>
-                                <option value="Shift 1">Shift 1</option>
-                                <option value="Shift 2">Shift 2</option>
+                                <option selected disabled>Pilih Opsi</option>
                             </select>
                         </div>
                         <hr class="my-4">
@@ -400,6 +464,8 @@
                                 <option value="">-- Kosongkan Shift --</option>
                                 <option value="Shift 1">Shift 1</option>
                                 <option value="Shift 2">Shift 2</option>
+                                <option value="Sabtu">Sabtu</option>
+                                <option value="Minggu">Minggu</option>
                             </select>
                             <button type="button" class="btn btn-primary btn-sm"
                                 id="confirmBulkUpdate">Terapkan</button>
@@ -488,12 +554,10 @@
                                 <option value="Semester">Semester</option>
                                 <option value="Tahunan">Tahunan</option>
                             </select></div>
-                        <div class="mb-3" id="editTipeTurunanContainer">
-                            <label class="form-label fw-semibold">Tipe Turunan (Shift)</label>
+                        <div class="mb-3 d-none" id="editTipeTurunanContainer">
+                            <label class="form-label fw-semibold" id="editTipeTurunanLabel">Tipe Turunan</label>
                             <select name="tipe_turunan" id="edit_tipe_turunan" class="form-select">
                                 <option value="">Tidak Ada / Umum</option>
-                                <option value="Shift 1">Shift 1</option>
-                                <option value="Shift 2">Shift 2</option>
                             </select>
                         </div>
                         @if (Auth::user()->jabatan === 'HRD')
@@ -1028,9 +1092,60 @@
                 loadData();
             });
 
+            function renderTipeTurunanDropdown(tipe, container, labelContainer, selected = '') {
+                let options = '<option value="" selected disabled>Pilih Opsi</option>';
+
+                if (tipe === 'Harian') {
+                    options += '<option value="Shift 1"' + (selected === 'Shift 1' ? ' selected' : '') +
+                        '>Shift 1</option>';
+                    options += '<option value="Shift 2"' + (selected === 'Shift 2' ? ' selected' : '') +
+                        '>Shift 2</option>';
+                    labelContainer.text('Shift Harian');
+                } else if (tipe === 'Mingguan') {
+                    options += '<option value="Sabtu"' + (selected === 'Sabtu' ? ' selected' : '') +
+                        '>Sabtu</option>';
+                    options += '<option value="Minggu"' + (selected === 'Minggu' ? ' selected' : '') +
+                        '>Minggu</option>';
+                    labelContainer.text('Shift Akhir Pekan');
+                } else if (tipe === 'Bulanan') {
+                    options = '<option value="">Setiap Tanggal 1</option>';
+                    for (let i = 1; i <= 31; i++) {
+                        const val = String(i).padStart(2, '0');
+                        const label = i === 1 ? 'Tanggal 1 (Default)' : `Tanggal ${i}`;
+                        options += `<option value="${val}"${selected === val ? ' selected' : ''}>${label}</option>`;
+                    }
+                    labelContainer.text('Tanggal Pengerjaan');
+                }
+
+                container.find('select[name="tipe_turunan"]').html(options);
+                container.removeClass('d-none');
+            }
+
             $('#createTipe').on('change', function() {
-                if ($(this).val() === 'Harian') $('#createTipeTurunanContainer').removeClass('d-none');
-                else $('#createTipeTurunanContainer').addClass('d-none');
+                const tipe = $(this).val();
+                const container = $('#createTipeTurunanContainer');
+                const label = $('#createTipeTurunanLabel');
+
+                if (['Harian', 'Mingguan', 'Bulanan'].includes(tipe)) {
+                    renderTipeTurunanDropdown(tipe, container, label);
+                } else {
+                    container.addClass('d-none');
+                    container.find('select[name="tipe_turunan"]').val('');
+                }
+            });
+
+            $('#edit_tipe').on('change', function() {
+                const tipe = $(this).val();
+                const container = $('#editTipeTurunanContainer');
+                const label = $('#editTipeTurunanLabel');
+                const selected = $('#edit_tipe_turunan').val();
+
+                if (['Harian', 'Mingguan', 'Bulanan'].includes(tipe)) {
+                    renderTipeTurunanDropdown(tipe, container, label, selected);
+                } else {
+                    container.addClass('d-none');
+                    container.find('select[name="tipe_turunan"]').val('');
+                }
             });
 
             let wasCreateModalOpen = false;
@@ -1076,8 +1191,13 @@
                 $('#edit_judul').val(judul);
                 $('#edit_tipe').val(tipe);
                 $('#edit_tipe_turunan').val(turunan);
-                if (tipe === 'Harian') $('#editTipeTurunanContainer').removeClass('d-none');
-                else $('#editTipeTurunanContainer').addClass('d-none');
+                const container = $('#editTipeTurunanContainer');
+                const label = $('#editTipeTurunanLabel');
+                if (['Harian', 'Mingguan', 'Bulanan'].includes(tipe)) {
+                    renderTipeTurunanDropdown(tipe, container, label, turunan);
+                } else {
+                    container.addClass('d-none');
+                }
                 const modal = new bootstrap.Modal(document.getElementById('modalEditKategori'));
                 modal.show();
             });
@@ -1667,12 +1787,14 @@
             $('#confirmBulkUpdate').on('click', function() {
                 const ids = [];
                 $('.chk-bulk-kategori:checked').each(function() {
-                    if ($(this).data('tipe') === 'Harian') {
+                    const tipe = $(this).data('tipe');
+                    if (tipe === 'Harian' || tipe === 'Mingguan') {
                         ids.push($(this).val());
                     }
                 });
                 if (ids.length === 0) {
-                    showNotification('Peringatan', 'Pilih minimal satu kategori Harian untuk diupdate',
+                    showNotification('Peringatan',
+                        'Pilih minimal satu kategori Harian atau Mingguan untuk diupdate',
                         'warning');
                     return;
                 }
@@ -1710,11 +1832,6 @@
                 });
             });
 
-            $('#edit_tipe').on('change', function() {
-                if ($(this).val() === 'Harian') $('#editTipeTurunanContainer').removeClass('d-none');
-                else $('#editTipeTurunanContainer').addClass('d-none');
-            });
-
             $('#btnLoadChart').on('click', function() {
                 loadChartData();
             });
@@ -1722,6 +1839,167 @@
             $('#chartPeriod, #chartKaryawan, #chartStartDate, #chartEndDate').on('change', function() {
                 loadChartData();
             });
+
+            // === LOAD AVAILABLE CATEGORIES ===
+            function loadAvailableCategories() {
+                $('#availableLoading').removeClass('d-none');
+                $('#availableList').html('');
+                $('#availableActions').hide();
+
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.availableCategories') }}",
+                    type: 'GET',
+                    success: function(r) {
+                        $('#availableCount').text(r.count);
+
+                        if (!r.available || !r.available.length) {
+                            $('#availableList').html(
+                                `<div class="text-center text-muted py-4">
+                        <i class="bx bx-check-circle text-success" style="font-size:2rem"></i>
+                        <p class="mt-2 mb-0 small">Semua tugas sudah aktif! 🎉</p>
+                    </div>`
+                            );
+                            return;
+                        }
+
+                        // Filter by tipe
+                        const filterTipe = $('#filterAvailableTipe').val();
+                        const filtered = filterTipe === 'all' ? r.available : r.available.filter(k => k
+                            .Tipe === filterTipe);
+
+                        if (!filtered.length) {
+                            $('#availableList').html(
+                                `<div class="text-center text-muted py-4">
+                        <p class="mb-0 small">Tidak ada kategori untuk filter "${filterTipe}"</p>
+                    </div>`
+                            );
+                            $('#availableActions').hide();
+                            return;
+                        }
+
+                        let html = '<div class="list-group list-group-flush">';
+                        filtered.forEach(kat => {
+                            const shiftBadge = kat.tipe_turunan ?
+                                `<span class="badge bg-secondary ms-1">${kat.tipe_turunan}</span>` :
+                                '';
+                            const picBadge = kat.karyawan ?
+                                `<span class="badge bg-light text-dark border ms-1">${kat.karyawan}</span>` :
+                                '';
+
+                            html += `
+                    <label class="list-group-item d-flex gap-2 py-3 available-item" style="cursor:pointer">
+                        <input class="form-check-input flex-shrink-0 chk-available" type="checkbox" 
+                            value="${kat.id}" data-tipe="${kat.Tipe}" data-deadline="${kat.deadline_preview}">
+                        <span class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <strong class="task-text">${kat.judul_kategori}</strong>
+                                <span class="badge ${kat.badge_color}">${kat.Tipe}</span>
+                                ${shiftBadge}
+                                ${picBadge}
+                            </div>
+                            <small class="text-muted">
+                                <i class="bx bx-time me-1"></i>Deadline: ${kat.deadline_preview}
+                            </small>
+                        </span>
+                    </label>
+                `;
+                        });
+                        html += '</div>';
+
+                        $('#availableList').html(html);
+                        $('#availableActions').show();
+                        updateSelectedCount();
+                    },
+                    error: function() {
+                        $('#availableList').html(
+                            `<div class="alert alert-danger small mb-0">
+                    <i class="bx bx-error me-1"></i>Gagal memuat kategori. Silakan coba lagi.
+                </div>`
+                        );
+                    },
+                    complete: function() {
+                        $('#availableLoading').addClass('d-none');
+                    }
+                });
+            }
+
+            // === UPDATE SELECTED COUNT ===
+            function updateSelectedCount() {
+                const count = $('.chk-available:checked').length;
+                $('#selectedCount').text(count);
+                $('#btnActivateSelected').prop('disabled', count === 0);
+            }
+
+            // === ACTIVATE SELECTED ===
+            function activateSelectedTasks() {
+                const ids = [];
+                $('.chk-available:checked').each(function() {
+                    ids.push($(this).val());
+                });
+
+                if (!ids.length) {
+                    showNotification('Peringatan', 'Pilih minimal satu kategori untuk diaktifkan', 'warning');
+                    return;
+                }
+
+                const btn = $('#btnActivateSelected');
+                const originalText = btn.html();
+                btn.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm"></span> Memproses...');
+
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.aktifkanTugas') }}",
+                    type: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        kategori_ids: ids
+                    },
+                    success: function(r) {
+                        showNotification('Berhasil!', r.message, 'success');
+                        loadData(); // Refresh main table
+                        loadAvailableCategories(); // Refresh available list
+                    },
+                    error: function(xhr) {
+                        showNotification('Gagal', xhr.responseJSON?.message ||
+                            'Gagal mengaktifkan tugas', 'danger');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html(originalText);
+                    }
+                });
+            }
+
+            // === EVENT LISTENERS ===
+
+            // Refresh available categories
+            $('#btnRefreshAvailable').on('click', function() {
+                loadAvailableCategories();
+            });
+
+            // Filter available by tipe
+            $('#filterAvailableTipe').on('change', function() {
+                // Re-render dari data yang sudah ada atau reload
+                loadAvailableCategories();
+            });
+
+            // Check all available
+            $('#checkAllAvailable').on('change', function() {
+                $('.chk-available').prop('checked', $(this).prop('checked'));
+                updateSelectedCount();
+            });
+
+            // Single checkbox change
+            $(document).on('change', '.chk-available', function() {
+                updateSelectedCount();
+            });
+
+            // Activate button
+            $('#btnActivateSelected').on('click', function() {
+                activateSelectedTasks();
+            });
+
+            // Load on page init
+            loadAvailableCategories();
         });
     </script>
 @endsection

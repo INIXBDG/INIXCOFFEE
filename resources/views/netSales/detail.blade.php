@@ -213,6 +213,7 @@
                             </div>
                         `);
                     } else {
+                        let netsales = response.dataNetSales || [];
                         let data = response.dataRKM;
                         content_utama.append(`
                             <div class="row">
@@ -251,6 +252,14 @@
                                 <div class="col-md-4 col-sm-4"><p>Durasi</p></div>
                                 <div class="col-md-1 col-sm-1"><p>:</p></div>
                                 <div class="col-md-7 col-sm-7"><p>${data.durasi_kelas || 0} hari</p></div>
+
+                                <div class="col-md-4 col-sm-4"><p>Bukti</p></div>
+                                <div class="col-md-1 col-sm-1"><p>:</p></div>
+                                ${
+                                    netsales.length > 0 && netsales[0].bukti
+                                    ? `<div class="col-md-7 col-sm-7"><a href="/storage/${netsales[0].bukti}" target="_blank">Lihat Bukti</a></div>`
+                                    : `<div class="col-md-7 col-sm-7"><p class="text-muted">—</p></div>`
+                                }
                             </div>
                         `);
                     }

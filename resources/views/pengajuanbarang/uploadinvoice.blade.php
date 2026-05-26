@@ -7,7 +7,7 @@
             <div class="card">
                 <div class="card-body" id="card">
                 <a href="{{ url()->previous() }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
-                <h5 class="card-title text-center mb-4">{{ __('Edit Surat Perjalanan') }}</h5>
+                <h5 class="card-title text-center mb-4">{{ __('Upload Invoice & Bukti') }}</h5>
                     <form method="POST" action="{{ route('updateInvoice', $PengajuanBarang->id) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
@@ -37,14 +37,38 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="divisi" class="col-md-4 col-form-label text-md-start">{{ __('Bukti Transaksi / Invoice') }}</label>
+                            <label for="divisi" class="col-md-4 col-form-label text-md-start">{{ __('Invoice') }}</label>
                             <div class="col-md-6">
                                 <input type="file" class="form-control" name="invoice" id="invoice">
-                                @error('divisi')
+                                @error('invoice')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
                                 @enderror
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <label for="divisi" class="col-md-4 col-form-label text-md-start">{{ __('Bukti Transaksi') }}</label>
+                            <div class="col-md-6">
+                                <input type="file" class="form-control" name="bukti" id="bukti">
+                                @error('bukti')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <label for="divisi" class="col-md-4 col-form-label text-md-start">{{ __('File') }}</label>
+                            <div class="col-md-6">
+                                @if ($PengajuanBarang->invoice)
+                                    <a href="{{ asset('storage/' . $PengajuanBarang->invoice) }}" target="_blank" class="btn btn-info">Lihat Invoice Saat Ini</a>
+                                @endif
+                                @if ($PengajuanBarang->bukti)
+                                    <a href="{{ asset('storage/' . $PengajuanBarang->bukti) }}" target="_blank" class="btn btn-info">Lihat Bukti Saat Ini</a>
+                                @endif
                             </div>
                         </div>
 

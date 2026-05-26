@@ -16,22 +16,22 @@
          */
         protected $table = 'pengajuanbarangs';
 
-        /**
-         * Atribut yang dapat diisi secara massal.
-         *
-         * @var array
-         */
-        protected $fillable = [
-            'id_karyawan',
-            'id_kegiatan',
-            'id_tracking',
-            'tipe',
-            'invoice',
-            'no_kk',
-            'tanggal_pencairan',
-            'tanggal_terima_finance',
-
-        ];
+    /**
+     * Atribut yang dapat diisi secara massal.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'id_karyawan',
+        'id_kegiatan',
+        'id_tracking',
+        'tipe',
+        'invoice',
+        'no_kk',
+        'tanggal_pencairan',
+        'tanggal_terima_finance',
+        'bukti',
+    ];
 
         /**
          * Tipe data untuk atribut yang didefinisikan.
