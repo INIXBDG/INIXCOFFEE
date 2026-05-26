@@ -139,7 +139,7 @@ public function get(Request $request)
     })->toArray();
 
     // PERBAIKAN: Combine data berdasarkan ruangan
-    $allRooms = ['1', '2', '3', '4', '5', '6', 'ADOC'];
+    $allRooms = ['1', '2', '3', '4', '5', '6', 'ADOC', 'Meeting-Kecil'];
     
     $final = collect($allRooms)->map(function ($room) use ($dataRKM, $dataMR) {
         $rkm = $dataRKM[$room] ?? null;
