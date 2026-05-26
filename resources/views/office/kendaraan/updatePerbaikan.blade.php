@@ -2,8 +2,7 @@
 
 @section('office_contents')
     @php
-        $isReadOnly = Auth::user()->jabatan !== 'Driver' 
-                    && Auth::user()->jabatan !== 'HRD';
+        $isReadOnly = Auth::user()->jabatan !== 'Driver' && Auth::user()->jabatan !== 'HRD';
     @endphp
 
     <div class="container-fluid">
@@ -324,11 +323,13 @@
                             <a href="{{ route('office.indexPerbaikanKendaraan') }}" class="btn btn-light border">
                                 Batal
                             </a>
-                            <button type="submit" class="btn btn-primary px-4">
+
+                            <button type="submit" name="action" value="update" class="btn btn-primary px-4">
                                 <i class="fas fa-save"></i> Simpan Perubahan
                             </button>
-                            <button type="submit" class="btn btn-primary px-4">
-                                <i class="fas fa-save"></i> Kirim Langsung Pengajuan
+
+                            <button type="submit" name="action" value="kirim_pengajuan" class="btn btn-success px-4">
+                                <i class="fas fa-paper-plane"></i> Kirim Langsung Pengajuan
                             </button>
                         </div>
                     @else

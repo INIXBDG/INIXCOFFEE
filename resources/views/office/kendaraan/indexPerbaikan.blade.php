@@ -106,14 +106,17 @@
                                 <th class="text-center" style="width: 15%">Aksi</th>
                             </tr>
                         </thead>
+                        {{-- Table Body --}}
                         <tbody>
                             @forelse ($perbaikan as $item)
+                                @php
+                                    $rawStatus = $item->getOriginal('status');
+                                    $displayStatus = $item->status; // sudah melalui accessor (sync dengan tracking)
+                                @endphp
                                 <tr>
                                     <td class="text-center">{{ $loop->iteration }}</td>
                                     <td>{{ $item->user->karyawan->nama_lengkap ?? ($item->user->name ?? '-') }}</td>
-                                    <td>
-                                        {{ $item->kendaraan }}
-                                    </td>
+                                    <td>{{ $item->kendaraan }}</td>
                                     <td>
                                         <span
                                             class="badge bg-{{ $item->type_condition == 'Kecelakaan' ? 'Danger' : 'Info' }}">
@@ -125,11 +128,9 @@
                                         {{ $item->tanggal_perbaikan ? \Carbon\Carbon::parse($item->tanggal_perbaikan)->format('d M Y') : '-' }}
                                     </td>
                                     <td>
-                                        {{ $item->status }}
-
+                                        {{ $displayStatus }}
                                         @if ($item->type_condition === 'Kecelakaan' && $item->estimasi > 1000000)
-                                            <br>
-                                            <small class="text-danger">
+                                            <br><small class="text-danger">
                                                 Estimasi paling lambat pencairan 1 minggu dari tanggal pembuatan
                                             </small>
                                         @endif
@@ -140,7 +141,6 @@
                                                 data-bs-toggle="dropdown" aria-expanded="false">
                                                 Aksi
                                             </button>
-
                                             <ul class="dropdown-menu">
 
                                                 {{-- Detail --}}
@@ -151,17 +151,15 @@
                                                     </a>
                                                 </li>
 
-                                                {{-- Hapus --}}
+                                                {{-- Hapus (Driver only) --}}
                                                 @if (Auth::user()->jabatan === 'Driver')
                                                     <li>
                                                         <form
                                                             action="{{ route('office.deletePerbaikanKendaraan', $item->id) }}"
                                                             method="POST"
                                                             onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
-
                                                             @csrf
                                                             @method('DELETE')
-
                                                             <button type="submit" class="dropdown-item text-danger">
                                                                 Hapus
                                                             </button>
@@ -169,31 +167,8 @@
                                                     </li>
                                                 @endif
 
-                                                {{-- Approve --}}
-                                                @if ($item->status === 'Diajukan')
-                                                    @if (Auth::user()->jabatan === 'GM')
-                                                        <li>
-                                                            <button type="button" class="dropdown-item btnUpdateStatus"
-                                                                data-bs-toggle="modal" data-bs-target="#ModalUpdateStatus"
-                                                                data-id="{{ $item->id }}">
-                                                                Approve
-                                                            </button>
-                                                        </li>
-                                                    @endif
-
-                                                    {{-- Update --}}
-                                                @elseif (Auth::user()->jabatan === 'Finance & Accounting' &&
-                                                        !in_array($item->status, ['Diajukan', 'Selesai', 'Ditolak Oleh GM']))
-                                                    <li>
-                                                        <button type="button" class="dropdown-item btnUpdateStatus"
-                                                            data-bs-toggle="modal" data-bs-target="#ModalUpdateStatus"
-                                                            data-id="{{ $item->id }}">
-                                                            Update
-                                                        </button>
-                                                    </li>
-
-                                                    {{-- Invoice --}}
-                                                @elseif ($item->status === 'Selesai' && $item->invoice)
+                                                {{-- Invoice (jika sudah selesai dan ada invoice) --}}
+                                                @if ($item->status === 'Selesai' && $item->invoice)
                                                     <li>
                                                         <button type="button" class="dropdown-item btnViewInvoice"
                                                             data-bs-toggle="modal" data-bs-target="#ModalViewInvoice"
@@ -201,12 +176,13 @@
                                                             Invoice
                                                         </button>
                                                     </li>
+                                                @endif
 
-                                                    {{-- Selesaikan --}}
-                                                @elseif (in_array(Auth::user()->jabatan, ['Driver']) && $item->status != 'Ditolak Oleh GM')
+                                                {{-- Selesaikan (Driver upload invoice) --}}
+                                                @if (Auth::user()->jabatan === 'Driver' &&
+                                                        !in_array($item->status, ['Diajukan', 'Selesai', 'Ditolak', 'Pengajuan ditolak']))
                                                     <li>
                                                         <button type="button" class="dropdown-item btnSelesaiPerbaikan"
-                                                            {{ in_array($item->status, ['Diajukan', 'Selesai', 'Ditolak Oleh GM']) ? 'disabled' : '' }}
                                                             data-bs-toggle="modal" data-bs-target="#modalSelesaiPerbaikan"
                                                             data-id="{{ $item->id }}">
                                                             Selesaikan
@@ -220,9 +196,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">
-                                        Belum ada data pemeriksaan
-                                    </td>
+                                    <td colspan="7" class="text-center text-muted py-4">Belum ada data pemeriksaan</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -481,74 +455,6 @@
     </div>
     @endif
 
-    <div class="modal fade" id="ModalUpdateStatus" tabindex="-1" role="dialog"
-        aria-labelledby="ModalUpdateStatusLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <form action="{{ route('office.updateStatusPerbaikanKendaraan') }}" method="POST">
-                @csrf
-                <input type="hidden" name="id" id="modal_id">
-                <input type="hidden" name="status_tracking" id="status_tracking_input">
-
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="ModalUpdateStatusLabel">Update Status</h5>
-                    </div>
-
-                    <div class="modal-body">
-
-                        @if (auth()->user()->jabatan === 'GM')
-                            <div class="text-center">
-                                <p>Silakan pilih tindakan:</p>
-
-                                <button type="button" class="btn btn-success m-2" onclick="setStatus('setujui')">
-                                    Setujui
-                                </button>
-
-                                <button type="button" class="btn btn-danger m-2" onclick="setStatus('tolak')">
-                                    Tolak
-                                </button>
-                            </div>
-                        @else
-                            <select name="status_tracking" class="form-select">
-                                <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">
-                                    Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi
-                                </option>
-                                <option value="Finance Menunggu Approve Direksi">
-                                    Finance Menunggu Approve Direksi
-                                </option>
-                                <option value="Membuat Permintaan Ke Direktur Utama">
-                                    Membuat Permintaan Ke Direktur Utama
-                                </option>
-                                <option value="Pengajuan sedang dalam proses Pencairan">
-                                    Pengajuan sedang dalam proses Pencairan
-                                </option>
-                                <option value="Pencairan Sudah Selesai">
-                                    Pencairan Sudah Selesai
-                                </option>
-                                <option value="Selesai">
-                                    Selesai
-                                </option>
-                            </select>
-                        @endif
-
-                    </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            Close
-                        </button>
-
-                        @if (auth()->user()->jabatan !== 'GM')
-                            <button type="submit" class="btn btn-primary">
-                                Update
-                            </button>
-                        @endif
-                    </div>
-
-                </div>
-            </form>
-        </div>
-    </div>
 
     {{-- Scripts --}}
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\tracking_pengajuan_barang;
+use App\Models\PengajuanBarang;
 
 class PerbaikanKendaraan extends Model
 {
@@ -29,7 +31,12 @@ class PerbaikanKendaraan extends Model
         'document',
         'invoice',
         'deskripsi_perbaikan',
-        'id_vendor'
+        'id_vendor',
+        'pengajuanbarangs_id'
+    ];
+
+    protected $casts = [
+        'estimasi' => 'decimal:2',
     ];
 
     public function user()
@@ -47,27 +54,16 @@ class PerbaikanKendaraan extends Model
         return $this->belongsTo(PengajuanBarang::class, 'pengajuanbarangs_id');
     }
 
-     public function getSyncedStatus()
+    public function getStatusAttribute($value)
     {
-        if (!$this->pengajuanbarangs_id) {
-            return $this->status;
+        if (empty($this->pengajuanbarangs_id)) {
+            return $value;
         }
 
-        $latestTracking = \App\Models\tracking_pengajuan_barang::where('id_pengajuan_barang', $this->pengajuanbarangs_id)
-            ->latest('id') 
+        $latestTracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $this->pengajuanbarangs_id)
+            ->latest('id')
             ->first();
 
-        return $latestTracking ? $latestTracking->tracking : $this->status;
-    }
-
-    public function syncStatusFromPengajuan()
-    {
-        $syncedStatus = $this->getSyncedStatus();
-        
-        if ($syncedStatus !== $this->status) {
-            $this->update(['status' => $syncedStatus]);
-            return true;
-        }
-        return false;
+        return $latestTracking ? $latestTracking->tracking : $value;
     }
 }

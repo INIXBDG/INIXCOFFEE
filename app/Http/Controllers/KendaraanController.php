@@ -18,8 +18,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Excel;
 use Maatwebsite\Excel\Facades\Excel as FacadesExcel;
+use Illuminate\Support\Facades\Auth;
 
 class KendaraanController extends Controller
 {
@@ -207,9 +209,9 @@ class KendaraanController extends Controller
 
     public function indexPerbaikan()
     {
-        $perbaikan = PerbaikanKendaraan::with('user.karyawan')->get();
+        // Load relasi agar akses tracking lebih efisien
+        $perbaikan = PerbaikanKendaraan::with(['user.karyawan', 'vendor', 'pengajuanBarang.tracking'])->get();
         $vendor = vendorBengkel::all();
-
         return view('office.kendaraan.indexPerbaikan', compact('perbaikan', 'vendor'));
     }
 
@@ -299,30 +301,25 @@ class KendaraanController extends Controller
             'type_condition' => 'required|in:Perawatan,Kecelakaan',
             'type_vehicle_condition' => 'required|in:Kerusakan Ringan,Kerusakan Sedang,Kerusakan Berat,Kerusakan Total',
             'type_repair' => 'required|in:Penggantian,Peningkatan,Perbaikan,Perbaikan Total',
-            'estimasi' => 'required',
+            'estimasi' => 'required|numeric',
             'deskripsi_kondisi' => 'required|string',
-
             'tanggal_kejadian' => 'nullable|date',
             'waktu_kejadian' => 'nullable',
             'lokasi' => 'nullable|string',
-
-            'bukti' => 'nullable',
-
             'tanggal_perbaikan' => 'nullable|date',
             'deskripsi_perbaikan' => 'nullable|string',
-
-            'vendor' => 'nullable',
-
-            'invoice' => 'nullable'
-        ], [
-            'kendaraan.required' => 'Kendaraan wajib diisi.',
-            'type_condition.required' => 'Tipe kondisi wajib diisi.',
-            'type_vehicle_condition.required' => 'Tingkat kerusakan wajib diisi.',
-            'type_repair.required' => 'Jenis Perbaikan wajib diisi.',
-            'estimasi.required' => 'Estimasi harga wajib diisi.',
-            'deskripsi_kondisi.required' => 'Deskripsi kondisi wajib diisi.',
+            'vendor' => 'nullable|exists:vendor_bengkel,id',
+            'bukti' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi|max:20480',
+            'invoice' => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx,doc,docx|max:10240',
+            // Field untuk PengajuanBarang
+            'id_karyawan' => 'nullable|exists:users,id',
+            'tipe' => 'nullable|string|max:255',
+            'no_kk' => 'nullable|string|max:50',
+            'tanggal_pencairan' => 'nullable|date',
+            'status' => 'nullable|string',
         ]);
 
+        // === 1. UPDATE DATA PERBAIKAN ===
         $perbaikan->kendaraan = $request->kendaraan;
         $perbaikan->type_condition = $request->type_condition;
         $perbaikan->type_vehicle_condition = $request->type_vehicle_condition;
@@ -343,33 +340,114 @@ class KendaraanController extends Controller
             $perbaikan->lokasi = null;
         }
 
+        // Handle upload bukti
         if ($request->hasFile('bukti')) {
             if ($perbaikan->bukti && Storage::disk('public')->exists($perbaikan->bukti)) {
                 Storage::disk('public')->delete($perbaikan->bukti);
             }
-
             $file = $request->file('bukti');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('perbaikan/bukti', $filename, 'public');
-
             $perbaikan->bukti = $path;
         }
 
+        // Handle upload invoice
         if ($request->hasFile('invoice')) {
             if ($perbaikan->invoice && Storage::disk('public')->exists($perbaikan->invoice)) {
                 Storage::disk('public')->delete($perbaikan->invoice);
             }
-
             $file = $request->file('invoice');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('perbaikan/invoice', $filename, 'public');
-
             $perbaikan->invoice = $path;
         }
 
         $perbaikan->save();
 
+        // === 2. CEK ACTION: KIRIM PENGAJUAN BARANG ===
+        if ($request->action === 'kirim_pengajuan') {
+            try {
+                // A. Buat record PengajuanBarang
+                $pengajuan = PengajuanBarang::create([
+                    'id_karyawan' => $request->id_karyawan ?? Auth::id(),
+                    'id_kegiatan' => null,
+                    'id_tracking' => null,
+                    'tipe' => $request->tipe ?? 'Perbaikan Kendaraan',
+                    'invoice' => $perbaikan->invoice,
+                    'no_kk' => $request->no_kk ?? 'KK-' . $perbaikan->id,
+                    'tanggal_pencairan' => $request->tanggal_pencairan ?? null,
+                    'tanggal_terima_finance' => null,
+                ]);
 
+                detailPengajuanBarang::create([
+                    'id_pengajuan_barang' => $pengajuan->id,
+                    'nama_barang' => 'Biaya Perbaikan Kendaraan (' . strtoupper($perbaikan->kendaraan) . ')',
+                    'qty' => 1,
+                    'harga' => $request->estimasi, // Total Pengajuan = 1 * estimasi
+                    'keterangan' => $perbaikan->deskripsi_kondisi ?? 'Estimasi biaya perbaikan kendaraan',
+                ]);
+
+                // C. Buat tracking awal
+                $karyawanPemohon = \App\Models\Karyawan::find($pengajuan->id_karyawan);
+                $divisi = $karyawanPemohon->divisi;
+                $tipe = $request->tipe ?? 'Perbaikan Kendaraan';
+
+                // Tentukan tracking awal sesuai divisi & tipe
+                if ($divisi == 'Education') {
+                    $trackingStatus = 'Diajukan dan Sedang Ditinjau oleh Education Manager';
+                } elseif ($divisi == 'Office' && in_array($tipe, ['Makanan', 'Operasional'])) {
+                    $trackingStatus = 'Diajukan dan Sedang Ditinjau oleh Finance';
+                } elseif ($divisi == 'Office') {
+                    $trackingStatus = 'Diajukan dan Sedang Ditinjau oleh General Manager';
+                } elseif ($divisi == 'Sales & Marketing') {
+                    $trackingStatus = 'Diajukan dan Sedang Ditinjau oleh SPV Sales';
+                } elseif ($divisi == 'IT Service Management') {
+                    $trackingStatus = 'Diajukan dan Sedang Ditinjau oleh Koordinator IT Service Management';
+                } else {
+                    $trackingStatus = 'Diajukan dan Sedang Ditinjau oleh General Manager'; // Fallback
+                }
+
+                $tracking = tracking_pengajuan_barang::create([
+                    'id_pengajuan_barang' => $pengajuan->id,
+                    'tracking' => $trackingStatus, // ✅ SESUAIKAN DENGAN ALUR EXISTING
+                    'keterangan' => 'Pengajuan otomatis dari perbaikan kendaraan #' . $perbaikan->id,
+                    'created_by' => Auth::id(),
+                ]);
+
+                // D. Link tracking ke PengajuanBarang
+                $pengajuan->id_tracking = $tracking->id;
+                $pengajuan->save();
+
+                // E. Link PerbaikanKendaraan ke PengajuanBarang
+                $perbaikan->pengajuanbarangs_id = $pengajuan->id;
+                $perbaikan->save();
+
+                // F. Kirim notifikasi
+                $penerima = User::whereIn('jabatan', ['GM', 'Finance & Accounting'])->get();
+                $karyawan = \App\Models\Karyawan::find($pengajuan->id_karyawan);
+
+                $dataNotif = [
+                    'user' => $karyawan->nama_lengkap ?? 'Driver',
+                    'kendaraan' => $perbaikan->kendaraan,
+                    'estimasi' => 'Rp ' . number_format($perbaikan->estimasi, 0, ',', '.'),
+                    'tanggal' => now()->format('d M Y'),
+                ];
+
+                $path = '/office/kendaraan/detail/perbaikan/' . $perbaikan->id;
+                $type = 'Pengajuan Perbaikan Kendaraan - Butuh Approval';
+
+                foreach ($penerima as $user) {
+                    Notification::send($user, new NotificationPerbaikanKendaraan($dataNotif, $path, $type, $user->id));
+                }
+
+                return redirect()->back()->with('success', 'Data diperbarui & Pengajuan Barang berhasil dikirim!');
+            } catch (\Exception $e) {
+                Log::error('Gagal kirim pengajuan: ' . $e->getMessage());
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['error' => 'Gagal kirim pengajuan: ' . $e->getMessage()]);
+            }
+        }
 
         return redirect()->back()->with('success', 'Data perbaikan kendaraan berhasil diperbarui.');
     }
@@ -382,64 +460,66 @@ class KendaraanController extends Controller
         return redirect()->back()->with('success', 'Data perbaikan kendaraan berhasil dihapus.');
     }
 
-    public function updateStatusPerbaikan(Request $request)
-    {
-        $data = PerbaikanKendaraan::findOrFail($request->id);
+    // public function updateStatusPerbaikan(Request $request)
+    // {
+    //     $data = PerbaikanKendaraan::findOrFail($request->id);
+    //     $newStatus = $request->status_tracking;
 
-        if ($data->pengajuanbarangs_id) {
-            $latestTracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $data->pengajuanbarangs_id)
-                ->latest('id')
-                ->first();
+    //     if ($newStatus === 'setujui') {
+    //         $newStatus = 'Telah Disetujui GM';
+    //     } elseif ($newStatus === 'tolak') {
+    //         $newStatus = 'Ditolak Oleh GM';
+    //     }
 
-            $statusChange = $latestTracking ? $latestTracking->tracking : $data->status;
-        } else {
-            $statusChange = $request->status_tracking;
-            if ($request->status_tracking === 'setujui') {
-                $statusChange = 'Telah Disetujui GM';
-            } elseif ($request->status_tracking === 'tolak') {
-                $statusChange = 'Ditolak Oleh GM';
-            }
-        }
+    //     if ($data->isLinkedToPengajuan()) {
+    //         tracking_pengajuan_barang::create([
+    //             'id_pengajuan_barang' => $data->pengajuanbarangs_id,
+    //             'tracking'            => $newStatus,
+    //             'tanggal'             => now(),
+    //             'created_by'          => Auth::id(),
+    //         ]);
+    //     }
 
-        $data->update(['status' => $statusChange]);
+    //     $data->update(['status' => $newStatus]);
 
-        $users = [$data->user->karyawan->kode_karyawan ?? null];
-        $to = $data->user->karyawan->nama_lengkap ?? 'Driver';
-        $path = '/office/kendaraan/detail/perbaikan/' . $data->id;
-        $type = 'Update Status Perbaikan Kendaraan';
+    //     // 📢 LOGIKA NOTIFIKASI
+    //     $users = [$data->user->karyawan->kode_karyawan ?? null];
+    //     $path = '/office/kendaraan/detail/perbaikan/' . $data->id;
+    //     $type = 'Update Status Perbaikan Kendaraan';
 
-        if (str_contains($statusChange, 'Pencairan Sudah Selesai')) {
-            $type = 'Pengajuan Perbaikan - Pencairan Selesai';
-            if ($data->invoice) {
-                $type = 'Pengajuan Perbaikan - Pencairan Selesai & Invoice Sudah Diunggah';
-            } else {
-                $type = 'Segera Upload Bukti Pembelian/Invoice';
-            }
-        } elseif (str_contains($statusChange, 'Finance')) {
-            $type = 'Sedang Diproses Finance';
-            $finance = \App\Models\Karyawan::where('jabatan', 'Finance & Accounting')->first();
-            if ($finance) $users[] = $finance->kode_karyawan;
-        }
+    //     if (str_contains($newStatus, 'Pencairan Sudah Selesai')) {
+    //         $type = $data->invoice ? 'Pengajuan Perbaikan - Pencairan Selesai & Invoice Sudah Diunggah' : 'Segera Upload Bukti Pembelian/Invoice';
+    //     } elseif (str_contains($newStatus, 'Finance')) {
+    //         $type = 'Sedang Diproses Finance';
+    //         $finance = \App\Models\Karyawan::where('jabatan', 'Finance & Accounting')->first();
+    //         if ($finance) $users[] = $finance->kode_karyawan;
+    //     } elseif (str_contains($newStatus, 'GM')) {
+    //         $type = 'Menunggu Persetujuan GM';
+    //     } elseif (str_contains($newStatus, 'Direksi')) {
+    //         $type = 'Menunggu Persetujuan Direksi';
+    //         $direksi = \App\Models\Karyawan::where('jabatan', 'Direktur')->first();
+    //         if ($direksi) $users[] = $direksi->kode_karyawan;
+    //     }
 
-        $notifData = [
-            'tanggal' => now(),
-            'status' => $statusChange,
-            'kendaraan' => $data->kendaraan,
-        ];
+    //     $notifData = [
+    //         'tanggal' => now(),
+    //         'status' => $newStatus,
+    //         'kendaraan' => $data->kendaraan,
+    //     ];
 
-        $userObjs = \App\Models\User::whereHas('karyawan', function ($query) use ($users) {
-            $query->whereIn('kode_karyawan', array_filter($users));
-        })->get();
+    //     $userObjs = \App\Models\User::whereHas('karyawan', function ($query) use ($users) {
+    //         $query->whereIn('kode_karyawan', array_filter($users));
+    //     })->get();
 
-        foreach ($userObjs as $user) {
-            \Illuminate\Support\Facades\Notification::send(
-                $user,
-                new \App\Notifications\NotificationPerbaikanKendaraan($notifData, $path, $type, $user->id)
-            );
-        }
+    //     foreach ($userObjs as $user) {
+    //         \Illuminate\Support\Facades\Notification::send(
+    //             $user,
+    //             new \App\Notifications\NotificationPerbaikanKendaraan($notifData, $path, $type, $user->id)
+    //         );
+    //     }
 
-        return back()->with('success', 'Status berhasil diperbarui mengikuti tracking pengajuan barang.');
-    }
+    //     return back()->with('success', 'Status berhasil diteruskan mengikuti alur pengajuan barang.');
+    // }
 
     public function SelesaiPerbaikan(Request $request)
     {
