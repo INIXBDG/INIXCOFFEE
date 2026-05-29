@@ -290,7 +290,6 @@
 
                             accordion_net_sales.append(`
                                 <div class="accordion-item">
-                                    </h2>
                                     <div id="collapse${data.id_netSales}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" aria-labelledby="heading${data.id_netSales}" data-bs-parent="#netSalesAccordion">
                                         <div class="accordion-body">
                                             <table class="table table-striped">
@@ -307,7 +306,8 @@
                                                     <tr><th>Sewa Laptop</th><td>${formatRupiah(data.sewa_laptop)}</td></tr>
                                                     <tr><th>Total Payment Advance</th><td>${formatRupiah(data.totalPa)}</td></tr>
                                                     <tr><th>Cashback</th><td>${formatRupiah(data.cashback)}</td></tr>
-                                                    <tr><th>Total</th><td>${formatRupiah(data.total)}</td></tr>
+                                                    <tr><th>Total</th><td class="fw-bold text-success">${formatRupiah(data.total)}</td></tr>
+                                                    <tr><th>Dengan PPN 11%</th><td>${formatRupiah(data.ppn)}</td></tr>
                                                     <tr><th>Tanggal Payment Advance</th><td>${tglPaFormatted}</td></tr>
                                                     <tr><th>Deskripsi Tambahan</th><td>${data.deskripsi_tambahan || '-'}</td></tr>
                                                     <tr><th>Tipe Pembayaran</th><td>${data.tipe_pembayaran || '-'}</td></tr>

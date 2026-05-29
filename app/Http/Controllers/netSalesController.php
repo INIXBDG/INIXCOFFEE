@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\RKM;
+use App\Models\Peluang;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -144,8 +145,7 @@ class netSalesController extends Controller
                 'data' => [],
             ]);
         }
-        // Carbon::setLocale('id');
-        $startDate = CarbonImmutable::create($year, $month, 1);
+
         $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
 
         $monthRanges = [];
@@ -194,9 +194,15 @@ class netSalesController extends Controller
                     $souvenir = $netSalesList->sum('souvenir');
                     $cashback = $netSalesList->sum('cashback');
                     $sewa_laptop = $netSalesList->sum('sewa_laptop');
-                    $totalPenawaran = $item->pax * $item->harga_jual;
 
-                    $totalPerhitunganNetSales = floatval($totalPenawaran - $transportasi - $fresh_money - $souvenir - $entertaint - $akomodasi_peserta - $akomodasi_tim - $cashback - $sewa_laptop);
+                    // Kalkulasi Total Penawaran
+                    $totalPenawaran = floatval($item->pax * $item->harga_jual);
+
+                    // Kalkulasi Potongan 11%
+                    $potonganPajak = $totalPenawaran * (11 / 100);
+
+                    // Kalkulasi Total Perhitungan Net Sales
+                    $totalPerhitunganNetSales = floatval($totalPenawaran - $potonganPajak - $transportasi - $fresh_money - $souvenir - $entertaint - $akomodasi_peserta - $akomodasi_tim - $cashback - $sewa_laptop);
 
                     $latestApproved = $netSalesList->flatMap->approvedNetSales->sortByDesc('created_at')->first();
 
@@ -293,7 +299,12 @@ class netSalesController extends Controller
         $grandtotal = 0;
         foreach ($dataNetSales as $netSale) {
             $dataApproved = approvedNetSales::where('id_rkm', $dataNetSales->first()->id_rkm)->get();
-            $total = $netSale->rkm->pax * $netSale->rkm->harga_jual - $netSale->transportasi - $netSale->akomodasi_tim - $netSale->akomodasi_peserta - $netSale->fresh_money - $netSale->entertaint - $netSale->cashback - $netSale->sewa_laptop - $netSale->souvenir;
+
+            // Kalkulasi Pemotongan PPN 11%
+            $totalPenawaran = $netSale->rkm->pax * $netSale->rkm->harga_jual;
+            $potonganPajak = $totalPenawaran * (11 / 100);
+
+            $total = $totalPenawaran - $potonganPajak - $netSale->transportasi - $netSale->akomodasi_tim - $netSale->akomodasi_peserta - $netSale->fresh_money - $netSale->entertaint - $netSale->cashback - $netSale->sewa_laptop - $netSale->souvenir;
 
             $totalPA = $netSale->transportasi + $netSale->akomodasi_tim + $netSale->akomodasi_peserta + $netSale->fresh_money + $netSale->entertaint + $netSale->souvenir + $netSale->sewa_laptop;
 
@@ -312,8 +323,8 @@ class netSalesController extends Controller
                 'sewa_laptop' => $netSale->sewa_laptop,
                 'tgl_pa' => $netSale->tgl_pa,
                 'tipe_pembayaran' => $netSale->tipe_pembayaran,
-                // 'peserta' => $netSale->peserta->nama,
                 'deskripsi_tambahan' => $netSale->deskripsi_tambahan,
+                'ppn' => $potonganPajak, // 🔹 Variabel PPN diteruskan ke frontend
                 'total' => $total,
                 'totalPa' => $totalPA,
                 'approved' => $dataApproved
@@ -384,6 +395,26 @@ class netSalesController extends Controller
         $dataNetSales->deskripsi_tambahan = $request->input('deskripsi_tambahan');
 
         $dataNetSales->save();
+
+        $peluang = Peluang::where('id_rkm', $dataNetSales->id_rkm)->first();
+        if ($peluang) {
+            $totalPenawaran = (float)$peluang->harga * (int)$peluang->pax;
+            $potonganPajak = $totalPenawaran * (11 / 100);
+
+            $allPA = perhitunganNetSales::where('id_rkm', $dataNetSales->id_rkm)->get();
+            $totalPAInputs = $allPA->sum('transportasi') +
+                             $allPA->sum('akomodasi_peserta') +
+                             $allPA->sum('akomodasi_tim') +
+                             $allPA->sum('fresh_money') +
+                             $allPA->sum('entertaint') +
+                             $allPA->sum('souvenir') +
+                             $allPA->sum('cashback') +
+                             $allPA->sum('sewa_laptop');
+
+            // Menyimpan hasil akhir ke kolom netsales
+            $peluang->netsales = $totalPenawaran - $potonganPajak - $totalPAInputs;
+            $peluang->save();
+        }
 
         $changed = [];
         $newData = $dataNetSales->getAttributes(); //Ambil yg udah ke save

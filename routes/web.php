@@ -705,6 +705,8 @@ Route::prefix('crm')->group(function () {
     Route::get('/contact/data', [ContactController::class, 'getPerusahaan'])->name('contact.data');
     Route::put('/update/pic', [PicController::class, 'updatePIC'])->name('pic.update');
     Route::delete('/delete/pic/{id}', [PicController::class, 'deletePIC'])->name('pic.delete');
+    Route::get('/contact/history-status/all', [ContactController::class, 'allHistoryStatus'])->name('crm.contact.all_history_status');
+    Route::get('/contact/history-status/data', [ContactController::class, 'allHistoryStatusData'])->name('crm.contact.all_history_status_data');
 
     // Peluang CRM
     Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
@@ -716,6 +718,7 @@ Route::prefix('crm')->group(function () {
     Route::put('/peluang/update/{id}', [PeluangController::class, 'updateTahap'])->name('update.tahap');
     Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
     Route::post('/peluang/paymentAdvance', [PeluangController::class, 'storePaymentAdvance'])->name('store.payment.advance');
+    Route::post('/peluang/restore/{id}', [PeluangController::class, 'restore'])->name('restore.peluang');
 
     // Aktivitas CRM
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('index.aktivitas');
@@ -945,7 +948,7 @@ Route::prefix('office')->group(function () {
     Route::get('/laporan/status-karyawan', [OfficeController::class, 'laporanStatusKaryawan'])->name('office.laporan.status-karyawan');
     Route::get('/laporan/status-karyawan/detail', [OfficeController::class, 'detailKaryawanStatus'])->name('office.laporan.status-karyawan.detail');
     Route::get('/laporan/trend-karyawan', [OfficeController::class, 'laporanTrendKaryawan'])->name('office.laporan.trend-karyawan');
-    
+
     // Export
     Route::get('/export/status-karyawan-pdf', [OfficeController::class, 'exportStatusKaryawanPdf'])
         ->name('office.export.status-karyawan-pdf');
@@ -969,7 +972,7 @@ Route::prefix('office')->group(function () {
     Route::get('/table/outstanding/', [OfficeController::class, 'TableOutstanding'])->name('office.table.outstanding');
     Route::get('/grafik/outstanding/', [OfficeController::class, 'GrafikOutstanding'])->name('office.grafik.outstanding');
     Route::get('/grafik/ketepatan-waktu/', [OfficeController::class, 'GrafikKetepatanWaktu'])->name('office.grafik.ketepatan.waktu');
-    
+
     Route::get('/get-exam', [OfficeController::class, 'getAllExam'])->name('office.table.exam');
     Route::get('/checklist-exam/{id}', [OfficeController::class, 'getExam'])->name('office.checklist-exam');
     Route::post('/checklist-exam/store', [OfficeController::class, 'storeChecklistExam'])->name('office.store.checklist-exam');
