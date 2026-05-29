@@ -94,6 +94,8 @@ use App\Http\Controllers\ReportSalesProjectController;
 use App\Http\Controllers\PicPenagihanController;
 use App\Http\Controllers\StockOpnameController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
+use App\Http\Controllers\IncomeStatementController;
+use App\Http\Controllers\PerusahaanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1400,3 +1402,8 @@ Route::get('/no-akun/{id}/edit', [App\Http\Controllers\NoAkunController::class, 
 Route::put('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'update'])->name('no_akun.update');
 Route::delete('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'destroy'])->name('no_akun.destroy');
 Route::post('/no-akun/import', [App\Http\Controllers\NoAkunController::class, 'importExcel'])->name('no_akun.import');
+
+Route::get('/income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
+Route::post('/income-statement/store', [IncomeStatementController::class, 'store'])->name('income-statement.store');
+Route::get('/income-statement/laporan', [IncomeStatementController::class, 'laporan'])->name('income-statement.laporan');
+Route::post('/perusahaan/merge', [PerusahaanController::class, 'merge'])->name('perusahaan.merge');

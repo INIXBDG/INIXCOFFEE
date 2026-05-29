@@ -210,7 +210,7 @@ class apiController extends Controller
 
     public function getPerusahaanall()
     {
-        $perusahaan = Perusahaan::with('karyawan')->get();
+        $perusahaan = Perusahaan::with('karyawan')->withCount('rkms', 'peserta', 'contacts', 'peluang')->get();
 
         return response()->json([
             'success' => true,
