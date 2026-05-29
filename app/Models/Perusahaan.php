@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Perusahaan extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'nama_perusahaan',
         'kategori_perusahaan',
@@ -21,7 +22,18 @@ class Perusahaan extends Model
         'email',
         'foto_npwp',
         'history_sales',
+        'history_status',
     ];
+
+    public function getHistorySalesArrayAttribute()
+    {
+        return json_decode($this->history_sales ?? '[]', true);
+    }
+
+    public function getHistoryStatusArrayAttribute()
+    {
+        return json_decode($this->history_status ?? '[]', true);
+    }
 
     public function karyawan()
     {
@@ -51,11 +63,6 @@ class Perusahaan extends Model
     public function scopeForSales($query, $salesKey)
     {
         return $query->where('sales_key', $salesKey);
-    }
-
-    public function getHistorySalesArrayAttribute()
-    {
-        return json_decode($this->history_sales ?? '[]', true);
     }
 
     public function canBeTransferred()

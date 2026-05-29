@@ -720,6 +720,8 @@ Route::prefix('crm')->group(function () {
     Route::get('/contact/data', [ContactController::class, 'getPerusahaan'])->name('contact.data');
     Route::put('/update/pic', [PicController::class, 'updatePIC'])->name('pic.update');
     Route::delete('/delete/pic/{id}', [PicController::class, 'deletePIC'])->name('pic.delete');
+    Route::get('/contact/history-status/all', [ContactController::class, 'allHistoryStatus'])->name('crm.contact.all_history_status');
+    Route::get('/contact/history-status/data', [ContactController::class, 'allHistoryStatusData'])->name('crm.contact.all_history_status_data');
 
     //cheklist RKM admin sales
     Route::prefix('checklist-rkm')->name('crm.checklist-rkm.')->group(function () {
@@ -739,6 +741,7 @@ Route::prefix('crm')->group(function () {
     Route::put('/peluang/update/{id}', [PeluangController::class, 'updateTahap'])->name('update.tahap');
     Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
     Route::post('/peluang/paymentAdvance', [PeluangController::class, 'storePaymentAdvance'])->name('store.payment.advance');
+    Route::post('/peluang/restore/{id}', [PeluangController::class, 'restore'])->name('restore.peluang');
 
     // Aktivitas CRM
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('index.aktivitas');
@@ -968,6 +971,20 @@ Route::prefix('office')->group(function () {
     Route::get('/laporan/status-karyawan', [OfficeController::class, 'laporanStatusKaryawan'])->name('office.laporan.status-karyawan');
     Route::get('/laporan/status-karyawan/detail', [OfficeController::class, 'detailKaryawanStatus'])->name('office.laporan.status-karyawan.detail');
     Route::get('/laporan/trend-karyawan', [OfficeController::class, 'laporanTrendKaryawan'])->name('office.laporan.trend-karyawan');
+
+    // Export
+    Route::get('/export/status-karyawan-pdf', [OfficeController::class, 'exportStatusKaryawanPdf'])
+        ->name('office.export.status-karyawan-pdf');
+
+    // Dashboard Tunjangan Office (AJAX)
+    Route::get('/dashboard/tunjangan', [OfficeController::class, 'getDashboardTunjanganOffice'])
+        ->name('office.dashboard.tunjangan');
+
+    // Export PDF Tunjangan
+    Route::get('/export/tunjangan-pdf', [OfficeController::class, 'exportTunjanganPdf'])
+        ->name('office.export.tunjangan.pdf');
+
+    Route::get('/export-gaji-pdf', [OfficeController::class, 'exportPdfGaji']);
 
     Route::post('/store-hari-libur', [OfficeController::class, 'storeHariLibur'])->name('storeHariLibur');
     Route::get('/data-hari-libur/{year}', [OfficeController::class, 'dataHariLibur']);

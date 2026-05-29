@@ -260,36 +260,72 @@
             </div>
 
             <div class="mb-3">
-                <table class="table table-bordered table-sm">
-                    <thead>
-                        <tr class="table-light">
-                            <th>User</th>
-                            <th>Field</th>
-                            <th>Sebelum</th>
-                            <th>Sesudah</th>
-                            <th>Waktu</th>
-                        </tr>
-                    </thead>
-                    @foreach ($historyNet as $history)
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center">User</th>
+                                <th class="text-center">Field</th>
+                                <th class="text-center">Sebelum</th>
+                                <th class="text-center">Sesudah</th>
+                                <th class="text-center">Waktu</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                            {{-- Di sini kuncinya: kita looping isi dari kolom 'data' --}}
-                            @foreach ($history->data as $field => $value)
+                            @php
+                                $currencyFields = [
+                                    'transportasi',
+                                    'akomodasi_peserta',
+                                    'akomodasi_tim',
+                                    'fresh_money',
+                                    'entertaint',
+                                    'souvenir',
+                                    'cashback',
+                                    'sewa_laptop'
+                                ];
+                            @endphp
+
+                            @forelse ($historyNet as $history)
+                                @if(is_array($history->data))
+                                    @foreach ($history->data as $field => $value)
+                                        @php
+                                            $before = $value['before'];
+                                            $after = $value['after'];
+
+                                            if (is_null($before) || $before === '') {
+                                                $displayBefore = '-';
+                                            } elseif (in_array($field, $currencyFields) && is_numeric($before)) {
+                                                $displayBefore = 'Rp ' . number_format((float) $before, 0, ',', '.');
+                                            } else {
+                                                $displayBefore = $before === '0' && !in_array($field, $currencyFields) ? '-' : $before;
+                                            }
+
+                                            if (is_null($after) || $after === '') {
+                                                $displayAfter = '-';
+                                            } elseif (in_array($field, $currencyFields) && is_numeric($after)) {
+                                                $displayAfter = 'Rp ' . number_format((float) $after, 0, ',', '.');
+                                            } else {
+                                                $displayAfter = $after === '0' && !in_array($field, $currencyFields) ? '-' : $after;
+                                            }
+                                        @endphp
+                                        <tr>
+                                            <td class="align-middle">{{ $history->user->karyawan->nama_lengkap ?? $history->user->username ?? '-' }}</td>
+                                            <td class="align-middle">{{ ucwords(str_replace('_', ' ', $field)) }}</td>
+                                            <td class="text-danger align-middle text-end">{{ $displayBefore }}</td>
+                                            <td class="text-success align-middle text-end">{{ $displayAfter }}</td>
+                                            <td class="align-middle text-center">{{ \Carbon\Carbon::parse($history->created_at)->translatedFormat('d M Y, H:i') }}</td>
+                                        </tr>
+                                    @endforeach
+                                @endif
+                            @empty
                                 <tr>
-                                    <td><strong>{{ $history->user->karyawan->nama_lengkap ?? '-' }}</strong></td>
-                                    <td><strong>{{ ucwords(str_replace('_', ' ', $field)) }}</strong></td>
-                                    <td class="text-danger">
-                                        {{ is_numeric($value['before']) ? 'Rp ' . number_format((float) $value['before'], 0, ',', '.') : $value['before'] ?? '-' }}
-                                    </td>
-                                    <td class="text-success">
-                                        {{ is_numeric($value['after']) ? 'Rp ' . number_format((float) $value['after'], 0, ',', '.') : $value['after'] ?? '-' }}
-                                    </td>
-                                    <td>{{ $history->created_at->translatedFormat('d F Y, H:i') }}</td>
+                                    <td colspan="5" class="text-center text-muted py-3">Belum ada histori perubahan data.</td>
                                 </tr>
-                            @endforeach
+                            @endforelse
                         </tbody>
-                        @endforeach
                     </table>
                 </div>
+            </div>
 
         </div>
     </div>
