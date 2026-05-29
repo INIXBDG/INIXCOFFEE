@@ -50,6 +50,7 @@
                                     <th>Sewa Laptop</th>
                                     <th>Tgl. PA</th>
                                     <th>Pembayaran</th>
+                                    <th>Bukti</th>
                                     <th>Deskripsi Tambahan</th>
                                     <th width="10%" class="text-center">Aksi</th>
                                 </tr>
@@ -85,6 +86,15 @@
                                                     class="badge bg-{{ $item->tipe_pembayaran === 'cash' ? 'success' : ($item->tipe_pembayaran === 'transfer' ? 'info' : 'warning') }}">
                                                     {{ ucfirst($item->tipe_pembayaran) }}
                                                 </span>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if ($item->bukti)
+                                                <a href="/storage/{{ $item->bukti }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    Lihat Bukti
+                                                </a>
                                             @else
                                                 <span class="text-muted">—</span>
                                             @endif

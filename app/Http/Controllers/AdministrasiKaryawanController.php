@@ -98,12 +98,6 @@ class AdministrasiKaryawanController extends Controller
         return back()->with('success_administrasi', 'Administrasi Karyawan berhasil dihapus.');
     }
 
-    public function reloadData() {
-        $datatunjangan = TunjanganKaryawan::get();
-        $karyawanKontrak = karyawan::where('akhir_probation', '>=', now())->where('')->get();
-        $karyawanTetap = karyawan::where('akhir_kontrak', '>=', now())->where('')->get();
-    }
-
     public function getData($id)
     {
         $data = AdministrasiKaryawan::findOrFail($id);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Tickets;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DashboardItsmController extends Controller
 {
@@ -70,8 +71,8 @@ class DashboardItsmController extends Controller
         $this->applyMonthFilter($query, $request->query('filterMonth'));
 
         $result = $query->get()
-                       ->where('pic_category', '!=', 'Lainnya')
-                       ->pluck('total', 'pic_category');
+            ->where('pic_category', '!=', 'Lainnya')
+            ->pluck('total', 'pic_category');
 
         $picCountByCategory = [
             'Programming' => $result->get('Programming', 0),
@@ -92,9 +93,9 @@ class DashboardItsmController extends Controller
     {
         // PERUBAHAN 2: Menggunakan CONCAT untuk menggabungkan tanggal dan jam selesai
         $query = Tickets::select(
-                'keperluan',
-                DB::raw('AVG(TIMESTAMPDIFF(SECOND, created_at, CONCAT(tanggal_selesai, " ", jam_selesai))) as avg_duration')
-            )
+            'keperluan',
+            DB::raw('AVG(TIMESTAMPDIFF(SECOND, created_at, CONCAT(tanggal_selesai, " ", jam_selesai))) as avg_duration')
+        )
             // Pastikan 'tanggal_selesai' tidak null
             ->whereNotNull('tanggal_selesai')
             ->whereNotNull('jam_selesai')
@@ -103,6 +104,8 @@ class DashboardItsmController extends Controller
         $this->applyMonthFilter($query, $request->query('filterMonth'));
 
         $result = $query->pluck('avg_duration', 'keperluan');
+
+        Log::info('Result: ' . json_encode($result));
 
         return response()->json([
             'labels' => $result->keys(),
@@ -131,23 +134,47 @@ class DashboardItsmController extends Controller
      */
     public function getRerataKetepatanResponse(Request $request)
     {
-        // PERUBAHAN 3: Menggunakan CONCAT untuk menggabungkan tanggal dan jam response
+        // Ambil parameter filter
+        $tahun = $request->query('tahun', now()->year);
+        $bulan = $request->query('filterMonthKetepatan', 'all');
+
+        // Query: hitung rata-rata response time dalam detik, group by keperluan
         $query = Tickets::select(
-                'keperluan',
-                DB::raw('AVG(TIMESTAMPDIFF(SECOND, created_at, CONCAT(tanggal_response, " ", jam_response))) as avg_response')
-            )
-            // Pastikan 'tanggal_response' tidak null
+            'keperluan',
+            DB::raw('AVG(TIMESTAMPDIFF(SECOND, timestamp, CAST(CONCAT(tanggal_response, " ", jam_response) AS DATETIME))) as avg_response_seconds')
+        )
             ->whereNotNull('tanggal_response')
             ->whereNotNull('jam_response')
+            ->whereNotNull('timestamp')
+            ->whereYear('timestamp', $tahun)
             ->groupBy('keperluan');
 
-        $this->applyMonthFilter($query, $request->query('filterMonthKetepatan'));
+        // Filter bulan jika dipilih
+        if ($bulan !== 'all' && is_numeric($bulan) && $bulan >= 1 && $bulan <= 12) {
+            $query->whereMonth('timestamp', $bulan);
+        }
 
-        $result = $query->pluck('avg_response', 'keperluan');
+        $result = $query->pluck('avg_response_seconds', 'keperluan');
+
+        // Format: konversi detik ke HH:MM:SS, filter null
+        $formattedValues = $result->map(function ($val) {
+            if ($val === null) return null;
+
+            $totalSeconds = round($val);
+
+            // Konversi detik ke HH:MM:SS
+            $hours = floor($totalSeconds / 3600);
+            $minutes = floor(($totalSeconds % 3600) / 60);
+            $seconds = $totalSeconds % 60;
+
+            return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+        })->filter();
 
         return response()->json([
-            'labels' => $result->keys(),
-            'values' => $result->values()->map(fn($val) => round($val))
+            'labels' => $formattedValues->keys()->values(),
+            'values' => $formattedValues->values(),
+            'tahun' => (int) $tahun,
+            'bulan' => $bulan
         ]);
     }
 
@@ -167,6 +194,4 @@ class DashboardItsmController extends Controller
             'values' => $result->values()
         ]);
     }
-
-    
 }

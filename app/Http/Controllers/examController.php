@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Tickets;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Mockery\Expectation;
 
 class examController extends Controller
 {
@@ -476,7 +477,7 @@ class examController extends Controller
                 ]);
 
                 // untuk exam bnsp dan ec-council, skip approval spv sales dan office manager
-                if ($rkmSource->materi->vendor == 'EC-Council' || str_contains($rkmSource->materi->nama_materi, 'BNSP')) {
+                if ($rkmSource->materi->vendor == 'EC-Council' || str_contains($rkmSource->materi->nama_materi, 'BNSP') || $request->skipApproval) {
                     approvalexam::create([
                         'id_exam' => $exam->id,
                         'sales' => $newRkm->sales_key,
@@ -525,7 +526,7 @@ class examController extends Controller
             $path = '/exam/' . eksam::latest()->first()->id;
 
             // selain rkm dengan exam "ya" maka skip notifikasi
-            if ($rkmSource->exam === '1') {
+            if ($rkmSource->exam === '1' || $request->skipApproval) {
                 foreach ($users as $user) {
                     $receiverId = $user->id;
                     NotificationFacade::send($user, new PengajuanexamNotification($data, $path, $receiverId));
@@ -1102,5 +1103,70 @@ class examController extends Controller
         }
 
         return redirect()->back()->with(['success' => 'Pengajuan berhasil dibuat, alur tiket dan notifikasi ganda telah dijalankan.']);
+    }
+
+    public function getKurs($id) {
+        $eksam = eksam::findOrFail($id);
+
+        if (!$eksam) {
+            return response()->json([
+                'message' => 'error'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'success',
+            'kurs' => (int) $eksam->kurs,
+            'kurs_admin' => (int) $eksam->kurs_dollar 
+        ]);
+    }
+    public function updateKurs($id, Request $request) {
+        $eksam = eksam::findOrFail($id);
+
+        $request->validate([
+            'update_kurs' => 'required',
+            'kurs_admin' => 'required',
+        ]);
+
+        try {
+            $harga = (int) $eksam->harga;
+            $biaya_admin = (int) $eksam->biaya_admin;
+            $pax = $eksam->pax;
+
+            $total = ($harga * $request->update_kurs) + ($biaya_admin * $request->kurs_admin);
+            $totalHarga = $total * $pax;
+
+            $eksam->update([
+                'harga_rupiah' => $harga,
+                'total' => $totalHarga,
+                'kurs' => $request->update_kurs,
+                'kurs_dollar' => $request->kurs_admin,
+            ]);
+
+            $change = changeexam::where('id_exam', $eksam->id)->latest()->first();
+            changeexam::create([
+                'id_exam' => $eksam->id,
+                'keterangan' => $change->keterangan,
+                'status' => 'Update Kurs',
+                'kode_karyawan' => auth()->user()->karyawan->kode_karyawan,
+            ]);
+
+        } catch (Expectation $e) {
+            return back()->with('error', 'Kurs gagal diupdate');
+        }
+
+        return back()->with('success', 'Kurs berhasil diupdate');
+    }
+
+    public function manualCreate() {
+        $kode_exam = Listexam::all();
+        $materi = Materi::all();
+        $rkm = RKM::with('perusahaan', 'materi')->orderBy('tanggal_awal', 'desc')->get();
+
+        return view('exam.createManual', compact(
+            'kode_exam',
+            'materi',
+            'rkm',
+        ));
     }
 }

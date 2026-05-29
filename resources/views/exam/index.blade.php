@@ -103,6 +103,11 @@
                 @if (in_array(auth()->user()->jabatan, ['Technical Support', 'Admin Holding']))
                     <div class="card m-4">
                         <div class="card-body table-responsive">
+                            <div class="d-flex justify-content-end align-items-center">
+                                <a class="btn btn-md click-primary mx-4" href="{{ route('exam.manualCreate') }}">
+                                    <img src="{{ asset('icon/plus.svg') }}" width="30px"> Add Pengajuan
+                                </a>
+                            </div>
                             <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Exam BNSP - EC Council') }}</h3>
                             <table class="table table-striped" id="examconditionaltable">
                                 <thead>

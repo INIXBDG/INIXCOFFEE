@@ -179,6 +179,7 @@ class LaporanPenjualanController extends Controller
                 'nama_perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
                 'perhitungannet' => $netsales,
                 'invoice' => $item->invoice,
+                'bukti' => $item->bukti ?? null,
                 'path_regis' => $item->peluang->regis->path ?? '-',
                 'total_ppn' => $totalppn,
             ];

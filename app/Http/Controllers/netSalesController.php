@@ -323,6 +323,7 @@ class netSalesController extends Controller
                 'sewa_laptop' => $netSale->sewa_laptop,
                 'tgl_pa' => $netSale->tgl_pa,
                 'tipe_pembayaran' => $netSale->tipe_pembayaran,
+                'bukti' => $netSale->bukti ?? null,
                 'deskripsi_tambahan' => $netSale->deskripsi_tambahan,
                 'ppn' => $potonganPajak, // 🔹 Variabel PPN diteruskan ke frontend
                 'total' => $total,

@@ -2,11 +2,27 @@
 
 @section('office_contents')
     @php
-        $isReadOnly = Auth::user()->jabatan !== 'Driver' 
-                    && Auth::user()->jabatan !== 'HRD';
+        $isReadOnly = Auth::user()->jabatan !== 'Driver' && Auth::user()->jabatan !== 'HRD';
     @endphp
 
     <div class="container-fluid">
+
+        {{-- Alert Success --}}
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+        {{-- Alert error --}}
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="m-0">Detail & Edit Perbaikan Kendaraan</h3>
@@ -307,8 +323,13 @@
                             <a href="{{ route('office.indexPerbaikanKendaraan') }}" class="btn btn-light border">
                                 Batal
                             </a>
-                            <button type="submit" class="btn btn-primary px-4">
+
+                            <button type="submit" name="action" value="update" class="btn btn-primary px-4">
                                 <i class="fas fa-save"></i> Simpan Perubahan
+                            </button>
+
+                            <button type="submit" name="action" value="kirim_pengajuan" class="btn btn-success px-4">
+                                <i class="fas fa-paper-plane"></i> Kirim Langsung Pengajuan
                             </button>
                         </div>
                     @else
