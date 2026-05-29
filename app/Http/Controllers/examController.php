@@ -477,7 +477,7 @@ class examController extends Controller
                 ]);
 
                 // untuk exam bnsp dan ec-council, skip approval spv sales dan office manager
-                if ($rkmSource->materi->vendor == 'EC-Council' || str_contains($rkmSource->materi->nama_materi, 'BNSP')) {
+                if ($rkmSource->materi->vendor == 'EC-Council' || str_contains($rkmSource->materi->nama_materi, 'BNSP') || $request->skipApproval) {
                     approvalexam::create([
                         'id_exam' => $exam->id,
                         'sales' => $newRkm->sales_key,
@@ -526,7 +526,7 @@ class examController extends Controller
             $path = '/exam/' . eksam::latest()->first()->id;
 
             // selain rkm dengan exam "ya" maka skip notifikasi
-            if ($rkmSource->exam === '1') {
+            if ($rkmSource->exam === '1' || $request->skipApproval) {
                 foreach ($users as $user) {
                     $receiverId = $user->id;
                     NotificationFacade::send($user, new PengajuanexamNotification($data, $path, $receiverId));
@@ -1156,5 +1156,17 @@ class examController extends Controller
         }
 
         return back()->with('success', 'Kurs berhasil diupdate');
+    }
+
+    public function manualCreate() {
+        $kode_exam = Listexam::all();
+        $materi = Materi::all();
+        $rkm = RKM::with('perusahaan', 'materi')->orderBy('tanggal_awal', 'desc')->get();
+
+        return view('exam.createManual', compact(
+            'kode_exam',
+            'materi',
+            'rkm',
+        ));
     }
 }

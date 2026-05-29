@@ -188,6 +188,7 @@ Route::prefix('catering')->name('catering.')->group(function () {
     Route::get('detail/{id}', [CateringController::class, 'getDetail'])->name('detail');
 });
 
+Route::get('/exam/manual-create-pengajuan', [examController::class, 'manualCreate'])->name('exam.manualCreate');
 Route::resource('/comment', \App\Http\Controllers\CommentController::class);
 
 Route::resource('/perusahaan', \App\Http\Controllers\PerusahaanController::class);
