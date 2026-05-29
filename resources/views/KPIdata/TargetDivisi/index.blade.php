@@ -621,6 +621,7 @@
         const assistantRouteUrlMap = {
             // GM
             "pemasukan kotor": "/rkm",
+            "target penjualan project tahunan": "/projects/leads",
             "pemasukan bersih": "/office/analysis",
             "kepuasan pelanggan": "/feedback",
             "rasio biaya operasional terhadap revenue": "/kpi-data/table-data",
@@ -1035,7 +1036,7 @@
                         }).join('') || '<div class="text-muted small">Tidak ada karyawan</div>';
 
                         const allowedAssistantRoutes = ['dorong inovasi pelayanan', 'rasio biaya operasional terhadap revenue', 'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'pengeluaran biaya karyawan'];
-                        const allowedAssistantRoutesForRupiah = ['pemasukan kotor', 'meningkatkan revenue perusahaan', 'target penjualan tahunan'];
+                        const allowedAssistantRoutesForRupiah = ['pemasukan kotor', 'meningkatkan revenue perusahaan', 'target penjualan tahunan', 'target penjualan project tahunan'];
                         const allowedAssistantRoutesForPresentaseGapKompetensi = ['persentase gap kompetensi tim terhadap standar skill'];
                         const allowedAssistantRoutesForTargetPenjualanTahunan = ['target penjualan tahunan', 'pemasukan kotor'];
                         const allowedAssistantRoutesForPeningkatanKontribusiPelatihan = ['peningkatan kontribusi pelatihan'];
