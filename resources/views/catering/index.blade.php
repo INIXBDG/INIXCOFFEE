@@ -967,7 +967,12 @@
             });
 
             function showEditModal(id) {
-                $.get("{{ route('catering.get') }}", function(response) {
+                const type = $('#catering-tab').hasClass('active')
+                    ? 'catering'
+                    : 'rencana';
+                    
+                $.get("{{ route('catering.get') }}", { type:type }, function(response) {
+                    console.log(response);
                     const item = response.find(d => d.id == id);
                     if (!item) return;
 
@@ -1028,7 +1033,8 @@
                             .tipe_detail, d.id_vendor);
                     });
 
-                    $('#editModal').modal('show');
+                    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+                    editModal.show();
                 });
             }
 

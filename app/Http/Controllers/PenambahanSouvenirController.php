@@ -106,7 +106,7 @@ class PenambahanSouvenirController extends Controller
     {
         // 1. Validasi Input
         $request->validate([
-            'id_rkm' => 'required|exists:r_k_m_s,id',
+            'id_rkm' => 'required',
             'nama' => 'required|string|max:255',
             'jabatan' => 'required|string|max:255',
             'tanggal' => 'required|date',
@@ -114,6 +114,7 @@ class PenambahanSouvenirController extends Controller
             'souvenir_id.*' => 'required|exists:souvenirs,id',
             'qty' => 'required|array|min:1',
             'qty.*' => 'required|integer|min:1',
+            'lainnya' => 'required_if:id_rkm,lainnya'
         ]);
 
         DB::beginTransaction();
@@ -122,9 +123,25 @@ class PenambahanSouvenirController extends Controller
             $karyawanId = auth()->user()->karyawan->id;
             $items = $request->souvenir_id;
             $quantities = $request->qty;
+            $idRkm = null;
+            $tipe = null;
 
             // Array untuk menampung detail barang notifikasi
             $listBarang = [];
+
+            // Handler id_rkm
+            if(in_array($request->id_rkm, ['Webinar', 'Mobile', 'lainnya'])) {
+                $idRkm = null;
+                
+                if($request->id_rkm === 'lainnya') {
+                    $tipe = $request->lainnya;
+                } else {
+                    $tipe = $request->id_rkm;
+                }
+            } else {
+                $idRkm = $request->id_rkm;
+                $tipe = 'RKM';
+            }
 
             // 3. Loop Proses Barang
             foreach ($items as $index => $souvenirId) {
@@ -140,7 +157,8 @@ class PenambahanSouvenirController extends Controller
 
                 // Simpan Riwayat
                 PenambahanSouvenir::create([
-                    'id_rkm' => $request->id_rkm,
+                    'id_rkm' => $idRkm,
+                    'tipe' => $tipe,
                     'id_karyawan' => $karyawanId,
                     'id_souvenir' => $souvenirId,
                     'nama' => $request->nama,
@@ -160,21 +178,36 @@ class PenambahanSouvenirController extends Controller
             }
 
             // 4. Persiapan Data Notifikasi
-            $rkm = RKM::with('materi')->find($request->id_rkm);
-            $namaMateri = $rkm->materi->nama_materi ?? $rkm->nama_program ?? 'RKM #' . $rkm->id;
-
-            $dataNotif = [
-                'id_karyawan'       => $karyawanId,
-                'tipe'              => 'Souvenir',
-                'tanggal_pengajuan' => $request->tanggal,
-                'nama_rkm'          => $namaMateri,
-                'rkm_start'         => $rkm->tanggal_awal,
-                'rkm_end'           => $rkm->tanggal_akhir,
-                // Data Detail Tambahan
-                'penerima_nama'     => $request->nama,
-                'penerima_jabatan'  => $request->jabatan,
-                'detail_barang'     => $listBarang
-            ];
+            if ($idRkm) {
+                $rkm = RKM::with('materi')->find($request->id_rkm);
+                $namaMateri = $rkm->materi->nama_materi ?? $rkm->nama_program ?? 'RKM #' . $rkm->id;
+                
+                $dataNotif = [
+                    'id_karyawan'       => $karyawanId,
+                    'tipe'              => 'Souvenir',
+                    'tanggal_pengajuan' => $request->tanggal,
+                    'nama_rkm'          => $namaMateri,
+                    'rkm_start'         => $rkm->tanggal_awal,
+                    'rkm_end'           => $rkm->tanggal_akhir,
+                    // Data Detail Tambahan
+                    'penerima_nama'     => $request->nama,
+                    'penerima_jabatan'  => $request->jabatan,
+                    'detail_barang'     => $listBarang
+                ];
+            } else {
+                 $dataNotif = [
+                    'id_karyawan'       => $karyawanId,
+                    'tipe'              => 'Souvenir',
+                    'tanggal_pengajuan' => $request->tanggal,
+                    'nama_rkm'          => $tipe,
+                    'rkm_start'         => null,
+                    'rkm_end'           => null,
+                    // Data Detail Tambahan
+                    'penerima_nama'     => $request->nama,
+                    'penerima_jabatan'  => $request->jabatan,
+                    'detail_barang'     => $listBarang
+                ];
+            }
 
             $type = 'Laporan Distribusi Souvenir';
             $path = '/penambahansouvenir';
@@ -241,12 +274,13 @@ class PenambahanSouvenirController extends Controller
     {
         // 1. Validasi
         $request->validate([
-            'id_rkm' => 'required|exists:r_k_m_s,id',
+            'id_rkm' => 'required',
             'nama' => 'required|string|max:255',
             'jabatan' => 'required|string|max:255',
             'tanggal' => 'required|date',
             'id_souvenir' => 'required|exists:souvenirs,id', // Hanya single item untuk edit
             'qty' => 'required|integer|min:1',
+            'lainnya' => 'required_if:id_rkm,lainnya'
         ]);
 
         DB::beginTransaction();
@@ -281,9 +315,26 @@ class PenambahanSouvenirController extends Controller
             // Potong stok dengan jumlah baru
             $newSouvenir->decrement('stok', $request->qty);
 
+            // Handler id_rkm
+            $idRkm = null;
+            $tipe = null;
+            if(in_array($request->id_rkm, ['Webinar', 'Mobile', 'lainnya'])) {
+                $idRkm = null;
+                
+                if($request->id_rkm === 'lainnya') {
+                    $tipe = $request->lainnya;
+                } else {
+                    $tipe = $request->id_rkm;
+                }
+            } else {
+                $idRkm = $request->id_rkm;
+                $tipe = 'RKM';
+            }
+
             // === UPDATE DATA TRANSAKSI ===
             $penambahan->update([
-                'id_rkm' => $request->id_rkm,
+                'id_rkm' => $idRkm,
+                'tipe' => $tipe,
                 'id_souvenir' => $request->id_souvenir,
                 'nama' => $request->nama,
                 'jabatan' => $request->jabatan,
@@ -314,9 +365,6 @@ class PenambahanSouvenirController extends Controller
         // Kita perlu load relasi 'souvenir' untuk mengambil namanya
         $penambahan->load(['souvenir', 'rkm.materi']);
 
-        $rkm = $penambahan->rkm;
-        $namaMateri = $rkm->materi->nama_materi ?? $rkm->nama_program ?? 'RKM #' . $rkm->id;
-
         // 2. Susun Detail Barang
         // Karena update biasanya per satu baris (row), kita bungkus dalam array
         $listBarang = [
@@ -326,20 +374,38 @@ class PenambahanSouvenirController extends Controller
             ]
         ];
 
-        // 3. Susun Payload Data (Harus Lengkap Sesuai Struktur Baru)
-        $dataNotif = [
-            'id_karyawan'       => auth()->user()->karyawan->id,
-            'tipe'              => 'Souvenir',
-            'tanggal_pengajuan' => $penambahan->tanggal,
-            'nama_rkm'          => $namaMateri,
-            'rkm_start'         => $rkm->tanggal_awal,
-            'rkm_end'           => $rkm->tanggal_akhir,
-
-            // Data Tambahan (PENTING: Agar tidak error di View)
-            'penerima_nama'     => $penambahan->nama,
-            'penerima_jabatan'  => $penambahan->jabatan,
-            'detail_barang'     => $listBarang
-        ];
+        if ($penambahan->rkm) {
+            $rkm = $penambahan->rkm;
+            $namaMateri = $rkm->materi->nama_materi ?? $rkm->nama_program ?? 'RKM #' . $rkm->id;
+    
+            // 3. Susun Payload Data (Harus Lengkap Sesuai Struktur Baru)
+            $dataNotif = [
+                'id_karyawan'       => auth()->user()->karyawan->id,
+                'tipe'              => 'Souvenir',
+                'tanggal_pengajuan' => $penambahan->tanggal,
+                'nama_rkm'          => $namaMateri,
+                'rkm_start'         => $rkm->tanggal_awal,
+                'rkm_end'           => $rkm->tanggal_akhir,
+    
+                // Data Tambahan (PENTING: Agar tidak error di View)
+                'penerima_nama'     => $penambahan->nama,
+                'penerima_jabatan'  => $penambahan->jabatan,
+                'detail_barang'     => $listBarang
+            ];
+        } else {
+            $dataNotif = [
+                'id_karyawan'       => auth()->user()->karyawan->id,
+                'tipe'              => 'Souvenir',
+                'tanggal_pengajuan' => $penambahan->tanggal,
+                'nama_rkm'          => $penambahan->tipe,
+                'rkm_start'         => null,
+                'rkm_end'           => null,
+                // Data Detail Tambahan
+                'penerima_nama'     => $penambahan->nama,
+                'penerima_jabatan'  => $penambahan->jabatan,
+                'detail_barang'     => $listBarang
+            ];
+        }
 
         // Ubah Judul Type agar user tahu ini hasil edit
         $type = 'Update Distribusi Souvenir';

@@ -53,10 +53,14 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="id_rkm" class="col-md-4 col-form-label text-md-start">Nama RKM</label>
+                            <label for="id_rkm" class="col-md-4 col-form-label text-md-start">Nama Kegiatan / RKM</label>
                             <div class="col-md-6">
-                                <select name="id_rkm" class="form-select" required>
-                                    <option value="">-- Pilih RKM --</option>
+                                <select id="id_rkm" name="id_rkm" class="form-select" required>
+                                    <option value="" disabled selected>-- Pilih Kegiatan --</option>
+                                    <option value="Webinar">Webinar</option>
+                                    <option value="Mobile">Mobile</option>
+                                    <option value="lainnya" >Lainnya</option>
+                                    <option value="" disabled>-- Pilih RKM --</option>
                                     @foreach($rkms as $rkm)
                                         <option value="{{ $rkm->id }}" {{ old('id_rkm') == $rkm->id ? 'selected' : '' }}>
                                             {{-- Menampilkan Tanggal Awal s/d Akhir dan Nama Materi --}}
@@ -64,6 +68,7 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                <input type="text" class="form-control" name="lainnya" id="input_lainnya" style="display: none;">
                                 <small class="text-muted" style="font-size: 0.75rem">Filter: 1 minggu lalu s/d 3 minggu ke depan.</small>
                             </div>
                         </div>
@@ -207,6 +212,16 @@
             if (maxStock > 0 && currentQty > maxStock) {
                 alert('Jumlah melebihi stok yang tersedia (' + maxStock + ')');
                 $(this).val(maxStock);
+            }
+        });
+
+        $('#id_rkm').on('change', function () {
+            if ($(this).val() === 'lainnya') {
+                $('#input_lainnya').show();
+                $('#input_lainnya').attr('required', true);
+            } else {
+                $('#input_lainnya').hide();
+                $('#input_lainnya').removeAttr('required', false);
             }
         });
     });

@@ -70,7 +70,7 @@
                         <thead>
                             <tr>
                                 <th scope="col">Tanggal</th>
-                                <th scope="col">RKM</th>
+                                <th scope="col">RKM / Kegiatan</th>
                                 <th scope="col">Nama Souvenir</th>
                                 <th scope="col">Penerima</th>
                                 <th scope="col">Jabatan</th>
@@ -136,6 +136,7 @@
                 }
 
                 let data = response.data || [];
+                console.log(data);
 
                 $('#tablePenambahan').DataTable({
                     data: data,
@@ -150,8 +151,10 @@
                         },
                     {
                         data: "rkm", // Relasi RKM
-                        render: function(data) {
-                            if (!data) return '-';
+                        render: function(data, type, row) {
+                            if (!data) {
+                                return row.tipe ?? '-'
+                            };
 
                             // Pastikan locale ID agar format bulan 'Jan', 'Feb', dst.
                             moment.locale('id');
