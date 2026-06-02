@@ -41,7 +41,7 @@
                         <div class="row mb-3">
                             <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Travel') }}</label>
                             <div class="col-md-6">
-                                <select  name="tipe" id="tipe" class="form-select">
+                                <select name="tipe" id="tipe" class="form-select">
                                     <option value="-">Pilih Jenis Travel</option>
                                     <option value="Domestik" {{ $suratperjalanan->tipe == 'Domestik' ? 'selected' : '' }}>Travel Domestik</option>
                                     <option value="Internasional" {{ $suratperjalanan->tipe == 'Internasional' ? 'selected' : '' }}>Travel Internasional</option>
@@ -119,7 +119,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" step="0.01" class="form-control @error('ratemakan') is-invalid @enderror" name="ratemakan" id="ratemakan" >
+                                    <input value="{{ number_format($suratperjalanan->ratemakan, 0, ',', '.') }}" type="text" step="0.01" class="form-control @error('ratemakan') is-invalid @enderror" name="ratemakan" id="ratemakan" >
                                 </div>
                                 @error('ratemakan')
                                     <span class="invalid-feedback" role="alert">
@@ -133,7 +133,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" step="0.01" class="form-control @error('ratespj') is-invalid @enderror" name="ratespj" id="ratespj">
+                                    <input value="{{ number_format($suratperjalanan->ratespj, 0, ',', '.') }}" type="text" step="0.01" class="form-control @error('ratespj') is-invalid @enderror" name="ratespj" id="ratespj">
                                 </div>
                                 @error('ratespj')
                                     <span class="invalid-feedback" role="alert">
@@ -147,7 +147,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" step="0.01" class="form-control @error('ratetaksi') is-invalid @enderror" name="ratetaksi" id="ratetaksi" >
+                                    <input value="{{ number_format($suratperjalanan->ratetaksi, 0, ',', '.') }}" type="text" step="0.01" class="form-control @error('ratetaksi') is-invalid @enderror" name="ratetaksi" id="ratetaksi" >
                                 </div>
                                 @error('ratetaksi')
                                     <span class="invalid-feedback" role="alert">

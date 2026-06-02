@@ -350,7 +350,6 @@ class SuratPerjalananController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         $request->validate([
             'id_karyawan' => 'required|string|max:255',
             'approval_hrd' => 'required|string|max:255',

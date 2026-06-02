@@ -66,4 +66,9 @@ class SuratPerjalanan extends Model
     {
         return $this->belongsTo(RKM::class, 'jadwal_RKM', 'id');
     }
+
+    public function jurnalAkuntansi()
+    {
+        return $this->belongsTo(JurnalAkuntansi::class, 'id_surat_perjalanan', 'id');
+    }
 }

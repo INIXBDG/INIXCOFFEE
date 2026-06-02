@@ -25,6 +25,7 @@ class JurnalAkuntansi extends Model
         'nomor_kk',
         'id_pengajuan_barang',
         'id_perhitungan_net_sales',
+        'id_surat_perjalanan',
         'tanggal_transaksi',
         'keterangan',
         'no_akun',
@@ -64,6 +65,11 @@ class JurnalAkuntansi extends Model
     public function no_accounting()
     {
         return $this->belongsTo(no_akun::class, 'no_akun', 'no');
+    }
+
+    public function spj()
+    {
+        return $this->belongsTo(SuratPerjalanan::class, 'id_surat_perjalanan', 'id');
     }
 
 
