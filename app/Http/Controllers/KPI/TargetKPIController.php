@@ -1459,9 +1459,7 @@ class TargetKPIController extends Controller
             ->select(DB::raw('SUM(projects.nilai_proyek) as total_sales'))
             ->value('total_sales') ?? 0);
 
-        $progress = $target > 0 ? ($totalSales / $target) * 100 : 0;
-
-        return round($progress, 1);
+        return round($totalSales);
     }
 
     private function calculateRasioBiayaOperasionalTerhadapRevenue($item, $personId)
@@ -5855,7 +5853,7 @@ class TargetKPIController extends Controller
         $targetGlobal = $nilaiTarget;
 
         // ✅ Hitung progress dengan rumus bersih
-        $progressGlobal = $targetGlobal > 0 ? ($progressRupiah / $targetGlobal) * 100 : 0;
+        $progressGlobal = $progressRupiah;
         $gap = $progressGlobal - $nilaiTarget;
 
         $above = $totalSales >= $targetGlobal ? 1 : 0;
