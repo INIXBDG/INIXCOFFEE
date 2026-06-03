@@ -74,30 +74,6 @@
 
         @if (Auth::user()->jabatan === 'HRD' || Auth::user()->jabatan === 'GM')
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Karyawan</span>
-            </li>
-            <li class="menu-item {{ request()->routeIs('office.HR.employee.newActive') ? 'active open' : '' }}">
-                <a href="{{ route('office.HR.employee.newActive') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-group"></i>
-                    <div class="text-truncate" data-i18n="contact">Informasi Karyawan</div>
-                </a>
-            </li>
-
-            <li class="menu-item {{ request()->routeIs('office.HR.payroll.payrollIndex') ? 'active open' : '' }}">
-                <a href="{{ route('office.HR.payroll.payrollIndex') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-wallet"></i>
-                    <div class="text-truncate" data-i18n="contact">Payroll</div>
-                </a>
-            </li>
-
-            <li class="menu-item {{ request()->routeIs('office.HR.absensi.kehadiranIndex') ? 'active open' : '' }}">
-                <a href="{{ route('office.HR.absensi.kehadiranIndex') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-calendar-check"></i>
-                    <div class="text-truncate" data-i18n="contact">Kehadiran</div>
-                </a>
-            </li>
-
-            <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Administrasi</span>
             </li>
 

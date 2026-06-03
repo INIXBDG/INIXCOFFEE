@@ -32,7 +32,11 @@ use App\Http\Controllers\examController;
 use App\Http\Controllers\feedbackController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\HRController;
+use App\Http\Controllers\HR\employeeController;
+use App\Http\Controllers\HR\HRController;
+use App\Http\Controllers\HR\payrollController;
+use App\Http\Controllers\HR\presenceController;
+use App\Http\Controllers\HR\ReportController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\InstructorDevelopmentController;
 use App\Http\Controllers\InventarisController;
@@ -516,15 +520,6 @@ Route::prefix('kpi-data/')
             ->group(function () {
             route::get('/get', [TargetKPIController::class, 'getDataTarget'])->name('get');
         });
-
-        Route::get('/dashboard', [TargetKPIController::class, 'executiveDashboard'])->name('executive.dashboard');
-        Route::get('/executive/analytics', [TargetKPIController::class, 'executiveDashboard'])->name('executive.analytics');
-        Route::get('/executive/analytics/export', [TargetKPIController::class, 'exportExecutiveReport'])->name('executive.analytics.export');
-        Route::get('/executive/analytics/trend', [TargetKPIController::class, 'getExecutiveTrend'])->name('executive.analytics.trend');
-        Route::get('/executive/analytics/prediction', [TargetKPIController::class, 'getPredictiveAnalysis'])->name('executive.analytics.prediction');
-        Route::get('/executive/analytics/matrix', [TargetKPIController::class, 'getPotentialMatrix'])->name('executive.analytics.matrix');
-        Route::get('/detail-data', [TargetKPIController::class, 'detailData'])->name('detail.data');
-        Route::get('/progress-dashboard', [TargetKPIController::class, 'getProgressDashboard'])->name('progress.dashboard');
     });
 
 //Project KPI
@@ -1034,45 +1029,6 @@ Route::prefix('office')
     ->name('office.')
     ->middleware(['auth'])
     ->group(function () {
-
-        //HR routes
-        Route::prefix('HR-infomation')
-            ->name('HR.')
-            ->group(function () {
-            Route::prefix('employee')
-                ->name('employee.')
-                ->group(function () {
-                Route::get('/index', [HRController::class, 'newActive'])->name('newActive');
-                Route::get('/category', [HRController::class, 'getEmployeesByCategory'])->name('category');
-                Route::get('/data', [HRController::class, 'getEmployeeData'])->name('data');
-                Route::get('/headcount/trend', [HRController::class, 'getHeadcountTrend'])->name('trend');
-                Route::get('/headcount/breakdown', [HRController::class, 'getHeadcountBreakdown'])->name('breakdown');
-                
-                Route::get('/export/trend/csv', [HRController::class, 'exportHeadcountTrendCsv'])->name('trend.export.csv');
-                Route::get('/export/trend/pdf', [HRController::class, 'exportHeadcountTrendPdf'])->name('trend.export.pdf');
-                Route::get('/export/breakdown/csv', [HRController::class, 'exportHeadcountBreakdownCsv'])->name('breakdown.export.csv');
-                Route::get('/export/breakdown/pdf', [HRController::class, 'exportHeadcountBreakdownPdf'])->name('breakdown.export.pdf');
-            });
-
-             Route::prefix('payroll')
-                ->name('payroll.')
-                ->group(function () {
-                    Route::get('/index', [HRController::class, 'payrollIndex'])->name('payrollIndex');
-                    Route::get('/dashboard', [HRController::class, 'getPayrollDashboard'])->name('dashboard');
-                    Route::get('/export/csv', [HRController::class, 'exportPayrollCsv'])->name('export.csv');
-                    Route::get('/export/pdf', [HRController::class, 'exportPayrollPdf'])->name('export.pdf');
-            });
-
-            Route::prefix('absensi')->name('absensi.')->group(function () {
-                Route::get('/', [HRController::class, 'kehadiranIndex'])->name('kehadiranIndex');
-                Route::get('/analytics', [HRController::class, 'getAttendanceAnalytics'])->name('analytics');
-                Route::get('/export', [HRController::class, 'exportAttendanceReport'])->name('export');
-                Route::get('/division-stats', [HRController::class, 'getDivisionDailyStats'])->name('division.stats');
-                Route::get('/top-late', [HRController::class, 'getTopLateEmployees'])->name('top.late');
-                Route::get('/calendar', [HRController::class, 'getAttendanceCalendar'])->name('calendar');
-            });
-        });
-
         //pickup driver routes
         Route::prefix('pickup-driver')
             ->name('pickupDriver.')
@@ -1393,3 +1349,72 @@ Route::get('/no-akun/{id}/edit', [App\Http\Controllers\NoAkunController::class, 
 Route::put('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'update'])->name('no_akun.update');
 Route::delete('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'destroy'])->name('no_akun.destroy');
 Route::post('/no-akun/import', [App\Http\Controllers\NoAkunController::class, 'importExcel'])->name('no_akun.import');
+
+Route::prefix('HR-dashboard')->name('HR.')->group(function () {
+    Route::get('/', [HRController::class, 'index'])->name('index');
+    Route::prefix('employee')
+        ->name('employee.')
+        ->group(function () {
+        Route::get('/index', [employeeController::class, 'index'])->name('index');
+        Route::get('/category', [employeeController::class, 'getEmployeesByCategory'])->name('category');
+        Route::get('/data', [employeeController::class, 'getEmployeeData'])->name('data');
+        Route::get('/headcount/trend', [employeeController::class, 'getHeadcountTrend'])->name('trend');
+        Route::get('/headcount/breakdown', [employeeController::class, 'getHeadcountBreakdown'])->name('breakdown');
+        Route::get('/export/trend/csv', [employeeController::class, 'exportHeadcountTrendCsv'])->name('trend.export.csv');
+        Route::get('/export/trend/pdf', [employeeController::class, 'exportHeadcountTrendPdf'])->name('trend.export.pdf');
+        Route::get('/export/breakdown/csv', [employeeController::class, 'exportHeadcountBreakdownCsv'])->name('breakdown.export.csv');
+        Route::get('/export/breakdown/pdf', [employeeController::class, 'exportHeadcountBreakdownPdf'])->name('breakdown.export.pdf');
+    });
+    Route::prefix('payroll')
+        ->name('payroll.')
+        ->group(function () {
+            Route::get('/index', [payrollController::class, 'index'])->name('index');
+            Route::get('/dashboard', [payrollController::class, 'getPayrollDashboard'])->name('dashboard');
+            Route::get('/export/csv', [payrollController::class, 'exportPayrollCsv'])->name('export.csv');
+            Route::get('/export/pdf', [payrollController::class, 'exportPayrollPdf'])->name('export.pdf');
+    });
+    Route::prefix('absensi')->name('absensi.')->group(function () {
+        Route::get('/', [presenceController::class, 'index'])->name('index');
+        Route::get('/analytics', [presenceController::class, 'getAttendanceAnalytics'])->name('analytics');
+        Route::get('/export', [presenceController::class, 'exportAttendanceReport'])->name('export');
+        Route::get('/division-stats', [presenceController::class, 'getDivisionDailyStats'])->name('division.stats');
+        Route::get('/top-late', [presenceController::class, 'getTopLateEmployees'])->name('top.late');
+        Route::get('/calendar', [presenceController::class, 'getAttendanceCalendar'])->name('calendar');
+    });
+
+    Route::prefix('executive')->name('executive.')->group(function () {
+        Route::get('/dashboard', [TargetKPIController::class, 'executiveDashboard'])->name('index');
+        Route::get('/export-report', [TargetKPIController::class, 'exportExecutiveReport'])->name('export-report');
+        Route::prefix('analytics')->name('analytics.')->group(function () {
+            Route::get('/trend', [TargetKPIController::class, 'getExecutiveTrend'])->name('trend');
+            Route::get('/prediction', [TargetKPIController::class, 'getPredictiveAnalysis'])->name('prediction');
+            Route::get('/matrix', [TargetKPIController::class, 'getPotentialMatrix'])->name('matrix');
+        });
+    });
+
+    Route::prefix('reports')->name('reports.')->group(function() {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        
+        Route::get('/create', [ReportController::class, 'create'])->name('create');
+        Route::post('/extract-text', [ReportController::class, 'extractText'])->name('extract.text');
+        Route::post('/store', [ReportController::class, 'store'])->name('store');
+        Route::get('/{template}/edit', [ReportController::class, 'edit'])->name('edit');
+        Route::put('/{template}', [ReportController::class, 'update'])->name('update');
+        
+        Route::get('/{template}/generate', [ReportController::class, 'generateForm'])->name('generate.form');
+        Route::post('/{template}/generate', [ReportController::class, 'generate'])->name('generate');
+        Route::get('/{template}/history', [ReportController::class, 'history'])->name('history');
+        Route::get('/{template}/history/data', [ReportController::class, 'getHistoryData'])->name('history.data');
+        
+        Route::post('/placeholders', [ReportController::class, 'addPlaceholder'])->name('placeholders.store');
+        Route::put('/placeholders/{placeholder}', [ReportController::class, 'updatePlaceholder'])->name('placeholders.update');
+        Route::delete('/placeholders/{placeholder}', [ReportController::class, 'deletePlaceholder'])->name('placeholders.destroy');
+        
+        Route::post('/{template}/settings', [ReportController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/generations/{generation}/download', [ReportController::class, 'download'])->name('download');
+        // Tambahkan route ini setelah route report yang sudah ada
+        Route::get('/create-with-mapping', [ReportController::class, 'createWithMapping'])->name('create.mapping');
+        Route::post('/upload-and-map', [ReportController::class, 'uploadAndMap'])->name('upload.map');
+        Route::post('/save-with-mapping', [ReportController::class, 'saveWithMapping'])->name('save.mapping');
+    });
+});
