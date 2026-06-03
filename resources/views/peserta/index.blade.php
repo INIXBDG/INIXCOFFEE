@@ -130,10 +130,10 @@
         console.log(idInstruktur);
         console.log(idSales);
         
-        if(idInstruktur == 'AD' || jabatan == "Technical Support"){
+        if(jabatan == 'Education Manager' || jabatan == "Technical Support"){
             var idInstruktur = "";
         }
-        if(idSales == 'AM'){
+        if(jabatan == "SPV Sales"){
             var idSales = "";
         }
         
@@ -142,7 +142,7 @@
         if(idInstruktur) {
             tableConfig = {
                 "ajax": {
-                    "url": "{{ route('getRegistrasiall') }}",
+                    "url": "{{ route('getPesertaall') }}",
                     "type": "GET",
                     "beforeSend": function () {
                         $('#loadingModal').modal('show');
@@ -160,23 +160,23 @@
                     }
                 },
                 "columns": [
-                    {"data": "peserta.nama"},
-                    {"data": "peserta.email"},
+                    {"data": "nama"},
+                    {"data": "email"},
                     {
                         "data": "id_instruktur",
                         "visible": false
                     },
                     {
-                        "data": "peserta.jenis_kelamin",
+                        "data": "jenis_kelamin",
                         "render": function(data) {
                             return data == 'L' ? 'Laki-laki' : 'Perempuan';
                         }
                     },
-                    {"data": "peserta.no_hp"},
-                    {"data": "peserta.alamat"},
-                    {"data": "peserta.perusahaan.nama_perusahaan"},
+                    {"data": "no_hp"},
+                    {"data": "alamat"},
+                    {"data": "perusahaan.nama_perusahaan"},
                     {
-                        "data": "peserta.tanggal_lahir",
+                        "data": "tanggal_lahir",
                         "render": function(data) {
                             moment.locale('id')
                             return moment(data).format('DD MMMM YYYY');
@@ -224,7 +224,7 @@
                     }
                 ],
                 "ajax": {
-                    "url": "{{ route('getRegistrasiall') }}",
+                    "url": "{{ route('getPesertaall') }}",
                     "type": "GET",
                     "beforeSend": function () {
                         $('#loadingModal').modal('show');
@@ -232,7 +232,8 @@
                             $('#loadingModal').removeAttr('inert');
                         });
                     },
-                    "complete": function () {
+                    "complete": function (res) {
+                        console.log(res);
                         setTimeout(() => {
                             $('#loadingModal').modal('hide');
                             $('#loadingModal').on('hidden.bs.modal', function () {
@@ -242,21 +243,27 @@
                     }
                 },
                 "columns": [
-                    {"data": "peserta.nama"},
-                    {"data": "peserta.email"},
-                    {"data": "peserta.id", "visible": false},
-                    {"data": "peserta.perusahaan.sales_key", "visible": false},
+                    {"data": "nama"},
+                    {"data": "email"},
+                    {"data": "id", "visible": false},
+                    {"data": "perusahaan.sales_key", "visible": false},
                     {
-                        "data": "peserta.jenis_kelamin",
+                        "data": "jenis_kelamin",
                         "render": function(data) {
                             return data === 'L' ? 'Laki-laki' : 'Perempuan';
                         }
                     },
-                    {"data": "peserta.no_hp"},
-                    {"data": "peserta.alamat"},
-                    {"data": "peserta.perusahaan.nama_perusahaan"},
+                    {"data": "no_hp"},
+                    {"data": "alamat"},
+                    {"data": "perusahaan.nama_perusahaan"},
                     {
-                        "data": "peserta.tanggal_lahir",
+                        "data": "tanggal_lahir",
+                        "render": function(data) {
+                            return moment(data).format('DD MMMM YYYY');
+                        }
+                    },
+                    {
+                        "data": "created_at",
                         "render": function(data) {
                             return moment(data).format('DD MMMM YYYY');
                         }
@@ -269,7 +276,7 @@
                             actions += '<div class="dropdown">';
                             actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                             actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                            actions += '<a class="dropdown-item" href="{{ url('/peserta') }}/' + row.peserta.id + '/edit" data-toggle="tooltip" title="Edit Peserta"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
+                            actions += '<a class="dropdown-item" href="{{ url('/peserta') }}/' + row.id + '/edit" data-toggle="tooltip" title="Edit Peserta"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
                             actions += '</div>';
                             actions += '</div>';
                             actions += '@else'
@@ -288,7 +295,7 @@
         } else {
             tableConfig = {
                 "ajax": {
-                    "url": "{{ route('getRegistrasiall') }}",
+                    "url": "{{ route('getPesertaall') }}",
                     "type": "GET",
                     "beforeSend": function () {
                         $('#loadingModal').modal('show');
@@ -306,19 +313,19 @@
                     }
                 },
                 "columns": [
-                    {"data": "peserta.nama"},
-                    {"data": "peserta.email"},
+                    {"data": "nama"},
+                    {"data": "email"},
                     {
-                        "data": "peserta.jenis_kelamin",
+                        "data": "jenis_kelamin",
                         "render": function(data) {
                             return data === 'L' ? 'Laki-laki' : 'Perempuan';
                         }
                     },
-                    {"data": "peserta.no_hp"},
-                    {"data": "peserta.alamat"},
-                    {"data": "peserta.perusahaan.nama_perusahaan"},
+                    {"data": "no_hp"},
+                    {"data": "alamat"},
+                    {"data": "perusahaan.nama_perusahaan"},
                     {
-                        "data": "peserta.tanggal_lahir",
+                        "data": "tanggal_lahir",
                         "render": function(data) {
                             return moment(data).format('DD MMMM YYYY');
                         }
@@ -338,7 +345,7 @@
                             actions += '<div class="dropdown">';
                             actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                             actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                            actions += '<a class="dropdown-item" href="{{ url('/peserta') }}/' + row.peserta.id + '/edit" data-toggle="tooltip" title="Edit Peserta"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
+                            actions += '<a class="dropdown-item" href="{{ url('/peserta') }}/' + row.id + '/edit" data-toggle="tooltip" title="Edit Peserta"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
                             actions += '</div>';
                             actions += '</div>';
                             actions += '@else'
