@@ -438,8 +438,8 @@ class DaftarTugasController extends Controller
     {
         $request->validate([
             'tugas_id' => 'required|exists:kontrol_tugas,id',
-            'bukti_before' => 'required|image|mimes:jpg,jpeg,png|max:5120',
-            'bukti_after' => 'required|image|mimes:jpg,jpeg,png|max:5120',
+            'bukti_before' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'bukti_after' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
         ]);
 
         $tugas = KontrolTugas::findOrFail($request->tugas_id);
@@ -448,19 +448,40 @@ class DaftarTugasController extends Controller
             return response()->json(['message' => 'Tidak berhak mengupload bukti ini'], 403);
         }
 
-        $buktiData = ['before' => null, 'after' => null];
+        $buktiData = $this->parseBukti($tugas->bukti);
 
         if ($request->hasFile('bukti_before')) {
+            if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
+                Storage::disk('public')->delete($buktiData['before']);
+            }
             $buktiData['before'] = $request->file('bukti_before')->store('bukti-tugas', 'public');
         }
 
         if ($request->hasFile('bukti_after')) {
+            if (empty($buktiData['before'])) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Foto Before wajib diupload terlebih dahulu sebelum mengupload Foto After'
+                ], 422);
+            }
+            if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
+                Storage::disk('public')->delete($buktiData['after']);
+            }
             $buktiData['after'] = $request->file('bukti_after')->store('bukti-tugas', 'public');
         }
 
         $tugas->update(['bukti' => json_encode($buktiData)]);
 
-        return response()->json(['success' => true, 'message' => 'Bukti Before dan After berhasil diupload']);
+        if (!empty($buktiData['after'])) {
+            $tugas->update(['status' => 1]);
+        }
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Bukti berhasil diupdate',
+            'status' => $tugas->status,
+            'bukti' => $buktiData
+        ]);
     }
 
     public function delete($id)

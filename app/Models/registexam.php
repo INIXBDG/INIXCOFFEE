@@ -45,4 +45,8 @@ class registexam extends Model
         return $this->hasOne(hasilexam::class, 'id_registexam', 'id'); // sesuaikan key-nya
 
     }
+    public function dokumentasiExam()
+    {
+        return $this->hasOne(DokumentasiExam::class, 'id_registrasi', 'id');
+    }
 }

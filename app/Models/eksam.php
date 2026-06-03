@@ -71,4 +71,9 @@ class eksam extends Model
         return $this->belongsTo(Perusahaan::class, 'perusahaan', 'id');
     }
 
+    public function checklistEksam()
+    {
+        return $this->hasOne(ChecklistEksam::class, 'id_exam');
+    }
+
 }

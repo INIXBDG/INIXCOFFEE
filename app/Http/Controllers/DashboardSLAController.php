@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers;
-
 // Pastikan semua 'use' statement ini ada dan benar
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +14,7 @@ use App\Models\ContentSchedule;
 use Carbon\CarbonPeriod;
 use App\Models\trackingLaporanInsiden;
 use App\Models\karyawan;
-use App\Models\User; // <-- Pastikan namespace model User Anda benar
+use App\Models\User;
 
 class DashboardSLAController extends Controller
 {
@@ -23,17 +22,14 @@ class DashboardSLAController extends Controller
      * Timezone default untuk semua kalkulasi Carbon.
      */
     protected $timezone = 'Asia/Jakarta';
-
     /**
      * Jam mulai kerja (misal: 08:00).
      */
     protected $businessStartHour = 8;
-
     /**
      * Jam selesai kerja (misal: 17:00).
      */
     protected $businessEndHour = 17;
-
     // =========================================================================
     // HELPER: VALIDASI DAN PARSING TANGGAL
     // =========================================================================
@@ -198,7 +194,13 @@ class DashboardSLAController extends Controller
         $allUsernames = array_keys($userToPicMap);
 
         // 2. Ambil data User
-        $users = User::whereIn('username', $allUsernames)->with('karyawan')->get();
+        $users = [];
+        if (!empty($allUsernames)) {
+            $users = User::query()
+                ->whereIn('username', $allUsernames, 'and', false)
+                ->with('karyawan')
+                ->get();
+        }
 
         // 3. Buat mapping (Username -> Nama Lengkap)
         $usernameToNamaLengkapMap = [];
@@ -229,7 +231,8 @@ class DashboardSLAController extends Controller
             ->whereIn('pic', $picNamesForQuery)
             ->whereNotNull('tanggal_selesai')
             ->where('keperluan', 'LIKE', $keperluan) // <-- Gunakan variabel dinamis
-            ->whereBetween('created_at', [$dateRange['startDate'], $dateRange['endDate']])
+            ->where('created_at', '>=', $dateRange['startDate'])
+            ->where('created_at', '<=', $dateRange['endDate'])
             ->get();
 
         // 6. Kelompokkan tiket per user
@@ -554,7 +557,7 @@ class DashboardSLAController extends Controller
             $contentStats['total_weeks']++;
 
             // 2. Hitung Upload pada Minggu Tersebut
-            $uploadCount = ContentSchedule::whereBetween('upload_date', [$startOfWeek, $endOfWeek])
+            $uploadCount = ContentSchedule::whereBetween('upload_date', [$startOfWeek, $endOfWeek], 'and', false)
                 ->count();
 
             $contentStats['total_content'] += $uploadCount;

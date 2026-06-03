@@ -119,6 +119,7 @@
                             <tr>
                                 <th scope="col">No</th>
                                 <th scope="col">Timestamp</th>
+                                <th scope="col">Ticket ID</th>
                                 <th scope="col">Nama Karyawan</th>
                                 <th scope="col">Divisi</th>
                                 <th scope="col">Kategori</th>
@@ -232,6 +233,7 @@
                         return moment(data).format('DD MMMM YYYY H:mm:ss');
                     }
                 },
+                {"data": "ticket_id"},
                 {"data": "nama_karyawan"},
                 {"data": "divisi"},
                 {"data": "kategori"},

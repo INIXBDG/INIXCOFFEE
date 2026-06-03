@@ -15,6 +15,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Exports\TunjanganExport;
+use App\Models\AdministrasiKaryawan;
 use Maatwebsite\Excel\Facades\Excel;
 
 class TunjanganController extends Controller
@@ -703,6 +704,21 @@ class TunjanganController extends Controller
                     $tunjanganKaryawan->save();
                 }
             }
+
+            // update administrasi 
+            $administrasi = AdministrasiKaryawan::whereNotIn('status', ['selesai', 'terlambat'])
+                                ->whereYear('created_at', $tahun)
+                                ->whereMonth('created_at', $bulan)
+                                ->where('nama_administrasi', 'like', '%Tunjangan bulan%')
+                                ->first();
+
+            if ($administrasi) {
+                $administrasi->update([
+                    'status' => 'selesai',
+                    'tanggal_selesai' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         }
 
         return redirect()->route('tunjangangenerate.index')->with(['success' => 'Penghitungan tunjangan berhasil!']);
@@ -780,6 +796,21 @@ class TunjanganController extends Controller
             $tunjanganKaryawan->save();
         }
 
+        // update administrasi 
+        $administrasi = AdministrasiKaryawan::whereNotIn('status', ['selesai', 'terlambat'])
+                            ->whereYear('created_at', $tahun)
+                            ->whereMonth('created_at', $bulan)
+                            ->where('nama_administrasi', 'like', '%Tunjangan bulan%')
+                            ->first();
+
+        if ($administrasi) {
+            $administrasi->update([
+                'status' => 'selesai',
+                'tanggal_selesai' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
         return redirect()->route('tunjangangenerate.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
 
@@ -843,6 +874,20 @@ class TunjanganController extends Controller
             }
 
             DB::commit();
+            // update administrasi
+            $administrasi = AdministrasiKaryawan::whereNotIn('status', ['selesai', 'terlambat'])
+                                ->whereYear('created_at', $tahun)
+                                ->whereMonth('created_at', $bulan)
+                                ->where('nama_administrasi', 'like', '%Tunjangan bulan%')
+                                ->first();
+
+            if ($administrasi) {
+                $administrasi->update([
+                    'status' => 'selesai',
+                    'tanggal_selesai' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
             return redirect()->route('tunjangangenerate.index')->with(['success' => 'Data Berhasil Disimpan!']);
         } catch (\Exception $e) {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdministrasiKaryawan;
 use App\Models\karyawan;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -159,6 +160,38 @@ class KaryawanController extends Controller
         $user->id_sales = $id_sales;
 
         $user->save();
+
+        if ($request->akhir_kontrak) {
+            $administrasi = AdministrasiKaryawan::where('id_karyawan', $karyawan->id)
+                                ->where('nama_administrasi', 'like', '%Pembuatan Kontrak Kerja%')
+                                ->whereNotIn('status', ['selesai', 'terlambat'])
+                                ->orderBy('created_at', 'desc')
+                                ->first();
+            
+            if ($administrasi) {
+                $administrasi->update([
+                    'status' => 'selesai',
+                    'tanggal_selesai' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        } 
+        
+        if ($request->akhir_tetap) {
+            $administrasi = AdministrasiKaryawan::where('id_karyawan', $karyawan->id)
+                                ->where('nama_administrasi', 'like', '%Pembuatan Administrasi Karyawan Tetap%')
+                                ->whereNotIn('status', ['selesai', 'terlambat'])
+                                ->orderBy('created_at', 'desc')
+                                ->first();
+
+            if ($administrasi) {
+                $administrasi->update([
+                    'status' => 'selesai',
+                    'tanggal_selesai' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
 
         if (auth()->user()->jabatan == "HRD") {
             return redirect('/user')->with('success', 'Data Berhasil Diubah');

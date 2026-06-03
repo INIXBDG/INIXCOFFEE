@@ -472,10 +472,10 @@
                                 if (summary.target_cac_periode) {
                                     // Tampilkan Target & Selisih
                                     $(`#${prefix}TargetCAC`).text(formatRupiah(summary.target_cac_periode));
-                                    
+
                                     let selisih = summary.selisih_cac;
                                     let textSelisih = formatRupiah(Math.abs(selisih));
-                                    
+
                                     $(`#${prefix}SelisihCAC`)
                                         .text((selisih >= 0 ? '+ ' : '- ') + textSelisih)
                                         .removeClass('text-success text-danger')
@@ -533,8 +533,9 @@
                                             <p><strong>Harga:</strong> ${formatRupiah(rowData.harga)}</p>
                                             <p><strong>Total Penjualan:</strong> ${formatRupiah(rowData.total_penjualan)}</p>
                                             <p><strong>Exam:</strong> ${formatRupiah(rowData.total_exam)}</p>
-                                            <p><strong>NetSales:</strong> ${formatRupiah(rowData.netsales)}</p>
-                                            <p><strong>Grand Total:</strong> ${formatRupiah(rowData.grandtotal)}</p>
+                                            <p><strong>Payment Advance:</strong> ${formatRupiah(rowData.netsales)}</p>
+                                            <p><strong>PPN 11%:</strong> ${formatRupiah(rowData.total_ppn)}</p>
+                                            <p><strong>Net Sales:</strong> ${formatRupiah(rowData.grandtotal)}</p>
                                         </div>
 
                                         <a href="/storage/${rowData.path_regis}" target="_blank">PDF E-regis</a>
@@ -593,6 +594,7 @@
                                                     <th>Deskripsi Tambahan</th>
                                                     <th>Tanggal PA</th>
                                                     <th>Tipe Pembayaran</th>
+                                                    <th>Bukti</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -615,6 +617,7 @@
                                             <td>${item.deskripsi_tambahan ?? '-'}</td>
                                             <td>${item.tgl_pa ? moment(item.tgl_pa).format('DD MMMM YYYY') : '-'}</td>
                                             <td>${item.tipe_pembayaran ? item.tipe_pembayaran.toUpperCase() : '-'}</td>
+                                            <td>${item.bukti ? `<a href="/storage/${item.bukti}" target="_blank">Lihat Bukti</a>` : '-'}</td>
                                         </tr>`;
                                             });
 

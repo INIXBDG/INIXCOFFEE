@@ -35,10 +35,14 @@
 
                         {{-- RKM --}}
                         <div class="row mb-3">
-                            <label class="col-md-4 col-form-label">Nama RKM</label>
+                            <label class="col-md-4 col-form-label">Nama RKM / Kegiatan</label>
                             <div class="col-md-6">
-                                <select name="id_rkm" class="form-select" required>
-                                    <option value="">-- Pilih RKM --</option>
+                                <select name="id_rkm" id="id_rkm" class="form-select" required>
+                                    <option value="" disabled>-- Pilih Kegiatan --</option>
+                                    <option value="Webinar" {{ $penambahan->tipe == 'Webinar' ? 'selected' : '' }}>Webinar</option>
+                                    <option value="Mobile" {{ $penambahan->tipe == 'Mobile' ? 'selected' : '' }}>Mobile</option>
+                                    <option value="lainnya" {{ (!in_array($penambahan->tipe, ['Webinar', 'Mobile']) && $penambahan->rkm === null) ? 'selected' : '' }}>Lainnya</option>
+                                    <option value="" disabled>-- Pilih RKM --</option>
                                     @foreach($rkms as $rkm)
                                         <option value="{{ $rkm->id }}"
                                             {{ old('id_rkm', $penambahan->id_rkm) == $rkm->id ? 'selected' : '' }}>
@@ -47,6 +51,7 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                <input type="text" class="form-control" name="lainnya" id="input_lainnya" style="display: none;" value="{{ $penambahan->tipe ?? null }}">
                             </div>
                         </div>
 
@@ -146,6 +151,22 @@
             $('.stok-val').text(stok);
             $('.item-qty').attr('max', stok);
         }
+
+        function cekRkm () {
+            if ($('#id_rkm').val() === 'lainnya') {
+                $('#input_lainnya').show();
+                $('#input_lainnya').attr('required', true);
+            } else {
+                $('#input_lainnya').hide();
+                $('#input_lainnya').removeAttr('required', false);
+            }
+        }
+
+        cekRkm();
+
+        $('#id_rkm').on('change', function () {
+            cekRkm();
+        });
     });
 </script>
 @endsection

@@ -29,6 +29,38 @@
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="editKursModal" tabindex="-1" aria-labelledby="editKursModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editKursModalLabel">Update Kurs</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="formEditKurs" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-body">
+                            <label for="update_kurs" class="col-md-4 col-form-label text-md-start">Kurs Harga</label>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Rp.</span>
+                                <input type="text" class="form-control @error('update_kurs') is-invalid @enderror"
+                                        name="update_kurs" id="update_kurs"required>
+                            </div>
+
+                            <label for="kurs_admin" class="col-md-4 col-form-label text-md-start">Kurs Admin</label>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Rp.</span>
+                                <input type="text" class="form-control @error('kurs_admin') is-invalid @enderror"
+                                        name="kurs_admin" id="kurs_admin"required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                            <button type="submit" class="btn btn-primary">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
@@ -189,7 +221,11 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-6 col-sm-6 col-xs-6">
-                                        <p>$ {{ $rkm->biaya_admin }}</p>
+                                        @if ($rkm->mata_uang === 'Rupiah')
+                                            <p>{{ formatRupiah(floatval($rkm->biaya_admin)) }}</p>
+                                        @else
+                                            <p>$ {{ $rkm->biaya_admin }}</p>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="row">
@@ -250,6 +286,13 @@
                                     </div>
                                 </div>
 
+                                @if (auth()->user()->jabatan == 'Finance & Accounting')
+                                    <div class="col-md-7 col-sm-7 col-xs-7">
+                                        <button type="button" class="btn btn-sm btn-primary mb-1" onclick="openKursEdit({{ $rkm->id }})">
+                                            <i class="fas fa-upload"></i> Update Kurs
+                                        </button>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                         <div class="col-md-7">
@@ -472,6 +515,9 @@
 
 </style>
 @push('js')
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 <script>
     function openUploadModal(id) {
         var form = document.getElementById('formUploadInvoice');
@@ -479,6 +525,77 @@
         var uploadModal = new bootstrap.Modal(document.getElementById('uploadInvoiceModal'));
         uploadModal.show();
     }
+
+
+    // Format number as Rupiah
+    function formatRupiah(angka, prefix) {
+        var numberString = angka.toString().replace(/[^,\d]/g, ''),
+            split = numberString.split(','),
+            sisa = split[0].length % 3,
+            rupiah = split[0].substr(0, sisa),
+            ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+        if (ribuan) {
+            var separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+        }
+
+        rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+        return (prefix === undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : ''));
+    }
+
+    // Remove Rupiah format for calculations
+    function removeRupiahFormat(angka) {
+        return parseFloat(angka.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+    }
+
+    // Validate numeric input
+    function validateInput(input, fieldName) {
+        let value = parseFloat(input.val()) || 0;
+        if (value < 0) {
+            alert(`${fieldName} tidak boleh negatif!`);
+            input.val('');
+            return false;
+        }
+        return true;
+    }
+    
+    function openKursEdit(id) {
+        var form = document.getElementById('formEditKurs');
+        form.action = '/exam/' + id + '/update-kurs';
+        var editModal = new bootstrap.Modal(document.getElementById('editKursModal'));
+        editModal.show();
+
+        $.ajax({
+            url: '/exam/get-kurs/' + id,
+            type: 'GET',
+            success: function (res) {
+                let kurs = res.kurs ?? 0;
+                let kurs_admin = res.kurs_admin ?? 0;
+                $('#update_kurs').val(formatRupiah(String(kurs)));
+                $('#kurs_admin').val(formatRupiah(String(kurs_admin)));
+            },
+            error: function (err) {
+                alert('Terjadi Kesalahan, gagal membuka modal update');
+                console.log(err);
+            }
+        })
+    }
+
+    $(document).ready(function() {
+
+        // Format and validate numeric inputs
+        $('#update_kurs, #kurs_admin').on('input', function() {
+            if (validateInput($(this), $(this).attr('name'))) {
+                $(this).val(formatRupiah($(this).val()));
+            }
+        });
+
+        $('#formEditKurs').on('submit', function() {
+            $('#update_kurs').val(removeRupiahFormat($('#update_kurs').val()));
+            $('#kurs_admin').val(removeRupiahFormat($('#kurs_admin').val()));
+        })
+    });
 </script>
 @endpush
 @endsection

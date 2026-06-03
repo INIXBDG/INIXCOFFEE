@@ -16,6 +16,9 @@ use App\Models\perhitunganNetSales;
 use App\Models\karyawan;
 use App\Models\RegisForm;
 use App\Models\Registrasi;
+use App\Models\eksam;
+use App\Models\outstanding;
+use App\Models\kelasanalisis;
 use App\Models\trackingNetSales;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -57,13 +60,13 @@ class PeluangController extends Controller
             if ($user->jabatan === 'Sales') {
                 $idSales = $user->id_sales;
                 $data = Peluang::where('id_sales', $idSales)
-                    ->with('materiRelation', 'rkm')
+                    ->with(['materiRelation', 'rkm' => function($query) { $query->withTrashed(); },])
                     ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
                     ->orderBy('created_at', 'desc')
                     ->get()
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
-                        $rkm = RKM::with('perusahaan')->where('id', $item->id_rkm)->first();
+                        $rkm = RKM::withTrashed()->with('perusahaan')->where('id', $item->id_rkm)->first();
                         $item->rkm_data = $rkm ? $rkm : null;
                         $item->rkm_formatted = $rkm
                             ? [
@@ -74,16 +77,20 @@ class PeluangController extends Controller
                                 'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
                             ]
                             : null;
+
+                        // 🔹 Tambahkan pengecekan histori
+                        $item->has_history = \Illuminate\Support\Facades\DB::table('peluang_histories')->where('id_peluang', $item->id)->exists();
+
                         return $item;
                     });
             } elseif (in_array($user->jabatan, $allowedJabatan)) {
                 $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
-                    ->with('materiRelation', 'rkm')
+                    ->with(['materiRelation', 'rkm' => function($query) { $query->withTrashed(); },])
                     ->orderBy('created_at', 'desc')
                     ->get()
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
-                        $rkm = RKM::with('perusahaan')->where('id', $item->id_rkm)->first();
+                        $rkm = RKM::withTrashed()->with('perusahaan')->where('id', $item->id_rkm)->first();
                         $item->rkm_data = $rkm ? $rkm : null;
                         $item->rkm_formatted = $rkm
                             ? [
@@ -94,6 +101,10 @@ class PeluangController extends Controller
                                 'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
                             ]
                             : null;
+
+                        // 🔹 Tambahkan pengecekan histori
+                        $item->has_history = \Illuminate\Support\Facades\DB::table('peluang_histories')->where('id_peluang', $item->id)->exists();
+
                         return $item;
                     });
             } else {
@@ -121,7 +132,11 @@ class PeluangController extends Controller
     public function detail($id)
     {
         // Ambil peluang dan relasi terkait
-        $peluang = Peluang::with(['materiRelation', 'rkm', 'aktivitas'])
+        $peluang = Peluang::with([
+            'materiRelation',
+            'rkm' => function($query) { $query->withTrashed(); },
+            'aktivitas'
+        ])
             ->where('id', $id)
             ->firstOrFail();
 
@@ -179,7 +194,12 @@ class PeluangController extends Controller
             return strcasecmp($a['label'], $b['label']);
         });
 
-        // dd($peluang);
+        // 🔹 Ambil Histori Pemulihan (Restore)
+        $histories = \Illuminate\Support\Facades\DB::table('peluang_histories')
+            ->where('id_peluang', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return view('crm.peluang.detail', compact(
             'peluang',
             'aktivitass',
@@ -188,7 +208,8 @@ class PeluangController extends Controller
             'regis',
             'items',
             'aktivitasTambahan',
-            'perusahaanAll'
+            'perusahaanAll',
+            'histories' // 🔹 Teruskan variabel ini ke view
         ));
     }
 
@@ -650,10 +671,10 @@ class PeluangController extends Controller
                 $peluang->tahap = 'merah';
 
                 $inputFinal = $request->input('final');
-                $final = $inputFinal - ($inputFinal * 11 / 100);
+                $netSalesCalculated = $inputFinal - ($inputFinal * 11 / 100);
 
-                $peluang->final = $final;
-                $peluang->netsales = $final;
+                $peluang->final = $inputFinal;
+                $peluang->netsales = $netSalesCalculated;
 
                 $peluang->merah = $now;
                 $peluang->desc_lost = null;
@@ -783,6 +804,7 @@ class PeluangController extends Controller
             'tgl_pa' => 'required|date',
             'tipe_pembayaran' => 'required|string',
             'deskripsi_tambahan' => 'nullable|string',
+            'bukti' => 'nullable|file|mimetypes:image/jpeg,image/png,application/pdf|max:5120',
         ]);
 
         Log::info("[PA] Validation passed");
@@ -813,34 +835,77 @@ class PeluangController extends Controller
             Log::info("[PA] Using existing tracking", ['tracking_id' => $idTracking]);
         }
 
-        // Save payment advance
+        // Kalkulasi total Payment Advance
+        $total_pa = (float)($request->transportasi ?? 0) +
+                    (float)($request->akomodasi_peserta ?? 0) +
+                    (float)($request->akomodasi_tim ?? 0) +
+                    (float)($request->fresh_money ?? 0) +
+                    (float)($request->entertaint ?? 0) +
+                    (float)($request->souvenir ?? 0) +
+                    (float)($request->cashback ?? 0) +
+                    (float)($request->sewa_laptop ?? 0);
+
+        // Save payment advance baru
         Log::info("[PA] Saving new Net Sales record");
 
         $netSales = new perhitunganNetSales();
         $netSales->id_rkm = $request->id_rkm;
 
-        $netSales->transportasi = $request->transportasi;
+        $netSales->transportasi = $request->transportasi ?: null;
         $netSales->jenis_transportasi = $request->jenis_transportasi;
 
-        $netSales->akomodasi_peserta = $request->akomodasi_peserta;
-        $netSales->akomodasi_tim = $request->akomodasi_tim;
-        $netSales->keterangan_akomodasi_tim = $request->keterangan_akomodasi_tim;
+        $netSales->akomodasi_peserta = $request->akomodasi_peserta ?: null;
+        $netSales->akomodasi_tim = $request->akomodasi_tim ?: null;
+        $netSales->keterangan_akomodasi_tim = $request->keterangan_akomodasi_tim ?: null;
 
-        $netSales->fresh_money = $request->fresh_money;
-        $netSales->entertaint = $request->entertaint;
-        $netSales->keterangan_entertaint = $request->keterangan_entertaint;
-        $netSales->souvenir = $request->souvenir;
-        $netSales->cashback = $request->cashback;
+        $netSales->fresh_money = $request->fresh_money ?: null;
+        $netSales->entertaint = $request->entertaint ?: null;
+        $netSales->keterangan_entertaint = $request->keterangan_entertaint ?: null;
+        $netSales->souvenir = $request->souvenir ?: null;
+        $netSales->cashback = $request->cashback ?: null;
 
-        $netSales->sewa_laptop = $request->sewa_laptop;
+        $netSales->sewa_laptop = $request->sewa_laptop ?: null;
         $netSales->tipe_pembayaran = $request->tipe_pembayaran;
         $netSales->tgl_pa = $request->tgl_pa;
         $netSales->deskripsi_tambahan = $request->deskripsi_tambahan;
+
+        if ($request->hasFile('bukti')) {
+            $file = $request->file('bukti');
+            $filename = 'bukti_pembayaran_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('bukti_pa', $filename, 'public');
+            $netSales->bukti = $path;
+        }
 
         $netSales->id_tracking = $idTracking;
         $netSales->save();
 
         Log::info("[PA] Net Sales saved", ['net_sales_id' => $netSales->id]);
+
+        // Memperbarui record Netsales lama dengan mengurangi nilai final
+        if ($existingNetSales) {
+            $existingNetSales->final = (float)$existingNetSales->final - $total_pa;
+            $existingNetSales->save();
+
+            Log::info("[PA] Existing Net Sales final value updated", [
+                'total_pa_deducted' => $total_pa,
+                'new_final_value' => $existingNetSales->final
+            ]);
+        }
+
+        // Memperbarui record Netsales pada tabel Peluang
+        $peluang = \App\Models\Peluang::find($request->id_peluang);
+        if ($peluang) {
+            $peluang->netsales = (float)$peluang->netsales - $total_pa;
+            $peluang->save();
+
+            Log::info("[PA] Peluang Net Sales updated", [
+                'id_peluang' => $peluang->id,
+                'total_pa_deducted' => $total_pa,
+                'new_netsales_value' => $peluang->netsales
+            ]);
+        } else {
+            Log::warning("[PA] Peluang not found for updating Net Sales", ['id_peluang' => $request->id_peluang]);
+        }
 
         // Notify SPV
         Log::info("[PA] Looking for SPV Sales");
@@ -880,6 +945,123 @@ class PeluangController extends Controller
         Log::info("[PA] Completed successfully");
 
         return redirect()->back()->with('success', 'Data payment advance berhasil disimpan.');
+    }
+
+    public function restore(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'tahap_baru' => 'required|in:biru,merah',
+                'harga' => 'required|numeric|min:0',
+                'pax' => 'required|integer|min:1',
+                'periode_mulai' => 'required|date',
+                'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
+            ]);
+
+            DB::beginTransaction();
+
+            $peluang = Peluang::findOrFail($id);
+
+            if ($peluang->tahap !== 'lost') {
+                throw new \Exception('Hanya peluang dengan status lost yang dapat dipulihkan.');
+            }
+
+            // 1. Simpan Histori Perubahan
+            DB::table('peluang_histories')->insert([
+                'id_peluang' => $peluang->id,
+                'tahap_sebelumnya' => $peluang->tahap,
+                'tahap_baru' => $validated['tahap_baru'],
+                'harga_sebelumnya' => $peluang->harga,
+                'harga_baru' => $validated['harga'],
+                'pax_sebelumnya' => $peluang->pax,
+                'pax_baru' => $validated['pax'],
+                'periode_mulai_sebelumnya' => $peluang->periode_mulai,
+                'periode_mulai_baru' => $validated['periode_mulai'],
+                'periode_selesai_sebelumnya' => $peluang->periode_selesai,
+                'periode_selesai_baru' => $validated['periode_selesai'],
+                'keterangan' => 'Pemulihan dari status lost',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // 2. Kalkulasi Netsales
+            $final = $validated['harga'] - ($validated['harga'] * 11 / 100);
+
+            // 3. Perbarui dan Pulihkan Entitas Peluang
+            $peluang->tahap = $validated['tahap_baru'];
+            $peluang->{$validated['tahap_baru']} = now(); // Perbarui timestamp biru atau merah
+            $peluang->lost = null; // Hapus penanda lost
+            $peluang->deleted_at = null; // Hapus penanda soft delete
+            $peluang->deleted_by = null; // Hapus penanda soft delete
+            $peluang->harga = $validated['harga'];
+            $peluang->final = $final;
+            $peluang->netsales = $final;
+            $peluang->pax = $validated['pax'];
+            $peluang->periode_mulai = $validated['periode_mulai'];
+            $peluang->periode_selesai = $validated['periode_selesai'];
+            $peluang->save();
+
+            // 4. Perbarui dan Pulihkan Entitas RKM beserta Relasinya
+            // Gunakan withTrashed() untuk menemukan RKM yang telah di-soft delete
+            $rkm = RKM::withTrashed()->where('id', $peluang->id_rkm)->first();
+
+            if ($rkm) {
+                // Pulihkan RKM utama
+                $rkm->deleted_at = null;
+                $rkm->deleted_by = null;
+                $rkm->harga_jual = $validated['harga'];
+                $rkm->pax = $validated['pax'];
+                $rkm->isi_pax = $validated['pax'];
+                $rkm->tanggal_awal = $validated['periode_mulai'];
+                $rkm->tanggal_akhir = $validated['periode_selesai'];
+                $rkm->save();
+
+                // Pulihkan entitas turunan RKM (menggunakan mass-update untuk efisiensi)
+                perhitunganNetSales::where('id_rkm', $rkm->id)->update([
+                    'deleted_at' => null,
+                    'deleted_by' => null,
+                ]);
+
+                Registrasi::where('id_rkm', $rkm->id)->update([
+                    'deleted_at' => null,
+                    'deleted_by' => null,
+                ]);
+
+                eksam::where('id_rkm', $rkm->id)->update([
+                    'deleted_at' => null,
+                    'deleted_by' => null,
+                ]);
+
+                outstanding::where('id_rkm', $rkm->id)->update([
+                    'deleted_at' => null,
+                    'deleted_by' => null,
+                ]);
+
+                kelasanalisis::where('id_rkm', $rkm->id)->update([
+                    'deleted_at' => null,
+                    'deleted_by' => null,
+                ]);
+            }
+
+            // 5. Pulihkan Entitas Aktivitas
+            Aktivitas::where('id_peluang', $id)->update([
+                'deleted_at' => null,
+                'deleted_by' => null,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Peluang beserta seluruh relasi RKM berhasil dipulihkan.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal memulihkan peluang: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
 }

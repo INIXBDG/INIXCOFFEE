@@ -446,15 +446,15 @@
                                                 $item->sewa_laptop,
                                             0, ',', '.') }}
                                         </td>
-                                        <td>{{ $item->trackingNetSales->tracking ?? '-' }}</td>      
+                                        <td>{{ $item->trackingNetSales->tracking ?? '-' }}</td>
                                         <td>
 											@php
 												$peluangId = optional(optional($item->rkm)->peluang)->id;
 											@endphp
 
 											@if($peluangId)
-												<a class="btn btn-sm btn-outline-primary" 
-												   href="{{ route('detail.peluang', $peluangId) }}" 
+												<a class="btn btn-sm btn-outline-primary"
+												   href="{{ route('detail.peluang', $peluangId) }}"
 												   target="_blank">View</a>
 											@else
 												-
@@ -565,6 +565,10 @@
                                     id="modalPersen" class="badge bg-info p-2 fs-6"></span></div>
                             <div><small class="text-muted d-block">Realisasi / Target</small><strong><span
                                         id="modalJumlah"></span> / <span id="modalTarget"></span></strong></div>
+                            <div id="modalTotalContainer" style="display: none; margin-top: 8px;">
+                                <small class="text-muted d-block">Total Nilai</small>
+                                <strong id="modalTotalValue" class="text-success fs-6"></strong>
+                            </div>
                         </div>
                     </div>
 
@@ -1295,7 +1299,6 @@
             // Activity data from PHP
             const activityData = @json($activitysales);
 
-            // Function to show modal with activity details
             async function showActivityDetails(salesId, activityLabel) {
                 const sales = activityData.find(s => s.id_sales === salesId);
                 console.log("Membuka modal →", {
@@ -1304,79 +1307,25 @@
                 });
                 console.log(sales);
 
-                const saless = activityData.find(s => s.id_sales === salesId);
                 if (!sales) {
                     console.error("Sales tidak ditemukan untuk ID:", salesId);
                     alert("Data sales tidak ditemukan");
                     return;
                 }
 
-                if (!sales) return;
-
                 const activityMap = {
-                    'DB': {
-                        jumlah: sales.DB,
-                        target: sales.target_DB,
-                        warna: 'info'
-                    },
-                    'Contact': {
-                        jumlah: sales.contact,
-                        target: sales.target_contact,
-                        warna: 'info'
-                    },
-                    'Call': {
-                        jumlah: sales.call,
-                        target: sales.target_call,
-                        warna: 'info'
-                    },
-                    'Email': {
-                        jumlah: sales.email,
-                        target: sales.target_email,
-                        warna: 'warning'
-                    },
-                    'Visit': {
-                        jumlah: sales.visit,
-                        target: sales.target_visit,
-                        warna: 'warning'
-                    },
-                    'Meet': {
-                        jumlah: sales.meet,
-                        target: sales.target_meet,
-                        warna: 'warning'
-                    },
-                    'Incharge': {
-                        jumlah: sales.incharge,
-                        target: sales.target_incharge,
-                        warna: 'success'
-                    },
-                    'Penawaran Awal': {
-                        jumlah: sales.PA,
-                        target: sales.target_PA,
-                        warna: 'success',
-                        total: sales.total_PA ?? 0
-                    },
-                    'Penawaran Internal': {
-                        jumlah: sales.PI,
-                        target: sales.target_PI,
-                        warna: 'success'
-                    },
-                    'Telemarketing': {
-                        jumlah: sales.Telemarketing,
-                        target: sales.target_Telemarketing,
-                        warna: 'danger'
-                    },
-                    'Form Masuk': {
-                        jumlah: sales.Form_Masuk,
-                        target: sales.target_Form_Masuk,
-                        warna: 'danger',
-                        total: sales.total_Form_Masuk ?? 0
-                    },
-                    'Form Keluar': {
-                        jumlah: sales.Form_Keluar,
-                        target: sales.target_Form_Keluar,
-                        warna: 'danger',
-                        total: sales.total_Form_Keluar ?? 0
-                    },
+                    'DB': { jumlah: sales.DB, target: sales.target_DB, warna: 'info' },
+                    'Contact': { jumlah: sales.contact, target: sales.target_contact, warna: 'info' },
+                    'Call': { jumlah: sales.call, target: sales.target_call, warna: 'info' },
+                    'Email': { jumlah: sales.email, target: sales.target_email, warna: 'warning' },
+                    'Visit': { jumlah: sales.visit, target: sales.target_visit, warna: 'warning' },
+                    'Meet': { jumlah: sales.meet, target: sales.target_meet, warna: 'warning' },
+                    'Incharge': { jumlah: sales.incharge, target: sales.target_incharge, warna: 'success' },
+                    'Penawaran Awal': { jumlah: sales.PA, target: sales.target_PA, warna: 'success', total: sales.total_PA ?? 0 },
+                    'Penawaran Internal': { jumlah: sales.PI, target: sales.target_PI, warna: 'success' },
+                    'Telemarketing': { jumlah: sales.Telemarketing, target: sales.target_Telemarketing, warna: 'danger' },
+                    'Form Masuk': { jumlah: sales.Form_Masuk, target: sales.target_Form_Masuk, warna: 'danger', total: sales.total_Form_Masuk ?? 0 },
+                    'Form Keluar': { jumlah: sales.Form_Keluar, target: sales.target_Form_Keluar, warna: 'danger', total: sales.total_Form_Keluar ?? 0 },
                 };
 
                 const activity = activityMap[activityLabel];
@@ -1386,7 +1335,7 @@
                     Math.min(Math.round((activity.jumlah / activity.target) * 100), 100) :
                     0;
 
-                // Populate modal
+                // Populate modal data atas
                 document.getElementById('modalSalesId').textContent = salesId;
                 document.getElementById('modalActivity').textContent = activityLabel;
                 document.getElementById('modalJumlah').textContent = activity.jumlah;
@@ -1395,47 +1344,68 @@
                 document.getElementById('modalProgressBar').style.width = `${persen}%`;
                 document.getElementById('modalProgressBar').className = `progress-bar bg-${activity.warna}`;
 
-                // 🧩 Ambil data aktivitas detail dari struktur data PHP
+                // Logika tampilan total di header modal
+                const totalContainer = document.getElementById('modalTotalContainer');
+                const totalValue = document.getElementById('modalTotalValue');
+
+                // Deteksi jika aktivitas ini memiliki data finansial
+                const hasFinancialData = activity.total !== undefined;
+
+                if (totalContainer && totalValue) {
+                    if (hasFinancialData && activity.total > 0) {
+                        const formattedTotal = new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0
+                        }).format(activity.total);
+
+                        totalValue.textContent = formattedTotal;
+                        totalContainer.style.display = 'block';
+                    } else {
+                        totalContainer.style.display = 'none';
+                    }
+                }
+
+                // Manipulasi Header Tabel Dinamis
+                const theadTr = document.querySelector('#detailAktivitas thead tr');
+                if (hasFinancialData) {
+                    theadTr.innerHTML = `
+                        <th class="small border-0">Client</th>
+                        <th class="small border-0">Tipe</th>
+                        <th class="small border-0">Deskripsi</th>
+                        <th class="small border-0 text-end">Harga</th>
+                        <th class="small border-0 text-center">Pax</th>
+                        <th class="small border-0 text-end">Total</th>
+                        <th class="small border-0 text-center">Foto</th>
+                        <th class="small border-0">Lokasi</th>
+                        <th class="small border-0 text-center">Waktu</th>
+                    `;
+                } else {
+                    theadTr.innerHTML = `
+                        <th class="small border-0">Client</th>
+                        <th class="small border-0">Tipe</th>
+                        <th class="small border-0">Deskripsi</th>
+                        <th class="small border-0 text-center">Foto</th>
+                        <th class="small border-0">Lokasi</th>
+                        <th class="small border-0 text-center">Waktu</th>
+                    `;
+                }
+
                 let activityKey = '';
                 switch (activityLabel) {
-                    case 'Contact':
-                        activityKey = 'data_contact';
-                        break;
-                    case 'Call':
-                        activityKey = 'data_call';
-                        break;
-                    case 'Email':
-                        activityKey = 'data_email';
-                        break;
-                    case 'Visit':
-                        activityKey = 'data_visit';
-                        break;
-                    case 'Meet':
-                        activityKey = 'data_meet';
-                        break;
-                    case 'Incharge':
-                        activityKey = 'data_incharge';
-                        break;
-                    case 'Penawaran Awal':
-                        activityKey = 'data_PA';
-                        break;
-                    case 'Penawaran Internal':
-                        activityKey = 'data_PI';
-                        break;
-                    case 'Telemarketing':
-                        activityKey = 'data_Telemarketing';
-                        break;
-                    case 'Form Masuk':
-                        activityKey = 'data_Form_Masuk';
-                        break;
-                    case 'Form Keluar':
-                        activityKey = 'data_Form_Keluar';
-                        break;
-                    case 'DB':
-                        activityKey = 'data_DB';
-                        break;
-                    default:
-                        activityKey = '';
+                    case 'Contact': activityKey = 'data_contact'; break;
+                    case 'Call': activityKey = 'data_call'; break;
+                    case 'Email': activityKey = 'data_email'; break;
+                    case 'Visit': activityKey = 'data_visit'; break;
+                    case 'Meet': activityKey = 'data_meet'; break;
+                    case 'Incharge': activityKey = 'data_incharge'; break;
+                    case 'Penawaran Awal': activityKey = 'data_PA'; break;
+                    case 'Penawaran Internal': activityKey = 'data_PI'; break;
+                    case 'Telemarketing': activityKey = 'data_Telemarketing'; break;
+                    case 'Form Masuk': activityKey = 'data_Form_Masuk'; break;
+                    case 'Form Keluar': activityKey = 'data_Form_Keluar'; break;
+                    case 'DB': activityKey = 'data_DB'; break;
+                    default: activityKey = '';
                 }
 
                 const tableBody = document.querySelector('#detailAktivitas tbody');
@@ -1444,32 +1414,24 @@
                 if (activityKey && Array.isArray(sales[activityKey])) {
 
                     for (const item of sales[activityKey]) {
-
                         let lokasi = '-';
 
                         try {
                             if (item.latitude && item.longitude) {
-
                                 const response = await fetch(
                                     `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${item.latitude}&lon=${item.longitude}&zoom=18`
                                 );
-
                                 const data = await response.json();
-
                                 const address = data.display_name || '-';
                                 const shortAddress = address.split(',').slice(0, 2).join(',');
-                                const city =
-                                    data.address?.city ||
-                                    data.address?.town ||
-                                    data.address?.village ||
-                                    '';
+                                const city = data.address?.city || data.address?.town || data.address?.village || '';
 
                                 lokasi = `
                                     <span title="${address}">
                                         <strong>${shortAddress}</strong>
                                     </span><br>
-                                    <a href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" 
-                                    target="_blank" 
+                                    <a href="https://www.google.com/maps?q=${item.latitude},${item.longitude}"
+                                    target="_blank"
                                     class="ms-1 text-primary">
                                         <small class="text-muted">${city}</small>
                                     </a>
@@ -1477,6 +1439,18 @@
                             }
                         } catch (error) {
                             console.error('Reverse geocoding error:', error);
+                        }
+
+                        // Penanganan Sel Finansial Dinamis
+                        let financialCells = '';
+                        if (hasFinancialData) {
+                            const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
+
+                            financialCells = `
+                                <td class="text-end">${item.harga ? formatRupiah(item.harga) : '-'}</td>
+                                <td class="text-center">${item.pax ?? '-'}</td>
+                                <td class="text-end fw-bold text-success">${item.total ? formatRupiah(item.total) : '-'}</td>
+                            `;
                         }
 
                         const row = `
@@ -1494,13 +1468,14 @@
                                 </td>
                                 <td>${item.aktivitas ?? '-'}</td>
                                 <td>${item.deskripsi ?? '-'}</td>
-                                <td>
-                                    <img src="/${item.foto_lokasi}" 
+                                ${financialCells}
+                                <td class="text-center">
+                                    <img src="/${item.foto_lokasi}"
                                         style="width:50px;border-radius:5px;cursor:pointer"
-                                        onclick="window.open(this.src)">
+                                        onclick="window.open(this.src)" alt="Foto">
                                 </td>
                                 <td>${lokasi}</td>
-                                <td>
+                                <td class="text-center text-nowrap">
                                     ${item.waktu_aktivitas
                                         ? new Date(item.waktu_aktivitas).toLocaleDateString('id-ID')
                                         : '-'}
@@ -1512,9 +1487,10 @@
                     }
 
                 } else {
+                    const colspan = hasFinancialData ? 9 : 6;
                     tableBody.innerHTML = `
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-3">
+                            <td colspan="${colspan}" class="text-center text-muted py-3">
                                 Tidak ada data aktivitas untuk jenis ini.
                             </td>
                         </tr>

@@ -11,6 +11,55 @@
                 {{ session('error') }}
             </div>
         @endif
+
+        <div class="modal fade" id="modalRestore" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Pulihkan Peluang Lost</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formRestorePeluang">
+                            <input type="hidden" id="restore_id_peluang">
+
+                            <div class="mb-3">
+                                <label class="form-label">Ubah ke Tahap</label>
+                                <select class="form-select" id="restore_tahap" required>
+                                    <option value="biru">Biru</option>
+                                    <option value="merah">Merah</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Harga (Rp)</label>
+                                <input type="number" class="form-control" id="restore_harga" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Pax</label>
+                                <input type="number" class="form-control" id="restore_pax" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Periode Mulai</label>
+                                <input type="date" class="form-control" id="restore_periode_mulai" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Periode Selesai</label>
+                                <input type="date" class="form-control" id="restore_periode_selesai" required>
+                            </div>
+
+                            <div class="text-end mt-4">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button type="button" class="btn btn-success" onclick="prosesRestore()">Simpan & Pulihkan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="container-xxl flex-grow-1 container-p-y">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -219,15 +268,26 @@
                 ajax: {
                     url: '{{ route('index.peluang.json') }}',
                     dataSrc: function(json) {
-                        console.log("Data dari server:", json);
                         return json.data;
                     },
                     error: function(xhr, error, thrown) {
                         alert('Gagal memuat data peluang: ' + thrown);
                     }
                 },
+                createdRow: function(row, data, dataIndex) {
+                    if (data.has_history) {
+                        $(row).css('background-color', '#f4f6f8');
+                        $(row).attr('title', 'Data ini merupakan hasil pemulihan dari status Lost');
+
+                        $('td:eq(0)', row).css({
+                            'background-color': '#fd7e14',
+                            'color': '#ffffff',
+                            'font-weight': 'bold'
+                        });
+                    }
+                },
                 columns: [
-                    { data: null, className: "text-center", orderable: false, searchable: false }, // nomor urut
+                    { data: null, className: "text-center", orderable: false, searchable: false },
                     {
                         data: null,
                         render: function(data, type, row) {
@@ -284,7 +344,9 @@
                     {
                         data: 'tahap',
                         render: function(data, type, row) {
-                            return data ? data.charAt(0).toUpperCase() + data.slice(1) : '-';
+                            let tahapNama = data ? data.charAt(0).toUpperCase() + data.slice(1) : '-';
+
+                            return tahapNama;
                         }
                     },
                     { data: 'id_sales' },
@@ -302,21 +364,27 @@
                             const isMerah = data.tahap === 'merah';
 
                             let rkmButton = '';
-                            let lostDisabled = (isMerah || isLost) ? 'disabled' : '';
-
                             if (isLost || !rkm) {
                                 rkmButton = `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`;
                             } else {
                                 rkmButton = `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
                             }
 
-                            return `
+                            let actionButtons = `
                                 <div class="d-flex flex-column gap-2" style="min-width: 80px;">
                                     <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
                                     ${rkmButton}
-                                    <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100" ${lostDisabled}>LOST</button>
-                                </div>
                             `;
+
+                            if (isLost) {
+                                actionButtons += `<button onclick="bukaModalRestore(${id}, ${data.harga}, ${data.pax}, '${data.periode_mulai}', '${data.periode_selesai}')" class="btn btn-sm btn-success w-100">PULIHKAN</button>`;
+                            } else {
+                                let lostDisabled = isMerah ? 'disabled' : '';
+                                actionButtons += `<button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100" ${lostDisabled}>LOST</button>`;
+                            }
+
+                            actionButtons += `</div>`;
+                            return actionButtons;
                         }
                     }
                 ],
@@ -525,6 +593,62 @@
                 if (netsalesInput !== null) {
                     netsalesInput.value = unformatRupiah(netsalesInput.value);
                 }
+            });
+        }
+
+        function bukaModalRestore(id, harga, pax, periodeMulai, periodeSelesai) {
+            document.getElementById('restore_id_peluang').value = id;
+            document.getElementById('restore_harga').value = harga || 0;
+            document.getElementById('restore_pax').value = pax || 1;
+            document.getElementById('restore_periode_mulai').value = periodeMulai;
+            document.getElementById('restore_periode_selesai').value = periodeSelesai;
+
+            let modal = new bootstrap.Modal(document.getElementById('modalRestore'));
+            modal.show();
+        }
+
+        function prosesRestore() {
+            const id = document.getElementById('restore_id_peluang').value;
+            const tahapBaru = document.getElementById('restore_tahap').value;
+            const harga = document.getElementById('restore_harga').value;
+            const pax = document.getElementById('restore_pax').value;
+            const periodeMulai = document.getElementById('restore_periode_mulai').value;
+            const periodeSelesai = document.getElementById('restore_periode_selesai').value;
+
+            if(!harga || !pax || !periodeMulai || !periodeSelesai) {
+                alert("Semua bidang harus diisi.");
+                return;
+            }
+
+            fetch(`/crm/peluang/restore/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    tahap_baru: tahapBaru,
+                    harga: harga,
+                    pax: pax,
+                    periode_mulai: periodeMulai,
+                    periode_selesai: periodeSelesai
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    const modalElement = document.getElementById('modalRestore');
+                    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                    modalInstance.hide();
+                    $('#peluangTable').DataTable().ajax.reload(null, false);
+                } else {
+                    alert(data.message || 'Terjadi kesalahan.');
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert('Terjadi kesalahan pada server saat memproses permintaan.');
             });
         }
     </script>

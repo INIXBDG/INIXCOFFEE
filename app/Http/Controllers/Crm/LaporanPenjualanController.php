@@ -61,7 +61,7 @@ class LaporanPenjualanController extends Controller
                 });
             });
         }
-        
+
         // Filter Sales & Materi
         if ($request->filled('sales_key')) {
             $query->where('sales_key', $request->sales_key);
@@ -151,13 +151,14 @@ class LaporanPenjualanController extends Controller
 
             $hargaJual = (float) ($item->harga_jual ?? 0.0);
             $totalPenjualan = $hargaJual * $pax;
-            $grandtotal = $totalPenjualan - ($sum['grand_total'] + $totalexam);
+            $grandtotal = $item->peluang->netsales ?? 0.0;
 
             // Akumulasi total keseluruhan
             $totalHargaJualKeseluruhan += $totalPenjualan; // Total sales revenue
             $totalNetSalesKeseluruhan += $sum['grand_total']; // Total CAC costs
             $totalExamKeseluruhan += $totalexam;
             $totalGrandKeseluruhan += $grandtotal;
+            $totalppn = 0.11 * $totalPenjualan;
 
             return [
                 'id' => $item->id,
@@ -178,7 +179,9 @@ class LaporanPenjualanController extends Controller
                 'nama_perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
                 'perhitungannet' => $netsales,
                 'invoice' => $item->invoice,
+                'bukti' => $item->bukti ?? null,
                 'path_regis' => $item->peluang->regis->path ?? '-',
+                'total_ppn' => $totalppn,
             ];
         });
 
@@ -197,7 +200,7 @@ class LaporanPenjualanController extends Controller
 
         $selisihBudget = $targetPeriode - $totalNetSalesKeseluruhan;
 
-        return response()->json([   
+        return response()->json([
             'data' => $data,
             'summary' => [
                 'total_harga_jual' => $totalHargaJualKeseluruhan,
@@ -225,8 +228,11 @@ class LaporanPenjualanController extends Controller
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta', 'rkm')
             ->where('id_rkm', $id)
             ->first();
-        $totalPA = $netsales->rkm->pax * $netsales->rkm->harga_jual - $netsales->transportasi - $netsales->akomodasi_peserta - $netsales->akomodasi_tim - $netsales->fresh_money - $netsales->entertaint - $netsales->souvenir - $netsales->cashback - $netsales->sewa_laptop;
-        $historyNet = HistoryNetSales::with('user.karyawan')->where('id_rkm', $pa[0]->id_rkm)->get();
+
+        $peluang = Peluang::where('id_rkm', $id)->first();
+        $totalPA = $peluang ? $peluang->netsales : 0;
+
+        $historyNet = HistoryNetSales::with('user.karyawan')->where('id_rkm', $id)->get();
 
         return view('crm.LaporanPenjualan.editpa', compact('pa', 'netsales', 'totalPA', 'historyNet'));
     }
@@ -284,6 +290,25 @@ class LaporanPenjualanController extends Controller
 
         $pa->update($validated);
 
+        $peluang = Peluang::where('id_rkm', $pa->id_rkm)->first();
+        if ($peluang) {
+            $totalPenawaran = (float)$peluang->harga * (int)$peluang->pax;
+            $potonganPajak = $totalPenawaran * (11 / 100);
+
+            $allPA = perhitunganNetSales::where('id_rkm', $pa->id_rkm)->get();
+            $totalPAInputs = $allPA->sum('transportasi') +
+                             $allPA->sum('akomodasi_peserta') +
+                             $allPA->sum('akomodasi_tim') +
+                             $allPA->sum('fresh_money') +
+                             $allPA->sum('entertaint') +
+                             $allPA->sum('souvenir') +
+                             $allPA->sum('cashback') +
+                             $allPA->sum('sewa_laptop');
+
+            $peluang->netsales = $totalPenawaran - $potonganPajak - $totalPAInputs;
+            $peluang->save();
+        }
+
         $changed = [];
         foreach ($validated as $key => $value) {
             $oldValue = $oldData[$key] ?? null;
@@ -302,10 +327,8 @@ class LaporanPenjualanController extends Controller
         $historyNet->data = $changed;
         $historyNet->save();
 
-        // Ambil user penerima notifikasi
         $users = User::whereIn('jabatan', ['GM', 'Adm Sales', 'Finance & Accounting'])->get();
 
-        // Ambil data RKM
         $rkm = RKM::with('materi')->where('id', $pa->id_rkm)->first();
 
         Carbon::setLocale('id');

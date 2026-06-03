@@ -47,10 +47,5 @@ class Registrasi extends Model
     {
         return $this->hasOne(souvenirpeserta::class, 'id_regist', 'id');
     }
-
-    public function dokumentasiExam()
-    {
-        return $this->hasOne(DokumentasiExam::class, 'id_registrasi', 'id');
-    }
 }
 

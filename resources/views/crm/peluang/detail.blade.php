@@ -236,6 +236,7 @@
                                         data-bs-target="#detailPAModal">
                                         <i class="bi bi-credit-card"></i> Detail PA
                                     </button>
+                                    <a class="btn btn-info btn-sm" href="/crm/edit/{{$netsales->id_rkm}}/pa" target="_blank"> Edit PA</a>
                                 </div>
                             @endif
                         </div>
@@ -310,6 +311,56 @@
                     @endif
                 </div>
             </div>
+
+            @if ($histories && count($histories) > 0)
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Histori Pemulihan Lead</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th scope="col" class="px-3 py-2 text-center">TANGGAL PEMULIHAN</th>
+                                        <th scope="col" class="px-3 py-2 text-center">PERUBAHAN TAHAP</th>
+                                        <th scope="col" class="px-3 py-2 text-center">PERUBAHAN HARGA (RP)</th>
+                                        <th scope="col" class="px-3 py-2 text-center">PERUBAHAN PAX</th>
+                                        <th scope="col" class="px-3 py-2 text-center">CATATAN</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($histories as $history)
+                                        <tr>
+                                            <td class="px-3 py-2 text-center align-middle">
+                                                {{ \Carbon\Carbon::parse($history->created_at)->translatedFormat('d M Y, H:i') }}
+                                            </td>
+                                            <td class="px-3 py-2 text-center align-middle">
+                                                <span class="text-muted">{{ strtoupper($history->tahap_sebelumnya) }}</span>
+                                                <i class="bx bx-right-arrow-alt mx-1"></i>
+                                                <strong class="text-dark">{{ strtoupper($history->tahap_baru) }}</strong>
+                                            </td>
+                                            <td class="px-3 py-2 text-center align-middle">
+                                                <span class="text-muted">{{ number_format($history->harga_sebelumnya, 0, ',', '.') }}</span>
+                                                <i class="bx bx-right-arrow-alt mx-1"></i>
+                                                <strong class="text-dark">{{ number_format($history->harga_baru, 0, ',', '.') }}</strong>
+                                            </td>
+                                            <td class="px-3 py-2 text-center align-middle">
+                                                <span class="text-muted">{{ $history->pax_sebelumnya }}</span>
+                                                <i class="bx bx-right-arrow-alt mx-1"></i>
+                                                <strong class="text-dark">{{ $history->pax_baru }}</strong>
+                                            </td>
+                                            <td class="px-3 py-2 align-middle">
+                                                {{ $history->keterangan ?? '-' }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- Modal Tambah Aktivitas -->
@@ -705,7 +756,7 @@
 
                             <!-- Input Harga Final hanya muncul jika tahap = Merah -->
                             <div class="mb-3 d-none" id="input-close-win">
-                                <label for="close_win_display" class="form-label">Harga Final (PAX)</label>
+                                <label for="close_win_display" class="form-label">Harga Final (Harga dari keseluruhan penawaran dikali dengan pax dan ppn)</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="close_win_display"
                                         placeholder="Masukkan harga final">
@@ -731,7 +782,7 @@
         <div class="modal fade" id="paymentAdvanceModal" tabindex="-1" aria-labelledby="paymentAdvanceModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
-                <form action="{{ route('store.payment.advance') }}" method="POST" id="StorePA">
+                <form action="{{ route('store.payment.advance') }}" method="POST" id="StorePA" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-content">
                         <div class="modal-header">
@@ -795,7 +846,7 @@
                             <!-- SOUVENIR -->
                             <div class="mb-3">
                                 <label class="form-label">Souvenir</label>
-                                <input type="text" class="form-control rupiah" name="Souvenir">
+                                <input type="text" class="form-control rupiah" name="souvenir">
                             </div>
 
                             <!-- CASHBACK -->
@@ -830,6 +881,13 @@
                                     <option value="cash">Cash</option>
                                     <option value="transfer">Transfer</option>
                                 </select>
+                            </div>
+
+                            <!-- Bukti -->
+                            <div class="mb-3">
+                                <label class="form-label">Bukti Pembayaran</label>
+                                <input type="file" class="form-control" name="bukti" required accept=".jpg,.jpeg,.png,.pdf">
+                                <small class="form-text text-muted">Format file: JPG, PNG, PDF (Max 2MB)</small>
                             </div>
 
                         </div>
@@ -876,6 +934,7 @@
                                             <th>Deskripsi Tambahan</th>
                                             <th>Tanggal PA</th>
                                             <th>Tipe Pembayaran</th>
+                                            <th>Bukti</th>
                                         </tr>
                                     </thead>
 
@@ -910,6 +969,11 @@
                                             </td>
 
                                             <td>{{ ucfirst($netsales->tipe_pembayaran) }}</td>
+                                            @if ($netsales->bukti)
+                                                <td><a href="/storage/{{ $netsales->bukti }}" target="_blank">Lihat Bukti</a></td>
+                                            @else
+                                                <td class="text-muted">—</td>
+                                            @endif
                                         </tr>
                                     </tbody>
                                 </table>

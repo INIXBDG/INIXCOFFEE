@@ -176,6 +176,7 @@ class DaftarPesertaExamController extends Controller
         $validated = $request->validate([
             'nama_exam' => 'required|string|max:255',
             'tanggal_pelaksanaan' => 'required|date',
+            'jam_pelaksanaan' => 'required|date_format:H:i',
             'skor' => 'nullable|numeric',
             'dokumentasi' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
             'invoice' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
@@ -220,11 +221,13 @@ class DaftarPesertaExamController extends Controller
             if ($dokumentasi->id) {
                 $dokumentasi->update(array_merge($validated, [
                     'tanggal_pelaksanaan' => $validated['tanggal_pelaksanaan'],
+                    'jam_pelaksanaan' => $validated['jam_pelaksanaan'],
                 ]));
             } else {
                 $dokumentasi->fill(array_merge($validated, [
                     'id_registrasi' => $registrasi->id,
                     'tanggal_pelaksanaan' => $validated['tanggal_pelaksanaan'],
+                    'jam_pelaksanaan' => $validated['jam_pelaksanaan'],
                 ]));
                 $dokumentasi->save();
             }
