@@ -90,11 +90,7 @@ class OfficeExamController extends Controller
 
                     $eksamData = Eksam::whereIn('id_rkm', $rkmIds)->first();
                     if ($eksamData) {
-                        if (!empty($eksamData->rekomendasi) || !empty($eksamData->status_rekomendasi) || !empty($eksamData->tanggal_rekomendasi)) {
-                            $row->exam_status = 'sudah_rekomendasi';
-                        } else {
-                            $row->exam_status = 'belum_rekomendasi';
-                        }
+                        $row->exam_status = 'sudah_rekomendasi';
                     } else {
                         $row->exam_status = 'belum_pengajuan';
                     }
@@ -137,21 +133,46 @@ class OfficeExamController extends Controller
     public function showDetailExam($id)
     {
         $ids = explode(', ', $id);
-        $rkms = RKM::with(['materi', 'eksam'])->whereIn('id', $ids)->get();
+        
+        $rkms = DB::table('r_k_m_s')
+            ->leftJoin('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+            ->leftJoin('eksams', 'r_k_m_s.id', '=', 'eksams.id_rkm')
+            ->whereIn('r_k_m_s.id', $ids)
+            ->select(
+                'r_k_m_s.*',
+                'materis.nama_materi',
+                'eksams.invoice as eksam_invoice',
+                'eksams.file_invoice as eksam_file_invoice',
+                'eksams.tanggal_pengajuan as eksam_tanggal_pengajuan',
+                'eksams.tanggal_mulai as eksam_tanggal_mulai',
+                'eksams.tanggal_selesai as eksam_tanggal_selesai',
+                'eksams.materi as eksam_materi',
+                'eksams.perusahaan as eksam_perusahaan',
+                'eksams.mata_uang as eksam_mata_uang',
+                'eksams.harga as eksam_harga',
+                'eksams.biaya_admin as eksam_biaya_admin',
+                'eksams.harga_rupiah as eksam_harga_rupiah',
+                'eksams.kurs as eksam_kurs',
+                'eksams.kurs_dollar as eksam_kurs_dollar',
+                'eksams.pax as eksam_pax',
+                'eksams.total as eksam_total',
+                'eksams.kode_exam as eksam_kode_exam',
+                'eksams.total_pax as eksam_total_pax',
+                'eksams.keterangan as eksam_keterangan',
+                'eksams.status as eksam_status',
+                'eksams.kode_karyawan as eksam_kode_karyawan'
+            )
+            ->get();
         
         $formatDate = function($value) {
-            if (empty($value)) return '-';
-            
-            if ($value instanceof \Carbon\Carbon) {
-                return $value->format('d M Y');
+            if (empty($value) || $value === '0000-00-00' || $value === '0000-00-00 00:00:00' || $value === '0') {
+                return '-';
             }
-            
-            if (is_numeric($value) && $value > 1000000000) {
-                return \Carbon\Carbon::createFromTimestamp($value)->format('d M Y');
+            if (is_numeric($value) && $value < 1000000000) {
+                return '-';
             }
-            
             try {
-                return \Carbon\Carbon::parse($value)->format('d M Y');
+                return \Carbon\CarbonImmutable::parse($value)->format('d M Y');
             } catch (\Exception $e) {
                 return '-';
             }
@@ -174,20 +195,52 @@ class OfficeExamController extends Controller
             $asisten_ids = array_filter(explode(', ', $rkm->asisten_key ?? ''));
             $asisten = Karyawan::whereIn('kode_karyawan', $asisten_ids)->pluck('nama_lengkap')->implode(', ') ?: '-';
 
+            $tglAwal = $formatDate($rkm->tanggal_awal);
+            $tglAkhir = $formatDate($rkm->tanggal_akhir);
+
             $tanggalTraining = '-';
-            if ($rkm->tanggal_awal && $rkm->tanggal_akhir) {
-                $tglAwal = $formatDate($rkm->tanggal_awal);
-                $tglAkhir = $formatDate($rkm->tanggal_akhir);
-                $tanggalTraining = ($rkm->tanggal_awal == $rkm->tanggal_akhir) ? $tglAwal : $tglAwal . ' s/d ' . $tglAkhir;
+            if ($tglAwal !== '-' && $tglAkhir !== '-') {
+                $tanggalTraining = ($tglAwal === $tglAkhir) ? $tglAwal : $tglAwal . ' s/d ' . $tglAkhir;
+            } elseif ($tglAwal !== '-') {
+                $tanggalTraining = $tglAwal;
+            } elseif ($tglAkhir !== '-') {
+                $tanggalTraining = $tglAkhir;
+            }
+
+            $eksamData = null;
+            if ($rkm->eksam_invoice || $rkm->eksam_materi) {
+                $eksamData = [
+                    'invoice' => $rkm->eksam_invoice ?? '-',
+                    'file_invoice' => $rkm->eksam_file_invoice,
+                    'tanggal_pengajuan' => $formatDate($rkm->eksam_tanggal_pengajuan),
+                    'tanggal_mulai'     => $formatDate($rkm->eksam_tanggal_mulai),
+                    'tanggal_selesai'   => $formatDate($rkm->eksam_tanggal_selesai),
+                    'materi'            => $rkm->eksam_materi ?? '-',
+                    'perusahaan'        => $rkm->eksam_perusahaan ?? '-',
+                    'mata_uang'         => $rkm->eksam_mata_uang ?? '-',
+                    'harga'             => $rkm->eksam_harga ?? 0,
+                    'biaya_admin'       => $rkm->eksam_biaya_admin ?? 0,
+                    'harga_rupiah'      => $rkm->eksam_harga_rupiah ?? 0,
+                    'kurs'              => $rkm->eksam_kurs ?? 0,
+                    'kurs_dollar'       => $rkm->eksam_kurs_dollar ?? 0,
+                    'pax'               => $rkm->eksam_pax ?? 0,
+                    'total'             => $rkm->eksam_total ?? 0,
+                    'kode_exam'         => $rkm->eksam_kode_exam ?? '-',
+                    'total_pax'         => $rkm->eksam_total_pax ?? 0,
+                    'keterangan'        => $rkm->eksam_keterangan ?? '-',
+                    'status'            => $rkm->eksam_status ?? '-',
+                    'kode_karyawan'     => $rkm->eksam_kode_karyawan ?? '-',
+                ];
             }
 
             $details[] = [
                 'rkm' => [
-                    'materi' => $rkm->materi ? $rkm->materi->nama_materi : '-',
+                    'id' => $rkm->id,
+                    'materi' => $rkm->nama_materi ?? '-',
                     'perusahaan' => $perusahaan,
                     'sales' => $sales,
-                    'harga_jual' => $rkm->harga_jual ? 'Rp ' . number_format($rkm->harga_jual, 0, ',', '.') : '-',
-                    'pax' => $rkm->pax ?? '-',
+                    'harga_jual' => $rkm->harga_jual ?? 0,
+                    'pax' => $rkm->pax ?? 0,
                     'isi_pax' => $rkm->isi_pax ?? '-',
                     'tanggal' => $tanggalTraining,
                     'metode_kelas' => $rkm->metode_kelas ?? '-',
@@ -196,7 +249,7 @@ class OfficeExamController extends Controller
                     'instruktur' => $instruktur,
                     'instruktur2' => $instruktur2,
                     'asisten' => $asisten,
-                    'status' => $rkm->status == 0 ? 'Tidak' : ($rkm->status == 1 ? 'Ya' : 'Tidak'),
+                    'status' => $rkm->status == 0 ? 'Tidak' : ($rkm->status == 1 ? 'Tidak' : 'Ya'),
                     'exam' => $rkm->exam == 1 ? 'Ya' : 'Tidak',
                     'authorize' => $rkm->authorize ?? '-',
                     'registrasi_form' => $rkm->registrasi_form ?? '-',
@@ -206,28 +259,7 @@ class OfficeExamController extends Controller
                     'makanan' => $rkm->makanan ?? '-',
                     'pdf_peserta' => $rkm->pdf_peserta,
                 ],
-                'eksam' => $rkm->eksam ? [
-                    'invoice' => $rkm->eksam->invoice ?? '-',
-                    'file_invoice' => $rkm->eksam->file_invoice,
-                    'tanggal_pengajuan' => $formatDate($rkm->eksam->tanggal_pengajuan),
-                    'tanggal_mulai' => $formatDate($rkm->eksam->tanggal_mulai),
-                    'tanggal_selesai' => $formatDate($rkm->eksam->tanggal_selesai),
-                    'materi' => $rkm->eksam->materi ?? '-',
-                    'perusahaan' => $rkm->eksam->perusahaan ?? '-',
-                    'mata_uang' => $rkm->eksam->mata_uang ?? '-',
-                    'harga' => $rkm->eksam->harga ? number_format($rkm->eksam->harga, 0, ',', '.') : '-',
-                    'biaya_admin' => $rkm->eksam->biaya_admin ? number_format($rkm->eksam->biaya_admin, 0, ',', '.') : '-',
-                    'harga_rupiah' => $rkm->eksam->harga_rupiah ? 'Rp ' . number_format($rkm->eksam->harga_rupiah, 0, ',', '.') : '-',
-                    'kurs' => $rkm->eksam->kurs ?? '-',
-                    'kurs_dollar' => $rkm->eksam->kurs_dollar ?? '-',
-                    'pax' => $rkm->eksam->pax ?? '-',
-                    'total' => $rkm->eksam->total ? number_format($rkm->eksam->total, 0, ',', '.') : '-',
-                    'kode_exam' => $rkm->eksam->kode_exam ?? '-',
-                    'total_pax' => $rkm->eksam->total_pax ?? '-',
-                    'keterangan' => $rkm->eksam->keterangan ?? '-',
-                    'status' => $rkm->eksam->status ?? '-',
-                    'kode_karyawan' => $rkm->eksam->kode_karyawan ?? '-',
-                ] : null
+                'eksam' => $eksamData
             ];
         }
         

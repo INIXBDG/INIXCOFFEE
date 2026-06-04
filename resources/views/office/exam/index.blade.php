@@ -15,13 +15,13 @@
         </div>
 
         <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Detail Data</h5>
+                        <h5 class="modal-title"><i class="bi bi-eye me-2"></i>Detail Data</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body" id="detailModalBody" style="max-height: 75vh; overflow-y: auto;">
+                    <div class="modal-body" id="detailModalBody" style="max-height: 80vh;">
                         Memuat detail...
                     </div>
                     <div class="modal-footer">
@@ -158,10 +158,8 @@
         }
 
         .badge-exam {
-            background-color: #118b35;
-            color: #fff;
+            color: #118b35;
             padding: 4px 10px;
-            border-radius: 4px;
             font-size: 0.8rem;
             font-weight: 600;
         }
@@ -179,7 +177,6 @@
             background-color: #6c757d;
             color: #fff;
             padding: 4px 10px;
-            border-radius: 4px;
             font-size: 0.8rem;
             font-weight: 600;
         }
@@ -227,6 +224,97 @@
         .notification-info .modal-header {
             background-color: #d1ecf1;
             border-bottom: 2px solid #17a2b8;
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 8px 0;
+            align-items: flex-start;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            flex: 0 0 45%;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .detail-separator {
+            flex: 0 0 5%;
+            color: #888;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            flex: 0 0 50%;
+            color: #222;
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+
+        .detail-value.text-currency-dollar {
+            font-weight: 600;
+            color: #c77d00;
+            font-family: 'Courier New', monospace;
+        }
+
+        .section-title i {
+            margin-right: 8px;
+        }
+
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-acc {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-reject {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-eksam {
+            text-align: center;
+            padding: 30px 15px;
+            color: #888;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .empty-eksam i {
+            font-size: 2.5rem;
+            color: #bbb;
+            margin-bottom: 10px;
+        }
+
+        @media screen and (max-width: 768px) {
+            .detail-label {
+                flex: 0 0 40%;
+            }
+
+            .detail-separator {
+                flex: 0 0 5%;
+            }
+
+            .detail-value {
+                flex: 0 0 55%;
+            }
         }
     </style>
 
@@ -368,10 +456,7 @@
 
                             var examBadge = '';
                             if (rkm.exam_status == 'sudah_rekomendasi') {
-                                examBadge = '<span class="badge-exam">Sudah Rekomendasi</span>';
-                            } else if (rkm.exam_status == 'belum_rekomendasi') {
-                                examBadge =
-                                    '<span class="badge-exam-warning">Belum Rekomendasi</span>';
+                                examBadge = '<p class="badge-exam">Sudah Pengajuan</p>';
                             } else {
                                 examBadge =
                                     'Belum Pengajuan';
@@ -459,155 +544,204 @@
                 var rkm = data.rkm;
                 var eksam = data.eksam;
 
+                // URL PDF Peserta
                 var pdfUrl = rkm.pdf_peserta;
                 if (pdfUrl && !pdfUrl.startsWith('http')) {
                     pdfUrl = '{{ asset('storage') }}/' + pdfUrl;
                 }
 
-                html += '<div class="card mb-3 border-0 shadow-sm">';
-                html += '<div class="card-body">';
+                // Badge Status RKM
+                var statusBadge = '';
+                if (rkm.status === 'Ya') statusBadge = '<span class="badge-status badge-acc">Ya</span>';
+                else if (rkm.status === 'Tidak') statusBadge =
+                    '<span class="badge-status badge-reject">Tidak</span>';
+                else statusBadge = '<span class="badge-status badge-pending">Tidak</span>';
 
-                html +=
-                    '<h6 class="text-primary border-bottom pb-2 mb-3"><i class="bi bi-file-earmark-text me-2"></i>Data RKM</h6>';
-                html += '<div class="row mb-2"><div class="col-md-4 fw-bold">Materi</div><div class="col-md-8">: ' +
-                    rkm.materi + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Perusahaan</div><div class="col-md-8">: ' +
-                    rkm.perusahaan + '</div></div>';
-                html += '<div class="row mb-2"><div class="col-md-4 fw-bold">Sales</div><div class="col-md-8">: ' +
-                    rkm.sales + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Harga Jual</div><div class="col-md-8">: ' +
-                    rkm.harga_jual + '</div></div>';
-                html += '<div class="row mb-2"><div class="col-md-4 fw-bold">Pax</div><div class="col-md-8">: ' +
-                    rkm.pax + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Isi Pax</div><div class="col-md-8">: ' +
-                    rkm.isi_pax + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Tanggal Training</div><div class="col-md-8">: ' +
-                    rkm.tanggal + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Metode Kelas</div><div class="col-md-8">: ' +
-                    rkm.metode_kelas + '</div></div>';
-                html += '<div class="row mb-2"><div class="col-md-4 fw-bold">Event</div><div class="col-md-8">: ' +
-                    rkm.event + '</div></div>';
-                html += '<div class="row mb-2"><div class="col-md-4 fw-bold">Ruang</div><div class="col-md-8">: ' +
-                    rkm.ruang + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Instruktur 1</div><div class="col-md-8">: ' +
-                    rkm.instruktur + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Instruktur 2</div><div class="col-md-8">: ' +
-                    rkm.instruktur2 + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Asisten</div><div class="col-md-8">: ' +
-                    rkm.asisten + '</div></div>';
-                html += '<div class="row mb-2"><div class="col-md-4 fw-bold">Status</div><div class="col-md-8">: ' +
-                    rkm.status + '</div></div>';
-                html += '<div class="row mb-2"><div class="col-md-4 fw-bold">Exam</div><div class="col-md-8">: ' +
-                    rkm.exam + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Authorize</div><div class="col-md-8">: ' +
-                    rkm.authorize + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Registrasi Form</div><div class="col-md-8">: ' +
-                    rkm.registrasi_form + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Quartal</div><div class="col-md-8">: ' +
-                    rkm.quartal + '</div></div>';
-                html += '<div class="row mb-2"><div class="col-md-4 fw-bold">Bulan</div><div class="col-md-8">: ' +
-                    rkm.bulan + '</div></div>';
-                html += '<div class="row mb-2"><div class="col-md-4 fw-bold">Tahun</div><div class="col-md-8">: ' +
-                    rkm.tahun + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">Makanan</div><div class="col-md-8">: ' +
-                    rkm.makanan + '</div></div>';
-                html +=
-                    '<div class="row mb-2"><div class="col-md-4 fw-bold">PDF Peserta</div><div class="col-md-8">: ' +
-                    (rkm.pdf_peserta ? '<a href="' + pdfUrl +
-                        '" target="_blank" class="text-primary text-decoration-underline">Lihat / Download</a>' :
-                        '-') + '</div></div>';
+                html += '<div class="detail-card">';
+                html += '<div class="detail-card-body">';
 
-                html +=
-                    '<h6 class="text-success border-bottom pb-2 mb-3 mt-4"><i class="bi bi-clipboard-check me-2"></i>Data Eksam</h6>';
+                // === KOLOM KIRI: INFO DASAR RKM ===
+                html += '<div class="row">';
+                html += '<div class="col-md-6">';
+
+                html += '<div class="section-title"><i class="bi bi-info-circle"></i>Informasi Dasar</div>';
+                html += buildRow('ID RKM', rkm.id || '-');
+                html += buildRow('Materi', rkm.materi);
+                html += buildRow('Perusahaan', rkm.perusahaan);
+                html += buildRow('Sales', rkm.sales);
+                html += buildRow('Tanggal Training', rkm.tanggal);
+                html += buildRow('Metode Kelas', rkm.metode_kelas);
+                html += buildRow('Event', rkm.event);
+                html += buildRow('Ruang', rkm.ruang);
+                html += buildRow('Pax', rkm.pax + ' Peserta');
+                html += buildRow('Isi Pax', rkm.isi_pax);
+                html += buildRow('Status', statusBadge, true);
+                html += buildRow('Exam', rkm.exam);
+
+                html += '</div>'; // end col-md-6 kiri
+
+                // === KOLOM KANAN: INSTRUKTUR & LAINNYA ===
+                html += '<div class="col-md-6">';
+
+                html += '<div class="section-title"><i class="bi bi-people"></i>Tim Pengajar</div>';
+                html += buildRow('Instruktur 1', rkm.instruktur);
+                html += buildRow('Instruktur 2', rkm.instruktur2);
+                html += buildRow('Asisten', rkm.asisten);
+
+                html += '<div class="section-title"><i class="bi bi-calendar3"></i>Informasi Periode</div>';
+                html += buildRow('Quartal', rkm.quartal);
+                html += buildRow('Bulan', rkm.bulan);
+                html += buildRow('Tahun', rkm.tahun);
+                html += buildRow('Authorize', rkm.authorize);
+
+                // Harga Jual RKM (selalu Rupiah)
+                html += buildRowCurrency('Harga Jual', rkm.harga_jual, 'Rupiah');
+
+                html += '</div>'; // end col-md-6 kanan
+                html += '</div>'; // end row
+
+                // === BAGIAN EKSAM (Full Width) ===
+                html += '<hr class="my-3">';
                 if (eksam) {
+                    // URL File Invoice
                     var invoiceUrl = eksam.file_invoice;
                     if (invoiceUrl && !invoiceUrl.startsWith('http')) {
                         invoiceUrl = '{{ asset('storage') }}/' + invoiceUrl;
                     }
 
+                    html += '<div class="detail-card" style="box-shadow:none; border:1px solid #ddd;">';
+                    html += '<div class="detail-card-body">';
+
+                    html += '<div class="row">';
+
+                    html += '<div class="col-md-6">';
+                    html += buildRow('Invoice', eksam.invoice);
+                    html += buildRow('Kode Exam', eksam.kode_exam);
+                    html += buildRow('Materi', eksam.materi);
+                    html += buildRow('Perusahaan', eksam.perusahaan);
+                    html += buildRow('Status', eksam.status);
+                    html += buildRow('Kode Karyawan', eksam.kode_karyawan);
+                    html += buildRow('Keterangan', eksam.keterangan);
+                    html += buildRow('Tanggal Pengajuan', eksam.tanggal_pengajuan);
+                    html += buildRow('Tanggal Mulai', eksam.tanggal_mulai);
+                    html += buildRow('Tanggal Selesai', eksam.tanggal_selesai);
+
+                    // Link File Invoice
+                    if (eksam.file_invoice) {
+                        html += '<div class="detail-row"><div class="detail-value"><a href="' + invoiceUrl +
+                            '" target="_blank" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-invoice me-1"></i>Lihat Invoice</a></div></div>';
+                    }
+                    html += '</div>'; // end col kiri eksam
+
+                    html += '<div class="col-md-6">';
                     html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Invoice</div><div class="col-md-8">: ' +
-                        eksam.invoice + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">File Invoice</div><div class="col-md-8">: ' +
-                        (eksam.file_invoice ? '<a href="' + invoiceUrl +
-                            '" target="_blank" class="text-primary text-decoration-underline">Lihat / Download</a>' :
-                            '-') + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Tanggal Pengajuan</div><div class="col-md-8">: ' +
-                        eksam.tanggal_pengajuan + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Tanggal Mulai</div><div class="col-md-8">: ' +
-                        eksam.tanggal_mulai + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Tanggal Selesai</div><div class="col-md-8">: ' +
-                        eksam.tanggal_selesai + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Materi</div><div class="col-md-8">: ' +
-                        eksam.materi + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Perusahaan</div><div class="col-md-8">: ' +
-                        eksam.perusahaan + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Mata Uang</div><div class="col-md-8">: ' +
-                        eksam.mata_uang + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Harga</div><div class="col-md-8">: ' +
-                        eksam.harga + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Biaya Admin</div><div class="col-md-8">: ' +
-                        eksam.biaya_admin + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Harga Rupiah</div><div class="col-md-8">: ' +
-                        eksam.harga_rupiah + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Kurs</div><div class="col-md-8">: ' +
-                        eksam.kurs + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Kurs Dollar</div><div class="col-md-8">: ' +
-                        eksam.kurs_dollar + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Pax</div><div class="col-md-8">: ' +
-                        eksam.pax + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Total</div><div class="col-md-8">: ' +
-                        eksam.total + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Kode Exam</div><div class="col-md-8">: ' +
-                        eksam.kode_exam + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Total Pax</div><div class="col-md-8">: ' +
-                        eksam.total_pax + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Keterangan</div><div class="col-md-8">: ' +
-                        eksam.keterangan + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Status</div><div class="col-md-8">: ' +
-                        eksam.status + '</div></div>';
-                    html +=
-                        '<div class="row mb-2"><div class="col-md-4 fw-bold">Kode Karyawan</div><div class="col-md-8">: ' +
-                        eksam.kode_karyawan + '</div></div>';
+                        '<div class="section-title" style="color:#118b35; border-color:#118b35;"><i class="bi bi-cash-coin"></i>Rincian Harga</div>';
+                    html += buildRow('Mata Uang', eksam.mata_uang);
+
+                    // Harga sesuai mata uang
+                    html += buildRowCurrency('Harga', eksam.harga, eksam.mata_uang);
+                    html += buildRowCurrency('Biaya Admin', eksam.biaya_admin, eksam.mata_uang);
+
+                    html += buildRow('Pax', eksam.pax + ' Peserta');
+                    html += buildRow('Total Pax', eksam.total_pax);
+
+                    // Kurs
+                    if (eksam.kurs && eksam.kurs != 0) {
+                        html += buildRowCurrency('Kurs', eksam.kurs, 'Rupiah');
+                    }
+                    if (eksam.kurs_dollar && eksam.kurs_dollar != 0) {
+                        html += buildRowCurrency('Kurs Dollar', eksam.kurs_dollar, 'Dollar');
+                    }
+
+                    // Harga dalam Rupiah (selalu Rupiah)
+                    html += buildRowCurrency('Harga dalam Rupiah', eksam.harga_rupiah, 'Rupiah');
+                    html += buildRowCurrency('Total', eksam.total, 'Rupiah', true);
+
+                    html += '</div>'; // end col kanan eksam
+                    html += '</div>'; // end row
+
+                    html += '</div>'; // end detail-card-body eksam
+                    html += '</div>'; // end detail-card eksam
                 } else {
-                    html += '<div class="alert alert-secondary text-center">Data Eksam kosong untuk RKM ini.</div>';
+                    html += '<div class="empty-eksam">';
+                    html += '<i class="bi bi-inbox d-block"></i>';
+                    html += '<strong>Data Eksam Kosong</strong><br>';
+                    html += '<small>Belum ada data exam yang diajukan untuk RKM ini.</small>';
+                    html += '</div>';
                 }
 
-                html += '</div>';
-                html += '</div>';
+                html += '</div>'; // end detail-card-body
+                html += '</div>'; // end detail-card
             });
 
             $('#detailModalBody').html(html);
+        }
+
+        // === HELPER FUNCTIONS ===
+
+        // Build row detail standar
+        function buildRow(label, value, isHtml = false) {
+            var displayValue = (value === null || value === undefined || value === '') ? '-' : value;
+            if (isHtml) {
+                return '<div class="detail-row"><div class="detail-label">' + label +
+                    '</div><div class="detail-separator">:</div><div class="detail-value">' + displayValue + '</div></div>';
+            }
+            return '<div class="detail-row"><div class="detail-label">' + label +
+                '</div><div class="detail-separator">:</div><div class="detail-value">' + escapeHtml(String(displayValue)) +
+                '</div></div>';
+        }
+
+        // Build row dengan format mata uang
+        function buildRowCurrency(label, value, mataUang, isTotal = false) {
+            var numValue = parseFloat(value) || 0;
+            var formatted = formatCurrency(numValue, mataUang);
+            var cssClass = 'text-currency';
+            if (mataUang && mataUang.toLowerCase() !== 'rupiah') {
+                cssClass = 'text-currency-dollar';
+            }
+            if (isTotal) {
+                cssClass += ' fw-bold';
+            }
+            return '<div class="detail-row"><div class="detail-label">' + label +
+                '</div><div class="detail-separator">:</div><div class="detail-value ' + cssClass + '">' + formatted +
+                '</div></div>';
+        }
+
+        // Format currency (Rupiah / Dollar / lainnya)
+        function formatCurrency(angka, mataUang) {
+            if (!angka && angka !== 0) return '-';
+            var num = parseFloat(angka);
+            if (isNaN(num)) return '-';
+
+            // Format angka dengan separator ribuan
+            var formatted = num.toLocaleString('id-ID', {
+                maximumFractionDigits: 0
+            });
+
+            if (!mataUang) return formatted;
+
+            var mu = mataUang.toString().toLowerCase();
+            if (mu === 'rupiah' || mu === 'idr' || mu === 'rp') {
+                return 'Rp ' + formatted;
+            } else if (mu === 'dollar' || mu === 'usd' || mu === '$') {
+                return '$ ' + formatted;
+            } else {
+                return formatted + ' ' + mataUang;
+            }
+        }
+
+        // Escape HTML untuk mencegah XSS
+        function escapeHtml(text) {
+            var map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) {
+                return map[m];
+            });
         }
 
         function showBundlingModal(id, currentStatus) {
