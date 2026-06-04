@@ -530,7 +530,7 @@
                                             <p><strong>Periode:</strong> ${tanggalAwal} s/d ${tanggalAkhir}</p>
                                         </div>
                                         <div class="col-md-6">
-                                            <p><strong>Harga:</strong> ${formatRupiah(rowData.harga)}</p>
+                                            <p><strong>Harga Penawaran:</strong> ${formatRupiah(rowData.harga)}</p>
                                             <p><strong>Total Penjualan:</strong> ${formatRupiah(rowData.total_penjualan)}</p>
                                             <p><strong>Exam:</strong> ${formatRupiah(rowData.total_exam)}</p>
                                             <p><strong>Payment Advance:</strong> ${formatRupiah(rowData.netsales)}</p>
