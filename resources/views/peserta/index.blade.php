@@ -37,10 +37,10 @@
                           <tr>
                             <th scope="col">Nama</th>
                             <th scope="col">Email</th>
-                            @if (auth()->user()->id_instruktur && auth()->user()->id_instruktur != 'AD' && auth()->user()->jabatan != 'Technical Support')
+                            @if (auth()->user()->id_instruktur && auth()->user()->jabatan != 'Education Manager' && auth()->user()->jabatan != 'Technical Support')
                                 <th scope="col">id</th>
                             @endif
-                            @if (auth()->user()->id_sales && auth()->user()->id_sales != 'AM')
+                            @if (auth()->user()->id_sales && auth()->user()->jabatan != 'SPV Sales')
                                 <th scope="col">id</th>
                                 <th scope="col">id</th>
                             @endif
@@ -49,7 +49,7 @@
                             <th scope="col">Alamat</th>
                             <th scope="col">Perusahaan/Instansi</th>
                             <th scope="col">Tanggal Lahir</th>
-                            @if (!auth()->user()->id_instruktur || auth()->user()->id_instruktur == 'AD' || auth()->user()->jabatan == 'Technical Support')
+                            @if (!auth()->user()->id_instruktur || auth()->user()->jabatan == 'Education Manager' || auth()->user()->jabatan == 'Technical Support')
                                 <th scope="col">Created_at</th>
                                 <th scope="col">Aksi</th>
                             @endif
@@ -163,8 +163,11 @@
                     {"data": "nama"},
                     {"data": "email"},
                     {
-                        "data": "id_instruktur",
-                        "visible": false
+                        "data": "latest_registrasi.id_instruktur",
+                        "visible": false,
+                        "render": function (data) {
+                            return data ? data : '-';
+                        }
                     },
                     {
                         "data": "jenis_kelamin",
