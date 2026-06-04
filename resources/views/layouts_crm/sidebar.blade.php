@@ -119,8 +119,9 @@
                     <div class="text-truncate" data-i18n="ringkasanPeluang">Closed Lost</div>
                 </a>
             </li>
-            <li class="menu-item {{ request()->routeIs('crm.laporanPenjualan') ? 'active open' : '' }}">
-                <a href="{{ route('crm.laporanPenjualan') }}" class="menu-link">
+
+            <li class="menu-item {{ request()->routeIs(Auth::check() && Auth::user()->jabatan == 'GM' ? 'laporan.for.gm' : 'crm.laporanPenjualan') ? 'active open' : '' }}">
+                <a href="{{ route(Auth::check() && Auth::user()->jabatan == 'GM' ? 'laporan.for.gm' : 'crm.laporanPenjualan') }}" class="menu-link">
                     <i class='menu-icon tf-icons bx bx-bar-chart-square'></i>
                     <div class="text-truncate" data-i18n="crmLaporanPenjualan">Laporan Penjualan</div>
                 </a>
@@ -195,7 +196,7 @@
                         <i class='menu-icon tf-icons bx bx-task'></i>
                         <div class="text-truncate" data-i18n="aktivitas">Checklist RKM</div>
                     </a>
-                </li>                
+                </li>
             @endif
 
             <li class="menu-item {{ request()->routeIs('index.pic') ? 'active open' : '' }}">
