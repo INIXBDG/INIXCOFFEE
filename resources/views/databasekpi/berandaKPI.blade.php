@@ -343,13 +343,6 @@
                                 <i class="fa-solid fa-bullseye menu-icon"></i>
                             </a>
                         </li>
-
-                        {{-- <li class="nav-item {{ Request::routeIs('kpi.executive.dashboard') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('kpi.executive.dashboard') }}">
-                                <span class="menu-title">Executive Analisis</span>
-                                <i class="fa-solid fa-bullseye menu-icon"></i>
-                            </a>
-                        </li> --}}
                     @endif
 
                     <li class="nav-item">

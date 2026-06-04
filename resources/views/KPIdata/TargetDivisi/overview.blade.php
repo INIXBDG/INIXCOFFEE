@@ -337,7 +337,7 @@
                             <div class="text-end d-flex flex-column align-items-end">
                                 <div class="row align-items-center g-2">
                                     <div class="col-auto">
-                                        <div class="fw-bold">${Math.round(emp.rata_rata_progress)}%</div> ${badge}
+                                        <div class="fw-bold">${emp.rata_rata_progress}%</div> ${badge}
                                     </div>
                                     <div class="col-auto">
                                         <div class="dropdown">
