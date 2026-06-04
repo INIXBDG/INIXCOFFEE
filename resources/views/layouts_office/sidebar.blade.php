@@ -77,7 +77,8 @@
                 <span class="menu-header-text">Administrasi</span>
             </li>
 
-            <li class="menu-item {{ request()->routeIs('office.indexKegiatan') ? 'active open' : '' }}">               <a href="{{ route('office.indexKegiatan') }}" class="menu-link">
+            <li class="menu-item {{ request()->routeIs('office.indexKegiatan') ? 'active open' : '' }}">               
+                <a href="{{ route('office.indexKegiatan') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-group"></i>
                     <div class="text-truncate" data-i18n="contact">Pengajuan Kegiatan</div>
                 </a>
@@ -111,6 +112,17 @@
             <a href="{{ route('office.vendor.bengkel.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-wrench"></i>
                 <div class="text-truncate" data-i18n="contact">Bengkel</div>
+            </a>
+        </li>
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">EXAM</span>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('office.exam.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.exam.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-clipboard"></i>
+                <div class="text-truncate" data-i18n="contact">Data Exam</div>
             </a>
         </li>
 

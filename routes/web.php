@@ -33,6 +33,7 @@ use App\Http\Controllers\feedbackController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HR\employeeController;
+use App\Http\Controllers\HR\hireController;
 use App\Http\Controllers\HR\HRController;
 use App\Http\Controllers\HR\payrollController;
 use App\Http\Controllers\HR\presenceController;
@@ -99,6 +100,7 @@ use App\Http\Controllers\PicPenagihanController;
 use App\Http\Controllers\StockOpnameController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\IncomeStatementController;
+use App\Http\Controllers\Office\OfficeExamController;
 use App\Http\Controllers\PerusahaanController;
 
 /*
@@ -1038,6 +1040,13 @@ Route::prefix('office')->group(function () {
         Route::post('update/{id}', [ApprovalPendapatanController::class, 'update'])->name('update');
         Route::get('total-tahunan/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'totalTahunan']);
     });
+
+    route::prefix('exam')->name('office.exam.')->group(function() {
+        route::get('/index', [OfficeExamController::class, 'indexOffice'])->name('index');
+        Route::get('/detail/{id}', [OfficeExamController::class, 'showDetailExam']);
+        route::post('/update-bundling', [OfficeExamController::class, 'updateBundling'])->name('updateBundling');
+        Route::get('/{year}/{month}', [OfficeExamController::class, 'showExamMonth']);
+    });
 });
 
 Route::prefix('dashboard-sla/{team}')->group(function () {
@@ -1442,6 +1451,10 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/create-with-mapping', [ReportController::class, 'createWithMapping'])->name('create.mapping');
         Route::post('/upload-and-map', [ReportController::class, 'uploadAndMap'])->name('upload.map');
         Route::post('/save-with-mapping', [ReportController::class, 'saveWithMapping'])->name('save.mapping');
+    });
+    
+    Route::prefix('recruitment')->name('recruitment.')->group(function() {
+        Route::get('/', [hireController::class, 'index'])->name('index');
     });
 });
 Route::get('/income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
