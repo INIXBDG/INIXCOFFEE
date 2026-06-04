@@ -48,23 +48,6 @@
                         <input type="text" hidden name="skipApproval" value="1">
 
                         <div class="row mb-3">
-                            <label for="kode_exam" class="col-md-4 col-form-label text-md-start">{{ __('Kode Exam') }}</label>
-                            <div class="col-md-6">
-                                <select name="kode_exam" id="kode_exam" class="form-select">
-                                    <option value="" selected>Pilih Kode Exam</option>
-                                    @foreach ($kode_exam as $list)
-                                    <option value="{{ $list->kode_exam }}">{{ $list->kode_exam }} - {{ $list->nama_exam }} - {{ $list->provider }} - {{ $list->vendor }}</option>
-                                    @endforeach
-                                </select>
-                                @error('kode_exam')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <label for="mata_uang" class="col-md-4 col-form-label text-md-start">{{ __('Mata Uang') }}</label>
                             <div class="col-md-6">
                                 <select name="mata_uang" id="mata_uang" class="form-select">
@@ -326,17 +309,23 @@ $(document).ready(function() {
         if (mataUang === 'Rupiah') {
             $('#kurs_harga_div').hide();
             $('#kurs_dollar_div').hide();
+            $('#harga_rupiah_div').hide();
+            $('#biaya_admin_div').hide();
 
             $('.currency-symbol').text('Rp.')
             $('#kurs').val(1);
             $('#kurs_dollar').val(1);
+            $('#biaya_admin').val(0);
         } else {
             $('#kurs_harga_div').show();
             $('#kurs_dollar_div').show();
+            $('#harga_rupiah_div').show();
+            $('#biaya_admin_div').show();
 
             $('.currency-symbol').text('$')
             $('#kurs').val('');
             $('#kurs_dollar').val('');
+            $('#biaya_admin').val('');
         }
 
         updateHargaRupiah();

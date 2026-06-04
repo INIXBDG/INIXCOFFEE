@@ -265,7 +265,7 @@ class examController extends Controller
         $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
             ->where('exam', '0')
             ->whereHas( 'materi', function ($query) {
-                $query->where('vendor', 'EC-Council')
+                $query->whereIn('vendor', ['EC-Council', 'Regular'])
                     ->orWhere('nama_materi', 'like', '%BNSP%');
             })
             ->whereNotIn('id', $existingRKMs)
