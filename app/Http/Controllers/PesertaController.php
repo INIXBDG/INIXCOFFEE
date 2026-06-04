@@ -36,7 +36,7 @@ class PesertaController extends Controller
     {
         // $registrasi = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')->get();
         // $peserta = $registrasi->peserta;
-        $peserta = Peserta::with('perusahaan', 'latestRegistrasi')->get();
+        $peserta = Peserta::with('perusahaan')->latest()->get();
 
         // return $peserta;
 

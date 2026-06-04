@@ -309,23 +309,16 @@
             selectPrimary.empty().append('<option value="">Pilih Perusahaan Utama</option>');
             selectDuplicate.empty().append('<option value="">Pilih Perusahaan Duplikat</option>');
 
-            // Mengambil data terkini dari DataTables
+            // Mengambil semua data terkini dari DataTables
             var tableData = table.rows().data().toArray();
             
-            // Memfilter hanya data yang memiliki status duplikat
-            var duplicateData = tableData.filter(function(item) {
-                return item.isDuplicate === true;
-            });
-            
-            // Mengurutkan data berdasarkan nama
-            duplicateData.sort(function(a, b) {
+            // Mengurutkan semua data berdasarkan nama perusahaan
+            tableData.sort(function(a, b) {
                 return a.nama_perusahaan.localeCompare(b.nama_perusahaan);
             });
 
-            // Menambahkan opsi ke dalam elemen select beserta perhitungan relasi
-            duplicateData.forEach(function(item) {
-                // Ekstraksi nilai perhitungan dari properti objek
-                // var countKaryawan = item.karyawan_count || 0;
+            // Menambahkan SEMUA opsi ke dalam elemen select dengan atribut penanda duplikat
+            tableData.forEach(function(item) {
                 var countRkms = item.rkms_count || 0;
                 var countPeserta = item.peserta_count || 0;
                 var countContacts = item.contacts_count || 0;
@@ -333,18 +326,57 @@
 
                 var textLokasi = item.lokasi ? ' - ' + item.lokasi : '';
                 var textCounts = ` (RKM: ${countRkms}, Peserta: ${countPeserta}, Contact: ${countContacts}, Peluang: ${countPeluang})`;
-                var sales = item.sales_key;
+                var sales = item.sales_key ? item.sales_key : '';
                 var optionText = item.nama_perusahaan + ' - ' + sales + textLokasi + textCounts;
 
-                selectPrimary.append(new Option(optionText, item.id));
-                selectDuplicate.append(new Option(optionText, item.id));
+                // Inisialisasi objek Option baru
+                var optionPrimary = new Option(optionText, item.id);
+                var optionDuplicate = new Option(optionText, item.id);
+
+                // Menambahkan atribut data HTML5 untuk mengidentifikasi status duplikat
+                $(optionPrimary).attr('data-is-duplicate', item.isDuplicate ? 'true' : 'false');
+                $(optionDuplicate).attr('data-is-duplicate', item.isDuplicate ? 'true' : 'false');
+
+                selectPrimary.append(optionPrimary);
+                selectDuplicate.append(optionDuplicate);
             });
 
-            // Inisialisasi Select2
+            // Definisi fungsi penyaringan (matcher) kustom untuk Select2
+            function customMatcher(params, data) {
+                // Pengecualian selalu tampil untuk opsi placeholder (value kosong)
+                if ($.trim(data.id) === '') {
+                    return data;
+                }
+
+                // Kondisi 1: Jika kotak pencarian kosong (tidak di-search)
+                if (typeof params.term === 'undefined' || $.trim(params.term) === '') {
+                    // Hanya kembalikan data jika atribut data-is-duplicate bernilai 'true'
+                    if ($(data.element).attr('data-is-duplicate') === 'true') {
+                        return data;
+                    }
+                    return null; // Sembunyikan opsi non-duplikat
+                }
+
+                // Kondisi 2: Jika ada input di kotak pencarian (di-search)
+                // Lakukan pencocokan string standar (case-insensitive) pada semua data
+                if (typeof data.text === 'undefined') {
+                    return null;
+                }
+
+                if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
+                    return data;
+                }
+
+                // Sembunyikan opsi jika string tidak cocok dengan kata kunci
+                return null; 
+            }
+
+            // Inisialisasi Select2 dengan matcher kustom
             $('#primary_id, #duplicate_id').select2({
-                dropdownParent: $('#mergeModal'), // Penting agar dropdown tidak tertutup oleh modal Z-index
+                dropdownParent: $('#mergeModal'),
                 placeholder: "Ketik untuk mencari...",
-                allowClear: true
+                allowClear: true,
+                matcher: customMatcher
             });
         });
 

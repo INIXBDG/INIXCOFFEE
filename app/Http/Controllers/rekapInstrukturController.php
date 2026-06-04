@@ -47,6 +47,8 @@ class rekapInstrukturController extends Controller
         // Mengambil id_rkm yang ada dari database
         $existingRKMs = rekapMengajarInstruktur::pluck('id_rkm')->toArray();
 
+        // dd($existingRKMs);
+
         // Menggabungkan array menjadi string, jika ada lebih dari satu id_rkm
         $existingRKMsString = implode(',', $existingRKMs);
 
@@ -60,58 +62,44 @@ class rekapInstrukturController extends Controller
         $startOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->startOfDay()->toDateString();
         $endOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()->endOfDay()->toDateString();
 
-        $data = RKM::with('materi')
-            ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-            ->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                $q->where('r_k_m_s.tanggal_awal', '<=', $endOfMonth)
-                ->where('r_k_m_s.tanggal_akhir', '>=', $startOfMonth);
-            })
-			->whereNotNull('r_k_m_s.instruktur_key') 
-            ->where('r_k_m_s.instruktur_key', '<>', '')
-            ->whereNotIn('r_k_m_s.id', $id_rkm)
-            ->select(
-                'r_k_m_s.materi_key',
-                // kita tidak men-select ruang langsung — kita akan hitung ruang_result di bawah
-                'r_k_m_s.event',
-				'r_k_m_s.instruktur_key',
-				'r_k_m_s.tanggal_awal',
-                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.instruktur_key SEPARATOR ",") AS instruktur_all'),
-                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.perusahaan_key SEPARATOR ",") AS perusahaan_all'),
-                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.sales_key SEPARATOR ",") AS sales_all'),
-                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.id SEPARATOR ",") AS id_all'),
-                DB::raw('CASE WHEN SUM(CASE WHEN r_k_m_s.status = 0 THEN 1 ELSE 0 END) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
-                DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-                DB::raw('MIN(r_k_m_s.tanggal_awal) AS tanggal_awal'),
-                DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir'),
-                // Prioritaskan metode_kelas: Offline > Virtual > gabungan distinct
-                DB::raw("
-                    CASE
-                        WHEN SUM(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'offline' THEN 1 ELSE 0 END) > 0 THEN 'Offline'
-                        WHEN SUM(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'virtual' THEN 1 ELSE 0 END) > 0 THEN 'Virtual'
-                        ELSE GROUP_CONCAT(DISTINCT r_k_m_s.metode_kelas SEPARATOR ', ')
-                    END AS metode_kelas_all
-                "),
-                // Pilih ruang: ambil ruang dari baris Offline jika ada, else ruang dari Virtual, else gabungkan distinct
-                DB::raw("
-                    CASE
-                        WHEN SUM(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'offline' THEN 1 ELSE 0 END) > 0
-                            THEN MIN(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'offline' THEN r_k_m_s.ruang ELSE NULL END)
-                        WHEN SUM(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'virtual' THEN 1 ELSE 0 END) > 0
-                            THEN MIN(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'virtual' THEN r_k_m_s.ruang ELSE NULL END)
-                        ELSE GROUP_CONCAT(DISTINCT r_k_m_s.ruang SEPARATOR ', ')
-                    END AS ruang_prefered
-                ")
-            )
-            ->groupBy(
-                'r_k_m_s.materi_key',
-                'r_k_m_s.event',
-				'r_k_m_s.instruktur_key',
-				'r_k_m_s.tanggal_awal'
-            )
-            ->orderBy('status_all', 'asc')
-            ->orderBy('tanggal_awal', 'asc')
-            ->orderBy('tanggal_akhir', 'asc')
-            ->get();
+        $data =  RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
+                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                    ->whereBetween('r_k_m_s.tanggal_awal', [$startOfMonth, $endOfMonth])
+                    ->whereDoesntHave('peluang', function ($query) {
+                        $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
+                    })->where(function ($query) {
+                        $query->whereHas('exam.approvalexam', function ($q) {
+                            $q->where('technical_support', 1);
+                        })
+                        ->orWhereDoesntHave('exam.approvalexam');
+                    })->select(
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
+                        DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
+                        'r_k_m_s.materi_key',
+                        'r_k_m_s.ruang',
+                        'r_k_m_s.metode_kelas',
+                        'r_k_m_s.event',
+                        DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'), // Gabungkan semua exam
+                        DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'), // Gabungkan semua makanan
+                        DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+                        DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+                        DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                        'r_k_m_s.tanggal_awal',
+                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
+                    )
+                    ->groupBy(
+                        'r_k_m_s.materi_key',
+                        'r_k_m_s.ruang',
+                        'r_k_m_s.metode_kelas',
+                        'r_k_m_s.event',
+                        'r_k_m_s.tanggal_awal'
+                    )
+                    ->orderBy('status_all', 'asc')
+                    ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+                    ->get();
 
         // return $data;
         // Ambil relasi instruktur/sales/perusahaan seperti sebelumnya

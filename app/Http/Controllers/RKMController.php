@@ -444,7 +444,7 @@ class RKMController extends Controller
     public function editInstruktur($id)
     {
         // return $id;
-        $karyawan = Karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager'])
+        $karyawan = Karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager', 'Outsource'])
             ->where('status_aktif', '1')
             ->get();
         $array = explode('ixb', $id);
