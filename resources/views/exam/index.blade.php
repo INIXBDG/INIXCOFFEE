@@ -108,7 +108,7 @@
                                     <img src="{{ asset('icon/plus.svg') }}" width="30px"> Add Pengajuan
                                 </a>
                             </div>
-                            <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Exam BNSP - EC Council') }}</h3>
+                            <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Exam BNSP - EC Council - Inixcert') }}</h3>
                             <table class="table table-striped" id="examconditionaltable">
                                 <thead>
                                     <tr>
