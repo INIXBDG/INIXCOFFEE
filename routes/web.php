@@ -792,6 +792,7 @@ Route::prefix('crm')->group(function () {
     Route::get('laporanPenjualan', [LaporanPenjualanController::class, 'index'])->name('crm.laporanPenjualan');
     Route::get('/edit/{id}/pa', [LaporanPenjualanController::class, 'editPA'])->name('editPA');
     Route::put('/update/pa/{id}', [LaporanPenjualanController::class, 'updatePA'])->name('updatePA');
+    Route::get('/laporan-for-gm', [LaporanPenjualanController::class, 'laporanForGm'])->name('laporan.for.gm');
 
     // Import Contact / Perusahaan
     Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
@@ -1420,22 +1421,22 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
     Route::prefix('reports')->name('reports.')->group(function() {
         Route::get('/', [ReportController::class, 'index'])->name('index');
-        
+
         Route::get('/create', [ReportController::class, 'create'])->name('create');
         Route::post('/extract-text', [ReportController::class, 'extractText'])->name('extract.text');
         Route::post('/store', [ReportController::class, 'store'])->name('store');
         Route::get('/{template}/edit', [ReportController::class, 'edit'])->name('edit');
         Route::put('/{template}', [ReportController::class, 'update'])->name('update');
-        
+
         Route::get('/{template}/generate', [ReportController::class, 'generateForm'])->name('generate.form');
         Route::post('/{template}/generate', [ReportController::class, 'generate'])->name('generate');
         Route::get('/{template}/history', [ReportController::class, 'history'])->name('history');
         Route::get('/{template}/history/data', [ReportController::class, 'getHistoryData'])->name('history.data');
-        
+
         Route::post('/placeholders', [ReportController::class, 'addPlaceholder'])->name('placeholders.store');
         Route::put('/placeholders/{placeholder}', [ReportController::class, 'updatePlaceholder'])->name('placeholders.update');
         Route::delete('/placeholders/{placeholder}', [ReportController::class, 'deletePlaceholder'])->name('placeholders.destroy');
-        
+
         Route::post('/{template}/settings', [ReportController::class, 'updateSettings'])->name('settings.update');
         Route::get('/generations/{generation}/download', [ReportController::class, 'download'])->name('download');
         // Tambahkan route ini setelah route report yang sudah ada

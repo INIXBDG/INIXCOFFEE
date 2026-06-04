@@ -614,4 +614,126 @@ class LaporanPenjualanController extends Controller
 
         return $pdf->download('laporan-lost-' . now()->format('Y-m-d') . '.pdf');
     }
+
+    public function laporanForGm(Request $request)
+    {
+        // 1. Inisialisasi parameter filter tahun
+        $tahun = $request->input('tahun', now()->year);
+
+        // 2. Deklarasi referensi target statis
+        $targetReferensi = [
+            'rara'   => 450000000,
+            'hera'   => 450000000,
+            'reni'   => 300000000,
+            'nabila' => 250000000,
+            'luthfiahaffah' => 200000000,
+            'Alfasyiani'   => 250000000,
+        ];
+
+        // 3. Ekstraksi entitas sales dengan validasi dan pemfilteran dinamis berdasarkan array referensi
+        $kunciTarget = array_keys($targetReferensi);
+        $users = User::where('status_akun', '1')
+                     ->whereNotNull('id_sales')
+                     ->where(function ($query) use ($kunciTarget) {
+                         foreach ($kunciTarget as $kunci) {
+                             $query->orWhere('username', 'LIKE', '%' . $kunci . '%');
+                         }
+                     })
+                     ->get();
+
+        // 4. Agregasi data penjualan dengan eksklusi status lost
+        $peluangData = Peluang::selectRaw('id_sales, MONTH(periode_mulai) as bulan, SUM(netsales) as total_netsales')
+            ->whereYear('periode_mulai', $tahun)
+            ->where(function ($query) {
+                $query->where('lost', 0)->orWhereNull('lost');
+            })
+            ->groupBy('id_sales', 'bulan')
+            ->get()
+            ->groupBy('id_sales');
+
+        // 5. Konfigurasi struktur periode triwulan
+        $strukturTriwulan = [
+            'Triwulan I'   => ['bulan' => [1, 2, 3], 'nama_bulan' => ['January', 'February', 'March']],
+            'Triwulan II'  => ['bulan' => [4, 5, 6], 'nama_bulan' => ['April', 'Mei', 'Juni']],
+            'Triwulan III' => ['bulan' => [7, 8, 9], 'nama_bulan' => ['Juli', 'Agustus', 'September']],
+            'Triwulan IV'  => ['bulan' => [10, 11, 12], 'nama_bulan' => ['Oktober', 'November', 'Desember']],
+        ];
+
+        $laporan = [];
+
+        // 6. Eksekusi komputasi matriks data
+        foreach ($strukturTriwulan as $namaTriwulan => $konfigurasi) {
+            $dataSales = [];
+            $totalKeseluruhan = [
+                'bulan_1' => 0, 'bulan_2' => 0, 'bulan_3' => 0,
+                'total' => 0, 'target' => 0, 'selisih' => 0
+            ];
+
+            foreach ($users as $user) {
+                $nama = $user->username;
+                $target = 0;
+
+                // Modifikasi pencocokan target menggunakan logika LIKE (string position)
+                foreach ($targetReferensi as $kunci => $nilaiTarget) {
+                    if (stripos($nama, $kunci) !== false) {
+                        $target = $nilaiTarget;
+                        break; // Hentikan iterasi setelah kecocokan pertama ditemukan
+                    }
+                }
+
+                $b1 = $konfigurasi['bulan'][0];
+                $b2 = $konfigurasi['bulan'][1];
+                $b3 = $konfigurasi['bulan'][2];
+
+                $salesB1 = $this->kalkulasiSalesBulanan($peluangData, $user->id_sales, $b1);
+                $salesB2 = $this->kalkulasiSalesBulanan($peluangData, $user->id_sales, $b2);
+                $salesB3 = $this->kalkulasiSalesBulanan($peluangData, $user->id_sales, $b3);
+
+                $totalSales = $salesB1 + $salesB2 + $salesB3;
+                $selisih = $totalSales - $target;
+                $persentase = $target > 0 ? round(($totalSales / $target) * 100) : 0;
+
+                $dataSales[] = [
+                    'nama_sales' => $nama,
+                    'bulan_1'    => $salesB1,
+                    'bulan_2'    => $salesB2,
+                    'bulan_3'    => $salesB3,
+                    'total'      => $totalSales,
+                    'target'     => $target,
+                    'selisih'    => $selisih,
+                    'persentase' => $persentase,
+                ];
+
+                $totalKeseluruhan['bulan_1'] += $salesB1;
+                $totalKeseluruhan['bulan_2'] += $salesB2;
+                $totalKeseluruhan['bulan_3'] += $salesB3;
+                $totalKeseluruhan['total']   += $totalSales;
+                $totalKeseluruhan['target']  += $target;
+                $totalKeseluruhan['selisih'] += $selisih;
+            }
+
+            $totalKeseluruhan['persentase'] = $totalKeseluruhan['target'] > 0
+                ? round(($totalKeseluruhan['total'] / $totalKeseluruhan['target']) * 100)
+                : 0;
+
+            $laporan[$namaTriwulan] = [
+                'nama_bulan'        => $konfigurasi['nama_bulan'],
+                'data_sales'        => $dataSales,
+                'total_keseluruhan' => $totalKeseluruhan,
+            ];
+        }
+
+        // 7. Pengembalian data ke antarmuka pengguna (menghapus dd($user))
+        return view('crm.LaporanPenjualan.laporan_for_gm', compact('laporan', 'tahun'));
+    }
+
+    private function kalkulasiSalesBulanan($peluangData, $idSales, $bulan)
+    {
+        if (!isset($peluangData[$idSales])) {
+            return 0;
+        }
+
+        $dataBulan = $peluangData[$idSales]->firstWhere('bulan', $bulan);
+        return $dataBulan ? $dataBulan->total_netsales : 0;
+    }
 }
