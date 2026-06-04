@@ -2410,7 +2410,7 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                        {{-- @can('View HR')
+                                                        @can('View HR')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
                                                                     <div class="card-body d-flex">
@@ -2430,7 +2430,7 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        @endcan --}}
+                                                        @endcan
                                                         @can('View Inventaris')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
