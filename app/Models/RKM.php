@@ -114,6 +114,11 @@ class RKM extends Model
         return $this->hasOne(eksam::class, 'id_rkm');
     }
 
+    public function bundlingeksam()
+    {
+        return $this->hasOne(BundlingExam::class, 'id_rkm');
+    }
+
     public function analisisrkm()
     {
         return $this->hasOne(kelasanalisis::class, 'id_rkm');
