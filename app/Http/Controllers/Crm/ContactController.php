@@ -323,7 +323,7 @@ class ContactController extends Controller
         // Melakukan iterasi pada setiap perusahaan untuk mengkalkulasi analitik
         foreach ($perusahaans as $perusahaan) {
             $history = $perusahaan->history_status_array;
-            
+
             // 1. Mengkalkulasi Durasi Konversi Status (Lead Time)
             if (count($history) > 1) {
                 $firstDate = strtotime($history[0]['waktu_perubahan']);
@@ -346,12 +346,6 @@ class ContactController extends Controller
                 }
                 $transitionRate[$transitionKey]++;
 
-                // 3. Mengkalkulasi Produktivitas Pengguna
-                if (!isset($userPerformance[$user])) {
-                    $userPerformance[$user] = 0;
-                }
-                $userPerformance[$user]++;
-
                 // 4. Mengkalkulasi Volume Aktivitas Berdasarkan Tanggal
                 if (!isset($timeBasedTrends[$waktu])) {
                     $timeBasedTrends[$waktu] = 0;
@@ -362,16 +356,14 @@ class ContactController extends Controller
 
         // Memformat hasil kalkulasi
         $averageConversionDays = $conversionCount > 0 ? round($totalConversionDays / $conversionCount, 2) : 0;
-        
+
         arsort($transitionRate);
         arsort($userPerformance);
         ksort($timeBasedTrends);
 
-        // Mengirimkan variabel metrik ke view
         return view('crm.contact.all_history_status', compact(
             'averageConversionDays',
             'transitionRate',
-            'userPerformance',
             'timeBasedTrends'
         ));
     }
@@ -380,20 +372,19 @@ class ContactController extends Controller
     {
         // Mengambil semua data perusahaan yang memiliki riwayat status
         $perusahaans = Perusahaan::whereNotNull('history_status')->get();
-        
+
         $allHistory = [];
 
         // Menggabungkan seluruh data riwayat status ke dalam satu array
         foreach ($perusahaans as $perusahaan) {
             $historyArray = $perusahaan->history_status_array;
-            
+
             foreach ($historyArray as $history) {
                 $allHistory[] = [
                     'waktu_perubahan' => $history['waktu_perubahan'] ?? null,
                     'nama_perusahaan' => $perusahaan->nama_perusahaan,
                     'status_lama' => $history['status_lama'] ?? '-',
-                    'status_baru' => $history['status_baru'] ?? '-',
-                    'diubah_oleh' => $history['diubah_oleh'] ?? '-'
+                    'status_baru' => $history['status_baru'] ?? '-'
                 ];
             }
         }
@@ -409,8 +400,7 @@ class ContactController extends Controller
             $allHistory = array_filter($allHistory, function ($item) use ($searchValue) {
                 return false !== strpos(strtolower($item['nama_perusahaan']), strtolower($searchValue)) ||
                     false !== strpos(strtolower($item['status_lama']), strtolower($searchValue)) ||
-                    false !== strpos(strtolower($item['status_baru']), strtolower($searchValue)) ||
-                    false !== strpos(strtolower($item['diubah_oleh']), strtolower($searchValue));
+                    false !== strpos(strtolower($item['status_baru']), strtolower($searchValue));
             });
             $allHistory = array_values($allHistory);
         }

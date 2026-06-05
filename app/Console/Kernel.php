@@ -51,9 +51,9 @@ class Kernel extends ConsoleKernel
                 if ($rkm && $rkm->perusahaan && $rkm->materi) {
                     DB::table('notifications')
                         ->where('type', 'App\Notifications\OutstandingNotification')
-                        ->whereJsonContains('data->message->nama_perusahaan', $rkm->perusahaan->nama_perusahaan) 
-                        ->whereJsonContains('data->message->nama_materi', $rkm->materi->nama_materi) 
-                        ->whereJsonContains('data->message->due_date', $outstanding->due_date) 
+                        ->whereJsonContains('data->message->nama_perusahaan', $rkm->perusahaan->nama_perusahaan)
+                        ->whereJsonContains('data->message->nama_materi', $rkm->materi->nama_materi)
+                        ->whereJsonContains('data->message->due_date', $outstanding->due_date)
                         ->update(['read_at' => Carbon::now()]);
                 }
             }
@@ -123,7 +123,7 @@ class Kernel extends ConsoleKernel
                     ->delete();
 
                 Log::info("Berhasil menghapus {$deleted} activity log dari status visit/login/logout/absen.");
-                
+
             } catch (\Throwable $e) {
                 Log::error("Schedule gagal: " . $e->getMessage());
             }
@@ -258,7 +258,9 @@ class Kernel extends ConsoleKernel
 
         // update libur nasional
         $schedule->command('app:generate-libur-nasional')->daily();
-    
+
+        $schedule->command('perusahaan:evaluasi-status')->daily();
+
     }
     /**
      * Register the commands for the application.

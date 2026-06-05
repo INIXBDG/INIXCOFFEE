@@ -120,12 +120,34 @@
                 </a>
             </li>
 
-            <li class="menu-item {{ request()->routeIs(Auth::check() && Auth::user()->jabatan == 'GM' ? 'laporan.for.gm' : 'crm.laporanPenjualan') ? 'active open' : '' }}">
-                <a href="{{ route(Auth::check() && Auth::user()->jabatan == 'GM' ? 'laporan.for.gm' : 'crm.laporanPenjualan') }}" class="menu-link">
-                    <i class='menu-icon tf-icons bx bx-bar-chart-square'></i>
-                    <div class="text-truncate" data-i18n="crmLaporanPenjualan">Laporan Penjualan</div>
-                </a>
-            </li>
+            @if(Auth::check() && in_array(Auth::user()->jabatan, ['Adm Sales', 'SPV Sales']))
+                <li class="menu-item {{ request()->routeIs('crm.laporanPenjualan') ? 'active open' : '' }}">
+                    <a href="{{ route('crm.laporanPenjualan') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-bar-chart-square'></i>
+                        <div class="text-truncate" data-i18n="crmLaporanPenjualan">Laporan Penjualan</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('laporan.for.gm') ? 'active open' : '' }}">
+                    <a href="{{ route('laporan.for.gm') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-line-chart'></i>
+                        <div class="text-truncate" data-i18n="crmLaporanPenjualanGm">Target Penjualan</div>
+                    </a>
+                </li>
+            @elseif(Auth::check() && Auth::user()->jabatan == 'GM')
+                <li class="menu-item {{ request()->routeIs('laporan.for.gm') ? 'active open' : '' }}">
+                    <a href="{{ route('laporan.for.gm') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-bar-chart-square'></i>
+                        <div class="text-truncate" data-i18n="crmLaporanPenjualan">Laporan Penjualan</div>
+                    </a>
+                </li>
+            @else
+                <li class="menu-item {{ request()->routeIs('crm.laporanPenjualan') ? 'active open' : '' }}">
+                    <a href="{{ route('crm.laporanPenjualan') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-bar-chart-square'></i>
+                        <div class="text-truncate" data-i18n="crmLaporanPenjualan">Laporan Penjualan</div>
+                    </a>
+                </li>
+            @endif
 
             <li class="menu-item {{ request()->routeIs('crm.ketentuan') ? 'active open' : '' }}">
                 <a href="{{ route('crm.ketentuan') }}" class="menu-link">
@@ -133,6 +155,15 @@
                     <div class="text-truncate" data-i18n="crmKetentuan">Ketentuan</div>
                 </a>
             </li>
+
+            @if (in_array($user->jabatan, ['GM', 'SPV Sales', 'Adm Sales']))
+                <li class="menu-item {{ request()->routeIs('crm.contact.all_history_status') ? 'active open' : '' }}">
+                    <a href="{{ route('crm.contact.all_history_status') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-bullseye'></i>
+                        <div class="text-truncate" data-i18n="indexTarget">Status Perusahaan</div>
+                    </a>
+                </li>
+            @endif
 
             @if (in_array($user->jabatan, ['GM', 'SPV Sales', 'Adm Sales']))
                 <li class="menu-item {{ request()->routeIs('index.target') ? 'active open' : '' }}">

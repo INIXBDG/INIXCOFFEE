@@ -9,6 +9,7 @@ use App\Models\karyawan;
 use App\Models\Materi;
 use Illuminate\Http\Request;
 use App\Models\Peluang;
+use App\Models\TargetPenjualan;
 use App\Models\perhitunganNetSales;
 use App\Models\RKM;
 use App\Models\User;
@@ -620,30 +621,21 @@ class LaporanPenjualanController extends Controller
         // 1. Inisialisasi parameter filter tahun
         $tahun = $request->input('tahun', now()->year);
 
-        // 2. Deklarasi referensi target statis
-        $targetReferensi = [
-            'rara'   => 450000000,
-            'hera'   => 450000000,
-            'reni'   => 300000000,
-            'nabila' => 250000000,
-            'luthfiahaffah' => 200000000,
-            'Alfasyiani'   => 250000000,
-        ];
+        $dataTarget = TargetPenjualan::where('tahun', $tahun)
+            ->pluck('nilai_target', 'id_sales')
+            ->toArray();
 
-        // 3. Ekstraksi entitas sales dengan validasi dan pemfilteran dinamis berdasarkan array referensi
-        $kunciTarget = array_keys($targetReferensi);
+        $kunciIdSales = array_keys($dataTarget);
+
+        // 3. Ekstraksi entitas sales menggunakan array kunci id_sales
         $users = User::where('status_akun', '1')
                      ->whereNotNull('id_sales')
-                     ->where(function ($query) use ($kunciTarget) {
-                         foreach ($kunciTarget as $kunci) {
-                             $query->orWhere('username', 'LIKE', '%' . $kunci . '%');
-                         }
-                     })
+                     ->whereIn('id_sales', $kunciIdSales)
                      ->get();
 
-        // 4. Agregasi data penjualan dengan eksklusi status lost
         $peluangData = Peluang::selectRaw('id_sales, MONTH(periode_mulai) as bulan, SUM(netsales) as total_netsales')
             ->whereYear('periode_mulai', $tahun)
+            ->where('merah', 1) // Penambahan parameter filter untuk tahap merah
             ->where(function ($query) {
                 $query->where('lost', 0)->orWhereNull('lost');
             })
@@ -671,15 +663,9 @@ class LaporanPenjualanController extends Controller
 
             foreach ($users as $user) {
                 $nama = $user->username;
-                $target = 0;
 
-                // Modifikasi pencocokan target menggunakan logika LIKE (string position)
-                foreach ($targetReferensi as $kunci => $nilaiTarget) {
-                    if (stripos($nama, $kunci) !== false) {
-                        $target = $nilaiTarget;
-                        break; // Hentikan iterasi setelah kecocokan pertama ditemukan
-                    }
-                }
+                // Pemetaan target langsung menggunakan id_sales
+                $target = $dataTarget[$user->id_sales] ?? 0;
 
                 $b1 = $konfigurasi['bulan'][0];
                 $b2 = $konfigurasi['bulan'][1];
@@ -723,8 +709,11 @@ class LaporanPenjualanController extends Controller
             ];
         }
 
-        // 7. Pengembalian data ke antarmuka pengguna (menghapus dd($user))
-        return view('crm.LaporanPenjualan.laporan_for_gm', compact('laporan', 'tahun'));
+        $daftarSales = User::where('status_akun', '1')
+                           ->whereNotNull('id_sales')
+                           ->get();
+
+        return view('crm.LaporanPenjualan.laporan_for_gm', compact('laporan', 'tahun', 'daftarSales'));
     }
 
     private function kalkulasiSalesBulanan($peluangData, $idSales, $bulan)
@@ -735,5 +724,25 @@ class LaporanPenjualanController extends Controller
 
         $dataBulan = $peluangData[$idSales]->firstWhere('bulan', $bulan);
         return $dataBulan ? $dataBulan->total_netsales : 0;
+    }
+
+    public function storeTarget(Request $request)
+    {
+        $request->validate([
+            'id_sales'     => 'required|string',
+            'nilai_target' => 'required|numeric|min:0',
+        ]);
+
+        TargetPenjualan::updateOrCreate(
+            [
+                'id_sales' => $request->id_sales,
+                'tahun'    => now()->year,
+            ],
+            [
+                'nilai_target' => $request->nilai_target,
+            ]
+        );
+
+        return redirect()->back()->with('success', 'Target penjualan berhasil disimpan.');
     }
 }
