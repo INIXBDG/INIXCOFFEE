@@ -1275,4 +1275,16 @@ class OfficeController extends Controller
             'probation' => $probation
         ]);
     }
+
+    public function getChecklistRKM($tahun, $bulan) {
+        $data = RKM::with('checklistKeperluan', 'materi', 'perusahaan')
+                    ->whereYear('tanggal_awal', $tahun)
+                    ->whereMonth('tanggal_awal', $bulan)
+                    ->get();
+    
+        return response()->json([
+            'message' => 'data checklist rkm',
+            'data' => $data
+        ]);
+    }
 }

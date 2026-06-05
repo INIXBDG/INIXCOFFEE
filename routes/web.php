@@ -999,6 +999,7 @@ Route::prefix('office')->group(function () {
     Route::post('/checklist-exam/store', [OfficeController::class, 'storeChecklistExam'])->name('office.store.checklist-exam');
 
     // export checklist
+    Route::get('/data-checklist/{tahun}/{bulan}', [OfficeController::class, 'getChecklistRKM'])->name('get.checklist.rkm');
     Route::get('/export-checklist/pdf/{id}', [OfficeController::class, 'exportChecklistPdf'])->name('export.pdf.checklist');
     Route::get('/export-checklist/excel/{id}', [OfficeController::class, 'exportChecklistExcel'])->name('export.excel.checklist');
 

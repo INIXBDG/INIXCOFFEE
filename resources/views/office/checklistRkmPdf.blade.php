@@ -7,7 +7,7 @@
 
     <style>
         * {
-            margin: 0;
+            margin: 15px 0 0 0 ;
             padding: 0;
             box-sizing: border-box;
         }
@@ -119,6 +119,18 @@
             background: #667eea;
             color: white;
             border-radius: 4px;
+        }
+
+        .day-card {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #ffffff;
+        }
+
+        .page-break {
+            page-break-after: always;
         }
     </style>
 </head>
@@ -306,6 +318,10 @@
                 </table>
 
             </div>
+
+            @if (!$loop->last)
+                <div class="page-break"></div>
+            @endif
         @endforeach
 
         <div class="footer">
