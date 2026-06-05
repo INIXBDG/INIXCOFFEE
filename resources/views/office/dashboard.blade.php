@@ -1104,7 +1104,7 @@
                                                     ];
                                                     for ($bulan = 1; $bulan <= 12; $bulan++) {
                                                         echo "<option value=\"$bulan\">{$nama_bulan[$bulan -
-            1]}</option>";
+                                                        1]}</option>";
                                                     }
                                                 @endphp
                                             </select>
@@ -1709,6 +1709,11 @@
                                         <span class="badge bg-success-subtle text-success px-3 py-2">
                                             {{ number_format($jumlahInstruktur, 0, ',', '.') }} Instruktur
                                         </span>
+
+                                        <button class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#modalEksportChecklistRKM">
+                                            Eksport
+                                        </button>
                                     </div>
                                 </div>
 
@@ -2024,6 +2029,94 @@
                                             @endforelse
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Eksport Checklist RKM -->
+                <div class="modal fade" id="modalEksportChecklistRKM" tabindex="-1">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content border-0 shadow">
+
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-semibold">
+                                    <i class="bi bi-download me-2"></i> Eksport Checklist RKM
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+
+                            <div class="modal-body pt-3" id="formEksportChecklistRKM">
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-3">Pilih Periode</h6>
+
+                                    <div class="row g-3 d-flex align-items-end">
+
+                                        <div class="col-md-4">
+                                            <label class="form-label small">Tahun</label>
+                                            <select name="tahun" class="form-select">
+                                                <option value="" selected>Pilih Tahun</option>
+                                                @php
+                                                    $tahun_sekarang = now()->year;
+                                                    for ($tahun = 2023; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                                        echo "<option value=\"$tahun\">$tahun</option>";
+                                                    }
+                                                @endphp
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label small">Bulan</label>
+                                            <select name="bulan" class="form-select">
+                                                <option value="" selected>Pilih Bulan</option>
+                                                @php
+                                                    $nama_bulan = [
+                                                        'Januari',
+                                                        'Februari',
+                                                        'Maret',
+                                                        'April',
+                                                        'Mei',
+                                                        'Juni',
+                                                        'Juli',
+                                                        'Agustus',
+                                                        'September',
+                                                        'Oktober',
+                                                        'November',
+                                                        'Desember',
+                                                    ];
+                                                    for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                                        echo "<option value=\"$bulan\">{$nama_bulan[$bulan -
+                                                        1]}</option>";
+                                                    }
+                                                @endphp
+                                            </select>
+                                        </div>
+
+                                        <div class="border-0 col-md-4">
+                                            <button type="button" id="cariDataRkmBtn" class="btn btn-primary px-4">
+                                                Cari data
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <h6 class="text-muted mb-3">Daftar Data RKM :</h6>
+
+                                    <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
+                                        <table id="tabelExportChecklistRkm" class="table table-hover align-middle mb-0">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <td>Nama Materi</td>
+                                                    <td>Perusahaan</td>
+                                                    <td>Tanggal Training</td>
+                                                    <td>Eksport</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2551,6 +2644,8 @@
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
@@ -4285,6 +4380,73 @@
                         });
                     });
                 }
+
+                let tabelEksport = null;
+
+                tabelEksport = $('#tabelExportChecklistRkm').DataTable({
+                    data: [],
+                    columns: [
+                        { data: 'materi.nama_materi', defaultContent: '-' },
+                        { data: 'perusahaan.nama_perusahaan', defaultContent: '-' },
+                        { data: 'tanggal_awal', defaultContent: '-' },
+                        { data: null, defaultContent: '-' }
+                    ]
+                });
+
+                $('#cariDataRkmBtn').on('click', function (e) {
+                    e.preventDefault();
+
+                    let tahun = $('#formEksportChecklistRKM select[name="tahun"]').val();
+                    let bulan = $('#formEksportChecklistRKM select[name="bulan"]').val();
+
+                    if (tabelEksport) {
+                        tabelEksport.destroy();
+                    }
+
+                    tabelEksport = $('#tabelExportChecklistRkm').DataTable({
+                        ajax: {
+                            url: '/office/data-checklist/' + tahun + '/' + bulan,
+                            dataSrc: 'data'
+                        },
+                        columns: [
+                            { data: 'materi.nama_materi' },
+                            { data: 'perusahaan.nama_perusahaan' },
+                            { 
+                                "data": null,
+                                "render": function (data, type, row) {
+                                    if (data.tanggal_awal && data.tanggal_akhir) {
+                                        return moment(data.tanggal_awal).format('LL') + " s/d " + moment(data.tanggal_akhir).format('LL');
+                                    } else {
+                                        return "";
+                                    }
+                                }
+                            },
+                            { 
+                                data: null,
+                                render: function (data, type, row) {
+                                    if (data.checklist_keperluan) {
+                                        return `
+                                            <td class="text-center align-middle">
+                                                <a href="/office/export-checklist/pdf/${data.id}"
+                                                    id="exportPdfRkm"
+                                                    class="btn btn-outline-danger btn-sm mb-1">
+                                                    PDF
+                                                </a>
+                                                <a href="/office/export-checklist/excel/${data.id}"
+                                                    id="exportExcelRkm"
+                                                    class="btn btn-outline-success btn-sm">
+                                                    Excel
+                                                </a>
+                                            </td>
+                                        `;
+                                    } else {
+                                        return `Tidak ada checklist`; 
+                                    }
+                                } 
+                            }
+                        ]
+                    });
+                });
             });
 
             window.statusPieChart = null;
