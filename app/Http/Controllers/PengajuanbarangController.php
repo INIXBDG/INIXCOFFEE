@@ -348,7 +348,7 @@ class PengajuanBarangController extends Controller
                         'tracking' => $status,
                         'tanggal' => now(),
                     ]);
-                    
+
                     $updateData = [
                         'id_tracking' => $e2->id,
                     ];
@@ -380,19 +380,19 @@ class PengajuanBarangController extends Controller
                         $jurnalExist = JurnalAkuntansi::where('nomor_kk', $nomorKK)->first();
 
                         if ($jurnalExist) {
-                            $currentIds = is_array($jurnalExist->id_pengajuan_barang) 
-                                        ? $jurnalExist->id_pengajuan_barang 
-                                        : [];
+                            $currentIds = is_array($jurnalExist->id_pengajuan_barang)
+                                ? $jurnalExist->id_pengajuan_barang
+                                : [];
 
                             if (!in_array($id, $currentIds)) {
-                                $currentIds[] = (int)$id; 
-                                
+                                $currentIds[] = (int)$id;
+
                                 $jurnalExist->update([
                                     'id_pengajuan_barang' => $currentIds,
                                     'kredit' => $jurnalExist->kredit + $totalPengeluaran,
                                     'keterangan' => 'Pengeluaran untuk pengajuan barang'
                                 ]);
-                                
+
                                 Log::info('Jurnal diupdate (ditambah ke KK yang sama)', ['jurnal_id' => $jurnalExist->id]);
                             }
                         } else {
@@ -409,7 +409,6 @@ class PengajuanBarangController extends Controller
 
                             Log::info('Jurnal baru berhasil dibuat', ['jurnal_id' => $jurnal->id]);
                         }
-
                     } catch (\Exception $ex) {
                         Log::error('Gagal memproses jurnal', [
                             'message' => $ex->getMessage()
@@ -433,10 +432,10 @@ class PengajuanBarangController extends Controller
                         'status' => $status,
                     ];
                 }
-                    $updatePayload = ['id_tracking' => $e->id];
-                    $updatePayload['no_kk'] = $request->no_kk;
-                    $updatePayload['tanggal_pencairan'] = $request->tanggal_pencairan ?? now();
-                    $data->update($updatePayload);
+                $updatePayload = ['id_tracking' => $e->id];
+                $updatePayload['no_kk'] = $request->no_kk;
+                $updatePayload['tanggal_pencairan'] = $request->tanggal_pencairan ?? now();
+                $data->update($updatePayload);
             } elseif ($status === 'Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager') {
                 $to = $data->karyawan->nama_lengkap;
                 $path = '/pengajuanbarang';
@@ -483,7 +482,6 @@ class PengajuanBarangController extends Controller
             return redirect()
                 ->route('pengajuanbarang.index')
                 ->with(['success' => 'Data berhasil diperbarui!']);
-
         } elseif ($request->approval == '2') {
             $status = 'Pengajuan ditolak dikarenakan ' . $request->alasan;
             $e = tracking_pengajuan_barang::create([
@@ -596,7 +594,7 @@ class PengajuanBarangController extends Controller
             NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
         }
 
-       return response()->json([
+        return response()->json([
             'success' => true,
             'message' => 'Pengajuan Barang berhasil diperbarui.',
             'status' => $status,
@@ -611,6 +609,11 @@ class PengajuanBarangController extends Controller
     {
         // Temukan data pengajuan barang
         $data = PengajuanBarang::with('karyawan')->findOrFail($id);
+
+        if ($data->perbaikanKendaraan) {
+            // Hapus langsung dari database untuk menghindari infinite loop
+            PerbaikanKendaraan::where('pengajuanbarangs_id', $id)->delete();
+        }
 
         // Ambil detail dan tracking yang terkait
         $detail = detailPengajuanBarang::where('id_pengajuan_barang', $id)->get();

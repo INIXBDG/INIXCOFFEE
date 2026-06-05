@@ -7,11 +7,9 @@
         {{-- Header --}}
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="m-0">Data Perbaikan Kendaraan</h3>
-            @if (Auth::user()->jabatan === 'Driver')
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahPerbaikan">
-                    Ajukan Perbaikan
-                </button>
-            @endif
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahPerbaikan">
+                Ajukan Perbaikan
+            </button>
         </div>
 
         {{-- Alert Success --}}
@@ -118,8 +116,7 @@
                                     <td>{{ $item->user->karyawan->nama_lengkap ?? ($item->user->name ?? '-') }}</td>
                                     <td>{{ $item->kendaraan }}</td>
                                     <td>
-                                        <span
-                                            class="badge bg-{{ $item->type_condition == 'Kecelakaan' ? 'Danger' : 'Info' }}">
+                                        <span class="badge bg-{{ $item->type_condition == 'Kecelakaan' ? 'Danger' : 'Info' }}">
                                             {{ $item->type_condition }}
                                         </span>
                                     </td>
@@ -152,20 +149,17 @@
                                                 </li>
 
                                                 {{-- Hapus (Driver only) --}}
-                                                @if (Auth::user()->jabatan === 'Driver')
-                                                    <li>
-                                                        <form
-                                                            action="{{ route('office.deletePerbaikanKendaraan', $item->id) }}"
-                                                            method="POST"
-                                                            onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                Hapus
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                @endif
+                                                <li>
+                                                    <form action="{{ route('office.deletePerbaikanKendaraan', $item->id) }}"
+                                                        method="POST"
+                                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            Hapus
+                                                        </button>
+                                                    </form>
+                                                </li>
 
                                                 {{-- Invoice (jika sudah selesai dan ada invoice) --}}
                                                 @if ($item->status === 'Selesai' && $item->invoice)
@@ -179,16 +173,14 @@
                                                 @endif
 
                                                 {{-- Selesaikan (Driver upload invoice) --}}
-                                                @if (Auth::user()->jabatan === 'Driver' &&
-                                                        !in_array($item->status, ['Diajukan', 'Selesai', 'Ditolak', 'Pengajuan ditolak']))
-                                                    <li>
-                                                        <button type="button" class="dropdown-item btnSelesaiPerbaikan"
-                                                            data-bs-toggle="modal" data-bs-target="#modalSelesaiPerbaikan"
-                                                            data-id="{{ $item->id }}">
-                                                            Selesaikan
-                                                        </button>
-                                                    </li>
-                                                @endif
+                                                <li>
+                                                    <button type="button" class="dropdown-item btnSelesaiPerbaikan"
+                                                        data-bs-toggle="modal" data-bs-target="#modalSelesaiPerbaikan"
+                                                        data-id="{{ $item->id }}">
+                                                        Selesaikan
+                                                    </button>
+                                                </li>
+
 
                                             </ul>
                                         </div>
@@ -309,7 +301,8 @@
 
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Deskripsi Kondisi</label>
-                                <textarea name="deskripsi_kondisi" class="form-control" rows="4" placeholder="Jelaskan kondisi kendaraan..."></textarea>
+                                <textarea name="deskripsi_kondisi" class="form-control" rows="4"
+                                    placeholder="Jelaskan kondisi kendaraan..."></textarea>
                             </div>
 
                             <div class="col-12">
@@ -339,8 +332,8 @@
                 </div>
 
                 <div class="modal-body">
-                    <form action="{{ route('office.selesaiPerbaikanKendaraan') }}" method="POST"
-                        id="formSelesaiPerbaikan" enctype="multipart/form-data">
+                    <form action="{{ route('office.selesaiPerbaikanKendaraan') }}" method="POST" id="formSelesaiPerbaikan"
+                        enctype="multipart/form-data">
                         @csrf
 
                         <input type="hidden" name="id" id="modal_selesai_id">
@@ -357,103 +350,100 @@
                                 <label class="form-label fw-semibold">Deskripsi Perbaikan</label>
                                 <textarea name="deskripsi_perbaikan" class="form-control" rows="4"
                                     placeholder="Jelaskan perbaikan kendaraan..."></textarea required>
-                            </div>
+                                    </div>
 
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Invoice<span
-                                        style="text-danger">*</span></label>
-                                <input type="file" name="invoice" class="form-control" required>
-                            </div>
-
-                        </div>
-                    </form>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" form="formSelesaiPerbaikan" class="btn btn-primary">Simpan</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    @if (count($perbaikan) > 0)
-<div class="modal fade" id="ModalViewInvoice" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content shadow">
-                <div class="modal-header">
-                    <h5 class="modal-title">Invoice Perbaikan Kendaraan</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body">
-                
-                    <div class="row g-4">
-
-                        <div class="col-12">
-                            <label class="form-label fw-semibold">Tanggal Perbaikan</label>
-                            <input type="date" name="tanggal_perbaikan" class="form-control" disabled value="{{ $item?->tanggal_perbaikan }}">
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label fw-semibold">Deskripsi Perbaikan</label>
-                            <textarea name="deskripsi_perbaikan" class="form-control" rows="4" disabled>{{ $item?->deskripsi_perbaikan }}</textarea>
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Invoice<span style="text-danger">*</span></label>
-                                @php
-                                    $extension = strtolower(pathinfo($item?->invoice, PATHINFO_EXTENSION));
-                                    $fileUrl = asset('storage/' . $item?->invoice);
-                                @endphp
-
-                                <div class="mb-3">
-
-                                    @if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp']))
-                                        <img src="{{ $fileUrl }}" class="img-fluid rounded shadow-sm border"
-                                            style="max-height:250px;">
-                                    @elseif (in_array($extension, ['mp4', 'mov', 'avi', 'webm']))
-                                        <video class="rounded shadow-sm border" style="max-height:250px;" controls>
-                                            <source src="{{ $fileUrl }}">
-                                            Browser tidak mendukung video.
-                                        </video>
-                                    @elseif ($extension === 'pdf')
-                                        <iframe src="{{ $fileUrl }}" class="w-100 border rounded"
-                                            style="height:400px;"></iframe>
-                                    @elseif (in_array($extension, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']))
-                                        <div class="alert alert-info">
-                                            File dokumen tidak bisa ditampilkan langsung.<br>
-                                            <a href="{{ $fileUrl }}" target="_blank"
-                                                class="btn btn-sm btn-primary mt-2">
-                                                Download / Buka File
-                                            </a>
-                                        </div>
-                                    @else
-                                        <div class="alert alert-warning">
-                                            File tidak dapat ditampilkan.<br>
-                                            <a href="{{ $fileUrl }}" target="_blank"
-                                                class="btn btn-sm btn-secondary mt-2">
-                                                Download File
-                                            </a>
-                                        </div>
-                                    @endif
-
-                                    <div class="mt-2">
-                                        <a href="{{ $fileUrl }}" class="btn btn-sm btn-outline-primary"
-                                            target="_blank">
-                                            <i class="fas fa-download"></i> Download Invoice
-                                        </a>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Invoice<span
+                                                style="text-danger">*</span></label>
+                                        <input type="file" name="invoice" class="form-control" required>
                                     </div>
 
                                 </div>
-                            </div>
-
+                            </form>
                         </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" form="formSelesaiPerbaikan" class="btn btn-primary">Simpan</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-    @endif
+
+            @if (count($perbaikan) > 0)
+                            <div class="modal fade" id="ModalViewInvoice" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                                        <div class="modal-content shadow">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Invoice Perbaikan Kendaraan</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+
+                                            <div class="modal-body">
+
+                                                <div class="row g-4">
+
+                                                    <div class="col-12">
+                                                        <label class="form-label fw-semibold">Tanggal Perbaikan</label>
+                                                        <input type="date" name="tanggal_perbaikan" class="form-control" disabled value="{{ $item?->tanggal_perbaikan }}">
+                                                    </div>
+
+                                                    <div class="col-12">
+                                                        <label class="form-label fw-semibold">Deskripsi Perbaikan</label>
+                                                        <textarea name="deskripsi_perbaikan" class="form-control" rows="4" disabled>{{ $item?->deskripsi_perbaikan }}</textarea>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold">Invoice<span style="text-danger">*</span></label>
+                                            @php
+                                                $extension = strtolower(pathinfo($item?->invoice, PATHINFO_EXTENSION));
+                                                $fileUrl = asset('storage/' . $item?->invoice);
+                                            @endphp
+
+                                            <div class="mb-3">
+
+                                                @if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp']))
+                                                    <img src="{{ $fileUrl }}" class="img-fluid rounded shadow-sm border"
+                                                        style="max-height:250px;">
+                                                @elseif (in_array($extension, ['mp4', 'mov', 'avi', 'webm']))
+                                                    <video class="rounded shadow-sm border" style="max-height:250px;" controls>
+                                                        <source src="{{ $fileUrl }}">
+                                                        Browser tidak mendukung video.
+                                                    </video>
+                                                @elseif ($extension === 'pdf')
+                                                    <iframe src="{{ $fileUrl }}" class="w-100 border rounded"
+                                                        style="height:400px;"></iframe>
+                                                @elseif (in_array($extension, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']))
+                                                    <div class="alert alert-info">
+                                                        File dokumen tidak bisa ditampilkan langsung.<br>
+                                                        <a href="{{ $fileUrl }}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                                                            Download / Buka File
+                                                        </a>
+                                                    </div>
+                                                @else
+                                                    <div class="alert alert-warning">
+                                                        File tidak dapat ditampilkan.<br>
+                                                        <a href="{{ $fileUrl }}" target="_blank" class="btn btn-sm btn-secondary mt-2">
+                                                            Download File
+                                                        </a>
+                                                    </div>
+                                                @endif
+
+                                                <div class="mt-2">
+                                                    <a href="{{ $fileUrl }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                                        <i class="fas fa-download"></i> Download Invoice
+                                                    </a>
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
 
     {{-- Scripts --}}
@@ -462,7 +452,7 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Initialize DataTable
             const table = $('#tablePerbaikan').DataTable({
                 language: {
@@ -479,7 +469,7 @@
             });
 
             // Custom date range filter
-            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
                 const min = $('#minDate').val();
                 const max = $('#maxDate').val();
                 const dateStr = table.cell(dataIndex, 4).nodes().to$().attr('data-order');
@@ -500,20 +490,20 @@
             });
 
             // Date filter events
-            $('#minDate, #maxDate').on('change', function() {
+            $('#minDate, #maxDate').on('change', function () {
                 table.draw();
             });
 
             // Reset filter
-            $('#resetFilter').on('click', function() {
+            $('#resetFilter').on('click', function () {
                 $('#minDate, #maxDate').val('');
                 table.draw();
             });
 
             // Reset form when modal closes
-            $('#modalTambahPerbaikan').on('hidden.bs.modal', function() {
+            $('#modalTambahPerbaikan').on('hidden.bs.modal', function () {
                 $('#formKondisi')[0].reset();
-                $('#formKondisi select').each(function() {
+                $('#formKondisi select').each(function () {
                     $(this).val('1');
                 });
                 $('input[name="tanggal_pemeriksaan"]').val('{{ date('Y-m-d') }}');
@@ -525,21 +515,21 @@
             document.querySelector('#ModalUpdateStatus form').submit();
         }
 
-        $(document).on('click', '.btnUpdateStatus', function() {
+        $(document).on('click', '.btnUpdateStatus', function () {
             let id = $(this).data('id');
             $('#modal_id').val(id);
         });
 
-        $(document).on('click', '.btnSelesaiPerbaikan', function() {
+        $(document).on('click', '.btnSelesaiPerbaikan', function () {
             let id = $(this).data('id');
             $('#modal_selesai_id').val(id);
         });
 
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             const displayInput = document.getElementById("estimasi_display");
             const hiddenInput = document.getElementById("estimasi");
 
-            displayInput.addEventListener("input", function(e) {
+            displayInput.addEventListener("input", function (e) {
                 let value = this.value.replace(/\D/g, "");
 
                 hiddenInput.value = value;
@@ -556,13 +546,13 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
 
 
             const typeCondition = document.querySelector('select[name="type_condition"]');
             const sectionKecelakaan = document.getElementById('sectionKecelakaan');
 
-            typeCondition.addEventListener('change', function() {
+            typeCondition.addEventListener('change', function () {
 
                 if (this.value === 'Kecelakaan') {
                     sectionKecelakaan.classList.remove('d-none');
@@ -575,7 +565,7 @@
 
         });
         // Export PDF button
-        $('#exportPdfBtn').on('click', function(e) {
+        $('#exportPdfBtn').on('click', function (e) {
             e.preventDefault();
             // Ambil tanggal dari filter
             const from = $('#minDate').val();
@@ -586,7 +576,7 @@
         });
 
         // Export Excel button
-        $('#exportExcelBtn').on('click', function(e) {
+        $('#exportExcelBtn').on('click', function (e) {
             e.preventDefault();
             const from = $('#minDate').val();
             const to = $('#maxDate').val();

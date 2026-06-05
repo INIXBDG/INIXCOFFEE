@@ -301,14 +301,15 @@ class KendaraanController extends Controller
             'type_condition' => 'required|in:Perawatan,Kecelakaan',
             'type_vehicle_condition' => 'required|in:Kerusakan Ringan,Kerusakan Sedang,Kerusakan Berat,Kerusakan Total',
             'type_repair' => 'required|in:Penggantian,Peningkatan,Perbaikan,Perbaikan Total',
-            'estimasi' => 'required|numeric',
+            'estimasi' => 'required|integer',
             'deskripsi_kondisi' => 'required|string',
             'tanggal_kejadian' => 'nullable|date',
             'waktu_kejadian' => 'nullable',
             'lokasi' => 'nullable|string',
             'tanggal_perbaikan' => 'nullable|date',
+            'harga_akhir' => 'nullable|integer',
             'deskripsi_perbaikan' => 'nullable|string',
-            'vendor' => 'nullable|exists:vendor_bengkel,id',
+            'vendor' => 'nullable|exists:vendor_bengkels,id',
             'bukti' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi|max:20480',
             'invoice' => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx,doc,docx|max:10240',
             // Field untuk PengajuanBarang
@@ -329,6 +330,7 @@ class KendaraanController extends Controller
         $perbaikan->deskripsi_perbaikan = $request->deskripsi_perbaikan;
         $perbaikan->tanggal_perbaikan = $request->tanggal_perbaikan;
         $perbaikan->id_vendor = $request->vendor;
+        $perbaikan->harga_akhir = $request->filled('harga_akhir') ? (int) $request->harga_akhir : null;
 
         if ($request->type_condition === 'Kecelakaan') {
             $perbaikan->tanggal_kejadian = $request->tanggal_kejadian;
@@ -366,6 +368,9 @@ class KendaraanController extends Controller
 
         // === 2. CEK ACTION: KIRIM PENGAJUAN BARANG ===
         if ($request->action === 'kirim_pengajuan') {
+            if ($perbaikan->pengajuanbarangs_id) {
+                return redirect()->back()->withErrors(['error' => 'Data perbaikan ini sudah terhubung dengan Pengajuan Barang dan tidak bisa diajukan ulang.']);
+            }
             try {
                 // A. Buat record PengajuanBarang
                 $pengajuan = PengajuanBarang::create([
@@ -383,12 +388,12 @@ class KendaraanController extends Controller
                     'id_pengajuan_barang' => $pengajuan->id,
                     'nama_barang' => 'Biaya Perbaikan Kendaraan (' . strtoupper($perbaikan->kendaraan) . ')',
                     'qty' => 1,
-                    'harga' => $request->estimasi, // Total Pengajuan = 1 * estimasi
+                    'harga' => $perbaikan->harga_akhir ?: $request->estimasi, 
                     'keterangan' => $perbaikan->deskripsi_kondisi ?? 'Estimasi biaya perbaikan kendaraan',
                 ]);
 
                 // C. Buat tracking awal
-                $karyawanPemohon = \App\Models\Karyawan::find($pengajuan->id_karyawan);
+                $karyawanPemohon = Karyawan::find($pengajuan->id_karyawan);
                 $divisi = $karyawanPemohon->divisi;
                 $tipe = $request->tipe ?? 'Perbaikan Kendaraan';
 
@@ -455,9 +460,20 @@ class KendaraanController extends Controller
     public function deletePerbaikan($id)
     {
         $perbaikan = PerbaikanKendaraan::findOrFail($id);
+
+        if ($perbaikan->pengajuanbarangs_id) {
+            $pengajuan = PengajuanBarang::find($perbaikan->pengajuanbarangs_id);
+            if ($pengajuan) {
+                // Hapus detail dan tracking agar tidak error foreign key
+                detailPengajuanBarang::where('id_pengajuan_barang', $pengajuan->id)->delete();
+                tracking_pengajuan_barang::where('id_pengajuan_barang', $pengajuan->id)->delete();
+                $pengajuan->delete();
+            }
+        }
+
         $perbaikan->delete();
 
-        return redirect()->back()->with('success', 'Data perbaikan kendaraan berhasil dihapus.');
+        return redirect()->back()->with('success', 'Data perbaikan kendaraan dan pengajuan barang terkait berhasil dihapus.');
     }
 
     // public function updateStatusPerbaikan(Request $request)
