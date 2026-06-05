@@ -6,6 +6,10 @@
 
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
             <h4 class="fw-bold mb-0 text-dark">Laporan Penjualan</h4>
+
+            <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTargetPenjualan">
+                <i class="bx bx-plus me-1"></i> Set Target Penjualan
+            </button>
         </div>
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden glass-force">
@@ -96,6 +100,56 @@
             </div>
         </div>
 
+        <div class="modal fade" id="modalTargetPenjualan" tabindex="-1" aria-labelledby="modalTargetPenjualanLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form action="{{ route('target_penjualan.store') }}" method="POST" class="modal-content shadow-lg border-0 rounded-4">
+                    @csrf
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="modalTargetPenjualanLabel">Set Target Penjualan</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body pt-2">
+
+                        @if(session('success'))
+                            <div class="alert alert-success mb-3">{{ session('success') }}</div>
+                        @endif
+
+                        <div class="form-group mb-3">
+                            <label class="form-label fw-semibold">Nama Sales</label>
+                            <select name="id_sales" class="form-select" required>
+                                <option value="">-- Pilih Sales --</option>
+                                @foreach($daftarSales as $sales)
+                                    <option value="{{ $sales->id_sales }}">{{ $sales->username }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+
+                        <div class="form-group mb-3">
+                            <label class="form-label fw-semibold">Nilai Target (Rp)</label>
+                            <input type="number" name="nilai_target" class="form-control" required min="0" placeholder="Contoh: 450000000">
+                            <small class="text-muted">Masukkan angka tanpa titik atau koma.</small>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary px-4">Simpan Target</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </div>
 </div>
+
+@if(session('success'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var myModal = new bootstrap.Modal(document.getElementById('modalTargetPenjualan'));
+        myModal.show();
+    });
+</script>
+@endif
+
 @endsection

@@ -795,6 +795,7 @@ Route::prefix('crm')->group(function () {
     Route::get('/edit/{id}/pa', [LaporanPenjualanController::class, 'editPA'])->name('editPA');
     Route::put('/update/pa/{id}', [LaporanPenjualanController::class, 'updatePA'])->name('updatePA');
     Route::get('/laporan-for-gm', [LaporanPenjualanController::class, 'laporanForGm'])->name('laporan.for.gm');
+    Route::post('/laporan-penjualan/target', [LaporanPenjualanController::class, 'storeTarget'])->name('target_penjualan.store');
 
     // Import Contact / Perusahaan
     Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
