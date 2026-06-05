@@ -23,6 +23,7 @@ class PerbaikanKendaraan extends Model
         'waktu_kejadian',
         'lokasi',
         'estimasi',
+        'harga_akhir',
         'status',
         'bukti',
         'tanggal_perbaikan',
