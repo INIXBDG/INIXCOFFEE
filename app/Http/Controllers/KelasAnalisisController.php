@@ -432,48 +432,61 @@ class KelasAnalisisController extends Controller
         ];
 
         $month = $months[$monthName] ?? null;
+
         if (!$month) {
             return new PostResource(false, "Bulan tidak valid: $monthName", null);
         }
 
         $rkm = RKM::with(['materi', 'analisisrkm', 'analisisrkm.analisisrkmmingguan'])
             ->where('status', '0')
-            ->get()
-            ->filter(fn($item) => Carbon::parse($item->tanggal_awal)->year == $year);
+            ->whereYear('tanggal_awal', $year)
+            ->get();
 
         $firstDayOfMonth = CarbonImmutable::create($year, $month, 1);
-        $lastDayOfMonth = $firstDayOfMonth->endOfMonth();
+        $lastDayOfMonth  = $firstDayOfMonth->endOfMonth();
 
         $weeks = [];
         $startOfWeek = $firstDayOfMonth->startOfWeek();
         $weekNumber = 1;
 
         while ($startOfWeek->lte($lastDayOfMonth)) {
+
             $endOfWeek = $startOfWeek->endOfWeek();
 
-            // Hindari minggu yang mulai di bulan sebelumnya
             if ($startOfWeek->month != $month) {
                 $startOfWeek = $startOfWeek->addWeek();
-                $weekNumber++;
                 continue;
             }
 
-            $weekItems = $rkm->filter(fn($item) => 
+            $weekItems = $rkm->filter(fn($item) =>
                 $item->tanggal_awal >= $startOfWeek->format('Y-m-d') &&
                 $item->tanggal_awal <= $endOfWeek->format('Y-m-d')
             );
 
-            $profit = 0;
-            if ($weekItems->isNotEmpty()) {
-                foreach ($weekItems as $item) {
-                    $analisisRkmmingguan = $item->analisisrkm->analisisrkmmingguan ?? [];
-                    foreach ($analisisRkmmingguan as $data) {
-                        $profit += floatval($data['profit'] ?? 0);
+            $totalNett = 0;
+            $fixCost = null;
+
+            foreach ($weekItems as $item) {
+
+                $analisis = $item->analisisrkm;
+                $mingguan = $analisis->analisisrkmmingguan ?? [];
+
+                foreach ($mingguan as $data) {
+
+                    $totalNett += floatval($data['nett_penjualan'] ?? 0);
+
+                    if ($fixCost === null) {
+                        $fixCost = floatval($data['fixcost'] ?? 0);
                     }
                 }
             }
 
+            $fixCost = $fixCost ?? 0;
+
+            $profit = $totalNett - $fixCost;
+
             $weeks['Minggu ' . $weekNumber] = $profit;
+
             $weekNumber++;
             $startOfWeek = $startOfWeek->addWeek();
         }
@@ -481,13 +494,12 @@ class KelasAnalisisController extends Controller
         $totalProfit = array_sum($weeks);
 
         return new PostResource(true, "Data Profit Bulanan untuk $monthName Tahun $year", [
-            'tahun' => $year,
-            'bulan' => $monthName,
+            'tahun'        => $year,
+            'bulan'        => $monthName,
             'weeklyProfit' => $weeks,
-            'totalProfit' => $totalProfit,
+            'totalProfit'  => $totalProfit,
         ]);
     }
-
 
     public function sinkronDataKelasAnalisis($year, $monthStart, $monthEnd)
     {
