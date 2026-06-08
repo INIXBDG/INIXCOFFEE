@@ -833,14 +833,13 @@ Route::get('/invoice/create/{id}', [InvoiceRKMController::class, 'create'])->nam
 Route::post('/invoice', [InvoiceRKMController::class, 'store'])->name('invoice.store');
 Route::get('/invoice/{id}', [InvoiceRKMController::class, 'show'])->name('invoice.show');
 Route::get('/invoice/{id}/edit', [InvoiceRKMController::class, 'edit'])->name('invoice.edit');
-Route::put('/invoice/{id}', [InvoiceRKMController::class, 'update'])->name('invoice.update');
-Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('invoice.destroy');
-Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])->name('invoices.export-pdf');
+Route::put('/invoice/{id}', [InvoiceRKMController::class, 'update'])->name('invoice.update'); // Ga tau, kayaknya ga kepake
+Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('invoice.destroy'); // Ga tau, kayaknya ga kepake
+Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])->name('invoices.export-pdf'); 
 Route::get('/invoices/{id}/export-excel', [InvoiceRKMController::class, 'exportExcel'])->name('invoices.export-excel');
 Route::get('/invoice/download/{id}', [InvoiceRKMController::class, 'downloadPDF'])->name('download.pdf');
 
 //Kwitansi
-
 Route::get('/invoice/{id}/kwitansi', [InvoiceRKMController::class, 'kwitansi'])->name('invoice.kwitansi');
 Route::get('/invoice/{invoiceId}/kwitansi/create', [InvoiceRKMController::class, 'createKwitansi'])->name('kwitansi.create');
 Route::post('/kwitansi/store', [InvoiceRKMController::class, 'storeKwitansi'])->name('kwitansi.store');

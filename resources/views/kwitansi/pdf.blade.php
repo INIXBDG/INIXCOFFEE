@@ -154,7 +154,7 @@
                         KUITANSI
                     </h1>
                     <div class="nomor-kwitansi">
-                        Nomor : {{ $kwitansi->invoice->invoice_number ?? '-' }}
+                        Nomor : {{ $nomor_kwitansi ?? $kwitansi->invoice->invoice_number ?? '-' }}
                     </div>
                 </div>
             </td>
@@ -164,11 +164,11 @@
     <table style="margin-bottom:20px; white-space:nowrap;">
         <tr style="font-weight: bold;">
             <td style="width:150px;">Sudah terima dari</td>
-            <td>: {{ $kwitansi->invoice->rkm->perusahaan->nama_perusahaan ?? '-' }}</td>
+            <td>: {{ $nama_penerima ?? $kwitansi->invoice->rkm->perusahaan->nama_perusahaan ?? '-' }}</td>
         </tr>
         <tr style="font-weight: bold;">
             <td>Jumlah Uang</td>
-            <td>: Rp {{ number_format($kwitansi->invoice->amount ?? 0, 0, ',', '.') }}</td>
+            <td>: Rp {{ number_format($jumlah_uang ?? $kwitansi->invoice->amount ?? 0, 0, ',', '.') }}</td>
         </tr>
         <tr style="font-weight: bold;">
             <td>Terbilang</td>
@@ -177,19 +177,29 @@
 
         <tr>
             <td>Untuk Pembayaran Pelatihan</td>
-            <td> : {{ $kwitansi->invoice->rkm->materi->nama_materi }}</td>
+            <td> : {{ $keterangan ?? ($kwitansi->invoice->rkm->materi->nama_materi ?? '') }}</td>
         </tr>
         <tr>
-            <td>tanggal</td>
-            <td> :
-                {{ optional($kwitansi->invoice->rkm)->tanggal_awal ? \Carbon\Carbon::parse($kwitansi->invoice->rkm->tanggal_awal)->format('d F') : '-' }}
-                -
-                {{ optional($kwitansi->invoice->rkm)->tanggal_akhir ? \Carbon\Carbon::parse($kwitansi->invoice->rkm->tanggal_akhir)->format('d F Y') : '-' }}
+            <td>Tanggal</td>
+            <td>:
+                @php
+                    $awal  = $tanggal_awal  ?? optional($kwitansi->invoice->rkm)->tanggal_awal;
+                    $akhir = $tanggal_akhir ?? optional($kwitansi->invoice->rkm)->tanggal_akhir;
+                @endphp
+                @if ($awal && $akhir)
+                    @if (\Carbon\Carbon::parse($awal)->toDateString() === \Carbon\Carbon::parse($akhir)->toDateString())
+                        {{ \Carbon\Carbon::parse($awal)->format('d F Y') }}
+                    @else
+                        {{ \Carbon\Carbon::parse($awal)->format('d F') }} - {{ \Carbon\Carbon::parse($akhir)->format('d F Y') }}
+                    @endif
+                @else
+                    -
+                @endif
             </td>
         </tr>
         <tr>
             <td>Sebanyak</td>
-            <td> : {{ $kwitansi->invoice->rkm->pax ?? 0 }} Peserta</td>
+            <td> : {{ $jumlah_peserta ?? $kwitansi->invoice->rkm->pax ?? 0 }}  Peserta</td>
         </tr>
     </table>
 
@@ -197,10 +207,10 @@
         <tr>
             <td style="width: 60%;"></td>
             <td style="width: 40%; text-align: center; vertical-align: top;">
-                <p style="margin: 0;">{{ $kota ?? 'Bandung, ' }} {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
+                <p style="margin: 0;">{{ $kota ?? 'Bandung, ' }} {{ $tanggal_ttd ? \Carbon\Carbon::parse($tanggal_ttd)->translatedFormat('d F Y') : \Carbon\Carbon::now()->translatedFormat('d F Y') }}
                 </p>
                 <div style="height: 90px;"></div>
-                <p style="margin: 0;"><u>{{ $karyawan->nama_lengkap ?? 'Nama Penanggung Jawab Kanan' }}</u></p>
+                <p style="margin: 0;"><u>{{ $nama_penandatangan ?? $karyawan->nama_lengkap ?? '-' }}</u></p>
                 <small>Accounting Finance</small>
             </td>
         </tr>

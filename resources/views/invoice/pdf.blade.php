@@ -196,17 +196,23 @@
                                 {{ $materi ?? '-' }}
                             </td>
                         </tr>
-                        <tr>
-                            <td style="border:none; padding: 2px 6px;"><strong>Tanggal</strong></td>
-                            <td style="border:none; padding: 2px 6px;">:</td>
-                            <td style="border:none; padding: 2px 6px;">
-                                {{ $tanggal_awal ? \Carbon\Carbon::parse($tanggal_awal)->translatedFormat('d F Y') : '-' }}
-                                {{-- {{ optional($invoice->rkm)->tanggal_awal ? \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y') : '-' }} --}}
-                                s/d
-                                {{ $tanggal_akhir ? \Carbon\Carbon::parse($tanggal_akhir)->translatedFormat('d F Y') : '-' }}
-                                {{-- {{ optional($invoice->rkm)->tanggal_akhir ? \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y') : '-' }} --}}
-                            </td>
-                        </tr>
+                            <tr>
+                                <td style="border:none; padding: 2px 6px;"><strong>Tanggal</strong></td>
+                                <td style="border:none; padding: 2px 6px;">:</td>
+                                <td style="border:none; padding: 2px 6px;">
+                                    @if ($tanggal_awal && $tanggal_akhir)
+                                        @if (\Carbon\Carbon::parse($tanggal_awal)->toDateString() === \Carbon\Carbon::parse($tanggal_akhir)->toDateString())
+                                            {{ \Carbon\Carbon::parse($tanggal_awal)->translatedFormat('d F Y') }}
+                                        @else
+                                            {{ \Carbon\Carbon::parse($tanggal_awal)->translatedFormat('d F Y') }}
+                                            s/d
+                                            {{ \Carbon\Carbon::parse($tanggal_akhir)->translatedFormat('d F Y') }}
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                            </tr>
                         <tr>
                             <td style="border:none; padding: 2px 6px;"><strong>Peserta</strong></td>
                             <td style="border:none; padding: 2px 6px;">:</td>
@@ -215,21 +221,21 @@
                             @if ($isPeserta)
                                 @if(!empty($pesertaList) && is_array($pesertaList))
                                     @foreach($pesertaList as $index => $namaPeserta)
-                                        {{ $loop->iteration }}. {{ e($namaPeserta) }}<br>
+                                        {{ $loop->iteration }}. {{ ucwords(strtolower($namaPeserta)) }}<br>
                                     @endforeach
                                 @else
-                                    {{ $invoice->rkm->isi_pax ? $invoice->rkm->isi_pax . ' orang' : '-' }}
+                                    {{ $invoice->rkm->pax ? $invoice->rkm->pax . ' orang' : '-' }}
                                 @endif
                             @else
-                                {{ $invoice->rkm->isi_pax ? $invoice->rkm->isi_pax . ' orang' : '-' }}
+                                {{ $invoice->rkm->pax ? $invoice->rkm->pax . ' orang' : '-' }}
                             @endif
                             </td>
                         </tr>
                     </table>
                 </td>
-                <td class="text-center">{{ $invoice->rkm->isi_pax ?? '0' }}</td>
+                <td class="text-center">{{ $invoice->rkm->pax ?? '0' }}</td>
                 <td class="text-end">Rp {{ number_format($unit_price ?? 0, 0, ',', '.') }}</td>
-                <td class="text-end">Rp {{ number_format(($unit_price ?? 0) * ($pax ?? 0), 0, ',', '.') }}</td>
+                <td class="text-end">Rp {{ number_format(($unit_price ?? 0) * ($invoice->rkm->pax ?? 0), 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td colspan="3" rowspan="{{ $isPPh ? 4 : 3 }}"></td>
