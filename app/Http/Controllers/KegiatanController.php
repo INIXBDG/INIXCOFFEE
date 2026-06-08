@@ -68,26 +68,44 @@ class KegiatanController extends Controller
     public function getPengajuanBarang($id)
     {
         $dataPengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->where('id_kegiatan', $id)->get();
+        $dataRincianKegiatan = RincianKegiatan::where('id_kegiatan', $id)->get()
+            ->map(function ($item) {
+                return [
+                    'notPengajuan' => 'true',
+                    'id' => $item->id,
+                    'created_at' => $item->tanggal,
+                    'karyawan' => [
+                        'nama_lengkap' => $item->karyawan->nama_lengkap,
+                        'divisi' => $item->karyawan->divisi,
+                    ],
+                    'tipe' => $item->tipe,
+                    'tracking' => [
+                        'tracking' => $item->status,
+                    ],
+                    'detail' => [
+                        [
+                            'harga' => $item->harga_satuan,
+                            'qty' => $item->qty
+                        ]
+                    ]
+                ];
+            });
+
+        $dataGabungan = collect($dataPengajuanBarang->toArray())
+            ->merge($dataRincianKegiatan)
+            ->values();
         return response()->json([
             'success' => true,
             'message' => 'List data pengajuan barang untuk kegiatan/pembelian',
-            'data' => $dataPengajuanBarang,
+            'data' => $dataGabungan,
         ]);
     }
 
     public function getDetailKegiatan($id) {
-        $data = RincianKegiatan::where('id_kegiatan', $id)->get();
+        $data = RincianKegiatan::findOrFail($id);
         return response()->json([
             'success' => true,
-            'message' => 'List data detail kegiatan',
-            'data' => $data
-        ]);
-    }
-    public function editDetailKegiatan($id) {
-        $data = RincianKegiatan::where('id_kegiatan', $id)->get();
-        return response()->json([
-            'success' => true,
-            'message' => 'List data detail kegiatan',
+            'message' => 'data detail kegiatan',
             'data' => $data
         ]);
     }
@@ -466,6 +484,10 @@ class KegiatanController extends Controller
             'qty' => 'required',
             'harga_satuan' => 'required',
             'total' => 'required',
+            'status' => 'required',
+            'tipe' => 'required',
+            'id_karyawan' => 'required',
+            'tanggal' => 'required',
         ]);
 
         try {
@@ -485,6 +507,9 @@ class KegiatanController extends Controller
             'qty' => 'required',
             'harga_satuan' => 'required',
             'total' => 'required',
+            'status' => 'required',
+            'tipe' => 'required',
+            'tanggal' => 'required',
         ]);
 
         try {
@@ -496,6 +521,9 @@ class KegiatanController extends Controller
                 'qty' => $request->qty ?? $detail->qty,
                 'harga_satuan' => $request->harga_satuan ?? $detail->harga_satuan,
                 'total' => $request->total ?? $detail->total,
+                'status' => $request->status ?? $detail->status,
+                'tipe' => $request->tipe ?? $detail->tipe,
+                'tanggal' => $request->tanggal ?? $detail->tanggal,
             ]);
 
             return back()->with('success', 'Detail barang berhasil diupdate');

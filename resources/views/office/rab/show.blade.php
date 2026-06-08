@@ -115,7 +115,7 @@
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
                     data-bs-target="#tambahDetailModal">
-                    Tambah Detail
+                    Tambah Manual
                 </button>
                 @if (!$kegiatan->selesai)
                     @if (Auth::user()->jabatan === 'HRD')
@@ -155,30 +155,7 @@
                                 <th>Tipe</th>
                                 <th>Status</th>
                                 <th class="text-end">Total</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="card border-0 shadow-sm rounded-3 mb-4">
-            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between">
-                <span class="fw-medium">Data Detail Rincian Kegiatan</span>
-                <button onclick="loadDetailTable()" class="btn btn-sm btn-outline-secondary">Refresh</button>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table id="detailTable" class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th>Perihal</th>
-                                <th>Rincian</th>
-                                <th>Quantity</th>
-                                <th>Harga Satuan</th>
-                                <th class="text-end">Total</th>
+                                <th>Kategori</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -195,17 +172,23 @@
                     $linkedPengajuan = \App\Models\PengajuanBarang::with('detail')
                         ->where('id_kegiatan', $kegiatan->id)
                         ->get();
-                    $totalBudget = $linkedPengajuan->sum(fn($pb) => $pb->detail->sum(fn($d) => $d->harga * $d->qty));
+                    $dataRincianKegiatan = \App\Models\RincianKegiatan::where('id_kegiatan', $kegiatan->id)->get();
+
+                    $totalBudgetPengajuan = $linkedPengajuan->sum(fn($pb) => $pb->detail->sum(fn($d) => $d->harga * $d->qty));
+                    $totalBudgetRincian = $dataRincianKegiatan->sum(fn($rk) => $rk->total);
+                    $totalBudget = $totalBudgetPengajuan + $totalBudgetRincian;
                     $totalRealisasi = $kegiatan->realisasi ?? 0;
                     $percentage = $totalBudget > 0 ? min(($totalRealisasi / $totalBudget) * 100, 100) : 0;
                     $isOverload = $totalRealisasi > $totalBudget;
+
+                    $totalPengajuan = $linkedPengajuan->count() + $dataRincianKegiatan->count();
                 @endphp
 
                 <div class="row g-4 align-items-center">
                     <div class="col-md-4 text-center">
                         <small class="text-muted d-block mb-1">Budget</small>
                         <div class="fw-bold">Rp {{ number_format($totalBudget, 0, ',', '.') }}</div>
-                        <small class="text-muted">{{ $linkedPengajuan->count() }} pengajuan</small>
+                        <small class="text-muted">{{ $totalPengajuan }} pengajuan</small>
                     </div>
                     <div class="col-md-4 text-center">
                         <small class="text-muted d-block mb-1">Realisasi</small>
@@ -335,17 +318,28 @@
                     </div>
 
                     <div class="px-5">
+                        @php
+                            $user = auth()->user()->karyawan_id;
+                            $k = App\Models\karyawan::findOrFail($user);
+                        @endphp
                         <input type="hidden" value="{{ $kegiatan->id }}" name="id_kegiatan">
+                        <input type="hidden" value="{{ $k->id }}" name="id_karyawan">
                         
-                        <div class="mb-3">
-                            <label class="form-label">Hal <span class="text-danger">*</span></label>
-                            <input type="text" name="hal" class="form-control">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Perihal / Barang <span class="text-danger">*</span></label>
+                                <input type="text" name="hal" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal <span class="text-danger">*</span></label>
+                                <input type="date" name="tanggal" class="form-control">
+                            </div>
                         </div>
     
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label class="form-label">Qty <span class="text-danger">*</span></label>
-                                <input type="number" name="qty" class="form-control">
+                                <input type="number" name="qty" class="form-control" min="1">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Harga Satuan <span class="text-danger">*</span></label>
@@ -361,6 +355,35 @@
                                     <input type="text" name="total_display" readonly class="form-control" disabled>
                                     <input type="hidden" name="total">
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tipe <span class="text-danger">*</span></label>
+                                <select name="tipe" id="tipe" class="form-select">
+                                    <option value="-">Pilih Jenis Barang</option>
+                                    <option value="ATK">ATK</option>
+                                    <option value="Elektronik">Elektronik</option>
+                                    <option value="Makanan">Makanan</option>
+                                    <option value="Souvenir">Souvenir</option>
+                                    <option value="Operasional">Operasional</option>
+                                    <option value="Reimbursement">Reimbursement</option>
+                                    <option value="Training & Sertifikasi">Training & Sertifikasi</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Status <span class="text-danger">*</span></label>
+                                <select name="status" id="status" class="form-select">
+                                    <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                    <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                    <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                    <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                    <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                    <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                    <option value="Selesai">Selesai</option>
+                                    {{-- <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option> --}}
+                                </select>
                             </div>
                         </div>
                         
@@ -392,15 +415,21 @@
                     <div class="px-5">
                         <input type="hidden" name="id_detail">
                         
-                        <div class="mb-3">
-                            <label class="form-label">Hal <span class="text-danger">*</span></label>
-                            <input type="text" name="hal" class="form-control">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Perihal / Barang <span class="text-danger">*</span></label>
+                                <input type="text" name="hal" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal <span class="text-danger">*</span></label>
+                                <input type="date" name="tanggal" class="form-control">
+                            </div>
                         </div>
     
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label class="form-label">Qty <span class="text-danger">*</span></label>
-                                <input type="number" name="qty" class="form-control">
+                                <input type="number" name="qty" class="form-control" min="1">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Harga Satuan <span class="text-danger">*</span></label>
@@ -416,6 +445,35 @@
                                     <input type="text" name="total_display" readonly class="form-control" disabled>
                                     <input type="hidden" name="total">
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tipe <span class="text-danger">*</span></label>
+                                <select name="tipe" id="tipe" class="form-select">
+                                    <option value="-">Pilih Jenis Barang</option>
+                                    <option value="ATK">ATK</option>
+                                    <option value="Elektronik">Elektronik</option>
+                                    <option value="Makanan">Makanan</option>
+                                    <option value="Souvenir">Souvenir</option>
+                                    <option value="Operasional">Operasional</option>
+                                    <option value="Reimbursement">Reimbursement</option>
+                                    <option value="Training & Sertifikasi">Training & Sertifikasi</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Status <span class="text-danger">*</span></label>
+                                <select name="status" id="status" class="form-select">
+                                    <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                    <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                    <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                    <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                    <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                    <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                    <option value="Selesai">Selesai</option>
+                                    {{-- <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option> --}}
+                                </select>
                             </div>
                         </div>
                         
@@ -670,7 +728,6 @@
     <script>
         $(document).ready(function() {
             loadPengajuanTable();
-            loadDetailTable();
             const display = document.getElementById('realisasi_display');
             const real = document.getElementById('realisasi');
             if (display && real) {
@@ -830,60 +887,6 @@
             });
         });
 
-        // document.addEventListener('DOMContentLoaded', function () {
-        //     const form = document.getElementById('tambahDetailForm');
-        //     const modal = document.getElementById('tambahDetailModal');
-
-        //     const hargaInput = form.elements['harga_satuan'];
-        //     const qtyInput = form.elements['qty'];
-        //     const totalDisplay = form.elements['total_display'];
-        //     const totalInput = form.elements['total'];
-
-        //     function formatRupiah(angka) {
-        //         return new Intl.NumberFormat('id-ID').format(angka || 0);
-        //     }
-
-        //     function unformatRupiah(value) {
-        //         return parseInt(String(value).replace(/\D/g, '')) || 0;
-        //     }
-
-        //     function hitungTotal() {
-        //         const harga = unformatRupiah(hargaInput.value);
-        //         const qty = parseInt(qtyInput.value) || 0;
-
-        //         const total = harga * qty;
-
-        //         totalDisplay.value = formatRupiah(total);
-        //         totalInput.value = total;
-        //     }
-
-        //     modal.addEventListener('show.bs.modal', function () {
-        //         form.reset();
-        //         totalDisplay.value = '';
-        //         totalInput.value = '';
-        //     });
-
-        //     hargaInput.addEventListener('input', function () {
-        //         const angka = unformatRupiah(this.value);
-
-        //         // tampilkan format ribuan
-        //         this.value = formatRupiah(angka);
-
-        //         hitungTotal();
-        //     });
-
-        //     qtyInput.addEventListener('input', hitungTotal);
-
-        //     // hapus format rupiah sebelum submit
-        //     form.addEventListener('submit', function () {
-        //         hargaInput.value = unformatRupiah(hargaInput.value);
-        //     });
-        // });
-
-        // function editDetail(id) {
-            
-        // }
-
         function initDetailForm(formId, modalId) {
             const form = document.getElementById(formId);
             const modal = document.getElementById(modalId);
@@ -949,30 +952,40 @@
         );
 
         function editDetail(id) {
-
-            const data = detailData[id];
-
             const form = document.getElementById('editDetailForm');
 
             form.action = `/office/kegiatan/edit/rincian/${id}`;
 
-            form.elements['id_detail'].value = id;
-            form.elements['hal'].value = data.hal;
-            form.elements['qty'].value = data.qty;
-            form.elements['harga_satuan'].value =
-                new Intl.NumberFormat('id-ID').format(data.harga_satuan);
-
-            form.elements['rincian'].value = data.rincian ?? '';
-
-            form.elements['total_display'].value =
-                new Intl.NumberFormat('id-ID').format(data.total);
-
-            form.elements['total'].value = data.total;
+            $.ajax({
+                url: `/office/kegiatan/get/rincian/${id}`,
+                type: "GET",
+                success: function(res) {
+                    var data = res.data;
+                    
+                    form.elements['id_detail'].value = id;
+                    form.elements['hal'].value = data.hal;
+                    form.elements['qty'].value = data.qty;
+                    form.elements['tanggal'].value = data.tanggal;
+                    form.elements['status'].value = data.status;
+                    form.elements['tipe'].value = data.tipe;
+                    form.elements['harga_satuan'].value =
+                        new Intl.NumberFormat('id-ID').format(data.harga_satuan);
+        
+                    form.elements['rincian'].value = data.rincian ?? '';
+        
+                    form.elements['total_display'].value =
+                        new Intl.NumberFormat('id-ID').format(data.total);
+        
+                    form.elements['total'].value = data.total;
+                }
+            });
 
             bootstrap.Modal
                 .getOrCreateInstance(document.getElementById('editDetailModal'))
                 .show();
         }
+
+        let detailData = {};
 
         function loadPengajuanTable() {
             if ($.fn.DataTable.isDataTable('#pengajuanTable')) $('#pengajuanTable').DataTable().destroy();
@@ -987,7 +1000,15 @@
                 ajax: {
                     url: "{{ route('getPengajuanBarangKegiatan', $kegiatan->id) }}",
                     type: "GET",
-                    dataSrc: "data"
+                    dataSrc: function(json) {
+                        detailData = {};
+
+                        json.data.forEach(row => {
+                            detailData[row.id] = row;
+                        });
+
+                        return json.data;
+                    }
                 },
                 columns: [{
                         data: "created_at",
@@ -1027,95 +1048,34 @@
                     },
                     {
                         data: null,
-                        orderable: false,
-                        render: (d, t, row) =>
-                            `<a href="{{ url('/pengajuanbarang') }}/${row.id}" class="btn btn-sm btn-outline-primary">Detail</a>`
-                    }
-                ],
-                order: [
-                    [0, 'desc']
-                ]
-            });
-        };
-
-        let detailData = {};
-
-        function loadDetailTable() {
-            if ($.fn.DataTable.isDataTable('#detailTable')) $('#detailTable').DataTable().destroy();
-            $('#detailTable').DataTable({
-                processing: false,
-                serverSide: false,
-                responsive: true,
-                language: {
-                    processing: '<small class="text-muted">Loading...</small>',
-                    emptyTable: "Belum ada data"
-                },
-                ajax: {
-                    url: "{{ route('office.getDetailKegiatan', $kegiatan->id) }}",
-                    type: "GET",
-                    dataSrc: function(json) {
-                        detailData = {};
-
-                        json.data.forEach(row => {
-                            detailData[row.id] = row;
-                        });
-
-                        return json.data;
-                    }
-                },
-                columns: [
-                    {
-                        data: "hal",
-                        defaultContent: "-"
-                    },
-                    {
-                        data: "rincian",
-                        defaultContent: "-"
-                    },
-                    {
-                        data: "qty"
-                    },
-                    {
-                        data: "harga_satuan",
-                        className: "text-end fw-medium",
-                        render: function(d) {
-                            return d
-                                ? new Intl.NumberFormat('id-ID', {
-                                    style: 'currency',
-                                    currency: 'IDR',
-                                    minimumFractionDigits: 0
-                                }).format(d)
-                                : '-';
-                        }
-                    },
-                    {
-                        data: "total",
-                        className: "text-end fw-medium",
-                        render: function(d) {
-                            return d
-                                ? new Intl.NumberFormat('id-ID', {
-                                    style: 'currency',
-                                    currency: 'IDR',
-                                    minimumFractionDigits: 0
-                                }).format(d)
-                                : '-';
+                        render: function (data, row, type) {
+                            if (data.notPengajuan) {
+                                return `<span class="badge bg-warning">Manual</span>`
+                            } else {
+                                return `<span class="badge bg-info">Pengajuan Barang</span>`
+                            }
                         }
                     },
                     {
                         data: null,
                         orderable: false,
-                        render: (d, t, row) =>
-                            `<div class="d-flex gap-2 justify-content-center">
-                                <button onclick="editDetail(${row.id})" class="btn btn-sm btn-outline-primary">Edit</button>
-                                <form action="/office/kegiatan/delete/rincian/${row.id}" method="POST"
-                                    class="d-inline"
-                                    onsubmit="return confirm('Apakah Anda yakin ingin menghapus kegiatan ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">Hapus</button>
-                                </form>
-                            </div>`
+                        render: function (data, type, row) {
+                            if (data.notPengajuan) {
+                                return `<div class="d-flex gap-2 justify-content-start">
+                                    <button onclick="editDetail(${row.id})" class="btn btn-sm btn-outline-primary">Edit</button>
+                                    <form action="/office/kegiatan/delete/rincian/${row.id}" method="POST"
+                                        class="d-inline"
+                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus kegiatan ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">Hapus</button>
+                                    </form>
+                                </div>`
+                            } else {
+                                return `<a href="{{ url('/pengajuanbarang') }}/${row.id}" class="btn btn-sm btn-outline-primary">Detail</a>`
+                            }
+                        }
                     }
                 ],
                 order: [
