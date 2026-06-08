@@ -211,8 +211,8 @@
                             var dataRKM = response.data.weeklyProfit;
 
                             $.each(dataRKM, function(week, value) {
-                                var minusValue = '';
-                                var profitValue = '';
+                                var minusValue = '-';
+                                var profitValue = '0';
                                 if (value < 0) {
                                     minusValue = formatRupiah(value, true);
                                     totalMinus += value;
