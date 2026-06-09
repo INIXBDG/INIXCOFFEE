@@ -505,6 +505,42 @@ class DaftarTugasController extends Controller
         return response()->json(['success' => true, 'message' => 'Tugas berhasil dihapus']);
     }
 
+    public function bulkDelete(Request $request) {
+        $ids = $request->ids ?? [];
+
+        $tasks = KontrolTugas::whereIn('id', $ids)->get();
+
+        foreach ($tasks as $tugas) {
+
+            if (
+                auth()->user()->jabatan !== 'HRD' &&
+                $tugas->id_karyawan !== auth()->id()
+            ) {
+                continue;
+            }
+
+            $buktiData = $this->parseBukti($tugas->bukti);
+
+            if (
+                $buktiData['before'] &&
+                Storage::disk('public')->exists($buktiData['before'])
+            ) {
+                Storage::disk('public')->delete($buktiData['before']);
+            }
+
+            if (
+                $buktiData['after'] &&
+                Storage::disk('public')->exists($buktiData['after'])
+            ) {
+                Storage::disk('public')->delete($buktiData['after']);
+            }
+
+            $tugas->delete();
+        }
+
+        return response()->json(['success' => true, 'message' => 'Tugas berhasil dihapus']);
+    }
+
     public function updateKategori(Request $request)
     {
         $request->validate([
@@ -514,9 +550,6 @@ class DaftarTugasController extends Controller
             'tipe_turunan' => 'nullable',
         ]);
         $kategori = KategoriDaftarTugas::findOrFail($request->id);
-        if (Auth::id() !== $kategori->id_user && Auth::user()->jabatan !== 'HRD') {
-            return response()->json(['message' => 'Tidak berhak mengedit kategori ini'], 403);
-        }
 
         $tipe_turunan = $request->tipe_turunan;
 
@@ -554,22 +587,13 @@ class DaftarTugasController extends Controller
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:kategori_daftar_tugas,id',
-            'tipe_turunan' => 'nullable|in:Shift 1,Shift 2',
+            'tipe_turunan' => 'nullable|in:Shift 1,Shift 2,Sabtu,Minggu',
         ]);
 
-        $user = Auth::user();
         $updated = 0;
 
         foreach ($request->ids as $id) {
             $kategori = KategoriDaftarTugas::findOrFail($id);
-
-            if (Auth::id() !== $kategori->id_user && $user->jabatan !== 'HRD') {
-                continue;
-            }
-
-            if ($kategori->Tipe !== 'Harian') {
-                continue;
-            }
 
             $kategori->update([
                 'tipe_turunan' => $request->tipe_turunan,

@@ -1180,6 +1180,7 @@ Route::prefix('office')
             Route::post('status/update', [DaftarTugasController::class, 'updateStatus'])->name('updateStatus');
             Route::post('bukti/upload', [DaftarTugasController::class, 'uploadBukti'])->name('uploadBukti');
             Route::delete('hapus/{id}', [DaftarTugasController::class, 'delete'])->name('delete');
+            Route::delete('/bulk-delete', [DaftarTugasController::class, 'bulkDelete'])->name('bulkDelete');
 
             Route::get('/export/excel', [DaftarTugasController::class, 'exportExcel'])->name('export.excel');
             Route::get('/export/pdf', [DaftarTugasController::class, 'exportPdf'])->name('export.pdf');
