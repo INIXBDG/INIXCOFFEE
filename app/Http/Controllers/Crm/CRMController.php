@@ -109,10 +109,8 @@ class CRMController extends Controller
                 $meetData = $userAktivitas->where('aktivitas', 'Meet');
                 $inchargeData = $userAktivitas->where('aktivitas', 'Incharge');
                 $paData = $userAktivitas->where('aktivitas', 'PA');
-                $piData = $userAktivitas->where('aktivitas', 'PI');
-                $teleData = $userAktivitas->where('aktivitas', 'Telemarketing');
-                $formMasukData = $userAktivitas->where('aktivitas', 'Form_Masuk');
-                $formKeluarData = $userAktivitas->where('aktivitas', 'Form_Keluar');
+                $piData = $userAktivitas->whereIn('aktivitas', ['PI', 'Leads']);
+                $formMasukData = $userAktivitas->whereIn('aktivitas', ['Form_Masuk', 'Regis Form']);
                 $dbData = $userAktivitas->where('aktivitas', 'DB');
 
                 $salesTarget = $target[$id_sales] ?? null;
@@ -128,16 +126,13 @@ class CRMController extends Controller
                     'meet' => $meetData->count(),
                     'incharge' => $inchargeData->count(),
                     'PA' => $paData->count(),
-                    'PI' => $piData->count(),
-                    'Telemarketing' => $teleData->count(),
-                    'Form_Masuk' => $formMasukData->count(),
-                    'Form_Keluar' => $formKeluarData->count(),
+                    'Leads' => $piData->count(),
+                    'Regis_Form' => $formMasukData->count(),
                     'DB' => $dbData->count(),
 
                     // 💰 Total nilai (Sum)
                     'total_PA' => $paData->sum('total'),
-                    'total_Form_Masuk' => $formMasukData->sum('total'),
-                    'total_Form_Keluar' => $formKeluarData->sum('total'),
+                    'total_Regis_Form' => $formMasukData->sum('total'),
 
                     // 🎯 Target
                     'target_contact' => $salesTarget->Contact ?? 0,
@@ -148,12 +143,10 @@ class CRMController extends Controller
                     'target_incharge' => $salesTarget->Incharge ?? 0,
                     'target_PA' => $salesTarget->PA ?? 0,
                     'target_PI' => $salesTarget->PI ?? 0,
-                    'target_Telemarketing' => $salesTarget->Telemarketing ?? 0,
                     'target_Form_Masuk' => $salesTarget->FormM ?? 0,
-                    'target_Form_Keluar' => $salesTarget->FormK ?? 0,
                     'target_DB' => $salesTarget->DB ?? 0,
 
-                    // 🗂️ Data aktivitas (detail untuk modal/tabel)
+                    // 🗂️ Data aktivitas
                     'data_contact' => $contactData->values(),
                     'data_call' => $callData->values(),
                     'data_email' => $emailData->values(),
@@ -161,14 +154,11 @@ class CRMController extends Controller
                     'data_meet' => $meetData->values(),
                     'data_incharge' => $inchargeData->values(),
                     'data_PA' => $paData->values(),
-                    'data_PI' => $piData->values(),
-                    'data_Telemarketing' => $teleData->values(),
-                    'data_Form_Masuk' => $formMasukData->values(),
-                    'data_Form_Keluar' => $formKeluarData->values(),
+                    'data_Leads' => $piData->values(),
+                    'data_Regis_Form' => $formMasukData->values(),
                     'data_DB' => $dbData->values(),
                 ];
             }
-
             // dd($activitysales);
 
             // 3. Top 5 produk paling banyak terjual
