@@ -32,10 +32,8 @@
                                 <option value="Meet">Meeting</option>
                                 <option value="Incharge">Incharge Inhouse</option>
                                 <option value="PA">Penawaran Awal</option>
-                                <option value="PI">Penawaran Internal</option>
-                                <option value="Telemarketing">Telemarketing</option>
-                                <option value="Form_Masuk">Form Masuk</option>
-                                <option value="Form_Keluar">Form Keluar</option>
+                                <option value="PI">Leads</option>
+                                <option value="Form_Masuk">Regis Form</option>
                                 <option value="DB">DB</option>
                                 <option value="Contact">Contact</option>
                             </select>
@@ -198,10 +196,8 @@
                                         <option value="Meet">Meeting</option>
                                         <option value="Incharge">Incharge Inhouse</option>
                                         <option value="PA">Penawaran Awal</option>
-                                        <option value="PI">Penawaran Internal</option>
-                                        <option value="Telemarketing">Telemarketing</option>
-                                        <option value="Form_Masuk">Regis Form Masuk</option>
-                                        <option value="Form_Keluar">Regis Form Keluar</option>
+                                        <option value="PI">Leads</option>
+                                        <option value="Form_Masuk">Regis Form</option>
                                     </select>
                                 </div>
 
@@ -323,10 +319,8 @@
                                         <option value="Contact">Contact Baru</option>
                                         <option value="Incharge">Incharge Inhouse</option>
                                         <option value="PA">Penawaran Awal</option>
-                                        <option value="PI">Penawaran Internal</option>
-                                        <option value="Telemarketing">Telemarketing</option>
-                                        <option value="Form_Masuk">Form Masuk</option>
-                                        <option value="Form_Keluar">Form Keluar</option>
+                                        <option value="PI">Leads</option>
+                                        <option value="Form_Masuk">Regis Form</option>
                                         <option value="DB">DB</option>
                                     </select>
                                 </div>
@@ -464,7 +458,7 @@
     <script src="{{ asset('js/webcam.js') }}"></script>
     <script>
         // ===============================
-        // 🔹 Fungsi Format Angka (IDR)
+        // Fungsi Format Angka (IDR)
         // ===============================
         function unformatNumber(value) {
             if (!value) return '';
@@ -476,7 +470,7 @@
             return parseInt(value, 10).toLocaleString('id-ID');
         }
 
-        // Function untuk reverse koordinat
+        // Fungsi untuk reverse koordinat
         async function updateAddressText(lat, lng, elementId) {
             try {
                 const response = await fetch(
@@ -507,7 +501,7 @@
         }
 
         // ===============================
-        // 🔹 DataTable & Form Events
+        // DataTable & Form Events
         // ===============================
         $(document).ready(function() {
             $('#aktivitasTable').DataTable({
@@ -532,7 +526,7 @@
                         } else {
                             $('#totalContainer').empty();
                         }
-                        return json.data; // ini tetap untuk isi tabel
+                        return json.data;
                     },
                     error: function(xhr, error, thrown) {
                         console.error('Error:', xhr.responseText);
@@ -584,8 +578,7 @@
                 ]
             });
 
-
-            // === Filter & Reset ===
+            // Filter & Reset
             $('#btnFilter').on('click', () => $('#aktivitasTable').DataTable().ajax.reload());
             $('#btnResetFilter').on('click', function() {
                 $('#filter_sales, #filter_aktivitas, #filter_waktu_start, #filter_waktu_end, #filter_created_start, #filter_created_end')
@@ -593,7 +586,7 @@
                 $('#aktivitasTable').DataTable().ajax.reload();
             });
 
-            // === Select2 Init ===
+            // Select2 Init
             initPerusahaanSelect2();
             initContactSelect2();
             initEditContactSelect2();
@@ -610,14 +603,13 @@
                 input.setSelectionRange(formatted.length, formatted.length);
             });
 
-            // === Form Submit (Edit) ===
+            // Form Submit (Edit)
             $('#editActivityForm').on('submit', async function(e) {
                 e.preventDefault();
                 const id = $('#edit_id').val();
                 const url = `/crm/aktivitas/update/${id}`;
                 const hargaUnformatted = unformatNumber($('#edit_harga').val());
 
-                // Ambil id_contact dari select2 atau hidden input tergantung tipe
                 const contactType = $('#edit_contact_type').val();
                 let idContact;
 
@@ -658,7 +650,7 @@
         });
 
         // ===============================
-        // 🔹 Fungsi Select2
+        // Fungsi Select2
         // ===============================
         function initPerusahaanSelect2() {
             const $select = $('#id_perusahaan');
@@ -702,7 +694,7 @@
         window.isAllowedUser = {{ $isAllowedUser ? 'true' : 'false' }};
 
         // ===============================
-        // 🔹 Fungsi Load Semua Target Aktivitas
+        // Fungsi Load Semua Target Aktivitas
         // ===============================
         async function loadSemuaTargetAktivitas(isAllowedUser = false) {
             try {
@@ -789,6 +781,9 @@
             }
         }
 
+        // ===============================
+        // Modifikasi Fungsi editAktivitas
+        // ===============================
         function editAktivitas(row) {
             console.log('🔍 Data row:', row);
 
@@ -811,10 +806,13 @@
             }
 
             let aktivitasValue = row.aktivitas;
+
+            // Modifikasi Peta Objek: Memetakan 'Regis Form' kembali ke 'Form_Masuk'
             const map = {
-                'Form Masuk': 'Form_Masuk',
+                'Regis Form': 'Form_Masuk',
                 'Form Keluar': 'Form_Keluar',
-                'Incharge Inhouse': 'Incharge'
+                'Incharge Inhouse': 'Incharge',
+                'Leads': 'PI'
             };
             aktivitasValue = map[aktivitasValue] || aktivitasValue;
             $('#edit_aktivitas').val(aktivitasValue);
@@ -876,7 +874,7 @@
 
                 if (row.foto_lokasi) {
                     $('#detail_foto_lokasi')
-                        .attr('src', '/' + row.foto_lokasi) 
+                        .attr('src', '/' + row.foto_lokasi)
                         .show();
                 } else {
                     $('#detail_foto_lokasi')
@@ -903,18 +901,34 @@
                 .catch(() => alert('Terjadi kesalahan saat menghapus aktivitas.'));
         }
 
+        // ===============================
+        // Modifikasi DOMContentLoaded
+        // ===============================
         document.addEventListener("DOMContentLoaded", function() {
             const contactSelect = document.getElementById("id_contact");
             const contactTypeInput = document.getElementById("contact_type");
             const newContactFields = document.getElementById("newContactFields");
             const aktivitasOption = document.getElementById("aktivitas");
+            const editAktivitasOption = document.getElementById("edit_aktivitas");
             const cameraWrapper = document.getElementById("camera_wrapper");
             const hiddenContainer = document.getElementById("hidden-container");
             const paxInput = document.getElementById("pax");
             const hargaInput = document.getElementById("harga");
-            const editAktivitasOption = document.getElementById("edit_aktivitas");
             const editHiddenContainer = document.getElementById("edit-hidden-container");
             const isAllowedUser = window.isAllowedUser || false;
+
+            // Modifikasi Tampilan Teks: Memastikan elemen opsi dengan nilai 'PI' ditampilkan sebagai 'Leads'
+            if (aktivitasOption) {
+                Array.from(aktivitasOption.options).forEach(opt => {
+                    if (opt.value === 'PI') opt.text = 'Leads';
+                });
+            }
+            if (editAktivitasOption) {
+                Array.from(editAktivitasOption.options).forEach(opt => {
+                    if (opt.value === 'PI') opt.text = 'Leads';
+                });
+            }
+
             loadSemuaTargetAktivitas(isAllowedUser);
 
             $('#id_perusahaan').on('change', function() {
@@ -997,7 +1011,6 @@
                     Webcam.reset();
                 }
 
-                // Toggle hidden-container untuk PA, Form_Masuk, Form_Keluar
                 if (["PA", "Form_Masuk", "Form_Keluar"].includes(this.value)) {
                     hiddenContainer.style.display = "block";
                 } else {
@@ -1034,31 +1047,6 @@
             });
 
             $('#activityForm').on('submit', function(e) {
-                const activityType = $('#aktivitas').val();
-                const uploadMethod = $('input[name="upload_method"]:checked').val();
-
-                if (activityType === 'Visit') {
-                    if (uploadMethod === 'camera') {
-                        e.preventDefault();
-                        const form = this;
-
-                        Webcam.snap(function(data_uri) {
-                            document.getElementById('foto_lokasi').value = data_uri;
-
-                            if (!document.getElementById('latitude').value) {
-                                alert(
-                                    "Lokasi belum terdeteksi. Gunakan metode Upload jika GPS bermasalah."
-                                );
-                                return;
-                            }
-                            form.submit();
-                        });
-                    }
-                }
-            });
-
-            $('#activityForm').on('submit', function(e) {
-                // 1. Format Harga
                 const hargaEl = document.getElementById('harga');
                 if (hargaEl) {
                     const raw = unformatNumber(hargaEl.value);
@@ -1070,7 +1058,6 @@
 
                 if (activityType === 'Visit') {
                     if (uploadMethod === 'camera') {
-                        // Jika pilih kamera, pastikan snap diambil
                         e.preventDefault();
                         const form = this;
                         Webcam.snap(function(data_uri) {
@@ -1087,26 +1074,24 @@
                                 );
                                 return;
                             }
-                            form.off('submit').submit(); // Gunakan off agar tidak looping event
+                            form.off('submit').submit();
                         });
                     } else {
-                        // Jika pilih upload, pastikan file dipilih
                         const fileInput = document.getElementById('file_foto');
                         if (fileInput.files.length === 0) {
                             e.preventDefault();
                             alert("Silakan pilih file foto terlebih dahulu.");
                         }
-                        // Biarkan submit normal untuk upload file
                     }
                 }
             });
 
-            // Show/hide hidden container berdasarkan jenis aktivitas (edit)
             editAktivitasOption.addEventListener('change', function() {
                 let selected = this.value;
 
+                // Modifikasi Peta Objek: Memetakan 'Regis Form' kembali ke 'Form_Masuk'
                 const aktivitasMap = {
-                    'Form Masuk': 'Form_Masuk',
+                    'Regis Form': 'Form_Masuk',
                     'Form Keluar': 'Form_Keluar',
                     'Incharge Inhouse': 'Incharge'
                 };
