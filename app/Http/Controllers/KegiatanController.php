@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\KoordinasiDriverNotifcation;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Mockery\Expectation;
 
 class KegiatanController extends Controller
 {
@@ -67,10 +68,45 @@ class KegiatanController extends Controller
     public function getPengajuanBarang($id)
     {
         $dataPengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->where('id_kegiatan', $id)->get();
+        $dataRincianKegiatan = RincianKegiatan::where('id_kegiatan', $id)->get()
+            ->map(function ($item) {
+                return [
+                    'notPengajuan' => 'true',
+                    'id' => $item->id,
+                    'created_at' => $item->tanggal,
+                    'karyawan' => [
+                        'nama_lengkap' => $item->karyawan->nama_lengkap,
+                        'divisi' => $item->karyawan->divisi,
+                    ],
+                    'tipe' => $item->tipe,
+                    'tracking' => [
+                        'tracking' => $item->status,
+                    ],
+                    'detail' => [
+                        [
+                            'harga' => $item->harga_satuan,
+                            'qty' => $item->qty
+                        ]
+                    ]
+                ];
+            });
+
+        $dataGabungan = collect($dataPengajuanBarang->toArray())
+            ->merge($dataRincianKegiatan)
+            ->values();
         return response()->json([
             'success' => true,
             'message' => 'List data pengajuan barang untuk kegiatan/pembelian',
-            'data' => $dataPengajuanBarang,
+            'data' => $dataGabungan,
+        ]);
+    }
+
+    public function getDetailKegiatan($id) {
+        $data = RincianKegiatan::findOrFail($id);
+        return response()->json([
+            'success' => true,
+            'message' => 'data detail kegiatan',
+            'data' => $data
         ]);
     }
 
@@ -328,12 +364,6 @@ class KegiatanController extends Controller
     //     return redirect()->back()->with('success', 'Rincian berhasil diupdate');
     // }
 
-    // public function deleteRincian($id)
-    // {
-    //     RincianKegiatan::findOrFail($id)->delete();
-
-    //     return redirect()->back()->with('success', 'Rincian berhasil didelete');
-    // }
 
     public function gm(Request $request, $id)
     {
@@ -444,5 +474,68 @@ class KegiatanController extends Controller
         return redirect()
             ->back()
             ->with('success', "Berhasil menghubungkan {$updated} pengajuan barang ke kegiatan.");
+    }
+
+    public function storeDetail(Request $request) {
+        $validation = $request->validate([
+            'id_kegiatan' => 'required|exists:kegiatans,id',
+            'hal' => 'required',
+            'rincian' => 'nullable',
+            'qty' => 'required',
+            'harga_satuan' => 'required',
+            'total' => 'required',
+            'status' => 'required',
+            'tipe' => 'required',
+            'id_karyawan' => 'required',
+            'tanggal' => 'required',
+        ]);
+
+        try {
+            RincianKegiatan::create($validation);
+
+            return back()->with('success', 'Detail barang berhasil dibuat');
+        } catch (Expectation $e) {
+            return back()->with('error', 'Terjadi kesalahan : '.$e);
+        }
+    }
+
+    public function updateDetail(Request $request) {
+        $request->validate([
+            'id_detail' => 'required|exists:rincian_kegiatans,id',
+            'hal' => 'required',
+            'rincian' => 'nullable',
+            'qty' => 'required',
+            'harga_satuan' => 'required',
+            'total' => 'required',
+            'status' => 'required',
+            'tipe' => 'required',
+            'tanggal' => 'required',
+        ]);
+
+        try {
+            $detail = RincianKegiatan::findOrFail($request->id_detail);
+
+            $detail->update([
+                'hal' => $request->hal ?? $detail->hal,
+                'rincian' => $request->rincian ?? $detail->rincian,
+                'qty' => $request->qty ?? $detail->qty,
+                'harga_satuan' => $request->harga_satuan ?? $detail->harga_satuan,
+                'total' => $request->total ?? $detail->total,
+                'status' => $request->status ?? $detail->status,
+                'tipe' => $request->tipe ?? $detail->tipe,
+                'tanggal' => $request->tanggal ?? $detail->tanggal,
+            ]);
+
+            return back()->with('success', 'Detail barang berhasil diupdate');
+        } catch (Expectation $e) {
+            return back()->with('error', 'Terjadi kesalahan : '.$e);
+        }
+    }
+
+    public function deleteRincian($id)
+    {
+        RincianKegiatan::findOrFail($id)->delete();
+
+        return redirect()->back()->with('success', 'Rincian berhasil didelete');
     }
 }

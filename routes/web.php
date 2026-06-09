@@ -1156,9 +1156,6 @@ Route::prefix('office')
             Route::post('{id}/link-pengajuan', [KegiatanController::class, 'linkPengajuanBarang'])->name('linkPengajuan');
 
             Route::get('/show/{id}', [KegiatanController::class, 'show'])->name('showRincian');
-            Route::post('/store/rincian/{id}', [KegiatanController::class, 'storeRincian'])->name('storeRincian');
-            Route::put('/update/rincian/{id}', [KegiatanController::class, 'updateRincian'])->name('updateRincian');
-            Route::delete('/delete/rincian/{id}', [KegiatanController::class, 'deleteRincian'])->name('deleteRincian');
 
             Route::put('/update/status/gm/{id}', [KegiatanController::class, 'gm'])->name('UpdateStatusGM');
             Route::put('/update/status/finance/{id}', [KegiatanController::class, 'finance'])->name('UpdateStatusFinance');
@@ -1168,6 +1165,11 @@ Route::prefix('office')
             Route::get('/download/pdf/{id}', [KegiatanController::class, 'downloadPDF'])->name('downloadPdfRab');
 
             Route::post('/update/realisasi', [KegiatanController::class, 'updateRealisasi'])->name('kegiatan.updateRealisasi');
+
+            Route::post('/store/rincian', [KegiatanController::class, 'storeDetail'])->name('store.detail');
+            Route::get('/get/rincian/{id}', [KegiatanController::class, 'getDetailKegiatan'])->name('getDetailKegiatan');
+            Route::post('/edit/rincian/{id}', [KegiatanController::class, 'updateDetail'])->name('updateDetail');
+            Route::delete('/delete/rincian/{id}', [KegiatanController::class, 'deleteRincian'])->name('deleteRincian');
         });
 
         //To Do list OB

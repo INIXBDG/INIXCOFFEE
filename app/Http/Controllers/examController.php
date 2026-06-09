@@ -410,6 +410,7 @@ class examController extends Controller
         try {
             $rkmSource = RKM::with('materi', 'perusahaan')->where('id', $request->id_rkm)->first();
             if ($request->pax > $rkmSource->pax) {
+                // dd($request->pax, $rkmSource->pax);
                 return redirect()->back()->with('error', 'Pax tidak boleh lebih dari ' . $rkmSource->pax);
             }
             $data = $request->validate([

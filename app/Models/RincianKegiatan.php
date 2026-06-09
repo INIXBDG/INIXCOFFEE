@@ -15,9 +15,18 @@ class RincianKegiatan extends Model
         'qty',
         'harga_satuan',
         'total',
+        'id_karyawan',
+        'tipe',
+        'status',
+        'tanggal',
     ];
 
     public function kegiatan(){
         return $this->belongsTo(Kegiatan::class, 'id_kegiatan', 'id');
+    }
+
+    public function karyawan()
+    {
+        return $this->belongsTo(karyawan::class, 'id_karyawan', 'id');
     }
 }
