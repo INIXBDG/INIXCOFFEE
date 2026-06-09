@@ -13,7 +13,7 @@
                     </div>
                     <div class="card-body p-4">
 
-                        <form method="GET" class="row g-2 mb-4 align-items-end pb-3 border-bottom">
+                        <form method="GET" action="{{ url()->current() }}" class="row g-2 mb-4 align-items-end pb-3 border-bottom">
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-muted mb-1">Tanggal Mulai</label>
                                 <input type="date" name="start_date" class="form-control form-control-sm border-light-subtle"
