@@ -314,15 +314,11 @@
                     document.getElementById('detailMateri').textContent = detailBtn.dataset.materi;
                     document.getElementById('detailInstruktur').textContent = detailBtn.dataset.instruktur;
 
-                    const perusahaanList = detailBtn.dataset.perusahaanList ? JSON.parse(detailBtn.dataset
-                        .perusahaanList) : [];
-                    const salesList = detailBtn.dataset.salesList ? JSON.parse(detailBtn.dataset
-                        .salesList) : [];
+                    const perusahaan = detailBtn.dataset.perusahaan || '-';
+                    const sales = detailBtn.dataset.sales || '-';
 
-                    document.getElementById('detailPerusahaan').innerHTML = perusahaanList.map(p =>
-                        `<div>• ${escapeHtml(p)}</div>`).join('') || '-';
-                    document.getElementById('detailSales').innerHTML = salesList.map(s =>
-                        `<div>• ${escapeHtml(s)}</div>`).join('') || '-';
+                    document.getElementById('detailPerusahaan').textContent = perusahaan;
+                    document.getElementById('detailSales').textContent = sales;
 
                     new bootstrap.Modal(document.getElementById('modalDetail')).show();
                 }
@@ -357,8 +353,29 @@
                         month: 'long'
                     });
                     const startDay = (minggu - 1) * 7 + 1;
-                    const endDay = Math.min(minggu * 7, new Date(tahun, bulan, 0).getDate());
-                    label = `${startDay}-${endDay} ${monthName} ${tahun}`;
+                    const endDay = Math.min(
+                        minggu * 7,
+                        new Date(tahun, bulan, 0).getDate()
+                    );
+
+                    let firstBusinessDay = null;
+                    let lastBusinessDay = null;
+
+                    for (let day = startDay; day <= endDay; day++) {
+                        const date = new Date(tahun, bulan - 1, day);
+                        const dayOfWeek = date.getDay();
+
+                        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                            if (!firstBusinessDay) {
+                                firstBusinessDay = day;
+                            }
+                            lastBusinessDay = day;
+                        }
+                    }
+
+                    if (firstBusinessDay && lastBusinessDay) {
+                        label = `${firstBusinessDay}-${lastBusinessDay} ${monthName} ${tahun}`;
+                    }
                 } else if (tahun && bulan) {
                     const monthName = new Date(tahun, bulan - 1, 1).toLocaleString('id-ID', {
                         month: 'long'
@@ -453,41 +470,32 @@
 
                 let globalNo = (currentPage - 1) * 20;
 
-                tableBody.innerHTML = data.map((group) => {
-                    const items = group.items;
-                    const firstItem = items[0];
+                tableBody.innerHTML = data.map(item => {
 
-                    const perusahaanList = [...new Set(items.map(i => i.perusahaan).filter(p => p && p !==
-                        '-'))];
-                    const salesList = [...new Set(items.map(i => i.sales).filter(s => s && s !== '-'))];
-
-                    const checkboxes = Object.entries(firstItem.checkboxes).map(([field, config]) => {
-                        const allChecked = items.every(item => item.checkboxes[field].checked);
-                        const someChecked = items.some(item => item.checkboxes[field].checked);
-
-                        return `
+                    const checkboxes = Object.entries(item.checkboxes)
+                        .map(([field, config]) => `
                             <td class="text-center">
                                 <div class="form-check form-switch d-flex justify-content-center">
-                                    <input type="checkbox" 
+                                    <input type="checkbox"
                                         class="form-check-input checklist-checkbox"
-                                        data-rkm="${items.map(i => i.id).join(',')}"
+                                        data-rkm="${item.id}"
                                         data-field="${field}"
-                                        ${allChecked ? 'checked' : ''}
-                                        ${someChecked && !allChecked ? 'indeterminate' : ''}
-                                        id="chk-${group.group_key}-${field}">
+                                        ${config.checked ? 'checked' : ''}>
                                 </div>
                             </td>
-                        `;
-                    }).join('');
+                        `)
+                        .join('');
 
                     const showDetailBtn = `
                         <button class="btn btn-link text-decoration-none show-detail p-0"
-                            data-materi="${escapeHtml(firstItem.materi)}"
-                            data-perusahaan-list='${JSON.stringify(perusahaanList)}'
-                            data-sales-list='${JSON.stringify(salesList)}'
-                            data-instruktur="${escapeHtml(firstItem.instruktur)}"
-                            data-tanggaltraining="${escapeHtml(firstItem.tanggal_training)}">
-                            <small class="text-muted">${escapeHtml(firstItem.materi)}</small>
+                            data-materi="${escapeHtml(item.materi)}"
+                            data-perusahaan="${escapeHtml(item.perusahaan)}"
+                            data-sales="${escapeHtml(item.sales)}"
+                            data-instruktur="${escapeHtml(item.instruktur)}"
+                            data-tanggaltraining="${escapeHtml(item.tanggal_training)}">
+                            <small class="text-muted">
+                                ${escapeHtml(item.materi)}
+                            </small>
                         </button>
                     `;
 
@@ -495,10 +503,22 @@
 
                     return `
                         <tr class="table-row-hover">
-                            <td class="text-center fw-medium text-muted">${globalNo}</td>
-                            <td>${showDetailBtn}</td>
-                            <td><small>${escapeHtml(perusahaanList.join(', '))}</small></td>
-                            <td><small>${escapeHtml(salesList.join(', '))}</small></td>
+                            <td class="text-center fw-medium text-muted">
+                                ${globalNo}
+                            </td>
+
+                            <td>
+                                ${showDetailBtn}
+                            </td>
+
+                            <td>
+                                <small>${escapeHtml(item.perusahaan)}</small>
+                            </td>
+
+                            <td>
+                                <small>${escapeHtml(item.sales)}</small>
+                            </td>
+
                             ${checkboxes}
                         </tr>
                     `;
