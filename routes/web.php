@@ -583,6 +583,7 @@ Route::put('notifications/{notification}/read', [App\Http\Controllers\CommentCon
 Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
+Route::put('/suratperjalanan/{id}/approve-direksi/{status}', [App\Http\Controllers\SuratPerjalananController::class, 'approveDireksi'])->name('suratperjalanan.approve.direksi');
 Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
 Route::get('/absensi/karyawan', [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
@@ -1315,6 +1316,8 @@ Route::post('/jurnalakuntansi/store-manual-netsales/{id}', [JurnalAkuntansiContr
 Route::get('/jurnalakuntansi/export', [App\Http\Controllers\JurnalAkuntansiController::class, 'export'])->name('jurnalakuntansi.export');
 Route::get('/jurnalakuntansi/pdf/{id}', [JurnalAkuntansiController::class, 'eksportPdf'])->name('jurnalakuntansi.pdf');
 Route::post('/jurnalakuntansi/otomatisasi/data', [JurnalAkuntansiController::class, 'otomatisasiJurnal'])->name('jurnalakuntansi.otomatisasiJurnal');
+Route::get('/jurnalakuntansi/belum-jurnal-sp', [JurnalAkuntansiController::class, 'getBelumJurnalSuratPerjalanan'])->name('jurnalakuntansi.belumJurnalSuratPerjalanan');
+Route::post('/jurnalakuntansi/store-manual-surat-perjalanan/{id}', [JurnalAkuntansiController::class, 'storeManualSuratPerjalanan'])->name('jurnalakuntansi.storeManualSuratPerjalanan');
 
 Route::middleware(['auth'])->group(function () {
     // Route Administrasi Project

@@ -57,6 +57,11 @@ class SuratPerjalanan extends Model
         'approval_direksi' => 'string',
     ];
 
+    public function jurnalAkuntansi()
+    {
+        return $this->hasOne(JurnalAkuntansi::class, 'id_surat_perjalanan', 'id');
+    }
+    
     public function karyawan()
     {
         return $this->belongsTo(karyawan::class, 'id_karyawan', 'id');
