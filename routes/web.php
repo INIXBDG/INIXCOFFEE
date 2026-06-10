@@ -900,7 +900,6 @@ Route::get('/getTickets', [TicketController::class, 'getTickets'])->name('getTic
 Route::get('/gaji/karyawan', [KaryawanController::class, 'gajiIndex'])->name('gaji.index');
 Route::post('/gaji', [KaryawanController::class, 'storeGaji'])->name('gaji.store');
 Route::put('/gaji/{id}', [KaryawanController::class, 'updateGaji'])->name('gaji.update');
-Route::delete('/gaji/{id}', [KaryawanController::class, 'destroyGaji'])->name('gaji.destroy');
 
 //Slip Gaji
 Route::get('/slip/gaji', [KaryawanController::class, 'slip'])->name('SlipGaji');
