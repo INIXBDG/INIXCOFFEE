@@ -22,10 +22,10 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="row mb-3">
+                        <div class="row mb-3" style="display: none;">
                             <label for="angka_terakhir" class="col-md-4 col-form-label text-md-start">{{ __('4 Angka Terakhir') }}</label>
                             <div class="col-md-6">
-                                <input id="angka_terakhir" type="text" placeholder="Masukan 4 Angka Terakhir" class="form-control @error('angka_terakhir') is-invalid @enderror" name="angka_terakhir" value="{{ $creditcard->angka_terakhir }}" autocomplete="angka_terakhir" autofocus>
+                                <input id="angka_terakhir" type="text" value="0000" placeholder="Masukan 4 Angka Terakhir" class="form-control @error('angka_terakhir') is-invalid @enderror" name="angka_terakhir" value="{{ $creditcard->angka_terakhir }}" autocomplete="angka_terakhir" autofocus>
                                 @error('angka_terakhir')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
