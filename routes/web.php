@@ -595,16 +595,6 @@ Route::post('/absensi/delete/pengajuan-klaim/scheme-work', [App\Http\Controllers
 Route::get('/absensi/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'cancelLeave'])->name('absensi.cancelLeave');
 Route::post('/absensi/approve/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveCancelLeave'])->name('absensi.approveCancelLeave');
 Route::post('/absensi/delete/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'deleteCancelLeave'])->name('absensi.deleteCancelLeave');
-Route::get('/absensi/karyawan', [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
-Route::get('/absensi/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
-Route::post('/absensi/approve/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');
-Route::post('/absensi/delete/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'deleteNoRecord'])->name('absensi.deleteNoRecord');
-Route::get('/absensi/pengajuan-klaim/scheme-work', [App\Http\Controllers\AbsensiKaryawanController::class, 'schemeWork'])->name('absensi.schemeWork');
-Route::post('/absensi/approve/pengajuan-klaim/scheme-work', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveSchemeWork'])->name('absensi.approveSchemeWork');
-Route::post('/absensi/delete/pengajuan-klaim/scheme-work', [App\Http\Controllers\AbsensiKaryawanController::class, 'deleteSchemeWork'])->name('absensi.deleteSchemeWork');
-Route::get('/absensi/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'cancelLeave'])->name('absensi.cancelLeave');
-Route::post('/absensi/approve/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveCancelLeave'])->name('absensi.approveCancelLeave');
-Route::post('/absensi/delete/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'deleteCancelLeave'])->name('absensi.deleteCancelLeave');
 Route::post('/absensi/create/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'createNoRecord'])->name('absensi.createNoRecord');
 Route::post('/absensi/create/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'createCancelLeave'])->name('absensi.createCancelLeave');
 Route::post('/absensi/create/pengajuan-klaim/scheme_work', [App\Http\Controllers\AbsensiKaryawanController::class, 'createSchemeWork'])->name('absensi.createSchemeWork');
@@ -835,7 +825,7 @@ Route::get('/invoice/{id}', [InvoiceRKMController::class, 'show'])->name('invoic
 Route::get('/invoice/{id}/edit', [InvoiceRKMController::class, 'edit'])->name('invoice.edit');
 Route::put('/invoice/{id}', [InvoiceRKMController::class, 'update'])->name('invoice.update'); // Ga tau, kayaknya ga kepake
 Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('invoice.destroy'); // Ga tau, kayaknya ga kepake
-Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])->name('invoices.export-pdf'); 
+Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])->name('invoices.export-pdf');
 Route::get('/invoices/{id}/export-excel', [InvoiceRKMController::class, 'exportExcel'])->name('invoices.export-excel');
 Route::get('/invoice/download/{id}', [InvoiceRKMController::class, 'downloadPDF'])->name('download.pdf');
 
@@ -1456,7 +1446,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/upload-and-map', [ReportController::class, 'uploadAndMap'])->name('upload.map');
         Route::post('/save-with-mapping', [ReportController::class, 'saveWithMapping'])->name('save.mapping');
     });
-    
+
     Route::prefix('recruitment')->name('recruitment.')->group(function() {
         Route::get('/', [hireController::class, 'index'])->name('index');
     });

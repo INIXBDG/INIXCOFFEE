@@ -94,29 +94,30 @@ class AbsensiKaryawanController extends Controller
         if (!$validationResult['valid']) {
             return response()->json(['error' => $validationResult['message']], 400);
         }
+
         $kemarin = Carbon::yesterday();
-		$kemarintea = $kemarin->toDateString();
+        $kemarintea = $kemarin->toDateString();
 
-		// Tambahkan variabel untuk tanggal hari ini
-		$hari_ini = Carbon::today();
-		$hari_ini_tea = $hari_ini->toDateString();
+        // Tambahkan variabel untuk tanggal hari ini
+        $hari_ini = Carbon::today();
+        $hari_ini_tea = $hari_ini->toDateString();
 
-		if($jabatan == 'Office Boy'){
-			// Cari data absensi untuk KEMARIN ATAU HARI INI
-			$data = AbsensiKaryawan::where('id_karyawan', $request->id_karyawan)
-								   ->where(function($query) use ($kemarintea, $hari_ini_tea) {
-									   $query->where('tanggal', $kemarintea)
-											 ->orWhere('tanggal', $hari_ini_tea);
-								   })
-								   ->orderBy('tanggal', 'desc') // Ambil yang paling baru
-								   ->first();
-			
-			// Pastikan data ditemukan sebelum mengakses propertinya
-			if($data && $data->jam_keluar == null){
-				$data->jam_keluar = $sekarang->toTimeString();
-				$data->save();
-			}
-		}
+        if($jabatan == 'Office Boy'){
+            // Cari data absensi untuk KEMARIN ATAU HARI INI
+            $data = AbsensiKaryawan::where('id_karyawan', $request->id_karyawan)
+                                   ->where(function($query) use ($kemarintea, $hari_ini_tea) {
+                                       $query->where('tanggal', $kemarintea)
+                                             ->orWhere('tanggal', $hari_ini_tea);
+                                   })
+                                   ->orderBy('tanggal', 'desc') // Ambil yang paling baru
+                                   ->first();
+
+            // Pastikan data ditemukan sebelum mengakses propertinya
+            if($data && $data->jam_keluar == null){
+                $data->jam_keluar = $sekarang->toTimeString();
+                $data->save();
+            }
+        }
 
         // Simpan data
         $absensi = AbsensiKaryawan::create([
@@ -175,6 +176,7 @@ class AbsensiKaryawanController extends Controller
             return false;
         }
     }
+
     private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null, $perintahSpj = false)
     {
         $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
@@ -185,7 +187,6 @@ class AbsensiKaryawanController extends Controller
             ->whereDate('tanggal_pengajuan', $waktu->toDateString())
             // ->where('approval', 2)
             ->first();
-        // return $izinHariIni;
 
         $keteranganLower = strtolower($keterangan ?? '');
 
@@ -200,7 +201,7 @@ class AbsensiKaryawanController extends Controller
 
         // ✅ Cek SPJ hanya jika keterangan berisi "spj" atau flag perintah_spj true
         if (strpos($keteranganLower, 'spj') !== false || $perintahSpj) {
-            $spjAktif = \App\Models\SuratPerjalanan::where('id_karyawan', $id_karyawan)
+            $spjAktif = SuratPerjalanan::where('id_karyawan', $id_karyawan)
                 ->whereDate('tanggal_berangkat', '<=', $waktu->toDateString())
                 ->whereDate('tanggal_pulang', '>=', $waktu->toDateString())
                 ->where('approval_manager', '1')
@@ -209,14 +210,12 @@ class AbsensiKaryawanController extends Controller
                 ->exists();
 
             if ($spjAktif) {
-                // Jika punya SPJ aktif → hapus keterlambatan
                 return [
                     'valid' => true,
                     'keterangan' => 'Masuk (SPJ)',
                     'keterlambatan' => '00:00:00'
                 ];
             }
-            // Jika tidak punya SPJ aktif, lanjut ke aturan telat normal di bawah
         }
 
         // Validasi waktu shift
@@ -262,30 +261,36 @@ class AbsensiKaryawanController extends Controller
                 $keteranganOut = 'Masuk (Izin 3 Jam)';
                 $keterlambatan = '00:00:00';
             }
-        } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
-            $start = $config['jamMulaiShift']->copy()->setSecond(0);
-            $current = $waktu->copy()->setSecond(0);
 
-            if ($current->greaterThan($start)) {
-                $diffMinutes = $current->diffInMinutes($start);
+            } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
 
-                $hours = intdiv($diffMinutes, 60);
-                $minutes = $diffMinutes % 60;
+                    $batasToleransi = $config['jamMulaiShift']->copy();
 
-                $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-                $keteranganOut = 'Telat';
+                    // Aplikasi toleransi hingga detik ke-59 khusus selain Office Boy
+                    if ($jabatan !== 'Office Boy') {
+                        $batasToleransi->endOfMinute(); // Menjadi 08:00:59
+                    }
+
+                    // Jika waktu melewati 08:00:59 (misal: 08:01:00)
+                    if ($waktu->greaterThan($batasToleransi)) {
+
+                        $diffSeconds = $waktu->diffInSeconds($config['jamMulaiShift']);
+
+                        $hours = intdiv($diffSeconds, 3600);
+                        $minutes = intdiv(($diffSeconds % 3600), 60);
+                        $seconds = $diffSeconds % 60;
+
+                        $keterlambatan = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+                        $keteranganOut = 'Telat';
+                    }
+                }
+
+                return [
+                    'valid' => true,
+                    'keterangan' => $keteranganOut,
+                    'keterlambatan' => $keterlambatan
+                ];
             }
-        }
-
-        return [
-            'valid' => true,
-            'keterangan' => $keteranganOut,
-            'keterlambatan' => $keterlambatan
-        ];
-    }
-
-
-
 
     private function getShiftConfig($dayOfWeek, $jabatan, $shift)
     {
@@ -563,7 +568,7 @@ class AbsensiKaryawanController extends Controller
             ? $sekarang->copy()->subDay()->toDateString()
             : $sekarang->toDateString();
         // return $tanggal;
-        
+
         $absensi = AbsensiKaryawan::where('id_karyawan', $request->input('id_karyawan'))
             ->where('tanggal', $tanggal)
             ->latest()
@@ -599,7 +604,7 @@ class AbsensiKaryawanController extends Controller
 
     public function jumlahAbsensi($karyawanId, $bulan, $tahun)
     {
-        // Mengambil data absensi karyawan berdasarkan bulan dan tahun  
+        // Mengambil data absensi karyawan berdasarkan bulan dan tahun
         $absensiKaryawan = AbsensiKaryawan::whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
             ->where('id_karyawan', $karyawanId)
@@ -630,31 +635,31 @@ class AbsensiKaryawanController extends Controller
 
         $karyawan = karyawan::findOrFail($karyawanId);
 
-        // Inisialisasi total durasi cuti dan izin    
+        // Inisialisasi total durasi cuti dan izin
         $totalCuti = 0;
         $totalizin = 0;
 
         if ($cutis->isNotEmpty()) {
             foreach ($cutis as $cuti) {
                 if ($cuti->tipe == 'Izin') {
-                    $totalizin += $cuti->durasi; // Menjumlahkan durasi izin      
+                    $totalizin += $cuti->durasi; // Menjumlahkan durasi izin
                 } else {
-                    $totalCuti += $cuti->durasi; // Menjumlahkan durasi cuti          
+                    $totalCuti += $cuti->durasi; // Menjumlahkan durasi cuti
                 }
             }
 
-            // Tambahkan totalCuti ke jumlahAbsensi terlebih dahulu  
+            // Tambahkan totalCuti ke jumlahAbsensi terlebih dahulu
             $jumlahAbsensi += $totalCuti;
             // dd($jumlahAbsensi);
 
-            // Kemudian kurangi totalizin dari jumlahAbsensi jika totalizin >= 1  
+            // Kemudian kurangi totalizin dari jumlahAbsensi jika totalizin >= 1
             if ($totalizin >= 1) {
-                $jumlahAbsensi -= $totalizin; // Kurangi totalizin dari jumlahAbsensi        
+                $jumlahAbsensi -= $totalizin; // Kurangi totalizin dari jumlahAbsensi
             }
         }
 
 
-        // Hitung total keterlambatan dalam detik jika ada data absensi  
+        // Hitung total keterlambatan dalam detik jika ada data absensi
         $totalSeconds = $absensiKaryawan->sum(function ($item) {
             if (!empty($item->waktu_keterlambatan) && strpos($item->waktu_keterlambatan, ':') !== false) {
                 list($hours, $minutes, $seconds) = explode(':', $item->waktu_keterlambatan);
@@ -663,7 +668,7 @@ class AbsensiKaryawanController extends Controller
             return 0;
         });
 
-        // Kondisi jika total keterlambatan lebih dari 0  
+        // Kondisi jika total keterlambatan lebih dari 0
         if ($totalSeconds > 0) {
             if ($totalSeconds > 900) {
                 $keterangan = "Terlambat > 15 menit";
@@ -678,11 +683,11 @@ class AbsensiKaryawanController extends Controller
             'success' => true,
             'message' => 'Jumlah Absen ' . $bulan . '-' . $tahun,
             'data' => [
-                'jumlah_absensi' => $jumlahAbsensi ?? 0, // Menangani kondisi null  
+                'jumlah_absensi' => $jumlahAbsensi ?? 0, // Menangani kondisi null
                 'keterangan' => $keterangan,
                 'jumlah_tidak_absen_pulang' => $jumlahAbsensiPulang ?? 0,
-                'cutikaryawan' => $cutis ?? [], // Jika tidak ada data cuti, kirimkan array kosong  
-                'karyawan' => $karyawan ?? [], // Jika tidak ada data cuti, kirimkan array kosong  
+                'cutikaryawan' => $cutis ?? [], // Jika tidak ada data cuti, kirimkan array kosong
+                'karyawan' => $karyawan ?? [], // Jika tidak ada data cuti, kirimkan array kosong
             ],
         ]);
     }
@@ -1266,5 +1271,5 @@ class AbsensiKaryawanController extends Controller
 
         return view('absensi.pembatalancuti', compact('karyawan', 'karyawanall', 'data_cuti'));
     }
-    
+
 }
