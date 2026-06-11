@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class TelegramController extends Controller
 {
@@ -23,9 +24,9 @@ class TelegramController extends Controller
             $text .= "──────────────\n";
             $text .= strip_tags($message);
 
-            if ($url) {
-                $text .= "\n🔗 <a href=\"{$url}\">Lihat Detail</a>";
-            }
+            // if ($url) {
+            //     $text .= "\n🔗 <a href=\"{$url}\">Lihat Detail</a>";
+            // }
 
             $payload = [
                 'chat_id' => self::PERSONAL_CHAT_ID,
@@ -35,13 +36,21 @@ class TelegramController extends Controller
             ];
 
             if (!empty($buttons)) {
-                $keyboard = array_map(
-                    fn($btn) => [
-                        'text' => $btn['text'],
-                        'url' => $btn['url'],
-                    ],
-                    $buttons,
-                );
+                $keyboard = array_map(function ($btn) {
+                    $button = [
+                        'text' => $btn['text']
+                    ];
+
+                    if (isset($btn['url'])) {
+                        $button['url'] = $btn['url'];
+                    }
+
+                    if (isset($btn['callback_data'])) {
+                        $button['callback_data'] = $btn['callback_data'];
+                    }
+
+                    return $button;
+                }, $buttons);
 
                 $payload['reply_markup'] = json_encode([
                     'inline_keyboard' => [$keyboard],
@@ -105,11 +114,11 @@ class TelegramController extends Controller
         $buttons = [['text' => '🔍 Lihat Detail', 'url' => $detailUrl]];
 
         if ($statusApply == 0) {
-            $token = substr(md5($id . now()->timestamp . self::PERSONAL_CHAT_ID), 0, 10);
-            $buttons[] = ['text' => '✅ Terima', 'url' => "{$baseUrl}/action/terima/{$id}?token={$token}&from_personal=1"];
+            // $token = substr(md5($id . now()->timestamp . self::PERSONAL_CHAT_ID), 0, 10);
+            $buttons[] = ['text' => '✅ Terima', 'callback_data' => "terima_{$id}"];
         } elseif ($statusApply == 1) {
-            $token = substr(md5($id . now()->timestamp . self::PERSONAL_CHAT_ID), 0, 10);
-            $buttons[] = ['text' => '🏁 Selesaikan', 'url' => "{$baseUrl}/action/selesaikan/{$id}?token={$token}&from_personal=1"];
+            // $token = substr(md5($id . now()->timestamp . self::PERSONAL_CHAT_ID), 0, 10);
+            $buttons[] = ['text' => '🏁 Selesaikan', 'callback_data' => "selesaikan_{$id}"];
         }
 
         return [
@@ -120,6 +129,20 @@ class TelegramController extends Controller
             'id' => $id,
             'status_apply' => $statusApply,
         ];
+    }
+
+    private function answerCallbackQuery($callbackId, $text)
+    {
+        Http::post(
+            'https://api.telegram.org/bot' .
+            self::PERSONAL_BOT_TOKEN .
+            '/answerCallbackQuery',
+            [
+                'callback_query_id' => $callbackId,
+                'text' => $text,
+                'show_alert' => false
+            ]
+        );
     }
 
     public function webhook(Request $request)
@@ -142,6 +165,36 @@ class TelegramController extends Controller
             Log::info("Chat ID dari user @$username adalah: $chatId");
         } else {
             Log::warning('Tidak ditemukan chat ID pada update ini.');
+        }
+
+        if (isset($update['callback_query'])) {
+            Log::info('CALLBACK MASUK', [
+                'data' => $update['callback_query']
+            ]);
+            
+            $callback = $update['callback_query'];
+            $callbackId = $callback['id'];
+            $data = $callback['data'];
+
+            if (str_starts_with($data, 'terima_')) {
+                $id = str_replace('terima_', '', $data);
+                $result = $this->terimaKoordinasi($id);
+
+                $this->answerCallbackQuery(
+                    $callbackId,
+                    $result['message']
+                );
+            }
+
+            if (str_starts_with($data, 'selesaikan_')) {
+                $id = str_replace('selesaikan_', '', $data);
+                $result = $this->selesaikanKoordinasi($id);
+
+                $this->answerCallbackQuery(
+                    $callbackId,
+                    $result['message']
+                );
+            }
         }
 
         return response()->json(['status' => 'ok']);
