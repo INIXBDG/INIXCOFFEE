@@ -140,4 +140,9 @@ class karyawan extends Model
     {
         return $this->hasMany(AdministrasiKaryawan::class, 'id_karyawan');   
     }
+
+    public function logGaji()
+    {
+        return $this->hasMany(LogGaji::class, 'id_karyawan', 'id');
+    }
 }

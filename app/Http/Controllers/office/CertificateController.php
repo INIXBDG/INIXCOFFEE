@@ -12,6 +12,7 @@ use App\Models\Registrasi;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class CertificateController extends Controller
@@ -147,7 +148,8 @@ class CertificateController extends Controller
                 '=',
                 'certificates.id_peserta'
             )
-            ->whereIn('registrasis.id_rkm', $rkmIds)
+            ->whereIn('certificates.rkm_id', $rkmIds)
+            ->whereIn('certificates.id_peserta', $peserta->pluck('id_peserta'))
             ->pluck('registrasis.id_peserta')
             ->unique()
             ->toArray();
@@ -243,8 +245,23 @@ class CertificateController extends Controller
             ->with('success', 'Sertifikat berhasil di-generate!');
     }
 
-    public function delete($rkm_id, $peserta_id){
-        Certificate::where('rkm_id', $rkm_id)->where('id_peserta', $peserta_id)->delete();
+    public function delete($rkm_id, $peserta_id)
+    {
+        Log::info('Delete sertifikat dipanggil', [
+            'rkm_id' => $rkm_id,
+            'peserta_id' => $peserta_id,
+        ]);
+
+        $deleted = Certificate::where('rkm_id', $rkm_id)
+            ->where('id_peserta', $peserta_id)
+            ->delete();
+
+        Log::info('Hasil delete sertifikat', [
+            'rkm_id' => $rkm_id,
+            'peserta_id' => $peserta_id,
+            'deleted_rows' => $deleted,
+        ]);
+
         return back()->with('success', 'Sertifikat berhasil dihapus!');
     }
 

@@ -8,6 +8,7 @@ use App\Models\no_akun;
 use Illuminate\Http\Request;
 use App\Models\PengajuanBarang;
 use App\Models\perhitunganNetSales;
+use App\Models\SuratPerjalanan;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class JurnalAkuntansiController extends Controller
@@ -51,7 +52,7 @@ class JurnalAkuntansiController extends Controller
      */
     public function getData(Request $request)
     {
-        $query = JurnalAkuntansi::with('no_accounting', 'netSales');
+        $query = JurnalAkuntansi::with('no_accounting', 'netSales', 'suratPerjalanan.karyawan');
 
         if ($request->filled('start_date')) {
             $query->whereDate('tanggal_transaksi', '>=', $request->start_date);
@@ -66,8 +67,8 @@ class JurnalAkuntansiController extends Controller
         $data->transform(function ($jurnal) {
             if (is_array($jurnal->id_pengajuan_barang) && count($jurnal->id_pengajuan_barang) > 0) {
                 $jurnal->list_pengajuan = PengajuanBarang::with('karyawan')->whereIn('id', $jurnal->id_pengajuan_barang)
-                                            ->with('detail') // Muat detail barangnya juga
-                                            ->get();
+                    ->with('detail') // Muat detail barangnya juga
+                    ->get();
             } else {
                 $jurnal->list_pengajuan = [];
             }
@@ -94,14 +95,14 @@ class JurnalAkuntansiController extends Controller
         // 2. Ambil data pengajuan yang ID-nya TIDAK ADA di array di atas
         $data = PengajuanBarang::with(['karyawan', 'detail', 'tracking'])
             ->whereNotIn('id', $alreadyJurnaledIds)
-            ->whereHas('tracking', function($query) {
+            ->whereHas('tracking', function ($query) {
                 $query->whereIn('tracking', ['Selesai', 'Pencairan Sudah Selesai']);
             })
             ->get();
-        
-        $formattedData = $data->map(function($item) {
+
+        $formattedData = $data->map(function ($item) {
             $totalHarga = 0;
-            foreach($item->detail as $det) {
+            foreach ($item->detail as $det) {
                 $qtyValue = (int) $det->qty;
                 $hargaClean = str_replace('.', '', $det->harga);
                 $totalHarga += ($qtyValue * (float)$hargaClean);
@@ -126,32 +127,32 @@ class JurnalAkuntansiController extends Controller
      */
     public function getBelumJurnalNetSales()
     {
-$data = perhitunganNetSales::with([
-        'karyawan',
-        'approvedNetSales',
-        'rkm.materi',
-        'rkm.perusahaan'
-    ])
-    ->whereDoesntHave('jurnalAkuntansi')
-    ->whereHas('approvedNetSales', function ($query) {
-        $query->whereIn('keterangan', [
-                'Selesai',
-                'Pencairan Sudah Selesai'
-            ])
-            ->whereRaw('id = (
+        $data = perhitunganNetSales::with([
+            'karyawan',
+            'approvedNetSales',
+            'rkm.materi',
+            'rkm.perusahaan'
+        ])
+            ->whereDoesntHave('jurnalAkuntansi')
+            ->whereHas('approvedNetSales', function ($query) {
+                $query->whereIn('keterangan', [
+                    'Selesai',
+                    'Pencairan Sudah Selesai'
+                ])
+                    ->whereRaw('id = (
                 SELECT MAX(ans.id)
                 FROM approved_net_sales ans
                 WHERE ans.id_rkm = approved_net_sales.id_rkm
             )');
-    })
-    ->get();
+            })
+            ->get();
 
         // return $data;
-        $formattedData = $data->map(function($item) {
+        $formattedData = $data->map(function ($item) {
             // Kalkulasi total pengeluaran Net Sales
-            $totalHarga = $item->transportasi + $item->akomodasi_peserta + $item->akomodasi_tim + 
-                          $item->fresh_money + $item->entertaint + $item->souvenir + 
-                          $item->cashback + $item->sewa_laptop;
+            $totalHarga = $item->transportasi + $item->akomodasi_peserta + $item->akomodasi_tim +
+                $item->fresh_money + $item->entertaint + $item->souvenir +
+                $item->cashback + $item->sewa_laptop;
 
             return [
                 'id' => $item->id,
@@ -177,21 +178,57 @@ $data = perhitunganNetSales::with([
         return response()->json(['data' => $formattedData]);
     }
 
+    public function getBelumJurnalSuratPerjalanan()
+    {
+        $alreadyJurnaledIds = JurnalAkuntansi::whereNotNull('id_surat_perjalanan')
+            ->pluck('id_surat_perjalanan')
+            ->unique()
+            ->toArray();
+
+        $query = SuratPerjalanan::with(['karyawan', 'RKM'])
+            ->whereNotIn('id', $alreadyJurnaledIds);
+
+        $query->where('approval_manager', '=', '1')
+            ->where('approval_hrd', '=', '1')
+            ->where('approval_direksi', '=', '1');
+
+        $data = $query->get();
+
+        $formattedData = $data->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'nama_karyawan' => $item->karyawan->nama_lengkap ?? '-',
+                'divisi' => $item->karyawan->divisi ?? '-',
+                'tipe' => $item->tipe ?? '-',
+                'tujuan' => $item->tujuan ?? '-',
+                'tanggal_berangkat' => $item->tanggal_berangkat,
+                'tanggal_pulang' => $item->tanggal_pulang,
+                'total' => (float) ($item->total ?? 0),
+                'approval_manager' => $item->approval_manager,
+                'approval_hrd' => $item->approval_hrd,
+                'approval_direksi' => $item->approval_direksi,
+            ];
+        });
+
+        return response()->json(['data' => $formattedData]);
+    }
+
+
     /**
      * Menyimpan jurnal akuntansi secara manual dari Perhitungan Net Sales.
      */
     public function storeManualNetSales($id)
     {
         $netSales = \App\Models\perhitunganNetSales::with('rkm.materi', 'rkm.perusahaan')->findOrFail($id);
-        
+
         $jurnalExist = JurnalAkuntansi::where('id_perhitungan_net_sales', $id)->first();
         if ($jurnalExist) {
             return response()->json(['success' => false, 'message' => 'Jurnal untuk Net Sales ini sudah ada!']);
         }
 
-        $totalPengeluaran = $netSales->transportasi + $netSales->akomodasi_peserta + $netSales->akomodasi_tim + 
-                            $netSales->fresh_money + $netSales->entertaint + $netSales->souvenir + 
-                            $netSales->cashback + $netSales->sewa_laptop;
+        $totalPengeluaran = $netSales->transportasi + $netSales->akomodasi_peserta + $netSales->akomodasi_tim +
+            $netSales->fresh_money + $netSales->entertaint + $netSales->souvenir +
+            $netSales->cashback + $netSales->sewa_laptop;
 
         $tanggal_transaksi = now();
         $materi = $netSales->rkm->materi->nama_materi ?? '-';
@@ -203,8 +240,8 @@ $data = perhitunganNetSales::with([
 
         JurnalAkuntansi::create([
             'nomor_kk' => $this->generateNomorKK(now()),
-            'id_perhitungan_net_sales' => $id, 
-            'id_pengajuan_barang' => [], 
+            'id_perhitungan_net_sales' => $id,
+            'id_pengajuan_barang' => [],
             'tanggal_transaksi' => now(),
             'keterangan' => $keterangan,
             'kredit' => $totalPengeluaran,
@@ -220,9 +257,9 @@ $data = perhitunganNetSales::with([
     public function storeManual($id)
     {
         $pengajuan = PengajuanBarang::with('detail', 'karyawan')->findOrFail($id);
-        
+
         $jurnalExist = JurnalAkuntansi::whereJsonContains('id_pengajuan_barang', (int)$id)->first();
-        
+
         if ($jurnalExist) {
             return response()->json(['success' => false, 'message' => 'Jurnal untuk pengajuan ini sudah ada!']);
         }
@@ -238,15 +275,70 @@ $data = perhitunganNetSales::with([
 
         JurnalAkuntansi::create([
             'nomor_kk' => $this->generateNomorKK($tanggal_transaksi),
-            'id_pengajuan_barang' => [(int)$id], 
+            'id_pengajuan_barang' => [(int)$id],
             'tanggal_transaksi' => $tanggal_transaksi,
             'keterangan' => 'Pengeluaran untuk Pengajuan Barang dari : ' . $pengajuan->karyawan->nama_lengkap . ' (' . $pengajuan->tipe . ')',
-            'kredit' => $totalPengeluaran, 
+            'kredit' => $totalPengeluaran,
             'debit' => 0,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Jurnal berhasil dibuat!']);
     }
+
+    public function storeManualSuratPerjalanan($id)
+    {
+        $suratPerjalanan = SuratPerjalanan::with('karyawan')->findOrFail($id);
+
+        $jurnalExist = JurnalAkuntansi::where('id_surat_perjalanan', $id)->first();
+        if ($jurnalExist) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jurnal untuk Surat Perjalanan ini sudah ada!'
+            ]);
+        }
+
+        if (
+            $suratPerjalanan->approval_manager != 1 ||
+            $suratPerjalanan->approval_hrd != 1 ||
+            $suratPerjalanan->approval_direksi != 1
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Surat Perjalanan belum disetujui lengkap!'
+            ]);
+        }
+
+        $totalPengeluaran = (float) ($suratPerjalanan->total ?? 0);
+
+        if ($totalPengeluaran <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rate SPJ tidak boleh kosong atau nol!'
+            ]);
+        }
+
+        $tanggal_transaksi = now();
+        $namaKaryawan = $suratPerjalanan->karyawan->nama_lengkap ?? '-';
+        $tujuan = $suratPerjalanan->tujuan ?? '-';
+
+        $keterangan = "Pengeluaran Surat Perjalanan - {$namaKaryawan} | Tujuan: {$tujuan}";
+
+        JurnalAkuntansi::create([
+            'nomor_kk' => $this->generateNomorKK($tanggal_transaksi),
+            'id_surat_perjalanan' => $id,
+            'id_pengajuan_barang' => null,
+            'tanggal_transaksi' => $tanggal_transaksi,
+            'keterangan' => $keterangan,
+            'kredit' => $totalPengeluaran,
+            'debit' => 0,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jurnal Surat Perjalanan berhasil dibuat!'
+        ]);
+    }
+
     /**
      * Mengambil data spesifik jurnal akuntansi untuk form edit.
      */
@@ -257,7 +349,7 @@ $data = perhitunganNetSales::with([
     {
         $jurnal = JurnalAkuntansi::findOrFail($id);
         $is_petty_cash = is_null($jurnal->id_pengajuan_barang);
-        
+
         return response()->json([
             'success' => true,
             'data' => $jurnal,
@@ -285,7 +377,7 @@ $data = perhitunganNetSales::with([
         ]);
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Data Jurnal Akuntansi berhasil diperbarui.'
         ]);
     }
@@ -307,7 +399,7 @@ $data = perhitunganNetSales::with([
 
         JurnalAkuntansi::create([
             'nomor_kk' => $this->generateNomorKK($request->tanggal_transaksi), // GENERATE DISINI
-            'id_pengajuan_barang' => null, 
+            'id_pengajuan_barang' => null,
             'tanggal_transaksi' => $request->tanggal_transaksi,
             'keterangan' => '[Kas Kecil] ' . $request->keterangan,
             'debit' => $debit,
@@ -315,7 +407,7 @@ $data = perhitunganNetSales::with([
         ]);
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Data Kas Kecil berhasil ditambahkan.'
         ]);
     }
@@ -336,7 +428,7 @@ $data = perhitunganNetSales::with([
 
             foreach ($sheet as $key => $row) {
                 // Melewati baris pertama (index 0) yang berisi Header Kolom
-                if ($key === 0) continue; 
+                if ($key === 0) continue;
 
                 // Mengabaikan baris jika Tanggal atau Keterangan kosong
                 if (empty($row[1]) || empty($row[2])) continue;
@@ -368,13 +460,12 @@ $data = perhitunganNetSales::with([
             }
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Data Jurnal Akuntansi dari Excel berhasil diimpor.'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Gagal mengimpor data: ' . $e->getMessage()
             ], 500);
         }
@@ -409,7 +500,7 @@ $data = perhitunganNetSales::with([
                 break;
             case 'bulanan':
                 $query->whereMonth('tanggal_transaksi', $tanggal_acuan->month)
-                      ->whereYear('tanggal_transaksi', $tanggal_acuan->year);
+                    ->whereYear('tanggal_transaksi', $tanggal_acuan->year);
                 $labelPeriode = "Bulanan (" . $tanggal_acuan->format('F Y') . ")";
                 break;
             case 'triwulan':
@@ -461,37 +552,37 @@ $data = perhitunganNetSales::with([
         return redirect()->back()->with('error', 'Format eksport tidak valid.');
     }
 
-    public function eksportPdf($id) 
+    public function eksportPdf($id)
     {
         $jurnalAkuntansi = JurnalAkuntansi::with('netSales')->findOrFail($id);
 
-        $listPengajuan = $jurnalAkuntansi->ListPengajuan(); 
-    
+        $listPengajuan = $jurnalAkuntansi->ListPengajuan();
+
         $firstPengajuan = $listPengajuan->first();
         $finance = null;
 
         if ($firstPengajuan && $firstPengajuan->karyawan) {
             $divisi = $firstPengajuan->karyawan->divisi;
-            
+
             if ($divisi == 'Education') {
                 $finance = karyawan::where('jabatan', 'Education Manager')->latest()->first();
             } elseif ($divisi == 'Sales & Marketing') {
                 $finance = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
             } elseif ($divisi == 'Office') {
                 $finance = karyawan::where('jabatan', 'GM')->latest()->first();
-            } elseif ($divisi == 'IT Service Management') { 
+            } elseif ($divisi == 'IT Service Management') {
                 $finance = karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
             }
         }
-        
+
         $gm = karyawan::where('jabatan', 'GM')->latest()->first();
 
         $netSales = null;
         $sales = null;
-            if ($jurnalAkuntansi->id_perhitungan_net_sales) {
-                $netSales = perhitunganNetSales::with('rkm')->find($jurnalAkuntansi->id_perhitungan_net_sales);
-                $sales = karyawan::where('kode_karyawan', $netSales->rkm->sales_key)->first();
-            }
+        if ($jurnalAkuntansi->id_perhitungan_net_sales) {
+            $netSales = perhitunganNetSales::with('rkm')->find($jurnalAkuntansi->id_perhitungan_net_sales);
+            $sales = karyawan::where('kode_karyawan', $netSales->rkm->sales_key)->first();
+        }
         $manager = karyawan::where('jabatan', 'SPV Sales')->where('status_aktif', "1")->latest()->first();
         $gm = karyawan::where('jabatan', 'GM')->where('status_aktif', "1")->latest()->first();
         $dirut = karyawan::where('jabatan', 'Direktur Utama')->where('status_aktif', "1")->latest()->first();
@@ -510,12 +601,12 @@ $data = perhitunganNetSales::with([
         ]);
 
         [$tahun, $bulan] = explode('-', $request->waktu);
-        
+
         if ($request->tipe_otomatisasi === 'pengajuan_barang') {
             $pengajuanBarang = PengajuanBarang::with('detail', 'karyawan')
                 ->whereYear('created_at', $tahun)
                 ->whereMonth('created_at', $bulan)
-                ->whereHas('tracking', function($query) {
+                ->whereHas('tracking', function ($query) {
                     $query->whereIn('tracking', ['Selesai', 'Pencairan Sudah Selesai']);
                 })
                 ->get();
@@ -535,12 +626,89 @@ $data = perhitunganNetSales::with([
             foreach ($netSalesList as $netSales) {
                 $this->storeManualNetSales($netSales->id);
             }
+        } elseif ($request->tipe_otomatisasi === 'surat_perjalanan') {
+            $suratPerjalananList = SuratPerjalanan::with('karyawan')
+                ->whereYear('created_at', $tahun)
+                ->whereMonth('created_at', $bulan)
+                ->where('approval_manager', '=', '1')
+                ->where('approval_hrd', '=', '1')
+                ->where('approval_direksi', '=', '1')
+                ->whereDoesntHave('jurnalAkuntansi')
+                ->get();
+
+            foreach ($suratPerjalananList as $spj) {
+                $this->storeManualSuratPerjalanan($spj->id);
+            }
         }
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Data Jurnal Akuntansi berhasil ditambahkan melalui otomatisasi.'
         ]);
     }
 
+    public function autoCreateJurnalSuratPerjalanan($id)
+    {
+        $suratPerjalanan = SuratPerjalanan::with('karyawan')->findOrFail($id);
+
+        // Cek apakah sudah ada jurnal untuk SPJ ini
+        $jurnalExist = JurnalAkuntansi::where('id_surat_perjalanan', $id)->first();
+        if ($jurnalExist) {
+            return [
+                'success' => false,
+                'message' => 'Jurnal sudah ada sebelumnya'
+            ];
+        }
+
+        // Validasi: Pastikan ketiga approval sudah = 1
+        if (
+            $suratPerjalanan->approval_manager != 1 ||
+            $suratPerjalanan->approval_hrd != 1 ||
+            $suratPerjalanan->approval_direksi != 1
+        ) {
+            return [
+                'success' => false,
+                'message' => 'Approval belum lengkap'
+            ];
+        }
+
+        // Gunakan rate_spj sebagai total pengeluaran
+        $totalPengeluaran = (float) ($suratPerjalanan->total ?? 0);
+
+        // Skip jika rate_spj kosong atau nol
+        if ($totalPengeluaran <= 0) {
+            return [
+                'success' => false,
+                'message' => 'Rate SPJ kosong atau nol'
+            ];
+        }
+
+        $tanggal_transaksi = now();
+        $namaKaryawan = $suratPerjalanan->karyawan->nama_lengkap ?? '-';
+        $tujuan = $suratPerjalanan->tujuan ?? '-';
+
+        $keterangan = "Pengeluaran Surat Perjalanan - {$namaKaryawan} | Tujuan: {$tujuan}";
+
+        try {
+            JurnalAkuntansi::create([
+                'nomor_kk' => $this->generateNomorKK($tanggal_transaksi),
+                'id_surat_perjalanan' => $id,
+                'id_pengajuan_barang' => null,
+                'tanggal_transaksi' => $tanggal_transaksi,
+                'keterangan' => $keterangan,
+                'kredit' => $totalPengeluaran,
+                'debit' => 0,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'Jurnal berhasil dibuat otomatis'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Gagal membuat jurnal: ' . $e->getMessage()
+            ];
+        }
+    }
 }

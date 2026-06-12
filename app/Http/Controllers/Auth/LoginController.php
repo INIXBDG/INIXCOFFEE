@@ -58,12 +58,23 @@ class LoginController extends Controller
             ->exists();
 
         $targetShift = null;
-        if ($userAlreadyHasShift2) {
+        $pagiMulai = Carbon::today()->setTime(4, 0, 0);
+        $pagiSelesai = Carbon::today()->setTime(8, 0, 0);
+        $soreMulai = Carbon::today()->setTime(15, 0, 0);
+        $soreSelesai = Carbon::today()->setTime(19, 0, 0);
+
+        if (!$now->between($pagiMulai, $pagiSelesai) && !$now->between($soreMulai, $soreSelesai)) {
+            $targetShift = null;
+        } elseif ($userAlreadyHasShift2) {
             $targetShift = 'Shift 2';
         } elseif ($shift1TakenByOther) {
             $targetShift = 'Shift 2';
         } else {
-            $targetShift = 'Shift 1';
+            if ($now->between($pagiMulai, $pagiSelesai)) {
+                $targetShift = 'Shift 1';
+            } else {
+                $targetShift = 'Shift 2';
+            }
         }
 
         $isEndOfWeek = $now->isSaturday() || $now->isSunday();
@@ -98,7 +109,7 @@ class LoginController extends Controller
                     $deadline = $now->copy()->setDay($targetDate)->toDateString();
                 }
             } elseif ($kat->Tipe === 'Mingguan') {
-                $hariMap = ['Saturday' => 'Sabtu', 'Sunday' => 'Minggu'];
+                $hariMap = ['Saturday' => 'Sabtu', 'Sabtu' => 'Sabtu', 'Minggu' => 'Minggu', 'Sunday' => 'Minggu'];
                 $hariIni = $now->dayName;
                 $shiftHariIni = $hariMap[$hariIni] ?? null;
 

@@ -627,15 +627,19 @@ class LaporanPenjualanController extends Controller
 
         $kunciIdSales = array_keys($dataTarget);
 
-        // 3. Ekstraksi entitas sales menggunakan array kunci id_sales
+        // 2. Ekstraksi entitas sales secara dinamis berdasarkan array kunci target penjualan
         $users = User::where('status_akun', '1')
                      ->whereNotNull('id_sales')
-                     ->whereIn('id_sales', $kunciIdSales)
+                     ->whereIn('id_sales', $kunciIdSales) // Sistem hanya menampilkan sales dengan target yang disetel
                      ->get();
 
+        // 3. Agregasi data penjualan dengan filter tahap merah dan eksklusi status lost
         $peluangData = Peluang::selectRaw('id_sales, MONTH(periode_mulai) as bulan, SUM(netsales) as total_netsales')
             ->whereYear('periode_mulai', $tahun)
-            ->where('merah', 1) // Penambahan parameter filter untuk tahap merah
+            ->where(function ($query) {
+                $query->where('tahap', 'LIKE', '%merah%')
+                      ->orWhere('merah', 1);
+            })
             ->where(function ($query) {
                 $query->where('lost', 0)->orWhereNull('lost');
             })
@@ -643,7 +647,7 @@ class LaporanPenjualanController extends Controller
             ->get()
             ->groupBy('id_sales');
 
-        // 5. Konfigurasi struktur periode triwulan
+        // 4. Konfigurasi struktur periode triwulan
         $strukturTriwulan = [
             'Triwulan I'   => ['bulan' => [1, 2, 3], 'nama_bulan' => ['January', 'February', 'March']],
             'Triwulan II'  => ['bulan' => [4, 5, 6], 'nama_bulan' => ['April', 'Mei', 'Juni']],
@@ -653,7 +657,7 @@ class LaporanPenjualanController extends Controller
 
         $laporan = [];
 
-        // 6. Eksekusi komputasi matriks data
+        // 5. Eksekusi komputasi matriks data
         foreach ($strukturTriwulan as $namaTriwulan => $konfigurasi) {
             $dataSales = [];
             $totalKeseluruhan = [
@@ -709,6 +713,7 @@ class LaporanPenjualanController extends Controller
             ];
         }
 
+        // 6. Ekstraksi daftar sales untuk keperluan formulir select modal (tanpa filter whereIn)
         $daftarSales = User::where('status_akun', '1')
                            ->whereNotNull('id_sales')
                            ->get();

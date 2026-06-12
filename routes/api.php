@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\MoodleApiController;
+use App\Http\Controllers\Office\pickupDriverController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,3 +80,9 @@ Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiM
 
 
 Route::get('/moodle-grades-sharingknowledge', [MoodleApiController::class, 'fetchGradesSharingKnowledge']);
+
+// webhook untuk update pickupDriver
+Route::prefix('pickup-driver')->group(function () {
+    Route::post('action/terima', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
+    // Route::post('action/selesaikan', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])->name('action.selesaikan');
+});
