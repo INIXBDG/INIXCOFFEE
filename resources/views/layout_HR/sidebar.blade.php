@@ -74,9 +74,19 @@
         <li class="menu-item {{ request()->routeIs('HR.reports.*') ? 'active' : '' }}">
             <a href="{{ route('HR.reports.index') }}" class="menu-link">
                 <span class="menu-link-icon">
-                    <i class="iconify menu-icon" data-icon="mdi:chart-line" data-width="20" data-height="20"></i>
+                    <i class="iconify menu-icon" data-icon="mdi:file-chart" data-width="20" data-height="20"></i>
                 </span>
                 <span>Laporan</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('HR.hire.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.hire.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:account-search" data-width="20" data-height="20"></i>
+                </span>
+                <span>Rekrutmen</span>
                 <span class="menu-link-indicator"></span>
             </a>
         </li>
@@ -113,7 +123,7 @@
         <li class="menu-item {{ request()->routeIs('HR.executive.*') ? 'active' : '' }}">
             <a href="{{ route('HR.executive.index') }}" class="menu-link">
                 <span class="menu-link-icon">
-                    <i class="iconify menu-icon" data-icon="mdi:chart-line" data-width="20" data-height="20"></i>
+                    <i class="iconify menu-icon" data-icon="mdi:chart-timeline-variant" data-width="20" data-height="20"></i>
                 </span>
                 <span>Trend Performance</span>
                 <span class="menu-link-indicator"></span>
