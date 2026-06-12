@@ -27,6 +27,7 @@ class RegistryFeature extends Model
         'harapan',
         'waktu_perkiraan',
         'ticket_id',
+        'daily_activity_id',
     ];
 
     protected $casts = [
@@ -47,6 +48,11 @@ class RegistryFeature extends Model
     public function ticket()
     {
         return $this->belongsTo(Tickets::class, 'ticket_id');
+    }
+
+    public function dailyActivity()
+    {
+        return $this->belongsTo(DailyActivity::class, 'daily_activity_id');
     }
 
     public function getDurasiPengerjaanAttribute(): string
