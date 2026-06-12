@@ -1,4 +1,4 @@
-`@extends('layouts_office.app')
+@extends('layouts_office.app')
 
 @section('office_contents')
     <div class="container-fluid mt-4">
@@ -7,50 +7,54 @@
             <span class="badge bg-primary-subtle text-primary-emphasis fs-6 px-3 py-2" id="current-period"></span>
         </div>
 
-        @php
-            $currentMonth = date('n');
-            $currentYear = date('Y');
-            $months = [
-                1 => 'Januari',
-                2 => 'Februari',
-                3 => 'Maret',
-                4 => 'April',
-                5 => 'Mei',
-                6 => 'Juni',
-                7 => 'Juli',
-                8 => 'Agustus',
-                9 => 'September',
-                10 => 'Oktober',
-                11 => 'November',
-                12 => 'Desember',
-            ];
-        @endphp
-
         <div class="card shadow-sm mb-4 border-0 bg-gradient">
             <div class="card-body">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold small text-muted">Bulan</label>
-                        <select id="month" class="form-select form-select-lg shadow-sm">
-                            @foreach ($months as $key => $month)
-                                <option value="{{ $key }}" {{ $key == $currentMonth ? 'selected' : '' }}>
-                                    {{ $month }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4 mx-1">
                         <label class="form-label fw-semibold small text-muted">Tahun</label>
-                        <select id="year" class="form-select form-select-lg shadow-sm">
-                            @for ($year = 2023; $year <= date('Y'); $year++)
-                                <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>
-                                    {{ $year }}</option>
-                            @endfor
+                        <select id="year" class="form-select" aria-label="tahun">
+                            <option disabled>Pilih Tahun</option>
+                            @php
+                                $tahun_sekarang = now()->year;
+                                for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                    $selected = $tahun == $tahun_sekarang ? 'selected' : '';
+                                    echo "<option value=\"$tahun\" $selected>$tahun</option>";
+                                }
+                            @endphp
                         </select>
                     </div>
-                    <div class="col-md-6 text-end">
-                        <button class="btn btn-primary btn-lg shadow-sm" onclick="loadTable()">
-                            <i class="bi bi-search me-2"></i>Tampilkan Data
-                        </button>
+                    <div class="col-md-4 mx-1">
+                        <label class="form-label fw-semibold small text-muted">Bulan</label>
+                        <select id="month" class="form-select" aria-label="bulan">
+                            <option disabled>Pilih Bulan</option>
+                            @php
+                                $bulan_sekarang = now()->month;
+                                $nama_bulan = [
+                                    'Januari',
+                                    'Februari',
+                                    'Maret',
+                                    'April',
+                                    'Mei',
+                                    'Juni',
+                                    'Juli',
+                                    'Agustus',
+                                    'September',
+                                    'Oktober',
+                                    'November',
+                                    'Desember',
+                                ];
+                                for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                    $bulan_awal = $nama_bulan[$bulan - 1];
+                                    $bulan_akhir = $nama_bulan[$bulan % 12];
+                                    $selected = $bulan == $bulan_sekarang ? 'selected' : '';
+                                    echo "<option value=\"$bulan\" $selected>$bulan_awal - $bulan_akhir</option>";
+                                }
+                            @endphp
+                        </select>
+                    </div>
+                    <div class="col-md-4 mx-1">
+                        <button type="submit" onclick="loadTable()" class="btn btn-primary"
+                            style="margin-top: 30px; height: 37px;">Cari Data</button>
                     </div>
                 </div>
             </div>
@@ -153,7 +157,8 @@
                                                         name="pax">
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label text-muted small">Total Penjualan Kotor</label>
+                                                    <label class="form-label text-muted small">Total Penjualan
+                                                        Kotor</label>
                                                     <input type="text" class="form-control bg-light"
                                                         id="total_display" readonly>
                                                     <input type="hidden" id="total">
@@ -234,7 +239,8 @@
                                                 </div>
                                                 <div class="col-12">
                                                     <label class="form-label text-muted small">Exam</label>
-                                                    <input type="text" class="form-control bg-light" id="exam" readonly>
+                                                    <input type="text" class="form-control bg-light" id="exam"
+                                                        readonly>
                                                     <input type="hidden" id="exam_value">
                                                 </div>
                                             </div>
@@ -288,22 +294,89 @@
         </div>
     </div>
 
+    <style>
+        #weekly-container {
+            overflow-y: hidden;
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        .form-control-lg,
+        .form-select-lg {
+            font-size: 0.95rem;
+        }
+
+        .card-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .bg-gradient {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .badge {
+            font-weight: 500;
+        }
+
+        .form-label {
+            margin-bottom: 0.35rem;
+        }
+
+        .table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table td {
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 1400px) {
+            .table-responsive {
+                font-size: 0.75rem;
+            }
+
+            .table th,
+            .table td {
+                padding: 0.4rem 0.5rem;
+            }
+        }
+
+        .table-info td {
+            background-color: #cff4fc !important;
+            color: #055160;
+            border-top: 2px solid #9eeaf9;
+        }
+
+        .table-dark td {
+            background-color: #212529 !important;
+            color: #fff;
+            border-top: 3px double #495057;
+            font-size: 0.85rem;
+        }
+    </style>
+
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
     <script>
         $(document).ready(function() {
-            loadTable();
             updateCurrentPeriod();
+            loadTable();
         });
 
         $('#month, #year').on('change', function() {
             updateCurrentPeriod();
-            loadTable();
         });
 
         function updateCurrentPeriod() {
             let bulan = $('#month option:selected').text();
             let tahun = $('#year').val();
-            $('#current-period').text(bulan + ' ' + tahun);
+            if (bulan && tahun && bulan !== 'Pilih Bulan') {
+                $('#current-period').text('Periode: ' + bulan + ' ' + tahun);
+            }
         }
 
         function formatRupiah(value) {
@@ -361,6 +434,15 @@
             let bulan = $('#month').val();
             let tahun = $('#year').val();
 
+            if (!bulan || !tahun) {
+                $('#weekly-container').html(`
+                    <div class="alert alert-warning">
+                        Silakan pilih periode bulan dan tahun terlebih dahulu.
+                    </div>
+                `);
+                return;
+            }
+
             $('#loading-spinner').removeClass('d-none');
             $('#weekly-container').html('');
 
@@ -371,11 +453,11 @@
                     $('#loading-spinner').addClass('d-none');
 
                     let container = $('#weekly-container');
-                    let groupedData = response.groupedData || [];
+                    let monthDataList = response.data || [];
                     let footerBulanan = response.footer_bulanan || {};
                     let footerTahunan = response.footer_tahunan || {};
 
-                    if (groupedData.length === 0) {
+                    if (monthDataList.length === 0) {
                         container.html(`
                             <div class="card shadow-sm border-0">
                                 <div class="card-body text-center py-5">
@@ -387,120 +469,134 @@
                         return;
                     }
 
-                    groupedData.forEach((week, index) => {
-                        let rows = '';
+                    moment.locale('id');
 
-                        week.data.forEach((item, i) => {
-                            let totalVal = Number(item.harga) * Number(item.pax);
-                            let totalSalesVal = Number(item.total_penjualan_sales || 0);
-                            let rowClass = item.valid === 'valid' ? '' : 'table-warning';
-                            let encodedItem = encodeURIComponent(JSON.stringify(item));
+                    let totalWeeks = 0;
+                    monthDataList.forEach(md => totalWeeks += md.weeksData.length);
+                    let currentWeekIndex = 0;
 
-                            rows += `
-                                <tr class="${rowClass} cursor-pointer btn-edit" data-item="${encodedItem}">
-                                    <td class="text-center fw-bold">${i + 1}</td>
-                                    <td>${escapeHtml(item.no_faktur)}</td>
-                                    <td>${escapeHtml(item.no_invoice)}</td>
-                                    <td>${escapeHtml(item.materi)}</td>
-                                    <td>${escapeHtml(item.tanggal_training)}</td>
-                                    <td>${escapeHtml(item.perusahaan)}</td>
-                                    <td>${escapeHtml(item.nama_sales)}</td>
-                                    <td>${escapeHtml(item.instruktur)}</td>
-                                    <td class="text-end">${formatRupiah(item.harga)}</td>
-                                    <td class="text-center">${item.pax ?? '-'}</td>
-                                    <td class="text-end">${formatRupiah(totalVal)}</td>
-                                    <td class="text-end">${formatRupiah(item.diskon || 0)}</td>
-                                    <td class="text-end">${formatRupiah(item.total_diskon || 0)}</td>
-                                    <td class="text-end">${formatRupiah(item.total_pa || 0)}</td>
-                                    <td class="text-end">${formatRupiah(item.total_cashback || 0)}</td>
-                                    <td class="text-end">${formatRupiah(item.total_uang_saku || 0)}</td>
-                                    <td class="text-end">${formatRupiah(item.total_akomodasi || 0)}</td>
-                                    <td class="text-end">${formatRupiah(item.oleh_oleh || 0)}</td>
-                                    <td>${escapeHtml(item.jenis_transport || '-')}</td>
-                                    <td class="text-end">${formatRupiah(item.biaya_transport || 0)}</td>
-                                    <td>${item.exam}</td>
-                                    <td class="text-end">${formatRupiah(item.total_penjualan_sales || 0)}</td>
-                                    <td class="text-end">${formatRupiah(item.PPN || 0)}</td>
-                                    <td class="text-end">${formatRupiah(item.PPH || 0)}</td>
-                                    <td class="text-end">${escapeHtml(item.jumlah_pembayaran || '-')}</td>
-                                    <td class="text-end">${escapeHtml(item.tanggal_pembayaran || '-')}</td>
-                                    <td class="text-end">${escapeHtml(item.biaya_admin || '-')}</td>
-                                    <td class="text-end">${escapeHtml(item.total_piutang || '-')}</td>
-                                    <td>${escapeHtml(item.tanggal_mulai || '-')}</td>
-                                    <td>${escapeHtml(item.tanggal_selesai || '-')}</td>
-                                </tr>
-                            `;
-                        });
+                    monthDataList.forEach(function(monthData) {
+                        monthData.weeksData.forEach(function(weekData) {
+                            currentWeekIndex++;
+                            let isLastWeek = currentWeekIndex === totalWeeks;
 
-                        let footerHtml = '';
+                            var startOfWeek = moment(weekData.start);
+                            var endOfWeek = startOfWeek.clone().add(4, 'days');
 
-                        if (index === groupedData.length - 1) {
-                            footerHtml = `
-                                <tfoot>
-                                    <tr class="table-info fw-bold">
-                                        <td colspan="10" class="text-end">TOTAL BULANAN</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_penjualan || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_diskon || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_diskon || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_pa || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_cashback || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_uang_saku || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_akomodasi || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.oleh_oleh || 0)}</td>
-                                        <td class="text-end">-</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.biaya_transport || 0)}</td>
-                                        <td class="text-end">
-                                            ${formatRupiah(footerBulanan.total_exam || 0)}
-                                        </td>                                     
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_penjualan_sales || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_ppn || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_pph || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.jumlah_pembayaran || 0)}</td>
-                                        <td class="text-end">-</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.biaya_admin || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerBulanan.total_piutang || 0)}</td>
-                                        <td colspan="2"></td>
+                            let rows = '';
+
+                            if (weekData.data.length === 0) {
+                                rows = `
+                                    <tr>
+                                        <td colspan="30" class="text-center">Tidak Ada Data pada Periode Ini</td>
                                     </tr>
+                                `;
+                            } else {
+                                weekData.data.forEach((item, i) => {
+                                    let totalVal = Number(item.harga) * Number(item
+                                    .pax);
+                                    let rowClass = item.valid === 'valid' ? '' :
+                                        'table-warning';
+                                    let encodedItem = encodeURIComponent(JSON.stringify(
+                                        item));
 
-                                    <tr class="table-dark fw-bold">
-                                        <td colspan="10" class="text-end">TOTAL TAHUNAN</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_penjualan || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_diskon || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_diskon || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_pa || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_cashback || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_uang_saku || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_akomodasi || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.oleh_oleh || 0)}</td>
-                                        <td class="text-end">-</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.biaya_transport || 0)}</td>
-                                        <td class="text-end">
-                                            ${formatRupiah(footerTahunan.total_exam || 0)}
-                                        </td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_penjualan_sales || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_ppn || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_pph || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.jumlah_pembayaran || 0)}</td>
-                                        <td class="text-end">-</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.biaya_admin || 0)}</td>
-                                        <td class="text-end">${formatRupiah(footerTahunan.total_piutang || 0)}</td>
-                                        <td colspan="2"></td>
-                                    </tr>
-                                </tfoot>
-                            `;
-                        }
+                                    rows += `
+                                        <tr class="${rowClass} cursor-pointer btn-edit" data-item="${encodedItem}">
+                                            <td class="text-center fw-bold">${i + 1}</td>
+                                            <td>${escapeHtml(item.no_faktur)}</td>
+                                            <td>${escapeHtml(item.no_invoice)}</td>
+                                            <td>${escapeHtml(item.materi)}</td>
+                                            <td>${escapeHtml(item.tanggal_training)}</td>
+                                            <td>${escapeHtml(item.perusahaan)}</td>
+                                            <td>${escapeHtml(item.nama_sales)}</td>
+                                            <td>${escapeHtml(item.instruktur)}</td>
+                                            <td class="text-end">${formatRupiah(item.harga)}</td>
+                                            <td class="text-center">${item.pax ?? '-'}</td>
+                                            <td class="text-end">${formatRupiah(totalVal)}</td>
+                                            <td class="text-end">${formatRupiah(item.diskon || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.total_diskon || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.total_pa || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.total_cashback || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.total_uang_saku || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.total_akomodasi || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.oleh_oleh || 0)}</td>
+                                            <td>${escapeHtml(item.jenis_transport || '-')}</td>
+                                            <td class="text-end">${formatRupiah(item.biaya_transport || 0)}</td>
+                                            <td>${item.exam}</td>
+                                            <td class="text-end">${formatRupiah(item.total_penjualan_sales || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.PPN || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.PPH || 0)}</td>
+                                            <td class="text-end">${escapeHtml(item.jumlah_pembayaran || '-')}</td>
+                                            <td class="text-end">${escapeHtml(item.tanggal_pembayaran || '-')}</td>
+                                            <td class="text-end">${escapeHtml(item.biaya_admin || '-')}</td>
+                                            <td class="text-end">${escapeHtml(item.total_piutang || '-')}</td>
+                                            <td>${escapeHtml(item.tanggal_mulai || '-')}</td>
+                                            <td>${escapeHtml(item.tanggal_selesai || '-')}</td>
+                                        </tr>
+                                    `;
+                                });
+                            }
 
-                        container.append(`
-                            <div class="card shadow-sm border-0 mb-4">
-                                <div class="card-header bg-light">
-                                    <h6 class="m-0 fw-bold">
-                                        Minggu ${index + 1} (${escapeHtml(week.range)})
-                                    </h6>
-                                </div>
+                            let footerHtml = '';
 
-                                <div class="card-body p-0">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover table-bordered mb-0">
+                            if (isLastWeek) {
+                                footerHtml = `
+                                    <tfoot>
+                                        <tr class="table-info fw-bold">
+                                            <td colspan="10" class="text-end">TOTAL BULANAN</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_penjualan || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_diskon || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_diskon || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_pa || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_cashback || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_uang_saku || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_akomodasi || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.oleh_oleh || 0)}</td>
+                                            <td class="text-end">-</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.biaya_transport || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_exam || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_penjualan_sales || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_ppn || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_pph || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.jumlah_pembayaran || 0)}</td>
+                                            <td class="text-end">-</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.biaya_admin || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_piutang || 0)}</td>
+                                            <td colspan="2"></td>
+                                        </tr>
+
+                                        <tr class="table-dark fw-bold">
+                                            <td colspan="10" class="text-end">TOTAL TAHUNAN</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_penjualan || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_diskon || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_diskon || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_pa || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_cashback || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_uang_saku || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_akomodasi || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.oleh_oleh || 0)}</td>
+                                            <td class="text-end">-</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.biaya_transport || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_exam || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_penjualan_sales || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_ppn || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_pph || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.jumlah_pembayaran || 0)}</td>
+                                            <td class="text-end">-</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.biaya_admin || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_piutang || 0)}</td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                    </tfoot>
+                                `;
+                            }
+
+                            container.append(`
+                                <div class="card my-1">
+                                    <div class="card-body table-responsive">
+                                        <h3 class="card-title my-1">Validasi Laba Kotor</h3>
+                                        <p class="card-title my-1">Periode : ${moment(startOfWeek).format('DD MMMM YYYY')} - ${moment(endOfWeek).format('DD MMMM YYYY')}</p>
+                                        <table class="table table-responsive table-striped table-hover">
                                             <thead>
                                                 <tr>
                                                     <th>No</th>
@@ -542,8 +638,8 @@
                                         </table>
                                     </div>
                                 </div>
-                            </div>
-                        `);
+                            `);
+                        });
                     });
                 },
 
@@ -700,87 +796,4 @@
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
     </script>
-
-    <style>
-        .cursor-pointer {
-            cursor: pointer;
-        }
-
-        .form-control-lg,
-        .form-select-lg {
-            font-size: 0.95rem;
-        }
-
-        .card-header {
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .bg-gradient {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        }
-
-        .sticky-top {
-            z-index: 1020;
-        }
-
-        .badge {
-            font-weight: 500;
-        }
-
-        .form-label {
-            margin-bottom: 0.35rem;
-        }
-
-        .table th {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .table td {
-            font-size: 0.8rem;
-        }
-
-        @media (max-width: 1400px) {
-            .table-responsive {
-                font-size: 0.75rem;
-            }
-
-            .table th,
-            .table td {
-                padding: 0.4rem 0.5rem;
-            }
-        }
-
-        @media (max-width: 991px) {
-            .sticky-top {
-                position: static;
-            }
-        }
-
-        .table-info td {
-            background-color: #cff4fc !important;
-            color: #055160;
-            border-top: 2px solid #9eeaf9;
-        }
-
-        .table-dark td {
-            background-color: #212529 !important;
-            color: #fff;
-            border-top: 3px double #495057;
-            font-size: 0.85rem;
-        }
-
-        .table-info .text-success,
-        .table-dark .text-success {
-            color: #198754 !important;
-            font-weight: 700;
-        }
-
-        .table-info .text-primary,
-        .table-dark .text-primary {
-            color: #0d6efd !important;
-            font-weight: 700;
-        }
-    </style>
 @endsection

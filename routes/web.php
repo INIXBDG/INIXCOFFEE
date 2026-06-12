@@ -6,6 +6,7 @@ use App\Http\Controllers\AdministrasiKaryawanController;
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\ApprovalPendapatanController;
 use App\Http\Controllers\approvedNetSalesController;
+use App\Http\Controllers\HR\ArsipRekrutmenController;
 use App\Http\Controllers\CateringController;
 use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\Crm\AktivitasController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\feedbackController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HR\employeeController;
+use App\Http\Controllers\HR\FolderController;
 use App\Http\Controllers\HR\hireController;
 use App\Http\Controllers\HR\HRController;
 use App\Http\Controllers\HR\payrollController;
@@ -1447,11 +1449,64 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/upload-and-map', [ReportController::class, 'uploadAndMap'])->name('upload.map');
         Route::post('/save-with-mapping', [ReportController::class, 'saveWithMapping'])->name('save.mapping');
     });
+    
+    Route::prefix('hire')->name('hire.')->group(function() {
+        Route::get('/',             [HireController::class, 'index'])->name('index');
+        Route::post('/store',            [HireController::class, 'store'])->name('store');
+        Route::get('/show/{pelamar}',    [HireController::class, 'show'])->name('show');
+        Route::put('/update/{pelamar}',    [HireController::class, 'update'])->name('update');
+        Route::delete('/delete/{pelamar}', [HireController::class, 'destroy'])->name('destroy');
+        Route::post('/{pelamar}/lanjut-tahap',      [HireController::class, 'lanjutTahap'])->name('lanjutTahap');
+        Route::post('/{pelamar}/tolak',             [HireController::class, 'tolak'])->name('tolak');
+        Route::post('/{pelamar}/jadwal-interview',  [HireController::class, 'jadwalkanInterview'])->name('jadwalInterview');
+        Route::post('/{pelamar}/kirim-offer',       [HireController::class, 'kirimOffer'])->name('kirimOffer');
+        Route::post('/{pelamar}/onboarding',        [HireController::class, 'onboarding'])->name('onboarding');
+        Route::post('/{pelamar}/kirim-email',       [HireController::class, 'kirimEmail'])->name('kirimEmail');
+        Route::post('/{pelamar}/catatan',           [HireController::class, 'tambahCatatan'])->name('catatan');
+        Route::get('/{pelamar}/riwayat',            [HireController::class, 'riwayat'])->name('riwayat');
+        Route::get('/talent-pool/list',             [HireController::class, 'talentPool'])->name('talentPool');
+        Route::post('/{pelamar}/talent-pool',       [HireController::class, 'toggleTalentPool'])->name('toggleTalentPool');
+        Route::get('/export/data',                  [HireController::class, 'export'])->name('export');
+        Route::get('/stats/funnel',                 [HireController::class, 'funnelStats'])->name('funnelStats');
+        Route::get('/by-folder/{folderId?}', [HireController::class, 'getPelamarByFolder'])->name('by-folder');
+        Route::get('/folder-list', [HireController::class, 'getFolderList'])->name('folder-list');
+        Route::post('/penilaian', [HireController::class, 'storePenilaian'])->name('penilaian.store');
+        Route::get('/{pelamar}/cv', [HireController::class, 'lihatCV'])->name('cv');
+    });
 
-    Route::prefix('recruitment')->name('recruitment.')->group(function() {
-        Route::get('/', [hireController::class, 'index'])->name('index');
+    Route::prefix('folders')->name('folders.')->group(function () {
+        Route::get('/', [FolderController::class, 'index'])->name('index');
+        Route::get('/data', [FolderController::class, 'getFolders'])->name('data');
+        
+        Route::post('/store', [FolderController::class, 'storeFolder'])->name('store');
+        Route::get('/pelamar/belum-folder', [FolderController::class, 'getPelamarBelumFolder'])->name('pelamar.belum-folder');
+        Route::post('/pelamar/add', [FolderController::class, 'addPelamar'])->name('pelamar.add');
+        Route::post('/pelamar/move', [FolderController::class, 'movePelamar'])->name('pelamar.move');
+        Route::post('/pelamar/penilaian', [FolderController::class, 'storePenilaian'])->name('pelamar.penilaian');
+        Route::get('/pelamar/{pelamar}/penilaian', [FolderController::class, 'getPenilaian'])->name('pelamar.penilaian.get');
+        Route::delete('/pelamar/{pelamarId}/remove', [FolderController::class, 'removePelamar'])->name('pelamar.remove');
+        Route::get('/pelamar/{pelamar}/detail', [FolderController::class, 'getDetailPelamar'])->name('pelamar.detail');
+
+        Route::put('/{folder}/rename', [FolderController::class, 'renameFolder'])->name('rename');
+        Route::post('/{folder}/pin', [FolderController::class, 'togglePin'])->name('pin');
+        Route::post('/{folder}/archive', [FolderController::class, 'archiveFolder'])->name('archive');
+        Route::delete('/{folder}', [FolderController::class, 'destroyFolder'])->name('destroy');
+        Route::post('/{folder}/move', [FolderController::class, 'moveFolder'])->name('move');
+    });
+
+    Route::prefix('arsip')->name('arsip.')->group(function () {
+        Route::get('/', [ArsipRekrutmenController::class, 'index'])->name('index');
+        Route::get('/folders', [ArsipRekrutmenController::class, 'getArsipFolders'])->name('folders');
+        Route::get('/folders/{folderId}/pelamar', [ArsipRekrutmenController::class, 'getArsipPelamarByFolder'])->name('folders.pelamar');
+        Route::post('/pelamar/move', [ArsipRekrutmenController::class, 'movePelamarArsip'])->name('pelamar.move');
+        Route::post('/folders/{folder}/move', [ArsipRekrutmenController::class, 'moveFolderArsip'])->name('folders.move');
+        Route::post('/folders/{folder}/restore', [ArsipRekrutmenController::class, 'restoreFolder'])->name('folders.restore');
+        Route::delete('/folders/{folder}', [ArsipRekrutmenController::class, 'permanentDeleteFolder'])->name('folders.delete');
+        Route::delete('/pelamar/{pelamarFolderId}/restore', [ArsipRekrutmenController::class, 'restorePelamar'])->name('pelamar.restore');
+
     });
 });
+
 Route::get('/income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
 Route::post('/income-statement/store', [IncomeStatementController::class, 'store'])->name('income-statement.store');
 Route::get('/income-statement/laporan', [IncomeStatementController::class, 'laporan'])->name('income-statement.laporan');
