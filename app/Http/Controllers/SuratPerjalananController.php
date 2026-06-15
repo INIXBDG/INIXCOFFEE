@@ -242,6 +242,7 @@ class SuratPerjalananController extends Controller
 
         $data['approval_manager'] = '0';
         $data['approval_hrd'] = '0';
+        $data['approval_gm'] = '0';
         $data['approval_direksi'] = '0';
 
         $suratPerjalanan = SuratPerjalanan::create($data);
@@ -457,7 +458,25 @@ class SuratPerjalananController extends Controller
         if ($request->has('approval_manager')) {
             $dataToUpdate['approval_manager'] = $request->input('approval_manager');
         }
-        if ($request->has('approval_direksi')) {
+
+        if ($request->has('approval_hrd')) {
+            $dataToUpdate['approval_hrd'] = $request->input('approval_hrd');
+
+            // === LOGIKA BARU: AUTO-APPROVE GM & DIREKSI JIKA DOMESTIK ===
+            if ($request->input('approval_hrd') == '1' && $suratPerjalanan->tipe == 'Domestik') {
+                $dataToUpdate['approval_gm'] = '1';
+                $dataToUpdate['approval_direksi'] = '1';
+            }
+        }
+
+        if ($request->has('approval_gm')) {
+            $gmStatus = $request->input('approval_gm');
+            $dataToUpdate['approval_gm'] = $gmStatus;
+            $dataToUpdate['approval_direksi'] = $gmStatus; // GM auto-approve atas nama Direksi
+        }
+
+        // Fallback jika ada approval_direksi dikirim terpisah
+        if ($request->has('approval_direksi') && !isset($dataToUpdate['approval_direksi'])) {
             $dataToUpdate['approval_direksi'] = $request->input('approval_direksi');
         }
 
@@ -467,7 +486,7 @@ class SuratPerjalananController extends Controller
         // $Offman = karyawan::where('jabatan' , 'Office Manager')->first();
         $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
 
-        $this->checkAndCreateJurnalOtomatis($suratPerjalanan);
+        //$this->checkAndCreateJurnalOtomatis($suratPerjalanan);
 
         $users = [
             $karyawan->kode_karyawan,

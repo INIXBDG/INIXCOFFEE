@@ -35,6 +35,7 @@ class SuratPerjalanan extends Model
         'durasi',
         'approval_manager',
         'approval_hrd',
+        'approval_gm',
         'approval_direksi',
         'jenis_dinas',
         'jadwal_RKM'

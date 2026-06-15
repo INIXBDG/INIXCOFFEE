@@ -13766,11 +13766,6 @@ class TargetKPIController extends Controller
         })
         ->distinct()
         ->get();
-            ->whereYear('created_at', $tahunFilter)
-            ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
-                $q->whereIn('id_karyawan', $karyawanIds);
-            })
-            ->get();
 
         $daftarTargetKPI = [];
         $employeeProgressMap = [];
