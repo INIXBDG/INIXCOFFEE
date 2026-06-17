@@ -2839,6 +2839,23 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="col-sm-6 mt-2">
+                                        <div class="card" id="card-hover">
+                                            <div class="card-body d-flex">
+                                                <div class="col-md-2">
+                                                    <img src="{{ asset('icon/bell.svg') }}" class="img-responsive"
+                                                        width="30px">
+                                                </div>
+                                                <div class="col-md-10" style="margin-left: 10px">
+                                                    <a href="/schedule-logs"
+                                                        class="link stretched-link text-decoration-none">
+                                                        <h5 class="card-title">Schedule Logs</h5>
+                                                    </a>
+                                                    <p class="card-text">Schedule logs for monitoring.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="row">
                                     @if (auth()->user()->jabatan === 'Koordinator ITSM')
