@@ -4,6 +4,7 @@ use App\Http\Controllers\AktivitasController;
 use App\Http\Controllers\Api\apiController;
 use App\Http\Controllers\CatatanSalesController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\KoordinasiOfficeBoyController;
 use App\Http\Controllers\PeluangController;
 use App\Http\Controllers\TelegramController;
 use App\Http\Controllers\TicketController;
@@ -86,3 +87,6 @@ Route::prefix('pickup-driver')->group(function () {
     Route::post('action/terima', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
     // Route::post('action/selesaikan', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])->name('action.selesaikan');
 });
+
+// update koordinasi ob
+Route::post('/koordinasi-ob/updateFromTelegram', [KoordinasiOfficeBoyController::class, 'updateFromTelegram']);

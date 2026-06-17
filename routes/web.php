@@ -102,6 +102,7 @@ use App\Http\Controllers\PicPenagihanController;
 use App\Http\Controllers\StockOpnameController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\IncomeStatementController;
+use App\Http\Controllers\KoordinasiOfficeBoyController;
 use App\Http\Controllers\Office\OfficeExamController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\ScheduleLogController;
@@ -1188,6 +1189,15 @@ Route::prefix('office')
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
 
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
+        });
+
+        Route::prefix('koordinasi-ob')->name('KoordinasiOb.')->group(function() {
+            Route::get('/', [KoordinasiOfficeBoyController::class, 'index'])->name('index');
+            Route::get('/get-data', [KoordinasiOfficeBoyController::class, 'getData'])->name('getData');
+            Route::post('/store', [KoordinasiOfficeBoyController::class, 'store'])->name('store');
+            Route::post('/update', [KoordinasiOfficeBoyController::class, 'update'])->name('update');
+            Route::post('/update-status-{action}/{id}', [KoordinasiOfficeBoyController::class, 'updateStatus'])->name('updateStatus');
+            Route::delete('/delete/{id}', [KoordinasiOfficeBoyController::class, 'delete'])->name('delete');
         });
 
         Route::prefix('/rekomendasi-lanjutan')
