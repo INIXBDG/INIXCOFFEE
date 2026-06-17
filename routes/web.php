@@ -104,6 +104,7 @@ use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\IncomeStatementController;
 use App\Http\Controllers\Office\OfficeExamController;
 use App\Http\Controllers\PerusahaanController;
+use App\Http\Controllers\ScheduleLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1449,7 +1450,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/upload-and-map', [ReportController::class, 'uploadAndMap'])->name('upload.map');
         Route::post('/save-with-mapping', [ReportController::class, 'saveWithMapping'])->name('save.mapping');
     });
-    
+
     Route::prefix('hire')->name('hire.')->group(function() {
         Route::get('/',             [HireController::class, 'index'])->name('index');
         Route::post('/store',            [HireController::class, 'store'])->name('store');
@@ -1477,7 +1478,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::prefix('folders')->name('folders.')->group(function () {
         Route::get('/', [FolderController::class, 'index'])->name('index');
         Route::get('/data', [FolderController::class, 'getFolders'])->name('data');
-        
+
         Route::post('/store', [FolderController::class, 'storeFolder'])->name('store');
         Route::get('/pelamar/belum-folder', [FolderController::class, 'getPelamarBelumFolder'])->name('pelamar.belum-folder');
         Route::post('/pelamar/add', [FolderController::class, 'addPelamar'])->name('pelamar.add');
@@ -1511,3 +1512,8 @@ Route::get('/income-statement', [IncomeStatementController::class, 'index'])->na
 Route::post('/income-statement/store', [IncomeStatementController::class, 'store'])->name('income-statement.store');
 Route::get('/income-statement/laporan', [IncomeStatementController::class, 'laporan'])->name('income-statement.laporan');
 Route::post('/perusahaan/merge', [PerusahaanController::class, 'merge'])->name('perusahaan.merge');
+
+
+Route::get('/schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule.index');
+Route::get('/schedule-logs/data', [ScheduleLogController::class, 'data'])->name('schedule.data');
+Route::delete('/schedule-logs/clear-all', [ScheduleLogController::class, 'clearAll'])->name('schedule.clear');
