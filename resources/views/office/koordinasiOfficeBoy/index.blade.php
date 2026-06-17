@@ -19,6 +19,10 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+    @php
+        $auth = auth()->user()->karyawan->jabatan;
+    @endphp
+    <input type="hidden" name="authUser" id="authUser" value="{{ $auth }}">
 
     {{-- Modal Tambah --}}
     <div class="modal fade" id="createModal" tabindex="-1">
@@ -166,6 +170,7 @@
 
                     @if (Auth()->user()->jabatan === 'HRD' || Auth()->user()->jabatan === 'GM' || Auth()->user()->jabatan === 'Office Boy')
                         <div class="btn-group">
+                            <button id="refreshBtn" onclick="refreshTable()" class="btn btn-primary">Refresh</button>
                             {{-- <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-file-export me-1"></i> Export Laporan
                             </button> --}}
@@ -272,6 +277,10 @@
         $(document).ready(function() {
             loadTable();
 
+            $(document).on('click', '#refreshBtn', function() {
+                loadTable();
+            })
+
             // edit
             $(document).on('click', '.editBtn', function() {
                 const table = $('#dataTable').DataTable();
@@ -293,9 +302,10 @@
             // delete 
             $(document).on('click', '.deleteBtn', function() {
                 const id = $(this).data('id');
+                const namaTugas = $(this).data('title');
 
                 Swal.fire({
-                    title: 'Hapus Data?',
+                    title: `Hapus Tugas ${namaTugas}?`,
                     text: 'Data yang dihapus tidak dapat dikembalikan.',
                     icon: 'warning',
                     showCancelButton: true,
@@ -347,12 +357,133 @@
             });
         })
 
-        function getStatusBadge(status) {
+        // update status
+        $(document).on('click', '.obAction', function() {
+            const id = $(this).data('id');
+            const action = $(this).data('action');
+            const namaTugas = $(this).data('title');
+
+            if (action === 'terima') {
+                Swal.fire({
+                    title: 'Terima tugas?',
+                    html: `Terima tugas <b>${namaTugas}</b>?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+
+                    if (!result.isConfirmed) return;
+
+                    $.ajax({
+                        url: `/office/koordinasi-ob/update-status-${action}/${id}`,
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+
+                        beforeSend: function() {
+                            Swal.fire({
+                                title: 'Memproses...',
+                                text: 'Mohon tunggu',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+                        },
+
+                        success: function(res) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: res.message ?? 'Tugas berhasil diupdate'
+                            });
+
+                            $('#dataTable').DataTable().ajax.reload(null, false);
+                        },
+
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: xhr.responseJSON?.message ?? 'Terjadi kesalahan'
+                            });
+                        }
+                    });
+
+                });
+            } else if (action === 'selesai') {
+                Swal.fire({
+                    title: 'Selesaikan tugas?',
+                    html: `Selesaikan tugas <b>${namaTugas}</b>?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+
+                    if (!result.isConfirmed) return;
+
+                    $.ajax({
+                        url: `/office/koordinasi-ob/update-status-${action}/${id}`,
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+
+                        beforeSend: function() {
+                            Swal.fire({
+                                title: 'Memproses...',
+                                text: 'Mohon tunggu',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+                        },
+
+                        success: function(res) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: res.message ?? 'Tugas berhasil diupdate'
+                            });
+
+                            $('#dataTable').DataTable().ajax.reload(null, false);
+                        },
+
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: xhr.responseJSON?.message ?? 'Terjadi kesalahan'
+                            });
+                        }
+                    });
+
+                });
+            }
+        })
+
+        function getStatusBadge(status, id, namaTugas) {
             const map = {
                 'Dikerjakan': '<span class="badge bg-warning-subtle text-warning">Dikerjakan</span>',
                 'Selesai': '<span class="badge bg-success-subtle text-success">Selesai</span>'
             };
-            return map[status] || '<span class="badge bg-secondary-subtle text-secondary">Menunggu Konfirmasi</span>';
+            const action = {
+                'Dikerjakan': `<button class="obAction btn bg-warning-subtle text-warning" data-action="selesai" data-id="${id}" data-title="${namaTugas}">Selesaikan</button>`,
+                'Selesai': '<span class="badge bg-success-subtle text-success">Selesai</span>'
+            }
+            let auth = $('#authUser').val();
+
+            if (auth === 'Office Boy') {
+                return action[status] || `<button class="obAction btn bg-primary-subtle text-primary" data-action="terima" data-id="${id}" data-title="${namaTugas}">Terima</button>`;
+            } else {
+                return map[status] || '<span class="badge bg-secondary-subtle text-secondary">Menunggu Konfirmasi</span>';
+            }
         }
 
         function loadTable() {
@@ -389,16 +520,16 @@
                         data: 'pembuat.nama_lengkap'
                     },
                     {
-                        data: 'status',
+                        data: null,
                         defaultContent: '-',
                         render: function (data) {
-                            return getStatusBadge(data);
+                            return getStatusBadge(data.status, data.id, data.nama_tugas);
                         }
                     },
                     {
                         data: null,
                         defaultContent: '-',
-                        render: function(data, row, type) {
+                        render: function(data, row, type) {                        
                             return `
                                 <div class="dropdown">
                                     <button
@@ -436,6 +567,7 @@
                                                 type="submit"
                                                 class="dropdown-item text-danger deleteBtn"
                                                 data-id="${data.id}"
+                                                data-title="${data.nama_tugas}"
                                                 >
                                                 <i class="fas fa-trash me-2"></i>
                                                 Hapus

@@ -6,7 +6,6 @@ use App\Models\karyawan;
 use App\Models\KoordinasiOfficeBoy;
 use App\Models\TrackingKoordinasiOfficeBoy;
 use Illuminate\Http\Request;
-use Mockery\Expectation;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -26,15 +25,18 @@ class KoordinasiOfficeBoyController extends Controller
                 Http::withHeaders([
                     'Accept' => 'application/json',
                     'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
-                ])->timeout(60)->post('https://250d-202-138-248-36.ngrok-free.app/api/new-koordinasi-ob-notification', $telegramPayload);
+                ])->timeout(5)->post('https://unransacked-thriftily-justin.ngrok-free.dev/api/new-koordinasi-ob-notification', $telegramPayload);
             } elseif($tipe === 'response') {
                 Http::withHeaders([
                     'Accept' => 'application/json',
                     'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
-                ])->timeout(60)->post('https://250d-202-138-248-36.ngrok-free.app/api/koordinasi-ob-update-status', $telegramPayload);
+                ])->timeout(5)->post('https://unransacked-thriftily-justin.ngrok-free.dev/api/koordinasi-ob-update-status', $telegramPayload);
             }
+            
+            return response()->json([
+                'success' => true
+            ]);
         } catch (\Exception $e) {
-            // Log error jika Laravel A down
             Log::error("Gagal mengirim webhook: " . $e->getMessage());
         }
     }
@@ -54,12 +56,12 @@ class KoordinasiOfficeBoyController extends Controller
         $request->validate([
             'nama_tugas' => 'required|string',
             'karyawan' => 'required|exists:karyawans,id',
-            'deadline' => 'required|date|after:now',
+            'deadline' => 'required|date',
             'catatan' => 'nullable',
         ]);
 
         if (!in_array(Auth()->user()->jabatan, ['HRD', 'GM', 'Office Boy'])) {
-            abort(403, 'Akses ditolak.');
+            abort(401, 'Akses ditolak.');
         }
 
         try {
@@ -93,8 +95,8 @@ class KoordinasiOfficeBoyController extends Controller
             $this->telegramSender($telegramPayload, 'create');
 
             return back()->with('success', 'Koordinasi berhasil dibuat');
-        } catch (Expectation $e) {
-            Log::error('Error Koordinasi Ob : ', $e);
+        } catch (\Exception $e) {
+            Log::error('Error Koordinasi Ob : ', $e->getMessage());
 
             return back()->with('error', 'Terjadi kesalahan pada proses');
         }
@@ -107,7 +109,7 @@ class KoordinasiOfficeBoyController extends Controller
             'id' => 'required|exists:koordinasi_office_boys,id',
             'nama_tugas' => 'required|string',
             'karyawan' => 'required|exists:karyawans,id',
-            'deadline' => 'required|date|after:now',
+            'deadline' => 'required|date',
             'catatan' => 'nullable',
         ]);
 
@@ -128,8 +130,8 @@ class KoordinasiOfficeBoyController extends Controller
             ]);
 
             return back()->with('success', 'Koordinasi berhasil di Update');
-        } catch (Expectation $e) {
-            Log::error('Error Koordinasi Ob : ', $e);
+        } catch (\Exception $e) {
+            Log::error('Error Koordinasi Ob : ', $e->getMessage());
 
             return back()->with('error', 'Terjadi kesalahan pada proses');
         }
@@ -148,12 +150,21 @@ class KoordinasiOfficeBoyController extends Controller
                 'updated_by' => Auth()->user()->id
             ]);
 
+            $namaOb = karyawan::findOrFail($data->karyawan);
+            $telegramPayload = [
+                'title' => '🗑️ Tugas '.$data->nama_tugas.' dihapus',
+                'id_pengajuan' => $data->id,
+                'ob_name' => $namaOb->nama_lengkap,
+                'status' => 'Dihapus'
+            ];
+
+            $this->telegramSender($telegramPayload, 'response');
             $data->delete();
 
             return response()->json(['message' => 'Data berhasil dihapus']);
 
-        } catch (Expectation $e) {
-            Log::error('Error Koordinasi Ob : ', $e);
+        } catch (\Exception $e) {
+            Log::error('Error Koordinasi Ob : ', $e->getMessage());
 
             return back()->with('error', 'Terjadi kesalahan pada proses');
         }
@@ -163,73 +174,105 @@ class KoordinasiOfficeBoyController extends Controller
     {
         try {
             $data = KoordinasiOfficeBoy::findOrFail($id);
+            $telegramPayload = [];
 
             if ($action === 'terima') {
-                $data->update([
-                    'status' => 'Dikerjakan'
-                ]);
-
-                TrackingKoordinasiOfficeBoy::create([
-                    'koordinasi_id' => $data->id,
-                    'status' => 'Tugas sedang dikerjakan',
-                    'updated_by' => $data->karyawan
-                ]);
-
                 $namaOb = karyawan::findOrFail($data->karyawan);
-                $telegramPayload = [
-                    'title' => '✅ Tugas Diterima',
-                    'id_pengajuan' => $data->id,
-                    'ob_name' => $namaOb->nama_lengkap,
-                    'status' => 'Dikerjakan'
-                ];
 
-                $this->telegramSender($telegramPayload, 'response');
+                if (in_array($data->status, ['Dikerjakan', 'Selesai'])) {
+                    $status = '';
+                    if ($data->status === 'Dikerjakan') {
+                        $status = 'diterima';
+                    } else {
+                        $status = 'selesai';
+                    }
+                    $telegramPayload = [
+                        'title' => '⚠️ Tugas telah '. $status,
+                        'id_pengajuan' => $data->id,
+                        'ob_name' => $namaOb->nama_lengkap,
+                        'status' => 'Dikerjakan'
+                    ];
+                } else {
+                    $data->update([
+                        'status' => 'Dikerjakan'
+                    ]);
+    
+                    TrackingKoordinasiOfficeBoy::create([
+                        'koordinasi_id' => $data->id,
+                        'status' => 'Tugas sedang dikerjakan',
+                        'updated_by' => $data->karyawan
+                    ]);
+    
+                    $telegramPayload = [
+                        'title' => '✅ Tugas Diterima',
+                        'id_pengajuan' => $data->id,
+                        'ob_name' => $namaOb->nama_lengkap,
+                        'status' => 'Dikerjakan'
+                    ];
+                }
+
             } elseif ($action === 'selesai') {
-                $data->update([
-                    'status' => 'Selesai'
-                ]);
-
-                TrackingKoordinasiOfficeBoy::create([
-                    'koordinasi_id' => $data->id,
-                    'status' => 'Tugas selesai',
-                    'updated_by' => $data->karyawan
-                ]);
-
                 $namaOb = karyawan::findOrFail($data->karyawan);
-                $telegramPayload = [
-                    'title' => '🏁 Tugas Selesai',
-                    'id_pengajuan' => $data->id,
-                    'ob_name' => $namaOb->nama_lengkap,
-                    'status' => 'Selesai'
-                ];
 
-                $this->telegramSender($telegramPayload, 'response');
+                if ($data->status === 'Selesai') {
+                    $telegramPayload = [
+                        'title' => '⚠️ Tugas telah selesai',
+                        'id_pengajuan' => $data->id,
+                        'ob_name' => $namaOb->nama_lengkap,
+                        'status' => 'Selesai'
+                    ];
+                } else {
+                    $data->update([
+                        'status' => 'Selesai'
+                    ]);
+    
+                    TrackingKoordinasiOfficeBoy::create([
+                        'koordinasi_id' => $data->id,
+                        'status' => 'Tugas selesai',
+                        'updated_by' => $data->karyawan
+                    ]);
+                
+                    $telegramPayload = [
+                        'title' => '🏁 Tugas Selesai',
+                        'id_pengajuan' => $data->id,
+                        'ob_name' => $namaOb->nama_lengkap,
+                        'status' => 'Selesai'
+                    ];
+                }
             }
 
-        } catch (Expectation $e) {
-            Log::error('Error update status koordinasi ob : ', $e);
+            $this->telegramSender($telegramPayload, 'response');
+
+            return response()->json([
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error update status koordinasi ob : ', $e->getMessage());
         }
     }
 
     public function updateFromTelegram(Request $request) {
-         if (
-            $request->header('X-Webhook-Secret')
-            !== 'RAHASIA_KITA'
-        ) {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         try {
+            if (
+               $request->header('X-Webhook-Secret')
+               !== 'RAHASIA_KITA'
+            ) {
+               return response()->json([
+                   'message' => 'Unauthorized'
+               ], 401);
+            }
+        
             $data = $request->all();
             $action = $data['action'];
             $id = $data['id'];
 
             $this->updateStatus($action, $id);
-            Log::info("Update status koordinasi from telegram webhook");
-        } catch (Expectation $e) {
-            Log::error("Update From Telegram Error | Id Koordinasi : $id | Action : $action | Error : $e");
+
+            return response()->json([
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Update From Telegram Error : ", $e->getMessage());
         }
     }
 }

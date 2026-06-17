@@ -25,11 +25,11 @@ class KoordinasiOfficeBoy extends Model
 
     public function pembuat()
     {
-        return $this->belongsTo(Karyawan::class, 'created_by', 'id');
+        return $this->belongsTo(karyawan::class, 'created_by', 'id');
     }
 
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'karyawan', 'id');
+        return $this->belongsTo(karyawan::class, 'karyawan', 'id');
     }
 }
