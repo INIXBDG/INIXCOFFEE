@@ -224,18 +224,18 @@
                                         {{ $loop->iteration }}. {{ ucwords(strtolower($namaPeserta)) }}<br>
                                     @endforeach
                                 @else
-                                    {{ $invoice->rkm->pax ? $invoice->rkm->pax . ' orang' : '-' }}
+                                    {{ $pax ? $pax . ' orang' : '-' }}
                                 @endif
                             @else
-                                {{ $invoice->rkm->pax ? $invoice->rkm->pax . ' orang' : '-' }}
+                                {{ $pax ? $pax . ' orang' : '-' }}
                             @endif
                             </td>
                         </tr>
                     </table>
                 </td>
-                <td class="text-center">{{ $invoice->rkm->pax ?? '0' }}</td>
+                <td class="text-center">{{ $pax ?? '0' }}</td>
                 <td class="text-end">Rp {{ number_format($unit_price ?? 0, 0, ',', '.') }}</td>
-                <td class="text-end">Rp {{ number_format(($unit_price ?? 0) * ($invoice->rkm->pax ?? 0), 0, ',', '.') }}</td>
+                <td class="text-end">Rp {{ number_format(($jumlah ?? (($unit_price ?? 0) * ($pax ?? 0))), 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td colspan="3" rowspan="{{ $isPPh ? 4 : 3 }}"></td>
