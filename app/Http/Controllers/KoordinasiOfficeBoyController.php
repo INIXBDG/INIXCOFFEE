@@ -25,12 +25,12 @@ class KoordinasiOfficeBoyController extends Controller
                 Http::withHeaders([
                     'Accept' => 'application/json',
                     'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
-                ])->timeout(5)->post('https://unransacked-thriftily-justin.ngrok-free.dev/api/new-koordinasi-ob-notification', $telegramPayload);
+                ])->timeout(5)->post('https://inixindobdg.co.id/api/new-koordinasi-ob-notification', $telegramPayload);
             } elseif($tipe === 'response') {
                 Http::withHeaders([
                     'Accept' => 'application/json',
                     'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
-                ])->timeout(5)->post('https://unransacked-thriftily-justin.ngrok-free.dev/api/koordinasi-ob-update-status', $telegramPayload);
+                ])->timeout(5)->post('https://inixindobdg.co.id/api/koordinasi-ob-update-status', $telegramPayload);
             }
             
             return response()->json([
