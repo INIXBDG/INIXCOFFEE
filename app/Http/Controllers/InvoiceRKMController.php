@@ -191,6 +191,7 @@ public function store(Request $request)
     $isPeserta      = $request->input('is_peserta') === 'true';
     $isTtd          = $request->input('is_ttd') === 'true';
     $materi         = $request->input('materi');
+    $pax            = $request->input('pax');
     $isPPh          = $request->input('pph23');
     $unit_price     = $request->input('unit_price');
     $nama_perusahaan = $request->input('perusahaan');
@@ -278,6 +279,7 @@ public function store(Request $request)
         $tanggal_akhir,
         $materi,
         $unit_price,
+        $pax,
         $isPPh,
         $jumlah,
         $subtotal,
@@ -584,11 +586,12 @@ public function downloadPdf(
     $tanggal_akhir = null,
     $materi = null,
     $unit_price = null,
+    $pax = null,
     $isPPh = false,
-    $jumlah = null,   
-    $subtotal = null, 
-    $ppn = null,      
-    $pph = null,      
+    $jumlah = null,
+    $subtotal = null,
+    $ppn = null,
+    $pph = null,
     $total = null,
     $dueDateManual = null,
     $isUpdate = false
@@ -596,11 +599,12 @@ public function downloadPdf(
     $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta', 'rkm'])
         ->findOrFail($id);
 
-    $jumlah = $jumlah ?? $invoice->jumlah;
-    $subtotal = $subtotal ?? $invoice->subtotal;
-    $ppn = $ppn ?? $invoice->ppn;
-    $pph = $pph ?? $invoice->pph;
-    $total = $total ?? $invoice->total; 
+    $pax = $pax ?? $invoice->pax ?? $invoice->rkm->pax ?? 0;
+    $jumlah = $jumlah ?? $invoice->jumlah ?? (($unit_price ?? 0) * $pax);
+    $subtotal = $subtotal ?? $invoice->subtotal ?? $jumlah;
+    $ppn = $ppn ?? $invoice->ppn ?? 0;
+    $pph = $pph ?? $invoice->pph ?? 0;
+    $total = $total ?? $invoice->total ?? ($subtotal + $ppn - $pph);
 
     $terbilang = $this->terbilang($total ?? 0);
     $karyawan = Karyawan::findOrFail(22);
@@ -633,11 +637,12 @@ public function downloadPdf(
         'tanggal_akhir',
         'materi',
         'unit_price',
+        'pax',
         'isPPh',
-        'jumlah',   
-        'subtotal', 
-        'ppn',      
-        'pph',      
+        'jumlah',
+        'subtotal',
+        'ppn',
+        'pph',
         'total',
         'dueDateManual'
     ))
