@@ -118,6 +118,7 @@ class LeadProjectController extends Controller
             'nama_pic' => 'required|string|max:255',
             'kontak_pic' => 'required|string|max:255',
             'estimasi_nilai' => 'required|numeric',
+            'perusahaan_id' => 'required|exists:perusahaans,id',
         ]);
 
         DB::beginTransaction();
@@ -130,6 +131,7 @@ class LeadProjectController extends Controller
                 'nama_pic' => $request->nama_pic,
                 'kontak_pic' => $request->kontak_pic,
                 'estimasi_nilai' => $request->estimasi_nilai,
+                'perusahaan_id' => $request->perusahaan_id,
             ]);
 
             // 2. Mensinkronkan Data dengan Project (Jika sudah terkonversi/masuk fase administrasi)

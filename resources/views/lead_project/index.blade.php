@@ -107,6 +107,10 @@
                             <input type="text" class="form-control" id="edit_nama_pic" name="nama_pic" required>
                         </div>
                         <div class="mb-3">
+                            <label for="perusahaan_id" class="form-label">{{ __('Perusahaan (Klien)') }}</label>
+                            <select class="form-control" name="perusahaan_id" id="edit_perusahaan_id" style="width:100%;" required></select>
+                        </div>
+                        <div class="mb-3">
                             <label for="edit_kontak_pic" class="form-label">{{ __('Kontak PIC (No. HP / Email)') }}</label>
                             <input type="text" class="form-control" id="edit_kontak_pic" name="kontak_pic" required>
                         </div>
@@ -257,7 +261,14 @@
                         actions += '</button>';
                         actions += '<div class="dropdown-menu shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
                         actions += '<a class="dropdown-item btn-edit-status" href="#" data-id="' + row.id + '" data-status="' + row.status + '">Perbarui Tahapan</a>';
-                        actions += '<a class="dropdown-item btn-edit-lead" href="#" data-id="' + row.id + '" data-nama="' + row.nama_lead + '" data-pic="' + (row.nama_pic || '') + '" data-kontak="' + (row.kontak_pic || '') + '" data-nilai="' + row.estimasi_nilai + '">Edit Data Lead</a>';
+                        actions += '<a class="dropdown-item btn-edit-lead" href="#" \
+                        data-id="' + row.id + '" \
+                        data-nama="' + row.nama_lead + '" \
+                        data-pic="' + (row.nama_pic || '') + '" \
+                        data-kontak="' + (row.kontak_pic || '') + '" \
+                        data-nilai="' + row.estimasi_nilai + '" \
+                        data-perusahaan="' + (row.perusahaan_id || '') + '" \
+                        data-perusahaan-nama="' + (row.client?.nama_perusahaan || '') + '">Edit Data Lead</a>';
                         actions += '</div></div>';
                         return actions;
                     }
@@ -275,6 +286,25 @@
                     return {
                         results: $.map(data, function(item){
                             return { id: item.id, text: item.nama_perusahaan }
+                        })
+                    }
+                }
+            }
+        });
+
+        $('#edit_perusahaan_id').select2({
+            placeholder: "Pilih Perusahaan",
+            allowClear: true,
+            dropdownParent: $('#editLeadModal'),
+            ajax: {
+                url: '{{ route("getPerusahaan") }}',
+                processResults: function({data}) {
+                    return {
+                        results: $.map(data, function(item) {
+                            return {
+                                id: item.id,
+                                text: item.nama_perusahaan
+                            }
                         })
                     }
                 }
@@ -311,12 +341,13 @@
 
         $('#leadsTable tbody').on('click', '.btn-edit-status', function (e) {
             e.preventDefault();
-            var leadId = $(this).data('id');
-            var currentStatus = $(this).data('status');
+            $('#edit_lead_id').val($(this).data('id'));
+            $('#edit_nama_lead').val($(this).data('nama'));
+            $('#edit_nama_pic').val($(this).data('pic'));
+            $('#edit_kontak_pic').val($(this).data('kontak'));
+            $('#edit_estimasi_nilai').val($(this).data('nilai'));
 
-            $('#update_lead_id').val(leadId);
-            $('#lead_status').val(currentStatus);
-            $('#updateStatusModal').modal('show');
+            $('#editLeadModal').modal('show');
         });
 
         $('#formUpdateStatus').on('submit', function(e) {
@@ -349,12 +380,24 @@
         // 1. Membuka Modal Edit dan Memasukkan Data dari Atribut DataTables
         $('#leadsTable tbody').on('click', '.btn-edit-lead', function (e) {
             e.preventDefault();
+
             $('#edit_lead_id').val($(this).data('id'));
             $('#edit_nama_lead').val($(this).data('nama'));
             $('#edit_nama_pic').val($(this).data('pic'));
             $('#edit_kontak_pic').val($(this).data('kontak'));
             $('#edit_estimasi_nilai').val($(this).data('nilai'));
-            
+
+            let perusahaanId = $(this).data('perusahaan');
+            let perusahaanNama = $(this).data('perusahaan-nama');
+
+            if (perusahaanId) {
+                let option = new Option(perusahaanNama, perusahaanId, true, true);
+                $('#edit_perusahaan_id')
+                    .empty()
+                    .append(option)
+                    .trigger('change');
+            }
+
             $('#editLeadModal').modal('show');
         });
 
@@ -378,6 +421,7 @@
                 success: function(response) {
                     $('#editLeadModal').modal('hide');
                     $('#formEditLead')[0].reset();
+                    $('#edit_perusahaan_id').val(null).trigger('change');
                     table.ajax.reload(null, false);
                 },
                 error: function(xhr) {

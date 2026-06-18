@@ -1,13 +1,13 @@
-@extends('databasekpi.berandaKPI')
+@extends('layouts_kpi.app')
 
-@section('contentKPI')
+@section('kpi_contents')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <div class="content-wrapper">
         <div class="page-header">
             <h3 class="page-title">
-                <span class="page-title-icon bg-gradient-primary text-white me-2">
+                <span class="page-title-icon text-black me-2">
                     <i class="mdi mdi-home"></i>
                 </span>
                 Overview KPI
@@ -15,7 +15,7 @@
         </div>
 
         <div class="container-fluid bg-white p-4 rounded-4">
-            <div class="mb-4 p-3 rounded-4 shadow-sm bg-light">
+            <div class="mb-4 p-3 rounded-4 shadow-sm bg-white">
                 <form action="{{ route('kpi.overview.get') }}" method="get" id="FormFilter">
                     <div class="row align-items-center g-3">
                         <div class="col-md-3">

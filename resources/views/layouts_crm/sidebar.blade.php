@@ -284,4 +284,5 @@
                 <i class="bx bx-home me-2"></i>BACK TO INIXCOFFE
             </a>
         </li>
+    </ul>
 </aside>
