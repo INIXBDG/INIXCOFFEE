@@ -141,6 +141,23 @@ class karyawan extends Model
         return $this->hasMany(AdministrasiKaryawan::class, 'id_karyawan');   
     }
 
+    public function jabatan()
+    {
+        return $this->belongsToMany(OrgStructure::class, 'karyawan_jabatan')
+                    ->withPivot('is_primary')
+                    ->withTimestamps();
+    }
+
+    public function jobProfile()
+    {
+        return $this->hasOne(JobProfile::class, 'karyawan_id', 'id');
+    }
+
+    public function getOrgStructureAttribute()
+    {
+        return OrgStructure::whereJsonContains('karyawan_ids', (int) $this->id)->first();
+    }
+
     public function logGaji()
     {
         return $this->hasMany(LogGaji::class, 'id_karyawan', 'id');
