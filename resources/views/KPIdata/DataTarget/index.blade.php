@@ -1,12 +1,12 @@
-@extends('databasekpi.berandaKPI')
+@extends('layouts_kpi.app')
 
-@section('contentKPI')
+@section('kpi_contents')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
     <div class="content-wrapper">
         <div class="page-header">
             <h3 class="page-title">
-                <span class="page-title-icon bg-gradient-primary text-white me-2">
+                <span class="page-title-icon text-black me-2">
                     <i class="mdi mdi-file-document"></i>
                 </span> KPI / Konfigurasi Data Target
             </h3>

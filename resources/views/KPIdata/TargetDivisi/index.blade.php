@@ -1,6 +1,6 @@
-@extends('databasekpi.berandaKPI')
+@extends('layouts_kpi.app')
 
-@section('contentKPI')
+@section('kpi_contents')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -199,18 +199,18 @@
     </style>
     <div class="modal fade" id="detailTargetModal" tabindex="-1" aria-labelledby="detailTargetModalLable"
         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div id="bodyContentDetailTarget" class="p-3"></div>
             </div>
         </div>
     </div>
 
-    <div class="content-wrapper">
+    <div class="container content-wrapper">
         <div class="page-header">
             <h3 class="page-title">
-                <span class="page-title-icon bg-gradient-primary text-white me-2">
-                    <i class="mdi mdi-file-document"></i>
+                <span class="page-title-icon text-black me-2">
+                    <i class="fa-regular fa-file"></i>
                 </span> KPI
             </h3>
             <nav aria-label="breadcrumb">
@@ -231,19 +231,19 @@
                     <div class="d-flex justify-content-end">
                         <button type="button" class="btn btn-primary me-2"
                             data-bs-toggle="modal" data-bs-target="#modalBuatTarget">
-                            <i class="fas fa-plus fa-2x"></i>  buat target baru
+                            <i class="menu-icon fa-solid fa-plus "></i>  buat target baru
                         </button>
                         @If (Auth()->user()->jabatan === "Koordinator ITSM")
                             <a href="{{ route('kpi.cleaningDatabase') }}" 
                                 class="btn btn-danger me-2"
                                 onclick="return confirm('Apakah Anda BENAR-BENAR yakin ingin menghapus SELURUH data dari tabel database? Tindakan ini permanen dan tidak dapat dibatalkan!');">
                                 
-                                <i class="fas fa-brush fa-2x"></i> Database Cleaning
+                                <i class="menu-icon fa-solid fa-brush"></i> Database Cleaning
                             </a>
                         @endif
                         <button type="button" class="btn btn-success me-2"
                             data-bs-toggle="modal" data-bs-target="#ModalImport">
-                            <i class="fas fa-file-import"></i>  Import
+                            <i class="menu-icon fa-solid fa-file-import"></i>  Import
                         </button>
                     </div>
                     <div class="table-responsive mt-3">
@@ -275,7 +275,7 @@
     </div>
 
     <div class="modal fade" id="ModalImport" tabindex="-1" aria-labelledby="ModalImportLabel" aria-hidden="true">
-        <div class="modal-dialog modal-md" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <form action="{{ route('kpi.importTarget') }}" method="post" enctype="multipart/form-data" id="formImport">
                     @csrf
@@ -309,7 +309,7 @@
                             </div>
                         </div>
 
-                        <div class="card bg-light border-0 mb-3">
+                        <div class="card mb-3">
                             <div class="card-body py-2">
                                 <h6 class="fw-semibold mb-2">Opsi Import</h6>
                                 <div class="form-check form-switch p-2">
@@ -432,13 +432,13 @@
     </div>
 
     <div class="modal fade" id="modalBuatTarget" tabindex="-1" role="dialog" aria-labelledby="modalBuatTargetLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <form action="{{ route('kpi.createTarget') }}" method="post" id="targetForm">
                     @csrf
                     <div class="modal-header bg-light">
                         <h5 class="modal-title" id="modalBuatTargetLabel">
-                            <i class="fas fa-bullseye me-2"></i> Buat Target Divisi Anda
+                            <i class="menu-icon fa-solid fa-bullseye me-2"></i> Buat Target Divisi Anda
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -500,7 +500,7 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-danger me-2" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i> Simpan Target
+                            <i class="menu-icon fa-solid fa-save me-1"></i> Simpan Target
                         </button>
                     </div>
                 </form>
@@ -1094,7 +1094,7 @@
                                                         <input type="text" class="form-control text-end target-input ${sales.id_detailPerson ? '' : 'is-invalid'}" value="${targetValue}" data-id-detail="${sales.id_detailPerson || ''}" data-kode-karyawan="${sales.kode_karyawan || ''}" placeholder="Target" ${!sales.id_detailPerson ? 'disabled' : ''}>
                                                     </div>
                                                     <div class="loading-spinner" style="display: none; float: right; margin-right: 10px;"><span class="spinner-border spinner-border-sm text-primary" role="status"></span></div>
-                                                    <div class="update-feedback" style="display: none; float: right; margin-right: 10px; margin-top: 5px;"><i class="fas fa-check-circle text-success"></i></div>
+                                                    <div class="update-feedback" style="display: none; float: right; margin-right: 10px; margin-top: 5px;"><i class="menu-icon fa-solid fa-check-circle text-success"></i></div>
                                                     <div class="clearfix"></div>
                                                 </td>
                                                 <td class="text-center ${textClass}"><strong>${sales.percentage ?? 0}%</strong></td>
@@ -1172,7 +1172,7 @@
                                                         </div>
                                                         <div class="d-flex justify-content-end align-items-center mt-4">
                                                             <a href="{{ asset('storage') }}/${item.file_paths ? item.file_paths : ''}" class="btn btn-sm btn-dark d-flex align-items-center gap-2" download="${item.file_paths ? 'true' : 'false'}">
-                                                                <i class="fas fa-download"></i> Download
+                                                                <i class="menu-icon fa-solid fa-download"></i> Download
                                                             </a>
                                                         </div>
                                                     </div>
@@ -1290,7 +1290,7 @@
                                     </div>
                                     <div class="mt-auto p-3">
                                         <a href="${fileUrl}" class="btn btn-sm btn-outline-primary w-100" ${item.file_paths ? 'download' : ''}>
-                                            <i class="fas fa-file-alt"></i>
+                                            <i class="menu-icon fa-solid fa-file-alt"></i>
                                         </a>
                                     </div>
                                 </div>

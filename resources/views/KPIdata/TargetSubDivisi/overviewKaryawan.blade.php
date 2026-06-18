@@ -1,6 +1,6 @@
-@extends('databasekpi.berandaKPI')
+@extends('layouts_kpi.app')
 
-@section('contentKPI')
+@section('kpi_contents')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -15,7 +15,7 @@
     <div class="content-wrapper">
         <div class="page-header">
             <h3 class="page-title">
-                <span class="page-title-icon bg-gradient-primary text-white me-2">
+                <span class="page-title-icon text-black me-2">
                     <i class="mdi mdi-account"></i>
                 </span>
                 Dashboard Pribadi KPI
@@ -41,15 +41,15 @@
                         </div>
                     </div>
                     <div class="text-white">
-                        <h3 class="fw-bold mb-1" id="userName"></h3>
+                        <h3 class="fw-bold mb-1 text-white" id="userName"></h3>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <span class="badge bg-light text-primary px-3 py-2 rounded-pill">
+                            <span class="badge bg-white text-primary px-3 py-2 rounded-pill">
                                 <i class="fa-solid fa-briefcase me-1"></i>
                                 <span id="userJabatan"></span>
                             </span>
 
-                            <span class="badge bg-light text-primary px-3 py-2 rounded-pill">
+                            <span class="badge bg-white text-primary px-3 py-2 rounded-pill">
                                 <i class="fa-solid fa-building me-1"></i>
                                 <span id="userDivisi"></span>
                             </span>
@@ -1030,7 +1030,7 @@
                                     </div>
 
                                     <h5 class="card-title fw-bold mb-2 text-dark lh-base">
-                                        <span class="d-inline-block bg-light text-dark px-2 py-1 rounded-2 ">
+                                        <span class="d-inline-block bg-white text-dark px-2 py-1 rounded-2 ">
                                             ${target.judul}
                                         </span>
                                     </h5>

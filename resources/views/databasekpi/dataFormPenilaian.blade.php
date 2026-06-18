@@ -1,6 +1,6 @@
-@extends('databasekpi.berandaKPI')
+@extends('layouts_kpi.app')
 
-@section('contentKPI')
+@section('kpi_contents')
 <style>
     @media (max-width: 768px) {
         .table-responsive {
