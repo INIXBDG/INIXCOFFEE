@@ -1,9 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- Library CSS --}}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -82,9 +83,13 @@
                                 @endif
                             </td>
                             <td>
-                                @foreach(explode(',', $item->talents) as $talent)
-                                    <span class="badge bg-light text-dark border me-1 mb-1">{{ trim($talent) }}</span>
-                                @endforeach
+                                @if($item->talents)
+                                    @foreach(explode(',', $item->talents) as $talent)
+                                        <span class="badge bg-light text-dark border me-1 mb-1">{{ trim($talent) }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </td>
                             <td>
                                 <span class="d-inline-block text-truncate" style="max-width: 150px;">
@@ -108,7 +113,6 @@
                                         Actions
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        {{-- Edit (Memicu Modal Edit) --}}
                                         <li>
                                             <button class="dropdown-item edit-btn"
                                                 data-id="{{ $item->id }}"
@@ -123,7 +127,6 @@
                                             </button>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
-                                        {{-- Hapus --}}
                                         <li>
                                             <form action="{{ route('content-schedules.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus jadwal ini?');">
                                                 @csrf
@@ -169,7 +172,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-12"> {{-- Ubah col-md-6 jadi 12 karena tanggal dihapus --}}
+                        <div class="col-md-12">
                             <label class="form-label">Bentuk Konten</label>
                             <select name="content_form" class="form-select" required>
                                 <option value="Story">Story</option>
@@ -179,44 +182,14 @@
                                 <option value="Tiktok">Tiktod</option>
                             </select>
                         </div>
-
-                        {{-- INPUT TANGGAL DIHAPUS DARI SINI --}}
-
                         <div class="col-12">
-                            <label class="form-label">Talent (Pilih Multiple)</label>
-                            <select name="talents[]" class="form-select" multiple style="height: 100px;">
-                                <option value="Hera">Hera</option>
-                                <option value="Savanna">Savanna</option>
-                                <option value="Reni">Reni</option>
-                                <option value="Rara">Rara</option>
-                                <option value="Alfi">Alfi</option>
-                                <option value="Nabila">Nabila</option>
-                                <option value="Fia">Fia</option>
-                                <option value="Ani">Ani</option>
-                                <option value="Yanuar">Yanuar</option>
-                                <option value="Adit">Adit</option>
-                                <option value="Luki">Luki</option>
-                                <option value="Sabdhan">Sabdhan</option>
-                                <option value="Rustan">Rustan</option>
-                                <option value="Wahyu">Wahyu</option>
-                                <option value="Sahrul">Sahrul</option>
-                                <option value="Pani">Pani</option>
-                                <option value="Yayat">Yayat</option>
-                                <option value="Stepan">Stepan</option>
-                                <option value="Vicky">Vicky</option>
-                                <option value="Sergio">Sergio</option>
-                                <option value="Donna">Donna</option>
-                                <option value="Eggi">Eggi</option>
-                                <option value="Ardhan">Ardhan</option>
-                                <option value="Julie">Julie</option>
-                                <option value="Ferdi">Ferdi</option>
-                                <option value="Aulia">Aulia</option>
-                                <option value="Alysia">Alysia</option>
-                                <option value="Xepi">Xepi</option>
-                                <option value="Rifa">Rifa</option>
+                            <label class="form-label">Talent (Pilih Multiple atau Ketik Manual)</label>
+                            <select name="talents[]" id="create_talents" class="form-select" multiple style="width: 100%;">
+                                @foreach($uniqueTalents as $talent)
+                                    <option value="{{ $talent }}">{{ $talent }}</option>
+                                @endforeach
                             </select>
                         </div>
-                        {{-- Sisa input (Description, Script, Image, Tiktok) tetap sama --}}
                         <div class="col-12">
                             <label class="form-label">Deskripsi</label>
                             <textarea name="description" class="form-control" rows="2"></textarea>
@@ -258,7 +231,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    {{-- Struktur sama dengan Create, ID ditambahkan untuk JS --}}
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Bentuk Konten</label>
@@ -275,37 +247,11 @@
                             <input type="date" name="upload_date" id="edit_upload_date" class="form-control" required>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Talent</label>
-                            <select name="talents[]" id="edit_talents" class="form-select" multiple style="height: 100px;">
-                                <option value="Hera">Hera</option>
-                                <option value="Savanna">Savanna</option>
-                                <option value="Reni">Reni</option>
-                                <option value="Rara">Rara</option>
-                                <option value="Alfi">Alfi</option>
-                                <option value="Nabila">Nabila</option>
-                                <option value="Fia">Fia</option>
-                                <option value="Ani">Ani</option>
-                                <option value="Yanuar">Yanuar</option>
-                                <option value="Adit">Adit</option>
-                                <option value="Luki">Luki</option>
-                                <option value="Sabdhan">Sabdhan</option>
-                                <option value="Rustan">Rustan</option>
-                                <option value="Wahyu">Wahyu</option>
-                                <option value="Sahrul">Sahrul</option>
-                                <option value="Pani">Pani</option>
-                                <option value="Yayat">Yayat</option>
-                                <option value="Stepan">Stepan</option>
-                                <option value="Vicky">Vicky</option>
-                                <option value="Sergio">Sergio</option>
-                                <option value="Donna">Donna</option>
-                                <option value="Eggi">Eggi</option>
-                                <option value="Ardhan">Ardhan</option>
-                                <option value="Julie">Julie</option>
-                                <option value="Ferdi">Ferdi</option>
-                                <option value="Aulia">Aulia</option>
-                                <option value="Alysia">Alysia</option>
-                                <option value="Xepi">Xepi</option>
-                                <option value="Rifa">Rifa</option>
+                            <label class="form-label">Talent (Pilih Multiple atau Ketik Manual)</label>
+                            <select name="talents[]" id="edit_talents" class="form-select" multiple style="width: 100%;">
+                                @foreach($uniqueTalents as $talent)
+                                    <option value="{{ $talent }}">{{ $talent }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-12">
@@ -337,7 +283,7 @@
     </div>
 </div>
 
-{{-- MODAL VIEW PROOF (BUKTI) --}}
+{{-- MODAL VIEW PROOF --}}
 <div class="modal fade" id="proofModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -354,7 +300,6 @@
                     <div class="col-md-6 text-center">
                         <h6 class="fw-bold mb-3">Screenshot Bukti</h6>
                         <div id="viewImageContainer">
-                            {{-- Gambar di sini --}}
                         </div>
                     </div>
                 </div>
@@ -367,6 +312,7 @@
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
     $(document).ready(function() {
@@ -374,6 +320,30 @@
             order: [[ 2, "desc" ]],
             pageLength: 10,
             columnDefs: [ { orderable: false, targets: [6, 7] } ]
+        });
+
+        // Inisialisasi Select2 pada Modal Create saat dirender pertama kali atau saat modal terbuka
+        $('#createModal').on('shown.bs.modal', function () {
+            $('#create_talents').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#createModal'),
+                tags: true,
+                placeholder: "Pilih atau ketik talent baru...",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+
+        // Inisialisasi Select2 pada Modal Edit
+        $('#editModal').on('shown.bs.modal', function () {
+            $('#edit_talents').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#editModal'),
+                tags: true,
+                placeholder: "Pilih atau ketik talent baru...",
+                allowClear: true,
+                width: '100%'
+            });
         });
 
         $('#schedulesTable tbody').on('click', '.edit-btn', function() {
@@ -387,8 +357,15 @@
             $('#edit_proof_script').val($(this).data('script'));
             let isTiktok = $(this).data('tiktok');
             $('#edit_is_tiktok').prop('checked', isTiktok == 1);
-            let talents = $(this).data('talents').toString().split(',');
-            $('#edit_talents').val(talents);
+
+            // Render array parsing untuk Select2
+            let talentsRaw = $(this).data('talents');
+            if(talentsRaw) {
+                let talentsArray = talentsRaw.toString().split(',').map(t => t.trim());
+                $('#edit_talents').val(talentsArray).trigger('change');
+            } else {
+                $('#edit_talents').val([]).trigger('change');
+            }
 
             $('#editModal').modal('show');
         });
