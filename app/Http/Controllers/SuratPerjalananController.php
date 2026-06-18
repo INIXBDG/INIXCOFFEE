@@ -296,7 +296,7 @@ class SuratPerjalananController extends Controller
 
         foreach ($users as $user) {
             $receiverId = $user->id;
-            NotificationFacade::send($user, new PengajuanSPJNotification($suratPerjalanan, $path, $type, $receiverId));
+            NotificationFacade::send($user, new ApprovalSPJNotification($suratPerjalanan, $path, $type, $receiverId));
         }
 
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil dibuat.');
@@ -386,7 +386,7 @@ class SuratPerjalananController extends Controller
         $targetKaryawanIds = [
             $karyawanPengaju->id,
         ];
-
+                        
         $officeManager = karyawan::where('jabatan', 'Office Manager')->first();
         if ($officeManager) $targetKaryawanIds[] = $officeManager->id;
 
@@ -396,14 +396,6 @@ class SuratPerjalananController extends Controller
         $financeUser = karyawan::where('jabatan', 'Finance & Accounting')->where('status_aktif', '1')->latest()->first();
         if ($financeUser) {
             $targetKaryawanIds[] = $financeUser->id;
-        }
-
-        if ($suratPerjalanan->tipe === 'Internasional') {
-            $direksiIds = karyawan::whereIn('jabatan', ['Direktur Utama', 'Direktur'])
-                ->pluck('id') // PENTING: Ambil 'id', BUKAN 'kode_karyawan'
-                ->toArray();
-
-            $targetKaryawanIds = array_merge($targetKaryawanIds, $direksiIds);
         }
 
         $users = User::with('karyawan')

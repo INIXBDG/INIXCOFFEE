@@ -51,7 +51,8 @@ class ApprovalSPJNotification extends Notification implements ShouldBroadcast
         $messageData = [
             'user' => auth()->user()?->username ?? 'System',
             'message' => [
-                'tipe'             => $this->action, // Gunakan $this->action dinamis
+                'tipe'             => $this->action,
+                'spj_id'           => $this->data->id,
                 'nama_lengkap'     => $this->to,
                 'tanggal_berangkat' => $this->data['tanggal_berangkat'],
                 'tanggal_pulang'   => $this->data['tanggal_pulang'],
@@ -80,6 +81,7 @@ class ApprovalSPJNotification extends Notification implements ShouldBroadcast
             'user' => auth()->user()?->username ?? 'System',
             'message' => [
                 'tipe'             => $this->action,
+                'spj_id'           => $this->data->id,
                 'nama_lengkap'     => $this->to,
                 'tanggal_berangkat' => $this->data['tanggal_berangkat'],
                 'tanggal_pulang'   => $this->data['tanggal_pulang'],
@@ -94,7 +96,10 @@ class ApprovalSPJNotification extends Notification implements ShouldBroadcast
         if ($this->isDireksiApproval) {
             $messageData['approve_url'] = url('/suratperjalanan/' . $this->data['id'] . '/approve-direksi/1');
             $messageData['reject_url']  = url('/suratperjalanan/' . $this->data['id'] . '/approve-direksi/2');
+        } elseif ($this->action === 'Menunggu Verifikasi Finance') {
+            $messageData['finance_approval_url'] = url('/suratperjalanan?finance_approval_id=' . $this->data->id);
         }
+
 
         return $messageData;
     }

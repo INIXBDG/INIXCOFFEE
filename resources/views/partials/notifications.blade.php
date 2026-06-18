@@ -369,54 +369,56 @@
     @endif
 
     @if (in_array($tipePesan, ['Menyetujui SPJ', 'Menolak SPJ', 'Menunggu Persetujuan Direksi', 'Rate SPJ Telah Diisi', 'Menunggu Verifikasi Finance']))
-    <div class="notification mb-3">
-        <p>
-            <strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong>
-            @if($tipePesan == 'Menunggu Persetujuan Direksi')
-                meminta persetujuan SPJ untuk
-            @elseif($tipePesan == 'Menunggu Verifikasi Finance')
-                meminta verifikasi keuangan untuk
-            @else
-                telah {{ $tipePesan }}
-            @endif
-            {{ $notification->data['message']['nama_lengkap'] ?? '-' }}
-            dengan durasi {{ $notification->data['message']['durasi'] ?? '-' }} hari Pada Tanggal
-            {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_berangkat'] ?? now())->format('d M Y') }} s/d
-            {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_pulang'] ?? now())->format('d M Y') }}
-        </p>
-        <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+        <div class="notification mb-3">
+            <p>
+                <strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong>
+                @if($tipePesan == 'Menunggu Persetujuan Direksi')
+                    meminta persetujuan SPJ untuk
+                @elseif($tipePesan == 'Menunggu Verifikasi Finance')
+                    meminta verifikasi keuangan untuk
+                @else
+                    telah {{ $tipePesan }}
+                @endif
+                {{ $notification->data['message']['nama_lengkap'] ?? '-' }}
+                dengan durasi {{ $notification->data['message']['durasi'] ?? '-' }} hari Pada Tanggal
+                {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_berangkat'] ?? now())->format('d M Y') }} s/d
+                {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_pulang'] ?? now())->format('d M Y') }}
+            </p>
+            <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
 
-        <div class="d-flex flex-wrap gap-2">
-            <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm">Lihat Selengkapnya</a>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm">Lihat Selengkapnya</a>
 
-            {{-- Tombol Approve/Reject untuk Direksi --}}
-            @if(isset($notification->data['approve_url']) && isset($notification->data['reject_url']))
-                <form action="{{ $notification->data['approve_url'] }}" method="POST" class="d-inline">
+                {{-- Tombol Approve/Reject untuk Direksi --}}
+                @if(isset($notification->data['approve_url']) && isset($notification->data['reject_url']))
+                    <form action="{{ $notification->data['approve_url'] }}" method="POST" class="d-inline">
+                        @csrf @method('PUT')
+                        <input type="hidden" name="notification_id" value="{{ $notification->id }}">
+                        <button type="submit" class="btn btn-success btn-sm"
+                            onclick="return confirm('Yakin menyetujui?')">Approve</button>
+                    </form>
+                    <form action="{{ $notification->data['reject_url'] }}" method="POST" class="d-inline">
+                        @csrf @method('PUT')
+                        <input type="hidden" name="notification_id" value="{{ $notification->id }}">
+                        <button type="submit" class="btn btn-danger btn-sm"
+                            onclick="return confirm('Yakin menolak?')">Reject</button>
+                    </form>
+                @endif
+
+                {{-- Tombol Verifikasi untuk Finance (Membuka Modal Otomatis) --}}
+                @if(isset($notification->data['finance_approval_url']))
+                    <a href="{{ $notification->data['finance_approval_url'] }}" class="btn btn-warning btn-sm">
+                        Verifikasi & Upload Bukti
+                    </a>
+                @endif
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf @method('PUT')
-                    <input type="hidden" name="notification_id" value="{{ $notification->id }}">
-                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Yakin menyetujui?')">Approve</button>
+                    <button type="submit" class="btn btn-secondary btn-sm">Tandai sebagai Dibaca</button>
                 </form>
-                <form action="{{ $notification->data['reject_url'] }}" method="POST" class="d-inline">
-                    @csrf @method('PUT')
-                    <input type="hidden" name="notification_id" value="{{ $notification->id }}">
-                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Yakin menolak?')">Reject</button>
-                </form>
-            @endif
-
-            {{-- Tombol Verifikasi untuk Finance (Membuka Modal Otomatis) --}}
-            @if(isset($notification->data['finance_approval_url']))
-                <a href="{{ $notification->data['finance_approval_url'] }}" class="btn btn-warning btn-sm">
-                    Verifikasi & Upload Bukti
-                </a>
-            @endif
-
-            <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
-                @csrf @method('PUT')
-                <button type="submit" class="btn btn-secondary btn-sm">Tandai sebagai Dibaca</button>
-            </form>
+            </div>
         </div>
-    </div>
-@endif
+    @endif
     @if ($tipePesan == 'Outstanding' && \Carbon\Carbon::parse($notification->data['message']['due_date'] ?? now())->gte(\Carbon\Carbon::now()))
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">Perusahaan
