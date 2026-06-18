@@ -9,21 +9,25 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class PengajuanSPJNotification extends Notification implements ShouldBroadcast
+class ApprovalSPJNotification extends Notification implements ShouldBroadcast
 {
     use Queueable, InteractsWithSockets;
 
     protected $data;
     protected $path;
-    protected $type;
+    protected $to;
     protected $receiverId;
+    protected $action;
+    protected $isDireksiApproval;
 
-    public function __construct($data, $path, $type, $receiverId)
+    public function __construct($data, $path, $to, $receiverId, $action = 'Menyetujui SPJ', $isDireksiApproval = false)
     {
         $this->data = $data;
         $this->path = $path;
-        $this->type = $type;
+        $this->to   = $to;
         $this->receiverId = $receiverId;
+        $this->action = $action;
+        $this->isDireksiApproval = $isDireksiApproval;
     }
 
     public function via($notifiable): array
@@ -31,7 +35,6 @@ class PengajuanSPJNotification extends Notification implements ShouldBroadcast
         return ['database', 'broadcast'];
     }
 
-    /** @var \App\Models\User $notifiable */
     public function broadcastOn()
     {
         return new PrivateChannel('notifikasi.' . $this->receiverId);
@@ -42,37 +45,39 @@ class PengajuanSPJNotification extends Notification implements ShouldBroadcast
         return 'notifikasi-event';
     }
 
-    public function toBroadcast($notifiable): BroadcastMessage
+    public function toBroadcast($notifiable)
     {
-        return new BroadcastMessage([
-            'user' => auth()->user()?->username ?? 'System',
-            'message' => [
-                'tipe'              => $this->type,
-                'tanggal_berangkat' => $this->data['tanggal_berangkat'],
-                'tanggal_pulang'    => $this->data['tanggal_pulang'],
-                'alasan'            => $this->data['alasan'],
-                'durasi'            => $this->data['durasi'],
-                'tujuan'            => $this->data['tujuan'],
-            ],
-            'path'   => $this->path,
-            'status' => 'unread',
-        ]);
+        return new BroadcastMessage($this->toArray($notifiable));
     }
 
     public function toArray($notifiable): array
     {
-        return [
+        $messageData = [
             'user' => auth()->user()?->username ?? 'System',
             'message' => [
-                'tipe'              => $this->type,
+                'tipe'             => $this->action,
+                'spj_id'           => $this->data->id, // PENTING: ID SPJ untuk auto-read
+                'nama_lengkap'     => $this->to,
                 'tanggal_berangkat' => $this->data['tanggal_berangkat'],
-                'tanggal_pulang'    => $this->data['tanggal_pulang'],
-                'alasan'            => $this->data['alasan'],
-                'durasi'            => $this->data['durasi'],
-                'tujuan'            => $this->data['tujuan'],
+                'tanggal_pulang'   => $this->data['tanggal_pulang'],
+                'alasan'           => $this->data['alasan'],
+                'durasi'           => $this->data['durasi'],
+                'tujuan'           => $this->data['tujuan'],
             ],
             'path'   => $this->path,
             'status' => 'unread',
         ];
+
+        // 1. URL untuk Direksi (Approve/Reject langsung)
+        if ($this->isDireksiApproval) {
+            $messageData['approve_url'] = url('/suratperjalanan/' . $this->data->id . '/approve-direksi/1');
+            $messageData['reject_url']  = url('/suratperjalanan/' . $this->data->id . '/approve-direksi/2');
+        }
+        // 2. URL untuk Finance (Membuka modal otomatis di tabel)
+        elseif ($this->action === 'Menunggu Verifikasi Finance') {
+            $messageData['finance_approval_url'] = url('/suratperjalanan?finance_approval_id=' . $this->data->id);
+        }
+
+        return $messageData;
     }
 }

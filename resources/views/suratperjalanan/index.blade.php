@@ -48,11 +48,11 @@
                             <div id="hrd-row" style="display:none;">
                                 <p>Approve sebagai <strong>HRD</strong>?</p>
                                 <div class="btn-group" role="group" aria-label="Approval Options">
-                                    <input type="radio" class="btn-check" name="approval_hrd" id="approveYesHRD" value="1"
-                                        autocomplete="off" checked>
+                                    <input type="radio" class="btn-check" name="approval_hrd" id="approveYesHRD"
+                                        value="1" autocomplete="off" checked>
                                     <label class="btn btn-outline-primary" for="approveYesHRD">Ya</label>
-                                    <input type="radio" class="btn-check" name="approval_hrd" id="approveNoHRD" value="2"
-                                        autocomplete="off">
+                                    <input type="radio" class="btn-check" name="approval_hrd" id="approveNoHRD"
+                                        value="2" autocomplete="off">
                                     <label class="btn btn-outline-danger" for="approveNoHRD">Tidak</label>
                                 </div>
                             </div>
@@ -62,23 +62,42 @@
                                 <p class="text-muted small mb-2">* Menyetujui ini akan otomatis meng-approve atas nama GM
                                     dan Direksi.</p>
                                 <div class="btn-group" role="group" aria-label="Approval Options">
-                                    <input type="radio" class="btn-check" name="approval_gm" id="approveYesGM" value="1"
-                                        autocomplete="off" checked>
+                                    <input type="radio" class="btn-check" name="approval_gm" id="approveYesGM"
+                                        value="1" autocomplete="off" checked>
                                     <label class="btn btn-outline-primary" for="approveYesGM">Ya</label>
-                                    <input type="radio" class="btn-check" name="approval_gm" id="approveNoGM" value="2"
-                                        autocomplete="off">
+                                    <input type="radio" class="btn-check" name="approval_gm" id="approveNoGM"
+                                        value="2" autocomplete="off">
                                     <label class="btn btn-outline-danger" for="approveNoGM">Tidak</label>
+                                </div>
+                            </div>
+
+                            <!-- Finance Row -->
+                            <div id="finance-row" style="display:none;">
+                                <p>Verifikasi oleh <strong>Finance & Accounting</strong>?</p>
+                                <div class="btn-group mb-3" role="group" aria-label="Approval Options">
+                                    <input type="radio" class="btn-check" name="approval_finance"
+                                        id="approveYesFinance" value="1" autocomplete="off" checked>
+                                    <label class="btn btn-outline-primary" for="approveYesFinance">Ya (Verifikasi)</label>
+                                    <input type="radio" class="btn-check" name="approval_finance"
+                                        id="approveNoFinance" value="2" autocomplete="off">
+                                    <label class="btn btn-outline-danger" for="approveNoFinance">Tidak</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="bukti_transfer" class="form-label">Upload Bukti Transfer (Wajib jika
+                                        Approve)</label>
+                                    <input type="file" class="form-control" name="bukti_transfer" id="bukti_transfer"
+                                        accept=".jpg,.jpeg,.png,.pdf">
                                 </div>
                             </div>
 
                             <!-- Direksi Row (Disembunyikan, hanya sebagai fallback) -->
                             <div id="direksi-row" style="display:none;">
                                 <div class="btn-group" role="group" aria-label="Approval Options">
-                                    <input type="radio" class="btn-check" name="approval_direksi" id="approveYesDireksi"
-                                        value="1" autocomplete="off" checked>
+                                    <input type="radio" class="btn-check" name="approval_direksi"
+                                        id="approveYesDireksi" value="1" autocomplete="off" checked>
                                     <label class="btn btn-outline-primary" for="approveYesDireksi">Ya</label>
-                                    <input type="radio" class="btn-check" name="approval_direksi" id="approveNoDireksi"
-                                        value="2" autocomplete="off">
+                                    <input type="radio" class="btn-check" name="approval_direksi"
+                                        id="approveNoDireksi" value="2" autocomplete="off">
                                     <label class="btn btn-outline-danger" for="approveNoDireksi">Tidak</label>
                                 </div>
                             </div>
@@ -98,13 +117,15 @@
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
-                {{-- @if ( auth()->user()->jabatan == 'HRD' || auth()->user()->jabatan == 'Office ') --}}
+                {{-- @if (auth()->user()->jabatan == 'HRD' || auth()->user()->jabatan == 'Office ') --}}
                 @can('Rekap SPJ')
-                    <a href="{{ route('createPrint') }}" class="btn btn-success mx-4" data-toggle="tooltip" data-placement="top"
-                        title="Cetak Data"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Cetak</a>
+                    <a href="{{ route('createPrint') }}" class="btn btn-success mx-4" data-toggle="tooltip"
+                        data-placement="top" title="Cetak Data"><img src="{{ asset('icon/plus.svg') }}" class=""
+                            width="30px"> Cetak</a>
                 @endcan
                 <a href="suratperjalanan/create" class="btn btn-md click-primary mx-4" data-toggle="tooltip"
-                    data-placement="top" title="Ajukan Cuti"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px">
+                    data-placement="top" title="Ajukan Cuti"><img src="{{ asset('icon/plus.svg') }}" class=""
+                        width="30px">
                     Ajukan Surat Perjalanan</a>
                 {{-- @endif --}}
             </div>
@@ -191,58 +212,75 @@
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
         <script>
-            $(document).ready(function () {
-                var userRole = '{{ auth()->user()->jabatan}}';
+            $(document).ready(function() {
+                var userRole = '{{ auth()->user()->jabatan }}';
                 var user = '{{ auth()->user()->karyawan_id }}';
                 //console.log(user);
-                $('#tahun, #bulan').on('change', function () {
+                $('#tahun, #bulan').on('change', function() {
                     updateExportLink();
                 });
                 $('#jabatantable').DataTable({
                     "ajax": {
                         "url": "{{ route('getSuratPerjalanan') }}", // URL API untuk mengambil data
                         "type": "GET",
-                        "beforeSend": function () {
+                        "beforeSend": function() {
                             $('#loadingModal').modal('show');
-                            $('#loadingModal').on('show.bs.modal', function () {
+                            $('#loadingModal').on('show.bs.modal', function() {
                                 $('#loadingModal').removeAttr('inert');
                             });
                         },
-                        "complete": function () {
+                        "complete": function() {
                             setTimeout(() => {
                                 $('#loadingModal').modal('hide');
-                                $('#loadingModal').on('hidden.bs.modal', function () {
+                                $('#loadingModal').on('hidden.bs.modal', function() {
                                     $('#loadingModal').attr('inert', true);
                                 });
                             }, 1000);
                         }
                     },
-                    "columns": [
-                        { "data": "tanggal_berangkat", "visible": false },
-                        { "data": "karyawan.nama_lengkap" },
-                        { "data": "karyawan.divisi" },
-                        { "data": "karyawan.jabatan", "visible": false },
-                        { "data": "tipe" },
-                        { "data": "tujuan" },
-                        { "data": "alasan" },
+                    "columns": [{
+                            "data": "tanggal_berangkat",
+                            "visible": false
+                        },
+                        {
+                            "data": "karyawan.nama_lengkap"
+                        },
+                        {
+                            "data": "karyawan.divisi"
+                        },
+                        {
+                            "data": "karyawan.jabatan",
+                            "visible": false
+                        },
+                        {
+                            "data": "tipe"
+                        },
+                        {
+                            "data": "tujuan"
+                        },
+                        {
+                            "data": "alasan"
+                        },
                         {
                             "data": null,
-                            "render": function (data) {
+                            "render": function(data) {
                                 return data.durasi + ' Hari';
                             }
                         },
                         {
                             "data": null,
-                            "render": function (data) {
+                            "render": function(data) {
                                 moment.locale('id');
-                                return moment(data.tanggal_berangkat).format('DD MMMM YYYY') + ' s/d ' + moment(data.tanggal_pulang).format('DD MMMM YYYY');
+                                return moment(data.tanggal_berangkat).format('DD MMMM YYYY') + ' s/d ' +
+                                    moment(data.tanggal_pulang).format('DD MMMM YYYY');
                             }
                         },
                         {
                             "data": null,
-                            "render": function (data) {
+                            "render": function(data) {
                                 // 1. Ditolak di tahap mana pun
-                                if (data.approval_manager == '2' || data.approval_hrd == '2' || data.approval_gm == '2' || data.approval_direksi == '2') {
+                                if (data.approval_manager == '2' || data.approval_hrd == '2' || data
+                                    .approval_gm == '2' || data.approval_direksi == '2') {
                                     return `<span class="badge rounded-pill bg-danger"><i class="bi bi-x-circle me-1"></i> Ditolak</span>`;
                                 }
                                 // 2. Menunggu Manager
@@ -254,110 +292,209 @@
                                     return `<span class="badge rounded-pill bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu HRD</span>`;
                                 }
                                 // 4. Menunggu GM & Direksi (HANYA JIKA INTERNASIONAL)
-                                if (data.tipe == 'Internasional' && data.approval_manager == '1' && data.approval_hrd == '1' && data.approval_gm == '0') {
+                                if (data.tipe == 'Internasional' && data.approval_manager == '1' && data
+                                    .approval_hrd == '1' && data.approval_gm == '0') {
                                     return `<span class="badge rounded-pill bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu GM & Direksi</span>`;
                                 }
                                 // 5. Siap Rate SPJ (Jika Domestik ATAU Internasional yang sudah di-approve GM)
-                                if (data.approval_manager == '1' && data.approval_hrd == '1' && (data.tipe == 'Domestik' || data.approval_gm == '1')) {
+                                if (data.approval_manager == '1' && data.approval_hrd == '1' && (data
+                                        .tipe == 'Domestik' || data.approval_gm == '1')) {
                                     if (!data.ratespj || data.ratespj == 0 || data.ratespj === null) {
                                         return `<span class="badge rounded-pill bg-info text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu Isi Rate SPJ</span>`;
                                     } else {
-                                        return `<span class="badge rounded-pill bg-success"><i class="bi bi-check-circle me-1"></i> Disetujui & Rate Terisi</span>`;
+                                        if (data.approval_finance == '0') {
+                                            return `<span class="badge rounded-pill bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu Verifikasi Finance</span>`;
+                                        } else if (data.approval_finance == '2') {
+                                            return `<span class="badge rounded-pill bg-danger"><i class="bi bi-x-circle me-1"></i> Ditolak Finance</span>`;
+                                        } else {
+                                            return `<span class="badge rounded-pill bg-success"><i class="bi bi-check-circle me-1"></i> Selesai (Jurnal Terbentuk)</span>`;
+                                        }
                                     }
                                 }
                                 return `<span class="badge rounded-pill bg-secondary"><i class="bi bi-question-circle me-1"></i> Status Tidak Diketahui</span>`;
                             }
-                        }
-                        ,
+                        },
                         {
                             "data": null,
-                            "render": function (data, type, row) {
+                            "render": function(data, type, row) {
                                 var actions = "";
-                                var userRole = '{{ auth()->user()->jabatan}}';
+                                var userRole = '{{ auth()->user()->jabatan }}';
 
                                 // 1. LOGIKA KHUSUS UNTUK GM
                                 if (userRole == 'GM') {
-                                    actions += '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
+                                    actions +=
+                                        '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
 
                                     // GM sebagai Manager Divisi (Khusus Office/ID tertentu)
-                                    if (data.approval_manager == '0' && (data.karyawan.divisi === 'Office' || [4, 13, 14, 29].includes(Number(data.karyawan.id)))) {
-                                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')">Approve sbg Manager Divisi</button>';
+                                    if (data.approval_manager == '0' && (data.karyawan.divisi ===
+                                            'Office' || [4, 13, 14, 29].includes(Number(data.karyawan
+                                                .id)))) {
+                                        actions +=
+                                            '<button type="button" class="dropdown-item" onclick="openApproveModal(' +
+                                            row.id +
+                                            ', \'Manager\')">Approve sbg Manager Divisi</button>';
                                     }
                                     // GM sebagai GM (Hanya jika Internasional & Manager & HRD sudah approve)
-                                    else if (data.tipe == 'Internasional' && data.approval_manager == '1' && data.approval_hrd == '1' && data.approval_gm == '0') {
-                                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'GM\')">Approve sbg GM & Direksi</button>';
-                                    }
-                                    else {
-                                        actions += '<button type="button" class="dropdown-item disabled">Menunggu / Tidak Berwenang</button>';
+                                    else if (data.tipe == 'Internasional' && data.approval_manager ==
+                                        '1' && data.approval_hrd == '1' && data.approval_gm == '0') {
+                                        actions +=
+                                            '<button type="button" class="dropdown-item" onclick="openApproveModal(' +
+                                            row.id + ', \'GM\')">Approve sbg GM & Direksi</button>';
+                                    } else {
+                                        actions +=
+                                            '<button type="button" class="dropdown-item disabled">Menunggu / Tidak Berwenang</button>';
                                     }
 
                                     if (data.approval_manager == '0') {
-                                        actions += '<form onsubmit="return confirm(\'Yakin?\');" action="{{ url('/suratperjalanan') }}/' + row.id + '" method="POST">@csrf @method('DELETE')<button type="submit" class="dropdown-item text-danger">Hapus</button></form>';
+                                        actions +=
+                                            '<form onsubmit="return confirm(\'Yakin?\');" action="{{ url('/suratperjalanan') }}/' +
+                                            row.id +
+                                            '" method="POST">@csrf @method('DELETE')<button type="submit" class="dropdown-item text-danger">Hapus</button></form>';
                                     } else {
-                                        actions += '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' + row.id + '">Form PDF</a>';
+                                        actions +=
+                                            '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' +
+                                            row.id + '">Form PDF</a>';
                                     }
                                     actions += '</div></div>';
                                 }
 
                                 // 2. LOGIKA KHUSUS UNTUK HRD
                                 else if (userRole == 'HRD') {
-                                    actions += '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
-                                    var isAllApproved = (data.approval_manager == '1' && data.approval_hrd == '1' && (data.tipe == 'Domestik' || data.approval_gm == '1'));
+                                    actions +=
+                                        '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
+                                    var isAllApproved = (data.approval_manager == '1' && data
+                                        .approval_hrd == '1' && (data.tipe == 'Domestik' || data
+                                            .approval_gm == '1'));
 
-                                    if (data.approval_manager == '0' && data.karyawan.divisi === 'Office') {
-                                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')">Approve sbg Manager Divisi</button>';
-                                    } else if (data.approval_manager == '1' && data.approval_hrd == '0') {
-                                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'HRD\')">Approve sbg HRD</button>';
-                                        actions += '<a class="dropdown-item disabled" href="#">Rate SPJ (Terkunci)</a>';
+                                    if (data.approval_manager == '0' && data.karyawan.divisi ===
+                                        'Office') {
+                                        actions +=
+                                            '<button type="button" class="dropdown-item" onclick="openApproveModal(' +
+                                            row.id +
+                                            ', \'Manager\')">Approve sbg Manager Divisi</button>';
+                                    } else if (data.approval_manager == '1' && data.approval_hrd ==
+                                        '0') {
+                                        actions +=
+                                            '<button type="button" class="dropdown-item" onclick="openApproveModal(' +
+                                            row.id + ', \'HRD\')">Approve sbg HRD</button>';
+                                        actions +=
+                                            '<a class="dropdown-item disabled" href="#">Rate SPJ (Terkunci)</a>';
                                     } else if (isAllApproved) {
-                                        actions += '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' + row.id + '/edit">Isi Rate SPJ</a>';
-                                        actions += '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' + row.id + '">Form PDF</a>';
-                                    } else if (data.approval_manager == '2' || data.approval_hrd == '2' || data.approval_gm == '2' || data.approval_direksi == '2') {
-                                        actions += '<a class="dropdown-item disabled text-danger" href="#">Ditolak</a>';
+                                        actions +=
+                                            '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' +
+                                            row.id + '/edit">Isi Rate SPJ</a>';
+                                        actions +=
+                                            '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' +
+                                            row.id + '">Form PDF</a>';
+                                    } else if (data.approval_manager == '2' || data.approval_hrd ==
+                                        '2' || data.approval_gm == '2' || data.approval_direksi == '2'
+                                    ) {
+                                        actions +=
+                                            '<a class="dropdown-item disabled text-danger" href="#">Ditolak</a>';
                                     } else {
-                                        actions += '<a class="dropdown-item disabled" href="#">Menunggu Approval GM/Direksi</a>';
+                                        actions +=
+                                            '<a class="dropdown-item disabled" href="#">Menunggu Approval GM/Direksi</a>';
                                     }
                                     actions += '</div></div>';
                                 }
 
                                 // 3. LOGIKA KHUSUS UNTUK DIREKSI (Direktur & Direktur Utama)
                                 else if (userRole == 'Direktur' || userRole == 'Direktur Utama') {
-                                    actions += '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
+                                    actions +=
+                                        '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
                                     // Direksi melakukan approve langsung dari Notifikasi, jadi di tabel hanya butuh tombol PDF
-                                    actions += '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' + row.id + '">Form PDF</a>';
+                                    actions +=
+                                        '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' +
+                                        row.id + '">Form PDF</a>';
                                     actions += '</div></div>';
                                 }
 
                                 // 4. LOGIKA UNTUK MANAGER DIVISI LAINNYA
-                                else if (['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM', 'Koordinator Office'].includes(userRole)) {
-                                    actions += '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
+                                else if (['Office Manager', 'Education Manager', 'SPV Sales',
+                                        'Koordinator ITSM', 'Koordinator Office'
+                                    ].includes(userRole)) {
+                                    actions +=
+                                        '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
 
                                     if (data.approval_manager == '0') {
-                                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')">Approve Manager Divisi</button>';
+                                        actions +=
+                                            '<button type="button" class="dropdown-item" onclick="openApproveModal(' +
+                                            row.id + ', \'Manager\')">Approve Manager Divisi</button>';
                                     } else {
-                                        actions += '<button type="button" class="dropdown-item disabled">Sudah Approve / Menunggu HRD</button>';
+                                        actions +=
+                                            '<button type="button" class="dropdown-item disabled">Sudah Approve / Menunggu HRD</button>';
                                     }
 
                                     if (data.approval_manager == '0') {
-                                        actions += '<form onsubmit="return confirm(\'Yakin?\');" action="{{ url('/suratperjalanan') }}/' + row.id + '" method="POST">@csrf @method('DELETE')<button type="submit" class="dropdown-item text-danger">Hapus</button></form>';
+                                        actions +=
+                                            '<form onsubmit="return confirm(\'Yakin?\');" action="{{ url('/suratperjalanan') }}/' +
+                                            row.id +
+                                            '" method="POST">@csrf @method('DELETE')<button type="submit" class="dropdown-item text-danger">Hapus</button></form>';
                                     } else {
-                                        actions += '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' + row.id + '">Form PDF</a>';
+                                        actions +=
+                                            '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' +
+                                            row.id + '">Form PDF</a>';
                                     }
+                                    actions += '</div></div>';
+                                }
+                                // 4.5. LOGIKA KHUSUS UNTUK FINANCE & ACCOUNTING
+                                else if (userRole == 'Finance & Accounting') {
+                                    actions +=
+                                        '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
+
+                                    var isReadyForFinance = (data.approval_manager == '1' && data
+                                        .approval_hrd == '1' && (data.tipe == 'Domestik' || data
+                                            .approval_gm == '1') && data.ratespj && data.ratespj > 0
+                                    );
+
+                                    if (isReadyForFinance && (data.approval_finance == '0' || data
+                                            .approval_finance === null)) {
+                                        actions +=
+                                            '<button type="button" class="dropdown-item" onclick="openApproveModal(' +
+                                            row.id +
+                                            ', \'Finance\')">Verifikasi & Upload Bukti</button>';
+                                    } else if (data.approval_finance == '1') {
+                                        actions +=
+                                            '<a class="dropdown-item disabled text-success" href="#">Sudah Diverifikasi</a>';
+                                        if (data.bukti_transfer) {
+                                            actions +=
+                                                '<a class="dropdown-item" href="{{ url('storage') }}/' +
+                                                data.bukti_transfer +
+                                                '" target="_blank">Download Bukti Transfer</a>';
+                                        }
+                                    } else if (data.approval_finance == '2') {
+                                        actions +=
+                                            '<a class="dropdown-item disabled text-danger" href="#">Ditolak</a>';
+                                    } else {
+                                        actions +=
+                                            '<a class="dropdown-item disabled" href="#">Menunggu Rate SPJ / Approval Sebelumnya</a>';
+                                    }
+
+                                    actions +=
+                                        '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' +
+                                        row.id + '">Form PDF</a>';
                                     actions += '</div></div>';
                                 }
 
                                 // 5. LOGIKA UNTUK USER BIASA (PENGAJU)
                                 else {
-                                    actions += '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
-                                    actions += '<form onsubmit="return confirm(\'Yakin?\');" action="{{ url('/suratperjalanan') }}/' + row.id + '" method="POST">@csrf @method('DELETE')';
+                                    actions +=
+                                        '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
+                                    actions +=
+                                        '<form onsubmit="return confirm(\'Yakin?\');" action="{{ url('/suratperjalanan') }}/' +
+                                        row.id + '" method="POST">@csrf @method('DELETE')';
 
                                     if (data.approval_manager == '0') {
-                                        actions += '<button type="submit" class="dropdown-item text-danger">Hapus</button>';
+                                        actions +=
+                                            '<button type="submit" class="dropdown-item text-danger">Hapus</button>';
                                     } else {
-                                        actions += '<button type="submit" class="dropdown-item disabled text-danger">Hapus</button>';
+                                        actions +=
+                                            '<button type="submit" class="dropdown-item disabled text-danger">Hapus</button>';
                                     }
                                     actions += '</form>';
-                                    actions += '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' + row.id + '">Form PDF</a>';
+                                    actions +=
+                                        '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' +
+                                        row.id + '">Form PDF</a>';
                                     actions += '</div></div>';
                                 }
 
@@ -365,79 +502,105 @@
                             }
                         }
                     ],
-                    "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
-                    "columnDefs": [{ "targets": [0], "type": "date" }],
+                    "order": [
+                        [0, 'desc']
+                    ], // Ubah urutan menjadi descending untuk kolom ke-6
+                    "columnDefs": [{
+                        "targets": [0],
+                        "type": "date"
+                    }],
                 });
-                $('#approveForm').on('submit', function (e) {
+                $('#approveForm').on('submit', function(e) {
                     e.preventDefault();
                     const form = $(this);
 
-                    if ($('#manager-row').is(':hidden')) {
-                        $('#manager-row').find('input').prop('disabled', true);
-                    } else {
-                        $('#manager-row').find('input').prop('disabled', false);
+                    // Fungsi untuk menonaktifkan input pada row yang tersembunyi
+                    function toggleInputByVisibility(rowId) {
+                        if ($(rowId).is(':hidden')) {
+                            $(rowId).find('input, select, textarea').prop('disabled', true);
+                        } else {
+                            $(rowId).find('input, select, textarea').prop('disabled', false);
+                        }
                     }
 
-                    if ($('#hrd-row').is(':hidden')) {
-                        $('#hrd-row').find('input').prop('disabled', true);
-                    } else {
-                        $('#hrd-row').find('input').prop('disabled', false);
-                    }
-
-                    if ($('#gm-direksi-row').is(':hidden')) {
-                        $('#gm-direksi-row').find('input').prop('disabled', true);
-                    } else {
-                        $('#gm-direksi-row').find('input').prop('disabled', false);
-                    }
-
-                    if ($('#direksi-row').is(':hidden')) {
-                        $('#direksi-row').find('input').prop('disabled', true);
-                    } else {
-                        $('#direksi-row').find('input').prop('disabled', false);
-                    }
-
+                    // Terapkan ke SEMUA row approval
+                    toggleInputByVisibility('#manager-row');
+                    toggleInputByVisibility('#hrd-row');
+                    toggleInputByVisibility('#gm-direksi-row');
+                    toggleInputByVisibility('#direksi-row');
+                    toggleInputByVisibility('#finance-row');
 
                     const url = form.attr('action');
-                    const data = form.serialize();
+
+                    // PENTING: Gunakan FormData untuk mendukung upload file
+                    const formData = new FormData(this);
 
                     $.ajax({
                         url: url,
                         method: 'POST',
-                        data: data,
-                        success: function (res) {
+                        data: formData,
+                        contentType: false, // WAJIB: Agar browser tidak men-set header content-type
+                        processData: false, // WAJIB: Agar jQuery tidak memproses data menjadi string
+                        success: function(res) {
                             $('#approveModal').modal('hide');
                             $('#jabatantable').DataTable().ajax.reload(null, false);
                         },
-                        error: function (err) {
+                        error: function(err) {
                             console.error(err);
-                            alert("Gagal menyimpan data!");
+                            alert("Gagal menyimpan data! Silakan cek console untuk detail.");
                         },
-                        complete: function () {
-                            form.find('input').prop('disabled', false);
+                        complete: function() {
+                            // Aktifkan kembali semua input
+                            form.find('input, select, textarea').prop('disabled', false);
                         }
                     });
                 });
 
+                const urlParams = new URLSearchParams(window.location.search);
+                let financeApprovalId = urlParams.get('finance_approval_id');
+
+                if (financeApprovalId && '{{ auth()->user()->jabatan }}' === 'Finance & Accounting') {
+                    $('#jabatantable').on('xhr.dt', function() {
+                        if (financeApprovalId) {
+                            setTimeout(function() {
+                                openApproveModal(financeApprovalId, 'Finance');
+                            }, 500);
+
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                            financeApprovalId = null;
+                        }
+                    });
+                }
+
             });
+
             function openApproveModal(id, jabatan) {
-                // Sembunyikan semua row terlebih dahulu
+                // Sembunyikan semua row
                 $('#manager-row').hide();
                 $('#hrd-row').hide();
-                $('#gm-direksi-row').hide(); // PERBAIKAN: Dulu $('#gm-row')
+                $('#gm-direksi-row').hide();
                 $('#direksi-row').hide();
+                $('#finance-row').hide(); // TAMBAHKAN INI
 
-                // Tampilkan row sesuai jabatan yang diklik
+                // Tampilkan row sesuai jabatan
                 if (jabatan === 'Manager') {
                     $('#manager-row').show();
                 } else if (jabatan === 'HRD') {
                     $('#hrd-row').show();
                 } else if (jabatan === 'GM') {
-                    $('#gm-direksi-row').show(); // PERBAIKAN: Dulu $('#gm-row')
+                    $('#gm-direksi-row').show();
                 } else if (jabatan === 'Direksi') {
                     $('#direksi-row').show();
+                } else if (jabatan === 'Finance') {
+                    $('#finance-row').show();
                 }
 
+                // Tentukan URL berdasarkan jabatan
                 var approveUrl = "{{ url('/suratperjalanan') }}/" + id + "/approval";
+                if (jabatan === 'Finance') {
+                    approveUrl = "{{ url('/suratperjalanan') }}/" + id + "/finance-approval"; // Route khusus Finance
+                }
+
                 $('#approveForm').attr('action', approveUrl);
                 $('#approveModal').modal('show');
             }
@@ -450,7 +613,6 @@
                     document.getElementById('alasan_manager').value = ''; // Clear the input if hidden
                 }
             }
-
         </script>
     @endpush
 @endsection
