@@ -279,10 +279,9 @@
             </a>
         </li>
 
-        <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 12px;">
-            <a href="{{ route('home') }}"
-                class="btn btn-primary d-flex align-items-center justify-content-center w-100">
+        <li class="menu-item mt-4 mb-4 px-3">
+            <a href="{{ route('home') }}" class="btn btn-primary d-flex align-items-center justify-content-center w-100">
                 <i class="bx bx-home me-2"></i>BACK TO INIXCOFFE
             </a>
-        </div>
+        </li>
 </aside>

@@ -99,9 +99,43 @@ class CRMController extends Controller
             // 8. Hitung Aktivitas Per Sales (Looping Data)
             $activitysales = [];
 
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
+
+            // 2. Inisialisasi Kueri Aktivitas beserta relasi yang dibutuhkan
+            $aktivitasQuery = Aktivitas::with(['contact.perusahaan', 'peserta']);
+
+            // 3. Terapkan logika filter tanggal
+            if ($startDate && $endDate) {
+                // Gunakan rentang waktu penuh (00:00:00 hingga 23:59:59)
+                $aktivitasQuery->whereBetween('waktu_aktivitas', [
+                    $startDate . ' 00:00:00',
+                    $endDate . ' 23:59:59'
+                ]);
+
+                $tanggalRange = \Carbon\Carbon::parse($startDate)->translatedFormat('d M Y') . ' - ' . \Carbon\Carbon::parse($endDate)->translatedFormat('d M Y');
+            } else {
+                // Default filter (Bulan berjalan) jika request kosong
+                $aktivitasQuery->whereMonth('waktu_aktivitas', now()->month)
+                            ->whereYear('waktu_aktivitas', now()->year);
+
+                $tanggalRange = 'Bulan Ini (' . now()->translatedFormat('F Y') . ')';
+            }
+
+            // 4. Eksekusi Kueri Aktivitas
+            $aktivitas = $aktivitasQuery->get();
+
+            // Asumsi: Variabel $sales (array/collection ID Sales) dan $target (data target sales)
+            // sudah dideklarasikan sebelum blok ini sesuai dengan struktur aplikasi Anda.
+
+            // 5. Hitung Aktivitas Per Sales (Looping Data)
+            $activitysales = [];
+
             foreach ($sales as $id_sales) {
+                // Ekstraksi aktivitas khusus untuk sales terkait
                 $userAktivitas = $aktivitas->where('id_sales', $id_sales);
 
+                // Filter berdasarkan jenis aktivitas
                 $contactData = $userAktivitas->where('aktivitas', 'Contact');
                 $callData = $userAktivitas->where('aktivitas', 'Call');
                 $emailData = $userAktivitas->where('aktivitas', 'Email');
@@ -109,66 +143,60 @@ class CRMController extends Controller
                 $meetData = $userAktivitas->where('aktivitas', 'Meet');
                 $inchargeData = $userAktivitas->where('aktivitas', 'Incharge');
                 $paData = $userAktivitas->where('aktivitas', 'PA');
-                $piData = $userAktivitas->where('aktivitas', 'PI');
-                $teleData = $userAktivitas->where('aktivitas', 'Telemarketing');
-                $formMasukData = $userAktivitas->where('aktivitas', 'Form_Masuk');
-                $formKeluarData = $userAktivitas->where('aktivitas', 'Form_Keluar');
+
+                // Fallback multiple nama menggunakan whereIn
+                $piData = $userAktivitas->whereIn('aktivitas', ['PI', 'Leads']);
+                $formMasukData = $userAktivitas->whereIn('aktivitas', ['Form_Masuk', 'Regis Form']);
+
                 $dbData = $userAktivitas->where('aktivitas', 'DB');
 
+                // Ekstraksi target sales
                 $salesTarget = $target[$id_sales] ?? null;
 
                 $activitysales[] = [
                     'id_sales' => $id_sales,
 
                     // 📊 Jumlah aktivitas
-                    'contact' => $contactData->count(),
-                    'call' => $callData->count(),
-                    'email' => $emailData->count(),
-                    'visit' => $visitData->count(),
-                    'meet' => $meetData->count(),
-                    'incharge' => $inchargeData->count(),
-                    'PA' => $paData->count(),
-                    'PI' => $piData->count(),
-                    'Telemarketing' => $teleData->count(),
-                    'Form_Masuk' => $formMasukData->count(),
-                    'Form_Keluar' => $formKeluarData->count(),
-                    'DB' => $dbData->count(),
+                    'contact'    => $contactData->count(),
+                    'call'       => $callData->count(),
+                    'email'      => $emailData->count(),
+                    'visit'      => $visitData->count(),
+                    'meet'       => $meetData->count(),
+                    'incharge'   => $inchargeData->count(),
+                    'PA'         => $paData->count(),
+                    'Leads'      => $piData->count(),
+                    'Regis_Form' => $formMasukData->count(),
+                    'DB'         => $dbData->count(),
 
                     // 💰 Total nilai (Sum)
-                    'total_PA' => $paData->sum('total'),
-                    'total_Form_Masuk' => $formMasukData->sum('total'),
-                    'total_Form_Keluar' => $formKeluarData->sum('total'),
+                    'total_PA'         => $paData->sum('total'),
+                    'total_Regis_Form' => $formMasukData->sum('total'),
 
                     // 🎯 Target
-                    'target_contact' => $salesTarget->Contact ?? 0,
-                    'target_call' => $salesTarget->Call ?? 0,
-                    'target_email' => $salesTarget->Email ?? 0,
-                    'target_visit' => $salesTarget->Visit ?? 0,
-                    'target_meet' => $salesTarget->Meet ?? 0,
-                    'target_incharge' => $salesTarget->Incharge ?? 0,
-                    'target_PA' => $salesTarget->PA ?? 0,
-                    'target_PI' => $salesTarget->PI ?? 0,
-                    'target_Telemarketing' => $salesTarget->Telemarketing ?? 0,
-                    'target_Form_Masuk' => $salesTarget->FormM ?? 0,
-                    'target_Form_Keluar' => $salesTarget->FormK ?? 0,
-                    'target_DB' => $salesTarget->DB ?? 0,
+                    'target_contact'    => $salesTarget->Contact ?? 0,
+                    'target_call'       => $salesTarget->Call ?? 0,
+                    'target_email'      => $salesTarget->Email ?? 0,
+                    'target_visit'      => $salesTarget->Visit ?? 0,
+                    'target_meet'       => $salesTarget->Meet ?? 0,
+                    'target_incharge'   => $salesTarget->Incharge ?? 0,
+                    'target_PA'         => $salesTarget->PA ?? 0,
+                    'target_PI'         => $salesTarget->PI ?? 0, // Variabel database target lama
+                    'target_Form_Masuk' => $salesTarget->FormM ?? 0, // Variabel database target lama
+                    'target_DB'         => $salesTarget->DB ?? 0,
 
-                    // 🗂️ Data aktivitas (detail untuk modal/tabel)
-                    'data_contact' => $contactData->values(),
-                    'data_call' => $callData->values(),
-                    'data_email' => $emailData->values(),
-                    'data_visit' => $visitData->values(),
-                    'data_meet' => $meetData->values(),
-                    'data_incharge' => $inchargeData->values(),
-                    'data_PA' => $paData->values(),
-                    'data_PI' => $piData->values(),
-                    'data_Telemarketing' => $teleData->values(),
-                    'data_Form_Masuk' => $formMasukData->values(),
-                    'data_Form_Keluar' => $formKeluarData->values(),
-                    'data_DB' => $dbData->values(),
+                    // 🗂️ Data aktivitas (Disertai values() untuk mereset index array)
+                    'data_contact'    => $contactData->values(),
+                    'data_call'       => $callData->values(),
+                    'data_email'      => $emailData->values(),
+                    'data_visit'      => $visitData->values(),
+                    'data_meet'       => $meetData->values(),
+                    'data_incharge'   => $inchargeData->values(),
+                    'data_PA'         => $paData->values(),
+                    'data_Leads'      => $piData->values(),
+                    'data_Regis_Form' => $formMasukData->values(),
+                    'data_DB'         => $dbData->values(),
                 ];
             }
-
             // dd($activitysales);
 
             // 3. Top 5 produk paling banyak terjual

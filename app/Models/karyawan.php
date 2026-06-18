@@ -157,4 +157,9 @@ class karyawan extends Model
     {
         return OrgStructure::whereJsonContains('karyawan_ids', (int) $this->id)->first();
     }
+
+    public function logGaji()
+    {
+        return $this->hasMany(LogGaji::class, 'id_karyawan', 'id');
+    }
 }

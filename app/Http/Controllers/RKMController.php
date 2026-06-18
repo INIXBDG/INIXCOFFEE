@@ -1434,8 +1434,8 @@ class RKMController extends Controller
 
         return response()->json([
             'status' => true,
-            'tanggal_awal' => $rkm->tanggal_awal,
-            'tanggal_akhir' => $rkm->tanggal_akhir,
+            'tanggal_awal' => $rkm->tanggal_awal?->format('Y-m-d'),
+            'tanggal_akhir' => $rkm->tanggal_akhir?->format('Y-m-d'),
             'metode_kelas' => $rkm->metode_kelas,
             'data' => $result
         ]);

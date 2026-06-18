@@ -23,7 +23,6 @@
         .container {
             width: 100%;
             max-width: 190mm;
-            /* ≈ A4 lebar efektif portrait */
             margin: 0 auto;
             padding: 0;
             box-sizing: border-box;
@@ -53,7 +52,6 @@
             margin: 0 auto 4mm auto;
             border-collapse: collapse;
             table-layout: fixed;
-            page-break-inside: avoid;
         }
 
         table,
@@ -75,19 +73,31 @@
             font-weight: bold;
         }
 
+        thead {
+            display: table-header-group;
+        }
+
+        tfoot {
+            display: table-footer-group;
+        }
+
+        tbody tr {
+            page-break-inside: avoid;
+        }
+
         .signature {
             height: 45px;
-            /* ruang tanda tangan */
         }
 
         tr {
             height: 20px;
-            /* baris lebih rapat */
         }
 
         .footer-section {
             margin-top: 6mm;
             text-align: center;
+            page-break-before: auto;
+            display: block;
         }
 
         .vendor-logos {
@@ -107,7 +117,6 @@
             display: block;
         }
 
-        /* Memastikan konten tetap center secara horizontal */
         .center-wrapper {
             text-align: center;
         }

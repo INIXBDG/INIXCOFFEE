@@ -248,7 +248,11 @@ class KaryawanController extends Controller
             abort(403, 'Anda tidak memiliki izin untuk mengakses halaman ini.');
         }
 
-        $karyawan = user::with('karyawan')->where('status_akun', "1")->get();
+        $karyawan = User::with('karyawan', 'karyawan.LogGaji')
+            ->where('status_akun', '1')
+            ->get()
+            ->groupBy(fn($user) => $user->karyawan->divisi ?? 'Tidak Diketahui');
+        // dd($karyawan->toArray());   
         return view('gaji.index', compact('karyawan'));
     }
 
@@ -258,7 +262,7 @@ class KaryawanController extends Controller
             'jumlah_gaji' => 'required|numeric|min:0',
         ]);
 
-        $karyawan = Karyawan::findOrFail($id);
+        $karyawan = karyawan::findOrFail($id);
         $karyawan->update(['gaji' => $request->jumlah_gaji]);
 
         $logGaji = new LogGaji();
@@ -269,14 +273,6 @@ class KaryawanController extends Controller
         $logGaji->save();
 
         return redirect()->route('gaji.index')->with('success', 'Gaji berhasil diperbarui.');
-    }
-
-    public function destroyGaji($id)
-    {
-        $karyawan = Karyawan::findOrFail($id);
-        $karyawan->update(['gaji' => null]); // Nullify salary instead of deleting record
-
-        return redirect()->route('gaji.index')->with('success', 'Gaji berhasil dihapus.');
     }
 
     public function slip()

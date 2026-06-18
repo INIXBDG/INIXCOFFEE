@@ -148,6 +148,8 @@
                                     <option value="ADOC" {{ old('ruang', $rkm->ruang) == "ADOC" ? 'selected' : '' }}>ADOC</option>
                                     <option value="Inhouse" {{ old('ruang', $rkm->ruang) == "Inhouse" ? 'selected' : '' }}>Inhouse</option>
                                     <option value="Virtual" {{ old('ruang', $rkm->ruang) == "Virtual" ? 'selected' : '' }}>Virtual</option>
+                                    <option value="Meeting Kecil" {{ old('ruang', $rkm->ruang) == "Meeting Kecil" ? 'selected' : '' }}>Ruang Meeting Kecil</option>
+                                    <option value="Meeting Besar" {{ old('ruang', $rkm->ruang) == "Meeting Besar" ? 'selected' : '' }}>Ruang Meeting Besar</option>
                                     <option value="Working Space" {{ Str::startsWith(old('ruang', $rkm->ruang), 'Working Space') ? 'selected' : '' }}>
                                         Working Space (isi manual)
                                     </option>

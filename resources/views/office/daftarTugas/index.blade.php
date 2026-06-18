@@ -306,10 +306,18 @@
                                 <th class="border-0" style="width:15%">Deadline</th>
                                 <th class="border-0 text-center" style="width:20%">Bukti</th>
                                 <th class="border-0 text-center" style="width:15%">Aksi</th>
+                                <th width="50">
+                                    <input type="checkbox" id="checkAll">
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="tbody"></tbody>
                     </table>
+                    <div class="d-flex gap-2 m-3 justify-content-md-end">
+                        <button id="btnBulkDelete" class="btn btn-sm btn-danger">
+                            <i class="bx bx-trash"></i> Hapus Terpilih
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -868,7 +876,7 @@
                         tb.empty();
                         if (!r.data || !r.data.length) {
                             tb.append(
-                                `<tr><td colspan="8" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas Aktif</h5><p class="text-muted small mb-3">Pilih tugas dari kategori yang tersedia untuk mulai mengerjakan</p></div></td></tr>`
+                                `<tr><td colspan="9" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas Aktif</h5><p class="text-muted small mb-3">Pilih tugas dari kategori yang tersedia untuk mulai mengerjakan</p></div></td></tr>`
                             );
                             return;
                         }
@@ -904,13 +912,30 @@
 
                                 tb.append(
                                 `<tr class="${buktiStatus.rowClass} ${done?'bg-light':''}" data-id="${it.id}"><td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk} ${checkboxDisabled} ${checkboxTitle}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done}"><span class="badge bg-info text-dark">${turunan}</span></td><td class="task-text ${done} small fw-semibold">${karyawan}</td>
-                    <td class="task-text ${done} small">${dl}</td><td class="text-center">${buktiBadge}</td><td class="text-center"><div class="btn-group">${buktiBtn}<button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button></div></td></tr>`
+                                <td class="task-text ${done} small">${dl}</td><td class="text-center">${buktiBadge}</td><td class="text-center"><div class="btn-group">${buktiBtn}<button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button></div></td><td><input class="form-check-input bulkCheck me-2" type="checkbox" value="${it.id}"></td></tr>
+                                `
                             );
                         });
                     }
                 });
             }
 
+            function updateBulkDeleteButton() {
+                const checked = $('.bulkCheck:checked').length;
+
+                if (checked > 0) {
+                    $('#btnBulkDelete').removeClass('d-none')
+                        .html(`<i class="bx bx-trash"></i> Hapus (${checked})`);
+                } else {
+                    $('#btnBulkDelete').addClass('d-none');
+                }
+            }
+
+            $(document).on('change', '.bulkCheck', updateBulkDeleteButton);
+            $(document).on('change', '#checkAll', function () {
+                $('.bulkCheck').prop('checked', this.checked);
+                updateBulkDeleteButton();
+            })
 
             function loadChartData() {
                 const period = $('#chartPeriod').val();
@@ -1659,6 +1684,53 @@
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(r) {
+                        row.fadeOut(300, function() {
+                            $(this).remove();
+                            if (!$('#tbody tr').length) loadData();
+                        });
+                        showNotification('Berhasil', r.message || 'Tugas berhasil dihapus',
+                            'success');
+                    },
+                    error: function(x) {
+                        showNotification('Gagal', x.responseJSON?.message ||
+                            'Gagal menghapus tugas.', 'danger');
+                        btn.prop('disabled', false).html(orig);
+                    }
+                });
+            });
+
+            $('#btnBulkDelete').on('click', function () {
+                const ids = $('.bulkCheck:checked')
+                    .map(function () {
+                        return $(this).val();
+                    })
+                    .get();
+
+                if (!ids.length) return;
+
+                if (!confirm(`Hapus ${ids.length} tugas?`)) {
+                    return;
+                }
+
+                const btn = $(this);
+                const row = btn.closest('tr');
+
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.bulkDelete') }}",
+                    type: 'DELETE',
+                    data: {
+                        ids: ids,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function (r) {
+
+                        ids.forEach(id => {
+                            $(`tr[data-id="${id}"]`).remove();
+                        });
+
+                        $('#checkAll').prop('checked', false);
+                        updateBulkDeleteButton();
+
                         row.fadeOut(300, function() {
                             $(this).remove();
                             if (!$('#tbody tr').length) loadData();

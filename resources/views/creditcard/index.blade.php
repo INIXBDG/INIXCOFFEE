@@ -27,7 +27,6 @@
                             <tr>
                                 <th scope="col">No</th>
                                 <th scope="col">Nama Pemilik</th>
-                                <th scope="col">4 Angka Terakhir</th>
                                 <th scope="col">Bank</th>
                                 <th scope="col">Tipe Kartu</th>
                                 <th scope="col">Aksi</th>
@@ -113,7 +112,6 @@
             "columns": [
                 {"data": "id"},
                 {"data": "nama_pemilik"},
-                {"data": "angka_terakhir"},
                 {"data": "bank"},
                 {"data": "tipe_kartu"},
                 {

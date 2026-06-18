@@ -79,7 +79,7 @@ class checklistRKMController extends Controller
         }
 
         $perPage = $request->input('per_page', 20);
-        $dataRKM = $query->orderBy('tanggal_awal', 'asc')->paginate($perPage);
+        $dataRKM = $query->orderBy('status', 'asc')->orderBy('tanggal_awal', 'asc')->paginate($perPage);
 
         $taskMap = [
             'Registratsi Form' => 'registrasi_form',
@@ -112,28 +112,13 @@ class checklistRKMController extends Controller
             ];
         });
 
-        $grouped = $transformed->groupBy('group_key')->map(function ($items, $key) {
-            return [
-                'group_key' => $key,
-                'items' => $items->values()->all(),
-            ];
-        })->values();
-
-        $paginatedGroups = new \Illuminate\Pagination\LengthAwarePaginator(
-            $grouped->forPage($dataRKM->currentPage(), $perPage),
-            $grouped->count(),
-            $perPage,
-            $dataRKM->currentPage(),
-            ['path' => $dataRKM->path(), 'query' => $request->query()]
-        );
-
         return response()->json([
-            'data' => $paginatedGroups->items(),
+            'data' => $transformed->values(),
             'pagination' => [
-                'current_page' => $paginatedGroups->currentPage(),
-                'last_page' => $paginatedGroups->lastPage(),
-                'total' => $paginatedGroups->total(),
-                'per_page' => $paginatedGroups->perPage(),
+                'current_page' => $dataRKM->currentPage(),
+                'last_page' => $dataRKM->lastPage(),
+                'total' => $dataRKM->total(),
+                'per_page' => $dataRKM->perPage(),
             ],
             'filters' => $request->only(['search', 'bulan', 'tahun', 'minggu']),
         ]);
