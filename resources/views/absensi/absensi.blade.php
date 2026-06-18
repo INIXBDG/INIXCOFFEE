@@ -335,25 +335,41 @@
                                     ->where('approval', 2)
                                     ->first();
 
-                                    // Keterangan Masuk: ambil dari field keterangan
+                                    // Keterangan Masuk dan Waktu Keterlambatan bawaan
                                     $keteranganMasuk = $item->jam_masuk ? $item->keterangan : '-';
+                                    $waktuKeterlambatanTampil = $item->waktu_keterlambatan ?? '-';
+
+                                    // Intersep tampilan untuk data historis (Koreksi Toleransi 08:00:59)
+                                    if ($item->jam_masuk && auth()->user()->jabatan !== 'Office Boy') {
+                                        $waktuMasuk = Carbon::parse($item->jam_masuk);
+                                        $batasToleransiTampil = Carbon::createFromTime(8, 0, 59);
+
+                                        if ($waktuMasuk->lessThanOrEqualTo($batasToleransiTampil)) {
+                                            if (strtolower($keteranganMasuk) === 'telat') {
+                                                $keteranganMasuk = 'Masuk';
+                                            }
+                                            if ($waktuKeterlambatanTampil !== '-' && $waktuKeterlambatanTampil !== '00:00:00') {
+                                                $waktuKeterlambatanTampil = '00:00:00';
+                                            }
+                                        }
+                                    }
 
                                     // Default keterangan pulang
                                     $ket_pul = '-';
 
                                     if ($item->jam_keluar) {
-                                    if ($izin) {
-                                    $jamMulaiIzin = Carbon::createFromFormat('H:i:s', $izin->jam_mulai);
-                                    $jamSelesaiIzin = Carbon::createFromFormat('H:i:s', $izin->jam_selesai);
+                                        if ($izin) {
+                                            $jamMulaiIzin = Carbon::createFromFormat('H:i:s', $izin->jam_mulai);
+                                            $jamSelesaiIzin = Carbon::createFromFormat('H:i:s', $izin->jam_selesai);
 
-                                    if ($jamMulaiIzin->greaterThan(Carbon::createFromTime(12, 0))) {
-                                    $ket_pul = 'Pulang - Izin 3 Jam (' . $jamMulaiIzin->format('H:i') . ' - ' . $jamSelesaiIzin->format('H:i') . ')';
-                                    } else {
-                                    $ket_pul = 'Pulang';
-                                    }
-                                    } else {
-                                    $ket_pul = 'Pulang';
-                                    }
+                                            if ($jamMulaiIzin->greaterThan(Carbon::createFromTime(12, 0))) {
+                                                $ket_pul = 'Pulang - Izin 3 Jam (' . $jamMulaiIzin->format('H:i') . ' - ' . $jamSelesaiIzin->format('H:i') . ')';
+                                            } else {
+                                                $ket_pul = 'Pulang';
+                                            }
+                                        } else {
+                                            $ket_pul = 'Pulang';
+                                        }
                                     }
                                     @endphp
                                     <tr class="{{ $isToday ? 'tabel-custom' : '' }}">
@@ -362,7 +378,7 @@
                                         <td>{{ $keteranganMasuk }}</td>
                                         <td>{{ $item->jam_keluar ?? '-' }}</td>
                                         <td>{{ $ket_pul }}</td>
-                                        <td>{{ $item->waktu_keterlambatan ?? '-' }}</td>
+                                        <td>{{ $waktuKeterlambatanTampil }}</td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -778,9 +794,9 @@
             </div>
         </div>
         <style>
-            
 
-            
+
+
             /* Mario-inspired theme variables */
             :root {
                 --mario-red: #e74c3c;
@@ -928,7 +944,7 @@
                 background-color: #2980b9;
                 transition: background 0.3s ease;
             }
-            
+
 
             /* Mobile view (≤576px) */
             @media (max-width: 576px) {

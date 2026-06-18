@@ -66,8 +66,8 @@
                         <div class="row mb-3">
                             <label for="fitur" class="col-md-4 col-form-label text-md-start">Fitur / Modul</label>
                             <div class="col-md-6">
-                                <select class="form-select @error('fitur') is-invalid @enderror" id="fitur" name="fitur" required>
-                                    <option value="" disabled {{ old('fitur') ? '' : 'selected' }}>Pilih satu fitur</option>
+                                <select class="form-control @error('fitur') is-invalid @enderror" id="fitur" name="fitur" required>
+                                    <option value="">Pilih atau ketik fitur baru</option>
                                     @foreach($features as $featureName)
                                         <option value="{{ $featureName }}" {{ old('fitur') == $featureName ? 'selected' : '' }}>
                                             {{ $featureName }}
@@ -83,7 +83,11 @@
                         <div class="row mb-3">
                             <label for="tipe" class="col-md-4 col-form-label text-md-start">Tipe</label>
                             <div class="col-md-6">
-                                <input type="text" name="tipe" id="tipe" class="form-control @error('tipe') is-invalid @enderror" value="{{ old('tipe') }}" placeholder="cth: Request" required>
+                                <select name="tipe" id="tipe" class="form-select @error('tipe') is-invalid @enderror" required>
+                                    <option value="" disabled {{ old('tipe') ? '' : 'selected' }}>-- Pilih Tipe --</option>
+                                    <option value="Request" {{ old('tipe') == 'Request' ? 'selected' : '' }}>Request</option>
+                                    <option value="Error" {{ old('tipe') == 'Error' ? 'selected' : '' }}>Error</option>
+                                </select>
                                 @error('tipe')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -93,7 +97,14 @@
                         <div class="row mb-3">
                             <label for="pemilik" class="col-md-4 col-form-label text-md-start">Pemilik</label>
                             <div class="col-md-6">
-                                <input type="text" name="pemilik" id="pemilik" class="form-control @error('pemilik') is-invalid @enderror" value="{{ old('pemilik') }}" placeholder="cth: IT Service Management" required>
+                                <select class="form-select @error('pemilik') is-invalid @enderror" id="pemilik" name="pemilik" required>
+                                    <option value="">Pilih atau ketik pemilik</option>
+                                    @foreach($jabatans as $jabatan)
+                                        <option value="{{ $jabatan }}" {{ old('pemilik') == $jabatan ? 'selected' : '' }}>
+                                            {{ $jabatan }}
+                                        </option>
+                                    @endforeach
+                                </select>
                                 @error('pemilik')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -141,7 +152,6 @@
                                 </div>
                             </div>
                         @else
-                            <!-- Memberikan informasi untuk pengguna selain Koordinator ITSM -->
                             <div class="row mb-3">
                                 <div class="col-md-6 offset-md-4">
                                     <div class="alert alert-info py-2 mb-0" style="font-size: 0.85rem;">
@@ -167,8 +177,27 @@
 </div>
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
+        $('#fitur').select2({
+            theme: 'bootstrap-5',
+            tags: true,
+            placeholder: "Pilih atau ketik fitur baru",
+            allowClear: true,
+            width: '100%'
+        });
+
+        $('#pemilik').select2({
+            theme: 'bootstrap-5',
+            tags: true,
+            placeholder: "Pilih atau ketik pemilik",
+            allowClear: true,
+            width: '100%'
+        });
+
+        // Logika Otomatisasi Ticket
         $('#ticket_id').on('change', function() {
             var selectedOption = $(this).find(':selected');
 

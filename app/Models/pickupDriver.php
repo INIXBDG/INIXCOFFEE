@@ -22,12 +22,12 @@ class pickupDriver extends Model
 
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'id_karyawan', 'id');
+        return $this->belongsTo(karyawan::class, 'id_karyawan', 'id');
     }
 
     public function pembuat()
     {
-        return $this->belongsTo(Karyawan::class, 'id_pembuat', 'id');
+        return $this->belongsTo(karyawan::class, 'id_pembuat', 'id');
     }
 
     public function biayaTransportasi()

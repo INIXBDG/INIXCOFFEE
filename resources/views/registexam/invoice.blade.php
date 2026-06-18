@@ -156,7 +156,7 @@
                                     @if (is_null($cc))
                                         Belum Ditentukan
                                     @else
-                                        {{ $cc->nama_pemilik }} ({{ $cc->bank }} - {{ $cc->tipe_kartu }}) ({{$cc->angka_terakhir}})
+                                        {{ $cc->nama_pemilik }} ({{ $cc->bank }} - {{ $cc->tipe_kartu }})
                                     @endif
                                 </td>
                             </tr>

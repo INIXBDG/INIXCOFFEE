@@ -108,8 +108,10 @@ use App\Http\Controllers\PicPenagihanController;
 use App\Http\Controllers\StockOpnameController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\IncomeStatementController;
+use App\Http\Controllers\KoordinasiOfficeBoyController;
 use App\Http\Controllers\Office\OfficeExamController;
 use App\Http\Controllers\PerusahaanController;
+use App\Http\Controllers\ScheduleLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -591,18 +593,9 @@ Route::put('notifications/{notification}/read', [App\Http\Controllers\CommentCon
 Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
+Route::put('/suratperjalanan/{id}/approve-direksi/{status}', [App\Http\Controllers\SuratPerjalananController::class, 'approveDireksi'])->name('suratperjalanan.approve.direksi');
 Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
-Route::get('/absensi/karyawan', [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
-Route::get('/absensi/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
-Route::post('/absensi/approve/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');
-Route::post('/absensi/delete/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'deleteNoRecord'])->name('absensi.deleteNoRecord');
-Route::get('/absensi/pengajuan-klaim/scheme-work', [App\Http\Controllers\AbsensiKaryawanController::class, 'schemeWork'])->name('absensi.schemeWork');
-Route::post('/absensi/approve/pengajuan-klaim/scheme-work', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveSchemeWork'])->name('absensi.approveSchemeWork');
-Route::post('/absensi/delete/pengajuan-klaim/scheme-work', [App\Http\Controllers\AbsensiKaryawanController::class, 'deleteSchemeWork'])->name('absensi.deleteSchemeWork');
-Route::get('/absensi/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'cancelLeave'])->name('absensi.cancelLeave');
-Route::post('/absensi/approve/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveCancelLeave'])->name('absensi.approveCancelLeave');
-Route::post('/absensi/delete/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'deleteCancelLeave'])->name('absensi.deleteCancelLeave');
 Route::get('/absensi/karyawan', [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
 Route::get('/absensi/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
 Route::post('/absensi/approve/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');
@@ -843,7 +836,7 @@ Route::get('/invoice/{id}', [InvoiceRKMController::class, 'show'])->name('invoic
 Route::get('/invoice/{id}/edit', [InvoiceRKMController::class, 'edit'])->name('invoice.edit');
 Route::put('/invoice/{id}', [InvoiceRKMController::class, 'update'])->name('invoice.update'); // Ga tau, kayaknya ga kepake
 Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('invoice.destroy'); // Ga tau, kayaknya ga kepake
-Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])->name('invoices.export-pdf'); 
+Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])->name('invoices.export-pdf');
 Route::get('/invoices/{id}/export-excel', [InvoiceRKMController::class, 'exportExcel'])->name('invoices.export-excel');
 Route::get('/invoice/download/{id}', [InvoiceRKMController::class, 'downloadPDF'])->name('download.pdf');
 
@@ -908,7 +901,6 @@ Route::get('/getTickets', [TicketController::class, 'getTickets'])->name('getTic
 Route::get('/gaji/karyawan', [KaryawanController::class, 'gajiIndex'])->name('gaji.index');
 Route::post('/gaji', [KaryawanController::class, 'storeGaji'])->name('gaji.store');
 Route::put('/gaji/{id}', [KaryawanController::class, 'updateGaji'])->name('gaji.update');
-Route::delete('/gaji/{id}', [KaryawanController::class, 'destroyGaji'])->name('gaji.destroy');
 
 //Slip Gaji
 Route::get('/slip/gaji', [KaryawanController::class, 'slip'])->name('SlipGaji');
@@ -1088,8 +1080,6 @@ Route::prefix('office')
                 Route::get('/get-onlineStatus', [pickupDriverController::class, 'getDriverStatus'])->name('getDriverStatus');
                 Route::get('/export/excel', [pickupDriverController::class, 'exportExcel'])->name('export.excel');
                 Route::get('/export/pdf', [pickupDriverController::class, 'exportPdf'])->name('export.pdf');
-                Route::get('action/terima/{id}', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
-                Route::get('action/selesaikan/{id}', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])->name('action.selesaikan');
             });
 
         Route::prefix('stock-opname')
@@ -1190,6 +1180,7 @@ Route::prefix('office')
             Route::post('status/update', [DaftarTugasController::class, 'updateStatus'])->name('updateStatus');
             Route::post('bukti/upload', [DaftarTugasController::class, 'uploadBukti'])->name('uploadBukti');
             Route::delete('hapus/{id}', [DaftarTugasController::class, 'delete'])->name('delete');
+            Route::delete('/bulk-delete', [DaftarTugasController::class, 'bulkDelete'])->name('bulkDelete');
 
             Route::get('/export/excel', [DaftarTugasController::class, 'exportExcel'])->name('export.excel');
             Route::get('/export/pdf', [DaftarTugasController::class, 'exportPdf'])->name('export.pdf');
@@ -1204,6 +1195,15 @@ Route::prefix('office')
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
 
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
+        });
+
+        Route::prefix('koordinasi-ob')->name('KoordinasiOb.')->group(function() {
+            Route::get('/', [KoordinasiOfficeBoyController::class, 'index'])->name('index');
+            Route::get('/get-data', [KoordinasiOfficeBoyController::class, 'getData'])->name('getData');
+            Route::post('/store', [KoordinasiOfficeBoyController::class, 'store'])->name('store');
+            Route::post('/update', [KoordinasiOfficeBoyController::class, 'update'])->name('update');
+            Route::post('/update-status-{action}/{id}', [KoordinasiOfficeBoyController::class, 'updateStatus'])->name('updateStatus');
+            Route::delete('/delete/{id}', [KoordinasiOfficeBoyController::class, 'delete'])->name('delete');
         });
 
         Route::prefix('/rekomendasi-lanjutan')
@@ -1333,6 +1333,8 @@ Route::post('/jurnalakuntansi/store-manual-netsales/{id}', [JurnalAkuntansiContr
 Route::get('/jurnalakuntansi/export', [App\Http\Controllers\JurnalAkuntansiController::class, 'export'])->name('jurnalakuntansi.export');
 Route::get('/jurnalakuntansi/pdf/{id}', [JurnalAkuntansiController::class, 'eksportPdf'])->name('jurnalakuntansi.pdf');
 Route::post('/jurnalakuntansi/otomatisasi/data', [JurnalAkuntansiController::class, 'otomatisasiJurnal'])->name('jurnalakuntansi.otomatisasiJurnal');
+Route::get('/jurnalakuntansi/belum-jurnal-sp', [JurnalAkuntansiController::class, 'getBelumJurnalSuratPerjalanan'])->name('jurnalakuntansi.belumJurnalSuratPerjalanan');
+Route::post('/jurnalakuntansi/store-manual-surat-perjalanan/{id}', [JurnalAkuntansiController::class, 'storeManualSuratPerjalanan'])->name('jurnalakuntansi.storeManualSuratPerjalanan');
 
 Route::middleware(['auth'])->group(function () {
     // Route Administrasi Project
@@ -1464,7 +1466,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/upload-and-map', [ReportController::class, 'uploadAndMap'])->name('upload.map');
         Route::post('/save-with-mapping', [ReportController::class, 'saveWithMapping'])->name('save.mapping');
     });
-    
+
     Route::prefix('hire')->name('hire.')->group(function() {
         Route::get('/',             [HireController::class, 'index'])->name('index');
         Route::post('/store',            [HireController::class, 'store'])->name('store');
@@ -1492,7 +1494,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::prefix('folders')->name('folders.')->group(function () {
         Route::get('/', [FolderController::class, 'index'])->name('index');
         Route::get('/data', [FolderController::class, 'getFolders'])->name('data');
-        
+
         Route::post('/store', [FolderController::class, 'storeFolder'])->name('store');
         Route::get('/pelamar/belum-folder', [FolderController::class, 'getPelamarBelumFolder'])->name('pelamar.belum-folder');
         Route::post('/pelamar/add', [FolderController::class, 'addPelamar'])->name('pelamar.add');
@@ -1518,6 +1520,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/folders/{folder}/restore', [ArsipRekrutmenController::class, 'restoreFolder'])->name('folders.restore');
         Route::delete('/folders/{folder}', [ArsipRekrutmenController::class, 'permanentDeleteFolder'])->name('folders.delete');
         Route::delete('/pelamar/{pelamarFolderId}/restore', [ArsipRekrutmenController::class, 'restorePelamar'])->name('pelamar.restore');
+
     });
 
     Route::prefix('structure')->name('structure.')->group(function () {
@@ -1573,3 +1576,8 @@ Route::get('/income-statement', [IncomeStatementController::class, 'index'])->na
 Route::post('/income-statement/store', [IncomeStatementController::class, 'store'])->name('income-statement.store');
 Route::get('/income-statement/laporan', [IncomeStatementController::class, 'laporan'])->name('income-statement.laporan');
 Route::post('/perusahaan/merge', [PerusahaanController::class, 'merge'])->name('perusahaan.merge');
+
+
+Route::get('/schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule.index');
+Route::get('/schedule-logs/data', [ScheduleLogController::class, 'data'])->name('schedule.data');
+Route::delete('/schedule-logs/clear-all', [ScheduleLogController::class, 'clearAll'])->name('schedule.clear');

@@ -12,37 +12,19 @@
                         <span class="badge bg-white text-primary rounded-pill">{{ $tanggalRange }}</span>
                     </div>
                     <div class="card-body p-4">
-                        <form method="GET" class="row g-2 mb-4 align-items-end pb-3 border-bottom">
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold text-muted mb-1">Tahun</label>
-                                <select name="tahun" class="form-select form-select-sm border-light-subtle">
-                                    @for ($t = now()->year; $t >= now()->year - 3; $t--)
-                                        <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>
-                                            {{ $t }}</option>
-                                    @endfor
-                                </select>
+
+                        <form method="GET" action="{{ url()->current() }}" class="row g-2 mb-4 align-items-end pb-3 border-bottom">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted mb-1">Tanggal Mulai</label>
+                                <input type="date" name="start_date" class="form-control form-control-sm border-light-subtle"
+                                    value="{{ request('start_date') }}" required>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold text-muted mb-1">Bulan</label>
-                                <select name="bulan" class="form-select form-select-sm border-light-subtle">
-                                    @for ($b = 1; $b <= 12; $b++)
-                                        <option value="{{ $b }}" {{ $bulan == $b ? 'selected' : '' }}>
-                                            {{ \Carbon\Carbon::create()->month($b)->locale('id')->translatedFormat('F') }}
-                                        </option>
-                                    @endfor
-                                </select>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted mb-1">Tanggal Selesai</label>
+                                <input type="date" name="end_date" class="form-control form-control-sm border-light-subtle"
+                                    value="{{ request('end_date') }}" required>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold text-muted mb-1">Minggu</label>
-                                <select name="minggu" class="form-select form-select-sm border-light-subtle">
-                                    <option value="" {{ empty($mingguKe) ? 'selected' : '' }}>Semua Minggu</option>
-                                    @for ($m = 1; $m <= 5; $m++)
-                                        <option value="{{ $m }}" {{ $mingguKe == $m ? 'selected' : '' }}>Minggu
-                                            ke {{ $m }}</option>
-                                    @endfor
-                                </select>
-                            </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">
                                     Terapkan Filter
                                 </button>
@@ -123,30 +105,18 @@
                                                     'warna' => 'success',
                                                     'icon' => 'bx-file',
                                                 ],
-                                                'Penawaran Internal' => [
-                                                    'jumlah' => $sales['PI'],
+                                                'Leads' => [
+                                                    'jumlah' => $sales['Leads'],
                                                     'target' => $sales['target_PI'],
                                                     'warna' => 'success',
                                                     'icon' => 'bx-detail',
                                                 ],
-                                                'Telemarketing' => [
-                                                    'jumlah' => $sales['Telemarketing'],
-                                                    'target' => $sales['target_Telemarketing'],
-                                                    'warna' => 'danger',
-                                                    'icon' => 'bx-headphone',
-                                                ],
-                                                'Form Masuk' => [
-                                                    'jumlah' => $sales['Form_Masuk'],
+                                                'Regis Form' => [
+                                                    'jumlah' => $sales['Regis_Form'],
                                                     'target' => $sales['target_Form_Masuk'],
                                                     'warna' => 'danger',
                                                     'icon' => 'bx-log-in-circle',
-                                                ],
-                                                'Form Keluar' => [
-                                                    'jumlah' => $sales['Form_Keluar'],
-                                                    'target' => $sales['target_Form_Keluar'],
-                                                    'warna' => 'danger',
-                                                    'icon' => 'bx-log-out-circle',
-                                                ],
+                                                ]
                                             ];
                                         @endphp
 
@@ -183,12 +153,7 @@
                                     </div>
                                 </div>
                             @empty
-                                <div class="text-center py-5">
-                                    <img src="https://illustrations.popsy.co/gray/no-data.svg" alt="no-data"
-                                        style="width: 120px;" class="mb-3">
-                                    <p class="text-muted small">Tidak ada data aktivitas sales pada periode ini.</p>
-                                </div>
-                            @endforelse
+                                @endforelse
                         </div>
                     </div>
                 </div>
@@ -1301,11 +1266,6 @@
 
             async function showActivityDetails(salesId, activityLabel) {
                 const sales = activityData.find(s => s.id_sales === salesId);
-                console.log("Membuka modal →", {
-                    salesId,
-                    activityLabel
-                });
-                console.log(sales);
 
                 if (!sales) {
                     console.error("Sales tidak ditemukan untuk ID:", salesId);
@@ -1322,10 +1282,8 @@
                     'Meet': { jumlah: sales.meet, target: sales.target_meet, warna: 'warning' },
                     'Incharge': { jumlah: sales.incharge, target: sales.target_incharge, warna: 'success' },
                     'Penawaran Awal': { jumlah: sales.PA, target: sales.target_PA, warna: 'success', total: sales.total_PA ?? 0 },
-                    'Penawaran Internal': { jumlah: sales.PI, target: sales.target_PI, warna: 'success' },
-                    'Telemarketing': { jumlah: sales.Telemarketing, target: sales.target_Telemarketing, warna: 'danger' },
-                    'Form Masuk': { jumlah: sales.Form_Masuk, target: sales.target_Form_Masuk, warna: 'danger', total: sales.total_Form_Masuk ?? 0 },
-                    'Form Keluar': { jumlah: sales.Form_Keluar, target: sales.target_Form_Keluar, warna: 'danger', total: sales.total_Form_Keluar ?? 0 },
+                    'Leads': { jumlah: sales.Leads, target: sales.target_PI, warna: 'success' },
+                    'Regis Form': { jumlah: sales.Regis_Form, target: sales.target_Form_Masuk, warna: 'danger', total: sales.total_Regis_Form ?? 0 }
                 };
 
                 const activity = activityMap[activityLabel];
@@ -1335,7 +1293,6 @@
                     Math.min(Math.round((activity.jumlah / activity.target) * 100), 100) :
                     0;
 
-                // Populate modal data atas
                 document.getElementById('modalSalesId').textContent = salesId;
                 document.getElementById('modalActivity').textContent = activityLabel;
                 document.getElementById('modalJumlah').textContent = activity.jumlah;
@@ -1344,11 +1301,9 @@
                 document.getElementById('modalProgressBar').style.width = `${persen}%`;
                 document.getElementById('modalProgressBar').className = `progress-bar bg-${activity.warna}`;
 
-                // Logika tampilan total di header modal
                 const totalContainer = document.getElementById('modalTotalContainer');
                 const totalValue = document.getElementById('modalTotalValue');
 
-                // Deteksi jika aktivitas ini memiliki data finansial
                 const hasFinancialData = activity.total !== undefined;
 
                 if (totalContainer && totalValue) {
@@ -1366,7 +1321,6 @@
                     }
                 }
 
-                // Manipulasi Header Tabel Dinamis
                 const theadTr = document.querySelector('#detailAktivitas thead tr');
                 if (hasFinancialData) {
                     theadTr.innerHTML = `
@@ -1392,6 +1346,7 @@
                 }
 
                 let activityKey = '';
+
                 switch (activityLabel) {
                     case 'Contact': activityKey = 'data_contact'; break;
                     case 'Call': activityKey = 'data_call'; break;
@@ -1400,10 +1355,8 @@
                     case 'Meet': activityKey = 'data_meet'; break;
                     case 'Incharge': activityKey = 'data_incharge'; break;
                     case 'Penawaran Awal': activityKey = 'data_PA'; break;
-                    case 'Penawaran Internal': activityKey = 'data_PI'; break;
-                    case 'Telemarketing': activityKey = 'data_Telemarketing'; break;
-                    case 'Form Masuk': activityKey = 'data_Form_Masuk'; break;
-                    case 'Form Keluar': activityKey = 'data_Form_Keluar'; break;
+                    case 'Leads': activityKey = 'data_Leads'; break;
+                    case 'Regis Form': activityKey = 'data_Regis_Form'; break;
                     case 'DB': activityKey = 'data_DB'; break;
                     default: activityKey = '';
                 }
@@ -1441,7 +1394,6 @@
                             console.error('Reverse geocoding error:', error);
                         }
 
-                        // Penanganan Sel Finansial Dinamis
                         let financialCells = '';
                         if (hasFinancialData) {
                             const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
@@ -1451,6 +1403,13 @@
                                 <td class="text-center">${item.pax ?? '-'}</td>
                                 <td class="text-end fw-bold text-success">${item.total ? formatRupiah(item.total) : '-'}</td>
                             `;
+                        }
+
+                        let labelTipe = item.aktivitas ?? '-';
+                        if (labelTipe === 'PI') {
+                            labelTipe = 'Leads';
+                        } else if (labelTipe === 'Form_Masuk') {
+                            labelTipe = 'Regis Form';
                         }
 
                         const row = `
@@ -1466,7 +1425,7 @@
                                         : '-'
                                     }
                                 </td>
-                                <td>${item.aktivitas ?? '-'}</td>
+                                <td>${labelTipe}</td>
                                 <td>${item.deskripsi ?? '-'}</td>
                                 ${financialCells}
                                 <td class="text-center">
@@ -1497,7 +1456,6 @@
                     `;
                 }
 
-                // Show modal
                 document.getElementById('detailAktivitas').style.display = 'block';
             }
 

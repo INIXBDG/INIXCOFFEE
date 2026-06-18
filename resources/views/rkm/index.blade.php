@@ -1148,6 +1148,9 @@ function excelDownloadAdmSales() {
                             dates = generateDates(response.tanggal_awal, response.tanggal_akhir);
                             $('#metode_kelas').val(response.metode_kelas);
 
+                            console.log('Tanggal Awal:', response.tanggal_awal);
+                            console.log('Tanggal Akhir:', response.tanggal_akhir);
+
                             setDefaultIndex();
                             renderDay();
                         }
@@ -1161,12 +1164,6 @@ function excelDownloadAdmSales() {
             $('#modalChecklist').on('hidden.bs.modal', function () {
                 storeChecklistData(false); 
             });
-
-            // Logika Penyimpanan Data
-            // $('#btnSimpanChecklist').click(function() {
-            //     storeChecklistData(true);
-            // });
-            
 
             function storeChecklistData(showAlert = false)
             {

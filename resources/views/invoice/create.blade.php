@@ -166,7 +166,7 @@
                                     @endforeach
                             </td>
                             <td>
-                                <input type="number" class="form-control" id="pax" name="pax" readonly
+                                <input type="number" class="form-control" id="pax" name="pax"
                                     value="{{ $rkm->pax ?? 0 }}">
                             </td>
                             <td>

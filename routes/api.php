@@ -4,6 +4,7 @@ use App\Http\Controllers\AktivitasController;
 use App\Http\Controllers\Api\apiController;
 use App\Http\Controllers\CatatanSalesController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\KoordinasiOfficeBoyController;
 use App\Http\Controllers\PeluangController;
 use App\Http\Controllers\TelegramController;
 use App\Http\Controllers\TicketController;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\MoodleApiController;
+use App\Http\Controllers\Office\pickupDriverController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,3 +81,12 @@ Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiM
 
 
 Route::get('/moodle-grades-sharingknowledge', [MoodleApiController::class, 'fetchGradesSharingKnowledge']);
+
+// webhook untuk update pickupDriver
+Route::prefix('pickup-driver')->group(function () {
+    Route::post('action/terima', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
+    // Route::post('action/selesaikan', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])->name('action.selesaikan');
+});
+
+// update koordinasi ob
+Route::post('/koordinasi-ob/updateFromTelegram', [KoordinasiOfficeBoyController::class, 'updateFromTelegram']);
