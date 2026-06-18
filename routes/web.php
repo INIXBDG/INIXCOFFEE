@@ -29,17 +29,23 @@ use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\DashboardItsmController;
 use App\Http\Controllers\DashboardSLAController;
 use App\Http\Controllers\dbklienController;
+use App\Http\Controllers\HR\EmployeeJobDeskController;
 use App\Http\Controllers\examController;
 use App\Http\Controllers\feedbackController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HR\employeeController;
+use App\Http\Controllers\HR\EmployeeStructureController;
 use App\Http\Controllers\HR\FolderController;
 use App\Http\Controllers\HR\hireController;
 use App\Http\Controllers\HR\HRController;
+use App\Http\Controllers\HR\KaryawanProfileController;
+use App\Http\Controllers\HR\KaryawanTaskController;
 use App\Http\Controllers\HR\payrollController;
 use App\Http\Controllers\HR\presenceController;
 use App\Http\Controllers\HR\ReportController;
+use App\Http\Controllers\HR\SopController;
+use App\Http\Controllers\HR\StructureInixindoController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\InstructorDevelopmentController;
 use App\Http\Controllers\InventarisController;
@@ -1513,6 +1519,54 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::delete('/folders/{folder}', [ArsipRekrutmenController::class, 'permanentDeleteFolder'])->name('folders.delete');
         Route::delete('/pelamar/{pelamarFolderId}/restore', [ArsipRekrutmenController::class, 'restorePelamar'])->name('pelamar.restore');
     });
+
+    Route::prefix('structure')->name('structure.')->group(function () {
+        Route::get('/',          [StructureInixindoController::class, 'index'])->name('index');
+        Route::get('/api/tree',  [StructureInixindoController::class, 'apiTree'])->name('api.tree');
+        Route::post('/sync',     [StructureInixindoController::class, 'sync'])->name('sync');
+        Route::post('/reorder',  [StructureInixindoController::class, 'reorder'])->name('reorder');
+        Route::put('/update/{id}',  [StructureInixindoController::class, 'update'])->name('update');
+        Route::delete('/{id}',      [StructureInixindoController::class, 'destroy'])->name('destroy');
+        Route::post('/store',      [StructureInixindoController::class, 'store'])->name('store');
+        Route::get('/karyawans', [StructureInixindoController::class, 'getKaryawans'])->name('karyawans');
+        Route::post('/multi-parent', [StructureInixindoController::class, 'setMultiParent'])->name('multiParent');
+    });
+
+    Route::prefix('job-desk')->name('job_desk.')->group(function () {
+        Route::get('/',                 [KaryawanTaskController::class, 'index'])->name('index');
+        Route::post('/store',           [KaryawanTaskController::class, 'store'])->name('store');
+        Route::get('/api/{id}',         [KaryawanTaskController::class, 'show'])->name('show');
+        Route::put('/{id}',             [KaryawanTaskController::class, 'update'])->name('update');
+        Route::delete('/{id}',          [KaryawanTaskController::class, 'destroy'])->name('destroy');
+        Route::get('/org/{orgId}',      [KaryawanTaskController::class, 'getJobDesk'])->name('getByOrg');
+    });
+
+    Route::prefix('sop')->name('sop.')->group(function () {
+        Route::post('/store', [SopController::class, 'store'])->name('store');
+        Route::put('/{id}', [SopController::class, 'update'])->name('update');
+        Route::delete('/{id}', [SopController::class, 'destroy'])->name('destroy');
+        Route::get('/api/{id}', [SopController::class, 'show'])->name('show');
+    });
+
+    Route::prefix('karyawan-profile')->name('profile.')->group(function () {
+        Route::get('/{karyawanId}', [KaryawanProfileController::class, 'show'])->name('show');
+        Route::post('/', [KaryawanProfileController::class, 'store'])->name('store');
+        Route::put('/{karyawanId}', [KaryawanProfileController::class, 'update'])->name('update');
+        Route::delete('/{karyawanId}', [KaryawanProfileController::class, 'destroy'])->name('destroy');
+    });
+});
+
+Route::prefix('employee')->name('employee.')->middleware(['auth'])->group(function () {
+    Route::get('/job-desk', [EmployeeJobDeskController::class, 'index'])->name('jobdesk.index');
+    Route::get('/job-desk/api/{id}', [EmployeeJobDeskController::class, 'show'])->name('jobdesk.show');
+    
+    Route::get('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'showProfile'])->name('profile.show');
+    Route::post('/karyawan-profile', [EmployeeJobDeskController::class, 'storeProfile'])->name('profile.store');
+    Route::put('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'updateProfile'])->name('profile.update');
+    Route::delete('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'destroyProfile'])->name('profile.destroy');
+
+    Route::get('/structure', [EmployeeStructureController::class, 'index'])->name('structure.index');
+    Route::get('/structure/api/tree', [EmployeeStructureController::class, 'apiTree'])->name('structure.api.tree');
 });
 
 Route::get('/income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');

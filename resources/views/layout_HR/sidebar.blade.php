@@ -1,4 +1,4 @@
-<aside id="layout-menu" class="layout-menu menu-vertical menu bg-sidebar-premium">
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-sidebar-premium" style="">
 
     <div class="app-brand demo">
         <a href="{{ route('HR.index') }}" class="app-brand-link">
@@ -91,8 +91,31 @@
             </a>
         </li>
 
-        <li class="menu-item">
-            <div class="menu-divider my-2"></div>
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">
+                <i class="iconify me-1" data-icon="mdi:tune" data-width="14" data-height="14"></i>
+                Management
+            </span>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('HR.structure.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.structure.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:file-tree-outline" data-width="20" data-height="20"></i>
+                </span>
+                <span>Struktur Inixindo</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('HR.job_desk.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.job_desk.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:clipboard-text-outline" data-width="20" data-height="20"></i>
+                </span>
+                <span>Job Desk</span>
+                <span class="menu-link-indicator"></span>
+            </a>
         </li>
 
         <li class="menu-header small text-uppercase">
