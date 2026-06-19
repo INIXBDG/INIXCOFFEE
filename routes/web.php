@@ -6,6 +6,7 @@ use App\Http\Controllers\AdministrasiKaryawanController;
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\ApprovalPendapatanController;
 use App\Http\Controllers\approvedNetSalesController;
+use App\Http\Controllers\HR\ArsipRekrutmenController;
 use App\Http\Controllers\CateringController;
 use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\Crm\AktivitasController;
@@ -28,16 +29,23 @@ use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\DashboardItsmController;
 use App\Http\Controllers\DashboardSLAController;
 use App\Http\Controllers\dbklienController;
+use App\Http\Controllers\HR\EmployeeJobDeskController;
 use App\Http\Controllers\examController;
 use App\Http\Controllers\feedbackController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HR\employeeController;
+use App\Http\Controllers\HR\EmployeeStructureController;
+use App\Http\Controllers\HR\FolderController;
 use App\Http\Controllers\HR\hireController;
 use App\Http\Controllers\HR\HRController;
+use App\Http\Controllers\HR\KaryawanProfileController;
+use App\Http\Controllers\HR\KaryawanTaskController;
 use App\Http\Controllers\HR\payrollController;
 use App\Http\Controllers\HR\presenceController;
 use App\Http\Controllers\HR\ReportController;
+use App\Http\Controllers\HR\SopController;
+use App\Http\Controllers\HR\StructureInixindoController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\InstructorDevelopmentController;
 use App\Http\Controllers\InventarisController;
@@ -100,8 +108,11 @@ use App\Http\Controllers\PicPenagihanController;
 use App\Http\Controllers\StockOpnameController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\IncomeStatementController;
+use App\Http\Controllers\KoordinasiOfficeBoyController;
 use App\Http\Controllers\Office\OfficeExamController;
 use App\Http\Controllers\PerusahaanController;
+use App\Http\Controllers\ScheduleLogController;
+use App\Http\Controllers\VisitProjectController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1189,6 +1200,15 @@ Route::prefix('office')
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
         });
 
+        Route::prefix('koordinasi-ob')->name('KoordinasiOb.')->group(function() {
+            Route::get('/', [KoordinasiOfficeBoyController::class, 'index'])->name('index');
+            Route::get('/get-data', [KoordinasiOfficeBoyController::class, 'getData'])->name('getData');
+            Route::post('/store', [KoordinasiOfficeBoyController::class, 'store'])->name('store');
+            Route::post('/update', [KoordinasiOfficeBoyController::class, 'update'])->name('update');
+            Route::post('/update-status-{action}/{id}', [KoordinasiOfficeBoyController::class, 'updateStatus'])->name('updateStatus');
+            Route::delete('/delete/{id}', [KoordinasiOfficeBoyController::class, 'delete'])->name('delete');
+        });
+
         Route::prefix('/rekomendasi-lanjutan')
             ->name('rekomendasiLanjutan.')
             ->group(function () {
@@ -1450,11 +1470,123 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/save-with-mapping', [ReportController::class, 'saveWithMapping'])->name('save.mapping');
     });
 
-    Route::prefix('recruitment')->name('recruitment.')->group(function () {
-        Route::get('/', [hireController::class, 'index'])->name('index');
+    Route::prefix('hire')->name('hire.')->group(function() {
+        Route::get('/',             [HireController::class, 'index'])->name('index');
+        Route::post('/store',            [HireController::class, 'store'])->name('store');
+        Route::get('/show/{pelamar}',    [HireController::class, 'show'])->name('show');
+        Route::put('/update/{pelamar}',    [HireController::class, 'update'])->name('update');
+        Route::delete('/delete/{pelamar}', [HireController::class, 'destroy'])->name('destroy');
+        Route::post('/{pelamar}/lanjut-tahap',      [HireController::class, 'lanjutTahap'])->name('lanjutTahap');
+        Route::post('/{pelamar}/tolak',             [HireController::class, 'tolak'])->name('tolak');
+        Route::post('/{pelamar}/jadwal-interview',  [HireController::class, 'jadwalkanInterview'])->name('jadwalInterview');
+        Route::post('/{pelamar}/kirim-offer',       [HireController::class, 'kirimOffer'])->name('kirimOffer');
+        Route::post('/{pelamar}/onboarding',        [HireController::class, 'onboarding'])->name('onboarding');
+        Route::post('/{pelamar}/kirim-email',       [HireController::class, 'kirimEmail'])->name('kirimEmail');
+        Route::post('/{pelamar}/catatan',           [HireController::class, 'tambahCatatan'])->name('catatan');
+        Route::get('/{pelamar}/riwayat',            [HireController::class, 'riwayat'])->name('riwayat');
+        Route::get('/talent-pool/list',             [HireController::class, 'talentPool'])->name('talentPool');
+        Route::post('/{pelamar}/talent-pool',       [HireController::class, 'toggleTalentPool'])->name('toggleTalentPool');
+        Route::get('/export/data',                  [HireController::class, 'export'])->name('export');
+        Route::get('/stats/funnel',                 [HireController::class, 'funnelStats'])->name('funnelStats');
+        Route::get('/by-folder/{folderId?}', [HireController::class, 'getPelamarByFolder'])->name('by-folder');
+        Route::get('/folder-list', [HireController::class, 'getFolderList'])->name('folder-list');
+        Route::post('/penilaian', [HireController::class, 'storePenilaian'])->name('penilaian.store');
+        Route::get('/{pelamar}/cv', [HireController::class, 'lihatCV'])->name('cv');
+    });
+
+    Route::prefix('folders')->name('folders.')->group(function () {
+        Route::get('/', [FolderController::class, 'index'])->name('index');
+        Route::get('/data', [FolderController::class, 'getFolders'])->name('data');
+
+        Route::post('/store', [FolderController::class, 'storeFolder'])->name('store');
+        Route::get('/pelamar/belum-folder', [FolderController::class, 'getPelamarBelumFolder'])->name('pelamar.belum-folder');
+        Route::post('/pelamar/add', [FolderController::class, 'addPelamar'])->name('pelamar.add');
+        Route::post('/pelamar/move', [FolderController::class, 'movePelamar'])->name('pelamar.move');
+        Route::post('/pelamar/penilaian', [FolderController::class, 'storePenilaian'])->name('pelamar.penilaian');
+        Route::get('/pelamar/{pelamar}/penilaian', [FolderController::class, 'getPenilaian'])->name('pelamar.penilaian.get');
+        Route::delete('/pelamar/{pelamarId}/remove', [FolderController::class, 'removePelamar'])->name('pelamar.remove');
+        Route::get('/pelamar/{pelamar}/detail', [FolderController::class, 'getDetailPelamar'])->name('pelamar.detail');
+
+        Route::put('/{folder}/rename', [FolderController::class, 'renameFolder'])->name('rename');
+        Route::post('/{folder}/pin', [FolderController::class, 'togglePin'])->name('pin');
+        Route::post('/{folder}/archive', [FolderController::class, 'archiveFolder'])->name('archive');
+        Route::delete('/{folder}', [FolderController::class, 'destroyFolder'])->name('destroy');
+        Route::post('/{folder}/move', [FolderController::class, 'moveFolder'])->name('move');
+    });
+
+    Route::prefix('arsip')->name('arsip.')->group(function () {
+        Route::get('/', [ArsipRekrutmenController::class, 'index'])->name('index');
+        Route::get('/folders', [ArsipRekrutmenController::class, 'getArsipFolders'])->name('folders');
+        Route::get('/folders/{folderId}/pelamar', [ArsipRekrutmenController::class, 'getArsipPelamarByFolder'])->name('folders.pelamar');
+        Route::post('/pelamar/move', [ArsipRekrutmenController::class, 'movePelamarArsip'])->name('pelamar.move');
+        Route::post('/folders/{folder}/move', [ArsipRekrutmenController::class, 'moveFolderArsip'])->name('folders.move');
+        Route::post('/folders/{folder}/restore', [ArsipRekrutmenController::class, 'restoreFolder'])->name('folders.restore');
+        Route::delete('/folders/{folder}', [ArsipRekrutmenController::class, 'permanentDeleteFolder'])->name('folders.delete');
+        Route::delete('/pelamar/{pelamarFolderId}/restore', [ArsipRekrutmenController::class, 'restorePelamar'])->name('pelamar.restore');
+
+    });
+
+    Route::prefix('structure')->name('structure.')->group(function () {
+        Route::get('/',          [StructureInixindoController::class, 'index'])->name('index');
+        Route::get('/api/tree',  [StructureInixindoController::class, 'apiTree'])->name('api.tree');
+        Route::post('/sync',     [StructureInixindoController::class, 'sync'])->name('sync');
+        Route::post('/reorder',  [StructureInixindoController::class, 'reorder'])->name('reorder');
+        Route::put('/update/{id}',  [StructureInixindoController::class, 'update'])->name('update');
+        Route::delete('/{id}',      [StructureInixindoController::class, 'destroy'])->name('destroy');
+        Route::post('/store',      [StructureInixindoController::class, 'store'])->name('store');
+        Route::get('/karyawans', [StructureInixindoController::class, 'getKaryawans'])->name('karyawans');
+        Route::post('/multi-parent', [StructureInixindoController::class, 'setMultiParent'])->name('multiParent');
+    });
+
+    Route::prefix('job-desk')->name('job_desk.')->group(function () {
+        Route::get('/',                 [KaryawanTaskController::class, 'index'])->name('index');
+        Route::post('/store',           [KaryawanTaskController::class, 'store'])->name('store');
+        Route::get('/api/{id}',         [KaryawanTaskController::class, 'show'])->name('show');
+        Route::put('/{id}',             [KaryawanTaskController::class, 'update'])->name('update');
+        Route::delete('/{id}',          [KaryawanTaskController::class, 'destroy'])->name('destroy');
+        Route::get('/org/{orgId}',      [KaryawanTaskController::class, 'getJobDesk'])->name('getByOrg');
+    });
+
+    Route::prefix('sop')->name('sop.')->group(function () {
+        Route::post('/store', [SopController::class, 'store'])->name('store');
+        Route::put('/{id}', [SopController::class, 'update'])->name('update');
+        Route::delete('/{id}', [SopController::class, 'destroy'])->name('destroy');
+        Route::get('/api/{id}', [SopController::class, 'show'])->name('show');
+    });
+
+    Route::prefix('karyawan-profile')->name('profile.')->group(function () {
+        Route::get('/{karyawanId}', [KaryawanProfileController::class, 'show'])->name('show');
+        Route::post('/', [KaryawanProfileController::class, 'store'])->name('store');
+        Route::put('/{karyawanId}', [KaryawanProfileController::class, 'update'])->name('update');
+        Route::delete('/{karyawanId}', [KaryawanProfileController::class, 'destroy'])->name('destroy');
     });
 });
+
+Route::prefix('employee')->name('employee.')->middleware(['auth'])->group(function () {
+    Route::get('/job-desk', [EmployeeJobDeskController::class, 'index'])->name('jobdesk.index');
+    Route::get('/job-desk/api/{id}', [EmployeeJobDeskController::class, 'show'])->name('jobdesk.show');
+
+    Route::get('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'showProfile'])->name('profile.show');
+    Route::post('/karyawan-profile', [EmployeeJobDeskController::class, 'storeProfile'])->name('profile.store');
+    Route::put('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'updateProfile'])->name('profile.update');
+    Route::delete('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'destroyProfile'])->name('profile.destroy');
+
+    Route::get('/structure', [EmployeeStructureController::class, 'index'])->name('structure.index');
+    Route::get('/structure/api/tree', [EmployeeStructureController::class, 'apiTree'])->name('structure.api.tree');
+});
+
 Route::get('/income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
 Route::post('/income-statement/store', [IncomeStatementController::class, 'store'])->name('income-statement.store');
 Route::get('/income-statement/laporan', [IncomeStatementController::class, 'laporan'])->name('income-statement.laporan');
 Route::post('/perusahaan/merge', [PerusahaanController::class, 'merge'])->name('perusahaan.merge');
+
+
+Route::get('/schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule.index');
+Route::get('/schedule-logs/data', [ScheduleLogController::class, 'data'])->name('schedule.data');
+Route::delete('/schedule-logs/clear-all', [ScheduleLogController::class, 'clearAll'])->name('schedule.clear');
+
+Route::get('/visit-projects', [VisitProjectController::class, 'index'])->name('visit-projects.index');
+Route::get('/visit-projects/get', [VisitProjectController::class, 'get'])->name('visit-projects.get');
+Route::post('/visit-projects/store', [VisitProjectController::class, 'store'])->name('visit-projects.store');
+Route::put('/visit-projects/{visitProject}', [VisitProjectController::class, 'update'])->name('visit-projects.update');
+Route::delete('/visit-projects/{visitProject}', [VisitProjectController::class, 'destroy'])->name('visit-projects.destroy');

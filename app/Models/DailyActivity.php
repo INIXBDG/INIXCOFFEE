@@ -22,7 +22,7 @@ class DailyActivity extends Model
         'on_progress_next_day_at',
         'failed_at',
         'completed_at',
-    ];  
+    ];
 
     protected $casts = [
         'start_date' => 'date',
@@ -69,5 +69,10 @@ class DailyActivity extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function registryFeature()
+    {
+        return $this->hasOne(RegistryFeature::class, 'daily_activity_id', 'id');
     }
 }

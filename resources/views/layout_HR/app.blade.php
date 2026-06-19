@@ -69,6 +69,9 @@
         .menu-inner {
             padding-bottom: 100px;
             height: calc(100% - 70px);
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .sidebar-footer {
@@ -434,6 +437,13 @@
 
             #layout-menu {
                 z-index: 20;
+                height: 100vh;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            .sidebar-footer {
+                flex-shrink: 0;
             }
 
             @keyframes fadeIn {

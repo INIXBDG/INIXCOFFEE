@@ -187,6 +187,12 @@
                     <div class="text-truncate" data-i18n="contact">Stock Opname</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('office.KoordinasiOb.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.KoordinasiOb.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-user-plus"></i>
+                    <div class="text-truncate" data-i18n="contact">Koordinasi OB</div>
+                </a>
+            </li>
         @endif
 
         <li class="menu-header small text-uppercase">

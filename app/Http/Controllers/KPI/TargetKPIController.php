@@ -13766,7 +13766,7 @@ class TargetKPIController extends Controller
         })
         ->distinct()
         ->get();
-
+        
         $daftarTargetKPI = [];
         $employeeProgressMap = [];
         $employeeTargetStatusMap = [];

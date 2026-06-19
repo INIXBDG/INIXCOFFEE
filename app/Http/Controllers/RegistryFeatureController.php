@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\RegistryFeature;
 use App\Models\User;
+use App\Models\DailyActivity;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Permission;
 use App\Models\Tickets;
@@ -40,10 +41,16 @@ class RegistryFeatureController extends Controller
         $permissions = Permission::all();
         $unwantedWords = ['Create', 'Delete', 'View', 'Edit'];
 
-        $features = $permissions->pluck('name')->map(function ($name) use ($unwantedWords) {
+        $permissionFeatures = $permissions->pluck('name')->map(function ($name) use ($unwantedWords) {
             $cleanedName = str_replace($unwantedWords, '', $name);
             return trim($cleanedName);
-        })->filter()->unique()->sort()->values();
+        })->filter()->unique();
+
+        $registryFeatures = RegistryFeature::whereNotNull('fitur')->pluck('fitur')->unique();
+
+        $features = $permissionFeatures->merge($registryFeatures)->filter()->unique()->sort()->values();
+
+        $jabatans = User::whereNotNull('jabatan')->pluck('jabatan')->unique()->sort()->values();
 
         $assignedTickets = RegistryFeature::whereNotNull('ticket_id')->pluck('ticket_id');
 
@@ -56,7 +63,7 @@ class RegistryFeatureController extends Controller
             ])
             ->get();
 
-        return view('registry.create', compact('users', 'features', 'tickets'));
+        return view('registry.create', compact('users', 'features', 'tickets', 'jabatans'));
     }
 
     public function store(Request $request)
@@ -70,7 +77,7 @@ class RegistryFeatureController extends Controller
             'pemilik'         => 'required|string',
             'fakta'           => 'required|string',
             'harapan'         => 'required|string',
-            'waktu_perkiraan' => 'nullable|integer|min:1', // Mengubah menjadi nullable
+            'waktu_perkiraan' => 'nullable|integer|min:1',
             'ticket_id'       => 'nullable|string|exists:tickets,ticket_id',
         ]);
 
@@ -83,7 +90,18 @@ class RegistryFeatureController extends Controller
 
         $tugasBaru = RegistryFeature::create($validatedData);
 
-        // Logika Pengiriman Notifikasi ke Koordinator ITSM
+        $dailyActivity = DailyActivity::create([
+            'user_id'     => $tugasBaru->pengerja_id ?? auth()->id(),
+            'id_task'     => $tugasBaru->id,
+            'activity'    => $tugasBaru->tipe . ' - ' . $tugasBaru->fitur,
+            'status'      => 'On Progres',
+            'description' => $tugasBaru->tugas,
+        ]);
+
+        $tugasBaru->update([
+            'daily_activity_id' => $dailyActivity->id
+        ]);
+
         $koordinatorKaryawan = karyawan::where('jabatan', 'Koordinator ITSM')->first();
         if ($koordinatorKaryawan) {
             $userKoordinator = User::where('karyawan_id', $koordinatorKaryawan->id)->first();
@@ -203,8 +221,28 @@ class RegistryFeatureController extends Controller
             'tanggal_mulai' => $request->tanggal_mulai
         ]);
 
+        // Logika Pembaruan Start Date dan Status pada Daily Activity
+        $dailyActivity = null;
+        if ($tugas->daily_activity_id) {
+            $dailyActivity = DailyActivity::find($tugas->daily_activity_id);
+        } else {
+            // Cadangan untuk data lama sebelum migrasi
+            $dailyActivity = DailyActivity::where('id_task', $tugas->id)->first();
+        }
+
+        if ($dailyActivity) {
+            $dailyActivity->start_date = $request->tanggal_mulai;
+            $dailyActivity->updateStatus('On Progres'); // Memanggil fungsi kustom dari Model
+
+            // Perbarui ID jika menggunakan mekanisme cadangan
+            if (is_null($tugas->daily_activity_id)) {
+                $tugas->update(['daily_activity_id' => $dailyActivity->id]);
+            }
+        }
+
+        // Logika Pembaruan Status Ticket
         if ($tugas->ticket_id) {
-            $ticket = \App\Models\Tickets::where('id', $tugas->ticket_id)
+            $ticket = Tickets::where('id', $tugas->ticket_id)
                                          ->orWhere('ticket_id', $tugas->ticket_id)
                                          ->first();
             if ($ticket) {
@@ -249,8 +287,25 @@ class RegistryFeatureController extends Controller
             'tanggal_akhir' => $request->tanggal_akhir
         ]);
 
+        $dailyActivity = null;
+        if ($tugas->daily_activity_id) {
+            $dailyActivity = DailyActivity::find($tugas->daily_activity_id);
+        } else {
+            $dailyActivity = DailyActivity::where('id_task', $tugas->id)->first();
+        }
+
+        if ($dailyActivity) {
+            $dailyActivity->end_date = $request->tanggal_akhir;
+            $dailyActivity->updateStatus('Selesai');
+
+            if (is_null($tugas->daily_activity_id)) {
+                $tugas->update(['daily_activity_id' => $dailyActivity->id]);
+            }
+        }
+
+        // Logika Pembaruan Ticket dan Webhook Telegram
         if ($tugas->ticket_id) {
-            $ticket = \App\Models\Tickets::where('id', $tugas->ticket_id)
+            $ticket = Tickets::where('id', $tugas->ticket_id)
                                          ->orWhere('ticket_id', $tugas->ticket_id)
                                          ->first();
             if ($ticket) {
@@ -265,8 +320,7 @@ class RegistryFeatureController extends Controller
                     'penanganan' => $request->penanganan,
                 ]);
 
-                // 1. Logika Pengiriman Notifikasi Sistem (Survey)
-                $pembuatTiket = \App\Models\User::whereHas('karyawan', function ($query) use ($ticket) {
+                $pembuatTiket = User::whereHas('karyawan', function ($query) use ($ticket) {
                     $query->where('nama_lengkap', $ticket->nama_karyawan);
                 })->first();
 
@@ -274,7 +328,6 @@ class RegistryFeatureController extends Controller
                     \Illuminate\Support\Facades\Notification::send($pembuatTiket, new \App\Notifications\SurveyReminderNotification($ticket));
                 }
 
-                // 2. Logika Pengiriman Notifikasi Webhook Telegram
                 try {
                     $picName = $ticket->pic ?? auth()->user()->karyawan->nama_lengkap ?? auth()->user()->name;
 
@@ -295,8 +348,9 @@ class RegistryFeatureController extends Controller
         }
 
         return redirect()->route('registry.index')
-                         ->with('success', 'Tugas "' . $tugas->tugas . '" telah ditandai Selesai dan tiket diselesaikan beserta notifikasi.');
+                         ->with('success', 'Tugas "' . $tugas->tugas . '" telah ditandai Selesai dan tiket diselesaikan.');
     }
+
     public function destroy(RegistryFeature $tugas)
     {
         $tugas->delete();
