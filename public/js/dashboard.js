@@ -3021,7 +3021,7 @@ $(document).ready(function () {
     // =======================================================================
 
     initializeYearlySales();
-    initializeProjectTarget();
+    // initializeProjectTarget();
 
     // Inisialisasi dropdown filter bulan
     if (typeof loadBulanFilter === 'function') {
@@ -3050,7 +3050,7 @@ $(document).ready(function () {
         let year = $(this).val();
         if (year) {
             initializeYearlySales();
-            initializeProjectTarget(); // TAMBAHKAN INI
+            // initializeProjectTarget();
         }
     });
 
