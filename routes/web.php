@@ -1565,7 +1565,6 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 Route::prefix('employee')->name('employee.')->middleware(['auth'])->group(function () {
     Route::get('/job-desk', [EmployeeJobDeskController::class, 'index'])->name('jobdesk.index');
     Route::get('/job-desk/api/{id}', [EmployeeJobDeskController::class, 'show'])->name('jobdesk.show');
-
     Route::get('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'showProfile'])->name('profile.show');
     Route::post('/karyawan-profile', [EmployeeJobDeskController::class, 'storeProfile'])->name('profile.store');
     Route::put('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'updateProfile'])->name('profile.update');

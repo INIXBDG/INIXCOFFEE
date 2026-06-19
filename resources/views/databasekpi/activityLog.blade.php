@@ -1,5 +1,6 @@
-@extends('databasekpi.berandaKPI')
-@section('contentKPI')
+@extends('layouts_kpi.app')
+
+@section('kpi_contents')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
     .custom-scroll {

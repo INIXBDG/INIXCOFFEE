@@ -1,252 +1,295 @@
-@extends('databasekpi.berandaKPI')
-@section('contentKPI')
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+@extends('layouts_kpi.app')
 
+@section('kpi_contents')
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    {{-- ===== STYLE KHUSUS HALAMAN INI ===== --}}
     <style>
-        .corporate-btn-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08)
+        /* Page Header */
+        .page-header-modern {
+            margin-bottom: 1.5rem;
         }
 
-        .corporate-btn {
-            flex: 0 1 auto;
-            padding: 8px 14px;
-            border: none;
-            background: white;
-            color: #495057;
-            font-weight: 500;
-            font-size: .9rem;
+        .page-header-modern .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
             display: flex;
             align-items: center;
-            gap: 6px;
-            border-radius: 6px;
-            border: 1px solid #dee2e6;
+            gap: .5rem;
+        }
+
+        .page-title-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, .1), rgba(139, 92, 246, .1));
+            color: #6366f1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        /* Content Card */
+        .content-card {
+            background: #fff;
+            border-radius: 16px;
+            border: 0;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .04);
+            overflow: hidden;
+        }
+
+        .content-card .card-body {
+            padding: 2rem;
+        }
+
+        /* Tab Navigation Modern */
+        .modern-tab-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+        }
+
+        .modern-tab-btn {
+            flex: 1 1 auto;
+            min-width: 180px;
+            padding: 12px 18px;
+            border: 1px solid transparent;
+            background: #fff;
+            color: #475569;
+            font-weight: 600;
+            font-size: .875rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-radius: 10px;
             transition: all .25s ease;
-            white-space: nowrap
+            cursor: pointer;
+            white-space: nowrap;
+            text-align: left;
         }
 
-        .corporate-btn i {
-            font-size: 1rem;
-            flex-shrink: 0
+        .modern-tab-btn i {
+            font-size: 1.1rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(99, 102, 241, .08);
+            color: #6366f1;
+            flex-shrink: 0;
         }
 
-        .corporate-btn:hover {
-            background: linear-gradient(to right, #f1f3f5, #e9ecef);
-            color: #0d6efd;
-            border-color: #0d6efd
+        .modern-tab-btn:hover {
+            border-color: #cbd5e1;
+            background: #fff;
+            color: #1e293b;
+            transform: translateY(-1px);
         }
 
-        .corporate-btn:active {
-            background: #dee2e6
+        .modern-tab-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, .25);
         }
 
-        .corporate-btn.is-invalid {
-            border-color: #e74c3c !important;
-            color: #e74c3c !important;
-            box-shadow: 0 0 0 .15rem rgba(231, 76, 60, .25) !important
+        .modern-tab-btn.active i {
+            background: rgba(255, 255, 255, .2);
+            color: #fff;
         }
 
-        @media(max-width:768px) {
-            .corporate-btn-group {
+        .modern-tab-btn .tab-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.3;
+        }
+
+        .modern-tab-btn .tab-text .name {
+            font-weight: 700;
+            font-size: .9rem;
+        }
+
+        .modern-tab-btn .tab-text .type {
+            font-size: .75rem;
+            opacity: .8;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .modern-tab-group {
                 flex-wrap: nowrap;
                 overflow-x: auto;
                 scrollbar-width: thin;
-                -webkit-overflow-scrolling: touch
+                -webkit-overflow-scrolling: touch;
+                padding: 10px;
             }
 
-            .corporate-btn-group::-webkit-scrollbar {
-                height: 6px
+            .modern-tab-group::-webkit-scrollbar {
+                height: 6px;
             }
 
-            .corporate-btn-group::-webkit-scrollbar-thumb {
-                background-color: rgba(0, 0, 0, .2);
-                border-radius: 3px
+            .modern-tab-group::-webkit-scrollbar-thumb {
+                background: rgba(99, 102, 241, .3);
+                border-radius: 3px;
+            }
+
+            .modern-tab-btn {
+                min-width: 220px;
             }
         }
 
-        .styled-form {
-            padding: 20px
+        /* Select Dropdown (when > 3 tabs) */
+        .modern-select-wrapper {
+            position: relative;
+            margin-bottom: 1.5rem;
         }
 
-        .styled-form .card-kriteria {
+        .modern-select-wrapper .form-select {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all .2s ease;
+            background-color: #fff;
+        }
+
+        .modern-select-wrapper .form-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, .1);
+        }
+
+        /* Empty & Thank You States */
+        .state-card {
             background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
-            padding: 25px 30px;
-            margin-bottom: 30px;
-            transition: all .3s ease-in-out;
-            border-left: 5px solid #3498db;
-            box-sizing: border-box
-        }
-
-        .styled-form .card-kriteria h5 {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 20px
-        }
-
-        .styled-form label {
-            font-weight: 500;
-            color: #333
-        }
-
-        .styled-form .form-control,
-        .styled-form .form-select {
-            border-radius: 10px;
-            transition: border-color .3s ease-in-out
-        }
-
-        .styled-form .form-control:focus,
-        .styled-form .form-select:focus {
-            border-color: #3498db;
-            box-shadow: 0 0 0 .15rem rgba(52, 152, 219, .25)
-        }
-
-        .styled-form .btn-outline-secondary {
-            border-radius: 20px
-        }
-
-        .styled-form .btn-outline-secondary:hover,
-        .styled-form .btn-outline-secondary:focus {
-            background-color: #3498db;
-            color: #fff;
-            border-color: #3498db
-        }
-
-        .styled-form .form-check-input:checked {
-            background-color: #3498db;
-            border-color: #3498db
-        }
-
-        .styled-form .range-value {
-            width: 40px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, .06);
+            padding: 3rem 2rem;
             text-align: center;
-            color: #3498db;
-            font-weight: bold
+            border: 1px solid #f1f5f9;
         }
 
-        .styled-form .btn-primary {
-            background-color: #3498db;
-            border: none;
-            border-radius: 12px;
-            padding: 10px 30px;
+        .state-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .state-icon.success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, .15), rgba(5, 150, 105, .15));
+            color: #059669;
+        }
+
+        .state-icon.info {
+            background: linear-gradient(135deg, rgba(99, 102, 241, .15), rgba(139, 92, 246, .15));
+            color: #6366f1;
+        }
+
+        .state-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: .5rem;
+        }
+
+        .state-card p {
+            color: #64748b;
+            font-size: .95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .state-card .highlight-text {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(99, 102, 241, .1), rgba(139, 92, 246, .1));
+            color: #6366f1;
+            padding: .5rem 1.25rem;
+            border-radius: 50px;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(52, 152, 219, .4);
-            transition: all .3s ease-in-out
+            font-size: .9rem;
+            margin-top: .5rem;
         }
 
-        .styled-form .btn-primary:hover {
-            background-color: #2980b9;
-            box-shadow: 0 6px 16px rgba(41, 128, 185, .5)
+        /* Back Button */
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .6rem 1.25rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: .875rem;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            transition: all .2s ease;
+            margin-bottom: 1.5rem;
         }
 
-        .styled-form .is-invalid {
-            border-color: #e74c3c !important;
-            box-shadow: 0 0 0 .15rem rgba(231, 76, 60, .25) !important
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            transform: translateX(-2px);
         }
 
-        @media(max-width:768px) {
-            .styled-form {
-                padding: 10px
-            }
-
-            .styled-form .card-kriteria {
-                padding: 15px;
-                margin-bottom: 20px
-            }
-
-            .styled-form .row {
-                flex-direction: column;
-                margin-left: 0 !important
-            }
-
-            .styled-form label {
-                margin-bottom: 8px;
-                text-align: left !important;
-                padding-left: 0
-            }
-
-            .styled-form .col-md-4,
-            .styled-form .col-md-6,
-            .styled-form .col-md-8,
-            .styled-form .col-md-4 {
-                width: 100%;
-                max-width: 100%
-            }
-
-            .styled-form .text-end {
-                text-align: center !important;
-                margin-right: 0 !important
-            }
-
-            .styled-form .btn-primary {
-                width: 100%;
-                padding: 12px
-            }
-
-            .styled-form .d-flex.flex-wrap.gap-2,
-            .styled-form .d-flex.flex-wrap.gap-3 {
-                gap: 10px
-            }
-
-            .styled-form .d-flex.align-items-center.gap-3 {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px
-            }
+        /* Loading Spinner */
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid transparent;
+            border-top: 6px solid #a78bfa;
+            border-right: 6px solid #38bdf8;
+            border-bottom: 6px solid #34d399;
+            border-left: 6px solid #facc15;
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite;
+            margin: auto;
         }
 
-        .styled-form .btn-outline-secondary.is-invalid {
-            border-color: #e74c3c !important;
-            color: #e74c3c !important;
-            box-shadow: 0 0 0 .15rem rgba(231, 76, 60, .25) !important
-        }
-
-        .styled-form .form-check-label.is-invalid {
-            color: #e74c3c;
-            font-weight: 500
-        }
-
-        .styled-form .form-control.is-invalid,
-        .styled-form .form-select.is-invalid,
-        .styled-form .btn-check.is-invalid,
-        .styled-form .form-check-input.is-invalid {
-            animation: shake .5s ease-in-out
-        }
-
-        @keyframes shake {
-            0% {
-                transform: translateX(0)
-            }
-
-            25% {
-                transform: translateX(-5px)
-            }
-
-            50% {
-                transform: translateX(5px)
-            }
-
-            75% {
-                transform: translateX(-5px)
-            }
-
+        @keyframes spin {
             100% {
-                transform: translateX(0)
+                transform: rotate(360deg);
             }
+        }
+
+        /* Form Container */
+        .form-container {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .form-container .card-body {
+            padding: 0;
         }
     </style>
 
-    <div class="content-wrapper">
+    <div class="container content-wrapper mt-4">
+        {{-- Loading Modal --}}
         <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="loading-spinner"></div>
+                <div class="modal-content" style="background: transparent; box-shadow: none; border: none;">
+                    <div class="d-flex justify-content-center">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -273,45 +316,60 @@
         @if ($showThankYou)
             <div class="row justify-content-center">
                 <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <h6>Terima Kasih Telah Memberikan Penilaian Anda</h6>
-                            @if (session('evaluated_name'))
-                                <h5>"PENILAIAN KINERJA {{ strtoupper(session('evaluated_name')) }}"</h5>
-                            @endif
+                    <div class="state-card">
+                        <div class="state-icon success">
+                            <i class="fa-solid fa-check-circle"></i>
                         </div>
+                        <h3>Terima Kasih!</h3>
+                        <p>Penilaian Anda telah berhasil dikirim dan akan menjadi kontribusi berharga bagi pengembangan tim
+                            kami.</p>
+                        @if (session('evaluated_name'))
+                            <div class="highlight-text">
+                                <i class="fa-solid fa-user-tie me-1"></i>
+                                PENILAIAN KINERJA {{ strtoupper(session('evaluated_name')) }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
+
+            {{-- NOT EVALUATOR STATE --}}
         @elseif (empty($outputData) && !$isEvaluator)
             <div class="row justify-content-center">
                 <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <h6>Anda Belum Ditunjuk Untuk Menjadi Evaluator</h6>
-                            <h5>"PENILAIAN KINERJA"</h5>
-                            <a href="javascript:history.back()" class="btn btn-primary">Kembali</a>
+                    <div class="state-card">
+                        <div class="state-icon info">
+                            <i class="fa-solid fa-user-slash"></i>
                         </div>
+                        <h3>Belum Ditunjuk Sebagai Evaluator</h3>
+                        <p>Anda saat ini belum ditunjuk sebagai evaluator untuk penilaian kinerja manapun. Silakan hubungi
+                            atasan jika ini adalah kesalahan.</p>
+                        <a href="javascript:history.back()" class="btn-back">
+                            <i class="fa-solid fa-arrow-left"></i> Kembali
+                        </a>
                     </div>
                 </div>
             </div>
+
+            {{-- MAIN FORM --}}
         @else
-            <a href="javascript:history.back()" class="btn btn-primary mb-3">Kembali</a>
+            <a href="javascript:history.back()" class="btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Kembali
+            </a>
 
             <div class="row justify-content-center">
-                <div class="col-md-10">
-
+                <div class="col-md-11 col-lg-10">
                     @if (count($outputData) > 1)
+                        {{-- Tab Navigation (<=3 items) --}}
                         @if (count($outputData) <= 3)
-                            <div class="corporate-btn-group nav nav-tabs rounded-0 rounded-top" id="formTab"
-                                role="tablist">
+                            <div class="modern-tab-group" role="tablist">
                                 @foreach ($outputData as $i => $data)
                                     @php
                                         $shortNamePenilaian = match ($data['jenis_penilaian']) {
                                             'Manager/SPV/Team Leader (Atasan Langsung)' => 'Atasan Langsung',
                                             'General Manager' => 'General Manager',
                                             'Rekan Kerja (Satu Divisi)', 'Pekerja (Beda Divisi)' => 'Rekan Kerja',
-                                            'Self Apprisial' => 'Self Apprisial',
+                                            'Self Apprisial' => 'Self Appraisal',
                                             default => 'Lainnya',
                                         };
                                         $iconNamePenilaian = match ($data['jenis_penilaian']) {
@@ -322,45 +380,57 @@
                                             'Self Apprisial' => 'bi-person-check',
                                             default => 'bi-file-text',
                                         };
+                                        $evaluatedName = strtoupper(
+                                            implode(' ', array_slice(explode(' ', $data['evaluated']), 0, 2)),
+                                        );
                                     @endphp
-                                    <button class="corporate-btn nav-link @if ($i == $activeTab) active @endif"
+                                    <button class="modern-tab-btn nav-link @if ($i == $activeTab) active @endif"
                                         id="tab-{{ $i }}" data-bs-toggle="tab"
-                                        data-bs-target="#form-{{ $i }}" type="button">
+                                        data-bs-target="#form-{{ $i }}" type="button" role="tab">
                                         <i class="bi {{ $iconNamePenilaian }}"></i>
-                                        {{ strtoupper(implode(' ', array_slice(explode(' ', $data['evaluated']), 0, 2))) }}
-                                        -
-                                        {{ $shortNamePenilaian }}
+                                        <span class="tab-text">
+                                            <span class="name">{{ $evaluatedName }}</span>
+                                            <span class="type">{{ $shortNamePenilaian }}</span>
+                                        </span>
                                     </button>
                                 @endforeach
                             </div>
+
+                            {{-- Select Dropdown (>3 items) --}}
                         @else
-                            <div class="mb-3">
-                                <select id="formTabSelect" class="form-select">
+                            <div class="modern-select-wrapper">
+                                <label class="form-label fw-semibold text-dark mb-2">
+                                    <i class="fa-solid fa-list-check text-primary me-1"></i> Pilih Form Penilaian
+                                </label>
+                                <select id="formTabSelect" class="form-select form-select-lg">
                                     @foreach ($outputData as $i => $data)
                                         @php
                                             $shortNamePenilaian = match ($data['jenis_penilaian']) {
                                                 'Manager/SPV/Team Leader (Atasan Langsung)' => 'Atasan Langsung',
                                                 'General Manager' => 'General Manager',
                                                 'Rekan Kerja (Satu Divisi)', 'Pekerja (Beda Divisi)' => 'Rekan Kerja',
-                                                'Self Apprisial' => 'Self Apprisial',
+                                                'Self Apprisial' => 'Self Appraisal',
                                                 default => 'Lainnya',
                                             };
+                                            $evaluatedName = strtoupper(
+                                                implode(' ', array_slice(explode(' ', $data['evaluated']), 0, 2)),
+                                            );
                                         @endphp
                                         <option value="form-{{ $i }}"
                                             @if ($i == $activeTab) selected @endif>
-                                            {{ strtoupper(implode(' ', array_slice(explode(' ', $data['evaluated']), 0, 2))) }}
-                                            - {{ $shortNamePenilaian }}
+                                            {{ $evaluatedName }} - {{ $shortNamePenilaian }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
                         @endif
 
+                        {{-- Tab Content --}}
                         <div class="tab-content">
                             @foreach ($outputData as $i => $data)
                                 <div class="tab-pane fade @if ($i == $activeTab) show active @endif"
-                                    id="form-{{ $i }}">
-                                    <div class="card rounded-0 rounded-bottom shadow-sm">
+                                    id="form-{{ $i }}" role="tabpanel">
+                                    <div class="form-container">
                                         <div class="card-body">
                                             @include('databasekpi.formPenilaianUser', [
                                                 'data' => $data,
@@ -371,8 +441,10 @@
                                 </div>
                             @endforeach
                         </div>
+
+                        {{-- Single Form (no tabs) --}}
                     @else
-                        <div class="card rounded-0 rounded-bottom shadow-sm">
+                        <div class="form-container">
                             <div class="card-body">
                                 @include('databasekpi.formPenilaianUser', [
                                     'data' => $outputData[0],
@@ -381,22 +453,22 @@
                             </div>
                         </div>
                     @endif
-
                 </div>
             </div>
         @endif
 
+        {{-- SweetAlert Notifications --}}
         @if (session('success'))
             <script>
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil!',
                     text: {!! json_encode(session('success')) !!},
-                    confirmButtonColor: '#3085d6',
+                    confirmButtonColor: '#6366f1',
                     timer: 1500,
                     timerProgressBar: true,
                     showConfirmButton: false
-                })
+                });
             </script>
         @endif
 
@@ -406,8 +478,8 @@
                     icon: 'error',
                     title: 'Gagal',
                     text: {!! json_encode(session('error')) !!},
-                    confirmButtonColor: '#d33'
-                })
+                    confirmButtonColor: '#ef4444'
+                });
             </script>
         @endif
 
@@ -417,8 +489,8 @@
                     icon: 'error',
                     title: 'Validasi Gagal',
                     html: '{!! implode('<br>', array_map('e', $errors->all())) !!}',
-                    confirmButtonColor: '#d33'
-                })
+                    confirmButtonColor: '#ef4444'
+                });
             </script>
         @endif
 
@@ -427,17 +499,16 @@
                 Swal.fire({
                     icon: 'success',
                     title: 'Terima Kasih!',
-                    html: 'Terima kasih telah menyelesaikan semua penilaian.<br><strong>PENILAIAN KINERJA {{ strtoupper(session('evaluated_name ') ?? '') }}</strong>',
+                    html: 'Terima kasih telah menyelesaikan semua penilaian.<br><strong class="text-primary">PENILAIAN KINERJA {{ strtoupper(session('evaluated_name') ?? '') }}</strong>',
                     confirmButtonText: 'Kembali',
-                    confirmButtonColor: '#3085d6',
+                    confirmButtonColor: '#6366f1',
                     allowOutsideClick: false,
                     allowEscapeKey: false
                 }).then(() => {
-                    window.history.back()
-                })
+                    window.history.back();
+                });
             </script>
         @endif
-
     </div>
 
     <script>
@@ -446,7 +517,7 @@
             if (valueDisplay) {
                 valueDisplay.textContent = rangeInput.value;
                 let val = parseInt(rangeInput.value);
-                valueDisplay.style.color = val < 30 ? "red" : val < 70 ? "orange" : "green";
+                valueDisplay.style.color = val < 30 ? "#ef4444" : val < 70 ? "#f59e0b" : "#10b981";
             }
         }
 
@@ -471,12 +542,29 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.tab-pane.active').forEach(p => bindRangeEvents(p));
+
             document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
                 tab.addEventListener('shown.bs.tab', e => {
                     const pane = document.querySelector(e.target.getAttribute('data-bs-target'));
                     if (pane) bindRangeEvents(pane);
                 });
             });
+
+            // Handle select dropdown for > 3 tabs
+            const selectEl = document.getElementById('formTabSelect');
+            if (selectEl) {
+                selectEl.addEventListener('change', function() {
+                    const targetId = this.value;
+                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('show',
+                        'active'));
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        target.classList.add('show', 'active');
+                        bindRangeEvents(target);
+                    }
+                });
+            }
+
             document.querySelectorAll('.styled-form').forEach(form => {
                 form.addEventListener('submit', function(e) {
                     if (!validateForm(this)) {
@@ -485,7 +573,7 @@
                             icon: 'error',
                             title: 'Validasi Gagal',
                             text: 'Harap lengkapi semua field yang wajib diisi.',
-                            confirmButtonColor: '#d33'
+                            confirmButtonColor: '#ef4444'
                         });
                     }
                 });
