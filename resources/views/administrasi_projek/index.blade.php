@@ -227,6 +227,10 @@
     .modal-backdrop.show {
         opacity: 0.75;
     }
+
+    .dataTables_scrollBody {
+        min-height: 300px !important;
+    }
     
 </style>
 
@@ -324,11 +328,11 @@
                         // Logika Penentuan Kelengkapan Dokumen Dasar (Pastikan isComplete sudah didefinisikan sebelumnya)
                         
                         // 1. Pembuka Kerangka Dropup
-                        let actions = '<div class="btn-group dropup" style="overflow: visible !important;">';
-                        actions += '<button type="button" class="btn btn-sm dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-bs-boundary="window">';
-                        actions += 'Actions ';
-                        actions += '</button>';
-                        actions += '<div class="dropdown-menu shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
+                        let actions = '<div class="btn-group dropdown">';
+                            actions += '<button type="button" class="btn btn-sm dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-bs-boundary="window">';
+                            actions += 'Actions ';
+                            actions += '</button>';
+                            actions += '<div class="dropdown-menu dropdown-menu-end shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
 
                         // 2. Logika Tombol Kelola/Keputusan
                         if (row.dataproject.phase === 'administrasi') {
