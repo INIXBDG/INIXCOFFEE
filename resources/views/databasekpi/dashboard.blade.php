@@ -2,165 +2,292 @@
 
 @section('kpi_contents')
     <style>
-        .btn-plain { all: unset; cursor: pointer; display: block; padding: 0; }
-        #totalPenilaianChart { max-height: 250px; }
-        .chart-g-blue { background-color: linear-gradient(#8F87F1, #C68EFD, #E9A5F1, #FED2E2); }
+        .btn-plain {
+            all: unset;
+            cursor: pointer;
+            display: block;
+            padding: 0;
+        }
+
+        #totalPenilaianChart {
+            max-height: 250px;
+        }
+
         .loading-spinner {
-            width: 60px; height: 60px; border: 6px solid transparent; border-top: 6px solid #a78bfa;
-            border-right: 6px solid #38bdf8; border-bottom: 6px solid #34d399; border-left: 6px solid #facc15;
-            border-radius: 50%; animation: spin 1.2s linear infinite; margin: auto;
+            width: 60px;
+            height: 60px;
+            border: 6px solid transparent;
+            border-top: 6px solid #a78bfa;
+            border-right: 6px solid #38bdf8;
+            border-bottom: 6px solid #34d399;
+            border-left: 6px solid #facc15;
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite;
+            margin: auto;
         }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
         @media only screen and (max-width:800px) {
-            .doughnutjs-wrapper { width: 100%; max-width: 400px; height: auto; }
-            canvas#myChart { width: 100% !important; height: 100% !important; }
-            .card-trafic { max-height: none; height: 300px; }
+            .doughnutjs-wrapper {
+                width: 100%;
+                max-width: 400px;
+                height: auto;
+            }
+            canvas#myChart {
+                width: 100% !important;
+                height: 100% !important;
+            }
+            .card-trafic {
+                max-height: none;
+                height: 300px;
+            }
         }
-        .card-trafic { max-height: 170px; overflow-x: hidden; }
-        @media (max-width: 768px) { #select_peringkatPenilaian { width: 100% !important; } }
-        #btn_exportPDF_rangking { min-width: 50px; }
+
+        .card-trafic {
+            max-height: 170px;
+            overflow-x: hidden;
+        }
+
+        @media (max-width: 768px) {
+            #select_peringkatPenilaian {
+                width: 100% !important;
+            }
+        }
+
+        #btn_exportPDF_rangking {
+            min-width: 50px;
+        }
+
         .card-podium-1 { transform: scale(1.05); }
         .card-podium-2 { transform: scale(0.95); }
         .card-podium-3 { transform: scale(0.9); }
+
         #contentKPIDivisi::-webkit-scrollbar { height: 6px; }
         #contentKPIDivisi::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
         #contentKPIDivisi::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
         #contentKPIDivisi::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
         #contentKPIDivisi { -webkit-overflow-scrolling: touch; }
-        .progress-vertical { display: flex; align-items: flex-end; border-radius: 10px; overflow: hidden; }
-        .progress-vertical .progress-bar { transition: height 0.6s ease; border-radius: 10px 10px 0 0; }
-        .bar-container { display: flex; flex-direction: column; align-items: center; margin: 0 15px; }
-        .bar-label { margin-top: 8px; font-size: 14px; font-weight: 500; text-align: center; }
-        .bar-value { margin-bottom: 6px; font-weight: bold; color: #444; }
-        .legend-box { display: inline-block; width: 15px; height: 15px; border-radius: 3px; }
-        .scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 10px; }
-        .scroll-wrapper::-webkit-scrollbar { height: 6px; }
-        .scroll-wrapper::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
-        .chart-container canvas { width: 100% !important; height: 400px !important; }
+
+        .legend-box {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+
+        /* ===== Plain Card Theme ===== */
+        .plain-card {
+            background: #fff;
+            border: 0;
+            border-radius: 1rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,.06);
+            transition: box-shadow .2s ease;
+        }
+        .plain-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,.08);
+        }
+        .plain-card .card-body { padding: 1.5rem; }
+
+        .stat-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem;
+        }
+        .stat-icon.aktif   { background: rgba(99,102,241,.12); color: #6366f1; }
+        .stat-icon.sakit   { background: rgba(14,165,233,.12); color: #0ea5e9; }
+        .stat-icon.izin    { background: rgba(16,185,129,.12); color: #10b981; }
+        .stat-icon.cuti    { background: rgba(245,158,11,.12); color: #f59e0b; }
+
+        .stat-badge {
+            font-size: .7rem;
+            font-weight: 600;
+            padding: .35rem .7rem;
+            border-radius: 999px;
+        }
+        .stat-badge.aktif { background: rgba(99,102,241,.1);  color: #6366f1; }
+        .stat-badge.sakit { background: rgba(14,165,233,.1);  color: #0ea5e9; }
+        .stat-badge.izin  { background: rgba(16,185,129,.1);  color: #10b981; }
+        .stat-badge.cuti  { background: rgba(245,158,11,.1);  color: #f59e0b; }
+
+        /* Ranking podium gradients (no red) */
+        .podium-1 { background: linear-gradient(135deg,#fde68a,#f59e0b); }
+        .podium-2 { background: linear-gradient(135deg,#e0e7ff,#a5b4fc); }
+        .podium-3 { background: linear-gradient(135deg,#fed7aa,#fb923c); }
+
+        /* Progress bar no-red */
+        .progress-bar.bg-danger-soft { background-color: #f59e0b !important; }
+
+        /* Scrollbar tipis global */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
     </style>
 
-    <div class="container flex-grow-1">
+    <div class="container flex-grow-1 mt-4">
         <div class="content-wrapper">
-            <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="loading-spinner"></div>
-                </div>
-            </div>
-            
-            <div class="page-header mb-4">
-                <nav aria-label="breadcrumb">
-                    <ul class="breadcrumb">
-                        <li class="breadcrumb-item active" aria-current="page">
-                            <span></span>Dashboard <i class="mdi mdi-alert-circle-outline icon-sm text-primary align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Lihat statistik data seputar KPI."></i>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
 
+            {{-- ===== TOP 4 STAT CARDS ===== --}}
             <div class="row g-4 mb-4">
+                {{-- Card 1: Jumlah Karyawan Aktif --}}
                 <div class="col-md-6 col-xl-3 stretch-card d-flex">
-                    <div class="card bg-gradient-danger card-img-holder text-white shadow-sm rounded-4 flex-fill p-4">
-                        <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}" class="card-img-absolute" alt="circle-image" />
-                        <h6 class="font-weight-normal mb-3">Jumlah Karyawan Aktif</h6>
-                        <h3 class="mb-0">
-                            <span id="content_JK">
-                                <div class="spinner-border text-light" role="status" style="width:2rem;height:2rem;"></div>
-                            </span>
-                        </h3>
+                    <div class="plain-card flex-fill w-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="stat-icon aktif"><i class="ti-user"></i></div>
+                                <span class="stat-badge aktif">Aktif</span>
+                            </div>
+                            <h6 class="text-muted mb-1" style="font-size:.85rem;">Jumlah Karyawan Aktif</h6>
+                            <h3 class="fw-bold mb-0 text-dark">
+                                <span id="content_JK">
+                                    <div class="spinner-border text-primary" role="status" style="width:1.5rem;height:1.5rem;"></div>
+                                </span>
+                            </h3>
+                        </div>
                     </div>
                 </div>
 
+                {{-- Card 2: Sakit --}}
                 <div class="col-md-6 col-xl-3 stretch-card d-flex">
-                    <div class="card bg-gradient-info shadow-sm card-img-holder text-white rounded-4 flex-fill p-4" data-bs-toggle="modal" data-bs-target="#modalSakit" style="cursor:pointer;">
-                        <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}" class="card-img-absolute" alt="circle-image" />
-                        <h6 class="font-weight-normal mb-3">
-                            @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
-                                Sakit Dalam Semester Ini
-                            @else
-                                Data Sakit Anda Semester Ini
-                            @endif
-                        </h6>
-                        <h3 class="mb-0">
-                            <span id="content_KS">
-                                <div class="spinner-border text-light" role="status" style="width:2rem;height:2rem;"></div>
-                            </span>
-                        </h3>
+                    <div class="plain-card flex-fill w-100"
+                         data-bs-toggle="modal" data-bs-target="#modalSakit" style="cursor:pointer;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="stat-icon sakit"><i class="ti-medall"></i></div>
+                                <span class="stat-badge sakit">Semester</span>
+                            </div>
+                            <h6 class="text-muted mb-1" style="font-size:.85rem;">
+                                @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+                                    Sakit Dalam Semester Ini
+                                @else
+                                    Data Sakit Anda Semester Ini
+                                @endif
+                            </h6>
+                            <h3 class="fw-bold mb-0 text-dark">
+                                <span id="content_KS">
+                                    <div class="spinner-border text-primary" role="status" style="width:1.5rem;height:1.5rem;"></div>
+                                </span>
+                            </h3>
+                        </div>
                     </div>
                 </div>
 
+                {{-- Card 3: Izin --}}
                 <div class="col-md-6 col-xl-3 stretch-card d-flex">
-                    <div class="card bg-gradient-success shadow-sm card-img-holder text-white rounded-4 flex-fill p-4" data-bs-toggle="modal" data-bs-target="#modalIzin" style="cursor:pointer;">
-                        <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}" class="card-img-absolute" alt="circle-image" />
-                        <h6 class="font-weight-normal mb-3">
-                            @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
-                                Izin Dalam Triwulan Ini
-                            @else
-                                Data Izin Anda Semester Ini
-                            @endif
-                        </h6>
-                        <h3 class="mb-0">
-                            <span id="content_KI">
-                                <div class="spinner-border text-light" role="status" style="width:2rem;height:2rem;"></div>
-                            </span>
-                        </h3>
+                    <div class="plain-card flex-fill w-100"
+                         data-bs-toggle="modal" data-bs-target="#modalIzin" style="cursor:pointer;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="stat-icon izin"><i class="ti-check-box"></i></div>
+                                <span class="stat-badge izin">Triwulan</span>
+                            </div>
+                            <h6 class="text-muted mb-1" style="font-size:.85rem;">
+                                @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+                                    Izin Dalam Triwulan Ini
+                                @else
+                                    Data Izin Anda Semester Ini
+                                @endif
+                            </h6>
+                            <h3 class="fw-bold mb-0 text-dark">
+                                <span id="content_KI">
+                                    <div class="spinner-border text-primary" role="status" style="width:1.5rem;height:1.5rem;"></div>
+                                </span>
+                            </h3>
+                        </div>
                     </div>
                 </div>
 
+                {{-- Card 4: Cuti --}}
                 <div class="col-md-6 col-xl-3 stretch-card d-flex">
-                    <div class="card bg-gradient-warning shadow-sm card-img-holder text-white rounded-4 flex-fill p-4" data-bs-toggle="modal" data-bs-target="#modalCuti" style="cursor:pointer;">
-                        <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}" class="card-img-absolute" alt="circle-image" />
-                        <h6 class="font-weight-normal mb-3">
-                            @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
-                                Cuti Dalam Triwulan Ini
-                            @else
-                                Data Cuti Anda Semester Ini
-                            @endif
-                        </h6>
-                        <h3 class="mb-0">
-                            <span id="content_KC">
-                                <div class="spinner-border text-light" role="status" style="width:2rem;height:2rem;"></div>
-                            </span>
-                        </h3>
+                    <div class="plain-card flex-fill w-100"
+                         data-bs-toggle="modal" data-bs-target="#modalCuti" style="cursor:pointer;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="stat-icon cuti"><i class="ti-calendar"></i></div>
+                                <span class="stat-badge cuti">Triwulan</span>
+                            </div>
+                            <h6 class="text-muted mb-1" style="font-size:.85rem;">
+                                @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+                                    Cuti Dalam Triwulan Ini
+                                @else
+                                    Data Cuti Anda Semester Ini
+                                @endif
+                            </h6>
+                            <h3 class="fw-bold mb-0 text-dark">
+                                <span id="content_KC">
+                                    <div class="spinner-border text-primary" role="status" style="width:1.5rem;height:1.5rem;"></div>
+                                </span>
+                            </h3>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            {{-- ===== MIDDLE SECTION ===== --}}
             <div class="row g-4 mb-4 align-items-stretch">
-                @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+                @if (auth()->user()->jabatan === 'HRD' ||
+                        auth()->user()->jabatan === 'GM' ||
+                        auth()->user()->jabatan === 'Direktur Utama')
+
+                    {{-- Kolom Kiri: Terbaik Divisi + Progress Divisi --}}
                     <div class="col-xl-7 d-flex flex-column gap-4">
-                        <div class="card border-0 bg-light shadow-sm flex-fill">
+
+                        {{-- Terbaik Divisi --}}
+                        <div class="plain-card flex-fill">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="mb-0 fw-bold"><i class="mdi mdi-trophy-variant mdi-18px"></i> Terbaik Divisi</h6>
-                                    <form action="{{ route('databaseKPI.downloadDivisi') }}" method="post" class="d-flex w-50">
+                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                    <h6 class="mb-0 fw-bold text-dark">
+                                        <i class="mdi mdi-trophy-variant mdi-18px text-warning me-1"></i> Terbaik Divisi
+                                    </h6>
+                                    <form action="{{ route('databaseKPI.downloadDivisi') }}" method="post"
+                                          class="d-flex" style="min-width:220px;">
                                         @csrf
                                         <div class="input-group">
                                             <select class="form-select bg-white text-dark" id="select_peringkatPenilaian" name="divisi">
                                                 <option>Education</option>
                                             </select>
-                                            <button class="btn btn-danger" type="submit" id="btn_exportPDF_rangking"><i class="fa-solid fa-file-pdf"></i></button>
+                                            <button class="btn btn-warning text-white" type="submit" id="btn_exportPDF_rangking">
+                                                <i class="fa-solid fa-file-pdf"></i>
+                                            </button>
                                         </div>
                                         <input type="hidden" name="quartal" value="Q{{ ceil(date('m') / 3) }}">
                                         <input type="hidden" name="tahun" value="{{ date('Y') }}">
                                     </form>
                                 </div>
-                                <div class="row justify-content-center align-items-end text-center row-ranking" style="min-height:300px;">
-                                    <div class="loader" id="loader"><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div></div>
+
+                                <div class="row justify-content-center align-items-end text-center row-ranking"
+                                     style="min-height:300px;">
+                                    <div class="loader" id="loader">
+                                        <div class="bubble"></div>
+                                        <div class="bubble"></div>
+                                        <div class="bubble"></div>
+                                        <div class="bubble"></div>
+                                    </div>
+                                </div>
+
+                                <div class="text-center mt-3">
+                                    <small class="text-muted fst-italic">*hasil diambil dari penilaian 360°, tidak termasuk yang lainnya</small>
                                 </div>
                                 <div class="text-center mt-3">
-                                    <small class="text-dark-50 fst-italic">*hasil diambil dari penilaian 360°, tidak termasuk yang lainnya</small>
-                                </div>
-                                <div class="text-center mt-3">
-                                    <button type="button" class="btn btn-gradient-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalPeringkatPenilaian360">lihat semua</button>
+                                    <button type="button" class="btn btn-primary rounded-pill px-4"
+                                            data-bs-toggle="modal" data-bs-target="#modalPeringkatPenilaian360">
+                                        lihat semua
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="card border-0 shadow-sm flex-fill">
+                        {{-- Progress Divisi --}}
+                        <div class="plain-card flex-fill">
                             <div class="card-body">
-                                <h4 class="fw-bold mb-1">Progress Divisi</h4>
-                                <p class="text-muted mb-3 small">Ringkasan performa tahun berjalan</p>
-                                <div id="contentKPIDivisi" class="d-flex flex-nowrap overflow-x-auto pb-3 gap-3" style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
+                                <h5 class="fw-bold text-dark mb-1">Progress Divisi</h5>
+                                <p class="text-muted small mb-3">Ringkasan performa tahun berjalan</p>
+                                <div id="contentKPIDivisi" class="d-flex flex-nowrap overflow-x-auto pb-3 gap-3"
+                                     style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
                                     <div class="d-flex justify-content-center align-items-center w-100 text-muted py-4">
                                         <div class="spinner-border text-secondary me-2" style="width:1.5rem;height:1.5rem;"></div>
                                         <span class="small">Memuat data...</span>
@@ -173,16 +300,21 @@
                         </div>
                     </div>
 
+                    {{-- Kolom Kanan: Chart Penilaian 360° --}}
                     <div class="col-xl-5 d-flex flex-column">
-                        <div class="card border-0 bg-light shadow-sm flex-fill h-100">
+                        <div class="plain-card flex-fill h-100">
                             <div class="card-body">
-                                <h4 class="card-title mb-4">Chart Penilaian 360°</h4>
+                                <h5 class="fw-bold text-dark mb-4">Chart Penilaian 360°</h5>
                                 <div id="containerChartPenilaian" class="position-relative" style="min-height: 250px;">
-                                    <div id="loadingPenilaian" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-light" style="z-index: 10;">
+                                    <div id="loadingPenilaian"
+                                         class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-white"
+                                         style="z-index: 10; border-radius: 1rem;">
                                         <div class="spinner-border text-primary" role="status"></div>
                                         <small class="text-muted mt-2">Memuat penilaian...</small>
                                     </div>
-                                    <div id="emptyPenilaian" class="position-absolute top-0 start-0 w-100 h-100 d-none flex-column justify-content-center align-items-center bg-light" style="z-index: 10;">
+                                    <div id="emptyPenilaian"
+                                         class="position-absolute top-0 start-0 w-100 h-100 d-none flex-column justify-content-center align-items-center bg-white"
+                                         style="z-index: 10; border-radius: 1rem;">
                                         <i class="fas fa-chart-pie fs-1 text-muted opacity-50"></i>
                                         <p class="text-muted small mt-2 mb-0">Belum ada data penilaian</p>
                                     </div>
@@ -196,17 +328,23 @@
                             </div>
                         </div>
                     </div>
+
                 @else
+                    {{-- User biasa: Chart 360 + KPI Personal --}}
                     <div class="col-xl-5 d-flex flex-column">
-                        <div class="card border-0 bg-light shadow-sm flex-fill h-100">
+                        <div class="plain-card flex-fill h-100">
                             <div class="card-body">
-                                <h4 class="card-title mb-4">Chart Penilaian 360°</h4>
+                                <h5 class="fw-bold text-dark mb-4">Chart Penilaian 360°</h5>
                                 <div id="containerChartPenilaian" class="position-relative" style="min-height: 250px;">
-                                    <div id="loadingPenilaian" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-light" style="z-index: 10;">
+                                    <div id="loadingPenilaian"
+                                         class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-white"
+                                         style="z-index: 10; border-radius: 1rem;">
                                         <div class="spinner-border text-primary" role="status"></div>
                                         <small class="text-muted mt-2">Memuat penilaian...</small>
                                     </div>
-                                    <div id="emptyPenilaian" class="position-absolute top-0 start-0 w-100 h-100 d-none flex-column justify-content-center align-items-center bg-light" style="z-index: 10;">
+                                    <div id="emptyPenilaian"
+                                         class="position-absolute top-0 start-0 w-100 h-100 d-none flex-column justify-content-center align-items-center bg-white"
+                                         style="z-index: 10; border-radius: 1rem;">
                                         <i class="fas fa-chart-pie fs-1 text-muted opacity-50"></i>
                                         <p class="text-muted small mt-2 mb-0">Belum ada data penilaian</p>
                                     </div>
@@ -220,8 +358,9 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="col-xl-7 d-flex flex-column">
-                        <div class="card border-0 shadow-sm flex-fill h-100">
+                        <div class="plain-card flex-fill h-100">
                             <div class="card-body d-flex flex-column justify-content-center" id="contentKPIPersonal">
                                 <div class="text-center py-5">
                                     <div class="spinner-border text-secondary mb-3" style="width:2rem;height:2rem;"></div>
@@ -233,32 +372,48 @@
                 @endif
             </div>
 
+            {{-- ===== BOTTOM SECTION ===== --}}
             <div class="row g-4 mb-4 align-items-stretch">
-                @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+                @if (auth()->user()->jabatan === 'HRD' ||
+                        auth()->user()->jabatan === 'GM' ||
+                        auth()->user()->jabatan === 'Direktur Utama')
+
+                    {{-- Data Formulir --}}
                     <div class="col-lg-6 d-flex flex-column">
-                        <div class="card bg-light shadow-sm flex-fill h-100">
+                        <div class="plain-card flex-fill h-100">
                             <div class="card-body">
-                                <h4 class="card-title">Data Formulir</h4>
-                                <div class="row mt-4">
+                                <h5 class="fw-bold text-dark mb-1">Data Formulir</h5>
+                                <p class="text-muted small mb-4">Distribusi status karyawan</p>
+                                <div class="row mt-2 align-items-center">
                                     <div class="col-sm-6 position-relative" style="min-height: 200px;">
-                                        <div id="loadingFormulir" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-light" style="z-index: 10;">
+                                        <div id="loadingFormulir"
+                                             class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-white"
+                                             style="z-index: 10; border-radius: 1rem;">
                                             <div class="spinner-border text-primary"></div>
                                         </div>
                                         <canvas id="doughnutCharthr" height="200"></canvas>
                                     </div>
                                     <div class="col-sm-6">
-                                        <div class="row mb-4"><div class="col-6" id="totalFormulir"></div><div class="col-6" id="totalRutin"></div></div>
-                                        <div class="row"><div class="col-6" id="totalProbation"></div><div class="col-6" id="totalKontrak"></div></div>
+                                        <div class="row mb-3">
+                                            <div class="col-6" id="totalFormulir"></div>
+                                            <div class="col-6" id="totalRutin"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6" id="totalProbation"></div>
+                                            <div class="col-6" id="totalKontrak"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    {{-- Target Karyawan --}}
                     <div class="col-lg-6 d-flex flex-column">
-                        <div class="card border-0 shadow-sm flex-fill h-100">
+                        <div class="plain-card flex-fill h-100">
                             <div class="card-body d-flex flex-column">
-                                <div class="mb-4">
-                                    <h5 class="fw-bold mb-1">Target Karyawan</h5>
+                                <div class="mb-3">
+                                    <h5 class="fw-bold text-dark mb-1">Target Karyawan</h5>
                                     <small class="text-muted">Monitoring performa individu</small>
                                 </div>
                                 <div class="flex-grow-1 overflow-auto" style="max-height: 420px;">
@@ -272,12 +427,15 @@
                             </div>
                         </div>
                     </div>
+
                 @elseif (auth()->user()->jabatan === 'Koordinator ITSM')
+
+                    {{-- Target Karyawan --}}
                     <div class="col-lg-6 d-flex flex-column">
-                        <div class="card border-0 shadow-sm flex-fill h-100">
+                        <div class="plain-card flex-fill h-100">
                             <div class="card-body d-flex flex-column">
-                                <div class="mb-4">
-                                    <h5 class="fw-bold mb-1">Target Karyawan</h5>
+                                <div class="mb-3">
+                                    <h5 class="fw-bold text-dark mb-1">Target Karyawan</h5>
                                     <small class="text-muted">Monitoring performa individu</small>
                                 </div>
                                 <div class="flex-grow-1 overflow-auto" style="max-height: 420px;">
@@ -291,20 +449,31 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- Data Formulir --}}
                     <div class="col-lg-6 d-flex flex-column">
-                        <div class="card bg-light shadow-sm flex-fill h-100">
+                        <div class="plain-card flex-fill h-100">
                             <div class="card-body">
-                                <h4 class="card-title">Data Formulir</h4>
-                                <div class="row mt-4">
+                                <h5 class="fw-bold text-dark mb-1">Data Formulir</h5>
+                                <p class="text-muted small mb-4">Distribusi status karyawan</p>
+                                <div class="row mt-2 align-items-center">
                                     <div class="col-sm-6 position-relative" style="min-height: 200px;">
-                                        <div id="loadingFormulir" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-light" style="z-index: 10;">
+                                        <div id="loadingFormulir"
+                                             class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-white"
+                                             style="z-index: 10; border-radius: 1rem;">
                                             <div class="spinner-border text-primary"></div>
                                         </div>
                                         <canvas id="doughnutCharthr" height="200"></canvas>
                                     </div>
                                     <div class="col-sm-6">
-                                        <div class="row mb-4"><div class="col-6" id="totalFormulir"></div><div class="col-6" id="totalRutin"></div></div>
-                                        <div class="row"><div class="col-6" id="totalProbation"></div><div class="col-6" id="totalKontrak"></div></div>
+                                        <div class="row mb-3">
+                                            <div class="col-6" id="totalFormulir"></div>
+                                            <div class="col-6" id="totalRutin"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6" id="totalProbation"></div>
+                                            <div class="col-6" id="totalKontrak"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -315,9 +484,8 @@
 
         </div>
     </div>
-@endsection
-
-@section('script')
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -357,11 +525,11 @@
                 dataType: "json",
                 success: function(response) {
                     const dataCardFirst = response.dataCard_first || {};
-                    const sakit = dataCardFirst.dataSakit?.totalAbsenSakit ?? 0;
-                    const cuti = dataCardFirst.dataCuti?.totalAbsenCuti ?? 0;
-                    const izin = dataCardFirst.dataIzin?.totalAbsenIzin ?? 0;
-                    const aktif = dataCardFirst.karyawan_aktif ?? 0;
-                    const role = "{{ auth()->user()->jabatan }}";
+                    const sakit  = dataCardFirst.dataSakit?.totalAbsenSakit  ?? 0;
+                    const cuti   = dataCardFirst.dataCuti?.totalAbsenCuti   ?? 0;
+                    const izin   = dataCardFirst.dataIzin?.totalAbsenIzin   ?? 0;
+                    const aktif  = dataCardFirst.karyawan_aktif             ?? 0;
+                    const role   = "{{ auth()->user()->jabatan }}";
                     const labelType = (role === "HRD" || role === "GM" || role === "Direktur Utama") ? "Karyawan" : "Data";
 
                     $("#content_JK").text(`${aktif} Karyawan`);
@@ -369,9 +537,10 @@
                     $("#content_KC").text(`${cuti} ${labelType}`);
                     $("#content_KI").text(`${izin} ${labelType}`);
 
-                    const dataChart = response.dataChartPenilaian || {};
-                    const totalSemua = dataChart.totalSemua ?? 0;
-                    const totalDilaksanakan = dataChart.totalDilaksanakan ?? 0;
+                    /* ===== Chart Penilaian 360° ===== */
+                    const dataChart    = response.dataChartPenilaian || {};
+                    const totalSemua   = dataChart.totalSemua ?? 0;
+                    const totalDilaksanakan      = dataChart.totalDilaksanakan ?? 0;
                     const totalBelumDilaksanakan = dataChart.totalBelumDilaksanakan ?? 0;
 
                     $("#title_chartPenilaian").empty().append(
@@ -379,7 +548,6 @@
                     );
 
                     const chartEl1 = document.getElementById("myChart");
-
                     $("#loadingPenilaian").addClass("d-none").removeClass("d-flex");
 
                     if (totalSemua > 0) {
@@ -392,8 +560,8 @@
                             gradientBlue.addColorStop(0, "#8F87F1");
                             gradientBlue.addColorStop(1, "#FED2E2");
                             const gradientWarning = ctx1.createLinearGradient(0, 0, 0, 300);
-                            gradientWarning.addColorStop(0, "#EA907A");
-                            gradientWarning.addColorStop(1, "#AACDBE");
+                            gradientWarning.addColorStop(0, "#fbbf24");
+                            gradientWarning.addColorStop(1, "#f59e0b");
 
                             if (window.chart1) window.chart1.destroy();
 
@@ -403,7 +571,8 @@
                                     labels: ["Dilaksanakan", "Belum Dilaksanakan"],
                                     datasets: [{
                                         data: [Number(totalDilaksanakan), Number(totalBelumDilaksanakan)],
-                                        backgroundColor: [gradientBlue, gradientWarning]
+                                        backgroundColor: [gradientBlue, gradientWarning],
+                                        borderWidth: 0
                                     }]
                                 }
                             });
@@ -414,14 +583,14 @@
                         if (window.chart1) window.chart1.destroy();
                     }
 
-                    const DataFormulir = response.dataFormulir || {};
-                    const TotalFormulir = DataFormulir.totalFormulir ?? 0;
-                    const totalRutin = DataFormulir.totalRutin ?? 0;
-                    const totalProbation = DataFormulir.totalProbation ?? 0;
-                    const totalKontrak = DataFormulir.totalKontrak ?? 0;
+                    /* ===== Chart Formulir ===== */
+                    const DataFormulir  = response.dataFormulir || {};
+                    const TotalFormulir = DataFormulir.totalFormulir  ?? 0;
+                    const totalRutin    = DataFormulir.totalRutin     ?? 0;
+                    const totalProbation= DataFormulir.totalProbation ?? 0;
+                    const totalKontrak  = DataFormulir.totalKontrak   ?? 0;
 
                     const chartEl2 = document.getElementById("doughnutCharthr");
-
                     $("#loadingFormulir").addClass("d-none").removeClass("d-flex");
 
                     if (TotalFormulir > 0) {
@@ -429,18 +598,22 @@
 
                         if (chartEl2) {
                             const ctx2 = chartEl2.getContext("2d");
+
                             const gradientPrimary = ctx2.createLinearGradient(0, 0, 0, 200);
-                            gradientPrimary.addColorStop(0, "#da8cff");
-                            gradientPrimary.addColorStop(1, "#9a55ff");
+                            gradientPrimary.addColorStop(0, "#a78bfa");
+                            gradientPrimary.addColorStop(1, "#7c3aed");
+
                             const gradientInfo = ctx2.createLinearGradient(0, 0, 0, 200);
-                            gradientInfo.addColorStop(0, "#90caf9");
-                            gradientInfo.addColorStop(1, "#047edf");
-                            const gradientDanger = ctx2.createLinearGradient(0, 0, 0, 200);
-                            gradientDanger.addColorStop(0, "#ffbf96");
-                            gradientDanger.addColorStop(1, "#fe7096");
+                            gradientInfo.addColorStop(0, "#38bdf8");
+                            gradientInfo.addColorStop(1, "#0284c7");
+
+                            const gradientWarning = ctx2.createLinearGradient(0, 0, 0, 200);
+                            gradientWarning.addColorStop(0, "#fbbf24");
+                            gradientWarning.addColorStop(1, "#f59e0b");
+
                             const gradientSuccess = ctx2.createLinearGradient(0, 0, 0, 200);
-                            gradientSuccess.addColorStop(0, "#84d9d2");
-                            gradientSuccess.addColorStop(1, "#07cdae");
+                            gradientSuccess.addColorStop(0, "#34d399");
+                            gradientSuccess.addColorStop(1, "#059669");
 
                             if (window.chart2) window.chart2.destroy();
 
@@ -450,7 +623,7 @@
                                     labels: ["Total", "Rutin", "Probation", "Kontrak"],
                                     datasets: [{
                                         data: [Number(TotalFormulir), Number(totalRutin), Number(totalProbation), Number(totalKontrak)],
-                                        backgroundColor: [gradientPrimary, gradientInfo, gradientDanger, gradientSuccess],
+                                        backgroundColor: [gradientPrimary, gradientInfo, gradientWarning, gradientSuccess],
                                         borderWidth: 0
                                     }]
                                 },
@@ -462,23 +635,47 @@
                             });
                         }
 
-                        $("#totalFormulir").html(`<p class="legend-value">${TotalFormulir}</p><p class="legend-label d-flex align-items-center"><span class="bg-gradient-primary me-2 legend-box"></span> Total</p>`);
-                        $("#totalRutin").html(`<p class="legend-value">${totalRutin}</p><p class="legend-label d-flex align-items-center"><span class="bg-gradient-info me-2 legend-box"></span> Rutin</p>`);
-                        $("#totalProbation").html(`<p class="legend-value">${totalProbation}</p><p class="legend-label d-flex align-items-center"><span class="bg-gradient-danger me-2 legend-box"></span> Probation</p>`);
-                        $("#totalKontrak").html(`<p class="legend-value">${totalKontrak}</p><p class="legend-label d-flex align-items-center"><span class="bg-gradient-success me-2 legend-box"></span> Kontrak</p>`);
+                        $("#totalFormulir").html(
+                            `<p class="fw-bold fs-5 mb-1">${TotalFormulir}</p>
+                             <p class="mb-0 small d-flex align-items-center text-muted">
+                                <span class="me-2 legend-box" style="background:linear-gradient(135deg,#a78bfa,#7c3aed);"></span> Total
+                             </p>`
+                        );
+                        $("#totalRutin").html(
+                            `<p class="fw-bold fs-5 mb-1">${totalRutin}</p>
+                             <p class="mb-0 small d-flex align-items-center text-muted">
+                                <span class="me-2 legend-box" style="background:linear-gradient(135deg,#38bdf8,#0284c7);"></span> Rutin
+                             </p>`
+                        );
+                        $("#totalProbation").html(
+                            `<p class="fw-bold fs-5 mb-1">${totalProbation}</p>
+                             <p class="mb-0 small d-flex align-items-center text-muted">
+                                <span class="me-2 legend-box" style="background:linear-gradient(135deg,#fbbf24,#f59e0b);"></span> Probation
+                             </p>`
+                        );
+                        $("#totalKontrak").html(
+                            `<p class="fw-bold fs-5 mb-1">${totalKontrak}</p>
+                             <p class="mb-0 small d-flex align-items-center text-muted">
+                                <span class="me-2 legend-box" style="background:linear-gradient(135deg,#34d399,#059669);"></span> Kontrak
+                             </p>`
+                        );
 
                     } else {
                         $("#emptyFormulir").removeClass("d-none").addClass("d-flex");
                         if (window.chart2) window.chart2.destroy();
-                        $("#totalFormulir, #totalRutin, #totalProbation, #totalKontrak").html(`<span class="text-muted small">-</span>`);
+                        $("#totalFormulir, #totalRutin, #totalProbation, #totalKontrak").html(
+                            `<span class="text-muted small">-</span>`);
                     }
 
+                    /* ===== Ranking Divisi ===== */
                     const select = $("#select_peringkatPenilaian");
                     select.off("change").empty();
                     const Divisi = response.dataDivisi || [];
 
                     if (!Divisi.length) {
-                        $(".row-ranking").html('<div class="col-12 text-center text-muted py-5">Belum ada data divisi untuk ditampilkan</div>');
+                        $(".row-ranking").html(
+                            '<div class="col-12 text-center text-muted py-5">Belum ada data divisi untuk ditampilkan</div>'
+                        );
                         return;
                     }
 
@@ -508,9 +705,9 @@
                         if (!dataFiltered.length) {
                             cardContainer.append(`
                                 <div class="col-12">
-                                    <div class="p-4 text-center rounded-3 bg-light">
+                                    <div class="p-4 text-center rounded-4 bg-light">
                                         <img src="{{ asset('template_KPI/dist/assets/images/screenshots/gambar_pencarian.png') }}" width="80%" height="250" style="opacity:.5">
-                                        <h6 class="text-muted">Belum ada karyawan yang memiliki peringkat di divisi ini</h6>
+                                        <h6 class="text-muted mt-3">Belum ada karyawan yang memiliki peringkat di divisi ini</h6>
                                     </div>
                                 </div>
                             `);
@@ -520,21 +717,19 @@
                         const top3 = dataFiltered.slice(0, 3);
                         top3.forEach((item, index) => {
                             const posisi = index + 1;
-                            let gradient = posisi === 1 ? "linear-gradient(135deg,#f6d365,#fda085)" :
-                                posisi === 2 ? "linear-gradient(135deg,#cfd9df,#e2ebf0)" :
-                                "linear-gradient(135deg,#d1913c,#ffd194)";
+                            const podiumClass = posisi === 1 ? 'podium-1' : posisi === 2 ? 'podium-2' : 'podium-3';
                             const baseUrl = "{{ asset('storage') }}";
                             const defaultFoto = "{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}";
                             const foto = item.foto ? `${baseUrl}/${item.foto}` : defaultFoto;
 
                             cardContainer.append(`
                                 <div class="col-12 col-sm-6 col-lg-4 text-center mb-4">
-                                    <div class="ranking-card p-4 rounded-4 text-white" style="background:${gradient}">
+                                    <div class="ranking-card p-4 rounded-4 text-white ${podiumClass}" style="box-shadow: 0 6px 20px rgba(0,0,0,.1);">
                                         <img src="${foto}" class="rounded-circle border border-4 border-white my-3" style="width:110px;height:110px;object-fit:cover;">
-                                        <h6 class="fw-bold">${item.nama_karyawan}</h6>
+                                        <h6 class="fw-bold mb-1">${item.nama_karyawan}</h6>
                                         <small class="opacity-75">${item.divisi}</small>
                                     </div>
-                                    <h5 class="mt-3 fw-bold">${posisi}</h5>
+                                    <h5 class="mt-3 fw-bold text-dark">${posisi}</h5>
                                 </div>
                             `);
                         });
@@ -551,15 +746,15 @@
                             shown++;
 
                             bodyContentPeringkat.append(`
-                                <div class="d-flex align-items-center mb-3 p-2 rounded-3 shadow-sm bg-light">
-                                    <span class="me-3 fw-bold">${rank}.</span>
+                                <div class="d-flex align-items-center mb-3 p-3 rounded-3 plain-card">
+                                    <span class="me-3 fw-bold text-primary" style="min-width:28px;">${rank}.</span>
                                     <div class="flex-grow-1">
-                                        <div class="fw-bold">${item.nama_karyawan}</div>
+                                        <div class="fw-bold text-dark">${item.nama_karyawan}</div>
                                         <small class="text-muted">${item.divisi}</small>
                                     </div>
-                                    <div class="fw-bold me-3">${item.total_nilai}</div>
-                                    <div class="progress flex-grow-1" style="max-width:250px;height:12px;">
-                                        <div class="progress-bar bg-gradient-info" style="width:${item.total_nilai}%"></div>
+                                    <div class="fw-bold me-3 text-dark">${item.total_nilai}</div>
+                                    <div class="progress flex-grow-1" style="max-width:250px;height:10px;background:#f1f5f9;">
+                                        <div class="progress-bar" style="width:${item.total_nilai}%;background:linear-gradient(90deg,#6366f1,#a78bfa);"></div>
                                     </div>
                                 </div>
                             `);
@@ -568,7 +763,9 @@
                 },
                 error: function(xhr, status, error) {
                     $("#loadingFormulir, #loadingPenilaian").addClass("d-none").removeClass("d-flex");
-                    $(".row-ranking").html('<div class="col-12 text-center text-danger py-5">Gagal memuat data dari server</div>');
+                    $(".row-ranking").html(
+                        '<div class="col-12 text-center text-warning py-5">Gagal memuat data dari server</div>'
+                    );
                     $("#content_JK, #content_KS, #content_KC, #content_KI").text("-");
                 }
             });
@@ -582,28 +779,28 @@
                 success: function(response) {
                     const data = response.output_1;
                     const contentKPIPersonal = $('#contentKPIPersonal');
-                    
+
                     if (contentKPIPersonal.length > 0) {
                         contentKPIPersonal.empty();
                         if (!data || data.titleGet_data === "Tidak ada data") {
                             contentKPIPersonal.append(`
                                 <div class="d-flex flex-column justify-content-center align-items-center text-center h-100 py-5">
-                                    <div style="font-size:60px;">≈</div>
-                                    <h5 class="fw-semibold mt-3 mb-2">Belum Ada Data KPI</h5>
+                                    <div style="font-size:60px;color:#a78bfa;">≈</div>
+                                    <h5 class="fw-semibold mt-3 mb-2 text-dark">Belum Ada Data KPI</h5>
                                     <p class="text-muted small mb-4" style="max-width:320px;">Data performa personal belum tersedia. KPI akan muncul setelah target dan penilaian dibuat.</p>
                                     <span class="badge bg-light text-muted px-3 py-2">Menunggu Data</span>
                                 </div>
                             `);
                         } else {
                             let performanceColor = "warning";
-                            let performanceIcon = "∿";
+                            let performanceIcon  = "∿";
 
                             if (data.performance_title === "Naik") {
                                 performanceColor = "success";
-                                performanceIcon = "↑";
+                                performanceIcon  = "↑";
                             } else if (data.performance_title === "Turun") {
-                                performanceColor = "danger";
-                                performanceIcon = "↓";
+                                performanceColor = "warning";
+                                performanceIcon  = "↓";
                             }
 
                             let monthlyHTML = "";
@@ -611,7 +808,7 @@
                                 const bulanShort = item.bulan.split(" ")[0].substring(0, 3);
                                 monthlyHTML += `
                                     <div class="col">
-                                        <div class="fw-semibold ${index === data.progress_kpi_perbulan.length - 1 ? 'text-success fw-bold' : ''}">
+                                        <div class="fw-semibold ${index === data.progress_kpi_perbulan.length - 1 ? 'text-primary fw-bold' : 'text-dark'}">
                                             ${item.nilai}%
                                         </div>
                                         <div class="small text-muted">${bulanShort}</div>
@@ -622,7 +819,7 @@
                             contentKPIPersonal.append(`
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <div>
-                                        <h1 class="fw-bold mb-1 counter" data-value="${data.nilai_kpi_anda}">${data.nilai_kpi_anda}%</h1>
+                                        <h1 class="fw-bold mb-1 text-dark" data-value="${data.nilai_kpi_anda}">${data.nilai_kpi_anda}%</h1>
                                         <div class="small fw-semibold text-${performanceColor}">
                                             <i class="fas fa-arrow-up me-1"></i>
                                             ${performanceIcon} ${data.performance}% dari bulan lalu
@@ -635,17 +832,18 @@
                                 <div class="mb-4">
                                     <div class="d-flex justify-content-between small text-muted mb-2">
                                         <span>Progress KPI</span>
-                                        <span class="fw-semibold">${data.nilai_kpi_anda}%</span>
+                                        <span class="fw-semibold text-dark">${data.nilai_kpi_anda}%</span>
                                     </div>
-                                    <div class="progress" style="height:8px;">
-                                        <div class="progress-bar progress-animated bg-${performanceColor}" data-value="${data.nilai_kpi_anda}" style="width:0%"></div>
+                                    <div class="progress" style="height:8px;background:#f1f5f9;">
+                                        <div class="progress-bar progress-animated" data-value="${data.nilai_kpi_anda}"
+                                             style="width:0%;background:linear-gradient(90deg,#6366f1,#a78bfa);"></div>
                                     </div>
                                 </div>
                                 <div class="border-top pt-3 mb-4">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <div class="small text-muted">Deadline</div>
-                                            <div class="fw-semibold">${new Date(data.deadline).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })}</div>
+                                            <div class="fw-semibold text-dark">${new Date(data.deadline).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })}</div>
                                         </div>
                                         <span class="badge bg-light text-dark">${data.countdown}</span>
                                     </div>
@@ -665,9 +863,10 @@
                         }
                     }
 
+                    /* ===== KPI Tim ===== */
                     let dataContentKPITim = response.output_2 ?? [];
                     const contentKPITim = $('#contentKPITim');
-                    
+
                     if (contentKPITim.length > 0) {
                         contentKPITim.empty();
                         if (dataContentKPITim.length === 0) {
@@ -675,34 +874,34 @@
                         } else {
                             dataContentKPITim.forEach(function(item) {
                                 let performanceColorTim = "warning";
-                                let performanceIconTim = "∿";
+                                let performanceIconTim  = "∿";
 
                                 if (item.performance === "Naik") {
                                     performanceColorTim = "success";
-                                    performanceIconTim = "↑";
+                                    performanceIconTim  = "↑";
                                 } else if (item.performance === "Turun") {
-                                    performanceColorTim = "danger";
-                                    performanceIconTim = "↓";
+                                    performanceColorTim = "warning";
+                                    performanceIconTim  = "↓";
                                 }
 
-                                let progressColor = "bg-warning";
-                                if (item.nilaitargetkpi >= 80) progressColor = "bg-success";
-                                else if (item.nilaitargetkpi < 50) progressColor = "bg-danger";
+                                let barColor = "linear-gradient(90deg,#fbbf24,#f59e0b)";
+                                if (item.nilaitargetkpi >= 80) barColor = "linear-gradient(90deg,#34d399,#059669)";
+                                else if (item.nilaitargetkpi < 50) barColor = "linear-gradient(90deg,#fbbf24,#f59e0b)";
 
                                 contentKPITim.append(`
-                                    <div class="mb-4">
+                                    <div class="mb-3 p-3 rounded-3" style="background:#f8fafc;">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div>
-                                                <h6 class="mb-0 fw-semibold">${item.nama_karyawan}</h6>
+                                                <h6 class="mb-0 fw-semibold text-dark">${item.nama_karyawan}</h6>
                                                 <small class="text-muted">${item.jabatan}</small>
                                             </div>
                                             <div class="text-end">
-                                                <h6 class="mb-0 fw-bold">${item.nilaitargetkpi}%</h6>
+                                                <h6 class="mb-0 fw-bold text-dark">${item.nilaitargetkpi}%</h6>
                                                 <small class="text-${performanceColorTim}">${performanceIconTim} ${item.nilai_performance}% bulan ini</small>
                                             </div>
                                         </div>
-                                        <div class="progress" style="height:6px;">
-                                            <div class="progress-bar ${progressColor}" style="width:${item.nilaitargetkpi}%"></div>
+                                        <div class="progress" style="height:6px;background:#e2e8f0;">
+                                            <div class="progress-bar" style="width:${item.nilaitargetkpi}%;background:${barColor};"></div>
                                         </div>
                                     </div>
                                 `);
@@ -710,8 +909,9 @@
                         }
                     }
 
+                    /* ===== Progress Divisi ===== */
                     const dataDivisi = response.output_3 || [];
-                    const container = $('#contentKPIDivisi');
+                    const container  = $('#contentKPIDivisi');
                     const scrollHint = $('#scrollHint');
 
                     if (container.length > 0) {
@@ -725,17 +925,23 @@
                         } else {
                             let htmlContent = '';
                             const cardWidth = Math.max(260, Math.min(300, ($(window).width() / 4) - 20));
-                            
+
                             dataDivisi.forEach(item => {
                                 const nilai = parseFloat(item.nilai_kpi ?? 0);
                                 const nilaiDisplay = nilai.toFixed(1);
-                                let colorClass = 'danger';
-                                if (nilai >= 80) colorClass = 'success';
-                                else if (nilai >= 50) colorClass = 'warning';
+                                let colorClass = 'warning';
+                                let barColor   = 'linear-gradient(90deg,#fbbf24,#f59e0b)';
+                                if (nilai >= 80) {
+                                    colorClass = 'success';
+                                    barColor   = 'linear-gradient(90deg,#34d399,#059669)';
+                                } else if (nilai >= 50) {
+                                    colorClass = 'primary';
+                                    barColor   = 'linear-gradient(90deg,#6366f1,#a78bfa)';
+                                }
 
                                 htmlContent += `
                                     <div class="flex-shrink-0" style="width: ${cardWidth}px;">
-                                        <div class="card border-0 shadow-sm h-100">
+                                        <div class="plain-card h-100">
                                             <div class="card-body p-3">
                                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                                     <h6 class="fw-semibold mb-1 text-dark lh-sm text-truncate" style="max-width: 65%;" title="${item.divisi}">
@@ -745,8 +951,8 @@
                                                         ${nilaiDisplay}%
                                                     </span>
                                                 </div>
-                                                <div class="progress mb-2" style="height: 8px; border-radius: 4px; background-color: #e9ecef;">
-                                                    <div class="progress-bar bg-${colorClass}" style="width: ${nilai}%;" role="progressbar"></div>
+                                                <div class="progress mb-2" style="height: 8px; border-radius: 4px; background-color: #f1f5f9;">
+                                                    <div class="progress-bar" style="width: ${nilai}%; background: ${barColor};" role="progressbar"></div>
                                                 </div>
                                                 <small class="text-muted fw-medium" style="font-size: 0.8rem;">
                                                     ${item.performance_title || 'Stabil'}
@@ -768,13 +974,17 @@
                     }
                 },
                 error: function(xhr, status, error) {
-                    if ($('#contentKPIPersonal').length > 0) $('#contentKPIPersonal').html('<div class="text-center py-5 text-danger">Gagal memuat data personal</div>');
-                    if ($('#contentKPITim').length > 0) $('#contentKPITim').html('<div class="text-center py-5 text-danger">Gagal memuat data tim</div>');
-                    if ($('#contentKPIDivisi').length > 0) $('#contentKPIDivisi').html('<div class="text-center py-4 text-danger">Gagal memuat data divisi</div>');
+                    if ($('#contentKPIPersonal').length > 0) $('#contentKPIPersonal').html(
+                        '<div class="text-center py-5 text-warning">Gagal memuat data personal</div>');
+                    if ($('#contentKPITim').length > 0) $('#contentKPITim').html(
+                        '<div class="text-center py-5 text-warning">Gagal memuat data tim</div>');
+                    if ($('#contentKPIDivisi').length > 0) $('#contentKPIDivisi').html(
+                        '<div class="text-center py-4 text-warning">Gagal memuat data divisi</div>');
                 }
             });
         }
 
+        /* ===== Chart Statistics ===== */
         const ChartStatsConfig = {
             API_URL: '/kpi-data/get-statistika',
             currentJabatan: 'all',
@@ -791,7 +1001,7 @@
             const params = {
                 tahun: ChartStatsConfig.currentTahun,
                 ...(ChartStatsConfig.currentJabatan !== 'all' && { jabatan: ChartStatsConfig.currentJabatan }),
-                ...(ChartStatsConfig.currentBulan !== 'all' && { bulan: ChartStatsConfig.currentBulan })
+                ...(ChartStatsConfig.currentBulan   !== 'all' && { bulan:  ChartStatsConfig.currentBulan })
             };
 
             $.ajax({
@@ -844,9 +1054,7 @@
             const labels = Object.keys(monthlyData);
             const values = Object.values(monthlyData);
 
-            if (ChartStatsConfig.chartInstance) {
-                ChartStatsConfig.chartInstance.destroy();
-            }
+            if (ChartStatsConfig.chartInstance) ChartStatsConfig.chartInstance.destroy();
 
             ChartStatsConfig.chartInstance = new Chart(ctx, {
                 type: 'line',
@@ -855,13 +1063,13 @@
                     datasets: [{
                         label: 'Rata-rata Progress (%)',
                         data: values,
-                        borderColor: '#0d6efd',
-                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
                         borderWidth: 3,
                         tension: 0.4,
                         fill: true,
                         pointBackgroundColor: '#fff',
-                        pointBorderColor: '#0d6efd',
+                        pointBorderColor: '#6366f1',
                         pointBorderWidth: 2,
                         pointRadius: 5,
                         pointHoverRadius: 7
@@ -871,19 +1079,22 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: true, position: 'top', },
+                        legend: { display: true, position: 'top' },
                         tooltip: {
                             backgroundColor: 'rgba(0,0,0,0.8)',
                             padding: 12,
                             cornerRadius: 8,
                             callbacks: {
-                                label: function(context) { return 'Progress: ' + context.parsed.y + '%'; }
+                                label: function(context) {
+                                    return 'Progress: ' + context.parsed.y + '%';
+                                }
                             }
                         }
                     },
                     scales: {
                         y: {
-                            beginAtZero: true, max: 100,
+                            beginAtZero: true,
+                            max: 100,
                             grid: { color: '#f0f0f0' },
                             ticks: { callback: function(value) { return value + '%'; } }
                         },
@@ -904,7 +1115,7 @@
 
             targets.forEach(target => {
                 const gap = parseFloat(target.gap) || 0;
-                const gapClass = gap >= 0 ? 'text-success' : 'text-danger';
+                const gapClass = gap >= 0 ? 'text-success' : 'text-warning';
                 const gapSign = gap >= 0 ? '+' : '';
                 const progressClass = target.progress >= target.target ? 'bg-success' : 'bg-primary';
 
@@ -917,7 +1128,7 @@
                         <td><span class="badge bg-light text-dark border px-2 py-1">${target.jabatan || '-'}</span></td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                <div class="progress flex-grow-1" style="height: 8px; border-radius: 4px;">
+                                <div class="progress flex-grow-1" style="height: 8px; border-radius: 4px; background:#f1f5f9;">
                                     <div class="progress-bar ${progressClass}" style="width: ${Math.min(target.progress || 0, 100)}%" role="progressbar"></div>
                                 </div>
                                 <span class="small fw-bold" style="min-width: 45px;">${target.progress || 0}%</span>
@@ -931,10 +1142,10 @@
             });
         }
 
-        function showLoading() { $('#chartStatisticsContainer .loading-overlay').removeClass('d-none'); }
-        function hideLoading() { $('#chartStatisticsContainer .loading-overlay').addClass('d-none'); }
-        function showContent() { $('#contentArea').removeClass('d-none'); }
-        function hideContent() { $('#contentArea').addClass('d-none'); }
+        function showLoading()    { $('#chartStatisticsContainer .loading-overlay').removeClass('d-none'); }
+        function hideLoading()    { $('#chartStatisticsContainer .loading-overlay').addClass('d-none'); }
+        function showContent()    { $('#contentArea').removeClass('d-none'); }
+        function hideContent()    { $('#contentArea').addClass('d-none'); }
         function showEmptyState() { $('#emptyState').removeClass('d-none'); }
         function hideEmptyState() {
             $('#emptyState').addClass('d-none');
@@ -944,7 +1155,7 @@
 
         function resetFilters() {
             ChartStatsConfig.currentJabatan = 'all';
-            ChartStatsConfig.currentBulan = 'all';
+            ChartStatsConfig.currentBulan   = 'all';
             $('#jabatanPills .btn').removeClass('active').addClass('btn-outline-primary');
             $('#jabatanPills .btn[data-filter="all"]').addClass('active').removeClass('btn-outline-primary');
             $('#bulanPills .btn').removeClass('active').addClass('btn-light');

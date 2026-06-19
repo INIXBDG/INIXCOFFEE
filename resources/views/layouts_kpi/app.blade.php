@@ -30,25 +30,21 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/css/core.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font/css/materialdesignicons.min.css">
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
     <!-- CSS bawaan Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+        rel="stylesheet" />
 
     <!-- Page CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
-
-    <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/mdi/css/materialdesignicons.min.css') }} ">
-    <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/ti-icons/css/themify-icons.css') }}">
-    <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/css/vendor.bundle.base.css') }}">
-    <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/font-awesome/css/font-awesome.min.css') }}">
-    <link rel="stylesheet"
-        href="{{ asset('template_KPI/dist/assets/vendors/font-awesome/css/font-awesome.min.css') }}" />
-    <link rel="stylesheet"
-        href="{{ asset('template_KPI/dist/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -57,18 +53,151 @@
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
     <style>
+        /* ── ROOT LAYOUT: Prevent body scroll ── */
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ── Background Image Fixed ── */
+        body {
+            background-image: url('{{ asset('assets/img/backgrounds/main-bg.jpg') }}');
+            /* Ganti dengan path background Anda */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            position: relative;
+        }
+
+        /* Jika background ada di element lain, sesuaikan selector */
+        .layout-wrapper {
+            background: transparent !important;
+        }
+
+        /* ── Layout Structure ── */
+        .layout-wrapper {
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .layout-container {
+            height: 100%;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ── Sidebar: Fixed height, internal scroll ── */
+        .layout-menu {
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+        }
+
+        /* ── Main Page Area ── */
+        .layout-page {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Navbar: Fixed at top, no scroll ── */
+        .layout-page>.navbar,
+        .layout-page>nav,
+        .navbar {
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            z-index: 1040;
+            background: rgba(255, 255, 255, 0.95);
+            /* Sesuaikan dengan tema */
+            backdrop-filter: blur(10px);
+        }
+
+        /* ── Content Wrapper: ONLY this scrolls ── */
+        .layout-page>.content-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+            background: transparent;
+        }
+
+        /* ── Fix nested content-wrapper dari halaman ── */
+        .content-wrapper .container.content-wrapper,
+        .content-wrapper .content-wrapper {
+            flex: none !important;
+            overflow: visible !important;
+            height: auto !important;
+            min-height: 0 !important;
+        }
+
+        /* ── Footer: Sticky at bottom of content ── */
+        .content-wrapper .footer,
+        .content-wrapper footer {
+            margin-top: auto;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        /* ── Flex layout untuk content + footer ── */
+        .content-wrapper .container.content-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 120px);
+            /* Sesuaikan dengan tinggi navbar */
+        }
+
+        .content-wrapper .container.content-wrapper>.row,
+        .content-wrapper .container.content-wrapper>.card,
+        .content-wrapper .container.content-wrapper>div:not(.footer):not(footer) {
+            flex: 1;
+        }
+
+        /* ── Scrollbar Styling ── */
+        .content-wrapper::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content-wrapper::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .content-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        .content-wrapper::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* ── Avatar & Toast (pertahankan) ── */
         .avatar {
             width: 40px;
             height: 40px;
             overflow: hidden;
             border-radius: 50%;
         }
+
         .avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             object-position: center;
         }
+
         .toast {
             position: fixed;
             top: 50px;
@@ -90,6 +219,7 @@
             transform: translateY(0);
         }
 
+        /* ── Loader Animation (pertahankan) ── */
         .loader {
             position: relative;
             width: 100px;
@@ -107,30 +237,65 @@
             transform-origin: center;
         }
 
-        .bubble:nth-child(1) { left: 0; }
-        .bubble:nth-child(2) { left: 20px; }
-        .bubble:nth-child(3) { left: 40px; }
-        .bubble:nth-child(4) { left: 60px; }
+        .bubble:nth-child(1) {
+            left: 0;
+        }
+
+        .bubble:nth-child(2) {
+            left: 20px;
+        }
+
+        .bubble:nth-child(3) {
+            left: 40px;
+        }
+
+        .bubble:nth-child(4) {
+            left: 60px;
+        }
 
         @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-30px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-30px);
+            }
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         @keyframes merge {
-            0% { transform: translateX(0) translateY(0); }
-            100% { transform: translateX(calc((100px - var(--targetX)) * 1px)) translateY(-20px); }
+            0% {
+                transform: translateX(0) translateY(0);
+            }
+
+            100% {
+                transform: translateX(calc((100px - var(--targetX)) * 1px)) translateY(-20px);
+            }
         }
 
         @keyframes split {
-            0% { transform: translateX(calc((100px - var(--targetX)) * 1px)) translateY(-20px); }
-            100% { transform: translateX(0) translateY(0); }
+            0% {
+                transform: translateX(calc((100px - var(--targetX)) * 1px)) translateY(-20px);
+            }
+
+            100% {
+                transform: translateX(0) translateY(0);
+            }
         }
+
+        /* ── Button & Chart (pertahankan) ── */
         .btn-plain {
             all: unset;
             cursor: pointer;
@@ -146,6 +311,50 @@
             background-color: linear-gradient(#8F87F1, #C68EFD, #E9A5F1, #FED2E2);
         }
 
+        /* ── Modal Fix (pertahankan) ── */
+        .modal {
+            overflow: hidden !important;
+        }
+
+        .modal.show {
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+        }
+
+        .modal-dialog {
+            margin: 1.75rem auto;
+            max-height: none !important;
+            pointer-events: none;
+        }
+
+        .modal.show .modal-dialog {
+            pointer-events: all;
+        }
+
+        .modal-content {
+            overflow: visible;
+        }
+
+        .modal-body {
+            overflow-y: auto !important;
+            max-height: 65vh;
+        }
+
+        .dropdown-menu {
+            z-index: 1055 !important;
+        }
+
+        .card,
+        .table-responsive,
+        .card-trafic {
+            overflow: visible !important;
+        }
+
+        #contentKPIDivisi {
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+        }
+
         .loading-spinner {
             width: 60px;
             height: 60px;
@@ -159,7 +368,8 @@
             margin: auto;
         }
 
-        @media only screen and (max-width:800px) {
+        /* ── Responsive (pertahankan) ── */
+        @media only screen and (max-width: 800px) {
             .doughnutjs-wrapper {
                 width: 100%;
                 max-width: 400px;
@@ -192,15 +402,39 @@
             min-width: 50px;
         }
 
-        .card-podium-1 { transform: scale(1.05); }
-        .card-podium-2 { transform: scale(0.95); }
-        .card-podium-3 { transform: scale(0.9); }
+        .card-podium-1 {
+            transform: scale(1.05);
+        }
 
-        #contentKPIDivisi::-webkit-scrollbar { height: 6px; }
-        #contentKPIDivisi::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
-        #contentKPIDivisi::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
-        #contentKPIDivisi::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
-        #contentKPIDivisi { -webkit-overflow-scrolling: touch; }
+        .card-podium-2 {
+            transform: scale(0.95);
+        }
+
+        .card-podium-3 {
+            transform: scale(0.9);
+        }
+
+        #contentKPIDivisi::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        #contentKPIDivisi::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        #contentKPIDivisi::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        #contentKPIDivisi::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        #contentKPIDivisi {
+            -webkit-overflow-scrolling: touch;
+        }
 
         .progress-vertical {
             display: flex;
@@ -247,15 +481,21 @@
             padding-bottom: 10px;
         }
 
-        .scroll-wrapper::-webkit-scrollbar { height: 6px; }
-        .scroll-wrapper::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+        .scroll-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .scroll-wrapper::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
 
         .chart-container canvas {
             width: 100% !important;
             height: 400px !important;
         }
 
-        /* Perbaikan Alignment FontAwesome pada Sidebar Sneat */
+        /* ── Sidebar Icon Fix (pertahankan) ── */
         .layout-menu .menu-icon.fa-solid {
             width: 1.5rem;
             margin-right: 0.5rem;
@@ -264,41 +504,46 @@
             font-size: 1.15rem;
         }
 
-        /* Perbaikan Tampilan Sub-Menu Sneat */
         .sub-menu {
             margin: 0;
             padding: 0;
             list-style: none;
         }
-        
+
         .sub-menu .menu-link {
-            padding-left: 3rem; 
+            padding-left: 3rem;
             position: relative;
             font-size: 0.9375rem;
             color: #697a8d;
             transition: all 0.2s ease-in-out;
         }
-        
+
+        .swal2-container {
+            z-index: 99999 !important;
+        }
+
+        .swal2-backdrop-show {
+            z-index: 99998 !important;
+        }
+
         .sub-menu .menu-link:hover {
             color: #696cff;
             background-color: rgba(105, 108, 255, 0.04);
         }
 
-        /* Pembuatan Bullet Indicator Sub-Menu */
         .sub-menu .menu-link::before {
             content: '';
             position: absolute;
-            left: 1.75rem; 
+            left: 1.75rem;
             top: 50%;
             transform: translateY(-50%);
             width: 0.375rem;
             height: 0.375rem;
-            background-color: #b1b1b1; 
+            background-color: #b1b1b1;
             border-radius: 50%;
             transition: all 0.2s ease-in-out;
         }
 
-        /* Indikator Bullet Saat Menu Aktif */
         .sub-menu .menu-item.active .menu-link {
             color: #696cff;
             font-weight: 600;
@@ -306,10 +551,9 @@
         }
 
         .sub-menu .menu-item.active .menu-link::before {
-            background-color: #696cff; 
+            background-color: #696cff;
             box-shadow: 0 0 0 3px rgba(105, 108, 255, 0.16);
         }
-        
     </style>
 </head>
 
@@ -334,8 +578,6 @@
                     @yield('kpi_contents')
                     <!-- / Contents -->
                     <!-- Footer -->
-                    @include('layouts_kpi.footer')
-                    <!-- / Footer -->
                     <div class="content-backdrop fade"></div>
                 </div>
                 <!-- / Content Wrapper -->
@@ -432,18 +674,9 @@
     <!-- GitHub button -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
 
-    <script src="{{ asset('template_KPI/dist/assets/vendors/js/vendor.bundle.base.js') }}"></script>
-    <script src="{{ asset('template_KPI/dist/assets/vendors/chart.js/chart.umd.js') }}"></script>
-    <script src="{{ asset('template_KPI/dist/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js') }}">
-    </script>
-    <script src="{{ asset('template_KPI/dist/assets/js/off-canvas.js') }}"></script>
-    <script src="{{ asset('template_KPI/dist/assets/js/misc.js') }}"></script>
-    <script src="{{ asset('template_KPI/dist/assets/js/settings.js') }}"></script>
-    <script src="{{ asset('template_KPI/dist/assets/js/todolist.js') }}"></script>
-    <script src="{{ asset('template_KPI/dist/assets/js/jquery.cookie.js') }}"></script>
-    <script src="{{ asset('template_KPI/dist/assets/js/dashboard.js') }}"></script>
-    <script src="{{ asset('template_KPI/dist/assets/js/desktop-notification.js') }}"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"
+        integrity="sha512-AA1Bzp5Q0K1KanKKmvN/4d3IRKVlv9PYgwFPvm32nPO6QS8yH1HO7LbgB1pgiOxPtfeg5zEn2ba64MUcqJx6CA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <!-- User Profile Ajax -->
     <script>
@@ -490,25 +723,25 @@
                         profile_sidebar.append(`
                         <img src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="image" class="img-fluid rounded-circle">
                         `);
-                                } else {
-                                    profile_sidebar.append(`
+                    } else {
+                        profile_sidebar.append(`
                         <img src="{{ asset('assets/img/avatars') }}/${data.foto}" alt="image" class="img-fluid rounded-circle">
                         `);
-                                }
+                    }
 
-                                profile_navbar.empty();
+                    profile_navbar.empty();
 
-                                if (data.foto === null) {
-                                    profile_navbar.append(`
+                    if (data.foto === null) {
+                        profile_navbar.append(`
                         <img src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="image" class="img-fluid rounded-circle">
                         `);
-                                } else {
-                                    profile_navbar.append(`
+                    } else {
+                        profile_navbar.append(`
                         <img src="{{ asset('assets/img/avatars') }}/${data.foto}" alt="image" class="img-fluid rounded-circle">
                         `);
-                                }
-                            }
-                        });
+                    }
+                }
+            });
 
             $("#btnMobileSidebar").on("click", function() {
                 if (window.innerWidth > 991) {
@@ -518,7 +751,7 @@
                 }
             });
         });
-                document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function() {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
             var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl)
@@ -582,6 +815,136 @@
         defaultBounce();
 
         setTimeout(playRandomBehavior, 2000);
+    </script>
+
+    <script>
+        (function() {
+            'use strict';
+
+            function initDropdowns() {
+                if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) return;
+                document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(el) {
+                    var existing = bootstrap.Dropdown.getInstance(el);
+                    if (existing) existing.dispose();
+                    new bootstrap.Dropdown(el, {
+                        popperConfig: function(defaultConfig) {
+                            return Object.assign({}, defaultConfig, {
+                                strategy: 'fixed'
+                            });
+                        }
+                    });
+                });
+            }
+
+            function initModals() {
+                if (typeof bootstrap === 'undefined' || !bootstrap.Modal) return;
+                document.querySelectorAll('.modal').forEach(function(el) {
+                    var existing = bootstrap.Modal.getInstance(el);
+                    if (existing) existing.dispose();
+                    new bootstrap.Modal(el, {
+                        backdrop: true,
+                        keyboard: true,
+                        focus: true
+                    });
+                });
+                document.addEventListener('hidden.bs.modal', function() {
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                    document.querySelectorAll('.modal-backdrop').forEach(function(bd) {
+                        bd.remove();
+                    });
+                    document.body.classList.remove('modal-open');
+                });
+            }
+
+            function patchJQueryPlugins() {
+                if (typeof $ === 'undefined' || typeof bootstrap === 'undefined') return;
+
+                // Patch $.fn.modal → Bootstrap 5
+                $.fn.modal = function(option, relatedTarget) {
+                    return this.each(function() {
+                        var instance = bootstrap.Modal.getOrCreateInstance(this);
+                        if (typeof option === 'string' && typeof instance[option] === 'function') {
+                            instance[option](relatedTarget);
+                        }
+                    });
+                };
+
+                // Patch $.fn.dropdown → Bootstrap 5
+                $.fn.dropdown = function(option) {
+                    return this.each(function() {
+                        var instance = bootstrap.Dropdown.getOrCreateInstance(this);
+                        if (typeof option === 'string' && typeof instance[option] === 'function') {
+                            instance[option]();
+                        }
+                    });
+                };
+
+                // Support data-toggle="modal" lama sekaligus data-bs-toggle="modal"
+                $(document).off('click.bs.modal.fix').on(
+                    'click.bs.modal.fix',
+                    '[data-bs-toggle="modal"], [data-toggle="modal"]',
+                    function(e) {
+                        e.preventDefault();
+                        var target = $(this).data('bs-target') || $(this).data('target') || $(this).attr('href');
+                        if (!target) return;
+                        var $modal = $(target);
+                        if (!$modal.length) return;
+                        bootstrap.Modal.getOrCreateInstance($modal[0]).show();
+                    }
+                );
+            }
+
+            function runAllFixes() {
+                initDropdowns();
+                initModals();
+                patchJQueryPlugins();
+
+                // Re-init setelah setiap AJAX call (DataTables, dll.)
+                $(document).ajaxComplete(function() {
+                    setTimeout(function() {
+                        initDropdowns();
+                        patchJQueryPlugins();
+                    }, 150);
+                });
+
+                if (typeof MutationObserver !== 'undefined') {
+                    var observer = new MutationObserver(function(mutations) {
+                        var needReinit = false;
+                        mutations.forEach(function(m) {
+                            m.addedNodes.forEach(function(node) {
+                                if (node.nodeType === 1 && node.querySelector) {
+                                    if (
+                                        node.querySelector('[data-bs-toggle="dropdown"]') ||
+                                        node.querySelector('[data-bs-toggle="modal"]') ||
+                                        node.classList.contains('modal')
+                                    ) {
+                                        needReinit = true;
+                                    }
+                                }
+                            });
+                        });
+                        if (needReinit) {
+                            setTimeout(function() {
+                                initDropdowns();
+                                initModals();
+                                patchJQueryPlugins();
+                            }, 100);
+                        }
+                    });
+                    observer.observe(document.body, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+            }
+
+            if (document.readyState === 'complete') {
+                runAllFixes();
+            } else {
+                window.addEventListener('load', runAllFixes);
+            }
+        })();
     </script>
 </body>
 

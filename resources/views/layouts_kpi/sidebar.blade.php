@@ -1,8 +1,268 @@
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+    <style>
+        /* ===== Sidebar Modern Theme ===== */
+        .layout-menu {
+            background: #ffffff !important;
+            border-right: 1px solid #f1f5f9 !important;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, .03) !important;
+        }
+
+        /* Brand Header */
+        .app-brand {
+            padding: 1.5rem 1.25rem !important;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .app-brand-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none !important;
+        }
+
+        .app-brand-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, .25);
+        }
+
+        .app-brand-logo svg {
+            width: 22px !important;
+            height: 22px !important;
+        }
+
+        .app-brand-text {
+            font-size: 1.1rem !important;
+            font-weight: 700 !important;
+            color: #1e293b !important;
+            letter-spacing: -.5px;
+        }
+
+        /* Menu Inner */
+        .menu-inner {
+            padding: 1rem .75rem !important;
+        }
+
+        .menu-inner::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .menu-inner::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .menu-inner::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .menu-inner::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e1;
+        }
+
+        /* Section Header (KPI, Penilaian 360°, dll) */
+        .menu-header {
+            font-size: .7rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: .8px !important;
+            color: #94a3b8 !important;
+            padding: 1.25rem 1rem .5rem !important;
+            margin: 0 !important;
+        }
+
+        .menu-header-item {
+            padding: .25rem 1rem .5rem !important;
+            margin: 0 !important;
+        }
+
+        .menu-header-item .menu-title {
+            font-size: .7rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: .8px !important;
+            color: #94a3b8 !important;
+            opacity: 1 !important;
+        }
+
+        /* Menu Item */
+        .menu-item {
+            margin-bottom: 2px !important;
+        }
+
+        .menu-link {
+            display: flex !important;
+            align-items: center !important;
+            padding: .7rem 1rem !important;
+            border-radius: 10px !important;
+            color: #475569 !important;
+            font-size: .875rem !important;
+            font-weight: 500 !important;
+            transition: all .2s ease !important;
+            text-decoration: none !important;
+            margin-left: 0 !important;
+            position: relative;
+        }
+
+        .menu-link:hover {
+            background: #f8fafc !important;
+            color: #6366f1 !important;
+        }
+
+        .menu-link:hover .menu-icon {
+            color: #6366f1 !important;
+        }
+
+        /* Menu Icon */
+        .menu-icon {
+            font-size: 1rem !important;
+            width: 32px !important;
+            min-width: 32px !important;
+            height: 32px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 8px !important;
+            background: #f1f5f9 !important;
+            color: #64748b !important;
+            margin-right: .75rem !important;
+            transition: all .2s ease !important;
+        }
+
+        .menu-link:hover .menu-icon {
+            background: rgba(99, 102, 241, .1) !important;
+            color: #6366f1 !important;
+        }
+
+        /* Active State */
+        .menu-item.active .menu-link,
+        .menu-item.active-item .menu-link {
+            background: linear-gradient(135deg, rgba(99, 102, 241, .08), rgba(139, 92, 246, .08)) !important;
+            color: #6366f1 !important;
+            font-weight: 600 !important;
+        }
+
+        .menu-item.active .menu-icon,
+        .menu-item.active-item .menu-icon {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+            color: #fff !important;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, .3) !important;
+        }
+
+        /* Sub Menu */
+        .sub-menu {
+            padding: .25rem 0 .25rem 2.75rem !important;
+            margin: 0 !important;
+        }
+
+        .sub-menu .menu-item {
+            margin-bottom: 0 !important;
+        }
+
+        .sub-menu .menu-link {
+            padding: .5rem 1rem !important;
+            font-size: .825rem !important;
+            border-radius: 8px !important;
+            position: relative;
+        }
+
+        .sub-menu .menu-link::before {
+            content: '';
+            position: absolute;
+            left: -.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            transition: all .2s ease;
+        }
+
+        .sub-menu .menu-link:hover::before,
+        .sub-menu .menu-item.active .menu-link::before {
+            background: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, .15);
+        }
+
+        .sub-menu .menu-icon {
+            display: none !important;
+        }
+
+        /* Menu Arrow */
+        .menu-arrow {
+            margin-left: auto !important;
+            font-size: .75rem !important;
+            color: #94a3b8 !important;
+            transition: transform .2s ease !important;
+        }
+
+        .menu-link[aria-expanded="true"] .menu-arrow {
+            transform: rotate(90deg);
+        }
+
+        /* Collapse */
+        .collapse {
+            margin-top: .25rem !important;
+        }
+
+        /* Footer Button */
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid #f1f5f9;
+            margin-top: auto;
+        }
+
+        .btn-back-home {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: .75rem 1rem;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff !important;
+            font-weight: 600;
+            font-size: .8rem;
+            letter-spacing: .3px;
+            text-decoration: none !important;
+            border: 0;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, .3);
+            transition: all .25s ease;
+        }
+
+        .btn-back-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, .4);
+            color: #fff !important;
+        }
+
+        .btn-back-home i {
+            font-size: 1.1rem;
+            margin-right: .5rem;
+        }
+
+        /* Menu Divider */
+        .menu-divider {
+            border-color: #f1f5f9 !important;
+            margin: .5rem 0 !important;
+        }
+
+        /* Hide shadow element */
+        .menu-inner-shadow {
+            display: none !important;
+        }
+    </style>
+
     <div class="app-brand demo">
         <a href="{{ route('berandaKPI.get') }}" class="app-brand-link">
             <span class="app-brand-logo demo">
-                <span class="text-primary">
+                <span class="text-white">
                     <svg width="25" viewBox="0 0 25 42" version="1.1" xmlns="http://www.w3.org/2000/svg"
                         xmlns:xlink="http://www.w3.org/1999/xlink">
                         <defs>
@@ -47,147 +307,140 @@
                     </svg>
                 </span>
             </span>
-            <span class="app-brand-text demo menu-text fw-bold ms-2">INIX - KPI</span>
+            <span class="app-brand-text demo menu-text ms-2">INIX - KPI</span>
         </a>
     </div>
 
     <div class="menu-divider mt-0"></div>
 
-    <div class="menu-inner-shadow"></div>
-    {{-- <nav> --}}
-        {{-- <div id="sidebar" style="flex-grow: 1; overflow-y: auto; overflow-x: hidden;"> --}}
-            <ul class="menu-inner py-1">
-                <li class="menu-item {{ Request::routeIs('berandaKPI.get') ? 'active-item' : '' }}">
-                    <a class="menu-link " href="{{ route('berandaKPI.get') }}">
-                        <i class="menu-icon fa-solid fa-house"></i>
-                        <span class="menu-title">Dashboard</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a class="menu-link" style="margin-left: -10px;">
-                        <span class="menu-title">KPI</span>
-                    </a>
-                </li>
-                @php
-                    $auth = Auth()->user()->jabatan;
-                @endphp
-                @if (
-                    $auth === 'Koordinator ITSM' ||
-                        $auth === 'HRD' ||
-                        $auth === 'Education Manager' ||
-                        $auth === 'GM' ||
-                        $auth === 'SPV Sales')
-                    <li class="menu-item {{ Request::routeIs('kpi.index') ? 'active' : '' }}">
-                        <a class="menu-link" href="{{ route('kpi.index') }}">
-                            <i class="menu-icon fa-solid fa-bullseye"></i>
-                            <span class="menu-title">Target Divisi</span>
-                        </a>
-                    </li>
-                    <li class="menu-item {{ Request::routeIs('kpi.overview.index') ? 'active' : '' }}">
-                        <a class="menu-link" href="{{ route('kpi.overview.index') }}">
-                            <i class="menu-icon fa-solid fa-users-viewfinder"></i>
-                            <span class="menu-title">Overview Departement</span>
-                        </a>
-                    </li>
-                @endif
-                <li class="menu-item {{ Request::routeIs('kpi.overview.indexPersonal') ? 'active' : '' }}">
-                    <a class="menu-link" href="{{ route('kpi.overview.indexPersonal') }}">
-                        <i class="menu-icon fa-solid fa-users-viewfinder"></i>
-                        <span class="menu-title">Overview Personal</span>
-                    </a>
-                </li>
-                
-                @if ($auth === 'GM' || $auth === 'HRD' || $auth === 'Direktur Utama' || $auth === 'Direktur')
-                    <li class="menu-item {{ Request::routeIs('kpi.dataTarget.index') ? 'active' : '' }}">
-                        <a class="menu-link" href="{{ route('kpi.dataTarget.index') }}">
-                            <i class="menu-icon fa-solid fa-bullseye"></i>
-                            <span class="menu-title">Data Target</span>
-                        </a>
-                    </li>
-                @endif
-                <li class="menu-item">
-                    <a class="menu-link" style="margin-left: -10px;">
-                        <span class="menu-title">Penilaian 360°</span>
-                    </a>
-                </li>
-                @if ($auth === 'GM' || $auth === 'HRD' || $auth === 'Direktur Utama' || $auth === 'Direktur')
-                    <li class="menu-item">
-                        <a class="menu-link" data-bs-toggle="collapse" href="#forms" aria-expanded="true"
-                            aria-controls="forms">
-                            <i class="menu-arrow"></i>
-                            <i class="menu-icon fa-solid fa-table"></i>
-                            <span class="menu-title">Table Penilaian</span>
-                        </a>
-                        <div class="collapse show" id="forms" style="">
-                            <ul class="nav flex-column sub-menu">
-                                <li class="menu-item {{ request('tipe') === 'rutin' ? 'active' : '' }}">
-                                    <a class="menu-link"
-                                        href="{{ route('ketegoriKPI.get', ['tipe' => 'rutin']) }}">
-                                        <span class="menu-title">Rutin</span>
-                                    </a>
-                                </li>
-                                <li class="menu-item {{ request('tipe') === 'probation' ? 'active' : '' }}">
-                                    <a class="menu-link"
-                                        href="{{ route('ketegoriKPI.get', ['tipe' => 'probation']) }}">
-                                        <span class="menu-title">Probation</span>
-                                    </a>
-                                </li>
-                                <li class="menu-item {{ request('tipe') === 'kontrak' ? 'active' : '' }}">
-                                    <a class="menu-link"
-                                        href="{{ route('ketegoriKPI.get', ['tipe' => 'kontrak']) }}">
-                                        <span class="menu-title">Kontrak</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                    <li class="menu-item {{ Request::routeIs('ketegori.kpi.create') ? 'active' : '' }}">
-                        <a class="menu-link" href="{{ route('ketegori.kpi.create') }}">
-                            <i class="menu-icon fa-solid fa-square-plus"></i>
-                            <span class="menu-title">Buat Penilaian</span>
-                        </a>
-                    </li>
-                    <li class="menu-item {{ Request::routeIs('penilaian.form.data') ? 'active' : '' }}">
-                        <a class="menu-link" href="{{ route('penilaian.form.data') }}">
-                            <i class="menu-icon fa-solid fa-laptop-file"></i>
-                            <span class="menu-title">Data Form</span>
-                        </a>
-                    </li>
-                @endif
-                @php
-                    $id_karyawan = Auth()->user()->karyawan_id;
-                    $month = \Carbon\Carbon::now()->month;
-                    $year = \Carbon\Carbon::now()->year;
-                    if ($month >= 1 && $month <= 3) {
-                        $Q = 'Q1';
-                    } elseif ($month >= 4 && $month <= 6) {
-                        $Q = 'Q2';
-                    } elseif ($month >= 7 && $month <= 9) {
-                        $Q = 'Q3';
-                    } else {
-                        $Q = 'Q4';
-                    }
-                @endphp
-                @if ($auth != 'Direktur Utama' || $auth != 'Direktur')
-                    <li class="menu-item {{ Request::is('penilaian360/index*') ? 'active' : '' }}">
-                        <a class="menu-link" href="{{ url('/penilaian360/index/' . $id_karyawan) }}">
-                            <i class="menu-icon fa-solid fa-file-lines"></i>
-                            <span class="menu-title">Hasil Penilaian Anda</span>
-                        </a>
-                    </li>
-                    <li class="menu-item {{ Request::is('getFormPenilaianUser*') ? 'active' : '' }}">
-                        <a class="menu-link" href="{{ url('/getFormPenilaianUser/' . $id_karyawan) }}">
-                            <i class="menu-icon fa-solid fa-pen-to-square"></i>
-                            <span class="menu-title">Form Penilaian</span>
-                        </a>
-                    </li>
-                @endif
-            </ul>
-        {{-- </div> --}}
-    {{-- </nav> --}}
-    <div class="p-4 mt-auto">
-        <a href="{{ route('home') }}" class="btn btn-primary d-flex align-items-center justify-content-center w-100">
-            <i class="bx bx-home me-2"></i>BACK TO INIXCOFFE
+    <ul class="menu-inner py-1">
+        {{-- ===== MAIN ===== --}}
+        <li class="menu-header-item">
+            <span class="menu-title">Main</span>
+        </li>
+        <li class="menu-item {{ Request::routeIs('berandaKPI.get') ? 'active-item' : '' }}">
+            <a class="menu-link" href="{{ route('berandaKPI.get') }}">
+                <i class="menu-icon fa-solid fa-house"></i>
+                <span class="menu-title">Dashboard</span>
+            </a>
+        </li>
+
+        {{-- ===== KPI SECTION ===== --}}
+        @php $auth = Auth()->user()->jabatan; @endphp
+
+        <li class="menu-header-item">
+            <span class="menu-title">KPI</span>
+        </li>
+
+        @if (
+            $auth === 'Koordinator ITSM' ||
+                $auth === 'HRD' ||
+                $auth === 'Education Manager' ||
+                $auth === 'GM' ||
+                $auth === 'SPV Sales')
+            <li class="menu-item {{ Request::routeIs('kpi.index') ? 'active' : '' }}">
+                <a class="menu-link" href="{{ route('kpi.index') }}">
+                    <i class="menu-icon fa-solid fa-bullseye"></i>
+                    <span class="menu-title">Target Divisi</span>
+                </a>
+            </li>
+            <li class="menu-item {{ Request::routeIs('kpi.overview.index') ? 'active' : '' }}">
+                <a class="menu-link" href="{{ route('kpi.overview.index') }}">
+                    <i class="menu-icon fa-solid fa-users-viewfinder"></i>
+                    <span class="menu-title">Overview Departement</span>
+                </a>
+            </li>
+        @endif
+
+        <li class="menu-item {{ Request::routeIs('kpi.overview.indexPersonal') ? 'active' : '' }}">
+            <a class="menu-link" href="{{ route('kpi.overview.indexPersonal') }}">
+                <i class="menu-icon fa-solid fa-user-check"></i>
+                <span class="menu-title">Overview Personal</span>
+            </a>
+        </li>
+
+        @if ($auth === 'GM' || $auth === 'HRD' || $auth === 'Direktur Utama' || $auth === 'Direktur')
+            <li class="menu-item {{ Request::routeIs('kpi.dataTarget.index') ? 'active' : '' }}">
+                <a class="menu-link" href="{{ route('kpi.dataTarget.index') }}">
+                    <i class="menu-icon fa-solid fa-database"></i>
+                    <span class="menu-title">Data Target</span>
+                </a>
+            </li>
+        @endif
+
+        {{-- ===== PENILAIAN 360° SECTION ===== --}}
+        <li class="menu-header-item">
+            <span class="menu-title">Penilaian 360°</span>
+        </li>
+
+        @if ($auth === 'GM' || $auth === 'HRD' || $auth === 'Direktur Utama' || $auth === 'Direktur')
+            <li class="menu-item">
+                <a class="menu-link" data-bs-toggle="collapse" href="#forms" aria-expanded="true"
+                    aria-controls="forms">
+                    <i class="menu-icon fa-solid fa-table"></i>
+                    <span class="menu-title">Table Penilaian</span>
+                    <i class="menu-arrow fa-solid fa-chevron-right"></i>
+                </a>
+                <div class="collapse show" id="forms">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="menu-item {{ request('tipe') === 'rutin' ? 'active' : '' }}">
+                            <a class="menu-link" href="{{ route('ketegoriKPI.get', ['tipe' => 'rutin']) }}">
+                                <span class="menu-title">Rutin</span>
+                            </a>
+                        </li>
+                        <li class="menu-item {{ request('tipe') === 'probation' ? 'active' : '' }}">
+                            <a class="menu-link" href="{{ route('ketegoriKPI.get', ['tipe' => 'probation']) }}">
+                                <span class="menu-title">Probation</span>
+                            </a>
+                        </li>
+                        <li class="menu-item {{ request('tipe') === 'kontrak' ? 'active' : '' }}">
+                            <a class="menu-link" href="{{ route('ketegoriKPI.get', ['tipe' => 'kontrak']) }}">
+                                <span class="menu-title">Kontrak</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="menu-item {{ Request::routeIs('ketegori.kpi.create') ? 'active' : '' }}">
+                <a class="menu-link" href="{{ route('ketegori.kpi.create') }}">
+                    <i class="menu-icon fa-solid fa-square-plus"></i>
+                    <span class="menu-title">Buat Penilaian</span>
+                </a>
+            </li>
+
+            <li class="menu-item {{ Request::routeIs('penilaian.form.data') ? 'active' : '' }}">
+                <a class="menu-link" href="{{ route('penilaian.form.data') }}">
+                    <i class="menu-icon fa-solid fa-laptop-file"></i>
+                    <span class="menu-title">Data Form</span>
+                </a>
+            </li>
+        @endif
+
+        @php
+            $id_karyawan = Auth()->user()->karyawan_id;
+        @endphp
+
+        @if ($auth != 'Direktur Utama' && $auth != 'Direktur')
+            <li class="menu-item {{ Request::is('penilaian360/index*') ? 'active' : '' }}">
+                <a class="menu-link" href="{{ url('/penilaian360/index/' . $id_karyawan) }}">
+                    <i class="menu-icon fa-solid fa-file-lines"></i>
+                    <span class="menu-title">Hasil Penilaian Anda</span>
+                </a>
+            </li>
+            <li class="menu-item {{ Request::is('getFormPenilaianUser*') ? 'active' : '' }}">
+                <a class="menu-link" href="{{ url('/getFormPenilaianUser/' . $id_karyawan) }}">
+                    <i class="menu-icon fa-solid fa-pen-to-square"></i>
+                    <span class="menu-title">Form Penilaian</span>
+                </a>
+            </li>
+        @endif
+    </ul>
+
+    <div class="sidebar-footer mt-auto">
+        <a href="{{ route('home') }}" class="btn-back-home">
+            <i class="bx bx-home"></i>
+            <span>BACK TO INIXCOFFE</span>
         </a>
     </div>
 </aside>

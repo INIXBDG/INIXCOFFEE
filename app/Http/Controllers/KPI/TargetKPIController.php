@@ -13606,96 +13606,116 @@ class TargetKPIController extends Controller
     public function getDataOverviewPersonal(Request $request)
     {
         try {
-            $karyawanId = $request->id_karyawan ?? auth()->id();
+            $karyawanId  = $request->id_karyawan ?? auth()->id();
             $tahunFilter = $request->tahun ?? now()->year;
 
-            if (!karyawan::find($karyawanId)) {
+            $karyawan = karyawan::find($karyawanId);
+            if (!$karyawan) {
                 return response()->json(['success' => false, 'message' => 'Data karyawan tidak ditemukan'], 404);
             }
 
-            $karyawan = karyawan::find($karyawanId);
+            $allTargets = targetKPI::with([
+                'karyawan',
+                'detailTargetKPI.detailPersonKPI.karyawan',
+                'detailTargetKPI.dataTarget'
+            ])
+            ->whereYear('created_at', $tahunFilter)
+            ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanId) {
+                $q->where('id_karyawan', $karyawanId);
+            })
+            ->get();
 
-            $processedTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan', 'detailTargetKPI.dataTarget'])
-                ->whereYear('created_at', $tahunFilter)
-                ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanId) {
-                    $q->where('id_karyawan', $karyawanId);
-                })
-                ->get()
-                ->map(function ($target) use ($karyawanId) {
-                    $detail = $target->detailTargetKPI->first();
-                    if (!$detail) return null;
+            $processedTargets = collect();
+
+            foreach ($allTargets as $target) {
+                // FIX Bug 1: Loop semua detail, bukan hanya ->first()
+                foreach ($target->detailTargetKPI as $detail) {
+
+                    // Pastikan karyawan ini memang ditugaskan di detail ini
+                    $isAssigned = $detail->detailPersonKPI
+                        ->where('id_karyawan', $karyawanId)
+                        ->isNotEmpty();
+
+                    if (!$isAssigned) continue;
+
+                    $nilaiTarget = $detail->dataTarget?->nilai_target ?? $detail->nilai_target;
+                    $tipeTarget  = $detail->tipe_target;
 
                     $progress = $this->resolveProgress($target, $karyawanId);
-                    if ($progress === null) return null;
+                    if ($progress === null) continue;
 
-                    $nilaiTarget = $detail->nilai_target;
-                    $tipeTarget = $detail->tipe_target;
-                    $isRupiah = $tipeTarget === 'rupiah';
-                    $percent = $isRupiah
-                        ? ($nilaiTarget > 0 ? ($progress / $nilaiTarget) * 100 : 0)
-                        : ($nilaiTarget > 0 ? ($progress / $nilaiTarget) * 100 : 0);
+                    // Logika rupiah tetap menggunakan nilai mentah dari resolveProgress
+                    $percent = $nilaiTarget > 0
+                        ? round(($progress / $nilaiTarget) * 100, 2)
+                        : 0;
+                    $percent = max(0, min(100, $percent));
 
-                    $status = $isRupiah
-                        ? ($percent >= 100 ? 'Selesai' : ($percent > 0 ? 'Aktif' : 'Belum Mulai'))
-                        : ($progress >= $nilaiTarget ? 'Selesai' : ($progress > 0 ? 'Aktif' : 'Belum Mulai'));
-
-                    $progressDisplay = match (true) {
-                        $progress === null => '-',
-                        $tipeTarget === 'rupiah' => 'Rp ' . number_format($progress, 0, ',', '.'),
-                        $tipeTarget === 'persen' => round($progress, 2) . '%',
-                        default => number_format($progress, 0, ',', '.')
+                    // FIX Bug 3: status konsisten untuk semua tipe target
+                    $status = match (true) {
+                        $percent >= 100  => 'Selesai',
+                        $progress > 0    => 'Aktif',
+                        default          => 'Belum Mulai',
                     };
 
-                    return [
-                        'id' => $target->id,
-                        'judul' => $target->judul,
-                        'asistant_route' => $target->asistant_route,
-                        'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                        'tipe_target' => $tipeTarget,
-                        'target' => $nilaiTarget,
-                        'progress' => round($progress),
-                        'progress_display' => $progressDisplay,
-                        'progress_percent' => $percent,
-                        'status' => $status,
-                        'status_badge' => $status === 'Selesai' ? 'bg-success' : 'bg-warning text-dark',
-                        'deskripsi' => $detail->deskripsi ?? '-',
-                        'manual_value' => $detail->manual_value,
-                        'created_at' => $target->created_at->format('d M Y'),
-                    ];
-                })
-                ->filter()
-                ->values();
+                    $progressDisplay = match (true) {
+                        $tipeTarget === 'rupiah' => 'Rp ' . number_format($progress, 0, ',', '.'),
+                        $tipeTarget === 'persen' => round($progress, 2) . '%',
+                        default                  => number_format($progress, 0, ',', '.'),
+                    };
 
-            $progressPercentages = $processedTargets->pluck('progress_percent')->filter(fn($v) => $v > 0);
-            $rataRataProgress = $progressPercentages->isNotEmpty() ? round($progressPercentages->sum() / $progressPercentages->count(), 2) : 0;
+                    $processedTargets->push([
+                        'id'              => $target->id,
+                        'judul'           => $target->judul,
+                        'asistant_route'  => $target->asistant_route,
+                        'periode'         => $detail->jangka_target . ' ' . $detail->detail_jangka,
+                        'tipe_target'     => $tipeTarget,
+                        'target'          => $nilaiTarget,
+                        'progress'        => round($progress),
+                        'progress_display'=> $progressDisplay,
+                        'progress_percent'=> $percent,
+                        'status'          => $status,
+                        'status_badge'    => $status === 'Selesai' ? 'bg-success' : ($status === 'Aktif' ? 'bg-warning text-dark' : 'bg-secondary'),
+                        'deskripsi'       => $detail->deskripsi ?? '-',
+                        'manual_value'    => $detail->manual_value,
+                        'created_at'      => $target->created_at->format('d M Y'),
+                    ]);
+                }
+            }
+
+            // FIX Bug 2: Semua target ikut dihitung, termasuk yang 0%
+            $progressPercentages = $processedTargets->pluck('progress_percent')->filter(fn($v) => $v !== null);
+            $rataRataProgress = $progressPercentages->isNotEmpty()
+                ? round($progressPercentages->sum() / $progressPercentages->count(), 2)
+                : 0;
 
             return response()->json([
-                'success' => true,
-                'user_info' => [
-                    'nama' => $karyawan->nama_lengkap ?? '-',
+                'success'      => true,
+                'user_info'    => [
+                    'nama'    => $karyawan->nama_lengkap ?? '-',
                     'jabatan' => $karyawan->jabatan ?? '-',
-                    'divisi' => $karyawan->divisi ?? '-',
+                    'divisi'  => $karyawan->divisi ?? '-',
                 ],
-                'total_target' => $processedTargets->count(),
+                'total_target'       => $processedTargets->count(),
                 'rata_rata_progress' => $rataRataProgress,
-                'kpi_aktif' => $processedTargets->where('status', 'Aktif')->count(),
-                'kpi_selesai' => $processedTargets->where('status', 'Selesai')->count(),
+                'kpi_aktif'          => $processedTargets->where('status', 'Aktif')->count(),
+                'kpi_selesai'        => $processedTargets->where('status', 'Selesai')->count(),
                 'statistik_per_target' => $processedTargets->map(fn($t) => [
-                    'judul' => $t['judul'],
-                    'periode' => $t['periode'],
-                    'tipe_target' => $t['tipe_target'],
-                    'target' => $t['target'],
-                    'progress' => $t['progress'],
-                    'status' => $t['status'],
+                    'judul'      => $t['judul'],
+                    'periode'    => $t['periode'],
+                    'tipe_target'=> $t['tipe_target'],
+                    'target'     => $t['target'],
+                    'progress'   => $t['progress'],
+                    'status'     => $t['status'],
                 ])->values(),
                 'distribusi_status' => [
-                    'Selesai' => $processedTargets->where('status', 'Selesai')->count(),
-                    'Aktif' => $processedTargets->where('status', 'Aktif')->count(),
+                    'Selesai'     => $processedTargets->where('status', 'Selesai')->count(),
+                    'Aktif'       => $processedTargets->where('status', 'Aktif')->count(),
                     'Belum Mulai' => $processedTargets->where('status', 'Belum Mulai')->count(),
                 ],
-                'daftar_target_pribadi' => $processedTargets,
-                'tahun' => $tahunFilter,
+                'daftar_target_pribadi' => $processedTargets->values(),
+                'tahun'                 => $tahunFilter,
             ]);
+
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
         }
@@ -13720,12 +13740,9 @@ class TargetKPIController extends Controller
         $tahunFilter = $request->tahun;
 
         if (!$divisiFilter || !$tahunFilter) {
-            return response()->json([
-                'message' => 'Divisi dan tahun harus diisi'
-            ], 400);
+            return response()->json(['message' => 'Divisi dan tahun harus diisi'], 400);
         }
 
-        // Ambil semua karyawan di divisi yang aktif
         $karyawanDiDivisi = karyawan::where('divisi', $divisiFilter)
             ->where('status_aktif', '1')
             ->where('jabatan', '!=', 'Outsource')
@@ -13739,51 +13756,42 @@ class TargetKPIController extends Controller
 
         if (empty($karyawanIds)) {
             return response()->json([
-                'total_target' => 0,
-                'rata_rata_progress' => 0,
-                'kpi_aktif' => 0,
-                'kpi_selesai' => 0,
-                'karyawan_departemen' => [],
-                'statistik_karyawan' => [],
-                'distribusi_nilai' => [],
-                'daftar_target_kpi' => []
+                'total_target' => 0, 'rata_rata_progress' => 0,
+                'kpi_aktif' => 0, 'kpi_selesai' => 0,
+                'karyawan_departemen' => [], 'statistik_karyawan' => [],
+                'distribusi_nilai' => [], 'daftar_target_kpi' => []
             ]);
         }
 
-        // FIX: Ambil target KPI dengan filter yang lebih spesifik
-        // Pastikan hanya mengambil target untuk karyawan di divisi ini di tahun ini
+        // FIX Bug 2: Hapus whereHas ganda, cukup filter lewat karyawan
         $allTargets = targetKPI::with([
             'karyawan',
             'detailTargetKPI.dataTarget',
             'detailTargetKPI.detailPersonKPI.karyawan'
         ])
         ->whereYear('created_at', $tahunFilter)
-        ->whereHas('karyawan', function($q) use ($karyawanIds) {
+        ->whereHas('karyawan', function ($q) use ($karyawanIds) {
             $q->whereIn('id', $karyawanIds);
         })
-        ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
-            $q->whereIn('id_karyawan', $karyawanIds);
-        })
-        ->distinct()
         ->get();
-        
+
         $daftarTargetKPI = [];
         $employeeProgressMap = [];
         $employeeTargetStatusMap = [];
-        $processedTargets = []; // Track target yang sudah diproses untuk avoid duplikasi
+        $processedTargets = [];
 
         $distribusi = [
-            'Sangat Baik' => 0,
-            'Baik' => 0,
-            'Cukup' => 0,
-            'Kurang' => 0,
-            'Sangat Kurang' => 0
+            'Sangat Baik' => 0, 'Baik' => 0,
+            'Cukup' => 0, 'Kurang' => 0, 'Sangat Kurang' => 0
         ];
 
         foreach ($allTargets as $target) {
             foreach ($target->detailTargetKPI as $detail) {
-                
-                // Ambil semua karyawan yang ditugaskan di detail ini
+
+                // FIX Bug 1: Ambil nilai_target dan tipe_target seperti di personal
+                $nilaiTarget = $detail->dataTarget?->nilai_target ?? $detail->nilai_target;
+                $tipeTarget  = $detail->tipe_target;
+
                 $assignedPersons = $detail->detailPersonKPI
                     ->whereIn('id_karyawan', $karyawanIds)
                     ->groupBy('id_karyawan');
@@ -13795,42 +13803,30 @@ class TargetKPIController extends Controller
                 $targetProgressPercentages = collect();
                 $targetKey = $target->id . '_' . $detail->id;
 
-                // Process setiap karyawan yang ditugaskan
                 foreach ($assignedPersons as $personId => $assignments) {
-                    
-                    // Cek apakah target ini sudah diproses untuk karyawan ini
+
                     $uniqueKey = $targetKey . '_' . $personId;
-                    if (isset($processedTargets[$uniqueKey])) {
-                        continue;
-                    }
+                    if (isset($processedTargets[$uniqueKey])) continue;
                     $processedTargets[$uniqueKey] = true;
 
-                    $result = $this->resolveProgress($target, $personId);
+                    $rawProgress = $this->resolveProgress($target, $personId);
+                    if ($rawProgress === null) continue;
 
-                    if (!$result) {
-                        continue;
-                    }
+                    // FIX Bug 1: Hitung percent sama persis dengan fungsi personal
+                    $rawProgress = $this->normalizeNumber($rawProgress);
+                    $percent = $nilaiTarget > 0
+                        ? round(($rawProgress / $nilaiTarget) * 100, 2)
+                        : 0;
+                    $percent = max(0, min(100, $percent));
 
-                    // FIX: Ambil nilai realisasi langsung, jangan dibagi dengan target
-                    $rawProgress = $this->normalizeNumber($result);
-                    
-                    // Pastikan progress dalam range 0-100
-                    $percent = max(0, min(100, round($rawProgress, 2)));
-
-                    // Inisialisasi array jika belum ada
                     if (!isset($employeeProgressMap[$personId])) {
                         $employeeProgressMap[$personId] = [];
-                        $employeeTargetStatusMap[$personId] = [
-                            'aktif' => 0,
-                            'selesai' => 0
-                        ];
+                        $employeeTargetStatusMap[$personId] = ['aktif' => 0, 'selesai' => 0];
                     }
 
-                    // Simpan progress untuk karyawan ini
                     $employeeProgressMap[$personId][] = $percent;
                     $targetProgressPercentages->push($percent);
 
-                    // Update status target
                     if ($percent < 100) {
                         $employeeTargetStatusMap[$personId]['aktif']++;
                     } else {
@@ -13838,40 +13834,30 @@ class TargetKPIController extends Controller
                     }
                 }
 
-                // Hitung rata-rata progress untuk target ini
                 $avgTarget = $targetProgressPercentages->isNotEmpty()
                     ? round($targetProgressPercentages->avg(), 2)
                     : 0;
 
                 $status = $avgTarget >= 100 ? 'Selesai' : 'Belum Selesai';
 
-                // Update distribusi nilai
                 if ($avgTarget > 0) {
-                    if ($avgTarget >= 100) {
-                        $distribusi['Sangat Baik']++;
-                    } elseif ($avgTarget >= 80) {
-                        $distribusi['Baik']++;
-                    } elseif ($avgTarget >= 70) {
-                        $distribusi['Cukup']++;
-                    } elseif ($avgTarget >= 60) {
-                        $distribusi['Kurang']++;
-                    } else {
-                        $distribusi['Sangat Kurang']++;
-                    }
+                    if ($avgTarget >= 100)      $distribusi['Sangat Baik']++;
+                    elseif ($avgTarget >= 80)   $distribusi['Baik']++;
+                    elseif ($avgTarget >= 70)   $distribusi['Cukup']++;
+                    elseif ($avgTarget >= 60)   $distribusi['Kurang']++;
+                    else                        $distribusi['Sangat Kurang']++;
                 }
 
-                // Tambahkan ke daftar target KPI
                 $daftarTargetKPI[] = [
-                    'judul' => $target->judul,
-                    'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                    'target' => $detail->dataTarget?->nilai_target ?? $detail->nilai_target,
+                    'judul'    => $target->judul,
+                    'periode'  => $detail->jangka_target . ' ' . $detail->detail_jangka,
+                    'target'   => $nilaiTarget,
                     'progress' => $avgTarget,
-                    'status' => $status
+                    'status'   => $status
                 ];
             }
         }
 
-        // Hitung rata-rata progress per karyawan
         $avgPerEmployee = [];
         foreach ($employeeProgressMap as $personId => $progressList) {
             if (!empty($progressList)) {
@@ -13879,67 +13865,50 @@ class TargetKPIController extends Controller
             }
         }
 
-        // Hitung rata-rata progress keseluruhan divisi
         $rataRataProgress = !empty($avgPerEmployee)
             ? round(array_sum($avgPerEmployee) / count($avgPerEmployee), 2)
             : 0;
 
-        // Hitung KPI aktif dan selesai
-        $kpiAktif = collect($daftarTargetKPI)
-            ->where('status', 'Belum Selesai')
-            ->count();
+        $kpiAktif    = collect($daftarTargetKPI)->where('status', 'Belum Selesai')->count();
+        $kpiSelesai  = collect($daftarTargetKPI)->where('status', 'Selesai')->count();
 
-        $kpiSelesai = collect($daftarTargetKPI)
-            ->where('status', 'Selesai')
-            ->count();
-
-        // Siapkan data karyawan departemen
         $karyawanDepartemen = $karyawanDiDivisi->map(function ($karyawan) use (
-            $employeeProgressMap,
-            $employeeTargetStatusMap
+            $employeeProgressMap, $employeeTargetStatusMap
         ) {
             $progressList = $employeeProgressMap[$karyawan->id] ?? [];
-            $statusData = $employeeTargetStatusMap[$karyawan->id] ?? [
-                'aktif' => 0,
-                'selesai' => 0
-            ];
-
-            $avgTarget = !empty($progressList)
+            $statusData   = $employeeTargetStatusMap[$karyawan->id] ?? ['aktif' => 0, 'selesai' => 0];
+            $avgTarget    = !empty($progressList)
                 ? round(array_sum($progressList) / count($progressList), 2)
                 : 0;
 
             return [
-                'id_karyawan' => $karyawan->id,
-                'nama' => $karyawan->nama_lengkap,
-                'jabatan' => $karyawan->jabatan,
+                'id_karyawan'               => $karyawan->id,
+                'nama'                      => $karyawan->nama_lengkap,
+                'jabatan'                   => $karyawan->jabatan,
                 'total_target_belum_tercapai' => $statusData['aktif'],
-                'total_target_selesai' => $statusData['selesai'],
-                'jumlah_target' => count($progressList),
-                'rata_rata_progress' => $avgTarget
+                'total_target_selesai'      => $statusData['selesai'],
+                'jumlah_target'             => count($progressList),
+                'rata_rata_progress'        => $avgTarget,
             ];
         })->values();
 
         return response()->json([
-            'total_target' => count($daftarTargetKPI),
+            'total_target'       => count($daftarTargetKPI),
             'rata_rata_progress' => $rataRataProgress,
-            'kpi_aktif' => $kpiAktif,
-            'kpi_selesai' => $kpiSelesai,
-            'karyawan_departemen' => $karyawanDepartemen,
+            'kpi_aktif'          => $kpiAktif,
+            'kpi_selesai'        => $kpiSelesai,
+            'karyawan_departemen'=> $karyawanDepartemen,
             'statistik_karyawan' => $this->getEmployeeStatistics(
-                $karyawanIds,
-                $employeeProgressMap,
-                $employeeTargetStatusMap
+                $karyawanIds, $employeeProgressMap, $employeeTargetStatusMap
             ),
-            'distribusi_nilai' => $distribusi,
-            'daftar_target_kpi' => collect($daftarTargetKPI)->unique('judul')->values()
+            'distribusi_nilai'   => $distribusi,
+            'daftar_target_kpi'  => collect($daftarTargetKPI)->unique('judul')->values()
         ]);
     }
 
     private function normalizeNumber($value)
     {
-        if ($value 
-            
-            = null || $value === '') {
+        if ($value === null || $value === '') {
             return 0;
         }
 
