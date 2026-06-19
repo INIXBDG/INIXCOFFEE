@@ -536,8 +536,8 @@ Route::prefix('kpi-data/')
             ->name('karyawan.')
             ->middleware(['auth'])
             ->group(function () {
-            route::get('/get', [TargetKPIController::class, 'getDataTarget'])->name('get');
-        });
+                route::get('/get', [TargetKPIController::class, 'getDataTarget'])->name('get');
+            });
     });
 
 //Project KPI
@@ -595,6 +595,8 @@ Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentControll
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
 Route::put('/suratperjalanan/{id}/approve-direksi/{status}', [App\Http\Controllers\SuratPerjalananController::class, 'approveDireksi'])->name('suratperjalanan.approve.direksi');
+Route::put('/suratperjalanan/{id}/finance-approval', [App\Http\Controllers\SuratPerjalananController::class, 'financeApproval'])->name('suratperjalanan.financeApproval');
+Route::put('/suratperjalanan/{id}/upload-bukti', [App\Http\Controllers\SuratPerjalananController::class, 'uploadBuktiTransfer'])->name('suratperjalanan.uploadBukti');
 Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
 Route::get('/absensi/karyawan', [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
@@ -1044,7 +1046,7 @@ Route::prefix('office')->group(function () {
         Route::get('total-tahunan/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'totalTahunan']);
     });
 
-    route::prefix('exam')->name('office.exam.')->group(function() {
+    route::prefix('exam')->name('office.exam.')->group(function () {
         route::get('/index', [OfficeExamController::class, 'indexOffice'])->name('index');
         Route::get('/detail/{id}', [OfficeExamController::class, 'showDetailExam']);
         route::post('/update-bundling', [OfficeExamController::class, 'updateBundling'])->name('updateBundling');
@@ -1405,16 +1407,16 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::prefix('employee')
         ->name('employee.')
         ->group(function () {
-        Route::get('/index', [employeeController::class, 'index'])->name('index');
-        Route::get('/category', [employeeController::class, 'getEmployeesByCategory'])->name('category');
-        Route::get('/data', [employeeController::class, 'getEmployeeData'])->name('data');
-        Route::get('/headcount/trend', [employeeController::class, 'getHeadcountTrend'])->name('trend');
-        Route::get('/headcount/breakdown', [employeeController::class, 'getHeadcountBreakdown'])->name('breakdown');
-        Route::get('/export/trend/csv', [employeeController::class, 'exportHeadcountTrendCsv'])->name('trend.export.csv');
-        Route::get('/export/trend/pdf', [employeeController::class, 'exportHeadcountTrendPdf'])->name('trend.export.pdf');
-        Route::get('/export/breakdown/csv', [employeeController::class, 'exportHeadcountBreakdownCsv'])->name('breakdown.export.csv');
-        Route::get('/export/breakdown/pdf', [employeeController::class, 'exportHeadcountBreakdownPdf'])->name('breakdown.export.pdf');
-    });
+            Route::get('/index', [employeeController::class, 'index'])->name('index');
+            Route::get('/category', [employeeController::class, 'getEmployeesByCategory'])->name('category');
+            Route::get('/data', [employeeController::class, 'getEmployeeData'])->name('data');
+            Route::get('/headcount/trend', [employeeController::class, 'getHeadcountTrend'])->name('trend');
+            Route::get('/headcount/breakdown', [employeeController::class, 'getHeadcountBreakdown'])->name('breakdown');
+            Route::get('/export/trend/csv', [employeeController::class, 'exportHeadcountTrendCsv'])->name('trend.export.csv');
+            Route::get('/export/trend/pdf', [employeeController::class, 'exportHeadcountTrendPdf'])->name('trend.export.pdf');
+            Route::get('/export/breakdown/csv', [employeeController::class, 'exportHeadcountBreakdownCsv'])->name('breakdown.export.csv');
+            Route::get('/export/breakdown/pdf', [employeeController::class, 'exportHeadcountBreakdownPdf'])->name('breakdown.export.pdf');
+        });
     Route::prefix('payroll')
         ->name('payroll.')
         ->group(function () {
@@ -1422,7 +1424,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
             Route::get('/dashboard', [payrollController::class, 'getPayrollDashboard'])->name('dashboard');
             Route::get('/export/csv', [payrollController::class, 'exportPayrollCsv'])->name('export.csv');
             Route::get('/export/pdf', [payrollController::class, 'exportPayrollPdf'])->name('export.pdf');
-    });
+        });
     Route::prefix('absensi')->name('absensi.')->group(function () {
         Route::get('/', [presenceController::class, 'index'])->name('index');
         Route::get('/analytics', [presenceController::class, 'getAttendanceAnalytics'])->name('analytics');
@@ -1442,7 +1444,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         });
     });
 
-    Route::prefix('reports')->name('reports.')->group(function() {
+    Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
 
         Route::get('/create', [ReportController::class, 'create'])->name('create');
