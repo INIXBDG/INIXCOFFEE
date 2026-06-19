@@ -112,6 +112,7 @@ use App\Http\Controllers\KoordinasiOfficeBoyController;
 use App\Http\Controllers\Office\OfficeExamController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\ScheduleLogController;
+use App\Http\Controllers\VisitProjectController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1562,7 +1563,6 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 Route::prefix('employee')->name('employee.')->middleware(['auth'])->group(function () {
     Route::get('/job-desk', [EmployeeJobDeskController::class, 'index'])->name('jobdesk.index');
     Route::get('/job-desk/api/{id}', [EmployeeJobDeskController::class, 'show'])->name('jobdesk.show');
-    
     Route::get('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'showProfile'])->name('profile.show');
     Route::post('/karyawan-profile', [EmployeeJobDeskController::class, 'storeProfile'])->name('profile.store');
     Route::put('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'updateProfile'])->name('profile.update');
@@ -1581,3 +1581,9 @@ Route::post('/perusahaan/merge', [PerusahaanController::class, 'merge'])->name('
 Route::get('/schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule.index');
 Route::get('/schedule-logs/data', [ScheduleLogController::class, 'data'])->name('schedule.data');
 Route::delete('/schedule-logs/clear-all', [ScheduleLogController::class, 'clearAll'])->name('schedule.clear');
+
+Route::get('/visit-projects', [VisitProjectController::class, 'index'])->name('visit-projects.index');
+Route::get('/visit-projects/get', [VisitProjectController::class, 'get'])->name('visit-projects.get');
+Route::post('/visit-projects/store', [VisitProjectController::class, 'store'])->name('visit-projects.store');
+Route::put('/visit-projects/{visitProject}', [VisitProjectController::class, 'update'])->name('visit-projects.update');
+Route::delete('/visit-projects/{visitProject}', [VisitProjectController::class, 'destroy'])->name('visit-projects.destroy');
