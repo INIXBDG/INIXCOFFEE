@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\AbsensiKaryawan;
+use App\Models\notif;
+use App\Models\Project;
+use App\Models\Registrasi;
+use App\Models\RKM;
+use App\Models\target;
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Models\RKM;
-use App\Models\Registrasi;
-use App\Models\notif;
-use App\Models\target;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class HomeController extends Controller
 {
@@ -78,11 +80,18 @@ class HomeController extends Controller
     }
     private function getTotalSales($year)
     {
-        return DB::table('r_k_m_s')
-            ->where('status', '0') // Hanya data dengan status 0
-            ->whereYear('tanggal_awal', $year) // Tambahkan kondisi berdasarkan tahun
-            ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
-            ->value('total_sales');
+        if ($year === "2023" || $year === "2024" || $year === "2025") {
+            return DB::table('r_k_m_s')
+                ->where('status', '0') // Hanya data dengan status 0
+                ->whereYear('tanggal_awal', $year) // Tambahkan kondisi berdasarkan tahun
+                ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
+                ->value('total_sales');
+        } else {
+            return DB::table('approval_pendapatans')
+                ->whereYear('tanggal_mulai', $year)
+                ->select(DB::raw('SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
+                ->value('total_sales');
+        }
     }
 
     public function getYearSales($year)
@@ -138,6 +147,50 @@ class HomeController extends Controller
         ]);
     }
 
+    public function getProjectTarget($year)
+    {
+        try {
+            // Ambil target_project dari tabel target berdasarkan tahun
+            $targetRow = target::where('tahun', $year)->first();
+            $targetProject = $targetRow ? (float) $targetRow->target_project : 0;
 
+            // Hitung total nilai_proyek dari project yang phase = 'selesai'
+            $completedSum = Project::where('phase', 'selesai')
+                ->whereYear('tanggal_akhir', $year)
+                ->sum('nilai_proyek');
 
+            // Generate labels untuk ruler (9 titik: 0%, 12.5%, 25%, ... 100%)
+            $targetLabels = [];
+            if ($targetProject > 0) {
+                for ($i = 0; $i <= 8; $i++) {
+                    $targetLabels[] = $this->formatTargetLabel(($i / 8) * $targetProject);
+                }
+            } else {
+                $targetLabels = array_fill(0, 9, "0");
+            }
+
+            return response()->json([
+                'success' => true,
+                'completedSum' => (float) $completedSum,
+                'target' => (float) $targetProject,
+                'targetLabels' => $targetLabels,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('getProjectTarget error', [
+                'msg' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Server error'], 500);
+        }
+    }
+
+    // Helper function (jika belum ada)
+    private function formatTargetLabel($value)
+    {
+        if ($value >= 1000000000)
+            return round($value / 1000000000, 1) . ' M';
+        if ($value >= 1000000)
+            return round($value / 1000000, 1) . ' JT';
+        return number_format($value, 0, ',', '.');
+    }
 }

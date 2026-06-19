@@ -33,10 +33,7 @@ class eksam extends Model
         'mata_uang',
         'deleted_at',
         'deleted_by',
-    ];
-
-    protected $casts = [
-        'file_invoice' => 'array',
+        
     ];
 
     public function rkm()
@@ -72,6 +69,11 @@ class eksam extends Model
     public function perusahaan()
     {
         return $this->belongsTo(Perusahaan::class, 'perusahaan', 'id');
+    }
+
+    public function checklistEksam()
+    {
+        return $this->hasOne(ChecklistEksam::class, 'id_exam');
     }
 
 }

@@ -63,16 +63,21 @@
         </li>
 
         @if (Auth::user()->jabatan === 'Finance & Accounting')
-        <li class="menu-item {{ request()->routeIs('office.tagihanPerusahaan.index') ? 'active open' : '' }}">
-            <a href="{{ route('office.tagihanPerusahaan.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-dollar-circle"></i>
-                <div class="text-truncate" data-i18n="contact">Tagihan Perusahaan</div>
-            </a>
-        </li>
+            <li class="menu-item {{ request()->routeIs('office.tagihanPerusahaan.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.tagihanPerusahaan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-dollar-circle"></i>
+                    <div class="text-truncate" data-i18n="contact">Tagihan Perusahaan</div>
+                </a>
+            </li>
         @endif
 
-        @if (Auth::user()->jabatan === 'HRD')
-            <li class="menu-item {{ request()->routeIs('office.indexKegiatan') ? 'active open' : '' }}">
+
+        @if (Auth::user()->jabatan === 'HRD' || Auth::user()->jabatan === 'GM')
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Administrasi</span>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('office.indexKegiatan') ? 'active open' : '' }}">               
                 <a href="{{ route('office.indexKegiatan') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-group"></i>
                     <div class="text-truncate" data-i18n="contact">Pengajuan Kegiatan</div>
@@ -107,6 +112,17 @@
             <a href="{{ route('office.vendor.bengkel.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-wrench"></i>
                 <div class="text-truncate" data-i18n="contact">Bengkel</div>
+            </a>
+        </li>
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">EXAM</span>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('office.exam.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.exam.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-clipboard"></i>
+                <div class="text-truncate" data-i18n="contact">Data Exam</div>
             </a>
         </li>
 
@@ -164,6 +180,19 @@
                     <div class="text-truncate" data-i18n="contact">Daftar Tugas</div>
                 </a>
             </li>
+
+            <li class="menu-item {{ request()->routeIs('office.stockOpname.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.stockOpname.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-package"></i>
+                    <div class="text-truncate" data-i18n="contact">Stock Opname</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('office.KoordinasiOb.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.KoordinasiOb.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-user-plus"></i>
+                    <div class="text-truncate" data-i18n="contact">Koordinasi OB</div>
+                </a>
+            </li>
         @endif
 
         <li class="menu-header small text-uppercase">
@@ -191,7 +220,9 @@
             </a>
         </li>
 
-        @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM', 'HRD', 'Driver']))
+        @if (auth()->check() &&
+                isset(auth()->user()->karyawan) &&
+                in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM', 'HRD', 'Driver']))
             <li class="menu-item {{ request()->routeIs('office.indexPerbaikanKendaraan') ? 'active open' : '' }}">
                 <a href="{{ route('office.indexPerbaikanKendaraan') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-wrench"></i>
@@ -200,8 +231,9 @@
             </li>
         @endif
 
-        @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM']))
-
+        @if (auth()->check() &&
+                isset(auth()->user()->karyawan) &&
+                in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM']))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Accounting</span>
             </li>
@@ -213,13 +245,26 @@
                 </a>
             </li>
 
+            <li class="menu-item {{ request()->routeIs('pic-penagihan.index') ? 'active open' : '' }}">
+                <a href="{{ route('picpenagihan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-receipt"></i>
+                    <div class="text-truncate" data-i18n="contact">DB PIC Penagihan</div>
+                </a>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('approvalPendapatan.index') ? 'active open' : '' }}">
+                <a href="{{ route('approvalPendapatan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-money"></i>
+                    <div class="text-truncate" data-i18n="contact">Approval Pendapatan</div>
+                </a>
+            </li>
+
             <li class="menu-item {{ request()->is('outstanding') ? 'active open' : '' }}">
                 <a href="/outstanding" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-task"></i>
                     <div class="text-truncate" data-i18n="contact">Outstanding</div>
                 </a>
             </li>
-
         @endif
 
         <li class="menu-header mt-4 pb-3" style="padding-left: 12px; padding-right: 12px;">

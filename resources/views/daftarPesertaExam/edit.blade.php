@@ -58,7 +58,7 @@
                         <hr>
 
                         <div class="row mb-3">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">{{ __('Skor') }}</label>
                                 <div class="input-group">
                                     <input type="number" name="skor" class="form-control @error('skor') is-invalid @enderror"
@@ -68,7 +68,7 @@
                                     @enderror
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">{{ __('Keterangan Lulus') }}</label>
                                 <select name="keterangan_lulus" id="keterangan_lulus" class="form-control">
                                     <option value="" disable hidden>Pilih Keterangan</option>
@@ -79,10 +79,15 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">{{ __('Tanggal Pelaksanaan') }} <span class="text-danger">*</span></label>
                                 <input type="date" name="tanggal_pelaksanaan" class="form-control @error('tanggal_pelaksanaan') is-invalid @enderror"
                                     value="{{ old('tanggal_pelaksanaan', $dokumentasi && $dokumentasi->tanggal_pelaksanaan ? \Carbon\Carbon::parse($dokumentasi->tanggal_pelaksanaan)->format('Y-m-d') : '') }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">{{ __('Jam Pelaksanaan') }} <span class="text-danger">*</span></label>
+                                <input type="time" name="jam_pelaksanaan" class="form-control @error('jam_pelaksanaan') is-invalid @enderror"
+                                    value="{{ old('jam_pelaksanaan', $dokumentasi && $dokumentasi->jam_pelaksanaan ? $dokumentasi->jam_pelaksanaan : '') }}" required>
                             </div>
                         </div>
 

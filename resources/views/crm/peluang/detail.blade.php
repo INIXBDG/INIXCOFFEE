@@ -15,6 +15,11 @@
         ];
     @endphp
     <div class="content-wrapper">
+        @if(session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
         <div class="container-xxl flex-grow-1 container-p-y">
 
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -179,7 +184,7 @@
                                                 @if ($regis)
                                                     Edit PDF
                                                 @else
-                                                    Upload PDF                                                
+                                                    Upload PDF
                                                 @endif
                                             </button>
                                     </div>
@@ -231,6 +236,7 @@
                                         data-bs-target="#detailPAModal">
                                         <i class="bi bi-credit-card"></i> Detail PA
                                     </button>
+                                    <a class="btn btn-info btn-sm" href="/crm/edit/{{$netsales->id_rkm}}/pa" target="_blank"> Edit PA</a>
                                 </div>
                             @endif
                         </div>
@@ -240,71 +246,121 @@
             </div>
 
             <!-- Card Daftar Aktivitas -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Aktivitas Terkait</h5>
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Aktivitas Terkait</h5>
+                    </div>
+                    <div class="card-body">
+                        @if ($peluang->aktivitas->isEmpty())
+                            <p class="text-muted">Belum ada aktivitas yang tercatat.</p>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th scope="col" class="px-3 py-2 text-center">ID Sales</th>
+                                            <th scope="col" class="px-3 py-2">Contact (PIC)</th>
+                                            <th scope="col" class="px-3 py-2">Aktivitas</th>
+                                            <th scope="col" class="px-3 py-2">Deskripsi</th>
+                                            <th scope="col" class="px-3 py-2">Waktu Aktivitas</th>
+                                            <th scope="col" class="px-3 py-2 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($peluang->aktivitas as $item)
+                                            <tr>
+                                                <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
+                                                <td class="px-3 py-2">
+                                                    {{ $item->contact->nama ?? ($item->peserta->nama ?? '-') }}
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    @if ($item->aktivitas === 'Incharge')
+                                                        Incharge Inhouse
+                                                    @elseif ($item->aktivitas === 'Form_Masuk')
+                                                        Regis Form
+                                                    @elseif ($item->aktivitas === 'PI')
+                                                        Leads
+                                                    @else
+                                                        {{ $item->aktivitas }}
+                                                    @endif
+                                                </td>
+                                                <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
+                                                <td class="px-3 py-2">
+                                                    {{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}
+                                                </td>
+                                                <td class="px-3 py-2 text-center">
+                                                    <div class="d-flex gap-2 justify-content-center">
+                                                        <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
+                                                            data-bs-target="#editAktivitasModal" onclick='editAktivitas(@json($item))'>
+                                                            Edit
+                                                        </button>
+                                                        <form action="{{ route('delete.aktivitas', $item->id) }}" method="POST"
+                                                            onsubmit="return confirm('Yakin ingin menghapus?')"
+                                                            style="display: inline;">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
                 </div>
-                <div class="card-body">
-                    @if ($peluang->aktivitas->isEmpty())
-                        <p class="text-muted">Belum ada aktivitas yang tercatat.</p>
-                    @else
+
+            @if ($histories && count($histories) > 0)
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Histori Pemulihan Lead</h5>
+                    </div>
+                    <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover">
                                 <thead class="table-primary">
                                     <tr>
-                                        <th scope="col" class="px-3 py-2 text-center">ID Sales</th>
-                                        <th scope="col" class="px-3 py-2">Contact (PIC)</th>
-                                        <th scope="col" class="px-3 py-2">Aktivitas</th>
-                                        <th scope="col" class="px-3 py-2">Deskripsi</th>
-                                        <th scope="col" class="px-3 py-2">Waktu Aktivitas</th>
-                                        <th scope="col" class="px-3 py-2 text-center">Aksi</th>
+                                        <th scope="col" class="px-3 py-2 text-center">TANGGAL PEMULIHAN</th>
+                                        <th scope="col" class="px-3 py-2 text-center">PERUBAHAN TAHAP</th>
+                                        <th scope="col" class="px-3 py-2 text-center">PERUBAHAN HARGA (RP)</th>
+                                        <th scope="col" class="px-3 py-2 text-center">PERUBAHAN PAX</th>
+                                        <th scope="col" class="px-3 py-2 text-center">CATATAN</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($peluang->aktivitas as $item)
+                                    @foreach ($histories as $history)
                                         <tr>
-                                            <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
-                                            <td class="px-3 py-2">
-                                                {{ $item->contact->nama ?? ($item->peserta->nama ?? '-') }}
+                                            <td class="px-3 py-2 text-center align-middle">
+                                                {{ \Carbon\Carbon::parse($history->created_at)->translatedFormat('d M Y, H:i') }}
                                             </td>
-                                            <td class="px-3 py-2">
-                                                @if ($item->aktivitas === 'Incharge')
-                                                    Incharge Inhouse
-                                                @elseif ($item->aktivitas === 'Form_Keluar')
-                                                    Regis Form Keluar
-                                                @elseif ($item->aktivitas === 'Form_Masuk')
-                                                    Regis Form Masuk
-                                                @else
-                                                    {{ $item->aktivitas }}
-                                                @endif
+                                            <td class="px-3 py-2 text-center align-middle">
+                                                <span class="text-muted">{{ strtoupper($history->tahap_sebelumnya) }}</span>
+                                                <i class="bx bx-right-arrow-alt mx-1"></i>
+                                                <strong class="text-dark">{{ strtoupper($history->tahap_baru) }}</strong>
                                             </td>
-                                            <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
-                                            <td class="px-3 py-2">
-                                                {{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}
+                                            <td class="px-3 py-2 text-center align-middle">
+                                                <span class="text-muted">{{ number_format($history->harga_sebelumnya, 0, ',', '.') }}</span>
+                                                <i class="bx bx-right-arrow-alt mx-1"></i>
+                                                <strong class="text-dark">{{ number_format($history->harga_baru, 0, ',', '.') }}</strong>
                                             </td>
-                                            <td class="px-3 py-2 text-center">
-                                                <div class="d-flex gap-2 justify-content-center">
-                                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
-                                                        data-bs-target="#editAktivitasModal" onclick='editAktivitas(@json($item))'>
-                                                        Edit
-                                                    </button>
-                                                    <form action="{{ route('delete.aktivitas', $item->id) }}" method="POST"
-                                                        onsubmit="return confirm('Yakin ingin menghapus?')"
-                                                        style="display: inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
-                                                    </form>
-                                                </div>
+                                            <td class="px-3 py-2 text-center align-middle">
+                                                <span class="text-muted">{{ $history->pax_sebelumnya }}</span>
+                                                <i class="bx bx-right-arrow-alt mx-1"></i>
+                                                <strong class="text-dark">{{ $history->pax_baru }}</strong>
+                                            </td>
+                                            <td class="px-3 py-2 align-middle">
+                                                {{ $history->keterangan ?? '-' }}
                                             </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                             </table>
                         </div>
-                    @endif
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
 
         <!-- Modal Tambah Aktivitas -->
@@ -348,10 +404,8 @@
                                     <option value="Meet">Meeting</option>
                                     <option value="Incharge">Incharge Inhouse</option>
                                     <option value="PA">Penawaran Awal</option>
-                                    <option value="PI">Penawaran Internal</option>
-                                    <option value="Telemarketing">Telemarketing</option>
-                                    <option value="Form_Masuk">Regis Form Masuk</option>
-                                    <option value="Form_Keluar">Regis Form Keluar</option>
+                                    <option value="PI">Leads</option>
+                                    <option value="Form_Masuk">Regis Form</option>
                                 </select>
                             </div>
 
@@ -409,10 +463,29 @@
                                 </div>
                             @endif
 
-                            <!-- Existing Fields -->
                             <div class="mb-3">
-                                <label for="materi" class="form-label">Materi</label>
-                                <select class="form-select" id="materi" name="materi" required>
+                                <label for="edit_id_perusahaan" class="form-label">Perusahaan</label>
+
+                                <select class="form-select" id="edit_id_perusahaan" disabled>
+                                    <option value="">-- Pilih Perusahaan --</option>
+                                    @foreach ($perusahaanAll as $item)
+                                        <option value="{{ $item->id }}" {{ $item->id == $peluang->perusahaan?->id ? 'selected' : '' }}>
+                                            {{ $item->nama_perusahaan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                <input type="hidden" name="id_perusahaan" value="{{ $peluang->perusahaan?->id }}">
+
+                                @error('id_perusahaan')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="edit_id_materi" class="form-label">Materi</label>
+
+                                <select class="form-select" id="edit_id_materi" disabled>
                                     <option value="">-- Pilih Materi --</option>
                                     @foreach ($materi as $item)
                                         <option value="{{ $item->id }}" {{ $item->id == $peluang->materi ? 'selected' : '' }}>
@@ -420,11 +493,13 @@
                                         </option>
                                     @endforeach
                                 </select>
+
+                                <input type="hidden" name="materi" value="{{ $peluang->materi }}">
+
                                 @error('materi')
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
-
                             <div class="mb-3">
                                 <label for="catatan" class="form-label">Catatan</label>
                                 <textarea class="form-control" id="catatan" name="catatan"
@@ -559,7 +634,7 @@
                                     {{ old('authorize', $peluang->rkm?->authorize ?? 0) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="authorizeToggle">Authorize</label>
                             </div>
-                            
+
                             <!-- Related Activities -->
                             <div class="mb-3">
                                 <h6 class="fw-bold">Aktivitas Terkait</h6>
@@ -684,7 +759,7 @@
 
                             <!-- Input Harga Final hanya muncul jika tahap = Merah -->
                             <div class="mb-3 d-none" id="input-close-win">
-                                <label for="close_win_display" class="form-label">Harga Final (PAX)</label>
+                                <label for="close_win_display" class="form-label">Harga Final (Harga dari keseluruhan penawaran dikali dengan pax dan ppn)</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="close_win_display"
                                         placeholder="Masukkan harga final">
@@ -710,7 +785,7 @@
         <div class="modal fade" id="paymentAdvanceModal" tabindex="-1" aria-labelledby="paymentAdvanceModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
-                <form action="{{ route('store.payment.advance') }}" method="POST" id="StorePA">
+                <form action="{{ route('store.payment.advance') }}" method="POST" id="StorePA" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-content">
                         <div class="modal-header">
@@ -774,7 +849,7 @@
                             <!-- SOUVENIR -->
                             <div class="mb-3">
                                 <label class="form-label">Souvenir</label>
-                                <input type="text" class="form-control rupiah" name="Souvenir">
+                                <input type="text" class="form-control rupiah" name="souvenir">
                             </div>
 
                             <!-- CASHBACK -->
@@ -809,6 +884,13 @@
                                     <option value="cash">Cash</option>
                                     <option value="transfer">Transfer</option>
                                 </select>
+                            </div>
+
+                            <!-- Bukti -->
+                            <div class="mb-3">
+                                <label class="form-label">Bukti Pembayaran</label>
+                                <input type="file" class="form-control" name="bukti" required accept=".jpg,.jpeg,.png,.pdf">
+                                <small class="form-text text-muted">Format file: JPG, PNG, PDF (Max 2MB)</small>
                             </div>
 
                         </div>
@@ -855,6 +937,7 @@
                                             <th>Deskripsi Tambahan</th>
                                             <th>Tanggal PA</th>
                                             <th>Tipe Pembayaran</th>
+                                            <th>Bukti</th>
                                         </tr>
                                     </thead>
 
@@ -889,6 +972,11 @@
                                             </td>
 
                                             <td>{{ ucfirst($netsales->tipe_pembayaran) }}</td>
+                                            @if ($netsales->bukti)
+                                                <td><a href="/storage/{{ $netsales->bukti }}" target="_blank">Lihat Bukti</a></td>
+                                            @else
+                                                <td class="text-muted">—</td>
+                                            @endif
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1029,12 +1117,11 @@
             </div>
         </div>
 
-        <!-- Modal Upload RegisForm-->
         <div class="modal fade" id="uploadPdfModal" tabindex="-1" aria-labelledby="uploadPdfModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content rounded-3 shadow">
                     <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title" id="upladPdfModalLabel">Upload PDF</h5>
+                        <h5 class="modal-title" id="uploadPdfModalLabel">Upload PDF</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                             aria-label="Close"></button>
                     </div>
@@ -1048,6 +1135,25 @@
                                 <label for="pdfFile" class="form-label">Pilih File PDF</label>
                                 <input type="file" name="pdf" id="pdfFile" class="form-control" accept="application/pdf"
                                     required>
+                                @error('pdf')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="harga" class="form-label">Harga per pax (Rp)</label>
+                                <input type="number" name="harga" id="harga" class="form-control" min="0" required>
+                                @error('harga')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
+                                <input type="number" name="pax" id="pax" class="form-control" min="1" required>
+                                @error('pax')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
 
@@ -1059,8 +1165,6 @@
                 </div>
             </div>
         </div>
-
-
 
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
@@ -1178,8 +1282,7 @@
                         method: 'GET',
                         dataType: 'json',
                         success: function (data) {
-                            const activities = data.data ||
-                                data; // Fallback if response is directly an array
+                            const activities = data.data || data;
 
                             if (!Array.isArray(activities) || activities.length === 0) {
                                 $(`#${targetElementId}`).html(
@@ -1189,38 +1292,48 @@
                             }
 
                             let table = `
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Pilih</th>
-                                        <th>Kontak</th>
-                                        <th>Jenis Aktivitas</th>
-                                        <th>Subjek</th>
-                                        <th>Deskripsi</th>
-                                        <th>Waktu Aktivitas</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                    `;
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Pilih</th>
+                                                <th>Kontak</th>
+                                                <th>Jenis Aktivitas</th>
+                                                <th>Subjek</th>
+                                                <th>Deskripsi</th>
+                                                <th>Waktu Aktivitas</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                            `;
 
                             activities.forEach(a => {
-                                const waktu = new Date(a.waktu).toLocaleDateString(
-                                    'id-ID', {
+                                const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
                                     day: '2-digit',
                                     month: 'long',
                                     year: 'numeric'
                                 });
+
+                                // Evaluasi label aktivitas
+                                let labelAktivitas = a.aktivitas || '-';
+                                if (a.aktivitas === 'PI') {
+                                    labelAktivitas = 'Leads';
+                                } else if (a.aktivitas === 'Form_Masuk') {
+                                    labelAktivitas = 'Regis Form';
+                                } else if (a.aktivitas === 'Incharge') {
+                                    labelAktivitas = 'Incharge Inhouse';
+                                }
+
                                 table += `
-                            <tr>
-                                <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
-                                <td>${a.kontak || '-'}</td>
-                                <td>${a.aktivitas || '-'}</td>
-                                <td>${a.subject || '-'}</td>
-                                <td>${a.deskripsi ?? '-'}</td>
-                                <td>${waktu}</td>
-                            </tr>
-                        `;
+                                    <tr>
+                                        <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
+                                        <td>${a.kontak || '-'}</td>
+                                        <td>${labelAktivitas}</td>
+                                        <td>${a.subject || '-'}</td>
+                                        <td>${a.deskripsi ?? '-'}</td>
+                                        <td>${waktu}</td>
+                                    </tr>
+                                `;
                             });
 
                             table += `</tbody></table></div>`;
@@ -1232,7 +1345,7 @@
                                 `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas. Periksa console untuk detail.</p>`
                             );
                         }
-                    });
+                    }); // Pastikan penutup ajax terstruktur dengan benar
                 }
 
                 // Load activities for the main "Aktivitas Terkait" table
@@ -1245,6 +1358,8 @@
 
                 // Existing JavaScript for Select2 and input formatting
                 initContactSelect2();
+                initPerusahaanSelect2();
+                initMateriSelect2();
 
                 let peluang = @json($peluang);
                 console.log(peluang);
@@ -1354,6 +1469,36 @@
 
                 function initContactSelect2() {
                     var $select = $('#id_contact');
+                    if (typeof $.fn.select2 !== 'function') {
+                        console.error('Select2 belum ter-load!');
+                        return;
+                    }
+                    var $closestModal = $select.closest('.modal');
+                    $select.select2({
+                        width: '100%',
+                        theme: 'bootstrap-5',
+                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                    });
+                }
+
+                function initPerusahaanSelect2() {
+                    // Ubah selektor menjadi #edit_id_perusahaan sesuai dengan ID elemen HTML
+                    var $select = $('#edit_id_perusahaan');
+                    if (typeof $.fn.select2 !== 'function') {
+                        console.error('Select2 belum ter-load!');
+                        return;
+                    }
+                    var $closestModal = $select.closest('.modal');
+                    $select.select2({
+                        width: '100%',
+                        theme: 'bootstrap-5',
+                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                    });
+                }
+
+                function initMateriSelect2() {
+                    // Ubah selektor menjadi #edit_id_materi sesuai dengan ID elemen HTML
+                    var $select = $('#edit_id_materi');
                     if (typeof $.fn.select2 !== 'function') {
                         console.error('Select2 belum ter-load!');
                         return;

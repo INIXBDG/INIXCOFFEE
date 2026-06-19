@@ -258,7 +258,6 @@
 
         const allowedAssistantRoutes = [
             'dorong inovasi pelayanan',
-            'pemasukan bersih',
             'inisiatif efisiensi keuangan',
             'rasio biaya operasional terhadap revenue',
             'mengurangi manual work dan error',
@@ -762,7 +761,6 @@
 
                 const allowedAssistantRouteButtonsManual = [
                     'dorong inovasi pelayanan',
-                    'pemasukan bersih',
                     'inisiatif efisiensi keuangan',
                     'rasio biaya operasional terhadap revenue',
                     'mengurangi manual work dan error',
@@ -1356,7 +1354,6 @@
 
                         const allowedDetailAssistantRoutes = [
                             'dorong inovasi pelayanan',
-                            'pemasukan bersih',
                             'rasio biaya operasional terhadap revenue',
                             'inisiatif efisiensi keuangan',
                             'mengurangi manual work dan error',

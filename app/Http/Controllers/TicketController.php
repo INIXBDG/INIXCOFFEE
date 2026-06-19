@@ -152,7 +152,7 @@ class TicketController extends Controller
             $receiverId = $user->id;
             NotificationFacade::send($user, new TicketNotification($ticket, $path, $status, $receiverId));
         }
-		
+
 		try {
             Http::withHeaders([
                 'Accept' => 'application/json',
@@ -165,7 +165,7 @@ class TicketController extends Controller
                 'keperluan'      => $ticket->keperluan,
                 'detail_kendala' => $ticket->detail_kendala,
             ]);
-            
+
         } catch (\Exception $e) {
             // Log error jika Laravel A down
             Log::error("Gagal mengirim webhook: " . $e->getMessage());
@@ -173,7 +173,7 @@ class TicketController extends Controller
 
         return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat, akan segera diprovide. Terimakasih!');
     }
-	
+
 	private function notifyTelegram($action, $ticket, $pic = null, $keterangan = null)
 	{
 		try {
@@ -419,7 +419,7 @@ class TicketController extends Controller
         //     'message' => $message,
         // ]);
 		$this->notifyTelegram('rejected', $ticket, null, $request->keterangan);
-		
+
 		if (request()->expectsJson() || request()->is('api/*')) {
 			return response()->json([
 				'status' => 'success',
@@ -464,7 +464,7 @@ class TicketController extends Controller
     //         return null;
     //     }
     // }
-	
+
 	public function handleInternalUpdate(Request $request)
 	{
 		$request->headers->set('Accept', 'application/json');
@@ -522,7 +522,7 @@ class TicketController extends Controller
 
 		return response()->json(['message' => 'Action tidak dikenali'], 400);
 	}
-	
+
 	public function getOpenTickets(Request $request)
 	{
 		// Validasi Token

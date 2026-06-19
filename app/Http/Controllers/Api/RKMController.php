@@ -58,6 +58,7 @@ class RKMController extends Controller
                     })->select(
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
+                        DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
@@ -167,12 +168,12 @@ class RKMController extends Controller
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
-                        DB::raw('GROUP_CONCAT(CASE 
+                        DB::raw('GROUP_CONCAT(CASE
                 WHEN r_k_m_s.exam = "0" THEN "Tidak"
                 WHEN r_k_m_s.exam = "1" THEN "Ya"
                 ELSE COALESCE(r_k_m_s.exam, "Tidak")
             END SEPARATOR ", ") AS exam'),
-                        DB::raw('GROUP_CONCAT(CASE 
+                        DB::raw('GROUP_CONCAT(CASE
                 WHEN r_k_m_s.makanan = "0" THEN "Tidak Ada"
                 WHEN r_k_m_s.makanan = "1" THEN "Nasi Box"
                 WHEN r_k_m_s.makanan = "2" THEN "Prasmanan"
@@ -301,7 +302,6 @@ class RKMController extends Controller
         foreach ($rows as $row) {
             // Buat kunci unik berdasarkan materi_key, tanggal_awal, dan tanggal_akhir
             $key = $row->materi_key . '|' . $row->tanggal_awal . '|' . $row->tanggal_akhir;
-
             if (!isset($mergedData[$key])) {
                 // Jika kunci belum ada, tambahkan data baru
                 $mergedData[$key] = $row->toArray();
@@ -323,6 +323,8 @@ class RKMController extends Controller
             $data['sales_key'] = implode(', ', $data['sales_key']); // Gabungkan sales_key
             $data['perusahaan_key'] = implode(', ', $data['perusahaan_key']); // Gabungkan perusahaan_key
             $data['id_rkm'] = implode(', ', $data['id_rkm']);
+            $data['tanggal_awal'] = Carbon::parse($data['tanggal_awal'])->timezone('Asia/Jakarta')->format('Y-m-d');
+            $data['tanggal_akhir'] = Carbon::parse($data['tanggal_akhir'])->timezone('Asia/Jakarta')->format('Y-m-d');
             $result = $data;
         }
 

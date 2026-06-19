@@ -9,6 +9,7 @@ use App\Models\karyawan;
 use App\Models\Materi;
 use Illuminate\Http\Request;
 use App\Models\Peluang;
+use App\Models\TargetPenjualan;
 use App\Models\perhitunganNetSales;
 use App\Models\RKM;
 use App\Models\User;
@@ -61,7 +62,7 @@ class LaporanPenjualanController extends Controller
                 });
             });
         }
-        
+
         // Filter Sales & Materi
         if ($request->filled('sales_key')) {
             $query->where('sales_key', $request->sales_key);
@@ -151,13 +152,14 @@ class LaporanPenjualanController extends Controller
 
             $hargaJual = (float) ($item->harga_jual ?? 0.0);
             $totalPenjualan = $hargaJual * $pax;
-            $grandtotal = $totalPenjualan - ($sum['grand_total'] + $totalexam);
+            $grandtotal = $item->peluang->netsales ?? 0.0;
 
             // Akumulasi total keseluruhan
             $totalHargaJualKeseluruhan += $totalPenjualan; // Total sales revenue
             $totalNetSalesKeseluruhan += $sum['grand_total']; // Total CAC costs
             $totalExamKeseluruhan += $totalexam;
             $totalGrandKeseluruhan += $grandtotal;
+            $totalppn = 0.11 * $totalPenjualan;
 
             return [
                 'id' => $item->id,
@@ -178,7 +180,9 @@ class LaporanPenjualanController extends Controller
                 'nama_perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
                 'perhitungannet' => $netsales,
                 'invoice' => $item->invoice,
+                'bukti' => $item->bukti ?? null,
                 'path_regis' => $item->peluang->regis->path ?? '-',
+                'total_ppn' => $totalppn,
             ];
         });
 
@@ -197,7 +201,7 @@ class LaporanPenjualanController extends Controller
 
         $selisihBudget = $targetPeriode - $totalNetSalesKeseluruhan;
 
-        return response()->json([   
+        return response()->json([
             'data' => $data,
             'summary' => [
                 'total_harga_jual' => $totalHargaJualKeseluruhan,
@@ -225,8 +229,11 @@ class LaporanPenjualanController extends Controller
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta', 'rkm')
             ->where('id_rkm', $id)
             ->first();
-        $totalPA = $netsales->rkm->pax * $netsales->rkm->harga_jual - $netsales->transportasi - $netsales->akomodasi_peserta - $netsales->akomodasi_tim - $netsales->fresh_money - $netsales->entertaint - $netsales->souvenir - $netsales->cashback - $netsales->sewa_laptop;
-        $historyNet = HistoryNetSales::with('user.karyawan')->where('id_rkm', $pa[0]->id_rkm)->get();
+
+        $peluang = Peluang::where('id_rkm', $id)->first();
+        $totalPA = $peluang ? $peluang->netsales : 0;
+
+        $historyNet = HistoryNetSales::with('user.karyawan')->where('id_rkm', $id)->get();
 
         return view('crm.LaporanPenjualan.editpa', compact('pa', 'netsales', 'totalPA', 'historyNet'));
     }
@@ -284,6 +291,25 @@ class LaporanPenjualanController extends Controller
 
         $pa->update($validated);
 
+        $peluang = Peluang::where('id_rkm', $pa->id_rkm)->first();
+        if ($peluang) {
+            $totalPenawaran = (float)$peluang->harga * (int)$peluang->pax;
+            $potonganPajak = $totalPenawaran * (11 / 100);
+
+            $allPA = perhitunganNetSales::where('id_rkm', $pa->id_rkm)->get();
+            $totalPAInputs = $allPA->sum('transportasi') +
+                             $allPA->sum('akomodasi_peserta') +
+                             $allPA->sum('akomodasi_tim') +
+                             $allPA->sum('fresh_money') +
+                             $allPA->sum('entertaint') +
+                             $allPA->sum('souvenir') +
+                             $allPA->sum('cashback') +
+                             $allPA->sum('sewa_laptop');
+
+            $peluang->netsales = $totalPenawaran - $potonganPajak - $totalPAInputs;
+            $peluang->save();
+        }
+
         $changed = [];
         foreach ($validated as $key => $value) {
             $oldValue = $oldData[$key] ?? null;
@@ -302,10 +328,8 @@ class LaporanPenjualanController extends Controller
         $historyNet->data = $changed;
         $historyNet->save();
 
-        // Ambil user penerima notifikasi
         $users = User::whereIn('jabatan', ['GM', 'Adm Sales', 'Finance & Accounting'])->get();
 
-        // Ambil data RKM
         $rkm = RKM::with('materi')->where('id', $pa->id_rkm)->first();
 
         Carbon::setLocale('id');
@@ -590,5 +614,140 @@ class LaporanPenjualanController extends Controller
             ->setPaper('A4', 'landscape');
 
         return $pdf->download('laporan-lost-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function laporanForGm(Request $request)
+    {
+        // 1. Inisialisasi parameter filter tahun
+        $tahun = $request->input('tahun', now()->year);
+
+        $dataTarget = TargetPenjualan::where('tahun', $tahun)
+            ->pluck('nilai_target', 'id_sales')
+            ->toArray();
+
+        $kunciIdSales = array_keys($dataTarget);
+
+        // 2. Ekstraksi entitas sales secara dinamis berdasarkan array kunci target penjualan
+        $users = User::where('status_akun', '1')
+                     ->whereNotNull('id_sales')
+                     ->whereIn('id_sales', $kunciIdSales) // Sistem hanya menampilkan sales dengan target yang disetel
+                     ->get();
+
+        // 3. Agregasi data penjualan dengan filter tahap merah dan eksklusi status lost
+        $peluangData = Peluang::selectRaw('id_sales, MONTH(periode_mulai) as bulan, SUM(netsales) as total_netsales')
+            ->whereYear('periode_mulai', $tahun)
+            ->where(function ($query) {
+                $query->where('tahap', 'LIKE', '%merah%')
+                      ->orWhere('merah', 1);
+            })
+            ->where(function ($query) {
+                $query->where('lost', 0)->orWhereNull('lost');
+            })
+            ->groupBy('id_sales', 'bulan')
+            ->get()
+            ->groupBy('id_sales');
+
+        // 4. Konfigurasi struktur periode triwulan
+        $strukturTriwulan = [
+            'Triwulan I'   => ['bulan' => [1, 2, 3], 'nama_bulan' => ['January', 'February', 'March']],
+            'Triwulan II'  => ['bulan' => [4, 5, 6], 'nama_bulan' => ['April', 'Mei', 'Juni']],
+            'Triwulan III' => ['bulan' => [7, 8, 9], 'nama_bulan' => ['Juli', 'Agustus', 'September']],
+            'Triwulan IV'  => ['bulan' => [10, 11, 12], 'nama_bulan' => ['Oktober', 'November', 'Desember']],
+        ];
+
+        $laporan = [];
+
+        // 5. Eksekusi komputasi matriks data
+        foreach ($strukturTriwulan as $namaTriwulan => $konfigurasi) {
+            $dataSales = [];
+            $totalKeseluruhan = [
+                'bulan_1' => 0, 'bulan_2' => 0, 'bulan_3' => 0,
+                'total' => 0, 'target' => 0, 'selisih' => 0
+            ];
+
+            foreach ($users as $user) {
+                $nama = $user->username;
+
+                // Pemetaan target langsung menggunakan id_sales
+                $target = $dataTarget[$user->id_sales] ?? 0;
+
+                $b1 = $konfigurasi['bulan'][0];
+                $b2 = $konfigurasi['bulan'][1];
+                $b3 = $konfigurasi['bulan'][2];
+
+                $salesB1 = $this->kalkulasiSalesBulanan($peluangData, $user->id_sales, $b1);
+                $salesB2 = $this->kalkulasiSalesBulanan($peluangData, $user->id_sales, $b2);
+                $salesB3 = $this->kalkulasiSalesBulanan($peluangData, $user->id_sales, $b3);
+
+                $totalSales = $salesB1 + $salesB2 + $salesB3;
+                $selisih = $totalSales - $target;
+                $persentase = $target > 0 ? round(($totalSales / $target) * 100) : 0;
+
+                $dataSales[] = [
+                    'nama_sales' => $nama,
+                    'bulan_1'    => $salesB1,
+                    'bulan_2'    => $salesB2,
+                    'bulan_3'    => $salesB3,
+                    'total'      => $totalSales,
+                    'target'     => $target,
+                    'selisih'    => $selisih,
+                    'persentase' => $persentase,
+                ];
+
+                $totalKeseluruhan['bulan_1'] += $salesB1;
+                $totalKeseluruhan['bulan_2'] += $salesB2;
+                $totalKeseluruhan['bulan_3'] += $salesB3;
+                $totalKeseluruhan['total']   += $totalSales;
+                $totalKeseluruhan['target']  += $target;
+                $totalKeseluruhan['selisih'] += $selisih;
+            }
+
+            $totalKeseluruhan['persentase'] = $totalKeseluruhan['target'] > 0
+                ? round(($totalKeseluruhan['total'] / $totalKeseluruhan['target']) * 100)
+                : 0;
+
+            $laporan[$namaTriwulan] = [
+                'nama_bulan'        => $konfigurasi['nama_bulan'],
+                'data_sales'        => $dataSales,
+                'total_keseluruhan' => $totalKeseluruhan,
+            ];
+        }
+
+        // 6. Ekstraksi daftar sales untuk keperluan formulir select modal (tanpa filter whereIn)
+        $daftarSales = User::where('status_akun', '1')
+                           ->whereNotNull('id_sales')
+                           ->get();
+
+        return view('crm.LaporanPenjualan.laporan_for_gm', compact('laporan', 'tahun', 'daftarSales'));
+    }
+
+    private function kalkulasiSalesBulanan($peluangData, $idSales, $bulan)
+    {
+        if (!isset($peluangData[$idSales])) {
+            return 0;
+        }
+
+        $dataBulan = $peluangData[$idSales]->firstWhere('bulan', $bulan);
+        return $dataBulan ? $dataBulan->total_netsales : 0;
+    }
+
+    public function storeTarget(Request $request)
+    {
+        $request->validate([
+            'id_sales'     => 'required|string',
+            'nilai_target' => 'required|numeric|min:0',
+        ]);
+
+        TargetPenjualan::updateOrCreate(
+            [
+                'id_sales' => $request->id_sales,
+                'tahun'    => now()->year,
+            ],
+            [
+                'nilai_target' => $request->nilai_target,
+            ]
+        );
+
+        return redirect()->back()->with('success', 'Target penjualan berhasil disimpan.');
     }
 }

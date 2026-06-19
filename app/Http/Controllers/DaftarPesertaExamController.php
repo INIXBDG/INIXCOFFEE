@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\DokumentasiExam;
+use App\Models\eksam;
+use App\Models\Perusahaan;
 use App\Models\Peserta;
+use App\Models\registexam;
 use App\Models\Registrasi;
 use App\Models\RKM;
-use App\Models\registexam;
-use App\Models\Perusahaan;
-use App\Models\eksam;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class DaftarPesertaExamController extends Controller
@@ -118,6 +119,17 @@ class DaftarPesertaExamController extends Controller
 
                     $createdCount++;
                 } else {
+                    $registExam = registexam::where('id_peserta', $pesertaId)->first();
+                    $dokumentasi = DokumentasiExam::where('id_registrasi', $registExam->id) ->first();
+
+                    if (!$dokumentasi) {
+                        DokumentasiExam::create([
+                            'id_registrasi'       => $registExam->id,
+                            'nama_exam'           => $exam->materi?->nama_materi ?? ($exam->rkm?->materi?->nama_materi ?? ''),
+                            'tanggal_pelaksanaan' => now()->format('Y-m-d'),
+                        ]);
+                    }
+
                     $skippedCount++;
                 }
             }
@@ -133,6 +145,7 @@ class DaftarPesertaExamController extends Controller
                 ->with('success', $message);
 
         } catch (\Exception $e) {
+            Log::info('Terjadi kesalahan: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -163,6 +176,7 @@ class DaftarPesertaExamController extends Controller
         $validated = $request->validate([
             'nama_exam' => 'required|string|max:255',
             'tanggal_pelaksanaan' => 'required|date',
+            'jam_pelaksanaan' => 'required|date_format:H:i',
             'skor' => 'nullable|numeric',
             'dokumentasi' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
             'invoice' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
@@ -207,11 +221,13 @@ class DaftarPesertaExamController extends Controller
             if ($dokumentasi->id) {
                 $dokumentasi->update(array_merge($validated, [
                     'tanggal_pelaksanaan' => $validated['tanggal_pelaksanaan'],
+                    'jam_pelaksanaan' => $validated['jam_pelaksanaan'],
                 ]));
             } else {
                 $dokumentasi->fill(array_merge($validated, [
                     'id_registrasi' => $registrasi->id,
                     'tanggal_pelaksanaan' => $validated['tanggal_pelaksanaan'],
+                    'jam_pelaksanaan' => $validated['jam_pelaksanaan'],
                 ]));
                 $dokumentasi->save();
             }

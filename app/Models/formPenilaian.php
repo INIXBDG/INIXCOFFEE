@@ -30,4 +30,10 @@ class formPenilaian extends Model
     {
         return $this->belongsTo(karyawan::class, 'id_evaluated');
     }
+
+    public function scopeWithAllCategories($query, $kodeForm)
+    {
+        return $query->where('kode_form', $kodeForm)
+            ->with(['karyawan', 'kategoriKPI.tipeKategoriTabels']);
+    }
 }

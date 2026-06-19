@@ -45,7 +45,7 @@
             <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
             <input type="hidden" name="terbilang" id="terbilang_hidden">
             <input type="hidden" name="jumlah_uang" id="jumlah_uang_hidden" value="{{ $invoice->amount }}">
-            <input type="hidden" name="jumlah_peserta" value="{{ $invoice->rkm->pax ?? 0 }}">
+            <input type="hidden" name="jumlah_peserta" id="jumlah_peserta_hidden" value="{{ $invoice->rkm->pax ?? 0 }}">
 
             <div class="table-responsive">
                 <table class="invoice-table">
@@ -56,17 +56,18 @@
                             <td colspan="3" class="fw-bold">Nomor Kwitansi:</td>
                             <td colspan="2">
                                 @php
-                                $kodeKwitansi = "INXBDG-KWIT";
-                                $bulanRomawi = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'];
-                                $bulanRomawiNow = $bulanRomawi[(int) date('m')];
-                                $tahun = date('Y');
-                                $idRkm = $invoice->rkm->id;
-                                $kwitansiNumber = $idRkm . '/' . $kodeKwitansi . '/' . $bulanRomawiNow . '/' . $tahun;
+                                    $kodeKwitansi   = "INXBDG-KWIT";
+                                    $bulanRomawi    = [1=>'I',2=>'II',3=>'III',4=>'IV',5=>'V',6=>'VI',7=>'VII',8=>'VIII',9=>'IX',10=>'X',11=>'XI',12=>'XII'];
+                                    $bulanRomawiNow = $bulanRomawi[(int) date('m')];
+                                    $tahun          = date('Y');
+                                    $idRkm          = explode('/', $invoice->invoice_number)[0];
+                                    $kwitansiNumber = $idRkm . '/' . $kodeKwitansi . '/' . $bulanRomawiNow . '/' . $tahun;
                                 @endphp
                                 <input type="text" class="form-control" name="nomor_kwitansi"
                                     value="{{ old('nomor_kwitansi', $kwitansiNumber) }}" required>
                             </td>
                         </tr>
+
                         <tr>
                             <td colspan="3" class="fw-bold">Tanggal Kwitansi:</td>
                             <td colspan="2">
@@ -79,6 +80,7 @@
                         <tr>
                             <td colspan="5" class="bg-light fw-bold text-center">Detail Kwitansi</td>
                         </tr>
+
                         <tr>
                             <td colspan="3" class="fw-bold">Sudah terima dari:</td>
                             <td colspan="2">
@@ -87,13 +89,15 @@
                                     required>
                             </td>
                         </tr>
+
+                        {{-- Jumlah Uang — editable, sync ke hidden + terbilang --}}
                         <tr>
                             <td colspan="3" class="fw-bold">Jumlah Uang:</td>
                             <td colspan="2">
                                 <div class="input-group">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control currency-input" id="amount_display"
-                                        value="{{ number_format($invoice->amount, 0, ',', '.') }}" readonly>
+                                    <input type="text" class="form-control" id="jumlah_uang_display"
+                                        value="{{ number_format($invoice->amount, 0, ',', '.') }}">
                                 </div>
                             </td>
                         </tr>
@@ -110,26 +114,31 @@
                         <tr>
                             <td colspan="3" class="fw-bold">Untuk Pembayaran:</td>
                             <td colspan="2">
-                                <textarea name="keterangan" class="form-control" rows="3" required>{{ old('keterangan', 'Pembayaran ' . ($invoice->rkm->materi->nama_materi ?? '')) }}</textarea>
+                                <textarea name="keterangan" class="form-control" rows="3" required>{{ old('keterangan', $invoice->rkm->materi->nama_materi ?? '') }}</textarea>
                             </td>
                         </tr>
-<tr>
-    <td colspan="3">Tanggal Pelaksanaan:</td>
-    <td colspan="2">
-        <b>
-            {{ \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y') }}
-            s/d
-            {{ \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y') }}
-        </b>
-    </td>
-</tr>
 
-<tr>
-    <td colspan="3">Peserta:</td>
-    <td colspan="2">
-        <b>{{ $invoice->rkm->pax ?? '-' }}</b>
-    </td>
-</tr>
+                        <tr>
+                            <td colspan="3">Tanggal Pelaksanaan:</td>
+                            <td colspan="2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="date" class="form-control" name="tanggal_awal"
+                                        value="{{ old('tanggal_awal', \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('Y-m-d')) }}">
+                                    <span>s/d</span>
+                                    <input type="date" class="form-control" name="tanggal_akhir"
+                                        value="{{ old('tanggal_akhir', \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('Y-m-d')) }}">
+                                </div>
+                            </td>
+                        </tr>
+
+                        {{-- Peserta — editable, sync ke hidden --}}
+                        <tr>
+                            <td colspan="3">Peserta:</td>
+                            <td colspan="2">
+                                <input type="number" name="pax" class="form-control" id="jumlah_peserta_display"
+                                    value="{{ $invoice->rkm->pax ?? 0 }}" min="0">
+                            </td>
+                        </tr>
 
                         <tr>
                             <td colspan="3" class="fw-bold">Nama Penandatangan:</td>
@@ -138,13 +147,15 @@
                                     value="{{ old('nama_penandatangan', $karyawan->nama_lengkap ?? auth()->user()->name ?? '') }}">
                             </td>
                         </tr>
+
                         <tr>
                             <td colspan="3" class="fw-bold">Jabatan Penandatangan:</td>
                             <td colspan="2">
                                 <input type="text" class="form-control" name="jabatan_penandatangan"
-                                    value="{{ old('jabatan_penandatangan', $karyawan->jabatan ?? '') }}" required>
+                                    value="{{ old('jabatan_penandatangan', 'Accounting Finance') }}" required>
                             </td>
                         </tr>
+
                         <tr>
                             <td colspan="3" class="fw-bold">Tanggal TTD:</td>
                             <td colspan="2">
@@ -160,36 +171,44 @@
                                 <a href="{{ route('invoice.index') }}" class="btn btn-secondary">Batal</a>
                             </td>
                         </tr>
+
                     </tbody>
                 </table>
             </div>
         </form>
     </div>
 
-    {{-- JS Terbilang + Export --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
+        // ── Helpers ──────────────────────────────────────────────
+        function unformatNumber(val) {
+            return String(val).replace(/\./g, '').replace(/,/g, '');
+        }
+
+        function formatNumber(val) {
+            let number = parseFloat(val);
+            if (isNaN(number)) return '0';
+            return number.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        // ── Terbilang ─────────────────────────────────────────────
         function terbilang(angka) {
             if (typeof angka !== 'number') {
                 angka = Number(String(angka).replace(/[^0-9]/g, ''));
             }
-            if (angka === 0) {
-                return 'Nol Rupiah';
-            }
-            const bil = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
-            const belasan = ['sepuluh', 'sebelas', 'dua belas', 'tiga belas', 'empat belas', 'lima belas', 'enam belas', 'tujuh belas', 'delapan belas', 'sembilan belas'];
-            const ribuan = ['', 'ribu', 'juta', 'miliar', 'triliun'];
-            let hasil = '';
-            let tempAngka = String(angka);
-            let i = 0;
+            if (angka === 0) return 'Nol Rupiah';
+
+            const bil     = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
+            const belasan = ['sepuluh', 'sebelas', 'dua belas', 'tiga belas', 'empat belas', 'lima belas',
+                             'enam belas', 'tujuh belas', 'delapan belas', 'sembilan belas'];
+            const ribuan  = ['', 'ribu', 'juta', 'miliar', 'triliun'];
+
+            let hasil = '', tempAngka = String(angka), i = 0;
 
             while (tempAngka.length > 0) {
                 let tigaDigit = parseInt(tempAngka.slice(-3), 10);
                 tempAngka = tempAngka.slice(0, -3);
-                if (tigaDigit === 0) {
-                    i++;
-                    continue;
-                }
+                if (tigaDigit === 0) { i++; continue; }
 
                 let tempTerbilang = '';
                 let ratusan = Math.floor(tigaDigit / 100);
@@ -201,51 +220,71 @@
                 if (sisaRatusan < 10) tempTerbilang += bil[sisaRatusan];
                 else if (sisaRatusan < 20) tempTerbilang += belasan[sisaRatusan - 10];
                 else {
-                    let puluhan = Math.floor(sisaRatusan / 10);
-                    let satuan = sisaRatusan % 10;
-                    tempTerbilang += bil[puluhan] + ' puluh ' + bil[satuan];
+                    tempTerbilang += bil[Math.floor(sisaRatusan / 10)] + ' puluh ' + bil[sisaRatusan % 10];
                 }
 
-                if (tempTerbilang.trim() !== '') tempTerbilang += ' ' + ribuan[i];
+                if (tempTerbilang.trim()) tempTerbilang += ' ' + ribuan[i];
                 hasil = tempTerbilang.trim() + ' ' + hasil.trim();
                 i++;
             }
-            hasil = hasil.replace('satu ribu', 'seribu');
-            hasil = hasil.trim().charAt(0).toUpperCase() + hasil.trim().slice(1);
-            return hasil + ' Rupiah';
+
+            hasil = hasil.replace('satu ribu', 'seribu').trim();
+            return hasil.charAt(0).toUpperCase() + hasil.slice(1) + ' Rupiah';
         }
 
+        // ── Update terbilang display & hidden ─────────────────────
+        function updateTerbilang(numeric) {
+            const tb = terbilang(numeric);
+            document.getElementById('terbilang_display').innerText = tb;
+            document.getElementById('terbilang_hidden').value = tb;
+        }
+
+        // ── DOMContentLoaded ──────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
-            const amount = parseFloat("{{ $invoice->amount }}");
-            const terbilangValue = terbilang(amount);
-            document.getElementById('terbilang_display').innerText = terbilangValue;
-            document.getElementById('terbilang_hidden').value = terbilangValue;
+
+            // Init dari amount awal
+            const initAmount = parseFloat("{{ $invoice->amount }}") || 0;
+            updateTerbilang(initAmount);
+
+            // ── Jumlah Uang ──
+            const jumlahDisplay = document.getElementById('jumlah_uang_display');
+            const jumlahHidden  = document.getElementById('jumlah_uang_hidden');
+
+            jumlahDisplay.addEventListener('input', function () {
+                const raw     = unformatNumber(this.value);
+                const numeric = parseFloat(raw) || 0;
+
+                // Format saat mengetik (realtime)
+                const cursor = this.selectionStart;
+                this.value   = formatNumber(raw || '0');
+
+                jumlahHidden.value = numeric;
+                updateTerbilang(numeric);
+            });
+
+            jumlahDisplay.addEventListener('focus', function () {
+                // Strip format saat fokus supaya mudah diedit
+                const raw  = unformatNumber(this.value);
+                this.value = raw === '0' ? '' : raw;
+            });
+
+            jumlahDisplay.addEventListener('blur', function () {
+                // Format ulang saat keluar field
+                const raw      = unformatNumber(this.value) || '0';
+                const numeric  = parseFloat(raw) || 0;
+                this.value     = formatNumber(numeric);
+                jumlahHidden.value = numeric;
+                updateTerbilang(numeric);
+            });
+
+            // ── Peserta ──
+            const pesertaDisplay = document.getElementById('jumlah_peserta_display');
+            const pesertaHidden  = document.getElementById('jumlah_peserta_hidden');
+
+            pesertaDisplay.addEventListener('input', function () {
+                pesertaHidden.value = parseInt(this.value) || 0;
+            });
         });
-
-        function exportToPdf() {
-            const element = document.querySelector('.container');
-            const options = {
-                margin: [10, 10, 10, 10],
-                filename: 'kwitansi_' + document.querySelector('input[name="nomor_kwitansi"]').value + '.pdf',
-                image: {
-                    type: 'jpeg',
-                    quality: 0.98
-                },
-                html2canvas: {
-                    scale: 2
-                },
-                jsPDF: {
-                    unit: 'mm',
-                    format: 'a4',
-                    orientation: 'portrait'
-                }
-            };
-            html2pdf().set(options).from(element).save();
-        }
-
-        function exportToExcel() {
-            alert('Export Excel kwitansi bisa ditambahkan pakai SheetJS / TableExport.js');
-        }
     </script>
 </body>
 

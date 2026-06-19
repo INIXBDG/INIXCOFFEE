@@ -105,7 +105,17 @@
                                         <td>{{ \Carbon\Carbon::parse($rkm->tanggal_awal)->format('d F Y') }} s/d {{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('d F Y') }}</td>
                                         <td>{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</td>
                                         <td>
-                                            <a href="{{ route('invoice.show', $rkm->invoice->id) }}" class="btn btn-success btn-sm">Lihat Invoice</a>
+                                            @php
+                                                $peserta = $rkm->registrasi
+                                                    ->pluck('peserta.nama')
+                                                    ->toArray();
+                                            @endphp
+                                            <div class="d-flex gap-2">
+                                                <a href="{{ route('download.pdf', ['id' => $rkm->invoice->id, 'peserta[]' => $peserta]) }}" class="btn btn-primary">
+                                                    Pdf
+                                                </a>
+                                                 <a href="{{ route('invoice.create', $rkm->id) }}" class="btn btn-primary btn-sm">Edit</a>
+                                            </div>
                                         </td>
                                     </tr>
                                     @endforeach
@@ -145,7 +155,7 @@
                                         <td>{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</td>
                                         <td>{{ $rkm->pax ?? '-' }}</td>
                                         <td>
-                                            <a href="{{ route('kwitansi.create', ['invoiceId' => $rkm->invoice->id]) }}" class="btn btn-primary btn-sm">Buat Kwitansi</a>
+                                            <a href="{{ route('kwitansi.create', ['invoiceId' => $rkm->invoice->id ?? '-']) }}" class="btn btn-primary btn-sm">Buat Kwitansi</a>
                                         </td>
                                     </tr>
                                     @endforeach
@@ -182,7 +192,10 @@
                                         <td>{{ \Carbon\Carbon::parse($rkm->tanggal_awal)->format('d F Y') }} s/d {{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('d F Y') }}</td>
                                         <td>{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</td>
                                         <td>
-                                            <a href="{{ route('kwitansi.show', $rkm->kwitansi->first()->id) }}" class="btn btn-success btn-sm">Lihat Kwitansi</a>
+                                            <div class="flex gap-2">
+                                                <a href="{{ route('kwitansi.pdf', $rkm->kwitansi->first()->id) }}" class="btn btn-success btn-sm">Lihat Kwitansi</a>
+                                                <a href="{{ route('kwitansi.create', ['invoiceId' => $rkm->invoice->id ?? '-']) }}" class="btn btn-primary btn-sm">Edit</a>
+                                            </div>
                                         </td>
                                     </tr>
                                     @endforeach
@@ -201,12 +214,122 @@
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        $(document).ready(function() {
-            $('#notInvoicedTable').DataTable();
-            $('#invoicedTable').DataTable();
-            $('#notReceiptedTable').DataTable();
-            $('#receiptedTable').DataTable();
-        });
+    $(document).ready(function () {
+
+        function extractMonthYear(periodeStr) {
+            const months = {
+                // Indonesia
+                'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
+                'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
+                'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12',
+                // English
+                'January': '01', 'February': '02', 'March': '03',
+                'May': '05', 'June': '06', 'July': '07', 'August': '08',
+                'October': '10'
+                // April, September, November, December sama di dua bahasa
+            };
+
+            const regex = /(\d{1,2})\s+(\w+)\s+(\d{4})/g;
+            const results = [];
+            let match;
+
+            while ((match = regex.exec(periodeStr)) !== null) {
+                const monthNum = months[match[2]];
+                if (monthNum) {
+                    results.push({ month: monthNum, year: match[3] });
+                }
+            }
+
+            return results; // array
+        }
+
+        function initTableWithFilter(tableId, periodeColIndex) {
+            const $table = $('#' + tableId);
+            const wrapperId = tableId + '_wrapper';
+
+            const years = new Set();
+
+            // ✅ Pakai array hasil fix
+            $table.find('tbody tr').each(function () {
+                const periodeText = $(this).find('td').eq(periodeColIndex).text().trim();
+                const extracted = extractMonthYear(periodeText);
+                extracted.forEach(({ year }) => { if (year) years.add(year); });
+            });
+
+            const dt = $table.DataTable();
+
+            const sortedYears = [...years].sort();
+            let yearOptions = '<option value="">-- Semua Tahun --</option>';
+            sortedYears.forEach(y => yearOptions += `<option value="${y}">${y}</option>`);
+
+            const monthList = [
+                { val: '01', label: 'Januari' },
+                { val: '02', label: 'Februari' },
+                { val: '03', label: 'Maret' },
+                { val: '04', label: 'April' },
+                { val: '05', label: 'Mei' },
+                { val: '06', label: 'Juni' },
+                { val: '07', label: 'Juli' },
+                { val: '08', label: 'Agustus' },
+                { val: '09', label: 'September' },
+                { val: '10', label: 'Oktober' },
+                { val: '11', label: 'November' },
+                { val: '12', label: 'Desember' },
+            ];
+
+            let monthOptions = '<option value="">-- Semua Bulan --</option>';
+            monthList.forEach(({ val, label }) => {
+                monthOptions += `<option value="${val}">${label}</option>`;
+            });
+
+            const filterHtml = `
+                <div class="d-flex gap-2 mb-3 flex-wrap" id="filter_${tableId}">
+                    <div>
+                        <label class="form-label mb-1 fw-semibold" style="font-size:0.85rem;">Filter Tahun</label>
+                        <select class="form-select form-select-sm" id="yearFilter_${tableId}" style="min-width:130px;">
+                            ${yearOptions}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label mb-1 fw-semibold" style="font-size:0.85rem;">Filter Bulan</label>
+                        <select class="form-select form-select-sm" id="monthFilter_${tableId}" style="min-width:130px;">
+                            ${monthOptions}
+                        </select>
+                    </div>
+                </div>
+            `;
+
+            $('#' + wrapperId).before(filterHtml);
+
+            // ✅ Pakai .some() bukan destructuring langsung
+            $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+                if (settings.nTable.id !== tableId) return true;
+
+                const selectedYear  = $('#yearFilter_'  + tableId).val();
+                const selectedMonth = $('#monthFilter_' + tableId).val();
+
+                if (!selectedYear && !selectedMonth) return true;
+
+                const periodeText = data[periodeColIndex];
+                const extracted = extractMonthYear(periodeText);
+
+                return extracted.some(({ month, year }) => {
+                    if (selectedYear  && year  !== selectedYear)  return false;
+                    if (selectedMonth && month !== selectedMonth) return false;
+                    return true;
+                });
+            });
+
+            $('#yearFilter_' + tableId + ', #monthFilter_' + tableId).on('change', function () {
+                dt.draw();
+            });
+        }
+
+        initTableWithFilter('notInvoicedTable',  2);
+        initTableWithFilter('invoicedTable',     3);
+        initTableWithFilter('notReceiptedTable', 2);
+        initTableWithFilter('receiptedTable',    3);
+    });
     </script>
 
 </body>

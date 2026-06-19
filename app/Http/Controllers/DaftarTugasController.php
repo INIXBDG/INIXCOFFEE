@@ -13,6 +13,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\DaftarTugasImport;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class DaftarTugasController extends Controller
 {
@@ -39,21 +41,36 @@ class DaftarTugasController extends Controller
         $rules = [
             'tugas' => 'required|string|max:255',
             'Tipe' => 'required|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
-            'tipe_turunan' => 'nullable|in:Shift 1,Shift 2',
+            'tipe_turunan' => 'nullable',
         ];
 
         if ($user->jabatan === 'HRD') {
-            $rules['Jabatan_Pembuat'] = 'required';
+            $rules['jabatan_pembuat'] = 'required';
         }
 
         $validated = $request->validate($rules);
 
-        $id_user = $user->jabatan === 'HRD' ? Karyawan::where('jabatan', $validated['Jabatan_Pembuat'])->first()?->id : $user->id;
+        $id_user = $user->jabatan === 'HRD' ? Karyawan::where('jabatan', $validated['jabatan_pembuat'])->first()?->id : $user->id;
 
-        $tipe_turunan = null;
+        $tipe_turunan = $validated['tipe_turunan'];
 
-        if ($validated['Tipe'] === 'Harian' && !empty($validated['tipe_turunan'])) {
-            $tipe_turunan = $validated['tipe_turunan'];
+        if ($request->filled('tipe_turunan')) {
+            $tipe = $request->Tipe;
+            $turunan = $request->tipe_turunan;
+
+            if ($tipe === 'Harian' && !in_array($turunan, ['Shift 1', 'Shift 2'])) {
+                return response()->json(['message' => 'Shift untuk Harian harus Shift 1 atau Shift 2'], 422);
+            }
+
+            if ($tipe === 'Mingguan' && !in_array($turunan, ['Sabtu', 'Minggu'])) {
+                return response()->json(['message' => 'Shift untuk Mingguan harus Sabtu atau Minggu'], 422);
+            }
+
+            if ($tipe === 'Bulanan') {
+                if (!is_numeric($turunan) || $turunan < 1 || $turunan > 31) {
+                    return response()->json(['message' => 'Tanggal untuk Bulanan harus angka 1-31'], 422);
+                }
+            }
         }
 
         $kategori = KategoriDaftarTugas::create([
@@ -61,7 +78,7 @@ class DaftarTugasController extends Controller
             'Tipe' => $validated['Tipe'],
             'tipe_turunan' => $tipe_turunan,
             'judul_kategori' => $validated['tugas'],
-            'Jabatan_Pembuat' => $user->jabatan,
+            'Jabatan_Pembuat' => 'Office Boy',
         ]);
 
         return response()->json(
@@ -85,7 +102,16 @@ class DaftarTugasController extends Controller
         $query = KontrolTugas::with(['kategoriDaftarTugas', 'karyawan'])
             ->when($user->jabatan !== 'HRD', fn($q) => $q->where('id_karyawan', $user->id))
             ->when($tipe !== 'all', fn($q) => $q->whereHas('kategoriDaftarTugas', fn($q2) => $q2->where('Tipe', $tipe)))
-            ->when($tipe_turunan !== 'all', fn($q) => $q->whereHas('kategoriDaftarTugas', fn($q2) => $q2->where('tipe_turunan', $tipe_turunan)));
+            ->when($tipe_turunan !== 'all', function ($q) use ($tipe_turunan) {
+                $q->whereHas(
+                    'kategoriDaftarTugas',
+                    fn($q2) => $q2->where('tipe_turunan', $tipe_turunan)->orWhere(function ($q3) use ($tipe_turunan) {
+                        if ($tipe_turunan === 'all') {
+                            $q3->whereNull('tipe_turunan');
+                        }
+                    }),
+                );
+            });
 
         $query->whereDate('Deadline_Date', $tanggal);
 
@@ -101,6 +127,172 @@ class DaftarTugasController extends Controller
         ]);
     }
 
+    public function getAvailableCategories(Request $request)
+    {
+        $user = auth()->user();
+        $today = now()->toDateString();
+        $todayDate = now()->day;
+        $now = now();
+
+        $query = KategoriDaftarTugas::with('karyawan')
+            ->when($user->jabatan !== 'HRD', function ($q) use ($user) {
+                $q->where('Jabatan_Pembuat', $user->jabatan);
+            });
+
+        $kategori = $query->get();
+        $available = [];
+
+        foreach ($kategori as $kat) {
+            $canActivate = false;
+            $deadline = null;
+            $reason = null;
+
+            if ($kat->Tipe === 'Harian') {
+                $canActivate = true;
+                $deadline = $today;
+
+                if (!empty($kat->tipe_turunan)) {
+                    $shift1Taken = KontrolTugas::whereDate('Deadline_Date', $today)->where('id_karyawan', '!=', $user->id)->whereHas('kategoriDaftarTugas', fn($q) => $q->where('Tipe', 'Harian')->where('tipe_turunan', 'Shift 1'))->exists();
+
+                    if ($kat->tipe_turunan === 'Shift 1' && $shift1Taken) {
+                        $canActivate = false;
+                        $reason = 'Shift 1 sudah diambil karyawan lain';
+                    }
+                }
+            } elseif ($kat->Tipe === 'Bulanan') {
+                $targetDate = $kat->tipe_turunan ? (int) $kat->tipe_turunan : 1;
+                if ($todayDate == $targetDate) {
+                    $canActivate = true;
+                    $deadline = $now->copy()->setDay($targetDate)->toDateString();
+                } else {
+                    $reason = "Harian tanggal {$targetDate}, hari ini tanggal {$todayDate}";
+                }
+            } elseif ($kat->Tipe === 'Mingguan') {
+                $hariMap = ['Saturday' => 'Sabtu', 'Sunday' => 'Minggu'];
+                $hariIni = $now->dayName;
+                $shiftHariIni = $hariMap[$hariIni] ?? null;
+
+                $canActivate = true;
+                $deadline = $this->hitungDeadlineMingguan($kat->tipe_turunan);
+
+                if (!empty($kat->tipe_turunan) && $kat->tipe_turunan !== $shiftHariIni) {
+                    $reason = "Shift {$kat->tipe_turunan}, hari ini {$hariIni}";
+                }
+            } elseif (in_array($kat->Tipe, ['Quartal', 'Semester', 'Tahunan'])) {
+                $canActivate = true;
+                $deadline = $this->hitungDeadline($kat->Tipe);
+            }
+
+            if ($canActivate && $deadline) {
+                $exists = KontrolTugas::where('id_karyawan', $user->id)->where('id_DaftarTugas', $kat->id)->whereDate('Deadline_Date', $deadline)->exists();
+
+                if ($exists) {
+                    $canActivate = false;
+                    $reason = 'Sudah aktif untuk periode ini';
+                }
+            }
+
+            if ($canActivate) {
+                $available[] = [
+                    'id' => $kat->id,
+                    'judul_kategori' => $kat->judul_kategori,
+                    'Tipe' => $kat->Tipe,
+                    'tipe_turunan' => $kat->tipe_turunan,
+                    'karyawan' => $kat->karyawan?->nama_lengkap,
+                    'deadline_preview' => $deadline,
+                    'badge_color' => $this->getBadgeColor($kat->Tipe),
+                ];
+            }
+        }
+
+        return response()->json([
+            'available' => $available,
+            'count' => count($available),
+            'today' => $today,
+        ]);
+    }
+
+    private function getBadgeColor($tipe)
+    {
+        return match ($tipe) {
+            'Harian' => 'bg-primary',
+            'Mingguan' => 'bg-info text-dark',
+            'Bulanan' => 'bg-warning text-dark',
+            'Quartal' => 'bg-success',
+            'Semester' => 'bg-secondary',
+            'Tahunan' => 'bg-dark',
+            default => 'bg-light text-dark',
+        };
+    }
+
+    public function chartData(Request $request)
+    {
+        $period = $request->get('period', 'monthly');
+        $karyawan = $request->get('karyawan', 'all');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+
+        $user = auth()->user();
+
+        $query = KontrolTugas::with('kategoriDaftarTugas')
+            ->when($user->jabatan !== 'HRD', fn($q) => $q->where('id_karyawan', $user->id))
+            ->when($karyawan !== 'all', fn($q) => $q->where('id_karyawan', $karyawan));
+
+        if ($startDate) {
+            $query->whereDate('Deadline_Date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->whereDate('Deadline_Date', '<=', $endDate);
+        }
+
+        $data = $query->get();
+
+        $groups = [];
+
+        foreach ($data as $item) {
+            $date = Carbon::parse($item->Deadline_Date);
+            $key = '';
+
+            switch ($period) {
+                case 'weekly':
+                    $key = $date->startOfWeek()->format('d M Y');
+                    break;
+                case 'monthly':
+                    $key = $date->format('F Y');
+                    break;
+                case 'quarterly':
+                    $quarter = ceil($date->month / 3);
+                    $key = "Q{$quarter} {$date->year}";
+                    break;
+                case 'yearly':
+                    $key = $date->format('Y');
+                    break;
+            }
+
+            if (!isset($groups[$key])) {
+                $groups[$key] = ['selesai' => 0, 'pending' => 0];
+            }
+
+            if ($item->status == 1) {
+                $groups[$key]['selesai']++;
+            } else {
+                $groups[$key]['pending']++;
+            }
+        }
+
+        ksort($groups);
+
+        $labels = array_keys($groups);
+        $dataSelesai = array_map(fn($v) => $v['selesai'], array_values($groups));
+        $dataPending = array_map(fn($v) => $v['pending'], array_values($groups));
+
+        return response()->json([
+            'labels' => $labels,
+            'dataSelesai' => $dataSelesai,
+            'dataPending' => $dataPending,
+        ]);
+    }
+
     public function aktifkanTugas(Request $request)
     {
         $request->validate(['kategori_ids' => 'required|array']);
@@ -108,52 +300,116 @@ class DaftarTugasController extends Controller
         $user = auth()->user();
         $kategoriIds = $request->kategori_ids;
         $created = 0;
+        $skipped = 0;
+        $errors = [];
         $today = now()->toDateString();
 
         foreach ($kategoriIds as $katId) {
             $kategori = KategoriDaftarTugas::find($katId);
             if (!$kategori) {
+                $errors[] = "Kategori ID {$katId} tidak ditemukan";
                 continue;
             }
 
-            $deadline = $this->hitungDeadline($kategori->Tipe);
+            Log::info('Cek Permission', [
+                'user_jabatan' => $user->jabatan,
+                'user_id' => $user->id,
+                'kategori_id_user' => $kategori->id_user,
+                'kategori_judul' => $kategori->judul_kategori
+            ]);
 
-            $query = KontrolTugas::where('id_karyawan', $user->id)->where('id_DaftarTugas', $kategori->id);
+            $deadline = $this->hitungDeadline($kategori->Tipe, $kategori->tipe_turunan);
 
             if ($kategori->Tipe === 'Harian') {
-                $query->whereDate('Deadline_Date', $today);
-            } else {
-                $query->where('status', 0)->whereDate('Deadline_Date', $deadline);
+                $deadline = $today;
             }
 
-            if (!$query->exists()) {
-                KontrolTugas::create([
-                    'id_karyawan' => $user->id,
-                    'id_DaftarTugas' => $kategori->id,
-                    'status' => 0,
-                    'Deadline_Date' => $deadline,
-                ]);
-                $created++;
+            Log::info('Deadline Calculation', [
+                'kategori_id' => $kategori->id,
+                'tipe' => $kategori->Tipe,
+                'deadline' => $deadline
+            ]);
+
+            $exists = KontrolTugas::where('id_karyawan', $user->id)
+                ->where('id_DaftarTugas', $kategori->id)
+                ->whereDate('Deadline_Date', $deadline)
+                ->exists();
+
+            if ($exists) {
+                $skipped++;
+                $errors[] = "Task '{$kategori->judul_kategori}' sudah aktif untuk deadline {$deadline}";
+                continue;
             }
+
+            KontrolTugas::create([
+                'id_karyawan' => $user->id,
+                'id_DaftarTugas' => $kategori->id,
+                'status' => 0,
+                'Deadline_Date' => $deadline,
+            ]);
+            $created++;
+        }
+
+        $message = "{$created} tugas berhasil diaktifkan";
+        if ($skipped > 0) {
+            $message .= ", {$skipped} sudah ada sebelumnya";
+        }
+        if (!empty($errors)) {
+            $message .= '. ' . count($errors) . ' error (cek detail)';
         }
 
         return response()->json([
             'success' => true,
-            'message' => "{$created} tugas berhasil diaktifkan",
-        ]);
+            'message' => $message,
+            'created' => $created,
+            'skipped' => $skipped,
+            'errors' => $errors,
+        ], !empty($errors) ? 200 : 200);
     }
 
-    private function hitungDeadline($tipe)
+    private function hitungDeadline($tipe, $tipe_turunan = null)
     {
+        $now = now();
+
         return match ($tipe) {
-            'Harian' => now()->toDateString(),
-            'Mingguan' => now()->endOfWeek()->toDateString(),
-            'Bulanan' => now()->endOfMonth()->toDateString(),
-            'Quartal' => now()->addMonths(3)->endOfMonth()->toDateString(),
-            'Semester' => now()->addMonths(6)->endOfMonth()->toDateString(),
-            'Tahunan' => now()->endOfYear()->toDateString(),
-            default => now()->toDateString(),
+            'Harian' => $now->toDateString(),
+
+            'Mingguan' => $this->hitungDeadlineMingguan($tipe_turunan),
+
+            'Bulanan' => $this->hitungDeadlineBulanan($tipe_turunan),
+
+            'Quartal' => $now->addMonths(3)->endOfMonth()->toDateString(),
+            'Semester' => $now->addMonths(6)->endOfMonth()->toDateString(),
+            'Tahunan' => $now->endOfYear()->toDateString(),
+            default => $now->toDateString(),
         };
+    }
+
+    private function hitungDeadlineMingguan($shift = null)
+    {
+        $now = now();
+
+        if ($shift === 'Sabtu') {
+            return $now->copy()->next(Carbon::SATURDAY)->toDateString();
+        }
+
+        if ($shift === 'Minggu') {
+            return $now->copy()->next(Carbon::SUNDAY)->toDateString();
+        }
+
+        return $now->copy()->endOfWeek()->toDateString();
+    }
+
+    private function hitungDeadlineBulanan($tanggal = null)
+    {
+        $now = now();
+        $targetDate = $tanggal ? (int) $tanggal : 1;
+
+        if ($now->day > $targetDate) {
+            return $now->copy()->addMonth()->setDay($targetDate)->toDateString();
+        }
+
+        return $now->copy()->setDay($targetDate)->toDateString();
     }
 
     public function updateStatus(Request $request)
@@ -182,7 +438,8 @@ class DaftarTugasController extends Controller
     {
         $request->validate([
             'tugas_id' => 'required|exists:kontrol_tugas,id',
-            'bukti_file' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
+            'bukti_before' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'bukti_after' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
         ]);
 
         $tugas = KontrolTugas::findOrFail($request->tugas_id);
@@ -191,16 +448,40 @@ class DaftarTugasController extends Controller
             return response()->json(['message' => 'Tidak berhak mengupload bukti ini'], 403);
         }
 
-        if ($request->hasFile('bukti_file')) {
-            if ($tugas->bukti && Storage::disk('public')->exists($tugas->bukti)) {
-                Storage::disk('public')->delete($tugas->bukti);
-            }
+        $buktiData = $this->parseBukti($tugas->bukti);
 
-            $path = $request->file('bukti_file')->store('bukti-tugas', 'public');
-            $tugas->update(['bukti' => $path]);
+        if ($request->hasFile('bukti_before')) {
+            if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
+                Storage::disk('public')->delete($buktiData['before']);
+            }
+            $buktiData['before'] = $request->file('bukti_before')->store('bukti-tugas', 'public');
         }
 
-        return response()->json(['success' => true, 'message' => 'Bukti berhasil diupload']);
+        if ($request->hasFile('bukti_after')) {
+            if (empty($buktiData['before'])) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Foto Before wajib diupload terlebih dahulu sebelum mengupload Foto After'
+                ], 422);
+            }
+            if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
+                Storage::disk('public')->delete($buktiData['after']);
+            }
+            $buktiData['after'] = $request->file('bukti_after')->store('bukti-tugas', 'public');
+        }
+
+        $tugas->update(['bukti' => json_encode($buktiData)]);
+
+        if (!empty($buktiData['after'])) {
+            $tugas->update(['status' => 1]);
+        }
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Bukti berhasil diupdate',
+            'status' => $tugas->status,
+            'bukti' => $buktiData
+        ]);
     }
 
     public function delete($id)
@@ -211,11 +492,51 @@ class DaftarTugasController extends Controller
             return response()->json(['message' => 'Tidak berhak menghapus tugas ini'], 403);
         }
 
-        if ($tugas->bukti && Storage::disk('public')->exists($tugas->bukti)) {
-            Storage::disk('public')->delete($tugas->bukti);
+        $buktiData = $this->parseBukti($tugas->bukti);
+        if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
+            Storage::disk('public')->delete($buktiData['before']);
+        }
+        if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
+            Storage::disk('public')->delete($buktiData['after']);
         }
 
         $tugas->delete();
+
+        return response()->json(['success' => true, 'message' => 'Tugas berhasil dihapus']);
+    }
+
+    public function bulkDelete(Request $request) {
+        $ids = $request->ids ?? [];
+
+        $tasks = KontrolTugas::whereIn('id', $ids)->get();
+
+        foreach ($tasks as $tugas) {
+
+            if (
+                auth()->user()->jabatan !== 'HRD' &&
+                $tugas->id_karyawan !== auth()->id()
+            ) {
+                continue;
+            }
+
+            $buktiData = $this->parseBukti($tugas->bukti);
+
+            if (
+                $buktiData['before'] &&
+                Storage::disk('public')->exists($buktiData['before'])
+            ) {
+                Storage::disk('public')->delete($buktiData['before']);
+            }
+
+            if (
+                $buktiData['after'] &&
+                Storage::disk('public')->exists($buktiData['after'])
+            ) {
+                Storage::disk('public')->delete($buktiData['after']);
+            }
+
+            $tugas->delete();
+        }
 
         return response()->json(['success' => true, 'message' => 'Tugas berhasil dihapus']);
     }
@@ -226,24 +547,38 @@ class DaftarTugasController extends Controller
             'id' => 'required|exists:kategori_daftar_tugas,id',
             'judul_kategori' => 'required|string|max:255',
             'tipe' => 'required|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
-            'tipe_turunan' => 'nullable|in:Shift 1,Shift 2',
+            'tipe_turunan' => 'nullable',
         ]);
         $kategori = KategoriDaftarTugas::findOrFail($request->id);
-        if (Auth::id() !== $kategori->id_user && Auth::user()->jabatan !== 'HRD') {
-            return response()->json(['message' => 'Tidak berhak mengedit kategori ini'], 403);
-        }
 
-        $tipe_turunan = null;
-        if ($request->tipe === 'Harian' && !empty($request->tipe_turunan)) {
-            $tipe_turunan = $request->tipe_turunan;
+        $tipe_turunan = $request->tipe_turunan;
+
+        if ($request->filled('tipe_turunan')) {
+            $tipe = $request->Tipe;
+            $turunan = $request->tipe_turunan;
+
+            if ($tipe === 'Harian' && !in_array($turunan, ['Shift 1', 'Shift 2'])) {
+                return response()->json(['message' => 'Shift untuk Harian harus Shift 1 atau Shift 2'], 422);
+            }
+
+            if ($tipe === 'Mingguan' && !in_array($turunan, ['Sabtu', 'Minggu'])) {
+                return response()->json(['message' => 'Shift untuk Mingguan harus Sabtu atau Minggu'], 422);
+            }
+
+            if ($tipe === 'Bulanan') {
+                if (!is_numeric($turunan) || $turunan < 1 || $turunan > 31) {
+                    return response()->json(['message' => 'Tanggal untuk Bulanan harus angka 1-31'], 422);
+                }
+            }
         }
 
         $kategori->update([
             'judul_kategori' => $request->judul_kategori,
             'Tipe' => $request->tipe,
             'tipe_turunan' => $tipe_turunan,
-            'id_user' => Auth()->user()->id,
+            'Jabatan_Pembuat' => 'Office Boy',
         ]);
+
         return response()->json(['success' => true, 'message' => 'Kategori berhasil diperbarui']);
     }
 
@@ -252,22 +587,13 @@ class DaftarTugasController extends Controller
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:kategori_daftar_tugas,id',
-            'tipe_turunan' => 'nullable|in:Shift 1,Shift 2',
+            'tipe_turunan' => 'nullable|in:Shift 1,Shift 2,Sabtu,Minggu',
         ]);
 
-        $user = Auth::user();
         $updated = 0;
 
         foreach ($request->ids as $id) {
             $kategori = KategoriDaftarTugas::findOrFail($id);
-
-            if (Auth::id() !== $kategori->id_user && $user->jabatan !== 'HRD') {
-                continue;
-            }
-
-            if ($kategori->Tipe !== 'Harian') {
-                continue;
-            }
 
             $kategori->update([
                 'tipe_turunan' => $request->tipe_turunan,
@@ -286,8 +612,12 @@ class DaftarTugasController extends Controller
             return response()->json(['message' => 'Tidak berhak menghapus kategori ini'], 403);
         }
         KontrolTugas::where('id_DaftarTugas', $kategori->id)->each(function ($tugas) {
-            if ($tugas->bukti && Storage::disk('public')->exists($tugas->bukti)) {
-                Storage::disk('public')->delete($tugas->bukti);
+            $buktiData = $this->parseBukti($tugas->bukti);
+            if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
+                Storage::disk('public')->delete($buktiData['before']);
+            }
+            if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
+                Storage::disk('public')->delete($buktiData['after']);
             }
             $tugas->delete();
         });
@@ -348,7 +678,6 @@ class DaftarTugasController extends Controller
         } else {
             $query = \App\Models\KontrolTugas::with(['kategoriDaftarTugas', 'karyawan']);
 
-            // Filter tanggal berdasarkan Deadline_Date (bukan created_at)
             if ($request->start_date) {
                 $query->whereDate('Deadline_Date', '>=', $request->start_date);
             }
@@ -367,7 +696,6 @@ class DaftarTugasController extends Controller
             if ($request->karyawan) {
                 $query->where('id_karyawan', $request->karyawan);
             }
-            // HRD bisa melihat semua, non-HRD hanya data sendiri
             if ($user->jabatan !== 'HRD') {
                 $query->where('id_karyawan', $user->id);
             }
@@ -466,6 +794,21 @@ class DaftarTugasController extends Controller
                 ],
                 500,
             );
+        }
+    }
+
+    private function parseBukti($bukti)
+    {
+        if (!$bukti) {
+            return ['before' => null, 'after' => null];
+        }
+        try {
+            if (is_string($bukti) && str_starts_with($bukti, '{')) {
+                return json_decode($bukti, true);
+            }
+            return ['before' => $bukti, 'after' => null];
+        } catch (\Exception $e) {
+            return ['before' => $bukti, 'after' => null];
         }
     }
 }

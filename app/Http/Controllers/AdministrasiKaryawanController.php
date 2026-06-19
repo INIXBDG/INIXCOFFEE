@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdministrasiKaryawan;
+use App\Models\karyawan;
+use App\Models\TunjanganKaryawan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;

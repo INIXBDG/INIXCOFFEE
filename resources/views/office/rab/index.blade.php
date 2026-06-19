@@ -91,32 +91,70 @@
                                     <td>
                                         <span class="fw-medium text-dark">{{ $item->status }}</span>
                                     </td>
-                                    <td>
-                                        <div class="d-flex gap-2 justify-content-center">
-                                            <a href="{{ route('office.downloadPdfRab', $item->id) }}">
-                                                <button
-                                                    class="btn btn-sm btn-outline-success d-flex align-items-center gap-1">PDF</button>
-                                            </a>
-                                            <a href="{{ route('office.showRincian', $item->id) }}">
-                                                <button
-                                                    class="btn btn-sm btn-outline-info d-flex align-items-center gap-1">Detail</button>
-                                            </a>
-                                            <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
-                                                data-bs-toggle="modal" data-bs-target="#editModal"
-                                                data-id="{{ $item->id }}" data-nama="{{ $item->nama_kegiatan }}"
-                                                data-tipe="{{ $item->tipe }}"
-                                                data-waktu="{{ \Carbon\Carbon::parse($item->waktu_kegiatan)->format('Y-m-d\TH:i') }}"
-                                                data-durasi="{{ $item->lama_kegiatan }}" data-pic="{{ $item->pic }}">
-                                                Edit
+                                    <td class="text-center pe-4 position-relative">
+                                        <div class="dropdown">
+                                            <button
+                                                class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                                type="button"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false">
+                                                Aksi
                                             </button>
-                                            <form action="{{ route('office.deleteKegiatan', $item->id) }}" method="POST"
-                                                class="d-inline"
-                                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus kegiatan ini?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                    class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">Delete</button>
-                                            </form>
+
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                        href="{{ route('office.downloadPdfRab', $item->id) }}">
+                                                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                        Download PDF
+                                                    </a>
+                                                </li>
+
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                        href="{{ route('office.showRincian', $item->id) }}">
+                                                        <i class="fas fa-eye text-info me-2"></i>
+                                                        Detail
+                                                    </a>
+                                                </li>
+
+                                                <li>
+                                                    <button
+                                                        type="button"
+                                                        class="dropdown-item"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#editModal"
+                                                        data-id="{{ $item->id }}"
+                                                        data-nama="{{ $item->nama_kegiatan }}"
+                                                        data-tipe="{{ $item->tipe }}"
+                                                        data-waktu="{{ \Carbon\Carbon::parse($item->waktu_kegiatan)->format('Y-m-d\TH:i') }}"
+                                                        data-durasi="{{ $item->lama_kegiatan }}"
+                                                        data-pic="{{ $item->pic }}">
+                                                        <i class="fas fa-pen text-primary me-2"></i>
+                                                        Edit
+                                                    </button>
+                                                </li>
+
+                                                <li><hr class="dropdown-divider"></li>
+
+                                                <li>
+                                                    <form
+                                                        action="{{ route('office.deleteKegiatan', $item->id) }}"
+                                                        method="POST"
+                                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus kegiatan ini?')">
+
+                                                        @csrf
+                                                        @method('DELETE')
+
+                                                        <button
+                                                            type="submit"
+                                                            class="dropdown-item text-danger">
+                                                            <i class="fas fa-trash me-2"></i>
+                                                            Hapus
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>

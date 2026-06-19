@@ -353,6 +353,9 @@ function excelDownloadAdmSales() {
                         html += '<th scope="col">Event</th>';
                         html += '<th scope="col">Ruang</th>';
                         html += '<th scope="col">Pax</th>';
+                        if (jabatan == 'Finance & Accounting') {
+                            html += '<th scope="col">Registrasi Form</th>';
+                        }
                         if (jabatan == 'Customer Care') {
                             html += '<th scope="col">Makanan</th>';
                         }
@@ -439,6 +442,9 @@ function excelDownloadAdmSales() {
                                     html += '<td>' + rkm.ruang + '</td>';
                                 }
                                 html += '<td>' + rkm.total_pax + '</td>';
+                                if (jabatan == 'Finance & Accounting') {
+                                    html += '<td>' + (rkm.registrasi_form ? 'Ada' : 'Tidak Ada') + '</td>';
+                                }
                                 if (jabatan == 'Customer Care') {
                                     html += '<td>';
                                     // Ambil nilai makanan pertama dari daftar GROUP_CONCAT
@@ -794,7 +800,7 @@ function excelDownloadAdmSales() {
                 if (metodeKelas === 'Offline') {
                     let html = `
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item " type="checkbox" value="Materi" id="checkMateri" name="checklist[]" onclick="return false;">
+                            <input class="form-check-input checklist-item " type="checkbox" value="Materi" id="checkMateri" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkMateri">Materi</label>
                             <div class="form-check my-2">
                                 <input class="form-check-input checklist-item checkSubMateri" type="checkbox" value="Module" id="checkModule" name="checklistSubMateri[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
@@ -816,7 +822,7 @@ function excelDownloadAdmSales() {
                         <br>
     
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]" onclick="return false;">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkCb">Coffe Break</label>
                             <div class="form-check my-2">
                                 <input class="form-check-input checklist-item checkSubCb" type="checkbox" id="checkCbInstruktur" value="Instruktur" name="checklistSubCb[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
@@ -831,7 +837,7 @@ function excelDownloadAdmSales() {
                         <br>
     
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]" onclick="return false;">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkMaksi">Makan Siang</label>
                             <div class="form-check my-2">
                                 <input class="form-check-input checklist-item checkSubMaksi" type="checkbox" id="checkMaksiInstruktur" value="Instruktur" name="checklistSubMaksi[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
@@ -846,7 +852,7 @@ function excelDownloadAdmSales() {
                         <br>
     
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Keperluan Kelas" id="checkKeperluanKelas" name="checklist[]" onclick="return false;">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Keperluan Kelas" id="checkKeperluanKelas" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkKeperluanKelas">Keperluan Kelas</label>
                             <div class="form-check my-2">
                                 <input class="form-check-input checklist-item checkSubKeperluanKelas" type="checkbox" id="checkKeperluanKelasAC" value="AC" name="checklistSubKeperluanKelas[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
@@ -892,7 +898,7 @@ function excelDownloadAdmSales() {
                 } else {
                     let html = `
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item " type="checkbox" value="Materi" id="checkMateri" name="checklist[]" onclick="return false;">
+                            <input class="form-check-input checklist-item " type="checkbox" value="Materi" id="checkMateri" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkMateri">Materi</label>
                             <div class="form-check my-2">
                                 <input class="form-check-input checklist-item checkSubMateri" type="checkbox" value="Module" id="checkModule" name="checklistSubMateri[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
@@ -907,7 +913,7 @@ function excelDownloadAdmSales() {
                         <br>
 
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]" onclick="return false;">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkCb">Coffe Break</label>
                             <div class="form-check my-2">
                                 <input class="form-check-input checklist-item checkSubCb" type="checkbox" id="checkCbInstruktur" value="Instruktur" name="checklistSubCb[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
@@ -918,7 +924,7 @@ function excelDownloadAdmSales() {
                         <br>
     
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]" onclick="return false;">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkMaksi">Makan Siang</label>
                             <div class="form-check my-2">
                                 <input class="form-check-input checklist-item checkSubMaksi" type="checkbox" id="checkMaksiInstruktur" value="Instruktur" name="checklistSubMaksi[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
@@ -1055,8 +1061,17 @@ function excelDownloadAdmSales() {
 
             // Event Listener untuk Perubahan Kotak Centang
             $(document).on('change', '.checklist-item', function() {
-                updateProgressBar();
-                syncParentCheckbox();
+
+                // HANYA jalankan sync kalau yang berubah itu child
+                if (
+                    $(this).hasClass('checkSubMateri') ||
+                    $(this).hasClass('checkSubCb') ||
+                    $(this).hasClass('checkSubMaksi') ||
+                    $(this).hasClass('checkSubKeperluanKelas')
+                ) {
+                    syncParentCheckbox();
+                    updateProgressBar();
+                }
             });
 
             function syncParentCheckbox() {
@@ -1089,9 +1104,25 @@ function excelDownloadAdmSales() {
                 );
             }
 
-            $(document).on('click', '#checkMateri, #checkCb, #checkMaksi, #checkKeperluanKelas', function(e){
-                e.preventDefault();
-                return false;
+            // ================= PARENT -> CHILD =================
+            $(document).on('change', '#checkMateri', function () {
+                $('.checkSubMateri').prop('checked', this.checked);
+                updateProgressBar();
+            });
+
+            $(document).on('change', '#checkCb', function () {
+                $('.checkSubCb').prop('checked', this.checked);
+                updateProgressBar();
+            });
+
+            $(document).on('change', '#checkMaksi', function () {
+                $('.checkSubMaksi').prop('checked', this.checked);
+                updateProgressBar();
+            });
+
+            $(document).on('change', '#checkKeperluanKelas', function () {
+                $('.checkSubKeperluanKelas').prop('checked', this.checked);
+                updateProgressBar();
             });
 
             // Logika Pembukaan Modal
@@ -1117,6 +1148,9 @@ function excelDownloadAdmSales() {
                             dates = generateDates(response.tanggal_awal, response.tanggal_akhir);
                             $('#metode_kelas').val(response.metode_kelas);
 
+                            console.log('Tanggal Awal:', response.tanggal_awal);
+                            console.log('Tanggal Akhir:', response.tanggal_akhir);
+
                             setDefaultIndex();
                             renderDay();
                         }
@@ -1130,12 +1164,6 @@ function excelDownloadAdmSales() {
             $('#modalChecklist').on('hidden.bs.modal', function () {
                 storeChecklistData(false); 
             });
-
-            // Logika Penyimpanan Data
-            // $('#btnSimpanChecklist').click(function() {
-            //     storeChecklistData(true);
-            // });
-            
 
             function storeChecklistData(showAlert = false)
             {

@@ -14,5 +14,6 @@ class target extends Model
         'quartal',
         'tahun',
         'target',
+        'target_project',
     ];
 }

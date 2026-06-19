@@ -83,9 +83,12 @@ class RegisFormController extends Controller
 
     public function upload(Request $request)
     {
+        // 1. Validasi parameter masukan termasuk pax dan harga
         $data = $request->validate([
             'id_peluang' => 'required|integer',
             'pdf' => 'required|file|mimes:pdf|max:20480',
+            'pax' => 'required|integer|min:1',
+            'harga' => 'required|numeric|min:0',
         ]);
 
         $file = $data['pdf'];
@@ -100,16 +103,8 @@ class RegisFormController extends Controller
 
         $existing = RegisForm::where('id_peluang', $data['id_peluang'])->first();
 
+        // 2. Pembaruan data file PDF
         if ($existing) {
-            if (Storage::disk('public')->exists($existing->path)) {
-                Storage::disk('public')->delete($existing->path);
-            }
-
-            $existing->update([
-                'name' => $file->getClientOriginalName(),
-                'path' => $storedPath,
-            ]);
-        } elseif ($existing) {
             if (!empty($existing->path) && Storage::disk('public')->exists($existing->path)) {
                 Storage::disk('public')->delete($existing->path);
             }
@@ -126,10 +121,10 @@ class RegisFormController extends Controller
             ]);
         }
 
-
-
-        // ✅ Cek juga di RKM
+        // 3. Ekstraksi objek Peluang
         $peluang = Peluang::find($data['id_peluang']);
+
+        // 4. Pembaruan data pada tabel RKM
         if ($peluang && $peluang->id_rkm) {
             $rkm = RKM::find($peluang->id_rkm);
             if ($rkm) {
@@ -143,12 +138,24 @@ class RegisFormController extends Controller
             }
         }
 
+        // 5. Kalkulasi nilai total
+        $harga = $data['harga'];
+        $pax = $data['pax'];
+        $total = $harga * $pax;
+
+        // 6. Penyimpanan data ke tabel Aktivitas
         $aktivitasSales = new Aktivitas();
         $aktivitasSales->id_peluang = $data['id_peluang'];
+        // Mengambil id_contact dari relasi Peluang
+        $aktivitasSales->id_contact = $peluang ? $peluang->id_contact : null;
         $aktivitasSales->id_sales = Auth::user()->id_sales;
         $aktivitasSales->aktivitas = 'Form_Masuk';
         $aktivitasSales->deskripsi = 'Aktivitas berbasis PDF tanpa input manual';
         $aktivitasSales->waktu_aktivitas = now();
+        // Memasukkan nilai harga, pax, dan total
+        $aktivitasSales->harga = $harga;
+        $aktivitasSales->pax = $pax;
+        $aktivitasSales->total = $total;
         $aktivitasSales->save();
 
         return back()->with('success', 'PDF berhasil diupload');

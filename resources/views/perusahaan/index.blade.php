@@ -12,9 +12,46 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="mergeModal" tabindex="-1" aria-labelledby="mergeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mergeModalLabel">Penggabungan Data Perusahaan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formMergeData">
+                        <div class="mb-3">
+                            <label for="primary_id" class="form-label">Perusahaan Utama (Dipertahankan)</label>
+                            <select class="form-select" id="primary_id" name="primary_id" style="width: 100%;" required>
+                                <option value="">Pilih Perusahaan Utama</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="duplicate_id" class="form-label">Perusahaan Duplikat (Digabungkan & Dihapus)</label>
+                            <select class="form-select" id="duplicate_id" name="duplicate_id" style="width: 100%;" required>
+                                <option value="">Pilih Perusahaan Duplikat</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnProsesMerge">Proses Penggabungan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-12">
-            <div class="d-flex justify-content-end">
+            <div class="d-flex justify-content-end align-items-center">
+                @can('Edit Perusahaan')
+                    <button type="button" class="btn btn-md btn-warning mx-2" data-bs-toggle="modal" data-bs-target="#mergeModal">
+                        Gabungkan Duplikat
+                    </button>
+                @endcan
                 @can('Create Perusahaan')
                     <a href="{{ route('perusahaan.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah Perusahaan"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Data Perusahaan</a>
                 @endcan
@@ -99,44 +136,53 @@
 <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.print.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function(){
+        // Pengaturan CSRF Token untuk AJAX
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
         var idSales = "{{ auth()->user()->id_sales }}";
         var tableIndex = 1;
-        if(idSales == 'AM'){
+        if(idSales == 'VN'){
                 var idSales = "";
             }
-            $('#perusahaantable').DataTable({
+            var table = $('#perusahaantable').DataTable({
                 "dom": 'Bfrtip',
                 "buttons": [
                             {
                                 extend: 'excel',
                                 text: 'Export to Excel',
                                 exportOptions: {
-                                    columns: [ 1, 2, 3, 4 ] // Kolom yang akan diekspor ke Excel
+                                    columns: [ 1, 2, 3, 4 ]
                                 },
-                                filename: 'Inixindo E-office Data Perusahaan', // Specify the filename here
+                                filename: 'Inixindo E-office Data Perusahaan',
                             },
                             {
                                 extend: 'pdf',
                                 text: 'Export to PDF',
                                 exportOptions: {
-                                    columns: [ 1, 2, 3, 4 ] // Kolom yang akan diekspor ke PDF
+                                    columns: [ 1, 2, 3, 4 ]
                                 },
-                                filename: 'Inixindo E-office Data Perusahaan', // Specify the filename here
+                                filename: 'Inixindo E-office Data Perusahaan',
                                 customize: function(doc) {
-                                    doc.content[1].table.widths = ['*', '*', '*', '*']; // Menyesuaikan lebar kolom
+                                    doc.content[1].table.widths = ['*', '*', '*', '*'];
                                     doc.content.splice(0, 1, {
                                         text: 'Inixindo E-Office Data Perusahaan',
                                         fontSize: 12,
                                         alignment: 'center',
-                                        margin: [0, 0, 0, 12] // Margin dari header
+                                        margin: [0, 0, 0, 12]
                                     });
                                     doc['footer'] = function(currentPage, pageCount) {
                                         return {
                                             text: 'Data Perusahaan ' + currentPage.toString() + ' of ' + pageCount,
                                             alignment: 'center',
-                                            margin: [0, 0, 0, 12] // Margin dari footer
+                                            margin: [0, 0, 0, 12]
                                         };
                                     };
                                 }
@@ -146,10 +192,9 @@
                     "url": "{{ route('getPerusahaanall') }}",
                     "type": "GET",
                     "dataSrc": function (json) {
-                        // Temukan nama perusahaan yang duplikat
                         let perusahaanNames = {};
                         json.data.forEach(item => {
-                            let normalizedName = item.nama_perusahaan.toLowerCase(); // Ubah ke huruf kecil
+                            let normalizedName = item.nama_perusahaan.toLowerCase();
                             if (perusahaanNames[normalizedName]) {
                                 perusahaanNames[normalizedName]++;
                             } else {
@@ -157,7 +202,6 @@
                             }
                         });
                         
-                        // Tandai item sebagai duplikat jika ada lebih dari satu kemunculan nama yang sama
                         json.data.forEach(item => {
                             let normalizedName = item.nama_perusahaan.toLowerCase();
                             item.isDuplicate = perusahaanNames[normalizedName] > 1;
@@ -181,18 +225,35 @@
                     }
                 },
                 "columns": [
-                    { "data": null }, // Placeholder untuk index
+                    { "data": null },
                     { 
                         "data": "nama_perusahaan",
                         "render": function(data, type, row) {
-                            // Tandai duplikat dengan warna atau teks khusus
+                            // Ekstraksi nilai perhitungan dari properti objek
+                            var countKaryawan = row.karyawan_count || 0;
+                            var countRkms = row.rkms_count || 0;
+                            var countPeserta = row.peserta_count || 0;
+                            var countContacts = row.contacts_count || 0;
+                            var countPeluang = row.peluang_count || 0;
+
+                            // Format tampilan jumlah data
+                            var countBadge = `<br><small class="text-muted">
+                                [Karyawan: ${countKaryawan}] 
+                                [RKM: ${countRkms}] 
+                                [Peserta: ${countPeserta}] 
+                                [Contact: ${countContacts}] 
+                                [Peluang: ${countPeluang}]
+                            </small>`;
+
+                            // Evaluasi status duplikat
                             if (row.isDuplicate) {
-                                return `<span class="text-danger">${data} (Duplikat)</span>`;
+                                return `<span class="text-danger fw-bold">${data} (Duplikat)</span>` + countBadge;
                             } else {
-                                return data;
+                                return `<span class="fw-bold">${data}</span>` + countBadge;
                             }
                         }
                     },
+                    
                     { "data": "kategori_perusahaan" },
                     { "data": "lokasi" },
                     { "data": "sales_key" },
@@ -238,8 +299,131 @@
                     });
                 },
             });
+
+        // Event listener saat modal merge dibuka
+        $('#mergeModal').on('show.bs.modal', function () {
+            var selectPrimary = $('#primary_id');
+            var selectDuplicate = $('#duplicate_id');
+            
+            // Pembersihan opsi sebelumnya
+            selectPrimary.empty().append('<option value="">Pilih Perusahaan Utama</option>');
+            selectDuplicate.empty().append('<option value="">Pilih Perusahaan Duplikat</option>');
+
+            // Mengambil semua data terkini dari DataTables
+            var tableData = table.rows().data().toArray();
+            
+            // Mengurutkan semua data berdasarkan nama perusahaan
+            tableData.sort(function(a, b) {
+                return a.nama_perusahaan.localeCompare(b.nama_perusahaan);
+            });
+
+            // Menambahkan SEMUA opsi ke dalam elemen select dengan atribut penanda duplikat
+            tableData.forEach(function(item) {
+                var countRkms = item.rkms_count || 0;
+                var countPeserta = item.peserta_count || 0;
+                var countContacts = item.contacts_count || 0;
+                var countPeluang = item.peluang_count || 0;
+
+                var textLokasi = item.lokasi ? ' - ' + item.lokasi : '';
+                var textCounts = ` (RKM: ${countRkms}, Peserta: ${countPeserta}, Contact: ${countContacts}, Peluang: ${countPeluang})`;
+                var sales = item.sales_key ? item.sales_key : '';
+                var optionText = item.nama_perusahaan + ' - ' + sales + textLokasi + textCounts;
+
+                // Inisialisasi objek Option baru
+                var optionPrimary = new Option(optionText, item.id);
+                var optionDuplicate = new Option(optionText, item.id);
+
+                // Menambahkan atribut data HTML5 untuk mengidentifikasi status duplikat
+                $(optionPrimary).attr('data-is-duplicate', item.isDuplicate ? 'true' : 'false');
+                $(optionDuplicate).attr('data-is-duplicate', item.isDuplicate ? 'true' : 'false');
+
+                selectPrimary.append(optionPrimary);
+                selectDuplicate.append(optionDuplicate);
+            });
+
+            // Definisi fungsi penyaringan (matcher) kustom untuk Select2
+            function customMatcher(params, data) {
+                // Pengecualian selalu tampil untuk opsi placeholder (value kosong)
+                if ($.trim(data.id) === '') {
+                    return data;
+                }
+
+                // Kondisi 1: Jika kotak pencarian kosong (tidak di-search)
+                if (typeof params.term === 'undefined' || $.trim(params.term) === '') {
+                    // Hanya kembalikan data jika atribut data-is-duplicate bernilai 'true'
+                    if ($(data.element).attr('data-is-duplicate') === 'true') {
+                        return data;
+                    }
+                    return null; // Sembunyikan opsi non-duplikat
+                }
+
+                // Kondisi 2: Jika ada input di kotak pencarian (di-search)
+                // Lakukan pencocokan string standar (case-insensitive) pada semua data
+                if (typeof data.text === 'undefined') {
+                    return null;
+                }
+
+                if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
+                    return data;
+                }
+
+                // Sembunyikan opsi jika string tidak cocok dengan kata kunci
+                return null; 
+            }
+
+            // Inisialisasi Select2 dengan matcher kustom
+            $('#primary_id, #duplicate_id').select2({
+                dropdownParent: $('#mergeModal'),
+                placeholder: "Ketik untuk mencari...",
+                allowClear: true,
+                matcher: customMatcher
+            });
+        });
+
+        // Eksekusi proses penggabungan via AJAX
+        $('#btnProsesMerge').on('click', function() {
+            var primaryId = $('#primary_id').val();
+            var duplicateId = $('#duplicate_id').val();
+
+            if (!primaryId || !duplicateId) {
+                alert('Pilih data perusahaan utama dan duplikat terlebih dahulu.');
+                return;
+            }
+
+            if (primaryId === duplicateId) {
+                alert('Perusahaan utama dan duplikat tidak boleh sama.');
+                return;
+            }
+
+            if(confirm('Aksi ini akan memindahkan semua data relasi dan menghapus perusahaan duplikat secara permanen. Proses ini tidak dapat dibatalkan. Lanjutkan?')) {
+                $('#mergeModal').modal('hide');
+                $('#loadingModal').modal('show');
+
+                $.ajax({
+                    url: "{{ route('perusahaan.merge') }}",
+                    type: "POST",
+                    data: {
+                        primary_id: primaryId,
+                        duplicate_id: duplicateId
+                    },
+                    success: function(response) {
+                        $('#loadingModal').modal('hide');
+                        if(response.status === 'success') {
+                            alert(response.message);
+                            $('#formMergeData')[0].reset();
+                            table.ajax.reload();
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#loadingModal').modal('hide');
+                        var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan internal server.';
+                        alert('Kesalahan Sistem: ' + errorMsg);
+                        table.ajax.reload();
+                    }
+                });
+            }
+        });
     });
 </script>
 @endpush
 @endsection
-

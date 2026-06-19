@@ -725,7 +725,7 @@
                             <select id="bulan" class="form-select" aria-label="bulan">
                                 <option disabled>Pilih Bulan</option>
                                 @php
-                                $bulan_sekarang = now()->month;
+                                $bulan_sekarang = now()->subMonth()->month;
                                 $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                                 for ($bulan = 1; $bulan <= 12; $bulan++) {
                                     $bulan_awal = $nama_bulan[$bulan - 1];
@@ -751,7 +751,7 @@
                                 @foreach ($karyawan as $item)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link 
-                                            @if($id_instruktur !== $item->kode_karyawan && $id_instruktur !== 'AD') disabled @endif" 
+                                            @if($id_instruktur !== $item->kode_karyawan && $id_instruktur !== 'AD' && $id_instruktur !== 'HM') disabled @endif" 
                                             id="pills-{{ $item->kode_karyawan }}-tab" 
                                             data-bs-toggle="pill" 
                                             data-bs-target="#pills-{{ $item->kode_karyawan }}" 
@@ -905,12 +905,12 @@
         // $('#modalRekap').modal('show');
         var userRole = '{{ auth()->user()->jabatan}}';
         var kode_karyawan = '{{ auth()->user()->id_instruktur }}';
-        if (userRole == 'Education Manager') {
-            // Jika Education Manager, aktifkan tab List
+        if (userRole == 'Education Manager' || userRole == 'GM') {
+            // Jika Education Manager atau GM, aktifkan tab List
             $('#pills-list-tab').removeClass('disabled').addClass('active');
             $('#pills-list').addClass('show active'); // Aktifkan konten List
         } else {
-            // Jika bukan Education Manager, nonaktifkan tab List dan tab OL
+            // Jika bukan Education Manager atau GM, nonaktifkan tab List dan tab OL
             $('#pills-list-tab').addClass('disabled').removeClass('active');
             $('#pills-OL-tab').addClass('disabled');
 
@@ -922,7 +922,6 @@
             $('button[data-bs-toggle="pill"]').not(`#pills-${kode_karyawan}-tab`).removeClass('active').addClass('disabled');
             $('.tab-pane').not(`#pills-${kode_karyawan}`).removeClass('show active'); // Nonaktifkan semua konten tab lain
             tableInstruktur(kode_karyawan); // Memanggil fungsi untuk mengisi DataTable
-
         }
         $("#asisten").hide();
         $("#instruktur2").hide();
@@ -1051,7 +1050,7 @@
                             var kelas = "off"
                         }else if(rkmData.metode_kelas == 'Inhouse Bandung'){
                             var kelas = "inhb"
-                        }else if(rkmData.metode_kelas == 'Inhouse Luar Bandung'){
+                        }else if(rkmData.metodeA_kelas == 'Inhouse Luar Bandung'){
                             var kelas = "inhlb"
                         }else{
                             var kelas = "vir"
@@ -1182,8 +1181,6 @@
 			$('#feedback_ass').val(averageFeedback3.toFixed(2));
 		});
 	}
-
-
     function tableMengajar() {
         if ($.fn.DataTable.isDataTable('#mengajartable')) {
             $('#mengajartable').DataTable().clear().destroy(); // Hancurkan DataTable yang ada

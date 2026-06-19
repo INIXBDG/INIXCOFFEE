@@ -196,13 +196,13 @@
                                     <div class="mb-3">
                                         <label class="form-label" for="edit_cp">PIC</label>
                                         <input type="text" class="form-control" id="edit_cp" name="cp"
-                                            value="{{ $data->cp }}" maxlength="100">
+                                            value="{{ $data->cp }}" maxlength="100" required>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label" for="edit_email">Email</label>
                                         <input type="email" class="form-control" id="edit_email" name="email"
-                                            value="{{ $data->email }}" required maxlength="255">
+                                            value="{{ $data->email }}" required maxlength="255" required>
                                     </div>
 
                                     <div class="mb-3">
@@ -347,7 +347,7 @@
                                     <div class="mb-3">
                                         <label class="form-label" for="edit_no_telp">No Telepon</label>
                                         <input type="text" class="form-control" id="edit_no_telp" name="no_telp"
-                                            value="{{ $data->no_telp }}" maxlength="20">
+                                            value="{{ $data->no_telp }}" maxlength="20" required>
                                     </div>
 
                                     <div class="mb-3">

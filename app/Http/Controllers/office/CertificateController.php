@@ -12,6 +12,7 @@ use App\Models\Registrasi;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class CertificateController extends Controller
@@ -62,19 +63,31 @@ class CertificateController extends Controller
         $rkm = $query->orderBy('tanggal_awal', 'desc')
             ->paginate($request->per_page ?? 15);
 
-        $data = $rkm->through(function ($item) {
+        $grouped = $rkm->getCollection()->groupBy(function ($item) {
+            return $item->materi_id . '-' . $item->metode_kelas . '-' . $item->tanggal_awal . '-' . $item->tanggal_akhir;
+        });
+
+        $data = $grouped->map(function ($group) {
+            $first = $group->first();
+
             return [
-                'id'                => $item->id,
-                'materi_nama'       => $item->materi?->nama_materi ?? '-',
-                'materi_kode'       => $item->materi?->kode_materi ?? '',
-                'perusahaan_nama'   => $item->perusahaan?->nama_perusahaan ?? '-',
-                'tanggal_awal'      => \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y'),
-                'tanggal_akhir'     => \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y'),
+                'id' => $first->id,
+
+                'materi_nama' => $first->materi?->nama_materi ?? '-',
+                'materi_kode' => $first->materi?->kode_materi ?? '',
+                'perusahaan_nama' => $group->pluck('perusahaan.nama_perusahaan')
+                    ->filter()
+                    ->unique()
+                    ->implode(', '),
+                'tanggal_awal' => \Carbon\Carbon::parse($first->tanggal_awal)->format('d M Y'),
+                'tanggal_akhir' => \Carbon\Carbon::parse($first->tanggal_akhir)->format('d M Y'),
             ];
-        })->items();
+        })->values();
+
+        $rkm->setCollection($data);
 
         return response()->json([
-            'data'       => $data,
+            'data' => $rkm->items(),
             'pagination' => [
                 'total'        => $rkm->total(),
                 'from'         => $rkm->firstItem(),
@@ -86,37 +99,74 @@ class CertificateController extends Controller
         ]);
     }
 
-    // Detail RKM - List Peserta
     public function detail($rkm_id)
     {
-        $rkm = RKM::with(['materi', 'perusahaan'])->findOrFail($rkm_id);
+        $rkm = RKM::with([
+            'materi',
+            'perusahaan'
+        ])->findOrFail($rkm_id);
 
-        // Ambil id_peserta yang terdaftar di RKM ini
-        $pesertaIds = Registrasi::where('id_rkm', $rkm_id)
-            ->pluck('id_peserta')
-            ->toArray();
+        $rkmIds = RKM::where('materi_key', $rkm->materi_key)
+            ->whereBetween('tanggal_awal', [
+                $rkm->tanggal_awal,
+                $rkm->tanggal_akhir
+            ])
+            ->whereDoesntHave('peluang', function ($query) {
+                $query->where('tentatif', 1);
+            })
+            ->pluck('id');
+        
+        $perusahaan = RKM::with('perusahaan')->where('materi_key', $rkm->materi_key)
+            ->whereBetween('tanggal_awal', [
+                $rkm->tanggal_awal,
+                $rkm->tanggal_akhir
+            ])            
+            ->whereDoesntHave('peluang', function ($query) {
+                $query->where('tentatif', 1);
+            })
+            ->get()
+            ->pluck('perusahaan.nama_perusahaan')
+            ->filter()
+            ->unique()
+            ->values();        
 
-        // Ambil data peserta yang hanya ikut RKM ini
-        // 1. Ambil data registrasi peserta untuk RKM ini + join ambil nama peserta
-        $peserta = Registrasi::where('id_rkm', $rkm_id)
+        $peserta = Registrasi::whereIn('id_rkm', $rkmIds)
             ->join('pesertas', 'pesertas.id', '=', 'registrasis.id_peserta')
-            ->select('registrasis.id_peserta', 'pesertas.nama')
+            ->select(
+                'registrasis.id_peserta',
+                'registrasis.id_rkm',
+                'pesertas.nama',
+                'pesertas.email'
+            )
+            ->distinct()
             ->orderBy('pesertas.nama')
             ->get();
 
-        // 2. Ambil peserta yang sudah punya sertifikat untuk RKM ini
-        $certificateIds = Certificate::join('registrasis', 'registrasis.id_peserta', '=', 'certificates.id_peserta')
-            ->where('registrasis.id_rkm', $rkm_id)
+        $certificateIds = Certificate::join(
+                'registrasis',
+                'registrasis.id_peserta',
+                '=',
+                'certificates.id_peserta'
+            )
+            ->whereIn('certificates.rkm_id', $rkmIds)
+            ->whereIn('certificates.id_peserta', $peserta->pluck('id_peserta'))
             ->pluck('registrasis.id_peserta')
+            ->unique()
             ->toArray();
 
-        return view('office.certificate.detail', compact('rkm', 'peserta', 'certificateIds'));
+        return view('office.certificate.detail', compact(
+            'rkm',
+            'peserta',
+            'certificateIds',
+            'perusahaan'
+        ));
     }
+
 
     public function create($rkm_id, $peserta_id)
     {
         $rkm = RKM::with(['materi', 'perusahaan', 'peluang'])->findOrFail($rkm_id);
-        $peserta = Peserta::findOrFail($peserta_id);
+        $peserta = Peserta::with('perusahaan')->findOrFail($peserta_id);
 
         $isRegistered = Registrasi::where('id_rkm', $rkm_id)
             ->where('id_peserta', $peserta_id)
@@ -193,6 +243,26 @@ class CertificateController extends Controller
         return redirect()
             ->route('office.certificate.show', $certificate->id)
             ->with('success', 'Sertifikat berhasil di-generate!');
+    }
+
+    public function delete($rkm_id, $peserta_id)
+    {
+        Log::info('Delete sertifikat dipanggil', [
+            'rkm_id' => $rkm_id,
+            'peserta_id' => $peserta_id,
+        ]);
+
+        $deleted = Certificate::where('rkm_id', $rkm_id)
+            ->where('id_peserta', $peserta_id)
+            ->delete();
+
+        Log::info('Hasil delete sertifikat', [
+            'rkm_id' => $rkm_id,
+            'peserta_id' => $peserta_id,
+            'deleted_rows' => $deleted,
+        ]);
+
+        return back()->with('success', 'Sertifikat berhasil dihapus!');
     }
 
     // Tampilkan detail sertifikat

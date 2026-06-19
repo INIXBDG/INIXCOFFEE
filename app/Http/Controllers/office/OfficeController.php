@@ -6,10 +6,14 @@ use App\Exports\ChecklistRkmExport;
 use App\Http\Controllers\Controller;
 use App\Models\AbsensiKaryawan;
 use App\Models\AdministrasiKaryawan;
+use App\Models\ChecklistEksam;
 use App\Models\ChecklistKeperluan;
+use App\Models\eksam;
 use App\Models\Feedback;
 use App\Models\HariLibur;
+use App\Models\JenisTunjangan;
 use App\Models\karyawan;
+use App\Models\LogGaji;
 use App\Models\Nilaifeedback;
 use App\Models\outstanding;
 use App\Models\pengajuancuti;
@@ -18,12 +22,14 @@ use App\Models\RKM;
 use App\Models\tagihanPerusahaan;
 use App\Models\Tickets;
 use App\Models\trackingTagihanPerusahaan;
+use App\Models\TunjanganKaryawan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Http\JsonResponse;
 
 use function PHPUnit\Framework\matches;
 
@@ -298,12 +304,27 @@ class OfficeController extends Controller
 
         // Tagihan Perusaaan
         $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')
-            ->whereBetween('tanggal_perkiraan_selesai', [$startOfThisWeek, $endOfNextWeek])
             ->orderByDesc('created_at')
             ->get();
+            // dd($trackingTagihanPerusahaans);
 
         $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')
             ->get();
+
+        
+        // get data exam
+        $exams = eksam::with([
+            'materi',
+            'perusahaan',
+            'rkm.materi',
+            'rkm.perusahaan',
+            'approvalexam',
+            'checklistEksam'
+        ])
+        ->whereHas('approvalexam', function ($q) {
+            $q->where('office_manager', '1');
+        })
+        ->orderBy('created_at', 'desc')->get();
 
         return view('office.dashboard', compact(
             'total_karyawan',
@@ -315,7 +336,8 @@ class OfficeController extends Controller
             'jumlahInstruktur',
             'rkms',
             'trackingTagihanPerusahaans',
-            'administrasis'
+            'administrasis',
+            'exams'
         ));
     }
 
@@ -1044,5 +1066,225 @@ class OfficeController extends Controller
     public function exportChecklistExcel($id)
     {
         return Excel::download(new ChecklistRkmExport($id), 'Checklist_Keperluan.xlsx');
+    }
+
+    // get data checklist exam
+    public function getAllExam(Request $request)
+    {
+        $search = $request->search;
+
+        $exams = eksam::with([
+                'materi',
+                'perusahaan',
+                'rkm.materi',
+                'rkm.perusahaan',
+                'rkm.sales',
+                'approvalexam',
+                'checklistEksam'
+            ])
+            ->when($search, function ($q) use ($search) {
+
+                $q->where('perusahaan', 'like', "%{$search}%")
+                ->orWhereHas('rkm.materi', function ($qr) use ($search) {
+
+                        $qr->where(
+                            'nama_materi',
+                            'like',
+                            "%{$search}%"
+                        );
+                });
+            })
+            ->latest()
+            
+            ->paginate(10);
+
+        return response()->json($exams);
+    }
+
+    public function getExam($id) {
+        $exam = eksam::with([
+            'materi',
+            'perusahaan',
+            'rkm.materi',
+            'rkm.perusahaan',
+            'rkm.sales',
+            'approvalexam',
+            'checklistEksam'
+        ])
+        ->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List Exam',
+            'data' => $exam,
+        ]);
+    }
+
+    // store Checklist exam
+    public function storeChecklistExam(Request $request)
+    {
+        $request->validate([
+            'id_exam' => 'required'
+        ]);
+
+        ChecklistEksam::create([
+            'id_exam' => $request->id_exam,
+            'status' => 1
+        ]);
+
+        return redirect()->back()->with('success_exam', 'Exam berhasil di selesaikan');
+    }
+  
+    public function laporanStatusKaryawan(Request $request)
+    {
+        $tahun = $request->tahun ?? now()->year;
+        $bulan = $request->bulan;
+
+        $base = Karyawan::whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi');
+
+        $aktifBase = (clone $base)->where('status_aktif', '1');
+        $resignBase = (clone $base)->where('status_aktif', '0')->whereNotNull('resigned_at');
+
+        // Helper untuk apply filter tahun & bulan ke kolom spesifik
+        $applyDateFilter = function($query, $column) use ($tahun, $bulan) {
+            if ($tahun) $query->whereYear($column, $tahun);
+            if ($bulan) $query->whereMonth($column, $bulan);
+            return $query;
+        };
+
+        $kontrak = (clone $aktifBase)->whereNotNull(['awal_kontrak', 'akhir_kontrak'])->whereNull(['awal_tetap', 'akhir_tetap']);
+        $kontrakCount = $applyDateFilter($kontrak, 'awal_kontrak')->count();
+
+        $tetap = (clone $aktifBase)->whereNotNull(['awal_tetap', 'akhir_tetap']);
+        $tetapCount = $applyDateFilter($tetap, 'awal_tetap')->count();
+
+        $probation = (clone $aktifBase)->whereNotNull(['awal_probation', 'akhir_probation'])->whereNull(['awal_kontrak', 'akhir_kontrak']);
+        $probationCount = $applyDateFilter($probation, 'awal_probation')->count();
+
+        $resign = clone $resignBase;
+        $resignCount = $applyDateFilter($resign, 'resigned_at')->count();
+
+        return response()->json([
+            'kontrak' => $kontrakCount,
+            'tetap' => $tetapCount,
+            'probation' => $probationCount,
+            'resign' => $resignCount,
+        ]);
+    }
+
+    public function detailKaryawanStatus(Request $request)
+    {
+        $status = $request->status;
+        $tahun = $request->tahun ?? now()->year;
+        $bulan = $request->bulan;
+        $search = $request->search ?? '';
+
+        $query = Karyawan::whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi');
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'LIKE', "%{$search}%")
+                ->orWhere('nip', 'LIKE', "%{$search}%")
+                ->orWhere('divisi', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $dateColumn = null;
+        switch ($status) {
+            case 'kontrak':
+                $query->where('status_aktif', '1')->whereNotNull(['awal_kontrak', 'akhir_kontrak'])->whereNull(['awal_tetap', 'akhir_tetap']);
+                $dateColumn = 'awal_kontrak';
+                break;
+            case 'tetap':
+                $query->where('status_aktif', '1')->whereNotNull(['awal_tetap', 'akhir_tetap']);
+                $dateColumn = 'awal_tetap';
+                break;
+            case 'probation':
+                $query->where('status_aktif', '1')->whereNotNull(['awal_probation', 'akhir_probation'])->whereNull(['awal_kontrak', 'akhir_kontrak']);
+                $dateColumn = 'awal_probation';
+                break;
+            case 'resign':
+                $query->where('status_aktif', '0')->whereNotNull('resigned_at');
+                $dateColumn = 'resigned_at';
+                break;
+        }
+
+        // Apply filter tanggal sesuai status
+        if ($dateColumn) {
+            if ($tahun) $query->whereYear($dateColumn, $tahun);
+            if ($bulan) $query->whereMonth($dateColumn, $bulan);
+        }
+
+        return response()->json($query->orderBy('nama_lengkap')->paginate(10));
+    }
+
+    public function laporanTrendKaryawan(Request $request)
+    {
+        $tahun = $request->tahun ?? now()->year;
+        $labels = $kontrak = $tetap = $probation = [];
+
+        // Base query yang sama untuk semua status aktif
+        $base = Karyawan::whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi')
+            ->where('status_aktif', '1');
+
+        // Gunakan copy() agar tidak merusak instance Carbon di iterasi berikutnya
+        $baseDate = now()->year($tahun);
+
+        for ($i = 5; $i >= 0; $i--) {
+            $date = $baseDate->copy()->subMonths($i);
+            $labels[] = $date->translatedFormat('M Y');
+            
+            $start = $date->copy()->startOfMonth();
+            $end = $date->copy()->endOfMonth();
+
+            // Filter berdasarkan kolom tanggal spesifik masing-masing status
+            $kontrak[] = (clone $base)
+                ->whereNotNull(['awal_kontrak', 'akhir_kontrak'])
+                ->whereNull(['awal_tetap', 'akhir_tetap'])
+                ->whereBetween('awal_kontrak', [$start, $end])
+                ->count();
+
+            $tetap[] = (clone $base)
+                ->whereNotNull(['awal_tetap', 'akhir_tetap'])
+                ->whereBetween('awal_tetap', [$start, $end])
+                ->count();
+
+            $probation[] = (clone $base)
+                ->whereNotNull(['awal_probation', 'akhir_probation'])
+                ->whereNull(['awal_kontrak', 'akhir_kontrak'])
+                ->whereBetween('awal_probation', [$start, $end])
+                ->count();
+        }
+
+        return response()->json([
+            'labels' => $labels, 
+            'kontrak' => $kontrak, 
+            'tetap' => $tetap, 
+            'probation' => $probation
+        ]);
+    }
+
+    public function getChecklistRKM($tahun, $bulan) {
+        $data = RKM::with('checklistKeperluan', 'materi', 'perusahaan')
+                    ->whereYear('tanggal_awal', $tahun)
+                    ->whereMonth('tanggal_awal', $bulan)
+                    ->get();
+    
+        return response()->json([
+            'message' => 'data checklist rkm',
+            'data' => $data
+        ]);
     }
 }

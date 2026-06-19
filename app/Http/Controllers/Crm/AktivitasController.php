@@ -98,10 +98,8 @@ class AktivitasController extends Controller
             $orderColumns = ['id', 'id_sales', 'id_contact', 'aktivitas', 'pax', 'total', 'harga', 'deskripsi', 'waktu_aktivitas'];
             $orderColumn = $orderColumns[$orderColumnIndex] ?? 'id';
 
-            // Hitung total semua data sebelum filter
             $totalRecords = $query->count();
 
-            // 🔍 Filter pencarian umum
             if (!empty($searchValue)) {
                 $query->where(function ($q) use ($searchValue) {
                     $q->where('aktivitas', 'like', "%{$searchValue}%")
@@ -124,7 +122,6 @@ class AktivitasController extends Controller
                 });
             }
 
-            // 🔹 Filter tambahan
             $filterSales = request()->get('filter_sales');
             $filterAktivitas = request()->get('filter_aktivitas');
             $filterWaktuStart = request()->get('filter_waktu_start');
@@ -137,7 +134,11 @@ class AktivitasController extends Controller
             }
 
             if ($filterAktivitas) {
-                $query->where('aktivitas', $filterAktivitas);
+                if ($filterAktivitas === 'Leads') {
+                    $query->where('aktivitas', 'PI');
+                } else {
+                    $query->where('aktivitas', $filterAktivitas);
+                }
             }
 
             if ($filterWaktuStart && $filterWaktuEnd) {
@@ -171,13 +172,21 @@ class AktivitasController extends Controller
                     $relasi = null;
                     $perusahaan = null;
 
-                    // Kondisi khusus untuk aktivitas PA
                     if ($item->aktivitas === 'PA') {
-                        $perusahaan = $item->perusahaanLangsung; // Menggunakan relasi langsung ke Perusahaan
+                        $perusahaan = $item->perusahaanLangsung;
                         $namaPerusahaan = $perusahaan?->nama_perusahaan;
                         $idContact = $item->id_contact;
+                    } elseif ($item->aktivitas === 'Form_Masuk') {
+                        $perusahaan = $item->perusahaanLangsung;
+
+                        if (empty($perusahaan) && !empty($item->contact)) {
+                            $perusahaan = $item->contact->perusahaan;
+                        }
+
+                        $namaPerusahaan = $perusahaan?->nama_perusahaan;
+                        $namaKontak = null;
+                        $idContact = $item->id_contact;
                     } else {
-                        // Kondisi standar selain aktivitas PA
                         $relasi = $item->id_peserta ? $item->peserta : $item->contact;
                         $perusahaan = $relasi?->perusahaan;
 
@@ -208,10 +217,12 @@ class AktivitasController extends Controller
                         $kontak = $namaKontak ?: $namaPerusahaan;
                     }
 
+                    // Modifikasi: Form_Masuk dikonversi menjadi Regis Form
                     $aktivitas = match ($item->aktivitas) {
                         'Incharge'    => 'Incharge Inhouse',
-                        'Form_Masuk'  => 'Form Masuk',
+                        'Form_Masuk'  => 'Regis Form',
                         'Form_Keluar' => 'Form Keluar',
+                        'PI'          => 'Leads',
                         default       => ucfirst($item->aktivitas),
                     };
 
@@ -222,6 +233,7 @@ class AktivitasController extends Controller
                     return [
                         'id' => $item->id,
                         'kontak' => $kontak,
+                        'contact_type' => in_array($item->aktivitas, ['PA', 'Form_Masuk']) ? 'perusahaan' : 'contact',
                         'id_sales' => $item->id_sales,
                         'aktivitas' => $aktivitas,
                         'pax' => $item->pax,

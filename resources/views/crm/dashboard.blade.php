@@ -12,37 +12,19 @@
                         <span class="badge bg-white text-primary rounded-pill">{{ $tanggalRange }}</span>
                     </div>
                     <div class="card-body p-4">
-                        <form method="GET" class="row g-2 mb-4 align-items-end pb-3 border-bottom">
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold text-muted mb-1">Tahun</label>
-                                <select name="tahun" class="form-select form-select-sm border-light-subtle">
-                                    @for ($t = now()->year; $t >= now()->year - 3; $t--)
-                                        <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>
-                                            {{ $t }}</option>
-                                    @endfor
-                                </select>
+
+                        <form method="GET" action="{{ url()->current() }}" class="row g-2 mb-4 align-items-end pb-3 border-bottom">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted mb-1">Tanggal Mulai</label>
+                                <input type="date" name="start_date" class="form-control form-control-sm border-light-subtle"
+                                    value="{{ request('start_date') }}" required>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold text-muted mb-1">Bulan</label>
-                                <select name="bulan" class="form-select form-select-sm border-light-subtle">
-                                    @for ($b = 1; $b <= 12; $b++)
-                                        <option value="{{ $b }}" {{ $bulan == $b ? 'selected' : '' }}>
-                                            {{ \Carbon\Carbon::create()->month($b)->locale('id')->translatedFormat('F') }}
-                                        </option>
-                                    @endfor
-                                </select>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted mb-1">Tanggal Selesai</label>
+                                <input type="date" name="end_date" class="form-control form-control-sm border-light-subtle"
+                                    value="{{ request('end_date') }}" required>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold text-muted mb-1">Minggu</label>
-                                <select name="minggu" class="form-select form-select-sm border-light-subtle">
-                                    <option value="" {{ empty($mingguKe) ? 'selected' : '' }}>Semua Minggu</option>
-                                    @for ($m = 1; $m <= 5; $m++)
-                                        <option value="{{ $m }}" {{ $mingguKe == $m ? 'selected' : '' }}>Minggu
-                                            ke {{ $m }}</option>
-                                    @endfor
-                                </select>
-                            </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">
                                     Terapkan Filter
                                 </button>
@@ -123,30 +105,18 @@
                                                     'warna' => 'success',
                                                     'icon' => 'bx-file',
                                                 ],
-                                                'Penawaran Internal' => [
-                                                    'jumlah' => $sales['PI'],
+                                                'Leads' => [
+                                                    'jumlah' => $sales['Leads'],
                                                     'target' => $sales['target_PI'],
                                                     'warna' => 'success',
                                                     'icon' => 'bx-detail',
                                                 ],
-                                                'Telemarketing' => [
-                                                    'jumlah' => $sales['Telemarketing'],
-                                                    'target' => $sales['target_Telemarketing'],
-                                                    'warna' => 'danger',
-                                                    'icon' => 'bx-headphone',
-                                                ],
-                                                'Form Masuk' => [
-                                                    'jumlah' => $sales['Form_Masuk'],
+                                                'Regis Form' => [
+                                                    'jumlah' => $sales['Regis_Form'],
                                                     'target' => $sales['target_Form_Masuk'],
                                                     'warna' => 'danger',
                                                     'icon' => 'bx-log-in-circle',
-                                                ],
-                                                'Form Keluar' => [
-                                                    'jumlah' => $sales['Form_Keluar'],
-                                                    'target' => $sales['target_Form_Keluar'],
-                                                    'warna' => 'danger',
-                                                    'icon' => 'bx-log-out-circle',
-                                                ],
+                                                ]
                                             ];
                                         @endphp
 
@@ -183,12 +153,7 @@
                                     </div>
                                 </div>
                             @empty
-                                <div class="text-center py-5">
-                                    <img src="https://illustrations.popsy.co/gray/no-data.svg" alt="no-data"
-                                        style="width: 120px;" class="mb-3">
-                                    <p class="text-muted small">Tidak ada data aktivitas sales pada periode ini.</p>
-                                </div>
-                            @endforelse
+                                @endforelse
                         </div>
                     </div>
                 </div>
@@ -222,201 +187,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        @if (auth()->user()->jabatan === 'Adm Sales')
-            @php
-                $tasks = ['Registratsi Form', 'Surat Kontrak', 'PA', 'PO'];
-            @endphp
-            @php
-                $taskMap = [
-                    'Registratsi Form' => 'registrasi_form',
-                    'Surat Kontrak' => 'surat_kontrak',
-                    'PA' => 'PA',
-                    'PO' => 'PO',
-                ];
-            @endphp
-
-            <div class="row g-4 mb-4">
-                <div class="col-md-12">
-                    <div class="card shadow-sm border-0 h-100">
-
-                        <div class="card-header bg-transparent border-0">
-                            <h5 class="card-title mb-3 text-primary">Check List RKM</h5>
-
-                            <form method="GET">
-                                <div class="row g-2">
-
-                                    <div class="col-md-3">
-                                        <input type="text" name="search" value="{{ request('search') }}"
-                                            class="form-control" placeholder="Search...">
-                                    </div>
-
-                                    <div class="col-md-2">
-                                        <select name="bulan" class="form-select">
-                                            <option value="">Bulan</option>
-                                            @foreach (range(1, 12) as $bulan)
-                                                <option value="{{ $bulan }}"
-                                                    {{ request('bulan') == $bulan ? 'selected' : '' }}>
-                                                    {{ $bulan }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div class="col-md-2">
-                                        <select name="tahun" class="form-select">
-                                            <option value="">Tahun</option>
-                                            @foreach (range(date('Y') - 3, date('Y') + 1) as $tahun)
-                                                <option value="{{ $tahun }}"
-                                                    {{ request('tahun') == $tahun ? 'selected' : '' }}>
-                                                    {{ $tahun }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div class="col-md-2">
-                                        <select name="minggu" class="form-select">
-                                            <option value="">Minggu</option>
-                                            @for ($i = 1; $i <= 4; $i++)
-                                                <option value="{{ $i }}"
-                                                    {{ request('minggu') == $i ? 'selected' : '' }}>
-                                                    Minggu {{ $i }}
-                                                </option>
-                                            @endfor
-                                        </select>
-                                    </div>
-
-                                    <div class="col-md-2">
-                                        <button class="btn btn-primary w-100">Filter</button>
-                                    </div>
-
-                                </div>
-                            </form>
-                        </div>
-
-                        <div class="card-body">
-
-                            <div class="table-responsive">
-                                <table class="table table-bordered text-center align-middle" id="rkmTable">
-
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>No</th>
-                                            <th>RKM</th>
-                                            @foreach ($tasks as $task)
-                                                <th>{{ $task }}</th>
-                                            @endforeach
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        @foreach ($dataRKM as $item)
-                                            <tr>
-                                                <td>{{ $loop->iteration }}</td>
-                                                <td>
-                                                    <button class="btn btn-link text-decoration-none show-detail"
-                                                        data-id="{{ $item->id }}"
-                                                        data-materi="{{ $item->materi->nama_materi }}"
-                                                        data-perusahaan="{{ $item->perusahaan->nama_perusahaan ?? '-' }}"
-                                                        data-instruktur="{{ $item->instruktur->nama_lengkap ?? '-' }}"
-                                                        data-tanggaltraining="{{ $item->tanggal_awal ?? '-' }} s/d {{ $item->tanggal_akhir ?? '-' }}"
-                                                        data-sales="{{ $item->sales->nama_lengkap ?? '-' }}">
-                                                        {{ $item->materi->nama_materi }}
-                                                    </button>
-                                                </td>
-                                                @foreach ($tasks as $task)
-                                                    @php
-                                                        $field = $taskMap[$task];
-                                                        $isChecked = $item->checklist->$field ?? false;
-                                                    @endphp
-
-                                                    <td>
-                                                        <input type="checkbox" class="form-check-input checklist-checkbox"
-                                                            data-rkm="{{ $item->id }}"
-                                                            data-field="{{ $field }}"
-                                                            {{ $isChecked ? 'checked' : '' }}>
-                                                    </td>
-                                                @endforeach
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                                <div class="mt-3">
-                                    {{ $dataRKM->links() }}
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <div class="modal fade" id="modalDetail" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg rounded-4">
-
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-semibold text-primary">
-                            Detail RKM
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-
-                    <div class="modal-body pt-3">
-
-                        <div class="row g-3">
-
-                            <div class="col-12">
-                                <div class="p-3 bg-light rounded-3">
-                                    <small class="text-muted d-block">Tanggal</small>
-                                    <span id="detailTanggal" class="fw-semibold"></span>
-                                </div>
-                            </div>
-
-                            <div class="col-12">
-                                <div class="p-3 bg-light rounded-3">
-                                    <small class="text-muted d-block">Materi</small>
-                                    <span id="detailMateri" class="fw-semibold"></span>
-                                </div>
-                            </div>
-
-                            <div class="col-12">
-                                <div class="p-3 bg-light rounded-3">
-                                    <small class="text-muted d-block">Perusahaan</small>
-                                    <span id="detailPerusahaan" class="fw-semibold"></span>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="p-3 bg-light rounded-3 h-100">
-                                    <small class="text-muted d-block">Instruktur</small>
-                                    <span id="detailInstruktur" class="fw-semibold"></span>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="p-3 bg-light rounded-3 h-100">
-                                    <small class="text-muted d-block">Sales</small>
-                                    <span id="detailSales" class="fw-semibold"></span>
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    {{-- FOOTER --}}
-                    <div class="modal-footer border-0 pt-0">
-                        <button class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
-                            Tutup
-                        </button>
-                    </div>
-
                 </div>
             </div>
         </div>
@@ -641,15 +411,15 @@
                                                 $item->sewa_laptop,
                                             0, ',', '.') }}
                                         </td>
-                                        <td>{{ $item->trackingNetSales->tracking ?? '-' }}</td>      
+                                        <td>{{ $item->trackingNetSales->tracking ?? '-' }}</td>
                                         <td>
 											@php
 												$peluangId = optional(optional($item->rkm)->peluang)->id;
 											@endphp
 
 											@if($peluangId)
-												<a class="btn btn-sm btn-outline-primary" 
-												   href="{{ route('detail.peluang', $peluangId) }}" 
+												<a class="btn btn-sm btn-outline-primary"
+												   href="{{ route('detail.peluang', $peluangId) }}"
 												   target="_blank">View</a>
 											@else
 												-
@@ -760,6 +530,10 @@
                                     id="modalPersen" class="badge bg-info p-2 fs-6"></span></div>
                             <div><small class="text-muted d-block">Realisasi / Target</small><strong><span
                                         id="modalJumlah"></span> / <span id="modalTarget"></span></strong></div>
+                            <div id="modalTotalContainer" style="display: none; margin-top: 8px;">
+                                <small class="text-muted d-block">Total Nilai</small>
+                                <strong id="modalTotalValue" class="text-success fs-6"></strong>
+                            </div>
                         </div>
                     </div>
 
@@ -1490,88 +1264,26 @@
             // Activity data from PHP
             const activityData = @json($activitysales);
 
-            // Function to show modal with activity details
             async function showActivityDetails(salesId, activityLabel) {
                 const sales = activityData.find(s => s.id_sales === salesId);
-                console.log("Membuka modal →", {
-                    salesId,
-                    activityLabel
-                });
-                console.log(sales);
 
-                const saless = activityData.find(s => s.id_sales === salesId);
                 if (!sales) {
                     console.error("Sales tidak ditemukan untuk ID:", salesId);
                     alert("Data sales tidak ditemukan");
                     return;
                 }
 
-                if (!sales) return;
-
                 const activityMap = {
-                    'DB': {
-                        jumlah: sales.DB,
-                        target: sales.target_DB,
-                        warna: 'info'
-                    },
-                    'Contact': {
-                        jumlah: sales.contact,
-                        target: sales.target_contact,
-                        warna: 'info'
-                    },
-                    'Call': {
-                        jumlah: sales.call,
-                        target: sales.target_call,
-                        warna: 'info'
-                    },
-                    'Email': {
-                        jumlah: sales.email,
-                        target: sales.target_email,
-                        warna: 'warning'
-                    },
-                    'Visit': {
-                        jumlah: sales.visit,
-                        target: sales.target_visit,
-                        warna: 'warning'
-                    },
-                    'Meet': {
-                        jumlah: sales.meet,
-                        target: sales.target_meet,
-                        warna: 'warning'
-                    },
-                    'Incharge': {
-                        jumlah: sales.incharge,
-                        target: sales.target_incharge,
-                        warna: 'success'
-                    },
-                    'Penawaran Awal': {
-                        jumlah: sales.PA,
-                        target: sales.target_PA,
-                        warna: 'success',
-                        total: sales.total_PA ?? 0
-                    },
-                    'Penawaran Internal': {
-                        jumlah: sales.PI,
-                        target: sales.target_PI,
-                        warna: 'success'
-                    },
-                    'Telemarketing': {
-                        jumlah: sales.Telemarketing,
-                        target: sales.target_Telemarketing,
-                        warna: 'danger'
-                    },
-                    'Form Masuk': {
-                        jumlah: sales.Form_Masuk,
-                        target: sales.target_Form_Masuk,
-                        warna: 'danger',
-                        total: sales.total_Form_Masuk ?? 0
-                    },
-                    'Form Keluar': {
-                        jumlah: sales.Form_Keluar,
-                        target: sales.target_Form_Keluar,
-                        warna: 'danger',
-                        total: sales.total_Form_Keluar ?? 0
-                    },
+                    'DB': { jumlah: sales.DB, target: sales.target_DB, warna: 'info' },
+                    'Contact': { jumlah: sales.contact, target: sales.target_contact, warna: 'info' },
+                    'Call': { jumlah: sales.call, target: sales.target_call, warna: 'info' },
+                    'Email': { jumlah: sales.email, target: sales.target_email, warna: 'warning' },
+                    'Visit': { jumlah: sales.visit, target: sales.target_visit, warna: 'warning' },
+                    'Meet': { jumlah: sales.meet, target: sales.target_meet, warna: 'warning' },
+                    'Incharge': { jumlah: sales.incharge, target: sales.target_incharge, warna: 'success' },
+                    'Penawaran Awal': { jumlah: sales.PA, target: sales.target_PA, warna: 'success', total: sales.total_PA ?? 0 },
+                    'Leads': { jumlah: sales.Leads, target: sales.target_PI, warna: 'success' },
+                    'Regis Form': { jumlah: sales.Regis_Form, target: sales.target_Form_Masuk, warna: 'danger', total: sales.total_Regis_Form ?? 0 }
                 };
 
                 const activity = activityMap[activityLabel];
@@ -1581,7 +1293,6 @@
                     Math.min(Math.round((activity.jumlah / activity.target) * 100), 100) :
                     0;
 
-                // Populate modal
                 document.getElementById('modalSalesId').textContent = salesId;
                 document.getElementById('modalActivity').textContent = activityLabel;
                 document.getElementById('modalJumlah').textContent = activity.jumlah;
@@ -1590,47 +1301,64 @@
                 document.getElementById('modalProgressBar').style.width = `${persen}%`;
                 document.getElementById('modalProgressBar').className = `progress-bar bg-${activity.warna}`;
 
-                // 🧩 Ambil data aktivitas detail dari struktur data PHP
+                const totalContainer = document.getElementById('modalTotalContainer');
+                const totalValue = document.getElementById('modalTotalValue');
+
+                const hasFinancialData = activity.total !== undefined;
+
+                if (totalContainer && totalValue) {
+                    if (hasFinancialData && activity.total > 0) {
+                        const formattedTotal = new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0
+                        }).format(activity.total);
+
+                        totalValue.textContent = formattedTotal;
+                        totalContainer.style.display = 'block';
+                    } else {
+                        totalContainer.style.display = 'none';
+                    }
+                }
+
+                const theadTr = document.querySelector('#detailAktivitas thead tr');
+                if (hasFinancialData) {
+                    theadTr.innerHTML = `
+                        <th class="small border-0">Client</th>
+                        <th class="small border-0">Tipe</th>
+                        <th class="small border-0">Deskripsi</th>
+                        <th class="small border-0 text-end">Harga</th>
+                        <th class="small border-0 text-center">Pax</th>
+                        <th class="small border-0 text-end">Total</th>
+                        <th class="small border-0 text-center">Foto</th>
+                        <th class="small border-0">Lokasi</th>
+                        <th class="small border-0 text-center">Waktu</th>
+                    `;
+                } else {
+                    theadTr.innerHTML = `
+                        <th class="small border-0">Client</th>
+                        <th class="small border-0">Tipe</th>
+                        <th class="small border-0">Deskripsi</th>
+                        <th class="small border-0 text-center">Foto</th>
+                        <th class="small border-0">Lokasi</th>
+                        <th class="small border-0 text-center">Waktu</th>
+                    `;
+                }
+
                 let activityKey = '';
+
                 switch (activityLabel) {
-                    case 'Contact':
-                        activityKey = 'data_contact';
-                        break;
-                    case 'Call':
-                        activityKey = 'data_call';
-                        break;
-                    case 'Email':
-                        activityKey = 'data_email';
-                        break;
-                    case 'Visit':
-                        activityKey = 'data_visit';
-                        break;
-                    case 'Meet':
-                        activityKey = 'data_meet';
-                        break;
-                    case 'Incharge':
-                        activityKey = 'data_incharge';
-                        break;
-                    case 'Penawaran Awal':
-                        activityKey = 'data_PA';
-                        break;
-                    case 'Penawaran Internal':
-                        activityKey = 'data_PI';
-                        break;
-                    case 'Telemarketing':
-                        activityKey = 'data_Telemarketing';
-                        break;
-                    case 'Form Masuk':
-                        activityKey = 'data_Form_Masuk';
-                        break;
-                    case 'Form Keluar':
-                        activityKey = 'data_Form_Keluar';
-                        break;
-                    case 'DB':
-                        activityKey = 'data_DB';
-                        break;
-                    default:
-                        activityKey = '';
+                    case 'Contact': activityKey = 'data_contact'; break;
+                    case 'Call': activityKey = 'data_call'; break;
+                    case 'Email': activityKey = 'data_email'; break;
+                    case 'Visit': activityKey = 'data_visit'; break;
+                    case 'Meet': activityKey = 'data_meet'; break;
+                    case 'Incharge': activityKey = 'data_incharge'; break;
+                    case 'Penawaran Awal': activityKey = 'data_PA'; break;
+                    case 'Leads': activityKey = 'data_Leads'; break;
+                    case 'Regis Form': activityKey = 'data_Regis_Form'; break;
+                    case 'DB': activityKey = 'data_DB'; break;
+                    default: activityKey = '';
                 }
 
                 const tableBody = document.querySelector('#detailAktivitas tbody');
@@ -1639,32 +1367,24 @@
                 if (activityKey && Array.isArray(sales[activityKey])) {
 
                     for (const item of sales[activityKey]) {
-
                         let lokasi = '-';
 
                         try {
                             if (item.latitude && item.longitude) {
-
                                 const response = await fetch(
                                     `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${item.latitude}&lon=${item.longitude}&zoom=18`
                                 );
-
                                 const data = await response.json();
-
                                 const address = data.display_name || '-';
                                 const shortAddress = address.split(',').slice(0, 2).join(',');
-                                const city =
-                                    data.address?.city ||
-                                    data.address?.town ||
-                                    data.address?.village ||
-                                    '';
+                                const city = data.address?.city || data.address?.town || data.address?.village || '';
 
                                 lokasi = `
                                     <span title="${address}">
                                         <strong>${shortAddress}</strong>
                                     </span><br>
-                                    <a href="https://www.google.com/maps?q=${item.latitude},${item.longitude}" 
-                                    target="_blank" 
+                                    <a href="https://www.google.com/maps?q=${item.latitude},${item.longitude}"
+                                    target="_blank"
                                     class="ms-1 text-primary">
                                         <small class="text-muted">${city}</small>
                                     </a>
@@ -1672,6 +1392,24 @@
                             }
                         } catch (error) {
                             console.error('Reverse geocoding error:', error);
+                        }
+
+                        let financialCells = '';
+                        if (hasFinancialData) {
+                            const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
+
+                            financialCells = `
+                                <td class="text-end">${item.harga ? formatRupiah(item.harga) : '-'}</td>
+                                <td class="text-center">${item.pax ?? '-'}</td>
+                                <td class="text-end fw-bold text-success">${item.total ? formatRupiah(item.total) : '-'}</td>
+                            `;
+                        }
+
+                        let labelTipe = item.aktivitas ?? '-';
+                        if (labelTipe === 'PI') {
+                            labelTipe = 'Leads';
+                        } else if (labelTipe === 'Form_Masuk') {
+                            labelTipe = 'Regis Form';
                         }
 
                         const row = `
@@ -1687,15 +1425,16 @@
                                         : '-'
                                     }
                                 </td>
-                                <td>${item.aktivitas ?? '-'}</td>
+                                <td>${labelTipe}</td>
                                 <td>${item.deskripsi ?? '-'}</td>
-                                <td>
-                                    <img src="/${item.foto_lokasi}" 
+                                ${financialCells}
+                                <td class="text-center">
+                                    <img src="/${item.foto_lokasi}"
                                         style="width:50px;border-radius:5px;cursor:pointer"
-                                        onclick="window.open(this.src)">
+                                        onclick="window.open(this.src)" alt="Foto">
                                 </td>
                                 <td>${lokasi}</td>
-                                <td>
+                                <td class="text-center text-nowrap">
                                     ${item.waktu_aktivitas
                                         ? new Date(item.waktu_aktivitas).toLocaleDateString('id-ID')
                                         : '-'}
@@ -1707,16 +1446,16 @@
                     }
 
                 } else {
+                    const colspan = hasFinancialData ? 9 : 6;
                     tableBody.innerHTML = `
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-3">
+                            <td colspan="${colspan}" class="text-center text-muted py-3">
                                 Tidak ada data aktivitas untuk jenis ini.
                             </td>
                         </tr>
                     `;
                 }
 
-                // Show modal
                 document.getElementById('detailAktivitas').style.display = 'block';
             }
 

@@ -127,7 +127,7 @@
                 <th width="15%">Driver</th>
                 <th width="10%">Kendaraan</th>
                 <th width="10%">Budget</th>
-                <th width="10%">Total Biaya</th>
+                <th width="10%">Realisasi</th>
                 <th width="10%">Sisa</th>
                 <th width="10%">KM Awal</th>
                 <th width="10%">KM Akhir</th>

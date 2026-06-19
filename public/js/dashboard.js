@@ -14,6 +14,7 @@ function initializeYearlySales() {
         fetchTotalMengajarPerMateri(year, 'All');
         fetchAbsenPerbulan(year, 'All');
         dashboardEdu();
+        getProjectTarget(year);
         // fetchNilaiFeedback(year, '1');
         // fetchJumlahPICData();
         // fetchJumlahTicketingData();
@@ -99,6 +100,95 @@ function updateCarPosition(totalSales, target) {
         car.css('left', `${carPosition}%`); // Pindahkan mobil sesuai posisi progres
         car.css('transition', 'left 10s ease-in-out'); // Set animasi mobil, misalnya 2 detik
     }, 10000); // Waktu tunggu sama dengan durasi progress bar
+}
+
+function getProjectTarget(year) {
+    $.ajax({
+        url: `/getProjectTarget/${year}`,
+        type: 'GET',
+        dataType: 'json',
+        success: function (response) {
+            let total = response.completedSum || 0;
+            let target = response.target || 0;
+            let targetLabels = response.targetLabels?.length
+                ? response.targetLabels
+                : Array(9).fill("0");
+
+            // Update teks total
+            $('#totalProjectDisplay').text(formatRupiah(total));
+
+            // Update UI Project (selector berbeda)
+            updateRulerLabelsProject(total, target, targetLabels);
+            updateCarPositionProject(total, target);
+        },
+        error: function (xhr, status, error) {
+            console.error('Error fetching project target:', error);
+            $('#totalProjectDisplay').text('Error');
+        }
+    });
+}
+
+function updateRulerLabelsProject(total, target, targetLabels) {
+    let maxRange = Math.max(total, target, 1);
+    let isMobile = window.innerWidth <= 768;
+
+    // Kosongkan container project
+    $('.horizontal-ruler-labels-project').empty();
+
+    // Dynamically create labels based on targetLabels or total
+    $.each(targetLabels, function (index, label) {
+        let labelValue = (index / (targetLabels.length - 1)) * maxRange;
+        let labelPosition = (labelValue / maxRange) * 100;
+
+        // Use total-based dynamic labels if total > target, otherwise use static targetLabels
+        let displayLabel = total > target ? formatTarget(labelValue) : label;
+
+        let labelDiv = $('<div></div>', {
+            class: 'label',
+            text: displayLabel,
+            css: {
+                position: 'absolute',
+                left: `${labelPosition}%`
+            }
+        });
+
+        if (isMobile && index % 2 !== 0) {
+            labelDiv.hide();
+        }
+
+        $('.horizontal-ruler-labels-project').append(labelDiv);
+    });
+}
+
+function updateCarPositionProject(total, target) {
+    let maxRange = Math.max(total, target, 1);
+    let progress = Math.max((total / maxRange) * 100, 2);
+    let targetPosition = (target / maxRange) * 100;
+
+    // Selector project
+    let car = $('#car-project');
+    let goal = $('.target-label-right-project');
+
+    let isMobile = window.innerWidth <= 600;
+    let carPosition = Math.max(progress - (isMobile ? 30 : 7), 0);
+
+    // Set posisi tujuan
+    goal.css('left', `${Math.min(targetPosition, 100)}%`);
+
+    // Animasi progress bar terlebih dahulu
+    $("#progress-bar-project").css({
+        'width': `${progress}%`,
+        'transition': 'width 10s ease' // Durasi animasi disesuaikan
+    });
+    console.log("Project - Max Range:", maxRange, "Progress:", progress, "Target Position:", targetPosition, "Car", carPosition);
+
+    // Tunggu sampai progress bar selesai, lalu animasi mobil
+    setTimeout(() => {
+        car.css('left', `${carPosition}%`); // Pindahkan mobil sesuai posisi progres
+        car.css('transition', 'left 10s ease-in-out'); // Set animasi mobil
+    }, 10000); // Waktu tunggu sama dengan durasi progress bar
+
+    console.log("total:", total, "target:", target, "progress:", progress);
 }
 
 function fetchPenjualanPerSalesPerTahun(year) {
@@ -827,7 +917,7 @@ function dashboardEdu() {
                 document.getElementById('silabusValue').innerText = res.pembuatanSilabus;
             }
         })
-    .catch(err => console.error('Aktivitas error:', err));
+        .catch(err => console.error('Aktivitas error:', err));
 }
 
 function fetchTabInix(year) {
@@ -2449,13 +2539,20 @@ function renderRerataDurasiChart(labels, values) {
 // --- 2.4. RERATA KETEPATAN RESPONSE ---
 let rerataKetepatanResponseChart = null;
 
+// Helper: HH:MM:SS → detik (untuk plotting chart)
+function hmsToSeconds(hms) {
+    if (!hms || typeof hms !== 'string') return 0;
+    const [h, m, s] = hms.split(':').map(Number);
+    return (h || 0) * 3600 + (m || 0) * 60 + (s || 0);
+}
+
+// Helper: detik → HH:MM:SS (untuk display tooltip & axis)
 function secondsToHMS(seconds) {
-    if (isNaN(seconds) || seconds < 0) return '00:00:00';
-    // Pastikan detik adalah angka
-    seconds = Number(seconds);
+    if (isNaN(seconds) || seconds === null || seconds < 0) return '00:00:00';
+    seconds = Math.round(Number(seconds));
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
+    const s = seconds % 60;
     return [
         h.toString().padStart(2, '0'),
         m.toString().padStart(2, '0'),
@@ -2463,76 +2560,189 @@ function secondsToHMS(seconds) {
     ].join(':');
 }
 
-async function fetchRerataKetepatanResponseData(selectedMonth = 'all') {
+// Fetch data dari API
+async function fetchRerataKetepatanResponseData() {
+    console.group("🚀 [PROCESS] Fetching Rerata Kecepatan Response");
+
+    const tahunEl = document.getElementById('tahun');
+    const bulanEl = document.getElementById('filterMonthKetepatan');
+
+    const tahun = tahunEl ? tahunEl.value : null;
+    const bulan = bulanEl ? bulanEl.value : 'all';
+
+    console.log("ℹ️ Input - Tahun:", tahun, "Bulan:", bulan);
+
+    if (!tahun) {
+        console.warn("⚠️ [BATAL] Tahun belum dipilih di dropdown.");
+        console.groupEnd();
+        return;
+    }
+
     try {
-        let url = '/rerata-ketepatan-response-data';
-        if (selectedMonth !== 'all') {
-            // --- INI PERBAIKANNYA ---
-            url += '?filterMonthKetepatan=' + encodeURIComponent(selectedMonth);
-            // -------------------------
+        console.log(" Fetching URL:", `/rerata-ketepatan-response-data?tahun=${tahun}&filterMonthKetepatan=${bulan}`);
+
+        const params = new URLSearchParams({ tahun, filterMonthKetepatan: bulan });
+        const response = await fetch(`/rerata-ketepatan-response-data?${params}`);
+
+        console.log("ℹ️ Response Status:", response.status);
+
+        if (!response.ok) {
+            console.error(`❌ [ERROR] HTTP Error ${response.status}: ${response.statusText}`);
+            console.groupEnd();
+            return;
         }
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Network response was not ok');
+
         const data = await response.json();
+        console.log("✅ [SUCCESS] Data diterima dari API:", data);
+
+        // Validasi data kosong
+        if (!data.labels || data.labels.length === 0 || !data.values || data.values.length === 0) {
+            console.warn("⚠️ [WARNING] Data kosong atau tidak valid dari server.");
+            console.groupEnd();
+            return;
+        }
+
+        console.log("🔄 Memanggil fungsi render chart...");
         renderRerataKetepatanResponseChart(data.labels, data.values);
+
     } catch (error) {
-        console.error('Fetch Rata Rata Ketepatan Response Data Error:', error);
+        console.error("❌ [EXCEPTION] Terjadi kesalahan saat fetch:", error);
+    } finally {
+        console.groupEnd();
     }
 }
 
-/**
- * Merender chart ketepatan respons
- */
+// Render Chart.js
 function renderRerataKetepatanResponseChart(labels, values) {
-    const ctx = document.getElementById('rerataKetepatanResponseChart').getContext('2d');
+    console.group(" [CHART] Rendering Chart");
+    console.log("Labels:", labels);
+    console.log("Values (Raw HH:MM:SS):", values);
+
+    const canvas = document.getElementById('rerataKetepatanResponseChart');
+    if (!canvas) {
+        console.error("❌ [FATAL] Element Canvas dengan ID 'rerataKetepatanResponseChart' TIDAK DITEMUKAN di HTML!");
+        console.groupEnd();
+        return;
+    }
+
+    // Destroy chart lama jika ada
     if (rerataKetepatanResponseChart) {
+        console.log("🗑️ Menghapus chart lama...");
         rerataKetepatanResponseChart.destroy();
     }
+
+    // Konversi values (HH:MM:SS) → numeric (detik) untuk plotting sumbu Y
+    const numericValues = values.map(val => hmsToSeconds(val));
+    console.log("🔢 Values (Numeric/Seconds untuk Chart):", numericValues);
+
+    const ctx = canvas.getContext('2d');
+
     rerataKetepatanResponseChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Rata-rata Ketepatan Response (HH:mm:ss)',
-                data: values,
-                backgroundColor: 'rgba(54, 162, 235, 0.3)',
+                label: 'Rata-rata Kecepatan Respon (HH:mm:ss)',
+                data: numericValues, // numeric untuk plotting
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 2,
                 fill: true,
                 tension: 0.3,
-                pointRadius: 6,
-                pointHoverRadius: 10,
-                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
-                pointHoverBackgroundColor: 'rgba(0,123,255,1)'
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                pointBackgroundColor: '#36a2eb',
+                pointHoverBackgroundColor: '#0d6efd'
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
-                title: { display: true, text: 'Rata Rata Ketepatan Response Ticketing', font: { size: 18, weight: 'bold' } },
+                title: {
+                    display: true,
+                    text: 'Rata-rata Kecepatan Respon per Kategori',
+                    font: { size: 16, weight: 'bold' }
+                },
                 tooltip: {
                     callbacks: {
-                        label: (context) => `Ketepatan: ${secondsToHMS(context.raw)}`
+                        label: (context) => {
+                            const rawValue = values[context.dataIndex];
+                            return `Rata-rata: ${rawValue}`;
+                        }
                     }
                 },
-                legend: { display: true, position: 'top' },
+                legend: { display: true, position: 'top' }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: { callback: value => secondsToHMS(value) },
-                    title: { display: true, text: 'Durasi (HH:mm:ss)' },
-                    grid: { color: '#eee' }
+                    ticks: {
+                        callback: (value) => secondsToHMS(value),
+                        font: { size: 11 }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Durasi Respon (HH:mm:ss)'
+                    },
+                    grid: { color: '#f0f0f0' }
                 },
                 x: {
-                    title: { display: true, text: 'Kategori/Keperluan' },
-                    ticks: { color: '#444', font: { size: 14 } },
+                    title: {
+                        display: true,
+                        text: 'Kategori / Keperluan'
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                        font: { size: 11 }
+                    },
                     grid: { display: false }
                 }
             }
         }
     });
+
+    console.log("✅ [SUCCESS] Chart berhasil dirender.");
+    console.groupEnd();
 }
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("ℹ️ DOM Loaded. Setup Event Listeners...");
+
+    const tabTrigger = document.getElementById('pills-rerata-ketepatan-response-tab');
+    if (tabTrigger) {
+        tabTrigger.addEventListener('shown.bs.tab', function () {
+            console.log(" Event: Tab Rata-rata Kecepatan Response diklik.");
+            const tahun = document.getElementById('tahun')?.value;
+            if (tahun) fetchRerataKetepatanResponseData();
+            else console.warn("⚠️ Tab diklik tapi Tahun belum dipilih.");
+        });
+    }
+
+    const tahunEl = document.getElementById('tahun');
+    if (tahunEl) {
+        tahunEl.addEventListener('change', function () {
+            console.log("👂 Event: Dropdown Tahun berubah.");
+            fetchRerataKetepatanResponseData();
+        });
+    }
+
+    const bulanEl = document.getElementById('filterMonthKetepatan');
+    if (bulanEl) {
+        bulanEl.addEventListener('change', function () {
+            console.log("👂 Event: Dropdown Bulan berubah.");
+            fetchRerataKetepatanResponseData();
+        });
+    }
+
+    // Auto-load jika tahun sudah terpilih
+    if (tahunEl && tahunEl.value) {
+        console.log("ℹ️ Auto-load data karena tahun sudah terpilih saat load.");
+        fetchRerataKetepatanResponseData();
+    }
+});
 
 
 // --- 2.5. JUMLAH PERMINTAAN PER BULAN ---
@@ -2676,14 +2886,145 @@ function renderPermintaanSeringDiajukanChart(labels, values) {
     });
 }
 
+// =========================================================
+// 📦 MODULE: SLA DIGITAL KREATIF (STANDALONE)
+
+const formatPercent = (val) => `${parseFloat(val).toFixed(1)}%`;
+const formatHours = (val) => `${parseFloat(val).toFixed(1)} Jam`;
+const formatValue = (val) => parseFloat(val).toFixed(0);
+const getSlaClass = (val) => (val >= 90 ? 'text-success' : (val >= 80 ? 'text-warning' : 'text-danger'));
+
+async function loadSlaDigital() {
+    console.log('🚀 [SLA Digital] Memuat data dari endpoint dashboardDigital()');
+
+    const $container = $('#sla-digital-container');
+    // Gunakan endpoint khusus digital yang sudah ada di controller
+    const baseUrl = $container.data('url') || '/dashboard-digital';
+
+    console.log('📡 [SLA Digital] Request URL:', baseUrl);
+
+    // Set Loading State
+    $('#digital_sla_period').text('Memuat periode data...');
+    $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg').text('...');
+    $('#digital-content-sla, #digital-content-total, #digital-weeks-met, #digital-weeks-total').text('...');
+    $('#digital-weekly-table-body').html('<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
+
+    try {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+        const response = await $.ajax({
+            url: baseUrl,
+            method: 'GET',
+            data: { start_date: startOfMonth, end_date: endOfMonth },
+            dataType: 'json',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            timeout: 15000
+        });
+
+        console.log('✅ [SLA Digital] Response diterima:', response);
+
+        // Validasi response
+        if (!response || !response.kpi) {
+            throw new Error('Response tidak memiliki field "kpi". Cek endpoint /dashboard-digital');
+        }
+
+        const { kpi, content_details } = response;
+
+        // 1. Update Header Periode
+        if (kpi.filters) {
+            const start = kpi.filters.start?.split(' ')[0] || '-';
+            const end = kpi.filters.end?.split(' ')[0] || '-';
+            $('#digital_sla_period').text(`Periode: ${start} s/d ${end}`);
+        }
+
+        // 2. Update SLA Ticketing (Support) - kanan
+        const resComp = parseFloat(kpi.ticket_resolution_compliance) || 0;
+        const respComp = parseFloat(kpi.ticket_response_compliance) || 0;
+        const avgTime = parseFloat(kpi.avg_resolution_time) || 0;
+
+        $('#digital-ticket-res-sla')
+            .text(`${resComp.toFixed(1)}%`)
+            .attr('class', `fs-2 fw-bold ${getSlaClass(resComp)}`);
+        $('#digital-ticket-resp-sla')
+            .text(`${respComp.toFixed(1)}%`)
+            .attr('class', `fs-2 fw-bold ${getSlaClass(respComp)}`);
+        $('#digital-ticket-avg').text(`${avgTime.toFixed(1)} Jam`);
+
+        // 3. Update SLA Konten - kiri (INI YANG BARU!)
+        const contentComp = parseFloat(kpi.content_sla_compliance) || 0;
+        const totalContent = parseInt(kpi.total_content_uploaded) || 0;
+        const weeksMet = parseInt(kpi.weeks_met) || 0;
+        const totalWeeks = parseInt(kpi.total_weeks_evaluated) || 0;
+
+        $('#digital-content-sla')
+            .text(`${contentComp.toFixed(1)}%`)
+            .attr('class', `fs-1 fw-bold ${getSlaClass(contentComp)}`);
+        $('#digital-content-total').text(totalContent);
+        $('#digital-weeks-met').text(weeksMet);
+        $('#digital-weeks-total').text(totalWeeks);
+
+        // 4. Render Tabel Mingguan dari content_details
+        renderDigitalWeeklyTable(content_details || []);
+
+        console.log('✅ [SLA Digital] Render selesai. Data:', {
+            ticketing: { resComp, respComp, avgTime },
+            content: { contentComp, totalContent, weeksMet, totalWeeks }
+        });
+
+    } catch (err) {
+        console.error('❌ [SLA Digital] Error:', err);
+        $('#digital_sla_period').html(`<span class="text-danger">⚠️ Gagal: ${err.message}</span>`);
+        $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg')
+            .text('-').addClass('text-muted');
+        $('#digital-content-sla, #digital-content-total, #digital-weeks-met, #digital-weeks-total')
+            .text('-').addClass('text-muted');
+        $('#digital-weekly-table-body')
+            .html(`<tr><td colspan="4" class="text-center py-3 text-danger">Error: ${err.message}</td></tr>`);
+    }
+}
+
+function renderDigitalWeeklyTable(data) {
+    const $tbody = $('#digital-weekly-table-body');
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        $tbody.html('<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada data mingguan</td></tr>');
+        return;
+    }
+
+    const rows = data.map(row => {
+        // Mapping field dari controller: week_range → period, count → uploads
+        const period = row.week_range || row.period || '-';
+        const uploads = row.count ?? row.uploads ?? 0;
+        const target = row.target ?? 3;
+        const status = row.status || '-';
+        const badgeClass = status === 'Met' ? 'bg-success' : (status === 'Missed' ? 'bg-warning text-dark' : 'bg-secondary');
+
+        return `
+            <tr>
+                <td>${period}</td>
+                <td class="text-center fw-bold">${uploads}</td>
+                <td class="text-center">${target}</td>
+                <td class="text-center"><span class="badge ${badgeClass}">${status}</span></td>
+            </tr>
+        `;
+    }).join('');
+
+    $tbody.html(rows);
+}
+
 $(document).ready(function () {
 
     // =======================================================================
     // 1. INISIALISASI & TAB LAMA
     // =======================================================================
 
+    initializeYearlySales();
+    initializeProjectTarget();
+
     // Inisialisasi dropdown filter bulan
-    if(typeof loadBulanFilter === 'function') {
+    if (typeof loadBulanFilter === 'function') {
         loadBulanFilter('#filterBulan');
         loadBulanFilter('#filterMonthPIC');
         loadBulanFilter('#filterMonth');
@@ -2704,6 +3045,14 @@ $(document).ready(function () {
     $('#pills-jumlah-permintaan-tab').on('shown.bs.tab', function () { fetchJumlahPermintaanPerBulanData(); });
     $('#pills-permintaan-sering-diajukan-tab').on('shown.bs.tab', function () { fetchPermintaanSeringDiajukanData(); });
 
+
+    $('#tahun').on('change', function () {
+        let year = $(this).val();
+        if (year) {
+            initializeYearlySales();
+            initializeProjectTarget(); // TAMBAHKAN INI
+        }
+    });
 
     // =======================================================================
     // 2. HELPER UMUM SLA
@@ -2972,7 +3321,7 @@ $(document).ready(function () {
                 activePill.data('loaded', true);
             }
 
-        // --- Logika Tab Lama (Legacy) ---
+            // --- Logika Tab Lama (Legacy) ---
         } else {
             if (!isLoaded) {
                 switch (activePillId) {
@@ -2987,7 +3336,6 @@ $(document).ready(function () {
             }
         }
     });
-
     // Trigger Awal
     setTimeout(() => {
         const activePill = $('#itsm-pills-tab .nav-link.active');
@@ -2995,4 +3343,31 @@ $(document).ready(function () {
         else $('#itsm-pills-tab button:first').trigger('shown.bs.tab');
     }, 50);
 
+});
+
+// =========================================================
+// 🔗 EVENT BINDING: TAB SLA DIGITAL (ROBUST)
+// =========================================================
+$(document).ready(function () {
+
+    // Binding event untuk tab SLA Digital
+    $('#pills-sla-digital-tab').on('shown.bs.tab', function () {
+        console.log('📌 [EVENT] Tab SLA Digital aktif!');
+        const $tab = $(this);
+        const isLoaded = $tab.data('loaded');
+
+        if (!isLoaded) {
+            console.log('🔄 Memanggil loadSlaDigital()...');
+            loadSlaDigital();
+            $tab.data('loaded', true);
+        }
+    });
+
+    // Auto-load jika tab sudah aktif saat halaman pertama kali dibuka
+    setTimeout(function () {
+        if ($('#pills-sla-digital-tab').hasClass('active') || $('#pills-sla-digital').hasClass('show active')) {
+            console.log('🚀 Auto-load SLA Digital karena tab aktif');
+            loadSlaDigital();
+        }
+    }, 600);
 });

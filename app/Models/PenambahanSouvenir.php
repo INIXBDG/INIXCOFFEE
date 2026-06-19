@@ -19,6 +19,7 @@ class PenambahanSouvenir extends Model
         'jabatan',
         'qty',
         'tanggal',
+        'tipe'
     ];
 
     /**

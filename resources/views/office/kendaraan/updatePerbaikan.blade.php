@@ -2,10 +2,27 @@
 
 @section('office_contents')
     @php
-        $isReadOnly = Auth::user()->jabatan !== 'Driver';
+        $isReadOnly = Auth::user()->jabatan !== 'Driver' && Auth::user()->jabatan !== 'HRD';
     @endphp
 
     <div class="container-fluid">
+
+        {{-- Alert Success --}}
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+        {{-- Alert error --}}
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="m-0">Detail & Edit Perbaikan Kendaraan</h3>
@@ -130,10 +147,10 @@
                             <label class="form-label fw-semibold">Estimasi Biaya</label>
 
                             <input type="text" id="estimasi_display" class="form-control"
-                                value="{{ old('estimasi', $perbaikan->estimasi) }}" @disabled($isReadOnly)>
+                                value="{{ old('estimasi_display', number_format($perbaikan->estimasi, 0, ',', '.')) }}" @disabled($isReadOnly)>
 
                             <input type="hidden" name="estimasi" id="estimasi"
-                                value="{{ old('estimasi', $perbaikan->estimasi) }}">
+                                value="{{ (int) $perbaikan->estimasi }}">
                         </div>
 
                         <select name="vendor" class="form-control" id="vendor">
@@ -246,6 +263,18 @@
                                     @disabled($isReadOnly) value="{{ $perbaikan->tanggal_perbaikan }}">
                             </div>
 
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Realisasi Biaya</label>
+
+                                <input type="text" id="harga_akhir_display" class="form-control"
+                                    value="{{ old('harga_akhir_display', number_format($perbaikan->harga_akhir ?? 0, 0, ',', '.')) }}" 
+                                    @disabled($isReadOnly)
+                                    placeholder="Masukkan realisasi biaya">
+                                
+                                <input type="hidden" name="harga_akhir" id="harga_akhir"
+                                    value="{{ (int) ($perbaikan->harga_akhir ?? 0) }}">
+                            </div>
+
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Deskripsi Perbaikan</label>
                                 <textarea name="deskripsi_perbaikan" class="form-control" rows="4" @disabled($isReadOnly)>{{ $perbaikan->deskripsi_perbaikan }}</textarea>
@@ -306,9 +335,21 @@
                             <a href="{{ route('office.indexPerbaikanKendaraan') }}" class="btn btn-light border">
                                 Batal
                             </a>
-                            <button type="submit" class="btn btn-primary px-4">
+
+                            <button type="submit" name="action" value="update" class="btn btn-primary px-4">
                                 <i class="fas fa-save"></i> Simpan Perubahan
                             </button>
+
+                            @if (!$perbaikan->pengajuanbarangs_id)
+                                <button type="submit" name="action" value="kirim_pengajuan" class="btn btn-success">
+                                    <i class="fas fa-paper-plane"></i> Kirim ke Pengajuan Barang
+                                </button>
+                            @else
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Data ini sudah terhubung dengan <strong>Pengajuan Barang #{{ $perbaikan->pengajuanbarangs_id }}</strong>
+                                </div>
+                            @endif
                         </div>
                     @else
                         <div class="alert alert-secondary mt-4 mb-0 text-center">
@@ -323,35 +364,59 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-
             const displayInput = document.getElementById('estimasi_display');
             const hiddenInput = document.getElementById('estimasi');
-
-            function formatRupiah(angka) {
-                return new Intl.NumberFormat('id-ID').format(angka);
+        
+            function formatToRupiah(angka) {
+                if (!angka) return '';
+                // Pastikan angka adalah string digit saja
+                let clean = String(angka).replace(/[^0-9]/g, '');
+                if (!clean) return '';
+                return new Intl.NumberFormat('id-ID').format(clean);
             }
-
-            function parseRupiah(rupiah) {
-                return rupiah.replace(/[^0-9]/g, '');
+        
+            function parseFromRupiah(rupiah) {
+                return String(rupiah).replace(/[^0-9]/g, '');
             }
-
-            if (displayInput.value) {
-                displayInput.value = formatRupiah(parseRupiah(displayInput.value));
+        
+            // Format nilai awal jika ada
+            if (hiddenInput.value) {
+                displayInput.value = formatToRupiah(hiddenInput.value);
             }
-
-            displayInput.addEventListener('input', function() {
-                let angka = parseRupiah(this.value);
-
-                hiddenInput.value = angka;
-
-                if (angka) {
-                    this.value = formatRupiah(angka);
-                } else {
-                    this.value = '';
-                }
+        
+            displayInput.addEventListener('input', function(e) {
+                let rawValue = parseFromRupiah(this.value);
+                hiddenInput.value = rawValue;
+                this.value = formatToRupiah(rawValue);
             });
-
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const displayInput = document.getElementById('harga_akhir_display');
+            const hiddenInput = document.getElementById('harga_akhir');
+
+            function formatToRupiah(angka) {
+                if (!angka || angka === '0') return '';
+                let clean = String(angka).replace(/[^0-9]/g, '');
+                if (!clean || clean === '0') return '';
+                return new Intl.NumberFormat('id-ID').format(clean);
+            }
+        
+            function parseFromRupiah(rupiah) {
+                return String(rupiah).replace(/[^0-9]/g, '');
+            }
+        
+            if (hiddenInput.value && hiddenInput.value !== '0') {
+                displayInput.value = formatToRupiah(hiddenInput.value);
+            }
+        
+            displayInput.addEventListener('input', function(e) {
+                let rawValue = parseFromRupiah(this.value);
+                hiddenInput.value = rawValue;
+                this.value = formatToRupiah(rawValue);
+            });
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             const typeCondition = document.getElementById('type_condition');
             const sectionKecelakaan = document.getElementById('sectionKecelakaan');

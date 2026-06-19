@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ApprovalPendapatan;
 use App\Models\Invoice;
 use App\Models\karyawan;
 use App\Models\Kwitansi;
@@ -83,7 +84,7 @@ public function index(): View
         ->get();
 
     // Data untuk tabel 'Sudah di-Invoice'
-    $invoicedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'invoice'])
+    $invoicedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'invoice', 'registrasi.peserta'])
         ->whereIn('id', $existingRKMs)
         ->orderBy('tanggal_awal', 'desc')
         ->get();
@@ -118,7 +119,7 @@ public function index(): View
      */
     public function create(string $id): View
     {
-        $rkm = RKM::with('perusahaan', 'materi', 'registrasi.peserta')->findOrFail($id);
+        $rkm = RKM::with('perusahaan', 'materi', 'registrasi.peserta', 'invoice')->findOrFail($id);
         return view('invoice.create', compact('rkm'));
     }
 
@@ -144,102 +145,201 @@ public function createKwitansi($invoiceId)
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(Request $request)
-    {
+public function store(Request $request)
+{
+    $request->validate([
+        'invoice_number' => 'required|string|max:255',
+        'tanggal_invoice' => 'required|date',
+        'due_date' => 'nullable|date',
+        'purchase_order' => 'nullable|string|max:255',
+        'id_rkm' => 'required|exists:r_k_m_s,id',
+        'amount' => 'required|numeric',
+        'unit_price' => 'nullable|numeric',
+        'pax' => 'nullable|integer',
+        'jumlah' => 'nullable|numeric',
+        'subtotal' => 'nullable|numeric',
+        'ppn' => 'nullable|numeric',
+        'pph' => 'nullable|numeric',
+        'total' => 'nullable|numeric',
+        'bank_name' => 'nullable|string|max:255',
+        'account_number' => 'nullable|string|max:50',
+        'terbilang' => 'nullable|string',
+        'peserta' => 'nullable|array',
+        'peserta.*' => 'nullable|string|max:255',
+        'is_peserta' => 'required|in:true,false',
+        'is_ttd' => 'required|in:true,false',
+        'materi' => 'required',
+    ]);
+
+    // Cek apakah sudah ada invoice dengan id_rkm yang sama
+    $existingInvoice = Invoice::where('id_rkm', $request->input('id_rkm'))->first();
+    $isUpdate = $existingInvoice !== null;
+
+    // Validasi unique invoice_number hanya saat create,
+    // atau saat update tapi invoice_number berubah
+    if (!$isUpdate) {
         $request->validate([
-            'invoice_number' => 'required|string|max:255|unique:invoices',
-            'tanggal_invoice' => 'required|date',
-            'due_date' => 'nullable|date',
-            'purchase_order' => 'nullable|string|max:255',
-            'id_rkm' => 'required|exists:r_k_m_s,id',
-            'amount' => 'required|numeric',
-            'unit_price' => 'nullable|numeric',
-            'pax' => 'nullable|integer',
-            'bank_name' => 'nullable|string|max:255',
-            'account_number' => 'nullable|string|max:50',
-            'terbilang' => 'nullable|string',
-            'peserta' => 'nullable|array',
-            'peserta.*' => 'nullable|string|max:255',
-            'is_peserta' => 'required|in:true,false',
-            'is_ttd' => 'required|in:true,false',
+            'invoice_number' => 'unique:invoices,invoice_number',
         ]);
-
-        $pesertaList = $request->input('peserta', []);
-
-        $isPeserta = $request->input('is_peserta') === 'true';
-        $isTtd = $request->input('is_ttd') === 'true';
-        $nama_perusahaan = $request->input('perusahaan');
-        $tanggal_awal = $request->input('tanggal_awal');
-        $tanggal_akhir = $request->input('tanggal_akhir');
-
-        $rkm = RKM::where('id', $request->id_rkm)->firstOrFail();
-        $duedate = $rkm->tanggal_akhir->addMonths(6)->toDateString();
-
-        $invoice = Invoice::create([
-            'invoice_number' => $request->input('invoice_number'),
-            'tanggal_invoice' => $request->input('tanggal_invoice'),
-            'due_date' => $duedate,
-            'purchase_order' => $request->input('purchase_order'),
-            'id_rkm' => $request->input('id_rkm'),
-            'amount' => $request->input('amount'),
-            'unit_price' => $request->input('unit_price'),
-            'pax' => $request->input('pax'),
-            'bank_name' => $request->input('bank_name'),
-            'account_number' => $request->input('account_number'),
-            'terbilang' => $request->input('terbilang'),
+    } elseif ($existingInvoice->invoice_number !== $request->input('invoice_number')) {
+        $request->validate([
+            'invoice_number' => 'unique:invoices,invoice_number,' . $existingInvoice->id,
         ]);
-
-        $outstanding = Outstanding::where('id_rkm', $request->input('id_rkm'))->first();
-
-        if ($outstanding) {
-            trackingOutstanding::where('id_outstanding', $outstanding->id)
-                ->update(['invoice' => 1]);
-
-            $outstanding->no_invoice = $request->input('invoice_number');
-            $outstanding->update();
-        }
-
-        return $this->downloadPdf($invoice->id, $pesertaList, $isPeserta, $isTtd, $nama_perusahaan, $tanggal_awal, $tanggal_akhir);
-
-        // return redirect()->route('invoice.index')->with(['success' => 'Invoice berhasil dibuat!']);
     }
+
+    $pesertaList    = $request->input('peserta', []);
+    $isPeserta      = $request->input('is_peserta') === 'true';
+    $isTtd          = $request->input('is_ttd') === 'true';
+    $materi         = $request->input('materi');
+    $pax            = $request->input('pax');
+    $isPPh          = $request->input('pph23');
+    $unit_price     = $request->input('unit_price');
+    $nama_perusahaan = $request->input('perusahaan');
+    $tanggal_awal   = $request->input('tanggal_awal');
+    $tanggal_akhir  = $request->input('tanggal_akhir');
+    $dueDateManual  = $request->input('due_date_manual');
+    $jumlah         = $request->input('jumlah');
+    $subtotal       = $request->input('subtotal');
+    $ppn            = $request->input('ppn');
+    $pph            = $request->input('pph');
+    $total          = $request->input('total');
+
+    $rkm     = RKM::where('id', $request->id_rkm)->firstOrFail();
+    $duedate = $rkm->tanggal_akhir->addMonths(6)->toDateString();
+
+    $invoiceData = [
+        'invoice_number' => $request->input('invoice_number'),
+        'tanggal_invoice' => $request->input('tanggal_invoice'),
+        'due_date'        => $duedate,
+        'purchase_order'  => $request->input('purchase_order'),
+        'id_rkm'          => $request->input('id_rkm'),
+        'amount'          => $request->input('pax') * $request->input('unit_price') + $ppn,
+        'unit_price'      => $request->input('unit_price'),
+        'pax'             => $request->input('pax'),
+        'jumlah'          => $jumlah,
+        'subtotal'        => $subtotal,
+        'ppn'             => $ppn,
+        'pph'             => $pph,
+        'total'           => $total,
+        'bank_name'       => $request->input('bank_name'),
+        'account_number'  => $request->input('account_number'),
+        'terbilang'       => $request->input('terbilang'),
+    ];
+
+    if ($isUpdate) {
+        $existingInvoice->update($invoiceData);
+        $approvalPendapatan = ApprovalPendapatan::where('id_rkm', $rkm->id)->firstOrFail();
+        $approvalPendapatan->id_rkm = $existingInvoice->id_rkm;
+        $approvalPendapatan->no_invoice = $existingInvoice->invoice_number;
+        $approvalPendapatan->PPN = $existingInvoice->ppn;
+        $approvalPendapatan->PPH = $existingInvoice->pph;
+        $approvalPendapatan->pax = $existingInvoice->pax;
+        $approvalPendapatan->harga_net = $existingInvoice->unit_price;
+        $approvalPendapatan->materi = $rkm->materi_key;
+        $approvalPendapatan->perusahaan = $rkm->perusahaan_key;
+        $approvalPendapatan->tanggal_mulai = $tanggal_awal;
+        $approvalPendapatan->tanggal_selesai = $tanggal_akhir;
+        $approvalPendapatan->save();
+        $invoice = $existingInvoice;
+    } else {
+        // dd($invoiceData);
+        $approvalPendapatan = new ApprovalPendapatan();
+        $approvalPendapatan->id_rkm = $rkm->id;
+        $approvalPendapatan->no_invoice = $request->input('invoice_number');
+        $approvalPendapatan->PPN = $invoiceData['ppn'];
+        $approvalPendapatan->PPH = $invoiceData['pph'];
+        $approvalPendapatan->pax = $invoiceData['pax'];
+        $approvalPendapatan->harga_net = $invoiceData['unit_price'];
+        $approvalPendapatan->materi = $rkm->materi_key;
+        $approvalPendapatan->perusahaan = $rkm->perusahaan_key;
+        $approvalPendapatan->tanggal_mulai = $tanggal_awal;
+        $approvalPendapatan->tanggal_selesai = $tanggal_akhir;
+        $approvalPendapatan->save();
+        $invoice = Invoice::create($invoiceData);
+    }
+
+    // Outstanding update — sama untuk keduanya
+    $outstanding = outstanding::where('id_rkm', $request->input('id_rkm'))->first();
+
+    if ($outstanding) {
+        trackingOutstanding::where('id_outstanding', $outstanding->id)
+            ->update(['invoice' => 1]);
+
+        $outstanding->no_invoice = $request->input('invoice_number');
+        $outstanding->update();
+    }
+
+    return $this->downloadPdf(
+        $invoice->id,
+        $pesertaList,
+        $isPeserta,
+        $isTtd,
+        $nama_perusahaan,
+        $tanggal_awal,
+        $tanggal_akhir,
+        $materi,
+        $unit_price,
+        $pax,
+        $isPPh,
+        $jumlah,
+        $subtotal,
+        $ppn,
+        $pph,
+        $total,
+        $dueDateManual,
+        $isUpdate,
+    );
+}
 
 public function storeKwitansi(Request $request)
 {
-    // Validasi data dari form
     $request->validate([
-        'invoice_id' => 'required|exists:invoices,id',
-        'tanggal_ttd' => 'nullable|date',
-        'nama_penandatangan' => 'nullable|string|max:255',
+        'invoice_id'            => 'required|exists:invoices,id',
+        'nomor_kwitansi'        => 'required|string|max:255',
+        'tanggal'               => 'nullable|date',
+        'tanggal_ttd'           => 'nullable|date',
+        'nama_penerima'         => 'nullable|string|max:255',
+        'keterangan'            => 'nullable|string',
+        'nama_penandatangan'    => 'nullable|string|max:255',
+        'tanggal_awal'          => 'nullable|date',
+        'tanggal_akhir'         => 'nullable|date',
+        'jumlah_uang'           => 'nullable|numeric',
+        'jumlah_peserta'        => 'nullable|integer',
     ]);
 
-    // Ambil invoice untuk mendapatkan id_rkm
     $invoice = Invoice::findOrFail($request->invoice_id);
 
-    // Cek apakah kwitansi untuk invoice ini sudah ada
     $existingKwitansi = Kwitansi::where('invoice_id', $request->invoice_id)->first();
+    $isUpdate = $existingKwitansi !== null;
 
-    if ($existingKwitansi) {
-        // Kalau sudah ada, bisa pilih update atau balikin pesan error
-        return redirect()
-            ->route('invoice.index')
-            ->with('error', 'Kwitansi untuk invoice ini sudah ada!');
-    }
-
-    // Siapkan data yang akan disimpan
     $kwitansiData = [
-        'id_rkm'         => $invoice->id_rkm,
-        'invoice_id'     => $request->invoice_id,
-        'tanggal_cetak'  => $request->tanggal_ttd,
-        'dicetak_oleh'   => $request->nama_penandatangan,
+        'id_rkm'        => $invoice->id_rkm,
+        'invoice_id'    => $request->invoice_id,
+        'tanggal_cetak' => $request->tanggal,
+        'dicetak_oleh'  => $request->nama_penandatangan,
     ];
 
-    // Simpan kwitansi baru
-    Kwitansi::create($kwitansiData);
+    if ($isUpdate) {
+        $existingKwitansi->update($kwitansiData);
+        $kwitansi = $existingKwitansi;
+    } else {
+        $kwitansi = Kwitansi::create($kwitansiData);
+    }
 
-    return redirect()
-        ->route('invoice.index')
-        ->with('success', 'Kwitansi berhasil dibuat!');
+    return $this->downloadPdfKwitansi(
+        $kwitansi->id,
+        $isUpdate,
+        $request->nomor_kwitansi,
+        $request->tanggal,
+        $request->tanggal_ttd,
+        $request->nama_penerima,
+        $request->keterangan,
+        $request->nama_penandatangan,
+        $request->tanggal_awal,
+        $request->tanggal_akhir,
+        $request->jumlah_uang,
+        $request->jumlah_peserta,
+    );
 }
 
 
@@ -476,78 +576,158 @@ public function exportExcel($id)
     }, $fileName);
 }
 
-    public function downloadPdf($id, $pesertaList = [], $isPeserta = false, $isTtd = false, $nama_perusahaan = null, $tanggal_awal = null, $tanggal_akhir = null)
-    {
-        $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta'])
-            ->findOrFail($id);
+public function downloadPdf(
+    $id,
+    $pesertaList = [],
+    $isPeserta = false,
+    $isTtd = false,
+    $nama_perusahaan = null,
+    $tanggal_awal = null,
+    $tanggal_akhir = null,
+    $materi = null,
+    $unit_price = null,
+    $pax = null,
+    $isPPh = false,
+    $jumlah = null,
+    $subtotal = null,
+    $ppn = null,
+    $pph = null,
+    $total = null,
+    $dueDateManual = null,
+    $isUpdate = false
+) {
+    $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta', 'rkm'])
+        ->findOrFail($id);
 
-        $terbilang = $this->formatTerbilang($invoice->amount);
-        $karyawan = Karyawan::findOrFail(22);
+    $pax = $pax ?? $invoice->pax ?? $invoice->rkm->pax ?? 0;
+    $jumlah = $jumlah ?? $invoice->jumlah ?? (($unit_price ?? 0) * $pax);
+    $subtotal = $subtotal ?? $invoice->subtotal ?? $jumlah;
+    $ppn = $ppn ?? $invoice->ppn ?? 0;
+    $pph = $pph ?? $invoice->pph ?? 0;
+    $total = $total ?? $invoice->total ?? ($subtotal + $ppn - $pph);
 
-        $fileName = preg_replace('/[\/\\\\]/', '-', $invoice->invoice_number) . '.pdf';
-        $filePath = 'invoice/' . $fileName;
+    $terbilang = $this->terbilang($total ?? 0);
+    $karyawan = Karyawan::findOrFail(22);
 
-        if (!empty($invoice->file_path) &&
-            Storage::disk('local')->exists($invoice->file_path)) {
+    $fileName = preg_replace('/[\/\\\\]/', '-', $invoice->invoice_number) . '.pdf';
+    $filePath = 'invoice/' . $fileName;
 
-            return response()->download(
-                storage_path('app/' . $invoice->file_path)
-            );
-        }
+    if ($isUpdate && !empty($invoice->file_path) &&
+        Storage::disk('local')->exists($invoice->file_path)) {
+        Storage::disk('local')->delete($invoice->file_path);
+        $invoice->file_path = null;
+    }
 
-        $pdf = Pdf::loadView('invoice.pdf', compact('invoice', 'terbilang', 'karyawan', 'pesertaList', 'isPeserta', 'isTtd', 'nama_perusahaan', 'tanggal_awal', 'tanggal_akhir'))
-            ->setPaper('a4', 'portrait')
-            ->setOptions([
-                'isRemoteEnabled' => true,
-                'isHtml5ParserEnabled' => true,
-                'enable_css_float' => true,
-                'enable_html5' => true,
-                'debugCss' => false,
-                'debugLayout' => false,
-                'chroot' => public_path(),
-                'dpi' => 96,
-            ]);
-
-        Storage::disk('local')->put($filePath, $pdf->output());
-
-        $invoice->file_path = $filePath;
-        $invoice->save();
-
+    if (!$isUpdate && !empty($invoice->file_path) &&
+        Storage::disk('local')->exists($invoice->file_path)) {
         return response()->download(
-            storage_path('app/' . $filePath)
+            storage_path('app/' . $invoice->file_path)
         );
     }
 
-
-public function downloadPdfKwitansi($id)
-{
-    $kwitansi = Kwitansi::with('invoice.rkm.perusahaan', 'invoice.rkm.materi', 'karyawan', 'invoice.rkm')->findOrFail($id);
-    $terbilang = format_terbilang($kwitansi->invoice->amount);
-    $karyawan = karyawan::find(22); 
-
-    $fileName = preg_replace('/[\/\\\\]/', '-', $kwitansi->invoice->invoice_number) . '.pdf';
-    $filePath = 'kwitansi/' . $fileName;
-
-    if (!empty($kwitansi->file_path) &&
-        Storage::disk('local')->exists($kwitansi->file_path)) {
-
-        return response()->download(
-            storage_path('app/' . $kwitansi->file_path)
-        );   
-    }
-    
-
-    $pdf = Pdf::loadView('kwitansi.pdf', compact('kwitansi', 'terbilang', 'karyawan'))
+    $pdf = Pdf::loadView('invoice.pdf', compact(
+        'invoice',
+        'terbilang',
+        'karyawan',
+        'pesertaList',
+        'isPeserta',
+        'isTtd',
+        'nama_perusahaan',
+        'tanggal_awal',
+        'tanggal_akhir',
+        'materi',
+        'unit_price',
+        'pax',
+        'isPPh',
+        'jumlah',
+        'subtotal',
+        'ppn',
+        'pph',
+        'total',
+        'dueDateManual'
+    ))
         ->setPaper('a4', 'portrait')
         ->setOptions([
             'isRemoteEnabled' => true,
             'isHtml5ParserEnabled' => true,
             'enable_css_float' => true,
-            'enable_html5' => true,    
+            'enable_html5' => true,
             'debugCss' => false,
             'debugLayout' => false,
             'chroot' => public_path(),
             'dpi' => 96,
+        ]);
+
+    Storage::disk('local')->put($filePath, $pdf->output());
+
+    $invoice->file_path = $filePath;
+    $invoice->save(); // Simpan path file ke database
+
+    return response()->download(
+        storage_path('app/' . $filePath)
+    );
+}
+
+public function downloadPdfKwitansi(
+    $id,
+    $isUpdate          = false,
+    $nomor_kwitansi    = null,
+    $tanggal           = null,
+    $tanggal_ttd       = null,
+    $nama_penerima     = null,
+    $keterangan        = null,
+    $nama_penandatangan    = null,
+    $tanggal_awal    = null,
+    $tanggal_akhir    = null,
+    $jumlah_uang    = null,
+    $jumlah_peserta    = null,
+    ) {
+    $kwitansi  = Kwitansi::with('invoice.rkm.perusahaan', 'invoice.rkm.materi', 'karyawan', 'invoice.rkm')->findOrFail($id);
+    $terbilang = format_terbilang($jumlah_uang);
+    $karyawan  = Karyawan::find(22);
+
+    $fileName = preg_replace('/[\/\\\\]/', '-', $kwitansi->invoice->invoice_number) . '.pdf';
+    $filePath = 'kwitansi/' . $fileName;
+
+    if ($isUpdate && !empty($kwitansi->file_path) &&
+        Storage::disk('local')->exists($kwitansi->file_path)) {
+        Storage::disk('local')->delete($kwitansi->file_path);
+        $kwitansi->file_path = null;
+    }
+
+    if (!$isUpdate && !empty($kwitansi->file_path) &&
+        Storage::disk('local')->exists($kwitansi->file_path)) {
+        return response()->download(
+            storage_path('app/' . $kwitansi->file_path)
+        );
+    }
+
+    $pdf = Pdf::loadView('kwitansi.pdf', compact(
+        'kwitansi',
+        'terbilang',
+        'karyawan',
+        'nomor_kwitansi',
+        'tanggal',
+        'tanggal_ttd',
+        'nama_penerima',
+        'keterangan',
+        'nama_penandatangan',
+        'tanggal_awal',
+        'tanggal_akhir',
+        'terbilang',
+        'jumlah_uang',
+        'jumlah_peserta',
+    ))
+        ->setPaper('a4', 'portrait')
+        ->setOptions([
+            'isRemoteEnabled'      => true,
+            'isHtml5ParserEnabled' => true,
+            'enable_css_float'     => true,
+            'enable_html5'         => true,
+            'debugCss'             => false,
+            'debugLayout'          => false,
+            'chroot'               => public_path(),
+            'dpi'                  => 96,
         ]);
 
     Storage::disk('local')->put($filePath, $pdf->output());
@@ -559,43 +739,38 @@ public function downloadPdfKwitansi($id)
         storage_path('app/' . $filePath)
     );
 }
-
 private function formatTerbilang($amount)
 {
-    $bilangan = [
-        '', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan',
-        'sepuluh', 'sebelas'
-    ];
-    $satuan = ['', 'ribu', 'juta', 'miliar'];
+    $nilai = abs($amount);
+    $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
 
-    $amount = (int)$amount;
-    if ($amount < 0) return 'Minus ' . $this->formatTerbilang(abs($amount));
-    if ($amount == 0) return 'Nol rupiah';
-
-    $words = '';
-    $i = 0;
-    while ($amount > 0) {
-        $part = $amount % 1000;
-        if ($part > 0) {
-            $partWords = '';
-            if ($part < 12) {
-                $partWords = $bilangan[$part];
-            } elseif ($part < 20) {
-                $partWords = $bilangan[$part - 10] . ' belas';
-            } elseif ($part < 100) {
-                $puluhan = floor($part / 10);
-                $sisaSatuan  = $part % 10;
-                $partWords = $bilangan[$puluhan] . ' puluh ' . ($sisaSatuan  > 0 ? $bilangan[$sisaSatuan ] : '');
-            } else {
-                $ratusan = floor($part / 100);
-                $sisa = $part % 100;
-                $partWords = $bilangan[$ratusan] . ' ratus ' . ($sisa > 0 ? $this->formatTerbilang($sisa) : '');
-            }
-            $words = trim($partWords . ' ' . $satuan[$i] . ' ' . $words);
-        }
-        $amount = floor($amount / 1000);
-        $i++;
+    if ($nilai < 12) {
+        return " " . $huruf[$nilai];
+    } elseif ($nilai < 20) {
+        return $this->formatTerbilang($nilai - 10) . " belas";
+    } elseif ($nilai < 100) {
+        return $this->formatTerbilang($nilai / 10) . " puluh" . $this->formatTerbilang($nilai % 10);
+    } elseif ($nilai < 200) {
+        return " seratus" . $this->formatTerbilang($nilai - 100);
+    } elseif ($nilai < 1000) {
+        return $this->formatTerbilang($nilai / 100) . " ratus" . $this->formatTerbilang($nilai % 100);
+    } elseif ($nilai < 2000) {
+        return " seribu" . $this->formatTerbilang($nilai - 1000);
+    } elseif ($nilai < 1000000) {
+        return $this->formatTerbilang($nilai / 1000) . " ribu" . $this->formatTerbilang($nilai % 1000);
+    } elseif ($nilai < 1000000000) {
+        return $this->formatTerbilang($nilai / 1000000) . " juta" . $this->formatTerbilang($nilai % 1000000);
     }
-    return ucwords(trim($words)) . ' rupiah';
+
+    return "";
+}
+
+public function terbilang($nilai)
+{
+    if ($nilai < 0) {
+        return "Minus " . trim($this->formatTerbilang($nilai)) . " Rupiah";
+    }
+
+    return ucwords(trim($this->formatTerbilang($nilai))) . " Rupiah";
 }
 }

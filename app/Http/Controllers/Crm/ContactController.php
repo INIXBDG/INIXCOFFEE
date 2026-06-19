@@ -256,7 +256,6 @@ class ContactController extends Controller
 
     public function update($id, Request $request)
     {
-        // Validasi input request
         $validated = $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
             'kategori_perusahaan' => 'required|string|max:255',
@@ -272,7 +271,19 @@ class ContactController extends Controller
 
         $contact = Perusahaan::findOrFail($id);
 
-        // Update atribut dari data yang sudah tervalidasi
+        if (!empty($contact->status) && $contact->status !== $validated['status']) {
+            $historyStatus = $contact->history_status_array;
+
+            $historyStatus[] = [
+                'status_lama' => $contact->status,
+                'status_baru' => $validated['status'],
+                'waktu_perubahan' => now()->toDateTimeString(),
+                'diubah_oleh' => auth()->check() ? auth()->user()->id_sales : 'sistem'
+            ];
+
+            $contact->history_status = json_encode($historyStatus);
+        }
+
         $contact->nama_perusahaan = $validated['nama_perusahaan'];
         $contact->kategori_perusahaan = $validated['kategori_perusahaan'];
         $contact->email = $validated['email'];
@@ -283,22 +294,130 @@ class ContactController extends Controller
         $contact->no_telp = $validated['no_telp'] ?? $contact->no_telp;
         $contact->cp = $validated['cp'] ?? $contact->cp;
 
-        // Upload file jika ada unggahan baru
         if ($request->hasFile('foto_npwp')) {
             $file = $request->file('foto_npwp');
             $extension = $file->getClientOriginalExtension();
             $filename = $validated['nama_perusahaan'] . '_npwp.' . $extension;
             $file->storeAs('public/npwp', $filename);
-
-            // Simpan path file ke kolom foto_npwp
             $contact->foto_npwp = 'npwp/' . $filename;
         }
 
-        // Simpan perubahan ke database
         $contact->save();
 
         return back()->with([
             'message' => 'Kontak berhasil diperbarui.',
+        ]);
+    }
+
+    public function allHistoryStatus()
+    {
+        // Mengambil semua data perusahaan yang memiliki riwayat status
+        $perusahaans = Perusahaan::whereNotNull('history_status')->get();
+
+        $totalConversionDays = 0;
+        $conversionCount = 0;
+        $transitionRate = [];
+        $userPerformance = [];
+        $timeBasedTrends = [];
+
+        // Melakukan iterasi pada setiap perusahaan untuk mengkalkulasi analitik
+        foreach ($perusahaans as $perusahaan) {
+            $history = $perusahaan->history_status_array;
+
+            // 1. Mengkalkulasi Durasi Konversi Status (Lead Time)
+            if (count($history) > 1) {
+                $firstDate = strtotime($history[0]['waktu_perubahan']);
+                $lastDate = strtotime(end($history)['waktu_perubahan']);
+                $diffDays = ($lastDate - $firstDate) / (60 * 60 * 24);
+                $totalConversionDays += $diffDays;
+                $conversionCount++;
+            }
+
+            foreach ($history as $item) {
+                $lama = $item['status_lama'] ?? '-';
+                $baru = $item['status_baru'] ?? '-';
+                $user = $item['diubah_oleh'] ?? '-';
+                $waktu = date('Y-m-d', strtotime($item['waktu_perubahan']));
+
+                // 2. Mengkalkulasi Rasio Transisi Status
+                $transitionKey = $lama . ' -> ' . $baru;
+                if (!isset($transitionRate[$transitionKey])) {
+                    $transitionRate[$transitionKey] = 0;
+                }
+                $transitionRate[$transitionKey]++;
+
+                // 4. Mengkalkulasi Volume Aktivitas Berdasarkan Tanggal
+                if (!isset($timeBasedTrends[$waktu])) {
+                    $timeBasedTrends[$waktu] = 0;
+                }
+                $timeBasedTrends[$waktu]++;
+            }
+        }
+
+        // Memformat hasil kalkulasi
+        $averageConversionDays = $conversionCount > 0 ? round($totalConversionDays / $conversionCount, 2) : 0;
+
+        arsort($transitionRate);
+        arsort($userPerformance);
+        ksort($timeBasedTrends);
+
+        return view('crm.contact.all_history_status', compact(
+            'averageConversionDays',
+            'transitionRate',
+            'timeBasedTrends'
+        ));
+    }
+
+    public function allHistoryStatusData(Request $request)
+    {
+        // Mengambil semua data perusahaan yang memiliki riwayat status
+        $perusahaans = Perusahaan::whereNotNull('history_status')->get();
+
+        $allHistory = [];
+
+        // Menggabungkan seluruh data riwayat status ke dalam satu array
+        foreach ($perusahaans as $perusahaan) {
+            $historyArray = $perusahaan->history_status_array;
+
+            foreach ($historyArray as $history) {
+                $allHistory[] = [
+                    'waktu_perubahan' => $history['waktu_perubahan'] ?? null,
+                    'nama_perusahaan' => $perusahaan->nama_perusahaan,
+                    'status_lama' => $history['status_lama'] ?? '-',
+                    'status_baru' => $history['status_baru'] ?? '-'
+                ];
+            }
+        }
+
+        // Mengurutkan data secara default berdasarkan waktu perubahan terbaru
+        usort($allHistory, function ($a, $b) {
+            return strtotime($b['waktu_perubahan']) - strtotime($a['waktu_perubahan']);
+        });
+
+        // Memproses fitur pencarian global DataTables
+        $searchValue = $request->input('search.value');
+        if (!empty($searchValue)) {
+            $allHistory = array_filter($allHistory, function ($item) use ($searchValue) {
+                return false !== strpos(strtolower($item['nama_perusahaan']), strtolower($searchValue)) ||
+                    false !== strpos(strtolower($item['status_lama']), strtolower($searchValue)) ||
+                    false !== strpos(strtolower($item['status_baru']), strtolower($searchValue));
+            });
+            $allHistory = array_values($allHistory);
+        }
+
+        $totalRecords = count($allHistory);
+
+        // Memproses batasan paginasi (Server-side Slicing)
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        $slicedData = array_slice($allHistory, $start, $length);
+
+        // Mengembalikan respons berformat JSON sesuai dengan spesifikasi DataTables
+        return response()->json([
+            'draw' => intval($request->input('draw')),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+            'data' => $slicedData
         ]);
     }
 }

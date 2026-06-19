@@ -175,8 +175,20 @@ class feedbackController extends Controller
             })
             ->get();
 
+		
         // Transform the feedback data
         $transformedFeedbacks = $feedbacks->map(function ($feedback) {
+			$avg = function (array $values) {
+				$filtered = array_filter($values, function ($v) {
+					return !is_null($v);
+				});
+
+				$count = count($filtered);
+
+				if ($count === 0) return null;
+
+				return round(array_sum($filtered) / $count, 1);
+			};
             return [
                 'id_regist' => $feedback->id_regist,
                 'id_rkm' => $feedback->id_rkm,
@@ -189,12 +201,33 @@ class feedbackController extends Controller
                 'tanggal_akhir' => $feedback->rkm->tanggal_akhir,
                 'email' => $feedback->email,
                 'nama_perusahaan' => $feedback->rkm->perusahaan->nama_perusahaan,
-                'materi' => round(($feedback->M1 + $feedback->M2 + $feedback->M3 + $feedback->M4) / 4, 1),
-                'pelayanan' => round(($feedback->P1 + $feedback->P2 + $feedback->P3 + $feedback->P4 + $feedback->P5 + $feedback->P6 + $feedback->P7) / 7, 1),
-                'fasilitas' => round(($feedback->F1 + $feedback->F2 + $feedback->F3 + $feedback->F4 + $feedback->F5) / 5, 1),
-                'instruktur' => round(($feedback->I1 + $feedback->I2 + $feedback->I3 + $feedback->I4 + $feedback->I5 + $feedback->I6 + $feedback->I7 + $feedback->I8) / 8, 1),
-                'instruktur2' => round(($feedback->I1b + $feedback->I2b + $feedback->I3b + $feedback->I4b + $feedback->I5b + $feedback->I6b + $feedback->I7b + $feedback->I8b) / 8, 1),
-                'asisten' => round(($feedback->I1as + $feedback->I2as + $feedback->I3as + $feedback->I4as + $feedback->I5as + $feedback->I6as + $feedback->I7as + $feedback->I8as) / 8, 1),
+                'materi' => $avg([
+					$feedback->M1, $feedback->M2, $feedback->M3, $feedback->M4
+				]),
+
+				'pelayanan' => $avg([
+					$feedback->P1, $feedback->P2, $feedback->P3, $feedback->P4,
+					$feedback->P5, $feedback->P6, $feedback->P7
+				]),
+
+				'fasilitas' => $avg([
+					$feedback->F1, $feedback->F2, $feedback->F3, $feedback->F4, $feedback->F5
+				]),
+
+				'instruktur' => $avg([
+					$feedback->I1, $feedback->I2, $feedback->I3, $feedback->I4,
+					$feedback->I5, $feedback->I6, $feedback->I7, $feedback->I8
+				]),
+
+				'instruktur2' => $avg([
+					$feedback->I1b, $feedback->I2b, $feedback->I3b, $feedback->I4b,
+					$feedback->I5b, $feedback->I6b, $feedback->I7b, $feedback->I8b
+				]),
+
+				'asisten' => $avg([
+					$feedback->I1as, $feedback->I2as, $feedback->I3as, $feedback->I4as,
+					$feedback->I5as, $feedback->I6as, $feedback->I7as, $feedback->I8as
+				]),
                 'umum1' => $feedback->U1,
                 'umum2' => $feedback->U2,
                 'datafeedbacks' => $feedback,

@@ -16,9 +16,9 @@
             font-size: 8pt;
             color: #1F2937;
             background: #fff;
+            line-height: 1.3;
         }
 
-        /* ── Header ─────────────────────────────────── */
         .doc-header {
             background: #2F5496;
             color: #fff;
@@ -54,7 +54,6 @@
             color: #2F5496;
         }
 
-        /* ── Section ─────────────────────────────────── */
         .section-title {
             background: #8EA9DB;
             color: #fff;
@@ -68,7 +67,6 @@
             letter-spacing: .4px;
         }
 
-        /* ── Tabel ────────────────────────────────────── */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -106,7 +104,6 @@
             text-align: center;
         }
 
-        /* ── Progress bar ───────────────────────────── */
         .pb-wrap {
             background: #e9ecef;
             border-radius: 4px;
@@ -135,7 +132,6 @@
             background: #6c757d;
         }
 
-        /* ── Status text ────────────────────────────── */
         .s-selesai {
             color: #155724;
             font-weight: bold;
@@ -156,7 +152,6 @@
             font-weight: bold;
         }
 
-        /* ── Alignment ──────────────────────────────── */
         .tc {
             text-align: center;
         }
@@ -169,7 +164,6 @@
             text-align: left;
         }
 
-        /* ── Layout 2 kolom ─────────────────────────── */
         .two-col {
             width: 100%;
             border-collapse: collapse;
@@ -190,7 +184,6 @@
             padding-left: 5px;
         }
 
-        /* ── Page break ─────────────────────────────── */
         .page-break {
             page-break-after: always;
         }
@@ -199,7 +192,6 @@
             page-break-inside: avoid;
         }
 
-        /* ── Footer ─────────────────────────────────── */
         .footer {
             margin-top: 14px;
             border-top: 1px solid #4472C4;
@@ -208,14 +200,36 @@
             color: #6B7280;
             text-align: center;
         }
+
+        .grade-sangat-baik {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .grade-baik {
+            color: #20c997;
+            font-weight: bold;
+        }
+
+        .grade-cukup {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        .grade-kurang {
+            color: #fd7e14;
+            font-weight: bold;
+        }
+
+        .grade-sangat-kurang {
+            color: #dc3545;
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
 
-    {{-- ═══════════════════════════════════════════════════ --}}
-    {{-- HEADER                                              --}}
-    {{-- ═══════════════════════════════════════════════════ --}}
     <div class="doc-header">
         <h1>Monitoring KPI — {{ $karyawan->nama_lengkap ?? '-' }}</h1>
         <p>Jabatan: {{ $karyawan->jabatan ?? '-' }} &nbsp;|&nbsp; Divisi: {{ $karyawan->divisi ?? '-' }} &nbsp;|&nbsp;
@@ -229,10 +243,6 @@
         <span><strong>Dicetak:</strong> {{ now()->format('d/m/Y H:i') }}</span>
     </div>
 
-    {{-- ═══════════════════════════════════════════════════ --}}
-    {{-- TABEL DAFTAR TARGET KPI                             --}}
-    {{-- (Kolom identik dengan index blade)                  --}}
-    {{-- ═══════════════════════════════════════════════════ --}}
     <div class="section-title">Daftar Target KPI — Tahun {{ $tahun }}</div>
     <div class="avoid-break">
         <table>
@@ -265,35 +275,47 @@
                             'Belum Dimulai' => 'pb-belum',
                             default => 'pb-progress',
                         };
+                        $gradeClass = match (
+                            $t['progress_persen'] >= 100
+                                ? 'Sangat Baik'
+                                : ($t['progress_persen'] >= 80
+                                    ? 'Baik'
+                                    : ($t['progress_persen'] >= 70
+                                        ? 'Cukup'
+                                        : ($t['progress_persen'] >= 60
+                                            ? 'Kurang'
+                                            : 'Sangat Kurang')))
+                        ) {
+                            'Sangat Baik' => 'grade-sangat-baik',
+                            'Baik' => 'grade-baik',
+                            'Cukup' => 'grade-cukup',
+                            'Kurang' => 'grade-kurang',
+                            default => 'grade-sangat-kurang',
+                        };
                     @endphp
                     <tr>
                         <td class="tc">{{ $idx + 1 }}</td>
                         <td class="tl" style="font-weight:600;">{{ $t['judul'] }}</td>
                         <td class="tc">{{ $t['jangka_target'] }}</td>
-                        <td class="tc">
-                            <span class="{{ $statusClass }}">{{ $t['status'] }}</span>
-                        </td>
+                        <td class="tc"><span class="{{ $statusClass }}">{{ $t['status'] }}</span></td>
                         <td class="tc">{{ $t['nilai_target_fmt'] }}</td>
                         <td class="tc">{{ $t['jabatan'] }}</td>
                         <td class="tc">{{ $t['divisi'] }}</td>
                         <td class="tl">{{ $t['pembuat'] }}</td>
                         <td>
-                            {{-- Progress bar + display value (sama dengan index blade) --}}
                             <div class="pb-wrap">
                                 <div class="pb-fill {{ $pbClass }}" style="width:{{ $t['length_progress'] }}%">
                                 </div>
                             </div>
-                            <small class="tc" style="display:block;font-size:6.5pt;margin-top:1px;">
-                                {{ $t['progress_display'] }}
-                            </small>
+                            <small class="tc"
+                                style="display:block;font-size:6.5pt;margin-top:1px;">{{ $t['progress_display'] }}</small>
                         </td>
                         <td class="tc" style="font-size:6.5pt;">{{ $t['tenggat_waktu'] }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="tc" style="color:#888;font-style:italic;padding:8px;">
-                            Tidak ada data KPI.
-                        </td>
+                        <td colspan="10" class="tc" style="color:#888;font-style:italic;padding:8px;">Tidak ada
+                            data KPI.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -302,9 +324,6 @@
 
     <div class="page-break"></div>
 
-    {{-- ═══════════════════════════════════════════════════ --}}
-    {{-- REKAP BULANAN + INDIKATOR KEBERHASILAN              --}}
-    {{-- ═══════════════════════════════════════════════════ --}}
     <div class="doc-header">
         <h1>Rekap & Analisa KPI — {{ $karyawan->nama_lengkap ?? '-' }} ({{ $tahun }})</h1>
     </div>
@@ -312,7 +331,6 @@
 
     <table class="two-col" style="border:none;">
         <tr>
-            {{-- Kiri: Rekap Bulanan --}}
             <td class="col-l">
                 <div class="section-title">Rekap Bulanan</div>
                 <table>
@@ -360,8 +378,6 @@
                     </tfoot>
                 </table>
             </td>
-
-            {{-- Kanan: Indikator + Penilaian --}}
             <td class="col-r">
                 <div class="section-title">Indikator Keberhasilan</div>
                 <table style="margin-bottom:8px;">
@@ -428,9 +444,6 @@
         </tr>
     </table>
 
-    {{-- ═══════════════════════════════════════════════════ --}}
-    {{-- ANALISA PENGAMBILAN TARGET                          --}}
-    {{-- ═══════════════════════════════════════════════════ --}}
     <div class="section-title">Analisa Pengambilan Target (Tahun {{ $tahun }})</div>
     <table>
         <thead>
@@ -478,9 +491,91 @@
         </tfoot>
     </table>
 
-    {{-- ═══════════════════════════════════════════════════ --}}
-    {{-- FOOTER                                              --}}
-    {{-- ═══════════════════════════════════════════════════ --}}
+    <div class="page-break"></div>
+
+    <div class="section-title">Rekap Per Kuartal</div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:10%">No</th>
+                <th style="width:30%">Kuartal</th>
+                <th style="width:20%">Rata-rata %</th>
+                <th style="width:20%">Total %</th>
+                <th style="width:20%">Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($rekap_per_quarter as $idx => $q)
+                @php
+                    $gradeQ =
+                        $q['rata_rata'] >= 100
+                            ? 'Sangat Baik'
+                            : ($q['rata_rata'] >= 80
+                                ? 'Baik'
+                                : ($q['rata_rata'] >= 70
+                                    ? 'Cukup'
+                                    : ($q['rata_rata'] >= 60
+                                        ? 'Kurang'
+                                        : 'Sangat Kurang')));
+                    $gradeClassQ = match ($gradeQ) {
+                        'Sangat Baik' => 'grade-sangat-baik',
+                        'Baik' => 'grade-baik',
+                        'Cukup' => 'grade-cukup',
+                        'Kurang' => 'grade-kurang',
+                        default => 'grade-sangat-kurang',
+                    };
+                @endphp
+                <tr>
+                    <td class="tc">{{ $idx + 1 }}</td>
+                    <td class="tl">{{ $q['label'] }} - {{ $q['periode'] }}</td>
+                    <td class="tc">{{ $q['rata_rata'] }}%</td>
+                    <td class="tc">{{ $q['total'] }}%</td>
+                    <td class="tc {{ $gradeClassQ }}">{{ $gradeQ }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    <div class="section-title">Distribusi Grade KPI</div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:30%">Grade</th>
+                <th style="width:30%">Range Nilai</th>
+                <th style="width:20%">Jumlah Target</th>
+                <th style="width:20%">Visual</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php
+                $grades = [
+                    ['Sangat Baik', '≥ 100%', 'grade-sangat-baik'],
+                    ['Baik', '80% - 99%', 'grade-baik'],
+                    ['Cukup', '70% - 79%', 'grade-cukup'],
+                    ['Kurang', '60% - 69%', 'grade-kurang'],
+                    ['Sangat Kurang', '< 60%', 'grade-sangat-kurang'],
+                ];
+            @endphp
+            @foreach ($grades as $g)
+                @php
+                    $count = $grade_distribution[$g[0]] ?? 0;
+                    $totalTargets = count($tabel_target) ?: 1;
+                    $barWidth = min(($count / $totalTargets) * 100, 100);
+                @endphp
+                <tr>
+                    <td class="tl {{ $g[2] }}">{{ $g[0] }}</td>
+                    <td class="tc">{{ $g[1] }}</td>
+                    <td class="tc">{{ $count }}</td>
+                    <td>
+                        <div class="pb-wrap">
+                            <div class="pb-fill pb-progress" style="width:{{ $barWidth }}%"></div>
+                        </div>
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+
     <div class="footer">
         Dokumen ini dicetak otomatis oleh Sistem Monitoring KPI &nbsp;|&nbsp;
         {{ now()->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }} WIB &nbsp;|&nbsp;

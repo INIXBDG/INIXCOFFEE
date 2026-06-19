@@ -13,6 +13,7 @@ class DokumentasiExam extends Model
         'id_registrasi',
         'nama_exam',
         'tanggal_pelaksanaan',
+        'jam_pelaksanaan',
         'skor',
         'dokumentasi',
         'invoice',

@@ -6,8 +6,61 @@
     @endphp
 
     <div class="content-wrapper">
+        @if(session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <div class="modal fade" id="modalRestore" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Tabungan Prospek</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formRestorePeluang">
+                            <input type="hidden" id="restore_id_peluang">
+
+                            <div class="mb-3">
+                                <label class="form-label">Ubah ke Tahap</label>
+                                <select class="form-select" id="restore_tahap" required>
+                                    <option value="biru">Biru</option>
+                                    <option value="merah">Merah</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Harga (Rp)</label>
+                                <input type="number" class="form-control" id="restore_harga" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Pax</label>
+                                <input type="number" class="form-control" id="restore_pax" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Periode Mulai</label>
+                                <input type="date" class="form-control" id="restore_periode_mulai" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Periode Selesai</label>
+                                <input type="date" class="form-control" id="restore_periode_selesai" required>
+                            </div>
+
+                            <div class="text-end mt-4">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button type="button" class="btn btn-success" onclick="prosesRestore()">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="container-xxl flex-grow-1 container-p-y">
-            <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Prospect Management</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
@@ -16,12 +69,45 @@
                 </button>
             </div>
 
-            <!-- Tabel Peluang -->
-            <div class="card ">
-                <div class="card-body">
+            <div class="card mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0 text-primary">Data Prospek</h5>
+                </div>
+                <div class="card-body mt-3">
                     <div class="table-responsive">
-                        <table id="peluangTable" class="table table-bordered table-hover">
+                        <table id="peluangTable" class="table table-bordered table-hover w-100">
                             <thead class="table-primary">
+                                <tr>
+                                    <th style="text-align:center;">No</th>
+                                    <th style="text-align: center;">Materi</th>
+                                    <th style="text-align: center;">Client</th>
+                                    <th style="text-align: center;">Event</th>
+                                    <th style="text-align: center;">Harga (Rp)</th>
+                                    <th style="text-align: center;">Net Sales</th>
+                                    <th style="text-align: center;">Pax</th>
+                                    <th style="text-align: center;">Periode</th>
+                                    <th style="text-align: center;">Exam</th>
+                                    <th style="text-align: center;">Tahap</th>
+                                    <th style="text-align: center;">Sales</th>
+                                    <th style="text-align: center;">Prospek Terbuat</th>
+                                    <th style="text-align: center;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0 text-info">Tabungan Prospek</h5>
+                </div>
+                <div class="card-body mt-3">
+                    <div class="table-responsive">
+                        <table id="peluangLostTable" class="table table-bordered table-hover w-100">
+                            <thead class="table-info">
                                 <tr>
                                     <th style="text-align:center;">No</th>
                                     <th style="text-align: center;">Materi</th>
@@ -209,125 +295,166 @@
         });
 
         $(document).ready(function() {
-            let table = $('#peluangTable').DataTable({
-                processing: true,
-                ajax: {
-                    url: '{{ route('index.peluang.json') }}',
-                    dataSrc: function(json) {
-                        console.log("Data dari server:", json);
-                        return json.data;
-                    },
-                    error: function(xhr, error, thrown) {
-                        alert('Gagal memuat data peluang: ' + thrown);
+            // 1. Konfigurasi Kolom yang digunakan bersama oleh kedua tabel
+            const tableColumns = [
+                { data: null, className: "text-center", orderable: false, searchable: false },
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        return row.materi_relation?.nama_materi || '-';
                     }
                 },
-                columns: [
-                    { data: null, className: "text-center", orderable: false, searchable: false }, // nomor urut
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            return row.materi_relation?.nama_materi || '-';
-                        }
-                    },
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            const namaPerusahaan = row.rkm_data?.perusahaan?.nama_perusahaan || '-';
-                            const cp = row.rkm_data?.perusahaan?.cp;
-                            return cp ? namaPerusahaan + ' (' + cp + ')' : namaPerusahaan;
-                        }
-                    },
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            if (row.rkm?.event == null) {
-                                return '-';
-                            }
-                        return row.rkm.event.charAt(0).toUpperCase() + row.rkm.event.slice(1);
-                        }
-                    },
-                    {
-                        data: 'harga',
-                        render: function(data, type, row) {
-                            return data ? 'Rp ' + parseInt(data).toLocaleString('id-ID') : 'Rp 0';
-                        }
-                    },
-                    {
-                        data: 'netsales',
-                        render: function(data, type, row) {
-                            return data ? 'Rp ' + parseInt(data).toLocaleString('id-ID') : 'Rp 0,00';
-                        }
-                    },
-                    { data: 'pax' },
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            const startDate = data.periode_mulai ? moment(data.periode_mulai).format('DD-MM-YYYY') : '';
-                            const endDate = data.periode_selesai ? moment(data.periode_selesai).format('DD-MM-YYYY') : '';
-                            return startDate && endDate ? `${startDate} s/d ${endDate}` : 'Tentatif';
-                        }
-                    },
-                    {
-                        data: 'Exam',
-                        render: function(data, type, row) {
-                            if (row.rkm?.exam == null) {
-                                return '-';
-                            }
-                            return row.rkm.exam == 1 ? 'Ya' : 'Tidak';
-                        }
-                    },
-                    {
-                        data: 'tahap',
-                        render: function(data, type, row) {
-                            return data ? data.charAt(0).toUpperCase() + data.slice(1) : '-';
-                        }
-                    },
-                    { data: 'id_sales' },
-                    {
-                        data: 'created_at',
-                        render: function(data, type, row) {
-                            return data ? moment(data).format('DD-MM-YYYY') : '-';
-                        }
-                    },
-                    {
-                        data: 'id',
-                        render: function(id, type, data) {
-                            const rkm = data.rkm_formatted;
-                            const isLost = data.tahap?.toLowerCase() === 'lost';
-                            const isMerah = data.tahap === 'merah';
-
-                            let rkmButton = '';
-                            let lostDisabled = (isMerah || isLost) ? 'disabled' : '';
-
-                            if (isLost || !rkm) {
-                                rkmButton = `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`;
-                            } else {
-                                rkmButton = `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
-                            }
-
-                            return `
-                                <div class="d-flex flex-column gap-2" style="min-width: 80px;">
-                                    <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
-                                    ${rkmButton}
-                                    <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100" ${lostDisabled}>LOST</button>
-                                </div>
-                            `;
-                        }
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        const namaPerusahaan = row.rkm_data?.perusahaan?.nama_perusahaan || '-';
+                        const cp = row.rkm_data?.perusahaan?.cp;
+                        return cp ? namaPerusahaan + ' (' + cp + ')' : namaPerusahaan;
                     }
-                ],
+                },
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        if (row.rkm?.event == null) return '-';
+                        return row.rkm.event.charAt(0).toUpperCase() + row.rkm.event.slice(1);
+                    }
+                },
+                {
+                    data: 'harga',
+                    render: function(data, type, row) {
+                        return data ? 'Rp ' + parseInt(data).toLocaleString('id-ID') : 'Rp 0';
+                    }
+                },
+                {
+                    data: 'netsales',
+                    render: function(data, type, row) {
+                        return data ? 'Rp ' + parseInt(data).toLocaleString('id-ID') : 'Rp 0,00';
+                    }
+                },
+                { data: 'pax' },
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        const startDate = data.periode_mulai ? moment(data.periode_mulai).format('DD-MM-YYYY') : '';
+                        const endDate = data.periode_selesai ? moment(data.periode_selesai).format('DD-MM-YYYY') : '';
+                        return startDate && endDate ? `${startDate} s/d ${endDate}` : 'Tentatif';
+                    }
+                },
+                {
+                    data: 'Exam',
+                    render: function(data, type, row) {
+                        if (row.rkm?.exam == null) return '-';
+                        return row.rkm.exam == 1 ? 'Ya' : 'Tidak';
+                    }
+                },
+                {
+                    data: 'tahap',
+                    render: function(data, type, row) {
+                        return data ? data.charAt(0).toUpperCase() + data.slice(1) : '-';
+                    }
+                },
+                { data: 'id_sales' },
+                {
+                    data: 'created_at',
+                    render: function(data, type, row) {
+                        return data ? moment(data).format('DD-MM-YYYY') : '-';
+                    }
+                },
+                {
+                    data: 'id',
+                    render: function(id, type, data) {
+                        const rkm = data.rkm_formatted;
+                        const isLost = data.tahap?.toLowerCase() === 'lost';
+                        const isMerah = data.tahap === 'merah';
+
+                        let rkmButton = '';
+                        if (isLost || !rkm) {
+                            rkmButton = `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`;
+                        } else {
+                            rkmButton = `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+                        }
+
+                        let actionButtons = `
+                            <div class="d-flex flex-column gap-2" style="min-width: 80px;">
+                                <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
+                                ${rkmButton}
+                        `;
+
+                        if (isLost) {
+                            actionButtons += `<button onclick="bukaModalRestore(${id}, ${data.harga}, ${data.pax}, '${data.periode_mulai}', '${data.periode_selesai}')" class="btn btn-sm btn-success w-100">PULIHKAN</button>`;
+                        } else {
+                            let lostDisabled = isMerah ? 'disabled' : '';
+                            actionButtons += `<button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100" ${lostDisabled}>LOST</button>`;
+                        }
+
+                        actionButtons += `</div>`;
+                        return actionButtons;
+                    }
+                }
+            ];
+
+            // 2. Konfigurasi warna baris untuk histori yang digunakan bersama
+            const tableCreatedRow = function(row, data, dataIndex) {
+                if (data.has_history) {
+                    $(row).css('background-color', '#f4f6f8');
+                    $(row).attr('title', 'Data ini merupakan hasil pemulihan dari status Lost');
+
+                    $('td:eq(0)', row).css({
+                        'background-color': '#fd7e14',
+                        'color': '#ffffff',
+                        'font-weight': 'bold'
+                    });
+                }
+            };
+
+            // 3. Inisialisasi Tabel Aktif (Filter data SELAIN 'lost')
+            let tableAktif = $('#peluangTable').DataTable({
+                processing: true,
+                ajax: {
+                    url: '{{ route("index.peluang.json") }}',
+                    dataSrc: function(json) {
+                        return json.data.filter(item => item.tahap?.toLowerCase() !== 'lost');
+                    },
+                    error: function(xhr, error, thrown) {
+                        alert('Gagal memuat data peluang aktif: ' + thrown);
+                    }
+                },
+                createdRow: tableCreatedRow,
+                columns: tableColumns
             });
 
-            // 🔹 Callback untuk nomor urut tetap mengikuti tampilan
-            table.on('order.dt search.dt draw.dt', function() {
-                table.column(0, { search: 'applied', order: 'applied' }).nodes().each(function(cell, i) {
-                    cell.innerHTML = i + 1;
-                });
-            }).draw();
+            // 4. Inisialisasi Tabel Lost (Filter data HANYA 'lost')
+            let tableLost = $('#peluangLostTable').DataTable({
+                processing: true,
+                ajax: {
+                    url: '{{ route("index.peluang.json") }}',
+                    dataSrc: function(json) {
+                        return json.data.filter(item => item.tahap?.toLowerCase() === 'lost');
+                    },
+                    error: function(xhr, error, thrown) {
+                        alert('Gagal memuat data peluang lost: ' + thrown);
+                    }
+                },
+                createdRow: tableCreatedRow,
+                columns: tableColumns
+            });
+
+            // 5. Callback penomoran untuk kedua tabel
+            function bindNumbering(tableInstance) {
+                tableInstance.on('order.dt search.dt draw.dt', function() {
+                    tableInstance.column(0, { search: 'applied', order: 'applied' }).nodes().each(function(cell, i) {
+                        cell.innerHTML = i + 1;
+                    });
+                }).draw();
+            }
+
+            bindNumbering(tableAktif);
+            bindNumbering(tableLost);
 
             initPerusahaanSelect2();
             initMateriSelect2();
 
-            // Pindah event listener ke sini untuk consistency dengan jQuery dan Select2
+            // Event listener Select2 untuk perusahaan (Sama seperti sebelumnya)
             $('#id_perusahaan').on('change', function() {
                 const perusahaanId = $(this).val();
 
@@ -342,8 +469,7 @@
                     method: 'GET',
                     dataType: 'json',
                     success: function(data) {
-                        // Asumsi response mirip DataTable: { data: [...] }, jadi ambil data.data
-                        const activities = data.data || data; // Fallback jika langsung array
+                        const activities = data.data || data;
 
                         if (!Array.isArray(activities) || activities.length === 0) {
                             $('#aktivitasTableWrapper').html(
@@ -369,9 +495,7 @@
 
                         activities.forEach(a => {
                             const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
-                                day: '2-digit',
-                                month: 'long',
-                                year: 'numeric'
+                                day: '2-digit', month: 'long', year: 'numeric'
                             });
                             table += `
                                 <tr>
@@ -391,7 +515,7 @@
                     error: function(err) {
                         console.error('Gagal memuat aktivitas:', err);
                         $('#aktivitasTableWrapper').html(
-                            `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas. Periksa console untuk detail.</p>`);
+                            `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas.</p>`);
                     }
                 });
             });
@@ -520,6 +644,63 @@
                 if (netsalesInput !== null) {
                     netsalesInput.value = unformatRupiah(netsalesInput.value);
                 }
+            });
+        }
+
+        function bukaModalRestore(id, harga, pax, periodeMulai, periodeSelesai) {
+            document.getElementById('restore_id_peluang').value = id;
+            document.getElementById('restore_harga').value = harga || 0;
+            document.getElementById('restore_pax').value = pax || 1;
+            document.getElementById('restore_periode_mulai').value = periodeMulai;
+            document.getElementById('restore_periode_selesai').value = periodeSelesai;
+
+            let modal = new bootstrap.Modal(document.getElementById('modalRestore'));
+            modal.show();
+        }
+
+        function prosesRestore() {
+            const id = document.getElementById('restore_id_peluang').value;
+            const tahapBaru = document.getElementById('restore_tahap').value;
+            const harga = document.getElementById('restore_harga').value;
+            const pax = document.getElementById('restore_pax').value;
+            const periodeMulai = document.getElementById('restore_periode_mulai').value;
+            const periodeSelesai = document.getElementById('restore_periode_selesai').value;
+
+            if(!harga || !pax || !periodeMulai || !periodeSelesai) {
+                alert("Semua bidang harus diisi.");
+                return;
+            }
+
+            fetch(`/crm/peluang/restore/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    tahap_baru: tahapBaru,
+                    harga: harga,
+                    pax: pax,
+                    periode_mulai: periodeMulai,
+                    periode_selesai: periodeSelesai
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    const modalElement = document.getElementById('modalRestore');
+                    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                    modalInstance.hide();
+                    $('#peluangTable').DataTable().ajax.reload(null, false);
+                    $('#peluangLostTable').DataTable().ajax.reload(null, false);
+                } else {
+                    alert(data.message || 'Terjadi kesalahan.');
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert('Terjadi kesalahan pada server saat memproses permintaan.');
             });
         }
     </script>

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\tracking_pengajuan_barang;
+use App\Models\PengajuanBarang;
 
 class PerbaikanKendaraan extends Model
 {
@@ -21,6 +23,7 @@ class PerbaikanKendaraan extends Model
         'waktu_kejadian',
         'lokasi',
         'estimasi',
+        'harga_akhir',
         'status',
         'bukti',
         'tanggal_perbaikan',
@@ -29,7 +32,12 @@ class PerbaikanKendaraan extends Model
         'document',
         'invoice',
         'deskripsi_perbaikan',
-        'id_vendor'
+        'id_vendor',
+        'pengajuanbarangs_id'
+    ];
+
+    protected $casts = [
+        'estimasi' => 'decimal:2',
     ];
 
     public function user()
@@ -44,6 +52,19 @@ class PerbaikanKendaraan extends Model
 
     public function pengajuanBarang()
     {
-        return $this->belongTo(PengajuanBarang::class, 'pengajuanbarangs_id');
+        return $this->belongsTo(PengajuanBarang::class, 'pengajuanbarangs_id');
+    }
+
+    public function getStatusAttribute($value)
+    {
+        if (empty($this->pengajuanbarangs_id)) {
+            return $value;
+        }
+
+        $latestTracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $this->pengajuanbarangs_id)
+            ->latest('id')
+            ->first();
+
+        return $latestTracking ? $latestTracking->tracking : $value;
     }
 }

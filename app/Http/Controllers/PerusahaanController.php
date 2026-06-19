@@ -10,12 +10,13 @@ use App\Models\Perusahaan;
 use App\Models\karyawan;
 use App\Models\Peserta;
 use App\Models\comment;
+use App\Models\Contact;
 use App\Models\eksam;
 use App\Models\exam;
 use App\Models\lokasi;
 use App\Models\Registrasi;
 use App\Models\nilaifeedback;
-
+use App\Models\Peluang;
 use Carbon\CarbonImmutable;
 use App\Models\RKM;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ class PerusahaanController extends Controller
     public function getPerusahaanById(){
         $jabatan = auth()->user()->jabatan;
         $idSales = auth()->user()->id_sales;
-        if ($idSales == 'AM'){
+        if ($idSales == 'VN'){
             $perusahaans = Perusahaan::where('nama_perusahaan', 'LIKE', '%'.request('q').'%')
                     ->paginate(20);
         }else if($jabatan == 'Customer Care' || $jabatan == 'Admin Holding'){
@@ -278,96 +279,6 @@ class PerusahaanController extends Controller
         return redirect()->route('perusahaan.index')->with(['success' => 'Data Berhasil Dihapus!']);
     }
 
-
-
-    // public function joinPerusahaanKaryawan()
-    // {
-    //     $startDate = CarbonImmutable::create(2020, 1, 1);
-    //     $endDate = CarbonImmutable::create(2030, 12, 31);
-    //     $now = CarbonImmutable::now()->locale('id_ID');
-
-    //     $monthRanges = [];
-    //     $date = $startDate;
-
-    //     while ($date->month <= $endDate->month && $date->year <= $endDate->year) {
-    //         $startOfMonth = $date->startOfMonth();
-    //         $endOfMonth = $date->endOfMonth();
-
-    //         $weekRanges = [];
-    //         $startOfWeek = $startOfMonth->startOfWeek();
-    //         while ($startOfWeek->lte($endOfMonth)) {
-    //             $endOfWeek = $startOfWeek->copy()->endOfWeek();
-    //             $weekRanges[] = ['start' => $startOfWeek->format('Y-m-d'), 'end' => $endOfWeek->format('Y-m-d')];
-    //             $startOfWeek = $startOfWeek->addWeek();
-    //         }
-
-    //         $monthRanges[] = ['month' => $startOfMonth->translatedFormat('F-Y'), 'weeks' => $weekRanges];
-
-    //         $date = $date->addMonth();
-    //     }
-
-    //     $years = [];
-    //     $date = CarbonImmutable::create(2010, 1, 1); // Start from January 1, 2010
-
-    //     while ($date->year <= 2030) { // Until the year 2030
-    //         $years[] = $date->year;
-    //         $date = $date->addYear(); // Add one year
-    //     }
-
-    //     $months = [];
-    //     for ($i = 1; $i <= 12; $i++) {
-    //         $months[] = $now->month($i)->translatedFormat('F');
-    //     }
-
-    //     $weekRanges = [];
-    //     $date = $now->startOfMonth();
-
-    //     while ($date->lte($endOfMonth) && $date->month == $now->month) {
-    //         $startOfWeek = $date->startOfWeek()->format('Y-m-d');
-    //         $endOfWeek = $date->endOfWeek()->format('Y-m-d');
-    //         $weekRanges[] = ['start' => $startOfWeek, 'end' => $endOfWeek];
-
-    //         $date = $date->addWeek();
-    //     }
-
-    //     $rkmsByWeek = [];
-    //     foreach ($weekRanges as $weekRange) {
-    //         $rows = RKM::with(['materi'])
-    //             ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-    //             ->whereBetween('tanggal_awal', [$weekRange['start'],  $weekRange['end']])
-    //             ->whereBetween('tanggal_akhir', [$weekRange['start'],  $weekRange['end']])
-    //             ->select('r_k_m_s.materi_key', 'r_k_m_s.ruang','r_k_m_s.metode_kelas','r_k_m_s.event', 'r_k_m_s.tanggal_awal',
-    //                 DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
-    //                 DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
-    //                 DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
-    //                 DB::raw('SUM(r_k_m_s.pax) AS total_pax'))
-    //             ->groupBy('r_k_m_s.materi_key', 'r_k_m_s.ruang','r_k_m_s.metode_kelas','r_k_m_s.event', 'r_k_m_s.tanggal_awal',)
-    //             ->get();
-
-    //         foreach ($rows as $row) {
-    //             if ($row->instruktur_all == null){
-    //                 $sales_ids = explode(', ', $row->sales_all);
-    //                 $perusahaan_ids = explode(', ', $row->perusahaan_all);
-    //                 $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
-    //                 $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
-
-    //             }else{
-    //                 $sales_ids = explode(', ', $row->sales_all);
-    //                 $perusahaan_ids = explode(', ', $row->perusahaan_all);
-    //                 $instruktur_ids = explode(', ', $row->instruktur_all);
-    //                 $row->instruktur = Karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
-    //                 $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
-    //                 $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
-    //             }
-
-    //         }
-    //         $rkmsByWeek[] = ['weekRange' => $weekRange, 'rkms' => $rows];
-    //     }
-
-    //     $json = response()->json($rkmsByWeek);
-    //     return $json;
-    // }
-
     public function datas($tahun, $bulan,){
         // Perhitungan startDate dan endDate yang benar
         $startDate = "{$tahun}-{$bulan}-01";
@@ -399,6 +310,58 @@ class PerusahaanController extends Controller
 
         return response()->json(['data' => $rkms]);
 
+    }
+
+    public function merge(Request $request)
+    {
+        $request->validate([
+            'primary_id' => 'required|exists:perusahaans,id',
+            'duplicate_id' => 'required|exists:perusahaans,id|different:primary_id',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $primaryId = $request->primary_id;
+            $duplicateId = $request->duplicate_id;
+
+            // 1. Pembaruan Relasi RKM
+            RKM::where('perusahaan_key', $duplicateId)
+                ->update(['perusahaan_key' => $primaryId]);
+
+            // 2. Pembaruan Relasi Peserta
+            Peserta::where('perusahaan_key', $duplicateId)
+                ->update(['perusahaan_key' => $primaryId]);
+
+            // 3. Pembaruan Relasi Contact
+            Contact::where('id_perusahaan', $duplicateId)
+                ->update(['id_perusahaan' => $primaryId]);
+
+            // 4. Pembaruan Relasi Peluang
+            // Berdasarkan relasi di model: hasMany(Peluang::class, 'id_contact', 'id')
+            Peluang::where('id_contact', $duplicateId)
+                ->update(['id_contact' => $primaryId]);
+
+            // 5. Pembaruan Relasi Registrasi
+            // Sesuaikan kolom foreign key dengan skema database aktual (contoh: perusahaan_key)
+            // Registrasi::where('perusahaan_key', $duplicateId)->update(['perusahaan_key' => $primaryId]);
+
+            // 6. Penghapusan Data Perusahaan Duplikat
+            Perusahaan::where('id', $duplicateId)->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success', 
+                'message' => 'Data perusahaan beserta relasi berhasil digabungkan.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error', 
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
 }

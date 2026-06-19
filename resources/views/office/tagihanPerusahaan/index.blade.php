@@ -2,6 +2,17 @@
 
 @section('office_contents')
     <div class="container-fluid py-4">
+        <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="cube">
+                    <div class="cube_item cube_x"></div>
+                    <div class="cube_item cube_y"></div>
+                    <div class="cube_item cube_x"></div>
+                    <div class="cube_item cube_z"></div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
             <h4 class="mb-0 fw-semibold text-dark d-flex align-items-center">
@@ -11,12 +22,104 @@
             <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
         </div>
 
+        <!-- Modal Edit -->
+        <div class="modal fade" id="modalEditTagihan" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Edit Tagihan Perusahaan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
+                        <form method="post" class="mt-5" id="formEditTagihan" enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3 row">
+                                {{-- Status --}}
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small text-uppercase">
+                                        Status
+                                    </label>
+
+                                    <select name="status" id="status" class="form-select">
+                                        <option value="pending">
+                                            Pending
+                                        </option>
+                                        <option value="proses">
+                                            Proses
+                                        </option>
+                                        <option value="selesai" disabled hidden>
+                                            Selesai
+                                        </option>
+                                        <option value="telat" disabled hidden>
+                                            Terlambat
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <!-- Tanggal Perkiraan -->
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small text-uppercase">
+                                        Tracking
+                                    </label>
+
+                                    <select name="tracking" id="tracking" class="form-select">
+                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">
+                                            Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang
+                                            Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                        <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve
+                                            Direksi
+                                        </option>
+                                        <option value="Diajukan dan Sedang Ditinjau oleh Finance">Diajukan dan Sedang
+                                            Ditinjau oleh Finance</option>
+                                        <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke
+                                            Direktur
+                                            Utama</option>
+                                        <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam
+                                            proses Pencairan</option>
+                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                        <option value="Selesai">Selesai</option>
+                                    </select>
+                                </div>
+
+                                <!-- Tanggal Selesai -->
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small text-uppercase">
+                                        Tanggal Realisasi
+                                    </label>
+                                    <div>
+                                        <input type="date" name="tanggal_selesai" class="form-control col-md-6">
+                                    </div>
+                                </div>
+
+                                {{-- Keterangan --}}
+                                <div class="mb-3">
+                                    <label for="keterangan" class="col-md-5 col-form-label">Keterangan
+                                        (Optional)</label>
+                                    <textarea class="form-control" name="keterangan"></textarea>
+                                </div>
+
+                            </div>
+
+                            <div class="modal-footer mt-4">
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
                     <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
                         {{-- Table Tagihan --}}
-                        <div class="table-responsive mb-4" style="max-height: 500px; overflow-y: auto;">
+                        <div class="table-responsive mb-4">
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-light sticky-top">
                                     <tr>
@@ -55,13 +158,13 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="text-truncate" style="max-width: 150px;">
-                                                        {{ $tagihan->tagihanPerusahaan->kegiatan ?? $tagihan->kegiatan }}
+                                                        {{ $tagihan->tagihanPerusahaan?->kegiatan ?? $tagihan->kegiatan }}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div class="text-truncate" style="max-width: 150px;">
-                                                    {{ $tagihan->tagihanPerusahaan->tipe ?? $tagihan->kegiatan }} 
+                                                    {{ $tagihan->tagihanPerusahaan?->tipe ?? $tagihan->kegiatan }} 
                                                 </div>
                                             </td>
                                             <td>
@@ -138,7 +241,7 @@
                                                                 <input id="nama_karyawan" type="text" name="nama_karyawan" value="{{ $karyawan->nama_lengkap }}">
                                                                 <input id="divisi" type="text" name="divisi" value="{{ $karyawan->divisi }}">
                                                                 <input type="text" name="tipe" value="Tagihan Perusahaan">  
-                                                                <input type="text" name="barang[nama_barang][]" value="{{ $tagihan->kegiatan }}">
+                                                                <input type="text" name="barang[nama_barang][]" value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan?->kegiatan }}">
                                                                 <input type="number" name="barang[qty][]" value="1"> 
                                                                 <input type="text" name="barang[harga_barang][]" value="{{ $tagihan->nominal ?? null }}">  
                                                                 <input type="text" name="barang[keterangan][]" value="{{ $tagihan->keterangan ?? null }}">
@@ -247,6 +350,7 @@
         $(document).on('click', '.btn-ajukan-tagihan', function () {
             let id = $(this).data('id');
             let form = $('#form-ajukan-' + id);
+            $('#loadingModal').modal('show');
 
             $.ajax({
                 url: "{{ route('pengajuanbarang.store') }}",
@@ -256,16 +360,59 @@
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function (response) {
+                    $('#loadingModal').modal('hide');
                     alert("Berhasil membuat pengajuan barang!");
                     location.reload();
                 },
                 error: function (xhr) {
+                    $('#loadingModal').modal('hide');
                     alert('Terjadi kesalahan');
                     console.log(xhr.responseText);
                 }
             });
         });
         // end pengajuan tagihan perusahaan ke pengajuan barang
+
+        // form edit tagihan
+        $(document).on('click', '#edit-tagihan', function() {
+            let id = $(this).data('id');
+
+            // jika yang diklik checkbox → buka modal manual
+            if ($(this).is(':checkbox')) {
+                this.checked = false;
+                $('#modalEditTagihan').modal('show');
+            }
+
+            $.ajax({
+                url: '/office/data-tagihan/' + id,
+                type: 'GET',
+                success: function(res) {
+                    let nominal = formatRupiah(parseInt(res.data.nominal))
+                    // set action form
+                    $('#formEditTagihan').attr('action', '/office/update-tagihan/' + id);
+
+                    // set value input
+                    $('#modalEditTagihan select[name="status"]').val(res.data.status);
+                    $('#modalEditTagihan select[name="tracking"]').val(res.data.tracking);
+                    $('#modalEditTagihan input[name="tanggal_selesai"]').val(res.data
+                        .tanggal_selesai);
+                    $('#modalEditTagihan textarea[name="keterangan"]').val(res.data
+                        .keterangan);
+
+                    if (res.data.status === 'selesai' || res.data.status === 'telat') {
+                        $('#modalEditTagihan select[name="status"]').attr('disabled',
+                            'disabled');
+                    } else if (res.data.status === 'pending' || res.data.status ===
+                        'proses') {
+                        $('#modalEditTagihan select[name="status"]').attr('disabled',
+                            false);
+                    }
+
+                    // format rupiah jika ada function
+                    $('.format-rupiah').trigger('keyup');
+                }
+            });
+        });
     });
 </script>
 @endsection

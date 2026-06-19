@@ -174,6 +174,55 @@
 
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
         }
+        .cube {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .cube_item {
+            height: 40px;
+            width: 40px;
+            border-radius: 10px;
+            transition: all 0.2s ease-in;
+        }
+
+        .cube_x {
+            background-color: #182f51;
+            animation: animateLoaders 1s infinite;
+        }
+
+        .cube_y {
+            background-color: #962D2D;
+            animation: animateLoaders 1s 0.5s infinite;
+        }
+
+        .cube_z {
+            background-color: #A5C7EF;
+            animation: animateLoaders 1s 0.5s infinite;
+        }
+
+        @keyframes animateLoaders {
+            0% {
+                transform: scale(0.8);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(0.8);
+            }
+        }
     </style>
 </head>
 

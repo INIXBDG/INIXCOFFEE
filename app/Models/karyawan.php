@@ -45,6 +45,8 @@ class karyawan extends Model
         'religion',
         'provinsi',
         'kota',
+        'resigned_at',
+        'alasan_resign'
     ];
 
     public function user()
@@ -122,5 +124,42 @@ class karyawan extends Model
     public function catatanMeetingSales()
     {
         return $this->hasMany(CatatanMeetingSales::class);
+    }
+
+    public function absensi()
+    {
+        return $this->hasMany(AbsensiKaryawan::class, 'id_karyawan', 'id');
+    }
+
+    public function cuti()
+    {
+        return $this->hasMany(pengajuancuti::class, 'id_karyawan', 'id');
+    }
+  
+    public function administrasiKaryawan()
+    {
+        return $this->hasMany(AdministrasiKaryawan::class, 'id_karyawan');   
+    }
+
+    public function jabatan()
+    {
+        return $this->belongsToMany(OrgStructure::class, 'karyawan_jabatan')
+                    ->withPivot('is_primary')
+                    ->withTimestamps();
+    }
+
+    public function jobProfile()
+    {
+        return $this->hasOne(JobProfile::class, 'karyawan_id', 'id');
+    }
+
+    public function getOrgStructureAttribute()
+    {
+        return OrgStructure::whereJsonContains('karyawan_ids', (int) $this->id)->first();
+    }
+
+    public function logGaji()
+    {
+        return $this->hasMany(LogGaji::class, 'id_karyawan', 'id');
     }
 }

@@ -157,12 +157,22 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        @if (isset($data->invoice))
-                                            <a href="{{ asset('storage/' . $data->invoice) }}" class="btn click-primary"
-                                                target="_blank">Lihat Invoice</a>
-                                        @else
-                                            <p>-</p>
-                                        @endif
+                                        @foreach ([
+                                            'invoice' => 'Lihat Invoice',
+                                            'bukti' => 'Lihat Bukti',
+                                        ] as $field => $label)
+
+                                            @if (!empty($data->$field))
+                                                <a href="{{ asset('storage/' . $data->$field) }}"
+                                                class="btn click-primary"
+                                                target="_blank">
+                                                    {{ $label }}
+                                                </a>
+                                            @else
+                                                <p>-</p>
+                                            @endif
+
+                                        @endforeach
                                     </div>
                                 </div>
                             </div>

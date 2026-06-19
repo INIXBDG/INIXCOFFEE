@@ -69,6 +69,11 @@ class RKM extends Model
         return $this->belongsTo(Materi::class, 'materi_key', 'id');
     }
 
+    public function approvalPendapatan()
+    {
+        return $this->belongsTo(ApprovalPendapatan::class, 'id', 'id_rkm');
+    }
+
     public function instruktur()
     {
         return $this->belongsTo(karyawan::class, 'instruktur_key', 'kode_karyawan');
@@ -107,6 +112,11 @@ class RKM extends Model
     public function eksam()
     {
         return $this->hasOne(eksam::class, 'id_rkm');
+    }
+
+    public function bundlingeksam()
+    {
+        return $this->hasOne(BundlingExam::class, 'id_rkm');
     }
 
     public function analisisrkm()

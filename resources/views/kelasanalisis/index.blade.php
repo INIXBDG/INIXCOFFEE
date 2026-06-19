@@ -211,8 +211,8 @@
                             var dataRKM = response.data.weeklyProfit;
 
                             $.each(dataRKM, function(week, value) {
-                                var minusValue = '';
-                                var profitValue = '';
+                                var minusValue = '-';
+                                var profitValue = '0';
                                 if (value < 0) {
                                     minusValue = formatRupiah(value, true);
                                     totalMinus += value;
@@ -599,6 +599,42 @@
                     });
                 }
 
+                 function getWorkdayRange(startDateStr, endDateStr) {
+                    const months = {
+                        Januari: 0, Februari: 1, Maret: 2, April: 3, Mei: 4, Juni: 5,
+                        Juli: 6, Agustus: 7, September: 8, Oktober: 9, November: 10, Desember: 11
+                    };
+
+                    function parseIndoDate(str) {
+                        const [day, month, year] = str.split(' ');
+                        return new Date(year, months[month], day);
+                    }
+
+                    function formatIndoDate(date) {
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const monthNames = Object.keys(months);
+                        const month = monthNames[date.getMonth()];
+                        const year = date.getFullYear();
+                        return `${day} ${month} ${year}`;
+                    }
+
+                    let start = parseIndoDate(startDateStr);
+                    let end = parseIndoDate(endDateStr);
+
+                    if (end.getDay() === 6) {
+                        end.setDate(end.getDate() - 1);
+                    }
+
+                    if (end.getDay() === 0) {
+                        end.setDate(end.getDate() - 2);
+                    }
+
+                    return {
+                        start: formatIndoDate(start),
+                        end: formatIndoDate(end)
+                    };
+                }
+
                 function getData() {
                     var tahun = document.getElementById('tahun').value;
                     var bulanRange = document.getElementById('bulanRange').value;
@@ -659,13 +695,18 @@
                                         `<button type="button" class="btn click-primary p-2" onclick="analisaMargin('${tahun}', '${monthName}')">Analisa Margin</button>`;
                                 }
 
-                                monthData.weeksData.forEach(function(weekData) {
+                                monthData.weeksData.forEach(function(weekData, index) {
                                     console.log(`Processing week ${weekData.minggu} in ${monthName}: `,
                                         weekData);
+                                    const fakeWeekNumber = index + 1;
+                                    const workdays = getWorkdayRange(
+                                        weekData.tanggal_awal_minggu,
+                                        weekData.tanggal_akhir_minggu
+                                    );
                                     html += '<div class="card my-1">';
                                     html += '<div class="card-body table-responsive">';
                                     html +=
-                                        `<h3 class="card-title my-1">Rencana Kelas Mingguan ${monthName} (Minggu ke - ${weekData.minggu}) ${weekData.tanggal_awal_minggu} - ${weekData.tanggal_akhir_minggu}</h3>`;
+                                        `<h3 class="card-title my-1">Rencana Kelas Mingguan ${monthName} (Minggu ke - ${fakeWeekNumber}) ${workdays.start} - ${workdays.end}</h3>`;
 
                                     if (weekData.rkmfull === "ok" && jabatan == 'HRD') {
                                         var formId =

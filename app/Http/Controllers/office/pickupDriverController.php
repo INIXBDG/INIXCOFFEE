@@ -22,6 +22,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\TelegramController;
 use App\Models\outstanding;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class pickupDriverController extends Controller
 {
@@ -41,7 +43,7 @@ class pickupDriverController extends Controller
             ->pluck('perbaikan_kendaraans.kendaraan');
 
         if ($kendaraan->isEmpty()) {
-            $kendaraan = collect(['H1', 'Innova']);
+            $kendaraan = collect(['H1', 'Innova', 'Mobil Direksi']);
         }
 
         if ($kendaraan->contains('Innova')) {
@@ -74,7 +76,7 @@ class pickupDriverController extends Controller
 
         $kendaraanSedangDipakai = pickupDriver::where('status_apply', 1)->whereNotNull('kendaraan')->where('kendaraan', '!=', '')->pluck('kendaraan')->unique();
 
-        $allKendaraan = collect(['H1', 'Innova']);
+        $allKendaraan = collect(['H1', 'Innova', 'Mobil Direksi']);
 
         $kendaraanTersedia = $allKendaraan->diff($kendaraanSedangDipakai);
 
@@ -206,9 +208,16 @@ class pickupDriverController extends Controller
             'path' => $path,
         ];
 
-        $telegramCtrl = new TelegramController();
-        $personalData = $telegramCtrl->formatPersonalCoordinationMessage($telegramData);
-        $telegramCtrl->sendPersonalTelegramMessage($personalData);
+        try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
+            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramData);
+
+        } catch (\Exception $e) {
+            // Log error jika Laravel A down
+            Log::error("Gagal mengirim webhook: " . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -352,9 +361,16 @@ class pickupDriverController extends Controller
             'path' => '/office/pickup-driver/index',
         ];
 
-        $telegramCtrl = new TelegramController();
-        $personalData = $telegramCtrl->formatPersonalCoordinationMessage($telegramPayload);
-        $telegramCtrl->sendPersonalTelegramMessage($personalData);
+        try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
+            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramPayload);
+
+        } catch (\Exception $e) {
+            // Log error jika Laravel A down
+            Log::error("Gagal mengirim webhook: " . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -452,9 +468,16 @@ class pickupDriverController extends Controller
             'path' => '/office/pickup-driver/index',
         ];
 
-        $telegramCtrl = new TelegramController();
-        $personalData = $telegramCtrl->formatPersonalCoordinationMessage($telegramPayload);
-        $telegramCtrl->sendPersonalTelegramMessage($personalData);
+        try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
+            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramPayload);
+
+        } catch (\Exception $e) {
+            // Log error jika Laravel A down
+            Log::error("Gagal mengirim webhook: " . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -533,11 +556,19 @@ class pickupDriverController extends Controller
             'detail' => [],
             'log_text' => null,
             'path' => '/office/pickup-driver/index',
+            'state' => 'delete',
         ];
 
-        $telegramCtrl = new TelegramController();
-        $personalData = $telegramCtrl->formatPersonalCoordinationMessage($telegramPayload);
-        $telegramCtrl->sendPersonalTelegramMessage($personalData);
+        try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
+            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramPayload);
+
+        } catch (\Exception $e) {
+            // Log error jika Laravel A down
+            Log::error("Gagal mengirim webhook: " . $e->getMessage());
+        }
 
         $data->delete();
         return response()->json(['message' => 'Data berhasil dihapus']);
@@ -704,59 +735,179 @@ class pickupDriverController extends Controller
             'path' => '/office/pickup-driver/index',
         ];
 
-        $telegramCtrl = new TelegramController();
-        $personalData = $telegramCtrl->formatPersonalCoordinationMessage($telegramPayload);
-        $telegramCtrl->sendPersonalTelegramMessage($personalData);
+        try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
+            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramPayload);
+
+        } catch (\Exception $e) {
+            // Log error jika Laravel A down
+            Log::error("Gagal mengirim webhook: " . $e->getMessage());
+        }
 
         return response()->json(['success' => true, 'message' => 'Koordinasi berhasil diperbarui.']);
     }
 
-    public function actionTerimaFromTelegramToken(Request $request, $id, $token)
+    public function actionTerimaFromTelegramToken(Request $request)
     {
-        if (!Cache::has("telegram_action_{$id}_{$token}")) {
-            return $this->telegramResponse('❌ Link sudah kadaluarsa atau tidak valid.');
+        if (
+            $request->header('X-Webhook-Secret')
+            !== 'RAHASIA_KITA'
+        ) {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 403);
         }
 
-        $payload = Cache::get("telegram_action_{$id}_{$token}");
+        $id = $request->id_pengajuan;
 
-        Cache::forget("telegram_action_{$id}_{$token}");
-
-        $pickupDriver = pickupDriver::with('detailPickupDriver')->findOrFail($id);
+        $pickupDriver = pickupDriver::with('detailPickupDriver')
+            ->findOrFail($id);
 
         if ($pickupDriver->status_apply != 0) {
-            return $this->telegramResponse('⚠️ Status koordinasi sudah berubah.');
+            return [
+                'success' => false,
+                'message' => '⚠️ Status koordinasi sudah berubah.'
+            ];
         }
 
         $detail = $pickupDriver->detailPickupDriver->first();
+
+        if (!$detail) {
+            return [
+                'success' => false,
+                'message' => 'Detail pickup tidak ditemukan.'
+            ];
+        }
+
+        if ($detail->tipe === 'Penjemputan') {
+            $pickupDriver->status_driver = 'Sedang Menjemput';
+            $statusDriver = 'Sedang Menjemput';
+        } elseif ($detail->tipe === 'Pengantaran') {
+            $pickupDriver->status_driver = 'Sedang Mengantarkan';
+            $statusDriver = 'Sedang Mengantarkan';
+        } else {
+            $pickupDriver->status_driver = 'Diterima';
+            $statusDriver = 'Diterima';
+        }
+
         $pickupDriver->status_apply = 1;
-        $pickupDriver->status_driver = $detail?->tipe === 'Penjemputan' ? 'Sedang Menjemput' : 'Sedang Mengantarkan';
         $pickupDriver->save();
 
-        return $this->telegramResponse('✅ Koordinasi berhasil diterima! Driver sedang bertugas.');
+        $driver = karyawan::find($pickupDriver->id_karyawan);
+        $detailTipe = $pickupDriver->detailPickupDriver->pluck('tipe')->toArray();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tracking
+        |--------------------------------------------------------------------------
+        */
+        TrackingPickupDriver::create([
+            'pickup_driver_id' => $pickupDriver->id,
+            'status' => 'Koordinasi diterima melalui Telegram, status menjadi ' .
+                $statusDriver .
+                ' dengan kendaraan ' .
+                ($pickupDriver->kendaraan ?? '-'),
+            'diubah_oleh' => $driver->id,
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Telegram Notification
+        |--------------------------------------------------------------------------
+        */
+        $telegramPayload = [
+            'title' => '🔄 Status Diperbarui',
+            'id_pengajuan' => $pickupDriver->id,
+            'creator_name' => 'Telegram Bot',
+            'driver_name' => $driver->nama_lengkap ?? '-',
+            'budget' => $pickupDriver->budget,
+            'tanggal_pembuatan' => now(),
+            'status_text' => $statusDriver,
+            'status_apply' => $pickupDriver->status_apply,
+            'tipe' => $detailTipe,
+            'lokasi' => [],
+            'tanggal' => [],
+            'waktu' => [],
+            'detail' => [],
+            'log_text' => null,
+            'path' => '/office/pickup-driver/index',
+        ];
+
+        try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
+            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramPayload);
+
+        } catch (\Exception $e) {
+            // Log error jika Laravel A down
+            Log::error("Gagal mengirim webhook: " . $e->getMessage());
+        }
+        return [
+            'success' => true,
+            'message' => '✅ Koordinasi berhasil diterima!'
+        ];
     }
 
-    public function actionSelesaikanFromTelegramToken(Request $request, $id, $token)
-    {
-        if (!Cache::has("telegram_action_{$id}_{$token}")) {
-            return $this->telegramResponse('❌ Link sudah kadaluarsa atau tidak valid.');
-        }
+    // public function actionSelesaikanFromTelegramToken(Request $request)
+    // {
+    //     if (
+    //         $request->header('X-Webhook-Secret')
+    //         !== 'RAHASIA_KITA'
+    //     ) {
+    //         return response()->json([
+    //             'message' => 'Unauthorized'
+    //         ], 403);
+    //     }
+        
+    //     $id = $request->id_pengajuan;
 
-        $payload = Cache::get("telegram_action_{$id}_{$token}");
-        Cache::forget("telegram_action_{$id}_{$token}");
+    //     $pickupDriver = pickupDriver::with('detailPickupDriver')
+    //         ->findOrFail($id);
 
-        $pickupDriver = pickupDriver::findOrFail($id);
+    //     if ($pickupDriver->status_apply != 1) {
+    //         return [
+    //             'success' => false,
+    //             'message' => '⚠️ Koordinasi belum dalam status Diterima.'
+    //         ];
+    //     }
 
-        if ($pickupDriver->status_apply != 1) {
-            return $this->telegramResponse('⚠️ Koordinasi belum dalam status "Diterima".');
-        }
+    //     $pickupDriver->status_apply = 2;
+    //     $pickupDriver->status_driver = 'Selesai, Driver Ready';
+    //     $pickupDriver->waktu_kepulangan = now();
 
-        $pickupDriver->status_apply = 2;
-        $pickupDriver->status_driver = 'Selesai, Driver Ready';
-        $pickupDriver->waktu_kepulangan = now();
-        $pickupDriver->save();
+    //     $pickupDriver->save();
 
-        return $this->telegramResponse('🏁 Koordinasi berhasil diselesaikan! Driver sudah ready.');
-    }
+    //     $driver = karyawan::find($pickupDriver->id_karyawan);
+
+    //     $detailTipe = $pickupDriver->detailPickupDriver()
+    //         ->pluck('tipe')
+    //         ->toArray();
+
+    //     $telegramPayload = [
+    //         'title' => '🏁 Koordinasi Selesai',
+    //         'id_pengajuan' => $pickupDriver->id,
+    //         'creator_name' => 'Telegram Bot',
+    //         'driver_name' => $driver->nama_lengkap ?? '-',
+    //         'budget' => $pickupDriver->budget,
+    //         'tanggal_pembuatan' => now(),
+    //         'status_text' => 'Selesai, Driver Ready',
+    //         'status_apply' => $pickupDriver->status_apply,
+    //         'tipe' => $detailTipe,
+    //         'lokasi' => [],
+    //         'tanggal' => [],
+    //         'waktu' => [],
+    //         'detail' => [],
+    //         'log_text' => null,
+    //     ];
+
+    //     return [
+    //         'success' => true,
+    //         'message' => '🏁 Koordinasi berhasil diselesaikan!'
+    //     ];
+    // }
 
     private function telegramResponse($message)
     {

@@ -9,17 +9,7 @@ class DetailTargetKPI extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'id_targetKPI',
-        'jabatan',
-        'divisi',
-        'jangka_target',
-        'detail_jangka',
-        'tipe_target',
-        'nilai_target',
-        'manual_value',
-        'manual_document'
-    ];
+    protected $fillable = ['id_targetKPI', 'jabatan', 'divisi', 'id_data_target', 'detail_jangka', 'manual_value', 'manual_document'];
 
     public function targetKPI()
     {
@@ -29,5 +19,25 @@ class DetailTargetKPI extends Model
     public function detailPersonKPI()
     {
         return $this->hasMany(detailPersonKPI::class, 'detailTargetKey', 'id');
+    }
+
+    public function dataTarget()
+    {
+        return $this->belongsTo(DataTarget::class, 'id_data_target', 'id');
+    }
+
+    public function getTipeTargetAttribute()
+    {
+        return $this->dataTarget?->tipe_target;
+    }
+
+    public function getNilaiTargetAttribute()
+    {
+        return $this->dataTarget?->nilai_target;
+    }
+
+    public function getJangkaTargetAttribute()
+    {
+        return $this->dataTarget?->jangka_target;
     }
 }

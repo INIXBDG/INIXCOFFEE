@@ -2,6 +2,17 @@
 
 @section('office_contents')
     <div class="container-fluid py-4">
+        <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="cube">
+                    <div class="cube_item cube_x"></div>
+                    <div class="cube_item cube_y"></div>
+                    <div class="cube_item cube_x"></div>
+                    <div class="cube_item cube_z"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
             <h4 class="mb-0 fw-bold text-dark">Dashboard Office</h4>
@@ -34,7 +45,8 @@
             @foreach ($divisiStats as $index => $divisi)
                 <div class="col-xl-3 col-md-6">
                     <div class="card border-0 shadow-sm h-100 hover-card rounded-3 overflow-hidden glass-force"
-                        data-bs-toggle="modal" data-bs-target="#modalDivisi{{ $index }}" role="button" tabindex="0">
+                        data-bs-toggle="modal" data-bs-target="#modalDivisi{{ $index }}" role="button"
+                        tabindex="0">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="flex-shrink-0">
@@ -66,11 +78,13 @@
                         </div>
 
                         <div class="modal-body">
-                            <form method="post" action="{{ route('storeTagihanPerusahaan') }}" enctype="multipart/form-data">
+                            <form method="post" action="{{ route('storeTagihanPerusahaan') }}"
+                                enctype="multipart/form-data">
                                 @csrf
 
                                 <div class="mb-3">
-                                    <label class="form-label col-form-label">Kegiatan <span class="text-danger">*</span></label>
+                                    <label class="form-label col-form-label">Kegiatan <span
+                                            class="text-danger">*</span></label>
                                     <input type="text" name="kegiatan" class="form-control">
                                 </div>
                                 <div class="mb-3">
@@ -101,11 +115,12 @@
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label col-form-label">Nominal <span class="text-danger">*</span></label>
+                                    <label class="form-label col-form-label">Nominal <span
+                                            class="text-danger">*</span></label>
                                     <div class="input-group mb-3">
                                         <span class="input-group-text">Rp.</span>
-                                        <input type="text" name="nominal" id="nominal" class="form-control format-rupiah"
-                                            autocomplete="off">
+                                        <input type="text" name="nominal" id="nominal"
+                                            class="form-control format-rupiah" autocomplete="off">
                                     </div>
                                 </div>
 
@@ -173,11 +188,13 @@
                                                 Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
                                             <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang
                                                 Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
-                                            <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi
+                                            <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve
+                                                Direksi
                                             </option>
                                             <option value="Diajukan dan Sedang Ditinjau oleh Finance">Diajukan dan Sedang
                                                 Ditinjau oleh Finance</option>
-                                            <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur
+                                            <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke
+                                                Direktur
                                                 Utama</option>
                                             <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam
                                                 proses Pencairan</option>
@@ -198,7 +215,8 @@
 
                                     {{-- Keterangan --}}
                                     <div class="mb-3">
-                                        <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>
+                                        <label for="keterangan" class="col-md-5 col-form-label">Keterangan
+                                            (Optional)</label>
                                         <textarea class="form-control" name="keterangan"></textarea>
                                     </div>
 
@@ -249,17 +267,20 @@
                                         @forelse($trackingTagihanPerusahaans as $tagihan)
                                             <tr class="border-bottom ">
                                                 @if ($tagihan->status === 'selesai')
-                                                    <td class="text-center ps-4"><input class="custom-check" type="checkbox" checked
-                                                            disabled></td>
+                                                    <td class="text-center ps-4"><input class="custom-check"
+                                                            type="checkbox" checked disabled></td>
                                                 @elseif ($tagihan->status === 'telat')
-                                                    <td class="text-center ps-4"><input class="custom-fail" type="checkbox" checked
-                                                            disabled></td>
+                                                    <td class="text-center ps-4"><input class="custom-fail"
+                                                            type="checkbox" checked disabled></td>
                                                 @else
-                                                    <td class="text-center ps-4"><input class="check-blue" data-id="{{ $tagihan->id }}"
-                                                            type="checkbox" id="edit-tagihan"></td>
+                                                    <td class="text-center ps-4"><input class="check-blue"
+                                                            data-id="{{ $tagihan->id }}" type="checkbox"
+                                                            id="edit-tagihan"></td>
                                                 @endif
                                                 <td>
-                                                    @if ($tagihan->tanggal_perkiraan_mulai === $tagihan->tanggal_perkiraan_selesai || $tagihan->tanggal_perkiraan_selesai === null)
+                                                    @if (
+                                                        $tagihan->tanggal_perkiraan_mulai === $tagihan->tanggal_perkiraan_selesai ||
+                                                            $tagihan->tanggal_perkiraan_selesai === null)
                                                         <div class="small">
                                                             {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_mulai)->format('d F') }}
                                                         </div>
@@ -272,7 +293,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div class="text-truncate" style="max-width: 150px;">
-                                                            {{ $tagihan->tagihanPerusahaan->kegiatan ?? $tagihan->kegiatan }}
+                                                            {{ $tagihan->tagihanPerusahaan?->kegiatan ?? $tagihan->kegiatan }}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -319,41 +340,54 @@
                                                 </td>
                                                 <td class="text-center pe-4 position-relative">
                                                     <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
-                                                            data-bs-toggle="dropdown" data-bs-boundary="viewport"
-                                                            aria-expanded="false">
+                                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle"
+                                                            type="button" data-bs-toggle="dropdown"
+                                                            data-bs-boundary="viewport" aria-expanded="false">
                                                             Aksi
                                                         </button>
 
                                                         <ul class="dropdown-menu dropdown-menu-end">
                                                             <li>
-                                                                <button class="dropdown-item" data-id="{{ $tagihan->id }}"
-                                                                    data-bs-toggle="modal" id="edit-tagihan"
-                                                                    data-bs-target="#modalEditTagihan">
+                                                                <button class="dropdown-item"
+                                                                    data-id="{{ $tagihan->id }}" data-bs-toggle="modal"
+                                                                    id="edit-tagihan" data-bs-target="#modalEditTagihan">
                                                                     Edit
                                                                 </button>
                                                             </li>
 
                                                             <li>
-                                                                <button class="dropdown-item text-success btn-ajukan-tagihan" data-id="{{ $tagihan->id }}">
+                                                                <button
+                                                                    class="dropdown-item text-success btn-ajukan-tagihan"
+                                                                    data-id="{{ $tagihan->id }}">
                                                                     Ajukan Tagihan
                                                                 </button>
 
-                                                                <form id="form-ajukan-{{ $tagihan->id }}" method="POST" style="display:none;">
+                                                                <form id="form-ajukan-{{ $tagihan->id }}" method="POST"
+                                                                    style="display:none;">
                                                                     @csrf
                                                                     @php
                                                                         $user = auth()->user();
                                                                         $karyawan = $user->karyawan;
                                                                     @endphp
-                                                                    <input type="hidden" name="id_tagihan" value="{{ $tagihan->id }}">
-                                                                    <input name="id_karyawan" value="{{ $karyawan->id }}">
-                                                                    <input id="nama_karyawan" type="text" name="nama_karyawan" value="{{ $karyawan->nama_lengkap }}">
-                                                                    <input id="divisi" type="text" name="divisi" value="{{ $karyawan->divisi }}">
-                                                                    <input type="text" name="tipe" value="Tagihan Perusahaan">  
-                                                                    <input type="text" name="barang[nama_barang][]" value="{{ $tagihan->kegiatan }}">
-                                                                    <input type="number" name="barang[qty][]" value="1"> 
-                                                                    <input type="text" name="barang[harga_barang][]" value="{{ $tagihan->nominal ?? null }}">  
-                                                                    <input type="text" name="barang[keterangan][]" value="{{ $tagihan->keterangan ?? null }}">
+                                                                    <input type="hidden" name="id_tagihan"
+                                                                        value="{{ $tagihan->id }}">
+                                                                    <input name="id_karyawan"
+                                                                        value="{{ $karyawan->id }}">
+                                                                    <input id="nama_karyawan" type="text"
+                                                                        name="nama_karyawan"
+                                                                        value="{{ $karyawan->nama_lengkap }}">
+                                                                    <input id="divisi" type="text" name="divisi"
+                                                                        value="{{ $karyawan->divisi }}">
+                                                                    <input type="text" name="tipe"
+                                                                        value="Tagihan Perusahaan">
+                                                                    <input type="text" name="barang[nama_barang][]"
+                                                                        value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan?->kegiatan }}">
+                                                                    <input type="number" name="barang[qty][]"
+                                                                        value="1">
+                                                                    <input type="text" name="barang[harga_barang][]"
+                                                                        value="{{ $tagihan->nominal ?? null }}">
+                                                                    <input type="text" name="barang[keterangan][]"
+                                                                        value="{{ $tagihan->keterangan ?? null }}">
                                                                 </form>
                                                             </li>
 
@@ -365,11 +399,13 @@
                                                             </li>
 
                                                             <li>
-                                                                <form action="{{ route('hapusTagihanPerusahaan', $tagihan->id) }}"
+                                                                <form
+                                                                    action="{{ route('hapusTagihanPerusahaan', $tagihan->id) }}"
                                                                     method="POST"
                                                                     onsubmit="return confirm('Yakin ingin menghapus?')">
                                                                     @csrf
-                                                                    <button type="submit" class="dropdown-item text-danger">
+                                                                    <button type="submit"
+                                                                        class="dropdown-item text-danger">
                                                                         Hapus
                                                                     </button>
                                                                 </form>
@@ -382,7 +418,8 @@
                                             <tr>
                                                 <td colspan="8" class="text-center py-5">
                                                     <div class="d-flex flex-column align-items-center">
-                                                        <i class="bx bx-message-square-x text-muted" style="font-size: 3rem;"></i>
+                                                        <i class="bx bx-message-square-x text-muted"
+                                                            style="font-size: 3rem;"></i>
                                                         <p class="text-muted mt-3 mb-0">Tidak ada tagihan untuk
                                                             ditampilkan
                                                         </p>
@@ -403,7 +440,8 @@
                     <div class="col-12">
                         <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
                             <!-- Card Header -->
-                            <div class="card-header border-bottom-0 py-4 d-flex justify-content-between align-items-center">
+                            <div
+                                class="card-header border-bottom-0 py-4 d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                                     <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
                                     Data Outstanding
@@ -411,7 +449,8 @@
                             </div>
 
                             <div class="px-4 py-3 border-bottom">
-                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                <div
+                                    class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                                     <div class="w-md-25">
                                         <input type="text" id="searchOutstanding" class="form-control"
                                             placeholder="Cari data outstanding..." autocomplete="off">
@@ -451,7 +490,8 @@
                                 class="card-footer py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                                 <div id="paginationInfo" class="text-muted small"></div>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-secondary" id="prevPage" disabled>Sebelumnya</button>
+                                    <button class="btn btn-sm btn-outline-secondary" id="prevPage"
+                                        disabled>Sebelumnya</button>
                                     <span id="pageInfo" class="align-self-center"></span>
                                     <button class="btn btn-sm btn-outline-secondary" id="nextPage">Selanjutnya</button>
                                 </div>
@@ -473,7 +513,8 @@
                                 <label for="filterTahun" class="form-label mb-0 text-secondary fw-medium">Tahun :</label>
                                 <select id="filterTahun" class="form-select w-auto">
                                     @for ($i = 0; $i < 6; $i++)
-                                        <option value="{{ now()->year - $i }}" {{ (now()->year - $i) == now()->year ? 'selected' : '' }}>
+                                        <option value="{{ now()->year - $i }}"
+                                            {{ now()->year - $i == now()->year ? 'selected' : '' }}>
                                             {{ now()->year - $i }}
                                         </option>
                                     @endfor
@@ -490,7 +531,8 @@
                                 <div class="chart-wrapper position-relative" style="height: 380px;">
                                     <canvas id="grafikOutstanding"></canvas>
 
-                                    <div id="outstandingEmpty" class="d-none position-absolute top-50 start-50 translate-middle
+                                    <div id="outstandingEmpty"
+                                        class="d-none position-absolute top-50 start-50 translate-middle
                                                 d-flex flex-column align-items-center text-center w-100">
                                         <i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i>
                                         <p class="text-muted mt-2 mb-0">
@@ -565,7 +607,8 @@
                                     :</label>
                                 <select id="filterTahunKetepatan" class="form-select w-auto">
                                     @for ($i = 0; $i < 6; $i++)
-                                        <option value="{{ now()->year - $i }}" {{ (now()->year - $i) == now()->year ? 'selected' : '' }}>
+                                        <option value="{{ now()->year - $i }}"
+                                            {{ now()->year - $i == now()->year ? 'selected' : '' }}>
                                             {{ now()->year - $i }}
                                         </option>
                                     @endfor
@@ -579,7 +622,8 @@
                             <div class="col-lg-8">
                                 <div class="chart-wrapper position-relative" style="height: 380px;">
                                     <canvas id="grafikKetepatanWaktu"></canvas>
-                                    <div id="ketepatanWaktuEmpty" class="d-none position-absolute top-50 start-50 translate-middle
+                                    <div id="ketepatanWaktuEmpty"
+                                        class="d-none position-absolute top-50 start-50 translate-middle
                                                 d-flex flex-column align-items-center text-center w-100">
                                         <i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i>
                                         <p class="text-muted mt-2 mb-0">
@@ -630,6 +674,137 @@
                 </div>
             </div>
 
+            {{-- Checklist exam --}}
+            <div id="sectionExam">
+                <div class="modal fade" id="modalDetailExam" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-sm rounded-4">
+                            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 w-100">
+                                    <div>
+                                        <h5 class="modal-title fw-semibold mb-0">Informasi Exam</h5>
+                                        <small class="text-muted">Detail pengajuan exam</small>
+                                    </div>
+                                    <div id="selesaiExamBtn">
+                                    </div>
+                                </div>
+    
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+    
+                            <div class="modal-body p-4">
+                                <div class="bg-light rounded-4 p-4 border">
+                                    <div class="row g-4">
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Materi</small>
+    
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div>
+                                                    <div class="fw-semibold text-dark" id="detail_nama_materi">-</div>
+                                                </div>
+                                            </div>
+                                        </div>
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Perusahaan</small>
+                                            <div class="fw-semibold text-dark" id="detail_nama_perusahaan">-</div>
+                                        </div>
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Status</small>
+                                            <span id="detail_status">-</span>
+                                        </div>
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Tanggal Pengajuan</small>
+                                            <div class="fw-semibold text-dark" id="detail_tanggal_pengajuan">-</div>
+                                        </div>
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Sales</small>
+                                            <div class="fw-semibold text-dark" id="detail_sales">-</div>
+                                        </div>
+    
+                                        <div class="col-md-4">
+                                            <small class="text-muted text-uppercase d-block mb-2">Pax</small>
+                                            <div class="fw-semibold text-dark" id="detail_pax">-</div>
+                                        </div>
+    
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="row g-4 mb-5">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden  glass-force">
+                            <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
+                                <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                                    <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
+                                    Daftar Exam
+                                </h5>
+                                <div class="px-4 py-3 border-bottom">
+                                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    
+                                        <div class="w-md-25">
+                                            <input type="text"
+                                                id="searchExam"
+                                                class="form-control"
+                                                placeholder="Cari exam..."
+                                                autocomplete="off">
+                                        </div>
+    
+                                        <div id="examPaginationInfo" class="text-muted small"></div>
+    
+                                    </div>
+                                </div>
+                            </div>
+                            @if (session('success_exam'))
+                                <div class="alert alert-success">{{ session('success_exam') }}</div>
+                            @endif
+                            <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
+    
+                                {{-- Table Exam --}}
+                                <div class="table-responsive mb-4" style="max-height: 800px; overflow-y: auto;">
+                                    <table id="tabelEksam" class="table table-hover align-middle mb-0">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th class="border-0 ps-4">Selesai</th>
+                                                <th class="border-0">Nama Materi</th>
+                                                <th class="border-0">Tanggal Pengajuan</th>
+                                                <th class="border-0">Nama Perusahaan</th>
+                                                <th class="border-0">Pax</th>
+                                                <th class="border-0 text-center pe-4">Status</th>
+                                                <th class="border-0">Sales</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="examTableBody">
+                                        </tbody>
+                                    </table>
+                                    <div class="card-footer py-3 d-flex flex-column flex-md-row justify-content-end align-items-center gap-3">
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-secondary"
+                                                id="prevExamPage"
+                                                disabled>
+                                                Sebelumnya
+                                            </button>
+                                            <span id="examPageInfo" class="align-self-center"></span>
+                                            <button class="btn btn-sm btn-outline-secondary"
+                                                id="nextExamPage">
+                                                Selanjutnya
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         @endif
 
         @if (Auth::user()->jabatan === 'HRD')
@@ -653,7 +828,8 @@
                                     <input type="text" name="nama" class="form-control" autocomplete="off">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label col-form-label">Tanggal <span class="text-danger">*</span></label>
+                                    <label class="form-label col-form-label">Tanggal <span
+                                            class="text-danger">*</span></label>
                                     <input type="date" name="tanggal" class="form-control">
                                 </div>
 
@@ -710,7 +886,8 @@
                                 <i class="bx bx-calendar text-primary me-2" style="font-size: 1.5rem;"></i>
                                 Hari Libur
                             </h5>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahHariLibur">
+                            <button class="btn btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#modalTambahHariLibur">
                                 Tambah Hari Libur
                             </button>
                         </div>
@@ -735,11 +912,13 @@
                                     class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden d-flex flex-column glass-force">
                                     <div class="card-header border-bottom-0 pb-0">
                                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
-                                            <i class="bx bx-calendar-check text-success me-2" style="font-size: 1.5rem;"></i>
+                                            <i class="bx bx-calendar-check text-success me-2"
+                                                style="font-size: 1.5rem;"></i>
                                             Hari Libur Bulan Ini
                                         </h5>
                                     </div>
-                                    <div class="card-body p-4 flex-grow-1 d-flex flex-column" style="height: auto; gap: 12px;">
+                                    <div class="card-body p-4 flex-grow-1 d-flex flex-column"
+                                        style="height: auto; gap: 12px;">
                                         <div id="holiday-list" style="flex: 1; min-height: 200px; overflow-y: auto;">
                                             <div class="text-center py-4">
                                                 <div class="spinner-border spinner-border-sm text-primary" role="status">
@@ -764,7 +943,6 @@
                 </div>
 
             </div>
-
 
             {{-- Administrasi Karyawan --}}
             <!-- Modal Tambah -->
@@ -832,9 +1010,8 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari
-                                        sistem</small>
-                                    <label class="form-label">Status</label>
+                                    <label class="form-label">Status</label><br>
+                                    <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
                                     <select name="status" class="form-select">
                                         <option value="pending">Pending</option>
                                         <option value="proses">Proses</option>
@@ -911,9 +1088,23 @@
                                             <select name="bulan" id="eksportBulananAdminis" class="form-select">
                                                 <option value="" selected>Pilih Bulan</option>
                                                 @php
-                                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                                    $nama_bulan = [
+                                                        'Januari',
+                                                        'Februari',
+                                                        'Maret',
+                                                        'April',
+                                                        'Mei',
+                                                        'Juni',
+                                                        'Juli',
+                                                        'Agustus',
+                                                        'September',
+                                                        'Oktober',
+                                                        'November',
+                                                        'Desember',
+                                                    ];
                                                     for ($bulan = 1; $bulan <= 12; $bulan++) {
-                                                        echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
+                                                        echo "<option value=\"$bulan\">{$nama_bulan[$bulan -
+                                                        1]}</option>";
                                                     }
                                                 @endphp
                                             </select>
@@ -975,7 +1166,8 @@
                                 </button>
                                 <div class="d-flex gap-4 align-items-center">
                                     <h6 class="mb-0">Export : </h6>
-                                    <button type="button" data-bs-toggle="modal" data-bs-target="#modalEksportAdministrasi"
+                                    <button type="button" data-bs-toggle="modal"
+                                        data-bs-target="#modalEksportAdministrasi"
                                         class="btn btn-outline-secondary btn-sm pdfBtn">
                                         PDF
                                     </button>
@@ -1006,13 +1198,14 @@
                                         @forelse($administrasis as $administrasi)
                                             <tr class="border-bottom ">
                                                 @if ($administrasi->status === 'selesai')
-                                                    <td class="text-center ps-4"><input class="custom-check" type="checkbox" checked
-                                                            disabled></td>
+                                                    <td class="text-center ps-4"><input class="custom-check"
+                                                            type="checkbox" checked disabled></td>
                                                 @elseif ($administrasi->status === 'terlambat')
-                                                    <td class="text-center ps-4"><input class="custom-fail" type="checkbox" checked
-                                                            disabled></td>
+                                                    <td class="text-center ps-4"><input class="custom-fail"
+                                                            type="checkbox" checked disabled></td>
                                                 @else
-                                                    <td class="text-center ps-4"><input class="check-blue edit-administrasi"
+                                                    <td class="text-center ps-4"><input
+                                                            class="check-blue edit-administrasi"
                                                             data-id="{{ $administrasi->id }}" type="checkbox"></td>
                                                 @endif
                                                 <td>
@@ -1022,7 +1215,7 @@
                                                     {{ \Carbon\Carbon::parse($administrasi->dateline)->format('l, d F Y') }}
                                                 </td>
                                                 <td>
-                                                    {{ $administrasi->tanggal_selesai ? \Carbon\Carbon::parse($administrasi->tanggal_selesai)->format('l, d F Y') : '-'}}
+                                                    {{ $administrasi->tanggal_selesai ? \Carbon\Carbon::parse($administrasi->tanggal_selesai)->format('l, d F Y') : '-' }}
                                                 </td>
                                                 <td class="text-center pe-4">
                                                     @php
@@ -1058,8 +1251,12 @@
                                                 <td class="text-center pe-4">
                                                     @php
                                                         if ($administrasi->tanggal_selesai) {
-                                                            $diff = \Carbon\Carbon::parse($administrasi->dateline)
-                                                                ->diffInDays(\Carbon\Carbon::parse($administrasi->tanggal_selesai), false);
+                                                            $diff = \Carbon\Carbon::parse(
+                                                                $administrasi->dateline,
+                                                            )->diffInDays(
+                                                                \Carbon\Carbon::parse($administrasi->tanggal_selesai),
+                                                                false,
+                                                            );
 
                                                             if ($diff <= 0 || $administrasi->status === 'selesai') {
                                                                 $progress = 100;
@@ -1080,29 +1277,31 @@
                                                         }
                                                     @endphp
 
-                                                    <span class="badge bg-{{ $color }}-subtle text-{{ $color }}">
+                                                    <span
+                                                        class="badge bg-{{ $color }}-subtle text-{{ $color }}">
                                                         {{ $progress }}%
                                                     </span>
                                                 </td>
                                                 <td class="text-center pe-4 position-relative">
                                                     <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
-                                                            data-bs-toggle="dropdown" data-bs-boundary="viewport"
-                                                            aria-expanded="false">
+                                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle"
+                                                            type="button" data-bs-toggle="dropdown"
+                                                            data-bs-boundary="viewport" aria-expanded="false">
                                                             Aksi
                                                         </button>
 
                                                         <ul class="dropdown-menu dropdown-menu-end">
                                                             <li>
                                                                 <button class="dropdown-item edit-administrasi"
-                                                                    data-id="{{ $administrasi->id }}" data-bs-toggle="modal"
+                                                                    data-id="{{ $administrasi->id }}"
+                                                                    data-bs-toggle="modal"
                                                                     data-bs-target="#modalEditAdministrasi">
                                                                     Edit
                                                                 </button>
                                                             </li>
 
                                                             <li>
-                                                                @if($administrasi->bukti_transfer)
+                                                                @if ($administrasi->bukti_transfer)
                                                                     <a class="dropdown-item"
                                                                         href="{{ asset('storage/' . $administrasi->bukti_transfer) }}"
                                                                         target="_blank">
@@ -1124,7 +1323,8 @@
                                                                     @csrf
                                                                     @method('DELETE')
 
-                                                                    <button type="submit" class="dropdown-item text-danger">
+                                                                    <button type="submit"
+                                                                        class="dropdown-item text-danger">
                                                                         <i class="bx bx-trash me-2"></i> Hapus
                                                                     </button>
                                                                 </form>
@@ -1138,7 +1338,8 @@
                                             <tr>
                                                 <td colspan="8" class="text-center py-5">
                                                     <div class="d-flex flex-column align-items-center">
-                                                        <i class="bx bx-message-square-x text-muted" style="font-size: 3rem;"></i>
+                                                        <i class="bx bx-message-square-x text-muted"
+                                                            style="font-size: 3rem;"></i>
                                                         <p class="text-muted mt-3 mb-0">Tidak ada administrasi untuk
                                                             ditampilkan
                                                         </p>
@@ -1247,7 +1448,8 @@
                         </div>
                     </div>
                     <div class="card-body pe-5 mt-5" style="height: 320px;">
-                        <div class="chart-container d-flex align-items-center" style="position: relative; height: 100%;">
+                        <div class="chart-container d-flex align-items-center"
+                            style="position: relative; height: 100%;">
                             <canvas id="dataCuti"></canvas>
                             <div id="cutiEmpty" class="d-none d-flex flex-column align-items-center container-fluid">
                                 <i class="bx bx-x-circle text-muted" style="font-size: 3rem;"></i>
@@ -1275,7 +1477,20 @@
                                     <option value="default" disabled selected>Berdasarkan Bulan</option>
                                     @php
                                         $bulan_sekarang = now()->month;
-                                        $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                        $nama_bulan = [
+                                            'Januari',
+                                            'Februari',
+                                            'Maret',
+                                            'April',
+                                            'Mei',
+                                            'Juni',
+                                            'Juli',
+                                            'Agustus',
+                                            'September',
+                                            'Oktober',
+                                            'November',
+                                            'Desember',
+                                        ];
                                         for ($bulan = 1; $bulan <= 12; $bulan++) {
                                             echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
                                         }
@@ -1308,7 +1523,8 @@
                         </h5>
                         <div class="d-flex gap-4 align-items-center">
                             <h6 class="mb-0">Export : </h6>
-                            <button type="button" id="exportTotalMengajar" class="btn btn-outline-secondary btn-sm pdfBtn">
+                            <button type="button" id="exportTotalMengajar"
+                                class="btn btn-outline-secondary btn-sm pdfBtn">
                                 PDF
                             </button>
                         </div>
@@ -1333,7 +1549,20 @@
                                     <option value="default" disabled selected>Berdasarkan Bulan</option>
                                     @php
                                         $bulan_sekarang = now()->month;
-                                        $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                        $nama_bulan = [
+                                            'Januari',
+                                            'Februari',
+                                            'Maret',
+                                            'April',
+                                            'Mei',
+                                            'Juni',
+                                            'Juli',
+                                            'Agustus',
+                                            'September',
+                                            'Oktober',
+                                            'November',
+                                            'Desember',
+                                        ];
                                         for ($bulan = 1; $bulan <= 12; $bulan++) {
                                             echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
                                         }
@@ -1382,7 +1611,8 @@
                     </h5>
                     <div class="d-flex gap-4 align-items-center">
                         <h6 class="mb-0">Export : </h6>
-                        <button type="button" id="exportFeedbackInstruktur" class="btn btn-outline-secondary btn-sm pdfBtn">
+                        <button type="button" id="exportFeedbackInstruktur"
+                            class="btn btn-outline-secondary btn-sm pdfBtn">
                             PDF
                         </button>
                     </div>
@@ -1420,7 +1650,20 @@
                                 <option value="default" disabled selected>Berdasarkan Bulan</option>
                                 @php
                                     $bulan_sekarang = now()->month;
-                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                    $nama_bulan = [
+                                        'Januari',
+                                        'Februari',
+                                        'Maret',
+                                        'April',
+                                        'Mei',
+                                        'Juni',
+                                        'Juli',
+                                        'Agustus',
+                                        'September',
+                                        'Oktober',
+                                        'November',
+                                        'Desember',
+                                    ];
                                     for ($bulan = 1; $bulan <= 12; $bulan++) {
                                         echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
                                     }
@@ -1466,6 +1709,11 @@
                                         <span class="badge bg-success-subtle text-success px-3 py-2">
                                             {{ number_format($jumlahInstruktur, 0, ',', '.') }} Instruktur
                                         </span>
+
+                                        <button class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#modalEksportChecklistRKM">
+                                            Eksport
+                                        </button>
                                     </div>
                                 </div>
 
@@ -1476,44 +1724,63 @@
                                     <table class="table table-hover align-middle mb-0" style="table-layout: auto;">
                                         <thead class="table-light sticky-top">
                                             <tr>
-                                                <th scope="col" rowspan="2" class="border-0 ps-4" style="min-width: 50px;">
+                                                <th scope="col" rowspan="2" class="border-0 ps-4"
+                                                    style="min-width: 50px;">
                                                     No</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 250px;">
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 250px;">
                                                     Materi</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Harga
-                                                </th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">
-                                                    Tanggal Training</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">
-                                                    Perusahaan</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Kode
-                                                    Sales</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">
-                                                    Instruktur</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Ruang
-                                                </th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Pax
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 150px;">Harga
                                                 </th>
                                                 <th scope="col" rowspan="2" class="border-0"
-                                                    class="border-0 text-center pe-4" style="min-width: 100px;">Exam</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 120px;">
+                                                    style="min-width: 170px;">
+                                                    Tanggal Training</th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 170px;">
+                                                    Perusahaan</th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 100px;">Kode
+                                                    Sales</th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 100px;">
+                                                    Instruktur</th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 150px;">Ruang
+                                                </th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 100px;">Pax
+                                                </th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    class="border-0 text-center pe-4" style="min-width: 100px;">Exam
+                                                </th>
+                                                <th scope="col" rowspan="2" class="border-0"
+                                                    style="min-width: 120px;">
                                                     Makanan</th>
                                                 {{-- CheckList --}}
-                                                <th scope="col" colspan="7" class="border-bottom border-dark text-center"
+                                                <th scope="col" colspan="7"
+                                                    class="border-bottom border-dark text-center"
                                                     style="min-width: 300px;">Checklist</th>
 
                                                 <th scope="col" rowspan="2" class="border-0">Eksport</th>
                                             </tr>
                                             <tr class="text-center">
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Tanggal Keperluan
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Tanggal
+                                                    Keperluan
                                                 </th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Materi</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Kelas</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Coffe Break</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Makan Siang</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Keperluan Kelas
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Materi
                                                 </th>
-                                                <th scope="col" class="border-0 text-center pe-4" style="min-width: 120px;">
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Kelas
+                                                </th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Coffe
+                                                    Break</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Makan
+                                                    Siang</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">
+                                                    Keperluan Kelas
+                                                </th>
+                                                <th scope="col" class="border-0 text-center pe-4"
+                                                    style="min-width: 120px;">
                                                     Status</th>
                                             </tr>
                                         </thead>
@@ -1523,12 +1790,13 @@
                                                     $checklists = $detail_rkm->checklists ?? [];
                                                     $rowspan = count($checklists) > 0 ? count($checklists) : 1;
                                                 @endphp
-                                                @if(count($checklists) > 0)
+                                                @if (count($checklists) > 0)
                                                     @foreach ($checklists as $tanggal => $item)
                                                         <tr class="border-bottom">
 
                                                             @if ($loop->first)
-                                                                <td class="ps-4" rowspan="{{ $rowspan }}">{{ $loop->parent->iteration }}
+                                                                <td class="ps-4" rowspan="{{ $rowspan }}">
+                                                                    {{ $loop->parent->iteration }}
                                                                 </td>
 
                                                                 <td rowspan="{{ $rowspan }}">
@@ -1537,7 +1805,8 @@
 
                                                                 <td rowspan="{{ $rowspan }}">
                                                                     <span class="text-success fw-semibold">
-                                                                        Rp {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
+                                                                        Rp
+                                                                        {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
                                                                     </span>
                                                                 </td>
 
@@ -1557,25 +1826,30 @@
                                                                     @endforeach
                                                                 </td>
 
-                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->sales_all }}</td>
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    {{ $detail_rkm->sales_all }}</td>
                                                                 <td rowspan="{{ $rowspan }}">
                                                                     {{ implode(', ', array_filter([$detail_rkm->instruktur_key, $detail_rkm->instruktur_key2, $detail_rkm->asisten_key])) }}
                                                                 </td>
-                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    {{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}
                                                                 </td>
                                                                 <td rowspan="{{ $rowspan }}">
-                                                                    <span class="badge bg-info-subtle text-info px-3 py-2">
+                                                                    <span
+                                                                        class="badge bg-info-subtle text-info px-3 py-2">
                                                                         {{ number_format($detail_rkm->pax, 0, ',', '.') }}
                                                                     </span>
                                                                 </td>
 
                                                                 <td rowspan="{{ $rowspan }}">
                                                                     @if ($detail_rkm->exam == '1')
-                                                                        <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                                        <span
+                                                                            class="badge bg-success-subtle text-success px-3 py-2">
                                                                             Ya
                                                                         </span>
                                                                     @else
-                                                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                                                        <span
+                                                                            class="badge bg-secondary-subtle text-secondary px-3 py-2">
                                                                             Tidak
                                                                         </span>
                                                                     @endif
@@ -1583,8 +1857,13 @@
 
                                                                 <td rowspan="{{ $rowspan }}">
                                                                     @php
-                                                                        $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
-                                                                        $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
+                                                                        $makananList = $detail_rkm->makanan
+                                                                            ? explode(', ', $detail_rkm->makanan)
+                                                                            : [];
+                                                                        $makananValue =
+                                                                            count($makananList) > 0
+                                                                                ? $makananList[0]
+                                                                                : 'Tidak Ada';
                                                                     @endphp
 
                                                                     @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
@@ -1604,28 +1883,34 @@
                                                             </td>
 
                                                             <td class="text-center">
-                                                                <input type="checkbox" class="custom-check" {{ $item->materi ? 'checked' : '' }} disabled>
+                                                                <input type="checkbox" class="custom-check"
+                                                                    {{ $item->materi ? 'checked' : '' }} disabled>
                                                             </td>
 
                                                             <td class="text-center">
                                                                 @if ($detail_rkm->metode_kelas === 'Offline')
-                                                                    <input type="checkbox" class="custom-check" {{ $item->kelas ? 'checked' : '' }} disabled>
+                                                                    <input type="checkbox" class="custom-check"
+                                                                        {{ $item->kelas ? 'checked' : '' }} disabled>
                                                                 @else
                                                                     -
                                                                 @endif
                                                             </td>
 
                                                             <td class="text-center">
-                                                                <input type="checkbox" class="custom-check" {{ $item->cb ? 'checked' : '' }} disabled>
+                                                                <input type="checkbox" class="custom-check"
+                                                                    {{ $item->cb ? 'checked' : '' }} disabled>
                                                             </td>
 
                                                             <td class="text-center">
-                                                                <input type="checkbox" class="custom-check" {{ $item->maksi ? 'checked' : '' }} disabled>
+                                                                <input type="checkbox" class="custom-check"
+                                                                    {{ $item->maksi ? 'checked' : '' }} disabled>
                                                             </td>
 
                                                             <td class="text-center">
                                                                 @if ($detail_rkm->metode_kelas === 'Offline')
-                                                                    <input type="checkbox" class="custom-check" {{ $item->keperluan_kelas ? 'checked' : '' }} disabled>
+                                                                    <input type="checkbox" class="custom-check"
+                                                                        {{ $item->keperluan_kelas ? 'checked' : '' }}
+                                                                        disabled>
                                                                 @else
                                                                     -
                                                                 @endif
@@ -1635,13 +1920,16 @@
                                                                 {{ $item->progress ?? 0 }}%
                                                             </td>
                                                             @if ($loop->first)
-                                                                <td rowspan="{{ $rowspan }}" class="text-center align-middle">
+                                                                <td rowspan="{{ $rowspan }}"
+                                                                    class="text-center align-middle">
                                                                     <a href="{{ route('export.pdf.checklist', $detail_rkm->id) }}"
-                                                                        id="exportPdfRkm" class="btn btn-outline-danger btn-sm mb-1">
+                                                                        id="exportPdfRkm"
+                                                                        class="btn btn-outline-danger btn-sm mb-1">
                                                                         PDF
                                                                     </a>
                                                                     <a href="{{ route('export.excel.checklist', $detail_rkm->id) }}"
-                                                                        id="exportExcelRkm" class="btn btn-outline-success btn-sm">
+                                                                        id="exportExcelRkm"
+                                                                        class="btn btn-outline-success btn-sm">
                                                                         Excel
                                                                     </a>
                                                                 </td>
@@ -1658,7 +1946,8 @@
 
                                                         <td>
                                                             <span class="text-success fw-semibold">
-                                                                Rp {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
+                                                                Rp
+                                                                {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
                                                             </span>
                                                         </td>
 
@@ -1690,11 +1979,13 @@
 
                                                         <td>
                                                             @if ($detail_rkm->exam == '1')
-                                                                <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                                <span
+                                                                    class="badge bg-success-subtle text-success px-3 py-2">
                                                                     Ya
                                                                 </span>
                                                             @else
-                                                                <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                                                <span
+                                                                    class="badge bg-secondary-subtle text-secondary px-3 py-2">
                                                                     Tidak
                                                                 </span>
                                                             @endif
@@ -1702,8 +1993,13 @@
 
                                                         <td>
                                                             @php
-                                                                $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
-                                                                $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
+                                                                $makananList = $detail_rkm->makanan
+                                                                    ? explode(', ', $detail_rkm->makanan)
+                                                                    : [];
+                                                                $makananValue =
+                                                                    count($makananList) > 0
+                                                                        ? $makananList[0]
+                                                                        : 'Tidak Ada';
                                                             @endphp
 
                                                             @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
@@ -1739,6 +2035,94 @@
                     </div>
                 </div>
 
+                <!-- Modal Eksport Checklist RKM -->
+                <div class="modal fade" id="modalEksportChecklistRKM" tabindex="-1">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content border-0 shadow">
+
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-semibold">
+                                    <i class="bi bi-download me-2"></i> Eksport Checklist RKM
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+
+                            <div class="modal-body pt-3" id="formEksportChecklistRKM">
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-3">Pilih Periode</h6>
+
+                                    <div class="row g-3 d-flex align-items-end">
+
+                                        <div class="col-md-4">
+                                            <label class="form-label small">Tahun</label>
+                                            <select name="tahun" class="form-select">
+                                                <option value="" selected>Pilih Tahun</option>
+                                                @php
+                                                    $tahun_sekarang = now()->year;
+                                                    for ($tahun = 2023; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                                        echo "<option value=\"$tahun\">$tahun</option>";
+                                                    }
+                                                @endphp
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label small">Bulan</label>
+                                            <select name="bulan" class="form-select">
+                                                <option value="" selected>Pilih Bulan</option>
+                                                @php
+                                                    $nama_bulan = [
+                                                        'Januari',
+                                                        'Februari',
+                                                        'Maret',
+                                                        'April',
+                                                        'Mei',
+                                                        'Juni',
+                                                        'Juli',
+                                                        'Agustus',
+                                                        'September',
+                                                        'Oktober',
+                                                        'November',
+                                                        'Desember',
+                                                    ];
+                                                    for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                                        echo "<option value=\"$bulan\">{$nama_bulan[$bulan -
+                                                        1]}</option>";
+                                                    }
+                                                @endphp
+                                            </select>
+                                        </div>
+
+                                        <div class="border-0 col-md-4">
+                                            <button type="button" id="cariDataRkmBtn" class="btn btn-primary px-4">
+                                                Cari data
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <h6 class="text-muted mb-3">Daftar Data RKM :</h6>
+
+                                    <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
+                                        <table id="tabelExportChecklistRkm" class="table table-hover align-middle mb-0">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <td>Nama Materi</td>
+                                                    <td>Perusahaan</td>
+                                                    <td>Tanggal Training</td>
+                                                    <td>Eksport</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Daftar Ticketing --}}
                 <div class="row g-3 mb-4">
                     <div class="col-12">
@@ -1749,7 +2133,8 @@
                                         <i class="bx bx-support text-primary me-2"></i>
                                         Ticketing
                                     </h5>
-                                    <span class="badge bg-primary-subtle text-primary">{{ count($ticket) }} Ticket</span>
+                                    <span class="badge bg-primary-subtle text-primary">{{ count($ticket) }}
+                                        Ticket</span>
                                 </div>
                             </div>
                             <div class="card-body p-0">
@@ -1779,7 +2164,8 @@
                                                     <td>
                                                         <div class="d-flex align-items-center">
                                                             <div class="text-truncate" style="max-width: 150px;"
-                                                                data-bs-toggle="tooltip" title="{{ $item->nama_karyawan }}">
+                                                                data-bs-toggle="tooltip"
+                                                                title="{{ $item->nama_karyawan }}">
                                                                 {{ $item->nama_karyawan }}
                                                             </div>
                                                         </div>
@@ -1804,7 +2190,8 @@
                                                     </td>
                                                     <td>
                                                         <div class="text-truncate" style="max-width: 250px;"
-                                                            data-bs-toggle="tooltip" title="{{ $item->detail_kendala }}">
+                                                            data-bs-toggle="tooltip"
+                                                            title="{{ $item->detail_kendala }}">
                                                             {{ $item->detail_kendala }}
                                                         </div>
                                                     </td>
@@ -1874,8 +2261,8 @@
 
         <!-- Modals untuk setiap Divisi -->
         @foreach ($divisiStats as $index => $divisi)
-            <div class="modal fade" id="modalDivisi{{ $index }}" tabindex="-1" aria-labelledby="modalLabel{{ $index }}"
-                aria-hidden="true">
+            <div class="modal fade" id="modalDivisi{{ $index }}" tabindex="-1"
+                aria-labelledby="modalLabel{{ $index }}" aria-hidden="true">
                 <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
                     <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
                         <div class="modal-header bg-{{ $divisi['color'] }} bg-opacity-10 border-bottom-0">
@@ -1909,7 +2296,8 @@
                                                     <td class="ps-4 fw-medium">{{ $key + 1 }}</td>
                                                     <td class="ps-4">
                                                         <div class="d-flex align-items-center">
-                                                            <div class="avatar avatar-sm bg-opacity-15 rounded-circle me-3">
+                                                            <div
+                                                                class="avatar avatar-sm bg-opacity-15 rounded-circle me-3">
                                                                 <span class="text-{{ $divisi['color'] }} fw-bold small">
                                                                     {{ strtoupper(substr($karyawan->nama_lengkap, 0, 1)) }}
                                                                 </span>
@@ -2256,8 +2644,10 @@
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function() {
                 const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
                 if (!ctx) return;
 
@@ -2320,7 +2710,7 @@
                                 displayColors: false,
                                 padding: 12,
                                 callbacks: {
-                                    afterLabel: function (context) {
+                                    afterLabel: function(context) {
                                         const hadir = context.parsed.y;
                                         const tidakHadir = totalKaryawan - hadir;
                                         return [
@@ -2413,7 +2803,7 @@
                             value: value,
                             tahun: tahun,
                         },
-                        success: function (res) {
+                        success: function(res) {
 
                             if (cutiChart) {
                                 cutiChart.data.labels = res.labelCuti;
@@ -2469,32 +2859,32 @@
                             currentFilterCuti.tahun = tahun;
                             currentFilterCuti.rentangWaktu = res.rentangWaktu;
                         },
-                        error: function (xhr) {
+                        error: function(xhr) {
                             console.error(xhr.responseText);
                         }
                     });
                 }
 
                 // reset filter per tahun
-                $('#filterCutiTahun').change(function () {
+                $('#filterCutiTahun').change(function() {
                     $('#filterCutiBulan, #filterCutiTriwulan').val('default');
                     loadDataCuti('tahun', $(this).val());
                 });
 
                 // reset Filter per bulan
-                $('#filterCutiBulan').change(function () {
+                $('#filterCutiBulan').change(function() {
                     $('#filterCutiTriwulan').val('default');
                     loadDataCuti('bulan', $(this).val());
                 });
 
                 // reset filter per triwulan
-                $('#filterCutiTriwulan').change(function () {
+                $('#filterCutiTriwulan').change(function() {
                     $('#filterCutiBulan').val('default');
                     loadDataCuti('triwulan', $(this).val());
                 });
 
                 // Export cuti
-                $('#exportCuti').click(function () {
+                $('#exportCuti').click(function() {
 
                     $.ajax({
                         url: '/office/data-cuti',
@@ -2508,7 +2898,7 @@
                         xhrFields: {
                             responseType: 'blob'
                         },
-                        success: function (blob) {
+                        success: function(blob) {
 
                             const url = window.URL.createObjectURL(blob);
                             const a = document.createElement('a');
@@ -2521,7 +2911,7 @@
                             a.remove();
                             window.URL.revokeObjectURL(url);
                         },
-                        error: function (err) {
+                        error: function(err) {
                             alert('Gagal export PDF' + err);
                         }
                     });
@@ -2553,12 +2943,12 @@
                             value: value,
                             tahun: tahun
                         },
-                        success: function (res) {
+                        success: function(res) {
                             let tabelMengajar = $('#tabelTotalMengajar tbody');
                             tabelMengajar.empty();
                             let data = res.dataMengajar;
 
-                            $.each(data, function (index, item) {
+                            $.each(data, function(index, item) {
                                 tabelMengajar.append(`
                                         <tr>
                                             <td>${index + 1}</td>
@@ -2594,7 +2984,7 @@
                             currentFilterMengajar.tahun = tahun;
                             currentFilterMengajar.rentangWaktu = res.rentangWaktu;
                         },
-                        error: function (err) {
+                        error: function(err) {
                             alert(err);
                         }
                     });
@@ -2614,18 +3004,20 @@
                                 page: page,
                                 search: search
                             },
-                            success: function (res) {
+                            success: function(res) {
                                 let rows = '';
 
                                 currentPage = res.current_page;
                                 lastPage = res.last_page;
 
                                 if (res.data.length === 0) {
-                                    rows = `<tr><td colspan="12" class="text-center">Tidak ada data</td></tr>`;
+                                    rows =
+                                        `<tr><td colspan="12" class="text-center">Tidak ada data</td></tr>`;
                                 } else {
                                     res.data.forEach((item, index) => {
                                         const safeFormat = (val) => {
-                                            if (val === '-' || val === null || val === undefined || val === '' || Number(val) === 0) {
+                                            if (val === '-' || val === null || val ===
+                                                undefined || val === '' || Number(val) === 0) {
                                                 return '-';
                                             }
                                             return 'Rp ' + formatRupiah(val);
@@ -2670,13 +3062,13 @@
                         });
                     }
 
-                    $('#nextPage').click(function () {
+                    $('#nextPage').click(function() {
                         if (currentPage < lastPage) {
                             loadOutstanding(currentPage + 1, currentSearch);
                         }
                     });
 
-                    $('#prevPage').click(function () {
+                    $('#prevPage').click(function() {
                         if (currentPage > 1) {
                             loadOutstanding(currentPage - 1, currentSearch);
                         }
@@ -2684,7 +3076,7 @@
 
 
                     let debounceTimer;
-                    $('#searchOutstanding').on('keyup', function () {
+                    $('#searchOutstanding').on('keyup', function() {
                         clearTimeout(debounceTimer);
                         let value = $(this).val();
 
@@ -2774,16 +3166,17 @@
                                 let analysis = "";
 
                                 if (progress >= 90) {
-                                    analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${progress}% dari target 100%.`;
-                                }
-                                else if (progress >= 70) {
-                                    analysis = `Kinerja cukup baik. Anda mencapai KPI ${progress}% dari target 100%, masih ada ruang peningkatan.`;
-                                }
-                                else if (progress >= 50) {
-                                    analysis = `Kinerja sedang. Baru mencapai KPI ${progress}% dari target 100%, perlu perbaikan.`;
-                                }
-                                else {
-                                    analysis = `Kinerja rendah. Baru ${progress}% dari target 100%, perlu tindakan segera.`;
+                                    analysis =
+                                        `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${progress}% dari target 100%.`;
+                                } else if (progress >= 70) {
+                                    analysis =
+                                        `Kinerja cukup baik. Anda mencapai KPI ${progress}% dari target 100%, masih ada ruang peningkatan.`;
+                                } else if (progress >= 50) {
+                                    analysis =
+                                        `Kinerja sedang. Baru mencapai KPI ${progress}% dari target 100%, perlu perbaikan.`;
+                                } else {
+                                    analysis =
+                                        `Kinerja rendah. Baru ${progress}% dari target 100%, perlu tindakan segera.`;
                                 }
 
                                 document.getElementById('kpiAnalysis').innerText = analysis;
@@ -2838,11 +3231,13 @@
                                             tooltip: {
                                                 callbacks: {
 
-                                                    label: function (context) {
+                                                    label: function(context) {
 
                                                         const value = context.raw;
-                                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                                        const percent = ((value / total) * 100).toFixed(1);
+                                                        const total = context.dataset.data.reduce((a,
+                                                            b) => a + b, 0);
+                                                        const percent = ((value / total) * 100).toFixed(
+                                                            1);
 
                                                         return `${context.label}: ${percent}% (${value})`;
                                                     }
@@ -2858,7 +3253,7 @@
 
                     loadChartOutstanding(new Date().getFullYear());
 
-                    document.getElementById('filterTahun').addEventListener('change', function () {
+                    document.getElementById('filterTahun').addEventListener('change', function() {
                         loadChartOutstanding(this.value);
                     });
 
@@ -2884,21 +3279,23 @@
                                 document.getElementById('kpiProgressKetepatan').innerText = `${persen}%`;
                                 document.getElementById('totalDataKetepatan').innerText = total;
                                 document.getElementById('lblSesuaiKetepatan').innerText = `${sesuai}`;
-                                document.getElementById('lblTidakSesuaiKetepatan').innerText = `${data.data[1] || 0}`;
+                                document.getElementById('lblTidakSesuaiKetepatan').innerText =
+                                    `${data.data[1] || 0}`;
 
 
                                 let analysis = "";
                                 if (persen >= 90) {
-                                    analysis = `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${persen}% dari target 100%.`;
-                                }
-                                else if (persen >= 70) {
-                                    analysis = `Kinerja cukup baik. Anda mencapai KPI ${persen}% dari target 100%, masih ada ruang peningkatan.`;
-                                }
-                                else if (persen >= 50) {
-                                    analysis = `Kinerja sedang. Baru mencapai KPI ${persen}% dari target 100%, perlu perbaikan.`;
-                                }
-                                else {
-                                    analysis = `Kinerja rendah. Baru ${persen}% dari target 100%, perlu tindakan segera.`;
+                                    analysis =
+                                        `Kinerja sangat baik! Anda sudah mencapai KPI sebesar ${persen}% dari target 100%.`;
+                                } else if (persen >= 70) {
+                                    analysis =
+                                        `Kinerja cukup baik. Anda mencapai KPI ${persen}% dari target 100%, masih ada ruang peningkatan.`;
+                                } else if (persen >= 50) {
+                                    analysis =
+                                        `Kinerja sedang. Baru mencapai KPI ${persen}% dari target 100%, perlu perbaikan.`;
+                                } else {
+                                    analysis =
+                                        `Kinerja rendah. Baru ${persen}% dari target 100%, perlu tindakan segera.`;
                                 }
                                 document.getElementById('kpiAnalysisKetepatan').innerText = analysis;
 
@@ -2919,7 +3316,7 @@
                                             data: data.data,
                                             backgroundColor: [
                                                 '#198754', // Hijau untuk Sesuai
-                                                '#dc3545'  // Merah untuk Tidak Sesuai
+                                                '#dc3545' // Merah untuk Tidak Sesuai
                                             ]
                                         }]
                                     },
@@ -2932,10 +3329,12 @@
                                             },
                                             tooltip: {
                                                 callbacks: {
-                                                    label: function (context) {
+                                                    label: function(context) {
                                                         const value = context.raw;
-                                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                                        const percent = ((value / total) * 100).toFixed(1);
+                                                        const total = context.dataset.data.reduce((a,
+                                                            b) => a + b, 0);
+                                                        const percent = ((value / total) * 100).toFixed(
+                                                            1);
 
                                                         return `${context.label}: ${percent}% (${value})`;
                                                     }
@@ -2954,32 +3353,32 @@
 
                     loadChartKetepatan(new Date().getFullYear());
 
-                    document.getElementById('filterTahunKetepatan').addEventListener('change', function () {
+                    document.getElementById('filterTahunKetepatan').addEventListener('change', function() {
                         loadChartKetepatan(this.value);
                     });
 
                 }
 
                 // reset filter per tahun
-                $('#filterMengajarPerTahun').change(function () {
+                $('#filterMengajarPerTahun').change(function() {
                     $('#filterMengajarPerBulan, #filterMengajarPerTriwulan').val('default');
                     loadDataMengajar('tahun', $(this).val());
                 });
 
                 // reset Filter per bulan
-                $('#filterMengajarPerBulan').change(function () {
+                $('#filterMengajarPerBulan').change(function() {
                     $('#filterMengajarPerTriwulan').val('default');
                     loadDataMengajar('bulan', $(this).val());
                 });
 
                 // reset filter per triwulan
-                $('#filterMengajarPerTriwulan').change(function () {
+                $('#filterMengajarPerTriwulan').change(function() {
                     $('#filterMengajarPerBulan').val('default');
                     loadDataMengajar('triwulan', $(this).val());
                 });
 
                 // Export Total Mengajar
-                $('#exportTotalMengajar').click(function () {
+                $('#exportTotalMengajar').click(function() {
 
                     $.ajax({
                         url: '/office/data-mengajar',
@@ -2993,27 +3392,28 @@
                         xhrFields: {
                             responseType: 'blob'
                         },
-                        success: function (blob) {
+                        success: function(blob) {
 
                             const url = window.URL.createObjectURL(blob);
                             const a = document.createElement('a');
 
                             a.href = url;
-                            a.download = `Laporan_Total_Mengajar_${currentFilterMengajar.rentangWaktu}.pdf`;
+                            a.download =
+                                `Laporan_Total_Mengajar_${currentFilterMengajar.rentangWaktu}.pdf`;
                             document.body.appendChild(a);
                             a.click();
 
                             a.remove();
                             window.URL.revokeObjectURL(url);
                         },
-                        error: function (xhr, status, error) {
+                        error: function(xhr, status, error) {
                             console.log(xhr);
                         }
                     });
                 });
 
                 // Load semua AJAX
-                $(document).ready(function () {
+                $(document).ready(function() {
                     loadDataCuti('bulan', new Date().getMonth() + 1);
                     loadDataMengajar('bulan', new Date().getMonth() + 1);
                     loadOutstanding();
@@ -3023,27 +3423,26 @@
                 // Script Chart Feedback
                 let feedbackChart = null;
 
-                $(document).ready(function () {
+                $(document).ready(function() {
                     initFeedbackChart();
                     loadFeedback();
 
                     // Event listener untuk filter
-                    $('#filterFeedbackTahun').change(function () {
+                    $('#filterFeedbackTahun').change(function() {
                         resetSelect('#filterFeedbackBulan', '#filterFeedbackTriwulan');
                         loadFeedback('tahun', $(this).val());
                     });
 
-                    $('#filterFeedbackBulan').change(function () {
+                    $('#filterFeedbackBulan').change(function() {
                         resetSelect('#filterFeedbackTriwulan');
                         loadFeedback('bulan', $(this).val());
                     });
 
-                    $('#filterFeedbackTriwulan').change(function () {
+                    $('#filterFeedbackTriwulan').change(function() {
                         resetSelect('#filterFeedbackBulan');
                         loadFeedback('triwulan', $(this).val());
                     });
                 });
-
                 // Inisialisasi Chart Bar dengan styling baru
                 function initFeedbackChart() {
                     const ctx = document.getElementById('feedbackChart')?.getContext('2d');
@@ -3078,13 +3477,17 @@
                                 },
                                 tooltip: {
                                     callbacks: {
-                                        label: function (context) {
+                                        label: function(context) {
                                             return `Nilai: ${context.raw} (${context.label})`;
                                         }
                                     },
                                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                    titleFont: { size: 14 },
-                                    bodyFont: { size: 13 }
+                                    titleFont: {
+                                        size: 14
+                                    },
+                                    bodyFont: {
+                                        size: 13
+                                    }
                                 }
                             },
                             scales: {
@@ -3093,13 +3496,16 @@
                                     max: 4,
                                     ticks: {
                                         stepSize: 0.4,
-                                        font: { size: 12 }
+                                        font: {
+                                            size: 12
+                                        }
                                     },
                                     grid: {
-                                        color: function (context) {
-                                            return context.tick.value === 3.2
-                                                ? 'rgba(255, 0, 0, 0.3)'  // Highlight garis di nilai 3.2
-                                                : 'rgba(0, 0, 0, 0.05)';
+                                        color: function(context) {
+                                            return context.tick.value === 3.2 ?
+                                                'rgba(255, 0, 0, 0.3)' // Highlight garis di nilai 3.2
+                                                :
+                                                'rgba(0, 0, 0, 0.05)';
                                         }
                                     }
                                 },
@@ -3108,9 +3514,13 @@
                                         autoSkip: false,
                                         maxRotation: 30,
                                         minRotation: 15,
-                                        font: { size: 11 }
+                                        font: {
+                                            size: 11
+                                        }
                                     },
-                                    grid: { display: false }
+                                    grid: {
+                                        display: false
+                                    }
                                 }
                             },
                             animation: {
@@ -3133,17 +3543,21 @@
                             value: value,
                             tahun: tahun !== 'default' ? tahun : null
                         },
-                        beforeSend: function () {
+                        beforeSend: function() {
                             $('#nilaiInstrukturEmpty')
-                                .html('<i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i><p class="text-muted mt-2 mb-0">Memuat data...</p>')
+                                .html(
+                                    '<i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i><p class="text-muted mt-2 mb-0">Memuat data...</p>'
+                                )
                                 .removeClass('d-none');
                         },
-                        success: function (res) {
+                        success: function(res) {
                             // === DATA KOSONG ===
                             if (!res || !Array.isArray(res) || res.length === 0) {
                                 resetChart();
                                 $('#nilaiInstrukturEmpty')
-                                    .html('<i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i><p class="text-muted mt-2 mb-0">Tidak ada data Nilai Instruktur</p>')
+                                    .html(
+                                        '<i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i><p class="text-muted mt-2 mb-0">Tidak ada data Nilai Instruktur</p>'
+                                    )
                                     .removeClass('d-none');
                                 $('#exportFeedbackInstruktur').prop('disabled', true);
                                 return;
@@ -3176,11 +3590,13 @@
                                 $('#nilaiInstrukturEmpty').removeClass('d-none');
                             }
                         },
-                        error: function (xhr) {
+                        error: function(xhr) {
                             console.error('AJAX Error:', xhr.status);
                             resetChart();
                             $('#nilaiInstrukturEmpty')
-                                .html('<i class="bx bx-error-circle text-danger" style="font-size:3rem;"></i><p class="text-danger mt-2 mb-0">Gagal memuat data</p>')
+                                .html(
+                                    '<i class="bx bx-error-circle text-danger" style="font-size:3rem;"></i><p class="text-danger mt-2 mb-0">Gagal memuat data</p>'
+                                )
                                 .removeClass('d-none');
                         }
                     });
@@ -3205,7 +3621,7 @@
                 }
 
                 // === EXPORT PDF ===
-                $('#exportFeedbackInstruktur').on('click', function () {
+                $('#exportFeedbackInstruktur').on('click', function() {
                     let tahun = $('#filterFeedbackTahun').val();
                     let bulan = $('#filterFeedbackBulan').val();
                     let triwulan = $('#filterFeedbackTriwulan').val();
@@ -3224,7 +3640,8 @@
                         value = tahun;
                     }
 
-                    let url = `{{ route('office.feedbackinstrukturpdf') }}?filter=${filter}&value=${value}&tahun=${tahun}`;
+                    let url =
+                        `{{ route('office.feedbackinstrukturpdf') }}?filter=${filter}&value=${value}&tahun=${tahun}`;
                     window.open(url, '_blank');
                 });
                 // End Script Chart Feedback
@@ -3244,7 +3661,7 @@
                 }
 
                 // Format saat ngetik (fix cursor & bug 5 digit)
-                $(document).on('input', '.format-rupiah', function (e) {
+                $(document).on('input', '.format-rupiah', function(e) {
                     let cursorPos = this.selectionStart;
                     let value = this.value;
 
@@ -3267,17 +3684,17 @@
 
                 // Bersihkan sebelum submit
                 function bersihkanFormat(form) {
-                    form.find('.format-rupiah').each(function () {
+                    form.find('.format-rupiah').each(function() {
                         this.value = unformatRupiah(this.value);
                     });
                 }
 
-                $('#modalTambahTagihan form').on('submit', function () {
+                $('#modalTambahTagihan form').on('submit', function() {
                     bersihkanFormat($(this));
                 });
 
                 // Reset modal
-                $(document).on('hidden.bs.modal', '.modal', function () {
+                $(document).on('hidden.bs.modal', '.modal', function() {
                     const form = $(this).find('form');
 
                     if (form.length) {
@@ -3291,7 +3708,7 @@
                 });
 
                 // form edit tagihan
-                $(document).on('click', '#edit-tagihan', function () {
+                $(document).on('click', '#edit-tagihan', function() {
                     let id = $(this).data('id');
 
                     // jika yang diklik checkbox → buka modal manual
@@ -3303,7 +3720,7 @@
                     $.ajax({
                         url: '/office/data-tagihan/' + id,
                         type: 'GET',
-                        success: function (res) {
+                        success: function(res) {
                             let nominal = formatRupiah(parseInt(res.data.nominal))
                             // set action form
                             $('#formEditTagihan').attr('action', '/office/update-tagihan/' + id);
@@ -3311,13 +3728,18 @@
                             // set value input
                             $('#modalEditTagihan select[name="status"]').val(res.data.status);
                             $('#modalEditTagihan select[name="tracking"]').val(res.data.tracking);
-                            $('#modalEditTagihan input[name="tanggal_selesai"]').val(res.data.tanggal_selesai);
-                            $('#modalEditTagihan textarea[name="keterangan"]').val(res.data.keterangan);
+                            $('#modalEditTagihan input[name="tanggal_selesai"]').val(res.data
+                                .tanggal_selesai);
+                            $('#modalEditTagihan textarea[name="keterangan"]').val(res.data
+                                .keterangan);
 
                             if (res.data.status === 'selesai' || res.data.status === 'telat') {
-                                $('#modalEditTagihan select[name="status"]').attr('disabled', 'disabled');
-                            } else if (res.data.status === 'pending' || res.data.status === 'proses') {
-                                $('#modalEditTagihan select[name="status"]').attr('disabled', false);
+                                $('#modalEditTagihan select[name="status"]').attr('disabled',
+                                    'disabled');
+                            } else if (res.data.status === 'pending' || res.data.status ===
+                                'proses') {
+                                $('#modalEditTagihan select[name="status"]').attr('disabled',
+                                    false);
                             }
 
                             // format rupiah jika ada function
@@ -3327,7 +3749,7 @@
                 });
 
 
-                $(document).on('click', '.edit-administrasi', function () {
+                $(document).on('click', '.edit-administrasi', function() {
                     let id = $(this).data('id');
 
                     // reset checkbox supaya tidak tercentang
@@ -3341,20 +3763,26 @@
                         url: '/office/data-administrasi/' + id,
                         type: 'GET',
 
-                        success: function (res) {
+                        success: function(res) {
 
                             // set action form
-                            $('#formEditAdministrasi').attr('action', '/office/administrasi-karyawan/update/' + id);
+                            $('#formEditAdministrasi').attr('action',
+                                '/office/administrasi-karyawan/update/' + id);
 
                             // isi input
-                            $('#modalEditAdministrasi input[name="nama_administrasi"]').val(res.nama_administrasi);
-                            $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline).attr("disabled", "disabled");
+                            $('#modalEditAdministrasi input[name="nama_administrasi"]').val(res
+                                .nama_administrasi);
+                            $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline)
+                                .attr("disabled", "disabled");
                             $('#modalEditAdministrasi select[name="status"]').val(res.status);
-                            $('#modalEditAdministrasi input[name="tanggal_selesai"]').val(res.tanggal_selesai);
-                            $('#modalEditAdministrasi textarea[name="keterangan"]').val(res.keterangan);
+                            $('#modalEditAdministrasi input[name="tanggal_selesai"]').val(res
+                                .tanggal_selesai);
+                            $('#modalEditAdministrasi textarea[name="keterangan"]').val(res
+                                .keterangan);
 
                             if (res.status === 'selesai' || res.status === 'terlambat') {
-                                $('#modalEditAdministrasi select[name="status"]').attr("disabled", "disabled");
+                                $('#modalEditAdministrasi select[name="status"]').attr("disabled",
+                                    "disabled");
                             }
 
                             if (res.bukti_transfer) {
@@ -3380,7 +3808,7 @@
                     url: '/office/data-hari-libur/' + new Date().getFullYear(),
                     type: 'GET',
                     dataType: 'json',
-                    success: function (holidays) {
+                    success: function(holidays) {
                         let currentDisplayMonth = new Date().getMonth();
                         let currentDisplayYear = new Date().getFullYear();
 
@@ -3436,11 +3864,17 @@
                                 next: 'Next >>',
                             },
                             events: events,
-                            eventClick: function (info) {
+                            eventClick: function(info) {
                                 let data = info.event.extendedProps;
                                 const dateObj = new Date(data.date);
-                                const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'long' });
-                                const formattedDate = dateObj.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+                                const dayName = dateObj.toLocaleDateString('id-ID', {
+                                    weekday: 'long'
+                                });
+                                const formattedDate = dateObj.toLocaleDateString('id-ID', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                });
 
                                 const typeClass = typeClassMap[data.type] || {
                                     badge: 'bg-secondary-subtle text-secondary',
@@ -3466,7 +3900,7 @@
                                     `;
                                 $('#holiday-detail').html(detailHtml);
                             },
-                            datesSet: function (info) {
+                            datesSet: function(info) {
                                 const currentDate = info.view.currentStart;
 
                                 currentDisplayMonth = currentDate.getMonth();
@@ -3479,11 +3913,16 @@
                         function updateHolidayList() {
                             const monthHolidays = holidays.filter(h => {
                                 const date = new Date(h.tanggal);
-                                return date.getMonth() === currentDisplayMonth && date.getFullYear() === currentDisplayYear;
+                                return date.getMonth() === currentDisplayMonth && date
+                                    .getFullYear() === currentDisplayYear;
                             }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-                            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                            ];
+                            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat',
+                                'Sabtu'
+                            ];
 
                             if (monthHolidays.length === 0) {
                                 const emptyHtml = `
@@ -3496,7 +3935,8 @@
                                 return;
                             }
 
-                            let html = `<div class="mb-2"><span class="badge bg-success-subtle text-success px-3 py-2">${monthHolidays.length} Hari Libur - ${monthNames[currentDisplayMonth]}</span></div>`;
+                            let html =
+                                `<div class="mb-2"><span class="badge bg-success-subtle text-success px-3 py-2">${monthHolidays.length} Hari Libur - ${monthNames[currentDisplayMonth]}</span></div>`;
 
                             monthHolidays.forEach(holiday => {
                                 const date = new Date(holiday.tanggal);
@@ -3546,7 +3986,7 @@
                             $('#holiday-list').html(html);
                         }
 
-                        $(document).on('click', '.btn-edit-libur', function (e) {
+                        $(document).on('click', '.btn-edit-libur', function(e) {
                             e.preventDefault();
 
                             const id = $(this).data('id');
@@ -3554,10 +3994,11 @@
                             $.ajax({
                                 url: `/office/data-hari-libur/edit/${id}`,
                                 type: 'GET',
-                                success: function (res) {
+                                success: function(res) {
 
                                     // set action
-                                    $('#formEditHariLibur').attr('action', '/office/data-hari-libur/update/' + id);
+                                    $('#formEditHariLibur').attr('action',
+                                        '/office/data-hari-libur/update/' + id);
 
                                     // isi form
                                     $('#id').val(res.id);
@@ -3567,13 +4008,13 @@
                                     // tampilkan modal
                                     $('#modalEditHariLibur').modal('show');
                                 },
-                                error: function () {
+                                error: function() {
                                     alert('Gagal mengambil data hari libur');
                                 }
                             });
                         });
 
-                        $(document).on('click', '.btn-delete-libur', function (e) {
+                        $(document).on('click', '.btn-delete-libur', function(e) {
                             e.preventDefault();
 
                             const id = $(this).data('id');
@@ -3584,16 +4025,16 @@
                                 data: {
                                     _token: $('meta[name="csrf-token"]').attr('content')
                                 },
-                                success: function (res) {
+                                success: function(res) {
                                     location.reload();
                                 },
-                                error: function (error) {
+                                error: function(error) {
                                     console.log(error)
                                 },
                             });
                         });
 
-                        $(document).on('click', '.notifikasiLibur', function (e) {
+                        $(document).on('click', '.notifikasiLibur', function(e) {
                             e.preventDefault();
 
                             const id = $(this).data('id');
@@ -3605,10 +4046,10 @@
                                     _token: $('meta[name="csrf-token"]').attr('content'),
                                     id: id
                                 },
-                                success: function (res) {
+                                success: function(res) {
                                     location.reload();
                                 },
-                                error: function (error) {
+                                error: function(error) {
                                     console.log(error)
                                 },
                             })
@@ -3617,7 +4058,7 @@
                         calendar.render();
                         updateHolidayList();
                     },
-                    error: function (xhr, status, error) {
+                    error: function(xhr, status, error) {
                         console.error('Error loading holidays:', error);
                         $('#holiday-list').html('<p class="text-danger small">Gagal memuat data libur</p>');
                     }
@@ -3677,11 +4118,11 @@
 
                 }
 
-                $('#eksportTahunanAdminis, #eksportBulananAdminis, #eksportQuartalAdminis').on('change', function () {
+                $('#eksportTahunanAdminis, #eksportBulananAdminis, #eksportQuartalAdminis').on('change', function() {
                     handleFilter();
                 });
 
-                $('input[name="start_date"], input[name="end_date"]').on('change', function () {
+                $('input[name="start_date"], input[name="end_date"]').on('change', function() {
                     handleFilter();
                 });
 
@@ -3689,9 +4130,10 @@
 
 
                 // pengajuan tagihan perusahaan ke pengajuan barang
-                $(document).on('click', '.btn-ajukan-tagihan', function () {
+                $(document).on('click', '.btn-ajukan-tagihan', function() {
                     let id = $(this).data('id');
                     let form = $('#form-ajukan-' + id);
+                    $('#loadingModal').modal('show');
 
                     $.ajax({
                         url: "{{ route('pengajuanbarang.store') }}",
@@ -3700,17 +4142,464 @@
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
-                        success: function (response) {
+                        success: function(response) {
+                            $('#loadingModal').modal('hide');
                             alert("Berhasil membuat pengajuan barang!");
                             location.reload();
                         },
-                        error: function (xhr) {
+                        error: function(xhr) {
+                            $('#loadingModal').modal('hide');
                             alert('Terjadi kesalahan');
                             console.log(xhr.responseText);
                         }
                     });
                 });
                 // end pengajuan tagihan perusahaan ke pengajuan barang
+
+                //load table exam
+                if ($('#sectionExam').length) {
+                    let currentExamPage = 1;
+                    let lastExamPage = 1;
+                    let currentExamSearch = '';
+    
+                    function loadExam(page = 1, search = '') {
+    
+                        $.ajax({
+                            url: "{{ route('office.table.exam') }}",
+                            type: "GET",
+    
+                            data: {
+                                page: page,
+                                search: search
+                            },
+    
+                            success: function(res) {
+                                let rows = '';
+    
+                                currentExamPage = res.current_page;
+                                lastExamPage = res.last_page;
+    
+                                if (res.data.length === 0) {
+    
+                                    rows = `
+                                        <tr>
+                                            <td colspan="8" class="text-center py-5">
+                                                <div class="d-flex flex-column align-items-center">
+                                                    <i class="bx bx-message-square-x text-muted" style="font-size: 3rem;"></i>
+    
+                                                    <p class="text-muted mt-3 mb-0">
+                                                        Tidak ada exam untuk ditampilkan
+                                                    </p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `;
+    
+                                } else {
+    
+                                    res.data.forEach((exam) => {
+    
+                                        let checkbox = '';
+    
+                                        if (exam.checklist_eksam?.status === 1) {
+    
+                                            checkbox = `
+                                                <input class="custom-check"
+                                                    type="checkbox"
+                                                    checked
+                                                    disabled>
+                                            `;
+    
+                                        } else {
+    
+                                            checkbox = `
+                                                <input class="check-blue checkExam"
+                                                    type="checkbox">
+                                            `;
+                                        }
+    
+                                        let badge = '';
+    
+                                        if (exam.rkm?.status === '3') {
+    
+                                            badge = `
+                                                <span class="badge bg-info">
+                                                    Exam Only
+                                                </span>
+                                            `;
+    
+                                        } else {
+    
+                                            badge = `
+                                                <span class="badge bg-primary">
+                                                    Regular Exam
+                                                </span>
+                                            `;
+                                        }
+    
+                                        rows += `
+                                            <tr data-id="${exam.id}" id="examDetail">
+    
+                                                <td class="text-center ps-4">
+                                                    ${checkbox}
+                                                </td>
+    
+                                                <td>
+                                                    <div class="text-truncate" style="max-width: 350px;">
+                                                        ${exam.rkm?.materi?.nama_materi ?? '-'}
+                                                    </div>
+                                                </td>
+    
+                                                <td>
+                                                    ${formatDate(exam.tanggal_pengajuan)}
+                                                </td>
+    
+                                                <td>
+                                                    ${exam.rkm?.perusahaan.nama_perusahaan ?? '-'}
+                                                </td>
+    
+                                                <td>
+                                                    ${exam.rkm?.pax ?? '-'}
+                                                </td>
+    
+                                                <td>
+                                                    ${badge}
+                                                </td>
+    
+                                                <td>
+                                                    ${exam.rkm?.sales_key ?? '-'}
+                                                </td>
+    
+                                            </tr>
+                                        `;
+                                    });
+                                }
+    
+                                $('#examTableBody').html(rows);
+    
+                                $('#examPageInfo').text(
+                                    `Page ${currentExamPage} / ${lastExamPage}`
+                                );
+    
+                                $('#prevExamPage').prop(
+                                    'disabled',
+                                    currentExamPage === 1
+                                );
+    
+                                $('#nextExamPage').prop(
+                                    'disabled',
+                                    currentExamPage === lastExamPage
+                                );
+                            }
+                        });
+                    }
+    
+                    $('#nextExamPage').click(function () {
+                        if (currentExamPage < lastExamPage) {
+                            loadExam(
+                                currentExamPage + 1,
+                                currentExamSearch
+                            );
+                        }
+                    });
+    
+                    $('#prevExamPage').click(function () {
+                        if (currentExamPage > 1) {
+                            loadExam(
+                                currentExamPage - 1,
+                                currentExamSearch
+                            );
+                        }
+                    });
+    
+                    let examDebounce;
+    
+                    $('#searchExam').on('keyup', function () {
+                        clearTimeout(examDebounce);
+                        currentExamSearch = $(this).val();
+    
+                        examDebounce = setTimeout(() => {
+                            loadExam(1, currentExamSearch);
+                        }, 400);
+                    });
+    
+                    loadExam();
+    
+                    // form edit exam
+                    $(document).on('click', '#examDetail', function () {
+                        let id = $(this).data('id');
+                        $('#modalDetailExam').modal('show');
+                        $('.checkExam').prop('checked', false);
+    
+                        $.ajax({
+                            url: '/office/checklist-exam/' + id,
+                            type: 'GET',
+                            success: function (res) {
+                                $('#detail_nama_materi').text(
+                                    res.data.rkm?.materi?.nama_materi ?? '-'
+                                );
+                                $('#detail_nama_perusahaan').text(
+                                    res.data.rkm?.perusahaan?.nama_perusahaan ?? '-'
+                                );
+                                $('#detail_tanggal_pengajuan').text(
+                                    res.data.tanggal_pengajuan ?? '-'
+                                );
+                                $('#detail_sales').text(
+                                    res.data.rkm?.sales?.nama_lengkap ?? '-'
+                                );
+                                $('#detail_pax').text(
+                                    res.data.pax ?? '-'
+                                );
+    
+                                $('#detail_status').removeClass();
+                                if (res.data.rkm?.status === '3') {
+                                    $('#detail_status').text(
+                                        'Exam Only'
+                                    ).addClass('rounded px-3 py-2 text-success bg-success-subtle');
+                                } else {
+                                    $('#detail_status').text(
+                                        'Regular Exam'
+                                    ).addClass('rounded px-3 py-2 text-primary bg-primary-subtle');
+                                };
+    
+                                let selesaiBtn = $('#selesaiExamBtn');
+                                selesaiBtn.empty();
+    
+                                if (!res.data.checklist_eksam || res.data.checklist_eksam.status === '0'){
+                                    selesaiBtn.html(`
+                                        <form action="/office/checklist-exam/store" method="POST">
+                                            @csrf @method("POST")
+                                            <input type="text" id="id_exam" name="id_exam" hidden value="${id}">
+                                            <button type="submit" class="btn btn-success">Tandai Selesai</button>
+                                        </form>
+                                    `);
+                                } else {
+                                    selesaiBtn.empty();
+                                };
+                            }
+                        });
+                    });
+                }
+
+                let tabelEksport = null;
+
+                tabelEksport = $('#tabelExportChecklistRkm').DataTable({
+                    data: [],
+                    columns: [
+                        { data: 'materi.nama_materi', defaultContent: '-' },
+                        { data: 'perusahaan.nama_perusahaan', defaultContent: '-' },
+                        { data: 'tanggal_awal', defaultContent: '-' },
+                        { data: null, defaultContent: '-' }
+                    ]
+                });
+
+                $('#cariDataRkmBtn').on('click', function (e) {
+                    e.preventDefault();
+
+                    let tahun = $('#formEksportChecklistRKM select[name="tahun"]').val();
+                    let bulan = $('#formEksportChecklistRKM select[name="bulan"]').val();
+
+                    if (tabelEksport) {
+                        tabelEksport.destroy();
+                    }
+
+                    tabelEksport = $('#tabelExportChecklistRkm').DataTable({
+                        ajax: {
+                            url: '/office/data-checklist/' + tahun + '/' + bulan,
+                            dataSrc: 'data'
+                        },
+                        columns: [
+                            { data: 'materi.nama_materi' },
+                            { data: 'perusahaan.nama_perusahaan' },
+                            { 
+                                "data": null,
+                                "render": function (data, type, row) {
+                                    if (data.tanggal_awal && data.tanggal_akhir) {
+                                        return moment(data.tanggal_awal).format('LL') + " s/d " + moment(data.tanggal_akhir).format('LL');
+                                    } else {
+                                        return "";
+                                    }
+                                }
+                            },
+                            { 
+                                data: null,
+                                render: function (data, type, row) {
+                                    if (data.checklist_keperluan) {
+                                        return `
+                                            <td class="text-center align-middle">
+                                                <a href="/office/export-checklist/pdf/${data.id}"
+                                                    id="exportPdfRkm"
+                                                    class="btn btn-outline-danger btn-sm mb-1">
+                                                    PDF
+                                                </a>
+                                                <a href="/office/export-checklist/excel/${data.id}"
+                                                    id="exportExcelRkm"
+                                                    class="btn btn-outline-success btn-sm">
+                                                    Excel
+                                                </a>
+                                            </td>
+                                        `;
+                                    } else {
+                                        return `Tidak ada checklist`; 
+                                    }
+                                } 
+                            }
+                        ]
+                    });
+                });
             });
+
+            window.statusPieChart = null;
+            window.statusTrendChart = null;
+            window.currentDetailStatus = '';
+            window.currentFilter = {
+                tahun: '{{ now()->year }}',
+                bulan: ''
+            };
+
+            // === 2. DEFINISI FUNGSI GLOBAL (Pastikan scope window) ===
+            window.loadLaporanStatus = function() {
+                $.get("{{ route('office.laporan.status-karyawan') }}", {
+                    tahun: window.currentFilter.tahun,
+                    bulan: window.currentFilter.bulan
+                }, function(res) {
+                    $('#totalKontrak').text(res.kontrak || 0);
+                    $('#totalTetap').text(res.tetap || 0);
+                    $('#totalProbation').text(res.probation || 0);
+                    $('#totalResign').text(res.resign || 0);
+
+                    const ctx = document.getElementById('statusPieChart')?.getContext('2d');
+                    if (!ctx) return;
+
+                    if (window.statusPieChart) window.statusPieChart.destroy();
+                    const total = (res.kontrak || 0) + (res.tetap || 0) + (res.probation || 0) + (res.resign || 0);
+
+                    if (total === 0) {
+                        $('#pieEmpty').removeClass('d-none');
+                        return;
+                    }
+                    $('#pieEmpty').addClass('d-none');
+
+                    window.statusPieChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Kontrak', 'Tetap', 'Probation', 'Resign'],
+                            datasets: [{
+                                data: [res.kontrak || 0, res.tetap || 0, res.probation || 0, res
+                                    .resign || 0
+                                ],
+                                backgroundColor: ['rgba(91,115,232,0.8)', 'rgba(113,221,55,0.8)',
+                                    'rgba(255,193,7,0.8)', 'rgba(220,53,69,0.8)'
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        usePointStyle: true
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            };
+
+            window.loadTrendChart = function() {
+                $.get("{{ route('office.laporan.trend-karyawan') }}", {
+                    tahun: window.currentFilter.tahun
+                }, function(res) {
+                    const ctx = document.getElementById('statusTrendChart')?.getContext('2d');
+                    if (!ctx) return;
+
+                    if (window.statusTrendChart) window.statusTrendChart.destroy();
+                    const hasData = res.kontrak.some(v => v > 0) || res.tetap.some(v => v > 0) || res.probation
+                        .some(v => v > 0);
+                    if (!hasData) {
+                        $('#trendEmpty').removeClass('d-none');
+                        return;
+                    }
+                    $('#trendEmpty').addClass('d-none');
+
+                    window.statusTrendChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: res.labels,
+                            datasets: [{
+                                    label: 'Kontrak',
+                                    data: res.kontrak,
+                                    borderColor: '#5b73e8',
+                                    backgroundColor: 'rgba(91,115,232,0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                },
+                                {
+                                    label: 'Tetap',
+                                    data: res.tetap,
+                                    borderColor: '#71DD37',
+                                    backgroundColor: 'rgba(113,221,55,0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                },
+                                {
+                                    label: 'Probation',
+                                    data: res.probation,
+                                    borderColor: '#ffc107',
+                                    backgroundColor: 'rgba(255,193,7,0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            };
+
+            window.openDetailModal = function(status) {
+                window.currentDetailStatus = status;
+                const titles = {
+                    kontrak: 'Kontrak',
+                    tetap: 'Tetap',
+                    probation: 'Probation',
+                    resign: 'Resign'
+                };
+                const colors = {
+                    kontrak: 'primary',
+                    tetap: 'success',
+                    probation: 'warning',
+                    resign: 'danger'
+                };
+                $('#modalStatusBadge').text(titles[status]).removeClass().addClass(`badge bg-${colors[status]} ms-2`);
+                $('#modalDetailKaryawan').modal('show');
+                window.loadDetailKaryawan(status, 1);
+            };
         </script>
-@endsection
+    @endsection
