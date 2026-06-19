@@ -386,7 +386,7 @@ class SuratPerjalananController extends Controller
         $targetKaryawanIds = [
             $karyawanPengaju->id,
         ];
-                        
+
         $officeManager = karyawan::where('jabatan', 'Office Manager')->first();
         if ($officeManager) $targetKaryawanIds[] = $officeManager->id;
 
@@ -569,15 +569,9 @@ class SuratPerjalananController extends Controller
             $dataToUpdate['approval_finance'] = $request->input('approval_finance');
         }
 
-        if ($request->hasFile('bukti_transfer') && $request->input('approval_finance') == '1') {
-            $file = $request->file('bukti_transfer');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('bukti_transfer', $filename, 'public');
-            $dataToUpdate['bukti_transfer'] = $path;
-        }
-
         $suratPerjalanan->update($dataToUpdate);
 
+        // Mark notification as read
         $user = auth()->user();
         $notifications = $user->unreadNotifications;
         foreach ($notifications as $notif) {
@@ -586,10 +580,85 @@ class SuratPerjalananController extends Controller
             }
         }
 
+
         if ($suratPerjalanan->approval_finance == '1') {
-            $this->checkAndCreateJurnalOtomatis($suratPerjalanan);
+            $karyawanPengaju = karyawan::findOrFail($suratPerjalanan->id_karyawan);
+            $userKaryawan = User::where('karyawan_id', $karyawanPengaju->id)->first();
+            if ($userKaryawan) {
+                NotificationFacade::send($userKaryawan, new ApprovalSPJNotification(
+                    $suratPerjalanan,
+                    '/suratperjalanan',
+                    $karyawanPengaju->nama_lengkap,
+                    $userKaryawan->id,
+                    'Uang Sudah Ditransfer - Silakan Upload Bukti Transfer',
+                    false
+                ));
+            }
         }
 
-        return redirect()->route('suratperjalanan.index')->with('success', 'Verifikasi Finance & Bukti Transfer berhasil diproses.');
+        return redirect()->route('suratperjalanan.index')
+            ->with('success', 'Konfirmasi Finance berhasil diproses. Karyawan akan diminta upload bukti transfer.');
+    }
+
+    public function uploadBuktiTransfer(Request $request, $id)
+    {
+        $suratPerjalanan = SuratPerjalanan::findOrFail($id);
+
+        // Validasi: hanya karyawan pengaju yang bisa upload
+        if ($suratPerjalanan->id_karyawan != auth()->user()->karyawan_id) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk upload bukti transfer SPJ ini.');
+        }
+
+        // Validasi: Finance harus sudah konfirmasi dulu
+        if ($suratPerjalanan->approval_finance != '1') {
+            return redirect()->back()->with('error', 'Finance belum mengkonfirmasi transfer.');
+        }
+
+        // Validasi: belum ada bukti transfer
+        if ($suratPerjalanan->bukti_transfer) {
+            return redirect()->back()->with('error', 'Bukti transfer sudah diupload sebelumnya.');
+        }
+
+        $request->validate([
+            'bukti_transfer' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ], [
+            'bukti_transfer.required' => 'Bukti transfer wajib diupload.',
+            'bukti_transfer.mimes' => 'File harus berformat JPG, JPEG, PNG, atau PDF.',
+            'bukti_transfer.max' => 'Ukuran file maksimal 5MB.',
+        ]);
+
+        // Upload file
+        $file = $request->file('bukti_transfer');
+        $filename = time() . '_bukti_' . $suratPerjalanan->id . '_' . $file->getClientOriginalName();
+        $path = $file->storeAs('bukti_transfer', $filename, 'public');
+
+        $suratPerjalanan->update([
+            'bukti_transfer' => $path,
+        ]);
+
+        $this->checkAndCreateJurnalOtomatis($suratPerjalanan);
+
+        $financeUser = karyawan::where('jabatan', 'Finance & Accounting')
+            ->where('status_aktif', '1')
+            ->latest()
+            ->first();
+
+        if ($financeUser) {
+            $userFinance = User::where('karyawan_id', $financeUser->id)->first();
+            if ($userFinance) {
+                $karyawanPengaju = karyawan::findOrFail($suratPerjalanan->id_karyawan);
+                NotificationFacade::send($userFinance, new ApprovalSPJNotification(
+                    $suratPerjalanan,
+                    '/suratperjalanan',
+                    $karyawanPengaju->nama_lengkap,
+                    $userFinance->id,
+                    'Bukti Transfer Sudah Diupload oleh Karyawan',
+                    false
+                ));
+            }
+        }
+
+        return redirect()->route('suratperjalanan.index')
+            ->with('success', 'Bukti transfer berhasil diupload. SPJ telah selesai diproses.');
     }
 }

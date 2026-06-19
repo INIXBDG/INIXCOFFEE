@@ -73,20 +73,23 @@
 
                             <!-- Finance Row -->
                             <div id="finance-row" style="display:none;">
-                                <p>Verifikasi oleh <strong>Finance & Accounting</strong>?</p>
+                                <p>Konfirmasi oleh <strong>Finance & Accounting</strong>:</p>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    Pastikan uang sudah ditransfer ke rekening karyawan.
+                                    Karyawan akan diminta upload bukti transfer yang Anda kirimkan.
+                                </div>
                                 <div class="btn-group mb-3" role="group" aria-label="Approval Options">
                                     <input type="radio" class="btn-check" name="approval_finance" id="approveYesFinance"
                                         value="1" autocomplete="off" checked>
-                                    <label class="btn btn-outline-primary" for="approveYesFinance">Ya (Verifikasi)</label>
+                                    <label class="btn btn-outline-primary" for="approveYesFinance">
+                                        <i class="bi bi-check-circle"></i> Ya, Sudah Ditransfer
+                                    </label>
                                     <input type="radio" class="btn-check" name="approval_finance" id="approveNoFinance"
                                         value="2" autocomplete="off">
-                                    <label class="btn btn-outline-danger" for="approveNoFinance">Tidak</label>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="bukti_transfer" class="form-label">Upload Bukti Transfer (Wajib jika
-                                        Approve)</label>
-                                    <input type="file" class="form-control" name="bukti_transfer" id="bukti_transfer"
-                                        accept=".jpg,.jpeg,.png,.pdf">
+                                    <label class="btn btn-outline-danger" for="approveNoFinance">
+                                        <i class="bi bi-x-circle"></i> Belum / Batal
+                                    </label>
                                 </div>
                             </div>
 
@@ -102,6 +105,8 @@
                                 </div>
                             </div>
 
+
+
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                                 <button type="submit" class="btn btn-primary">Simpan</button>
@@ -110,6 +115,47 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+
+        <!-- Modal Upload Bukti Transfer untuk Karyawan -->
+        <div class="modal fade" id="uploadBuktiModal" tabindex="-1" aria-labelledby="uploadBuktiModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="uploadBuktiModalLabel">
+                            <i class="bi bi-upload"></i> Upload Bukti Transfer
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="uploadBuktiForm" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                Upload bukti transfer yang Anda terima dari <strong>Finance &
+                                    Accounting</strong>.
+                                <br><small>File yang diterima: JPG, JPEG, PNG, atau PDF (max
+                                    5MB).</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bukti_transfer_file" class="form-label">
+                                    Bukti Transfer <span class="text-danger">*</span>
+                                </label>
+                                <input type="file" class="form-control" name="bukti_transfer" id="bukti_transfer_file"
+                                    accept=".jpg,.jpeg,.png,.pdf" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload"></i> Upload Bukti
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -295,18 +341,22 @@
                                 return `<span class="badge rounded-pill bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu GM & Direksi</span>`;
                             }
                             // 5. Siap Rate SPJ (Jika Domestik ATAU Internasional yang sudah di-approve GM)
-                            if (data.approval_manager == '1' && data.approval_hrd == '1' && (data
-                                .tipe == 'Domestik' || data.approval_gm == '1')) {
+                            if (data.approval_manager == '1' && data.approval_hrd == '1' && (data.tipe == 'Domestik' || data.approval_gm == '1')) {
                                 if (!data.ratespj || data.ratespj == 0 || data.ratespj === null) {
                                     return `<span class="badge rounded-pill bg-info text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu Isi Rate SPJ</span>`;
-                                } else {
-                                    if (data.approval_finance == '0') {
-                                        return `<span class="badge rounded-pill bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu Verifikasi Finance</span>`;
-                                    } else if (data.approval_finance == '2') {
-                                        return `<span class="badge rounded-pill bg-danger"><i class="bi bi-x-circle me-1"></i> Ditolak Finance</span>`;
-                                    } else {
-                                        return `<span class="badge rounded-pill bg-success"><i class="bi bi-check-circle me-1"></i> Selesai (Jurnal Terbentuk)</span>`;
-                                    }
+                                }
+
+                                if (data.approval_finance == '0' || data.approval_finance === null) {
+                                    return `<span class="badge rounded-pill bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Menunggu Konfirmasi Finance</span>`;
+                                }
+                                if (data.approval_finance == '1' && (!data.bukti_transfer || data.bukti_transfer === '' || data.bukti_transfer === null)) {
+                                    return `<span class="badge rounded-pill bg-info text-dark"><i class="bi bi-upload me-1"></i> Menunggu Upload Bukti dari Karyawan</span>`;
+                                }
+                                if (data.approval_finance == '2') {
+                                    return `<span class="badge rounded-pill bg-danger"><i class="bi bi-x-circle me-1"></i> Ditolak Finance</span>`;
+                                }
+                                if (data.approval_finance == '1' && data.bukti_transfer) {
+                                    return `<span class="badge rounded-pill bg-success"><i class="bi bi-check-circle me-1"></i> Selesai (Jurnal Terbentuk)</span>`;
                                 }
                             }
                             return `<span class="badge rounded-pill bg-secondary"><i class="bi bi-question-circle me-1"></i> Status Tidak Diketahui</span>`;
@@ -435,71 +485,60 @@
                                 }
                                 actions += '</div></div>';
                             }
-                            
+
                             // 4.5. LOGIKA KHUSUS UNTUK FINANCE & ACCOUNTING
                             else if (userRole == 'Finance & Accounting') {
                                 actions += '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
 
-                                // PERBAIKAN: Parse dengan lebih robust
-                                var ratespjRaw = data.ratespj;
-                                var ratespjValue = 0;
-
-                                // Handle berbagai format data
-                                if (ratespjRaw !== null && ratespjRaw !== undefined && ratespjRaw !== '') {
-                                    // Hapus format Rupiah (titik sebagai pemisah ribuan)
-                                    if (typeof ratespjRaw === 'string') {
-                                        ratespjRaw = ratespjRaw.replace(/\./g, '').replace(/,/g, '.');
-                                    }
-                                    ratespjValue = parseFloat(ratespjRaw) || 0;
-                                }
-
-                                console.log('=== FINANCE CHECK ===');
-                                console.log('ratespjRaw:', ratespjRaw);
-                                console.log('ratespjValue:', ratespjValue);
-                                console.log('ratespjValue > 0:', ratespjValue > 0);
+                                var ratespjValue = parseFloat(data.ratespj) || 0;
+                                var hasBuktiTransfer = data.bukti_transfer && data.bukti_transfer !== '' && data.bukti_transfer !== null;
 
                                 var isReadyForFinance = (
                                     data.approval_manager == '1' &&
                                     data.approval_hrd == '1' &&
                                     (data.tipe == 'Domestik' || data.approval_gm == '1') &&
-                                    ratespjValue > 0  // ← FILTER TETAP ADA
+                                    ratespjValue > 0
                                 );
 
                                 if (isReadyForFinance && (data.approval_finance == '0' || data.approval_finance === null)) {
-                                    actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Finance\')">Verifikasi & Upload Bukti</button>';
-                                } else if (data.approval_finance == '1') {
-                                    actions += '<a class="dropdown-item disabled text-success" href="#">Sudah Diverifikasi</a>';
-                                    if (data.bukti_transfer) {
-                                        actions += '<a class="dropdown-item" href="{{ url('storage') }}/' + data.bukti_transfer + '" target="_blank">Download Bukti Transfer</a>';
-                                    }
+                                    actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Finance\')">Konfirmasi Sudah Ditransfer</button>';
+                                } else if (data.approval_finance == '1' && !hasBuktiTransfer) {
+                                    actions += '<a class="dropdown-item disabled text-warning" href="#"><i class="bi bi-hourglass-split"></i> Menunggu Upload Bukti dari Karyawan</a>';
+                                } else if (data.approval_finance == '1' && hasBuktiTransfer) {
+                                    actions += '<a class="dropdown-item disabled text-success" href="#"><i class="bi bi-check-circle"></i> Sudah Dikonfirmasi & Bukti Lengkap</a>';
+                                    actions += '<a class="dropdown-item" href="{{ url("storage") }}/' + data.bukti_transfer + '" target="_blank"><i class="bi bi-eye"></i> Lihat Bukti Transfer</a>';
                                 } else if (data.approval_finance == '2') {
                                     actions += '<a class="dropdown-item disabled text-danger" href="#">Ditolak</a>';
                                 } else {
                                     actions += '<a class="dropdown-item disabled" href="#">Menunggu Rate SPJ / Approval Sebelumnya</a>';
                                 }
 
-                                actions += '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' + row.id + '">Form PDF</a>';
+                                actions += '<a class="dropdown-item" href="{{ url("/suratperjalanan") }}/' + row.id + '">Form PDF</a>';
                                 actions += '</div></div>';
                             }
                             // 5. LOGIKA UNTUK USER BIASA (PENGAJU)
                             else {
-                                actions +=
-                                    '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
-                                actions +=
-                                    '<form onsubmit="return confirm(\'Yakin?\');" action="{{ url('/suratperjalanan') }}/' +
-                                    row.id + '" method="POST">@csrf @method('DELETE')';
+                                actions += '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
 
+                                var ratespjValue = parseFloat(data.ratespj) || 0;
+                                var hasBuktiTransfer = data.bukti_transfer && data.bukti_transfer !== '' && data.bukti_transfer !== null;
+                                var isPengaju = (data.id_karyawan == user);
+
+                                if (isPengaju && data.approval_finance == '1' && !hasBuktiTransfer) {
+                                    actions += '<button type="button" class="dropdown-item text-primary" onclick="openUploadBuktiModal(' + row.id + ')"><i class="bi bi-upload"></i> Upload Bukti Transfer</button>';
+                                } else if (hasBuktiTransfer) {
+                                    actions += '<a class="dropdown-item text-success" href="{{ url("storage") }}/' + data.bukti_transfer + '" target="_blank"><i class="bi bi-eye"></i> Lihat Bukti Transfer</a>';
+                                }
+
+                                actions += '<form onsubmit="return confirm(\'Yakin ingin menghapus?\');" action="{{ url("/suratperjalanan") }}/' + row.id + '" method="POST">@csrf @method("DELETE")';
                                 if (data.approval_manager == '0') {
-                                    actions +=
-                                        '<button type="submit" class="dropdown-item text-danger">Hapus</button>';
+                                    actions += '<button type="submit" class="dropdown-item text-danger">Hapus</button>';
                                 } else {
-                                    actions +=
-                                        '<button type="submit" class="dropdown-item disabled text-danger">Hapus</button>';
+                                    actions += '<button type="submit" class="dropdown-item disabled text-danger">Hapus</button>';
                                 }
                                 actions += '</form>';
-                                actions +=
-                                    '<a class="dropdown-item" href="{{ url('/suratperjalanan') }}/' +
-                                    row.id + '">Form PDF</a>';
+
+                                actions += '<a class="dropdown-item" href="{{ url("/suratperjalanan") }}/' + row.id + '">Form PDF</a>';
                                 actions += '</div></div>';
                             }
 
@@ -609,6 +648,49 @@
                 $('#approveForm').attr('action', approveUrl);
                 $('#approveModal').modal('show');
             }
+
+            function openUploadBuktiModal(id) {
+                var uploadUrl = "{{ url('/suratperjalanan') }}/" + id + "/upload-bukti";
+                $('#uploadBuktiForm').attr('action', uploadUrl);
+
+                $('#uploadBuktiForm')[0].reset();
+
+                $('#uploadBuktiModal').modal('show');
+            }
+
+            // Handle submit form upload bukti transfer
+            $('#uploadBuktiForm').on('submit', function (e) {
+                e.preventDefault();
+                const form = $(this);
+                const url = form.attr('action');
+                const formData = new FormData(this);
+
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function (res) {
+                        $('#uploadBuktiModal').modal('hide');
+                        $('#jabatantable').DataTable().ajax.reload(null, false);
+                        location.reload(); // Reload untuk tampilkan success message
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        let errorMsg = "Gagal upload bukti transfer!";
+                        if (err.responseJSON && err.responseJSON.errors) {
+                            errorMsg = Object.values(err.responseJSON.errors).flat().join('\n');
+                        } else if (err.responseJSON && err.responseJSON.message) {
+                            errorMsg = err.responseJSON.message;
+                        }
+                        alert(errorMsg);
+                    }
+                });
+            });
 
             function toggleAlasanManager(show) {
                 if (show) {
