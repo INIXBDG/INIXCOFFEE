@@ -1010,6 +1010,14 @@ Route::prefix('office')->group(function () {
     Route::post('/delete-tagihan/{id}', [TagihanPerusahaanController::class, 'hapusTagihanPerusahaan'])->name('hapusTagihanPerusahaan');
     Route::get('/tagihan-perusahaan', [TagihanPerusahaanController::class, 'index'])->name('office.tagihanPerusahaan.index');
 
+    // Sop Perusahaan
+    Route::get('/sop-perusahaan', [PerusahaanController::class, 'indexSop'])->name('sop.perusahaan.index');
+    Route::get('/sop-perusahaan/{id}', [PerusahaanController::class, 'detailSop'])->name('sop.perusahaan.detail');
+    Route::post('/sop-perusahaan/store', [PerusahaanController::class, 'storeSop'])->name('sop.perusahaan.store');
+    Route::put('/sop-perusahaan/update/{id}', [PerusahaanController::class, 'updateSop'])->name('sop.perusahaan.update');
+    Route::delete('/sop-perusahaan/delete/{id}', [PerusahaanController::class, 'deleteSop'])->name('sop.perusahaan.delete');
+    
+
     // administrasi karyawan
     Route::get('data-administrasi/{id}', [AdministrasiKaryawanController::class, 'getData']);
     Route::get('administrasi-karyawan', [AdministrasiKaryawanController::class, 'index'])->name('administrasi.karyawan');
