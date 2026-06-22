@@ -265,6 +265,13 @@
                     <div class="text-truncate" data-i18n="contact">Outstanding</div>
                 </a>
             </li>
+
+            <li class="menu-item {{ request()->routeIs('sop.perusahaan.index') ? 'active open' : '' }}">
+                <a href="{{ route('sop.perusahaan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-task"></i>
+                    <div class="text-truncate" data-i18n="contact">Persyaratan Dokumen</div>
+                </a>
+            </li>
         @endif
 
         <li class="menu-header mt-4 pb-3" style="padding-left: 12px; padding-right: 12px;">

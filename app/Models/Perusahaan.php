@@ -69,4 +69,13 @@ class Perusahaan extends Model
     {
         return !empty($this->sales_key) && $this->status !== 'nonaktif';
     }
+
+    public function picPenagihan(){
+        return $this->hasMany(PicPenagihanInvoice::class, 'perusahaan_id', 'id');
+    }
+
+    public function sop()
+    {
+        return $this->hasMany(SopPerusahaan::class, 'id_perusahaan', 'id');
+    }
 }
