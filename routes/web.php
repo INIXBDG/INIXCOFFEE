@@ -69,6 +69,7 @@ use App\Http\Controllers\office\OfficeController;
 use App\Http\Controllers\Office\pickupDriverController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\office\KondisiToolsController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\PenukaranSouvenirController;
@@ -1198,6 +1199,19 @@ Route::prefix('office')
             Route::post('/update', [KoordinasiOfficeBoyController::class, 'update'])->name('update');
             Route::post('/update-status-{action}/{id}', [KoordinasiOfficeBoyController::class, 'updateStatus'])->name('updateStatus');
             Route::delete('/delete/{id}', [KoordinasiOfficeBoyController::class, 'delete'])->name('delete');
+        });
+
+        Route::prefix('kondisi-tools')->name('KondisiTools.')->group(function() {
+            Route::get('/', [KondisiToolsController::class, 'index'])->name('index');
+            Route::post('/store', [KondisiToolsController::class, 'store'])->name('store');
+            Route::post('/update/{id}', [KondisiToolsController::class, 'update'])->name('update');
+            Route::post('/delete/{id}', [KondisiToolsController::class, 'delete'])->name('delete');
+            Route::get('/get-tools', [KondisiToolsController::class, 'getTools'])->name('get-tools');
+            Route::get('/get-pemeriksaan', [KondisiToolsController::class, 'getPemeriksaan'])->name('get-pemeriksaan');
+            Route::get('/get-template', [KondisiToolsController::class, 'getTemplate'])->name('get-template');
+            Route::post('/import-alat', [KondisiToolsController::class, 'importAlat'])->name('importAlat');
+            Route::get('/export-exel', [KondisiToolsController::class, 'exportExcel'])->name('exportExcel');
+            Route::get('/export-pdf', [KondisiToolsController::class, 'exportPdf'])->name('exportPdf');
         });
 
         Route::prefix('/rekomendasi-lanjutan')

@@ -193,6 +193,12 @@
                     <div class="text-truncate" data-i18n="contact">Koordinasi OB</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('office.KondisiTools.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.KondisiTools.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-list-ul"></i>
+                    <div class="text-truncate" data-i18n="contact">Kondisi Tools</div>
+                </a>
+            </li>
         @endif
 
         <li class="menu-header small text-uppercase">
