@@ -235,6 +235,7 @@ public function store(Request $request)
         $approvalPendapatan->PPH = $existingInvoice->pph;
         $approvalPendapatan->pax = $existingInvoice->pax;
         $approvalPendapatan->harga_net = $existingInvoice->unit_price;
+        $approvalPendapatan->total_penjualan_kotor = $existingInvoice->unit_price * $existingInvoice->pax;
         $approvalPendapatan->materi = $rkm->materi_key;
         $approvalPendapatan->perusahaan = $rkm->perusahaan_key;
         $approvalPendapatan->tanggal_mulai = $tanggal_awal;
@@ -250,6 +251,7 @@ public function store(Request $request)
         $approvalPendapatan->PPH = $invoiceData['pph'];
         $approvalPendapatan->pax = $invoiceData['pax'];
         $approvalPendapatan->harga_net = $invoiceData['unit_price'];
+        $approvalPendapatan->total_penjualan_kotor = $invoiceData['unit_price'] * $invoiceData['pax'];
         $approvalPendapatan->materi = $rkm->materi_key;
         $approvalPendapatan->perusahaan = $rkm->perusahaan_key;
         $approvalPendapatan->tanggal_mulai = $tanggal_awal;

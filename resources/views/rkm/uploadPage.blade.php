@@ -157,6 +157,30 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="modalNoResi" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">Upload No Resi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formNoResi">
+                    @csrf
+                    <div class="modal-body">
+                        <input type="hidden" id="resi_rkm_id" name="id_rkm">
+                        <div class="mb-3">
+                            <label for="input_no_resi" class="form-label text-muted small">No Resi</label>
+                            <input type="text" class="form-control" id="input_no_resi" name="no_resi" placeholder="Masukkan No Resi..." required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary px-4">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <style>
         #content {
             overflow-y: hidden;
@@ -484,6 +508,7 @@
                                                     '<a class="dropdown-item" href="/rkm/uploadSertifikat/' +
                                                     rkm.id +
                                                     '" data-toggle="tooltip" data-placement="top" title="Upload Sertifikat"><img src="{{ asset('icon/upload.svg') }}" class=""> Upload Sertifikat</a>';
+                                                html += '<a class="dropdown-item btn-upload-resi" href="javascript:void(0)" data-id="' + rkm.id + '" data-bs-toggle="modal" data-bs-target="#modalNoResi" data-toggle="tooltip" data-placement="top" title="Upload No Resi"><img src="{{ asset('icon/upload.svg') }}" class=""> Upload No Resi</a>';
                                                 html += '</div>';
                                                 html += '</div>';
                                                 html += '</td>';
@@ -505,6 +530,43 @@
                     }
                 });
             }
+
+            $(document).on('click', '.btn-upload-resi', function() {
+                let rkmId = $(this).data('id');
+                $('#resi_rkm_id').val(rkmId);
+                $('#input_no_resi').val(''); 
+            });
+
+            $('#formNoResi').on('submit', function(e) {
+                e.preventDefault();
+                let rkmId = $('#resi_rkm_id').val();
+                let noResi = $('#input_no_resi').val();
+                let $btn = $(this).find('button[type="submit"]');
+
+                $.ajax({
+                    url: '/rkm/upload-no-resi/' + rkmId,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        no_resi: noResi
+                    },
+                    beforeSend: function() {
+                        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...');
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#modalNoResi').modal('hide');
+                            alert('No resi berhasil disimpan!'); 
+                        }
+                    },
+                    error: function(xhr) {
+                        alert('Gagal menyimpan no resi. Silakan coba lagi.');
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).html('Simpan');
+                    }
+                });
+            });
         </script>
     @endpush
 @endsection
