@@ -1452,6 +1452,16 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         });
     });
 
+    Route::prefix('performance')->name('performance.')->group(function () {
+        Route::get('/dashboard', [TargetKPIController::class, 'performanceDashboard'])->name('index');
+        Route::get('/dashboard/data', [TargetKPIController::class, 'getPerformanceDashboardData'])->name('dashboard.data');
+        Route::prefix('analytics')->name('analytics.')->group(function () {
+            Route::get('/trend', [TargetKPIController::class, 'getPerformanceTrend'])->name('trend');
+            Route::get('/prediction', [TargetKPIController::class, 'getPerformancePrediction'])->name('prediction');
+            Route::get('/matrix', [TargetKPIController::class, 'getPerformanceMatrix'])->name('matrix');
+        });
+    });
+
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
 
