@@ -10,6 +10,7 @@ use App\Models\outstanding;
 use App\Models\Perusahaan;
 use App\Models\RKM;
 use App\Models\trackingOutstanding;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -268,6 +269,20 @@ public function store(Request $request)
         $outstanding->no_invoice = $request->input('invoice_number');
         $outstanding->update();
     }
+
+    $this->storeKwitansi(new Request([
+        'invoice_id' => $invoice->id,
+        'nomor_kwitansi' => 'KW-' . $invoice->invoice_number,
+        'tanggal' => now()->toDateString(),
+        'tanggal_ttd' => now()->toDateString(),
+        'nama_penandatangan' => karyawan::where('status_aktif', '1')->where('jabatan','Finance & Accounting')->first()->nama_karyawan,
+        'keterangan' => $materi,
+        'nama_penerima' => $nama_perusahaan,
+        'tanggal_awal' => $tanggal_awal,
+        'tanggal_akhir' => $tanggal_akhir,
+        'jumlah_uang' => $total,
+        'jumlah_peserta' => $pax,
+    ]));
 
     return $this->downloadPdf(
         $invoice->id,
