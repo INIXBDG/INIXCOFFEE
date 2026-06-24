@@ -43,6 +43,7 @@ use App\Http\Controllers\HR\KaryawanProfileController;
 use App\Http\Controllers\HR\KaryawanTaskController;
 use App\Http\Controllers\HR\payrollController;
 use App\Http\Controllers\HR\presenceController;
+use App\Http\Controllers\HR\RekapSJPController;
 use App\Http\Controllers\HR\ReportController;
 use App\Http\Controllers\HR\SopController;
 use App\Http\Controllers\HR\StructureInixindoController;
@@ -659,6 +660,7 @@ Route::post('/generate/pdf/peserta/{id}', [OutstandingController::class, 'genera
 Route::post('/rkm/store/absensi', [ControllersRKMController::class, 'storeAbsensi'])->name('storeAbsensi');
 Route::post('/rkm/delete/absensi', [ControllersRKMController::class, 'deleteAbsensi'])->name('deleteAbsensi');
 Route::get('/rkm/uploadSertifikat/{id}', [ControllersRKMController::class, 'uploadSertifikat'])->name('uploadSertifikat');
+Route::post('/rkm/upload-no-resi/{id}', [ControllersRKMController::class, 'uploadNoResi']);
 Route::post('/rkm/store/sertifikat', [ControllersRKMController::class, 'storeSertifikat'])->name('storeSertifikat');
 Route::post('/rkm/delete/sertifikat', [ControllersRKMController::class, 'deleteSertifikat'])->name('deleteSertifikat');
 // web.php
@@ -1047,6 +1049,7 @@ Route::prefix('office')->group(function () {
     Route::put('/pic-penagihan/update/{id}', [PicPenagihanController::class, 'update'])->name('picpenagihan.update');
     Route::delete('/pic-penagihan/delete/{id}', [PicPenagihanController::class, 'destroy'])->name('picpenagihan.delete');
     Route::get('/pic-penagihan/pdf/{id}', [PicPenagihanController::class, 'exportPdf'])->name('picpenagihan.pdf');
+
     Route::prefix('approval-pendapatan')->name('approvalPendapatan.')->group(function () {
         Route::get('/index', [ApprovalPendapatanController::class, 'index'])->name('index');
         Route::get('/get/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'get'])->name('get');
@@ -1567,6 +1570,16 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/', [KaryawanProfileController::class, 'store'])->name('store');
         Route::put('/{karyawanId}', [KaryawanProfileController::class, 'update'])->name('update');
         Route::delete('/{karyawanId}', [KaryawanProfileController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('rekap-spj')->name('rekap_spj.')->middleware('auth')->group(function () {
+        Route::get('/', [RekapSJPController::class, 'index'])->name('index');
+        Route::get('/load-data', [RekapSJPController::class, 'getRekapData'])->name('load_data');
+        Route::get('/export', [RekapSJPController::class, 'export'])->name('export');
+        Route::get('/ajax/jabatan/{divisi}', [RekapSJPController::class, 'getJabatan']);
+        Route::get('/ajax/karyawan/{jabatan}', [RekapSJPController::class, 'getKaryawan']);
+        Route::get('/export-pdf', [RekapSJPController::class, 'exportPdf'])->name('export_pdf');
+        Route::get('/detail-data', [RekapSJPController::class, 'getDetailData'])->name('detail_data');
     });
 });
 

@@ -135,6 +135,16 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('HR.rekap_spj.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.rekap_spj.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:cash-register" data-width="20" data-height="20"></i>
+                </span>
+                <span>Rekap SPJ</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">
                 <i class="iconify me-1" data-icon="mdi:chart-timeline-variant-shimmer" data-width="14"
