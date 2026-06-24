@@ -60,7 +60,7 @@ class KoordinasiOfficeBoyController extends Controller
             'catatan' => 'nullable',
         ]);
 
-        if (!in_array(Auth()->user()->jabatan, ['HRD', 'GM', 'Office Boy'])) {
+        if (!in_array(Auth()->user()->jabatan, ['HRD', 'GM', 'Office Boy', 'Customer Care'])) {
             abort(401, 'Akses ditolak.');
         }
 

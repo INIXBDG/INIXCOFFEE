@@ -187,16 +187,18 @@
                     <div class="text-truncate" data-i18n="contact">Stock Opname</div>
                 </a>
             </li>
-            <li class="menu-item {{ request()->routeIs('office.KoordinasiOb.index') ? 'active open' : '' }}">
-                <a href="{{ route('office.KoordinasiOb.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-user-plus"></i>
-                    <div class="text-truncate" data-i18n="contact">Koordinasi OB</div>
-                </a>
-            </li>
             <li class="menu-item {{ request()->routeIs('office.KondisiTools.index') ? 'active open' : '' }}">
                 <a href="{{ route('office.KondisiTools.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-list-ul"></i>
                     <div class="text-truncate" data-i18n="contact">Kondisi Tools</div>
+                </a>
+            </li>
+        @endif
+        @if (in_array(Auth::user()->jabatan, ['Customer Care', 'HRD', 'Office Boy']))
+            <li class="menu-item {{ request()->routeIs('office.KoordinasiOb.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.KoordinasiOb.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-user-plus"></i>
+                    <div class="text-truncate" data-i18n="contact">Koordinasi OB</div>
                 </a>
             </li>
         @endif

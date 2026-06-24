@@ -39,6 +39,7 @@ use App\Http\Controllers\HR\hireController;
 use App\Http\Controllers\HR\HRController;
 use App\Http\Controllers\HR\payrollController;
 use App\Http\Controllers\HR\presenceController;
+use App\Http\Controllers\HR\RencanaPembelianHrController;
 use App\Http\Controllers\HR\ReportController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\InstructorDevelopmentController;
@@ -1447,6 +1448,15 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
             Route::get('/prediction', [TargetKPIController::class, 'getPredictiveAnalysis'])->name('prediction');
             Route::get('/matrix', [TargetKPIController::class, 'getPotentialMatrix'])->name('matrix');
         });
+    });
+
+    Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() {
+        Route::get('', [RencanaPembelianHrController::class, 'index'])->name('index');
+        Route::post('/store', [RencanaPembelianHrController::class, 'store'])->name('store');
+        Route::post('/update/{id}', [RencanaPembelianHrController::class, 'update'])->name('update');
+        Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');
+        Route::post('/update-nvoice/{id}', [RencanaPembelianHrController::class, 'updateInvoice'])->name('updateInvoice');
+        Route::post('/update-status', [RencanaPembelianHrController::class, 'updateStatus'])->name('updateStatus');
     });
 
     Route::prefix('reports')->name('reports.')->group(function() {

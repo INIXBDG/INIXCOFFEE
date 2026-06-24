@@ -27,7 +27,6 @@ class BiayaTransportasiController extends Controller
     public function index()
     {
         $dataPickup = pickupDriver::with(['karyawan', 'detailPickupDriver', 'biayaTransportasi'])
-            ->where('created_at', '>=', Carbon::now()->subDays(7))
             ->where(function ($q) {
                 $q->whereDoesntHave('biayaTransportasi');
             })
@@ -181,7 +180,7 @@ class BiayaTransportasiController extends Controller
             'items.*.tipe' => 'required|in:BBM,TOL,Parkir,Lainnya,Budget Lebih',
             'items.*.harga' => 'required|numeric|min:500',
             'items.*.keterangan' => 'nullable|string|max:255',
-            'items.*.bukti' => 'nullable|image',
+            'items.*.bukti' => 'nullable',
         ]);
 
         $existingItems = BiayaTransportasiDriver::where('id_pickup_driver', $id_pickup_driver)->where('id_karyawan', Auth::id())->get();
