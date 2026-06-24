@@ -1455,6 +1455,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::prefix('performance')->name('performance.')->group(function () {
         Route::get('/dashboard', [TargetKPIController::class, 'performanceDashboard'])->name('index');
         Route::get('/dashboard/data', [TargetKPIController::class, 'getPerformanceDashboardData'])->name('dashboard.data');
+        Route::get('/dashboard/assessment-360-detail', [TargetKPIController::class, 'getAssessment360DetailTab'])->name('dashboard.assessment360.detailTab');
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/trend', [TargetKPIController::class, 'getPerformanceTrend'])->name('trend');
             Route::get('/prediction', [TargetKPIController::class, 'getPerformancePrediction'])->name('prediction');

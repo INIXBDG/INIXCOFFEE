@@ -52,6 +52,9 @@ use App\Models\Tickets;
 use App\Models\TodoAdministrasi;
 use App\Models\trackingTagihanPerusahaan;
 use App\Models\TunjanganKaryawan;
+use App\Models\kategoriKPI;
+use App\Models\shareForm;
+use App\Models\tipeKategoriTabel;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Google\Service\CloudDeploy\Target;
@@ -16539,6 +16542,7 @@ class TargetKPIController extends Controller
         $tahun = $request->input('tahun', now()->year);
         $divisi = $request->input('divisi');
         $jabatan = $request->input('jabatan');
+        $search = $request->input('search');
 
         $query = karyawan::where('status_aktif', '1')
             ->whereNot('jabatan', 'Outsource')
@@ -16549,43 +16553,348 @@ class TargetKPIController extends Controller
 
         if ($divisi) $query->where('divisi', $divisi);
         if ($jabatan) $query->where('jabatan', $jabatan);
+        if ($search) $query->where('nama_lengkap', 'LIKE', "%{$search}%");
 
-        $karyawans = $query->orderBy('jabatan')->orderBy('nama_lengkap')->get();
+        $karyawans = $query->orderBy('nama_lengkap')->get();
 
-        $groups = [];
+        $users = [];
         foreach ($karyawans as $emp) {
-            // Menggunakan function referensi dari file txt Anda
+            // Get KPI details
+            $kpiDetails = $this->getKPIDetails($emp->id, $tahun);
             $kpiScore = $this->calculatePerformanceScore($emp, $tahun);
+
+            // Get 360 assessment details
+            $assessment360Details = $this->getAssessment360Details($emp->id, $tahun);
             $score360 = $this->calculateThreeSixtyScore($emp->id, $tahun);
 
-            $groups[$emp->jabatan][] = [
+            $users[] = [
                 'id' => $emp->id,
                 'nama' => $emp->nama_lengkap,
-                'foto' => $emp->foto ? asset('storage/' . $emp->foto) : asset('assets/img/avatars/1.png'),
+                'jabatan' => $emp->jabatan,
                 'divisi' => $emp->divisi,
                 'kpi' => [
                     'score' => round($kpiScore, 1),
                     'grade' => $this->getGradeLabel($kpiScore),
+                    'details' => $kpiDetails
                 ],
                 'assessment_360' => [
                     'score' => round($score360, 1),
                     'grade' => $this->getGradeLabel($score360),
+                    'details' => $assessment360Details
                 ]
-            ];
-        }
-
-        $formattedGroups = [];
-        foreach ($groups as $jab => $users) {
-            $formattedGroups[] = [
-                'jabatan' => $jab,
-                'total_users' => count($users),
-                'users' => $users
             ];
         }
 
         return response()->json([
             'success' => true,
-            'groups' => $formattedGroups
+            'total' => count($users),
+            'users' => $users
+        ]);
+    }
+
+    private function getKPIDetails($karyawanId, $tahun)
+    {
+        $targets = targetKPI::with(['detailTargetKPI.detailPersonKPI', 'detailTargetKPI.dataTarget'])
+            ->whereYear('created_at', $tahun)
+            ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanId) {
+                $q->where('id_karyawan', $karyawanId);
+            })
+            ->get();
+
+        $details = [];
+        foreach ($targets as $target) {
+            foreach ($target->detailTargetKPI as $detail) {
+                $assignedPersons = $detail->detailPersonKPI
+                    ->where('id_karyawan', $karyawanId);
+
+                if ($assignedPersons->isEmpty()) continue;
+
+                $result = $this->getCalculationByRoute($target, $karyawanId);
+                if (!$result || !isset($result['progress'])) continue;
+
+                $rawProgress = $this->normalizeNumber($result['progress']);
+                $nilaiTarget = $detail->dataTarget?->nilai_target ?? $detail->nilai_target;
+                $tipeTarget = $detail->tipe_target;
+
+                $percent = 0;
+                if ($tipeTarget === 'rupiah' && $nilaiTarget > 0) {
+                    $percent = ($rawProgress / $nilaiTarget) * 100;
+                } elseif ($tipeTarget === 'angka' && $nilaiTarget > 0) {
+                    $percent = ($rawProgress / $nilaiTarget) * 100;
+                } else {
+                    $percent = $rawProgress;
+                }
+
+                $percent = max(0, min(100, round($percent, 1)));
+
+                $details[] = [
+                    'judul' => $target->judul,
+                    'asistant_route' => $detail->dataTarget?->asistant_route ?? '-',
+                    'tipe_target' => $tipeTarget,
+                    'nilai_target' => $nilaiTarget,
+                    'progress' => $percent,
+                    'status' => $percent >= 100 ? 'Selesai' : ($percent > 0 ? 'Aktif' : 'Belum Mulai')
+                ];
+            }
+        }
+
+        return $details;
+    }
+
+    private function getAssessment360Details($karyawanId, $tahun)
+    {
+        $persentaseJenis = [
+            'General Manager' => 35,
+            'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
+            'Rekan Kerja (Satu Divisi)' => 20,
+            'Pekerja (Beda Divisi)' => 10,
+            'Self Apprisial' => 5,
+        ];
+
+        $allNilaiKPI = nilaiKPI::where('id_evaluated', $karyawanId)
+            ->whereYear('created_at', $tahun)
+            ->get();
+
+        $details = [];
+        foreach ($persentaseJenis as $jenis => $bobot) {
+            $nilaiForJenis = $allNilaiKPI->where('jenis_penilaian', $jenis)
+                ->pluck('nilai')
+                ->filter(fn($n) => is_numeric($n) && $n > 0);
+
+            if ($nilaiForJenis->isNotEmpty()) {
+                $avgNilai = $nilaiForJenis->avg();
+                $score = ($avgNilai * $bobot) / 100;
+
+                $details[] = [
+                    'jenis_penilaian' => $jenis,
+                    'bobot' => $bobot,
+                    'rata_rata_nilai' => round($avgNilai, 1),
+                    'score' => round($score, 1),
+                    'jumlah_evaluator' => $nilaiForJenis->count()
+                ];
+            }
+        }
+
+        return $details;
+    }
+
+    public function getAssessment360DetailTab(Request $request)
+    {
+        $request->validate([
+            'id_karyawan' => 'required|integer',
+            'tahun'       => 'required|integer'
+        ]);
+
+        $id_karyawan = $request->input('id_karyawan');
+        $tahun       = $request->input('tahun');
+
+        $karyawan = karyawan::find($id_karyawan);
+        if (!$karyawan) {
+            return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
+        }
+
+        // Ambil semua form penilaian 360 untuk tahun tersebut (semua jenis form)
+        $formPenilaians = formPenilaian::with('karyawan')
+            ->where('id_karyawan', $id_karyawan)
+            ->where('tahun', $tahun)
+            ->get();
+
+        if ($formPenilaians->isEmpty()) {
+            $availableYears = formPenilaian::where('id_karyawan', $id_karyawan)
+                ->select('tahun', 'quartal', 'jenis_form')
+                ->distinct()
+                ->orderBy('tahun', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => false,
+                'message' => "Belum ada data penilaian 360 untuk tahun {$tahun}",
+                'debug' => [
+                    'id_karyawan' => $id_karyawan,
+                    'tahun_dipilih' => $tahun,
+                    'tahun_tersedia' => $availableYears->pluck('tahun')->unique()->values(),
+                ]
+            ], 404);
+        }
+
+        // Group by quartal
+        $groupedByQuartal = $formPenilaians->groupBy('quartal')->sortKeysDesc();
+        $firstForm = $formPenilaians->first();
+
+        // Info evaluated
+        $evaluated = [
+            'nama'        => optional($firstForm->karyawan)->nama_lengkap . ' - ' . (optional($firstForm->karyawan)->divisi ?? '-'),
+            'id_karyawan' => $firstForm->id_karyawan,
+            'quartal'     => $firstForm->quartal,
+            'tahun'       => $firstForm->tahun,
+            'catatan'     => $firstForm->catatan ?? '-',
+            'kode_form'   => $firstForm->kode_form,
+        ];
+
+        // Data absensi untuk tahun tersebut
+        $dataAbsensi = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
+            ->whereYear('created_at', $tahun)
+            ->get();
+
+        $dataAbsen = [
+            'sakit' => $dataAbsensi->where('keterangan', 'Sakit')->count(),
+            'telat' => $dataAbsensi->where('keterangan', 'Telat')->count(),
+            'izin'  => $dataAbsensi->where('keterangan', 'Izin')->count(),
+        ];
+
+        // Ambil semua kategori dari semua form
+        $kodeKategoriList = $formPenilaians->pluck('kode_kategori')->unique();
+        $allKategoriKPIs = kategoriKPI::whereIn('kode_kategori', $kodeKategoriList)->get();
+
+        // Ambil semua evaluator
+        $kodeFormList = $formPenilaians->pluck('kode_form')->unique();
+        $allEvaluatorData = shareForm::with('evaluator')
+            ->where('id_evaluated', $id_karyawan)
+            ->whereIn('kode_form', $kodeFormList)
+            ->get();
+
+        // Build evaluator list dengan detail nilai
+        $evaluatorList = [];
+        foreach ($allEvaluatorData as $evaluatorItem) {
+            $jenis_penilaian = $evaluatorItem->jenis_penilaian;
+            $id_evaluator    = $evaluatorItem->id_evaluator;
+
+            $nilaiKPIByEvaluator = nilaiKPI::where('id_evaluated', $id_karyawan)
+                ->whereIn('kode_form', $kodeFormList)
+                ->where('id_evaluator', $id_evaluator)
+                ->where('jenis_penilaian', $jenis_penilaian)
+                ->get();
+
+            $groupedByKategori = $nilaiKPIByEvaluator->groupBy('name_variabel');
+
+            $listNilaiEvaluator = [];
+            foreach ($allKategoriKPIs as $kategori) {
+                $nilaiItem = $groupedByKategori->get($kategori->judul_kategori);
+
+                if ($nilaiItem && $nilaiItem->count() > 0) {
+                    $firstItem = $nilaiItem->first();
+                    $listNilaiEvaluator[] = [
+                        'pesan' => $firstItem->pesan ?? '-',
+                        'nilai' => $firstItem->nilai ?? '-'
+                    ];
+                } else {
+                    $listNilaiEvaluator[] = [
+                        'pesan' => '-',
+                        'nilai' => '-'
+                    ];
+                }
+            }
+
+            $evaluatorList[] = [
+                'nama'            => optional($evaluatorItem->evaluator)->nama_lengkap . ' - ' . (optional($evaluatorItem->evaluator)->divisi ?? '-'),
+                'jenis_penilaian' => $evaluatorItem->jenis_penilaian ?? '-',
+                'nilai'           => $listNilaiEvaluator
+            ];
+        }
+
+        $evaluatorList = collect($evaluatorList)
+            ->unique(fn($item) => $item['nama'] . $item['jenis_penilaian'])
+            ->values();
+
+        // Build data kriteria
+        $dataKriteria = $formPenilaians
+            ->groupBy(fn($item) => $item->kode_form . '|' . $item->nama_penilaian)
+            ->map(function ($groupedForms, $combinedKey) {
+                [$kodeForm, $namaPenilaian] = explode('|', $combinedKey);
+
+                $kategoriKPIs = $groupedForms->flatMap(function ($form) {
+                    return kategoriKPI::where('kode_kategori', $form->kode_kategori)->get();
+                })->unique('judul_kategori')->values();
+
+                $detailKriteria = $kategoriKPIs->map(function ($kategori) {
+                    $tipeDetails = tipeKategoriTabel::where('id_kategori', $kategori->id)->get();
+
+                    return [
+                        'sub_kriteria' => $kategori->judul_kategori,
+                        'bobot'        => $kategori->bobot,
+                        'tipe_input'   => $kategori->tipe_kategori,
+                        'detailTipeSubKriteria' => $tipeDetails->map(fn($tipe) => [
+                            'ket_sub_tipe'       => $tipe->ket_tipe,
+                            'nilai_ket_sub_tipe' => $tipe->nilai_ket_sub_tipe
+                        ])->toArray()
+                    ];
+                });
+
+                return [
+                    'kriteria'       => $namaPenilaian,
+                    'kodeForm'       => $kodeForm,
+                    'detailKriteria' => $detailKriteria
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        // Chart data
+        $persentaseJenis = [
+            'General Manager' => 35,
+            'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
+            'Rekan Kerja (Satu Divisi)' => 20,
+            'Pekerja (Beda Divisi)' => 10,
+            'Self Apprisial' => 5,
+        ];
+
+        $chartData = [];
+        foreach ($groupedByQuartal as $quartal => $forms) {
+            $kodeForms = $forms->pluck('kode_form')->unique();
+            $evaluators = shareForm::where('id_evaluated', $id_karyawan)
+                ->whereIn('kode_form', $kodeForms)
+                ->get()
+                ->groupBy('jenis_penilaian');
+
+            $totalSkor = 0;
+            foreach ($evaluators as $jenis => $evalGroup) {
+                $bobotJenis = $persentaseJenis[$jenis] ?? 0;
+                if ($bobotJenis === 0) continue;
+
+                $skorJenis = 0;
+                foreach ($allKategoriKPIs as $kategori) {
+                    $nilaiPerEvaluator = [];
+                    foreach ($evalGroup as $eval) {
+                        $itemNilai = nilaiKPI::where('id_evaluator', $eval->id_evaluator)
+                            ->where('id_evaluated', $id_karyawan)
+                            ->where('kode_form', $eval->kode_form)
+                            ->where('jenis_penilaian', $jenis)
+                            ->where('name_variabel', $kategori->judul_kategori)
+                            ->whereNotNull('nilai')
+                            ->first();
+                        if ($itemNilai && is_numeric($itemNilai->nilai)) {
+                            $nilaiPerEvaluator[] = (float) $itemNilai->nilai;
+                        }
+                    }
+                    $avgNilai = count($nilaiPerEvaluator) > 0 ? array_sum($nilaiPerEvaluator) / count($nilaiPerEvaluator) : 0;
+                    $skorJenis += $avgNilai * ($kategori->bobot / 100);
+                }
+                $totalSkor += ($skorJenis * $bobotJenis) / 100;
+            }
+
+            $chartData[$quartal] = number_format($totalSkor, 2, '.', '');
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [[
+                'evaluated' => $evaluated,
+                'dataAbsen' => $dataAbsen,
+                'data' => [
+                    'evaluator'    => $evaluatorList,
+                    'dataKriteria' => $dataKriteria,
+                ],
+                'chart' => [
+                    'quartal' => $chartData,
+                    'all'     => []
+                ]
+            ]],
+            'karyawan' => [
+                'nama'    => $karyawan->nama_lengkap,
+                'jabatan' => $karyawan->jabatan,
+                'divisi'  => $karyawan->divisi,
+                'foto'    => $karyawan->foto ? asset('storage/' . $karyawan->foto) : asset('assets/img/avatars/1.png'),
+            ]
         ]);
     }
 }
