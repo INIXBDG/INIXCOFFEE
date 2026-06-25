@@ -12,7 +12,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class payrollController extends Controller
 {
-    //Payroll Function
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         return view('HR.payroll.index');
@@ -55,12 +59,7 @@ class payrollController extends Controller
             $eligibleIds = $eligibleKaryawan->pluck('id')->toArray();
             $totalEligible = count($eligibleIds);
 
-            $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')
-                ->whereIn('id_karyawan', $eligibleIds)
-                ->where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->get()
-                ->groupBy('id_karyawan');
+            $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')->whereIn('id_karyawan', $eligibleIds)->where('bulan', $bulan)->where('tahun', $tahun)->get()->groupBy('id_karyawan');
 
             $periodStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
             $periodEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
@@ -71,7 +70,14 @@ class payrollController extends Controller
 
                 $totalTunjangan = $items->where('jenistunjangan.tipe', 'Tunjangan')->sum('total');
                 $totalPotongan = abs($items->where('jenistunjangan.tipe', 'Potongan')->sum('total'));
-                $gajiBersih = $gajiPokok + $totalTunjangan - $totalPotongan;
+
+                $tunjanganBersih = $totalTunjangan - $totalPotongan;
+
+                if ($tunjanganBersih < 0) {
+                    $tunjanganBersih = 0;
+                }
+
+                $gajiBersih = $gajiPokok + $tunjanganBersih;
 
                 $awalProbation = $emp->awal_probation ? Carbon::parse($emp->awal_probation) : null;
                 $resignedAt = $emp->resigned_at ? Carbon::parse($emp->resigned_at) : null;
@@ -86,6 +92,7 @@ class payrollController extends Controller
                     'jabatan' => $emp->jabatan ?? '-',
                     'gaji_pokok' => $gajiPokok,
                     'total_tunjangan' => $totalTunjangan,
+                    'tunjangan_bersih' => $tunjanganBersih, // === PERUBAHAN: Menambahkan field baru ===
                     'total_potongan' => $totalPotongan,
                     'gaji_bersih' => $gajiBersih,
                     'status' => $status,
@@ -116,7 +123,9 @@ class payrollController extends Controller
                 'sudah_dihitung' => $payrollList->where('status', 'Sudah Dihitung')->count(),
                 'belum_dihitung' => $payrollList->where('status', 'Belum Dihitung')->count(),
                 'total_gaji_pokok' => $payrollList->sum('gaji_pokok'),
-                'total_tunjangan' => $payrollList->sum('total_tunjangan'),
+                'total_tunjangan' => $payrollList->filter(function($emp) {
+                    return $emp['tunjangan_bersih'] > 0;
+                })->sum('tunjangan_bersih'),
                 'total_potongan' => $payrollList->sum('total_potongan'),
                 'total_gaji_bersih' => $payrollList->sum('gaji_bersih'),
                 'avg_gaji_bersih' => $totalRecords > 0 ? round($payrollList->sum('gaji_bersih') / $totalRecords, 0) : 0,
@@ -235,11 +244,24 @@ class payrollController extends Controller
 
         $callback = function () use ($res) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['No', 'Nama', 'Kode', 'Divisi', 'Jabatan', 'Gaji Pokok', 'Total Tunjangan', 'Total Potongan', 'Gaji Bersih', 'Status']);
+            // === PERUBAHAN: Menambahkan kolom Tunjangan Bersih ===
+            fputcsv($file, ['No', 'Nama', 'Kode', 'Divisi', 'Jabatan', 'Gaji Pokok', 'Total Tunjangan', 'Tunjangan Bersih', 'Total Potongan', 'Gaji Bersih', 'Status']);
 
             $i = 1;
             foreach ($res['data'] as $row) {
-                fputcsv($file, [$i++, $row['nama'], $row['kode'] ?? '-', $row['divisi'], $row['jabatan'], $row['gaji_pokok'], $row['total_tunjangan'], $row['total_potongan'], $row['gaji_bersih'], $row['status']]);
+                fputcsv($file, [
+                    $i++,
+                    $row['nama'],
+                    $row['kode'] ?? '-',
+                    $row['divisi'],
+                    $row['jabatan'],
+                    $row['gaji_pokok'],
+                    $row['total_tunjangan'],
+                    $row['tunjangan_bersih'], // === PERUBAHAN: Memasukkan nilai tunjangan_bersih ===
+                    $row['total_potongan'],
+                    $row['gaji_bersih'],
+                    $row['status'],
+                ]);
             }
             fclose($file);
         };
@@ -334,8 +356,7 @@ class payrollController extends Controller
 
             $actives = Karyawan::where('status_aktif', '1')
                 ->where(function ($q) use ($periodStart) {
-                    $q->whereNull('awal_probation')
-                        ->orWhere('awal_probation', '<', $periodStart->copy()->subMonth());
+                    $q->whereNull('awal_probation')->orWhere('awal_probation', '<', $periodStart->copy()->subMonth());
                 })
                 ->count();
 
