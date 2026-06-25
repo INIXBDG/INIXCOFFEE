@@ -1837,7 +1837,7 @@
                                                                 <td rowspan="{{ $rowspan }}">
                                                                     <span
                                                                         class="badge bg-info-subtle text-info px-3 py-2">
-                                                                        {{ number_format($detail_rkm->pax, 0, ',', '.') }}
+                                                                        {{ number_format($detail_rkm->total_pax, 0, ',', '.') }}
                                                                     </span>
                                                                 </td>
 
@@ -1973,7 +1973,7 @@
                                                         <td>{{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}</td>
                                                         <td>
                                                             <span class="badge bg-info-subtle text-info px-3 py-2">
-                                                                {{ number_format($detail_rkm->pax, 0, ',', '.') }}
+                                                                {{ number_format($detail_rkm->total_pax, 0, ',', '.') }}
                                                             </span>
                                                         </td>
 
