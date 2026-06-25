@@ -15434,7 +15434,6 @@ class TargetKPIController extends Controller
     public function executiveDashboard(Request $request)
     {
         $user = auth()->user();
-
         $allowedRoles = ['GM', 'HRD', 'Direktur Utama'];
         if (!in_array($user->jabatan, $allowedRoles)) {
             abort(403, 'Akses khusus executive required');
@@ -15458,7 +15457,7 @@ class TargetKPIController extends Controller
             ->pluck('jabatan')
             ->filter()
             ->values();
-        
+
         return view('HR.executive.dashboard', compact('divisiList', 'jabatanList'));
     }
 
@@ -15473,13 +15472,37 @@ class TargetKPIController extends Controller
 
         $filters = $request->only(['divisi', 'jabatan', 'tahun']);
         $filename = 'Executive_Report_' . date('Ymd_His') . '.pdf';
-        
-        $pdf = PDF::loadView('HR.executive.report-pdf', [
 
+        $tahun = $filters['tahun'] ?? now()->year;
+        $karyawanIds = $this->getKaryawanIdsFromFilters($filters);
+
+        $query = targetKPI::with([
+            'karyawan',
+            'detailTargetKPI' => function($q) {
+                $q->with(['dataTarget', 'detailPersonKPI.karyawan']);
+            },
+        ])
+        ->whereYear('created_at', $tahun)
+        ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
+            $q->whereIn('id_karyawan', $karyawanIds);
+        });
+
+        $targets = $query->get();
+        $progressData = $this->extractAllProgressData($targets, $filters);
+
+        $summary = [
+            'total_targets' => $targets->count(),
+            'avg_progress' => round($progressData->pluck('progress')->filter()->avg() ?? 0, 1),
+            'completion_rate' => $this->calculateCompletionRate($targets),
+            'top_divisions' => $this->getTopDivisions($progressData),
+            'period' => $tahun
+        ];
+
+        $pdf = PDF::loadView('HR.executive.report-pdf', [
             'filters' => $filters,
             'generated_at' => now(),
             'user' => $user,
-            'summary' => $this->getExecutiveSummary($filters)
+            'summary' => $summary
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download($filename);
@@ -15488,7 +15511,10 @@ class TargetKPIController extends Controller
     public function getExecutiveTrend(Request $request)
     {
         $user = auth()->user();
-        $this->authorizeExecutive($user);
+        $allowedRoles = ['GM', 'HRD', 'Direktur Utama'];
+        if (!in_array($user->jabatan, $allowedRoles)) {
+            abort(403, 'Akses khusus executive required');
+        }
 
         $filters = $request->validate([
             'divisi' => 'nullable|string',
@@ -15501,10 +15527,22 @@ class TargetKPIController extends Controller
         $filters['granularity'] = $filters['granularity'] ?? 'monthly';
         $filters['tahun'] = $filters['tahun'] ?? now()->year;
 
-        $targets = $this->buildExecutiveQuery($filters)->get();
+        $tahun = $filters['tahun'];
+        $karyawanIds = $this->getKaryawanIdsFromFilters($filters);
 
-        $allProgressData = $this->extractAllProgressData($targets);
+        $query = targetKPI::with([
+            'karyawan',
+            'detailTargetKPI' => function($q) {
+                $q->with(['dataTarget', 'detailPersonKPI.karyawan']);
+            },
+        ])
+        ->whereYear('created_at', $tahun)
+        ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
+            $q->whereIn('id_karyawan', $karyawanIds);
+        });
 
+        $targets = $query->get();
+        $allProgressData = $this->extractAllProgressData($targets, $filters);
         $trendData = $this->calculateTrendMetrics($allProgressData, $filters['granularity']);
         $comparisonData = $this->calculatePeriodComparison($filters, $allProgressData);
 
@@ -15548,7 +15586,6 @@ class TargetKPIController extends Controller
             ->get();
 
         $historicalData = $this->extractAllProgressData($targets);
-
         $timeSeries = $this->prepareTimeSeries($historicalData, 'monthly');
 
         if (count($timeSeries) < 3) {
@@ -15585,75 +15622,178 @@ class TargetKPIController extends Controller
         ]);
     }
 
-    public function getPotentialMatrix(Request $request)
+    public function getPotentialMatrixUnified(Request $request)
     {
         $filters = $request->only(['divisi', 'jabatan', 'tahun']);
-        $type = $request->get('type', 'kpi');
         $tahun = $filters['tahun'] ?? now()->year;
-        
-        $employees = $this->getEmployeesWithMetrics($filters, $tahun);
+
+        $query = karyawan::where('status_aktif', '1')
+            ->whereNotNull('nama_lengkap')
+            ->whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi');
+
+        if (!empty($filters['divisi'])) $query->where('divisi', $filters['divisi']);
+        if (!empty($filters['jabatan'])) $query->where('jabatan', $filters['jabatan']);
+        if (!empty($filters['id_karyawan'])) $query->where('id', $filters['id_karyawan']);
+
+        $employees = $query->get();
 
         if ($employees->isEmpty()) {
             return response()->json([
-                'matrix' => $this->getEmptyMatrix(),
+                'matrix' => [],
                 'summary' => ['total_employees' => 0, 'message' => 'Tidak ada data karyawan untuk periode ini'],
                 'visualization_data' => []
             ]);
         }
-      
-        $matrix = $this->getEmptyMatrix();
+
+        $matrixData = [];
+        $allPoints = [];
 
         foreach ($employees as $emp) {
-            if ($type === 'assessment') {
-                $performance = $this->calculateThreeSixtyScore($emp->id, $tahun);
-                $growth = $this->calculateGrowthFromAssessment($emp->id, $tahun);
-            } else {
-                $performance = $this->calculatePerformanceScore($emp, $tahun);
-                $growth = $this->calculateGrowthPotential($emp, $tahun);
+            $kpiTargets = targetKPI::with(['detailTargetKPI.detailPersonKPI'])
+                ->whereYear('created_at', $tahun)
+                ->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $emp->id))
+                ->get();
+
+            $progressValues = [];
+            $processedTargets = [];
+
+            foreach ($kpiTargets as $target) {
+                foreach ($target->detailTargetKPI as $detail) {
+                    $assignedIds = $detail->detailPersonKPI
+                        ->where('id_karyawan', $emp->id)
+                        ->pluck('id_karyawan')
+                        ->unique()
+                        ->toArray();
+
+                    if (empty($assignedIds)) continue;
+
+                    foreach ($assignedIds as $personId) {
+                        $targetKey = $target->id . '_' . $detail->id . '_' . $personId;
+                        if (isset($processedTargets[$targetKey])) continue;
+                        $processedTargets[$targetKey] = true;
+
+                        $result = $this->getCalculationByRoute($target, $personId);
+                        if (!$result || !isset($result['progress'])) continue;
+
+                        $rawProgress = $this->normalizeNumber($result['progress']);
+                        $percent = max(0, min(100, round($rawProgress, 2)));
+                        $progressValues[] = $percent;
+                    }
+                }
             }
-            
-            $threeSixtyScore = $this->calculateThreeSixtyScore($emp->id, $tahun);
-            
-            $quadrant = $this->classifyNineBoxQuadrant($performance, $growth);
-  
-            $matrix[$quadrant][] = [
+
+            $performance = !empty($progressValues) ? round(array_sum($progressValues) / count($progressValues), 1) : 0;
+
+            $penilaian = nilaiKPI::where('id_evaluated', $emp->id)->whereYear('created_at', $tahun)->get();
+            $bobotJenis = [
+                'General Manager' => 35,
+                'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
+                'Rekan Kerja (Satu Divisi)' => 20,
+                'Pekerja (Beda Divisi)' => 10,
+                'Self Apprisial' => 5,
+            ];
+
+            $jenisTotalRaw = [];
+            foreach ($bobotJenis as $jenis => $bobot) {
+                $nilaiForJenis = $penilaian->where('jenis_penilaian', $jenis)
+                    ->pluck('nilai')
+                    ->filter(fn($n) => is_numeric($n) && $n > 0);
+
+                if ($nilaiForJenis->isNotEmpty()) {
+                    $avgNilai = $nilaiForJenis->avg();
+                    $jenisTotalRaw[$jenis] = ($avgNilai * $bobot) / 100;
+                }
+            }
+            $potential = empty($jenisTotalRaw) ? 0 : round(array_sum($jenisTotalRaw), 1);
+
+            $perfLevel = $performance >= 75 ? 'high' : ($performance >= 50 ? 'moderate' : 'low');
+            $potenLevel = $potential >= 70 ? 'high' : ($potential >= 40 ? 'moderate' : 'low');
+
+            $quadrant = match(true) {
+                $perfLevel === 'high' && $potenLevel === 'high' => 'star',
+                $perfLevel === 'moderate' && $potenLevel === 'high' => 'high_potential',
+                $perfLevel === 'low' && $potenLevel === 'high' => 'potential_gem',
+                $perfLevel === 'high' && $potenLevel === 'moderate' => 'high_performer',
+                $perfLevel === 'moderate' && $potenLevel === 'moderate' => 'core_player',
+                $perfLevel === 'low' && $potenLevel === 'moderate' => 'inconsistent',
+                $perfLevel === 'high' && $potenLevel === 'low' => 'solid_performer',
+                $perfLevel === 'moderate' && $potenLevel === 'low' => 'average_performer',
+                $perfLevel === 'low' && $potenLevel === 'low' => 'risk',
+                default => 'core_player'
+            };
+
+            $strengths = [];
+            if ($performance >= 80) $strengths[] = 'Kinerja konsisten di atas target';
+            elseif ($performance >= 70) $strengths[] = 'Kinerja stabil dan dapat diandalkan';
+
+            if ($potential >= 75) $strengths[] = 'Potensi pengembangan tinggi';
+            elseif ($potential >= 60) $strengths[] = 'Menunjukkan tren peningkatan yang positif';
+
+            if ($potential >= 80) $strengths[] = 'Penilaian 360° sangat baik';
+            elseif ($potential >= 70) $strengths[] = 'Penilaian rekan kerja positif';
+
+            $targetCount = targetKPI::whereYear('created_at', now()->year)
+                ->whereHas('detailTargetKPI.detailPersonKPI', function($q) use ($emp) {
+                    $q->where('id_karyawan', $emp->id);
+                })
+                ->count();
+
+            if ($targetCount >= 5) $strengths[] = 'Pengalaman menangani multiple target';
+            if (empty($strengths)) $strengths[] = 'Dalam proses pengembangan';
+
+            $areas = [];
+            if ($performance < 60) $areas[] = 'Fokus pada peningkatan kualitas eksekusi target';
+            elseif ($performance < 75) $areas[] = 'Optimalkan konsistensi pencapaian target';
+
+            if ($potential < 50) $areas[] = 'Perlu eksposur ke target yang lebih beragam untuk pengembangan skill';
+
+            if ($potential < 60 && $potential > 0) $areas[] = 'Perlu peningkatan kolaborasi dan komunikasi dengan tim';
+
+            $empTargets = targetKPI::whereYear('created_at', now()->year)
+                ->whereHas('detailTargetKPI.detailPersonKPI', function($q) use ($emp) {
+                    $q->where('id_karyawan', $emp->id);
+                })->get();
+
+            if ($empTargets->isNotEmpty()) {
+                $completionRate = $empTargets->filter(
+                    fn($t) => in_array(strtolower($t->status ?? ''), ['completed', 'selesai', 'done'])
+                )->count() / $empTargets->count() * 100;
+
+                if ($completionRate < 70) $areas[] = 'Tingkatkan konsistensi penyelesaian target';
+            }
+
+            if (empty($areas)) $areas[] = 'Pertahankan kinerja saat ini';
+
+            $matrixData[] = [
                 'id' => $emp->id,
                 'nama' => $emp->nama_lengkap,
                 'jabatan' => $emp->jabatan,
                 'divisi' => $emp->divisi,
                 'performance_score' => $performance,
-                'growth_score' => $growth,
-                'three_sixty_score' => $threeSixtyScore,
-                'key_strengths' => $this->extractStrengths($emp, $performance, $growth, $threeSixtyScore),
-                'development_areas' => $this->extractDevelopmentAreas($emp, $performance, $growth, $threeSixtyScore)
+                'potential_score' => $potential,
+                'three_sixty_score' => $potential,
+                'quadrant' => $quadrant,
+                'key_strengths' => $strengths,
+                'development_areas' => $areas
+            ];
+
+            $allPoints[] = [
+                'x' => $performance,
+                'y' => $potential,
+                'name' => $emp->nama_lengkap,
+                'jabatan' => $emp->jabatan,
+                'divisi' => $emp->divisi,
+                'quadrant' => $quadrant,
+                'three_sixty' => $potential,
+                'type' => 'unified'
             ];
         }
 
-        $avgThreeSixty = $employees->avg(fn($e) => $this->calculateThreeSixtyScore($e->id, $tahun));
-        $avgPerformance = $employees->avg(fn($e) => $type === 'assessment' 
-            ? $this->calculateThreeSixtyScore($e->id, $tahun) 
-            : $this->calculatePerformanceScore($e, $tahun));
-        $avgGrowth = $employees->avg(fn($e) => $type === 'assessment'
-            ? $this->calculateGrowthFromAssessment($e->id, $tahun)
-            : $this->calculateGrowthPotential($e, $tahun));
-
-        return response()->json([
-            'matrix' => $matrix,
-            'summary' => [
-                'total_employees' => count($employees),
-                'high_potential_count' => count($matrix['high_potential']) + count($matrix['star']) + count($matrix['potential_gem']),
-                'avg_performance' => round($avgPerformance ?? 0, 1),
-                'avg_growth' => round($avgGrowth ?? 0, 1),
-                'avg_three_sixty' => round($avgThreeSixty ?? 0, 1),
-                'type' => $type
-            ],  
-            'visualization_data' => $this->prepareChartFormat($matrix, $type)
-        ]);
-    }
-
-    private function getEmptyMatrix()
-    {
-        return [
+        $matrix = [
             'star' => [],
             'high_potential' => [],
             'potential_gem' => [],
@@ -15664,69 +15804,27 @@ class TargetKPIController extends Controller
             'average_performer' => [],
             'risk' => [],
         ];
-    }
 
-    private function classifyNineBoxQuadrant($performance, $growth)
-    {
-        $perfLevel = $performance >= 75 ? 'high' : ($performance >= 50 ? 'moderate' : 'low');
-        $growthLevel = $growth >= 70 ? 'high' : ($growth >= 40 ? 'moderate' : 'low');
-        
-        return match(true) {
-            $perfLevel === 'high' && $growthLevel === 'high' => 'star',
-            $perfLevel === 'moderate' && $growthLevel === 'high' => 'high_potential',
-            $perfLevel === 'low' && $growthLevel === 'high' => 'potential_gem',
-            $perfLevel === 'high' && $growthLevel === 'moderate' => 'high_performer',
-            $perfLevel === 'moderate' && $growthLevel === 'moderate' => 'core_player',
-            $perfLevel === 'low' && $growthLevel === 'moderate' => 'inconsistent',
-            $perfLevel === 'high' && $growthLevel === 'low' => 'solid_performer',
-            $perfLevel === 'moderate' && $growthLevel === 'low' => 'average_performer',
-            $perfLevel === 'low' && $growthLevel === 'low' => 'risk',
-            default => 'core_player'
-        };
-    }
-
-    private function getEmployeesWithMetrics($filters, $tahun)
-    {
-        $karyawanIds = $this->getKaryawanIdsFromFilters($filters);
-        
-        if (empty($karyawanIds)) {
-            return collect();
+        foreach ($matrixData as $emp) {
+            $matrix[$emp['quadrant']][] = $emp;
         }
 
-        $targets = targetKPI::with(['detailTargetKPI.detailPersonKPI'])
-            ->whereYear('created_at', $tahun)
-            ->whereHas('detailTargetKPI.detailPersonKPI', function($q) use ($karyawanIds) {
-                $q->whereIn('id_karyawan', $karyawanIds);
-            })
-            ->get();
-        
-        $employeeIds = collect();
-        
-        foreach ($targets as $target) {
-            foreach ($target->detailTargetKPI as $detail) {
-                foreach ($detail->detailPersonKPI as $person) {
-                    if ($person->id_karyawan && in_array($person->id_karyawan, $karyawanIds)) {
-                        $employeeIds->push($person->id_karyawan);
-                    }
-                }
-            }
-        }
-        
-        $employeeIds = $employeeIds->unique();
-        
-        if ($employeeIds->isEmpty()) {
-            return collect();
-        }
+        $avgPerformance = collect($matrixData)->avg('performance_score') ?? 0;
+        $avgPotential = collect($matrixData)->avg('potential_score') ?? 0;
+        $highPotentialCount = count($matrix['star']) + count($matrix['high_potential']) + count($matrix['potential_gem']);
 
-        return karyawan::whereIn('id', $employeeIds)
-            ->whereNotNull('nama_lengkap')
-            ->where('status_aktif', '1')
-            ->whereNot('jabatan', 'Outsource')
-            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-            ->whereNot('jabatan', 'Pilih Jabatan')
-            ->whereNotNull('nip')
-            ->whereNot('divisi', 'Direksi')
-            ->get();
+        return response()->json([
+            'matrix' => $matrix,
+            'summary' => [
+                'total_employees' => count($employees),
+                'high_potential_count' => $highPotentialCount,
+                'avg_performance' => round($avgPerformance, 1),
+                'avg_potential' => round($avgPotential, 1),
+                'avg_three_sixty' => round($avgPotential, 1),
+                'type' => 'unified'
+            ],
+            'visualization_data' => $allPoints
+        ]);
     }
 
     private function getKaryawanIdsFromFilters($filters)
@@ -15739,434 +15837,40 @@ class TargetKPIController extends Controller
             ->whereNotNull('nip')
             ->whereNot('divisi', 'Direksi');
 
-        if (!empty($filters['divisi'])) {
-            $query->where('divisi', $filters['divisi']);
-        }
-        
-        if (!empty($filters['jabatan'])) {
-            $query->where('jabatan', $filters['jabatan']);
-        }
-        
-        if (!empty($filters['id_karyawan'])) {
-            $query->where('id', $filters['id_karyawan']);
-        }
+        if (!empty($filters['divisi'])) $query->where('divisi', $filters['divisi']);
+        if (!empty($filters['jabatan'])) $query->where('jabatan', $filters['jabatan']);
+        if (!empty($filters['id_karyawan'])) $query->where('id', $filters['id_karyawan']);
 
         return $query->pluck('id')->toArray();
-    }
-
-    private function calculatePerformanceScore($employee, $tahun)
-    {
-        $karyawanIds = [$employee->id];
-        
-        $targets = targetKPI::with(['detailTargetKPI'])
-            ->whereYear('created_at', $tahun)
-            ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
-                $q->whereIn('id_karyawan', $karyawanIds);
-            })
-            ->get();
-
-        if ($targets->isEmpty()) return 0;
-        
-        $allProgressValues = [];
-        $processedTargets = [];
-        
-        foreach ($targets as $target) {
-            foreach ($target->detailTargetKPI as $detail) {
-                
-                $assignedIds = $detail->detailPersonKPI
-                    ->whereIn('id_karyawan', $karyawanIds)
-                    ->pluck('id_karyawan')
-                    ->unique()
-                    ->toArray();
-
-                if (empty($assignedIds)) {
-                    continue;
-                }
-
-                foreach ($assignedIds as $personId) {
-                    
-                    $targetKey = $target->id . '_' . $detail->id . '_' . $personId;
-                    if (isset($processedTargets[$targetKey])) {
-                        continue;
-                    }
-                    $processedTargets[$targetKey] = true;
-
-                    $result = $this->getCalculationByRoute($target, $personId);
-                    if (!$result || !isset($result['progress'])) continue;
-
-                    $rawProgress = $this->normalizeNumber($result['progress']);
-                    $percent = max(0, min(100, round($rawProgress, 2)));
-
-                    $allProgressValues[] = $percent;
-                }
-            }
-        }
-        
-        if (empty($allProgressValues)) return 0;
-        
-        return round(array_sum($allProgressValues) / count($allProgressValues), 2);
-    }
-
-    private function calculateGrowthPotential($employee, $tahun)
-    {
-        $currentProgress = $this->getAverageProgressFromTargets($tahun, $employee->id);
-        $previousProgress = $this->getAverageProgressFromTargets($tahun - 1, $employee->id);
-        
-        if ($previousProgress == 0 && $currentProgress == 0) {
-            return 50;
-        }
-
-        if ($previousProgress == 0) {
-            return min(100, max(0, 50 + ($currentProgress / 2)));
-        }
-
-        $improvement = $currentProgress - $previousProgress;
-        $growthScore = 50 + ($improvement / 2);
-
-        $diversityBonus = min(20, $this->calculateTargetDiversity($employee->id, $tahun));
-        
-        return round(min(100, max(0, $growthScore + $diversityBonus)), 2);
-    }
-
-    private function calculateGrowthFromAssessment($employeeId, $tahun)
-    {
-        $currentYearNilai = nilaiKPI::where('id_evaluated', $employeeId)
-            ->whereYear('created_at', $tahun)
-            ->get();
-
-        $previousYearNilai = nilaiKPI::where('id_evaluated', $employeeId)
-            ->whereYear('created_at', $tahun - 1)
-            ->get();
-
-        $currentAvg = $currentYearNilai->pluck('nilai')
-            ->filter(fn($n) => is_numeric($n) && $n > 0)
-            ->avg() ?? 0;
-
-        $previousAvg = $previousYearNilai->pluck('nilai')
-            ->filter(fn($n) => is_numeric($n) && $n > 0)
-            ->avg() ?? 0;
-
-        if ($previousAvg == 0 && $currentAvg == 0) {
-            return round(50, 2);
-        }
-
-        if ($previousAvg == 0) {
-            return round(min(100, max(0, 50 + ($currentAvg / 2))), 2);
-        }
-
-        $improvement = $currentAvg - $previousAvg;
-        $growthScore = 50 + ($improvement / 2);
-
-        $feedbackDiversity = $currentYearNilai->pluck('jenis_penilaian')
-            ->unique()
-            ->count();
-
-        $diversityBonus = min(20, $feedbackDiversity * 4);
-
-        return round(min(100, max(0, $growthScore + $diversityBonus)), 2);
-    }
-    
-    private function getAverageProgressFromTargets($tahun, $employeeId)
-    {
-        $karyawanIds = [$employeeId];
-        
-        $targets = targetKPI::with(['detailTargetKPI'])
-            ->whereYear('created_at', $tahun)
-            ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
-                $q->whereIn('id_karyawan', $karyawanIds);
-            })
-            ->get();
-
-        if ($targets->isEmpty()) return 0;
-        
-        $allProgressValues = [];
-        $processedTargets = [];
-        
-        foreach ($targets as $target) {
-            foreach ($target->detailTargetKPI as $detail) {
-                
-                $assignedIds = $detail->detailPersonKPI
-                    ->whereIn('id_karyawan', $karyawanIds)
-                    ->pluck('id_karyawan')
-                    ->unique()
-                    ->toArray();
-
-                if (empty($assignedIds)) {
-                    continue;
-                }
-
-                foreach ($assignedIds as $personId) {
-                    
-                    $targetKey = $target->id . '_' . $detail->id . '_' . $personId;
-                    if (isset($processedTargets[$targetKey])) {
-                        continue;
-                    }
-                    $processedTargets[$targetKey] = true;
-
-                    $result = $this->getCalculationByRoute($target, $personId);
-                    if (!$result || !isset($result['progress'])) continue;
-
-                    $rawProgress = $this->normalizeNumber($result['progress']);
-                    $percent = max(0, min(100, round($rawProgress, 2)));
-
-                    $allProgressValues[] = $percent;
-                }
-            }
-        }
-      
-        return !empty($allProgressValues) ? array_sum($allProgressValues) / count($allProgressValues) : 0;
-    }
-
-    private function calculateTargetDiversity($employeeId, $tahun)
-    {
-        $targets = targetKPI::whereYear('created_at', $tahun)
-            ->whereHas('detailTargetKPI.detailPersonKPI', function($q) use ($employeeId) {
-                $q->where('id_karyawan', $employeeId);
-            })
-            ->with('detailTargetKPI.dataTarget')
-            ->get();
-
-        if ($targets->isEmpty()) return 0;
-
-        $uniqueRoutes = $targets->flatMap(
-            fn($t) =>
-            $t->detailTargetKPI->map(fn($d) => strtolower($d->dataTarget?->asistant_route ?? ''))
-        )->filter()->unique()->count();
-
-        return min(20, $uniqueRoutes * 4);
-    }
-
-    private function calculateThreeSixtyScore($employeeId, $tahun)
-    {
-        $persentaseJenis = [
-            'General Manager' => 35,
-            'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
-            'Rekan Kerja (Satu Divisi)' => 20,
-            'Pekerja (Beda Divisi)' => 10,
-            'Self Apprisial' => 5,
-        ];
-
-        $allNilaiKPI = nilaiKPI::where('id_evaluated', $employeeId)
-            ->whereYear('created_at', $tahun)
-            ->get();
-
-        if ($allNilaiKPI->isEmpty()) return 0;
-
-        $jenisTotalRaw = [];
-
-        foreach ($persentaseJenis as $jenis => $bobot) {
-            $nilaiForJenis = $allNilaiKPI->where('jenis_penilaian', $jenis)
-                ->pluck('nilai')
-                ->filter(fn($n) => is_numeric($n) && $n > 0);
-
-            if ($nilaiForJenis->isNotEmpty()) {
-                $avgNilai = $nilaiForJenis->avg();
-                $jenisTotalRaw[$jenis] = ($avgNilai * $bobot) / 100;
-            }
-        }
-
-        return empty($jenisTotalRaw) ? 0 : round(array_sum($jenisTotalRaw), 2);
-    }
-
-    private function extractStrengths($employee, $performance, $growth, $threeSixtyScore)
-    {
-        $strengths = [];
-
-        if ($performance >= 80) {
-            $strengths[] = 'Kinerja konsisten di atas target';
-        } elseif ($performance >= 70) {
-            $strengths[] = 'Kinerja stabil dan dapat diandalkan';
-        }
-
-        if ($growth >= 75) {
-            $strengths[] = 'Potensi pengembangan tinggi';
-        } elseif ($growth >= 60) {
-            $strengths[] = 'Menunjukkan tren peningkatan yang positif';
-        }
-
-        if ($threeSixtyScore >= 80) {
-            $strengths[] = 'Penilaian 360° sangat baik';
-        } elseif ($threeSixtyScore >= 70) {
-            $strengths[] = 'Penilaian rekan kerja positif';
-        }
-        
-        $targetCount = targetKPI::whereYear('created_at', now()->year)
-            ->whereHas('detailTargetKPI.detailPersonKPI', function($q) use ($employee) {
-                $q->where('id_karyawan', $employee->id);
-            })
-            ->count();
-
-        if ($targetCount >= 5) {
-            $strengths[] = 'Pengalaman menangani multiple target';
-        }
-
-        if (empty($strengths)) {
-            $strengths[] = 'Dalam proses pengembangan';
-        }
-
-        return $strengths;
-    }
-
-    private function extractDevelopmentAreas($employee, $performance, $growth, $threeSixtyScore)
-    {
-        $areas = [];
-
-        if ($performance < 60) {
-            $areas[] = 'Fokus pada peningkatan kualitas eksekusi target';
-        } elseif ($performance < 75) {
-            $areas[] = 'Optimalkan konsistensi pencapaian target';
-        }
-
-        if ($growth < 50) {
-            $areas[] = 'Perlu eksposur ke target yang lebih beragam untuk pengembangan skill';
-        }
-
-        if ($threeSixtyScore < 60 && $threeSixtyScore > 0) {
-            $areas[] = 'Perlu peningkatan kolaborasi dan komunikasi dengan tim';
-        }        
-        $targets = targetKPI::whereYear('created_at', now()->year)
-            ->whereHas('detailTargetKPI.detailPersonKPI', function($q) use ($employee) {
-                $q->where('id_karyawan', $employee->id);
-            })->get();
-
-        if ($targets->isNotEmpty()) {
-            $completionRate = $targets->filter(
-                fn($t) =>
-                in_array(strtolower($t->status ?? ''), ['completed', 'selesai', 'done'])
-            )->count() / $targets->count() * 100;
-
-            if ($completionRate < 70) {
-                $areas[] = 'Tingkatkan konsistensi penyelesaian target';
-            }
-        }
-
-        if (empty($areas)) {
-            $areas[] = 'Pertahankan kinerja saat ini';
-        }
-
-        return $areas;
-    }
-
-    private function prepareChartFormat($matrix, $type)
-    {
-        $chartData = [];
-
-        foreach ($matrix as $quadrant => $employees) {
-            foreach ($employees as $emp) {
-                $chartData[] = [
-                    'x' => $emp['performance_score'],
-                    'y' => $emp['growth_score'],
-                    'name' => $emp['nama'],
-                    'jabatan' => $emp['jabatan'],
-                    'divisi' => $emp['divisi'],
-                    'quadrant' => $quadrant,
-                    'color' => $this->getQuadrantColor($quadrant),
-                    'three_sixty' => $emp['three_sixty_score'] ?? 0,
-                    'type' => $type
-                ];
-            }
-        }
-
-        return $chartData;
-    }
-
-    private function getQuadrantColor($quadrant)
-    {
-        return match($quadrant) {
-            'star' => '#22c55e',
-            'high_potential' => '#84cc16',
-            'potential_gem' => '#facc15',
-            'high_performer' => '#4ade80',
-            'core_player' => '#fde047',
-            'inconsistent' => '#f87171',
-            'solid_performer' => '#fbbf24',
-            'average_performer' => '#f87171',
-            'risk' => '#dc2626',
-            default => '#6b7280'
-        };
-    }
-
-    private function authorizeExecutive($user)
-    {
-        $allowedRoles = ['GM', 'HRD', 'Direktur Utama'];
-
-        if (!in_array($user->jabatan, $allowedRoles)) {
-            abort(403, 'Akses khusus executive required');
-        }
-
-        return true;
-    }
-
-    private function getExecutiveSummary($filters)
-    {
-        $tahun = $filters['tahun'] ?? now()->year;
-        $targets = $this->buildExecutiveQuery([...$filters, 'tahun' => $tahun])->get();
-        $progressData = $this->extractAllProgressData($targets);
-
-        return [
-            'total_targets' => $targets->count(),
-            'avg_progress' => round($progressData->pluck('progress')->filter()->avg() ?? 0, 1),
-            'completion_rate' => $this->calculateCompletionRate($targets),
-            'top_divisions' => $this->getTopDivisions($progressData),
-            'period' => $tahun
-        ];
-    }
-
-    private function calculateCompletionRate($targets)
-    {
-        if ($targets->isEmpty()) return 0;
-        $completed = $targets->filter(
-            fn($t) =>
-            in_array(strtolower($t->status ?? ''), ['completed', 'selesai', 'done'])
-        )->count();
-        return round(($completed / $targets->count()) * 100, 2);
-    }
-
-    private function getTopDivisions($progressData, $limit = 5)
-    {
-        return $progressData->groupBy('divisi')
-            ->map(fn($items) => round($items->pluck('progress')->filter()->avg() ?? 0, 1))
-            ->filter()
-            ->sortDesc()
-            ->take($limit)
-            ->toArray();
     }
 
     private function extractAllProgressData($targets, $filters = [])
     {
         $progressData = [];
         $processedTargets = [];
-        
+
         foreach ($targets as $target) {
             foreach ($target->detailTargetKPI as $detail) {
-                
                 $assignedPersons = $detail->detailPersonKPI
                     ->whereIn('id_karyawan', $this->getKaryawanIdsFromFilters($filters))
                     ->groupBy('id_karyawan');
 
-                if ($assignedPersons->isEmpty()) {
-                    continue;
-                }
+                if ($assignedPersons->isEmpty()) continue;
 
                 foreach ($assignedPersons as $personId => $assignments) {
-                    
                     $targetKey = $target->id . '_' . $detail->id . '_' . $personId;
-                    if (isset($processedTargets[$targetKey])) {
-                        continue;
-                    }
+                    if (isset($processedTargets[$targetKey])) continue;
                     $processedTargets[$targetKey] = true;
 
                     $result = $this->getCalculationByRoute($target, $personId);
 
-                    if (!$result || !isset($result['progress'])) {
-                        continue;
-                    }
+                    if (!$result || !isset($result['progress'])) continue;
 
                     $rawProgress = $this->normalizeNumber($result['progress']);
                     $percent = max(0, min(100, round($rawProgress, 2)));
 
                     $monthlyProgress = $result['monthly_progress'] ?? [];
-                    
+
                     foreach ($monthlyProgress as $month => $mp) {
                         if (is_numeric($mp) && $mp >= 0 && $mp <= 100) {
                             $progressData[] = [
@@ -16184,29 +15888,27 @@ class TargetKPIController extends Controller
                 }
             }
         }
-        
+
         return collect($progressData);
     }
 
-
-
-    private function buildExecutiveQuery($filters)
+    private function calculateCompletionRate($targets)
     {
-        $tahun = $filters['tahun'] ?? now()->year;
-        $karyawanIds = $this->getKaryawanIdsFromFilters($filters);
-        
-        $query = targetKPI::with([
-            'karyawan', 
-            'detailTargetKPI' => function($q) {
-                $q->with(['dataTarget', 'detailPersonKPI.karyawan']);
-            },
-        ])
-        ->whereYear('created_at', $tahun)
-        ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
-            $q->whereIn('id_karyawan', $karyawanIds);
-        });
+        if ($targets->isEmpty()) return 0;
+        $completed = $targets->filter(
+            fn($t) => in_array(strtolower($t->status ?? ''), ['completed', 'selesai', 'done'])
+        )->count();
+        return round(($completed / $targets->count()) * 100, 2);
+    }
 
-        return $query;
+    private function getTopDivisions($progressData, $limit = 5)
+    {
+        return $progressData->groupBy('divisi')
+            ->map(fn($items) => round($items->pluck('progress')->filter()->avg() ?? 0, 1))
+            ->filter()
+            ->sortDesc()
+            ->take($limit)
+            ->toArray();
     }
 
     private function calculateTrendMetrics($progressData, $granularity)
@@ -16239,86 +15941,66 @@ class TargetKPIController extends Controller
         foreach ($grouped as $period => $items) {
             $progressValues = $items->pluck('progress')->filter(fn($v) => $v !== null && is_numeric($v));
 
+            $sorted = $progressValues->sort()->values();
+            $count = $sorted->count();
+            $middle = floor(($count - 1) / 2);
+            $median = $count % 2
+                ? round($sorted->get($middle), 2)
+                : round(($sorted->get($middle) + $sorted->get($middle + 1)) / 2, 2);
+
+            $mean = $progressValues->avg();
+            $variance = $progressValues->map(fn($v) => pow($v - $mean, 2))->avg();
+            $stdDev = sqrt($variance);
+
             $metrics[$period] = [
                 'avg_progress' => $progressValues->isNotEmpty() ? round($progressValues->avg(), 2) : 0,
-                'median_progress' => $this->calculateMedian($progressValues),
+                'median_progress' => $median,
                 'total_targets' => $items->unique('target_id')->count(),
                 'completed' => $progressValues->filter(fn($v) => $v >= 100)->count(),
-                'std_deviation' => $progressValues->isNotEmpty() ? round($this->calculateStdDev($progressValues), 2) : 0,
+                'std_deviation' => $progressValues->isNotEmpty() ? round($stdDev, 2) : 0,
                 'min_progress' => $progressValues->min() ?? 0,
                 'max_progress' => $progressValues->max() ?? 0,
             ];
         }
 
         ksort($metrics);
-        
+
         $periods = array_keys($metrics);
         $metrics['trend_direction'] = 'stable';
         $metrics['trend_delta'] = 0;
-        
+
         if (count($periods) >= 2) {
             $lastPeriod = end($periods);
             $prevPeriod = $periods[count($periods) - 2];
-            
+
             $last = $metrics[$lastPeriod]['avg_progress'];
             $prev = $metrics[$prevPeriod]['avg_progress'];
-            
-            if ($last > $prev + 1) {
-                $metrics['trend_direction'] = 'up';
-            } elseif ($last < $prev - 1) {
-                $metrics['trend_direction'] = 'down';
-            }
-            
+
+            if ($last > $prev + 1) $metrics['trend_direction'] = 'up';
+            elseif ($last < $prev - 1) $metrics['trend_direction'] = 'down';
+
             $metrics['trend_delta'] = round($last - $prev, 2);
         }
-        
+
         $metrics['count'] = $progressData->unique('target_id')->count();
         $metrics['periods'] = array_values($periods);
 
         return $metrics;
     }
 
-    private function calculateMedian($collection)
-    {
-        if ($collection->isEmpty()) return 0;
-        
-        $sorted = $collection->sort()->values();
-        $count = $sorted->count();
-        $middle = floor(($count - 1) / 2);
-        
-        if ($count % 2) {
-            return round($sorted->get($middle), 2);
-        }
-        
-        return round(($sorted->get($middle) + $sorted->get($middle + 1)) / 2, 2);
-    }
-
-    private function calculateStdDev($collection)
-    {
-        if ($collection->isEmpty()) return 0;
-        $mean = $collection->avg();
-        $variance = $collection->map(fn($v) => pow($v - $mean, 2))->avg();
-        return sqrt($variance);
-    }
-
     private function calculatePeriodComparison($filters, $allProgressData)
     {
         $currentYear = $filters['tahun'] ?? now()->year;
         $previousYear = $currentYear - 1;
-        
-        $currentData = $allProgressData->filter(fn($d) => 
-            Carbon::parse($d['period'])->year == $currentYear
-        );
-        
-        $previousData = $allProgressData->filter(fn($d) => 
-            Carbon::parse($d['period'])->year == $previousYear
-        );
-        
+
+        $currentData = $allProgressData->filter(fn($d) => Carbon::parse($d['period'])->year == $currentYear);
+        $previousData = $allProgressData->filter(fn($d) => Carbon::parse($d['period'])->year == $previousYear);
+
         $currentAvg = $currentData->pluck('progress')->filter()->avg() ?? 0;
         $previousAvg = $previousData->pluck('progress')->filter()->avg() ?? 0;
-        
+
         $change = $previousAvg > 0 ? round((($currentAvg - $previousAvg) / $previousAvg) * 100, 1) : 0;
-        
+
         return [
             'current_period' => [
                 'year' => $currentYear,
@@ -16340,7 +16022,7 @@ class TargetKPIController extends Controller
     private function generateTrendInsights($trendData)
     {
         $insights = [];
-        
+
         if (isset($trendData['trend_direction'])) {
             if ($trendData['trend_direction'] === 'up' && ($trendData['trend_delta'] ?? 0) > 5) {
                 $insights[] = 'Trend kinerja menunjukkan peningkatan signifikan (' . $trendData['trend_delta'] . '%)';
@@ -16348,11 +16030,11 @@ class TargetKPIController extends Controller
                 $insights[] = 'Perlu perhatian: trend kinerja mengalami penurunan (' . $trendData['trend_delta'] . '%)';
             }
         }
-        
+
         if (isset($trendData['std_deviation']) && $trendData['std_deviation'] > 20) {
             $insights[] = 'Variasi kinerja antar target cukup tinggi (σ=' . $trendData['std_deviation'] . '), pertimbangkan standarisasi';
         }
-        
+
         if (isset($trendData['completed'], $trendData['count']) && $trendData['count'] > 0) {
             $completionRate = round(($trendData['completed'] / $trendData['count']) * 100, 1);
             if ($completionRate < 50) {
@@ -16361,27 +16043,23 @@ class TargetKPIController extends Controller
                 $insights[] = 'Tingkat penyelesaian target sangat baik (' . $completionRate . '%)';
             }
         }
-        
+
         if (isset($trendData['avg_progress']) && $trendData['avg_progress'] < 60) {
             $insights[] = 'Rata-rata progress masih di bawah target optimal (60%)';
         }
-        
+
         return $insights;
     }
 
     private function prepareTimeSeries($progressData, $granularity = 'monthly')
     {
-        if ($progressData->isEmpty()) {
-            return [];
-        }
-        
+        if ($progressData->isEmpty()) return [];
+
         $grouped = $progressData->groupBy(function($item) use ($granularity) {
             $period = $item['period'] ?? '';
-            
-            if (preg_match('/^\d{4}-\d{2}$/', $period)) {
-                return $period;
-            }
-            
+
+            if (preg_match('/^\d{4}-\d{2}$/', $period)) return $period;
+
             try {
                 $date = Carbon::parse($period);
                 return match($granularity) {
@@ -16393,21 +16071,20 @@ class TargetKPIController extends Controller
                 return 'unknown';
             }
         });
-        
+
         $timeSeries = [];
         foreach ($grouped as $period => $items) {
             if ($period === 'unknown') continue;
-            
+
             $progressValues = $items->pluck('progress')
                 ->filter(fn($v) => $v !== null && is_numeric($v) && $v >= 0 && $v <= 100);
-                
+
             if ($progressValues->isNotEmpty()) {
                 $timeSeries[$period] = round($progressValues->avg(), 1);
             }
         }
-        
+
         ksort($timeSeries);
-        
         return $timeSeries;
     }
 
@@ -16415,17 +16092,16 @@ class TargetKPIController extends Controller
     {
         $n = count($dataPoints);
         if ($n < 2) return ['next' => null, 'next_3' => [], 'slope' => 0];
-        
+
         $x = array_keys($dataPoints);
         $y = array_values($dataPoints);
-        
         $xNumeric = range(0, $n - 1);
-        
+
         $sumX = array_sum($xNumeric);
         $sumY = array_sum($y);
         $sumXY = array_sum(array_map(fn($i) => $xNumeric[$i] * $y[$i], range(0, $n-1)));
         $sumX2 = array_sum(array_map(fn($i) => $xNumeric[$i] * $xNumeric[$i], range(0, $n-1)));
-        
+
         $denominator = ($n * $sumX2 - $sumX * $sumX);
         if ($denominator == 0) {
             $b = 0;
@@ -16434,16 +16110,16 @@ class TargetKPIController extends Controller
             $b = ($n * $sumXY - $sumX * $sumY) / $denominator;
             $a = ($sumY - $b * $sumX) / $n;
         }
-        
+
         $nextIndex = $n;
         $nextValue = max(0, min(100, $a + $b * $nextIndex));
-        
+
         $next3 = [];
         for ($i = 1; $i <= 3; $i++) {
             $val = $a + $b * ($nextIndex + $i);
             $next3[] = round(max(0, min(100, $val)), 1);
         }
-        
+
         return [
             'next' => round($nextValue, 1),
             'next_3' => $next3,
@@ -16455,29 +16131,29 @@ class TargetKPIController extends Controller
     private function calculatePredictionConfidence($historicalData, $predictions)
     {
         if (count($historicalData) < 3) return 0.3;
-        
+
         $values = array_values($historicalData);
         $nonZeroValues = array_filter($values, fn($v) => $v > 0);
-        
+
         if (empty($nonZeroValues)) return 0.3;
-        
+
         $mean = array_sum($nonZeroValues) / count($nonZeroValues);
         $variance = array_sum(array_map(fn($v) => pow($v - $mean, 2), $nonZeroValues)) / count($nonZeroValues);
         $stdDev = sqrt($variance);
-        
+
         $cv = $mean > 0 ? $stdDev / $mean : 1;
         $confidence = max(0, min(1, 1 - $cv));
-        
+
         $dataPoints = count($nonZeroValues);
         $dataFactor = min(1, $dataPoints / 12);
-        
+
         return max(0.3, min(0.95, $confidence * 0.6 + $dataFactor * 0.4));
     }
 
     private function generateRecommendations($predictions, $confidence)
     {
         $recommendations = [];
-        
+
         if ($predictions['slope'] > 0.5) {
             $recommendations[] = 'Pertahankan strategi saat ini, trend menunjukkan peningkatan konsisten';
         } elseif ($predictions['slope'] < -0.5) {
@@ -16485,19 +16161,19 @@ class TargetKPIController extends Controller
         } elseif ($predictions['slope'] > 0) {
             $recommendations[] = 'Trend positif namun moderat, optimalkan eksekusi untuk akselerasi';
         }
-        
+
         if ($confidence < 0.6) {
             $recommendations[] = 'Data historis belum cukup konsisten untuk prediksi akurat, kumpulkan lebih banyak data';
         } elseif ($confidence >= 0.8) {
             $recommendations[] = 'Prediksi memiliki tingkat kepercayaan tinggi, dapat dijadikan dasar perencanaan';
         }
-        
+
         if ($predictions['next'] < 70) {
             $recommendations[] = 'Fokus pada peningkatan kualitas eksekusi target untuk mencapai threshold optimal (70%)';
         } elseif ($predictions['next'] >= 90) {
             $recommendations[] = 'Kinerja diprediksi sangat baik, pertimbangkan target yang lebih menantang';
         }
-        
+
         return $recommendations;
     }
 }

@@ -12,14 +12,15 @@ class ReportTemplate extends Model {
 
     protected $fillable = [
         'name', 'code', 'category', 'source_table', 'template_file_path',
-        'available_fields', 'field_mappings', 'manual_fields', 'is_active', 'created_by', 'edited_text'
+        'available_fields', 'field_mappings', 'manual_fields', 'is_active', 'created_by', 'edited_text', 'settings'
     ];
 
     protected $casts = [
         'available_fields' => 'array',
         'field_mappings' => 'array',
         'manual_fields' => 'array',
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
+        'settings' => 'array'
     ];
 
     public function creator(): BelongsTo {

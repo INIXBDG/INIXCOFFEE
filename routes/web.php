@@ -1451,7 +1451,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/trend', [TargetKPIController::class, 'getExecutiveTrend'])->name('trend');
             Route::get('/prediction', [TargetKPIController::class, 'getPredictiveAnalysis'])->name('prediction');
-            Route::get('/matrix', [TargetKPIController::class, 'getPotentialMatrix'])->name('matrix');
+            Route::get('/matrix-unified', [TargetKPIController::class, 'getPotentialMatrixUnified'])->name('matrix.unified');
         });
     });
 
@@ -1463,11 +1463,13 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/store', [ReportController::class, 'store'])->name('store');
         Route::get('/{template}/edit', [ReportController::class, 'edit'])->name('edit');
         Route::put('/{template}', [ReportController::class, 'update'])->name('update');
+        Route::delete('/delete/{template}', [ReportController::class, 'destroy'])->name('destroy');
 
         Route::get('/{template}/generate', [ReportController::class, 'generateForm'])->name('generate.form');
         Route::post('/{template}/generate', [ReportController::class, 'generate'])->name('generate');
-        Route::get('/{template}/history', [ReportController::class, 'history'])->name('history');
-        Route::get('/{template}/history/data', [ReportController::class, 'getHistoryData'])->name('history.data');
+        Route::get('/history', [ReportController::class, 'history'])->name('history');
+        Route::get('/history/data', [ReportController::class, 'getHistoryData'])->name('history.data');
+        Route::get('/{generation}/preview', [ReportController::class, 'preview'])->name('preview');
 
         Route::post('/placeholders', [ReportController::class, 'addPlaceholder'])->name('placeholders.store');
         Route::put('/placeholders/{placeholder}', [ReportController::class, 'updatePlaceholder'])->name('placeholders.update');
@@ -1475,10 +1477,13 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
         Route::post('/{template}/settings', [ReportController::class, 'updateSettings'])->name('settings.update');
         Route::get('/generations/{generation}/download', [ReportController::class, 'download'])->name('download');
-        // Tambahkan route ini setelah route report yang sudah ada
+
         Route::get('/create-with-mapping', [ReportController::class, 'createWithMapping'])->name('create.mapping');
         Route::post('/upload-and-map', [ReportController::class, 'uploadAndMap'])->name('upload.map');
         Route::post('/save-with-mapping', [ReportController::class, 'saveWithMapping'])->name('save.mapping');
+
+        Route::post('reports/preview-formula', [ReportController::class, 'previewFormula'])->name('preview.formula');
+        Route::post('reports/{template}/reset-counter/{counterKey}', [ReportController::class, 'resetCounter'])->name('reset.counter');
     });
 
     Route::prefix('hire')->name('hire.')->group(function() {
