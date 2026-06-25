@@ -46,8 +46,9 @@
                             placeholder="Nama karyawan...">
                     </div>
                     <div class="col-md-1">
+                        {{-- ✅ PERBAIKAN: Icon dan teks dipisah --}}
                         <button type="submit" class="btn btn-primary w-100 btn-glow">
-                            <i class="mdi mdi-filter-variant">Cari Karyawan</i>
+                            <i class="mdi mdi-filter-variant me-1"></i> Filter
                         </button>
                     </div>
                 </form>
@@ -85,15 +86,14 @@
         </div>
     </div>
 
-    <!-- Modal Detail Penilaian 360 -->
-    <!-- Modal Detail Penilaian 360 -->
+    {{-- Modal Detail Penilaian 360 (SAMA, tidak ada perubahan) --}}
+    {{-- Modal Detail Penilaian 360° --}}
     <div class="modal fade" id="modalAssessment360Detail" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg">
+                {{-- Header --}}
                 <div class="modal-header bg-gradient-primary text-white border-0">
                     <div class="d-flex align-items-center flex-grow-1">
-                        <img id="modalUserFoto" src="" class="rounded-circle border border-2 border-white me-3" width="50"
-                            height="50" style="object-fit: cover;">
                         <div>
                             <h5 class="modal-title fw-bold mb-0" id="modalUserName">Detail Penilaian 360°</h5>
                             <small id="modalUserMeta" class="opacity-75">-</small>
@@ -102,24 +102,29 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
+
+                {{-- Body --}}
                 <div class="modal-body p-0">
+                    {{-- Loading State --}}
                     <div id="modalLoading" class="text-center py-5">
                         <div class="spinner-border text-primary" role="status"></div>
                         <p class="mt-2 text-muted">Memuat data penilaian...</p>
                     </div>
+
+                    {{-- Content (hidden by default) --}}
                     <div id="modalContent" class="p-4" style="display: none;">
                         <div class="row g-4">
-                            <!-- Left Column: Info & Absensi -->
+                            {{-- Left Column: Info --}}
                             <div class="col-lg-4">
+                                {{-- Info Card --}}
                                 <div class="info-card mb-3">
                                     <div class="info-card-header">
                                         <i class="mdi mdi-information-outline"></i> Informasi Penilaian
                                     </div>
-                                    <div class="info-card-body" id="content_utama">
-                                        <!-- Info will be loaded here -->
-                                    </div>
+                                    <div class="info-card-body" id="content_utama"></div>
                                 </div>
 
+                                {{-- Absensi Card --}}
                                 <div class="info-card">
                                     <div class="info-card-header">
                                         <i class="mdi mdi-calendar-check-outline"></i> Data Absensi
@@ -143,7 +148,7 @@
                                 </div>
                             </div>
 
-                            <!-- Right Column: Main Table -->
+                            {{-- Right Column: Table --}}
                             <div class="col-lg-8">
                                 <div class="content-card">
                                     <div class="card-body">
@@ -151,12 +156,10 @@
                                             <i class="mdi mdi-table-large"></i> Detail Penilaian
                                         </h5>
 
-                                        <!-- Tab Navigation -->
-                                        <div class="modern-tab-nav" id="jenis-penilaian-tab" role="tablist">
-                                            <!-- Tabs will be loaded via AJAX -->
-                                        </div>
+                                        {{-- Tab Navigation --}}
+                                        <div class="modern-tab-nav" id="jenis-penilaian-tab" role="tablist"></div>
 
-                                        <!-- Table -->
+                                        {{-- Table --}}
                                         <div class="scrollable-table-wrapper">
                                             <table class="table modern-table" id="table-fixed">
                                                 <thead>
@@ -188,7 +191,6 @@
             </div>
         </div>
     </div>
-
     @push('styles')
         <style>
             .user-accordion-item {
@@ -714,6 +716,7 @@
                 padding: 0.85rem 0.75rem;
                 font-weight: 700;
                 text-transform: uppercase;
+                color: white;
                 font-size: 0.7rem;
                 letter-spacing: 0.5px;
                 border: none;
@@ -798,7 +801,390 @@
 
     @push('scripts')
         <script>
+            // ============================================
+            // GLOBAL VARIABLES (DI LUAR document.ready)
+            // ============================================
+            let modalEvaluators = [];
+            let modalKriteria = [];
+            let modalEvaluated = {};
+            let modalChart = {};
+            let modalAbsensi = {};
+
+            function pengubahFormatModal(angka) {
+                return angka.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            // ============================================
+            // FUNGSI MODAL - GLOBAL (HARUS DI LUAR ready)
+            // ============================================
+            window.openAssessment360Modal = function (userId, userName) {
+                console.log('🔍 Modal dipanggil untuk:', userId, userName);
+
+                try {
+                    const tahun = $('#filterTahun').val();
+
+                    // Reset modal state
+                    $('#modalUserName').text(`Detail Penilaian 360° - ${userName}`);
+                    $('#modalUserMeta').text(`Periode Tahun ${tahun}`);
+                    $('#modalLoading').show();
+                    // ✅ PERBAIKAN: HAPUS .empty() - jangan hapus struktur HTML modal!
+                    $('#modalContent').hide();
+
+                    // Reset hanya body_content tabel (bukan seluruh modal)
+                    $('#body_content').html(`
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="mdi mdi-loading mdi-spin fa-2x mb-2 d-block"></i>
+                                    Memuat data...
+                                </td>
+                            </tr>
+                        `);
+
+                    // Reset konten utama
+                    $('#content_utama').empty();
+
+                    // Show modal
+                    const modalEl = document.getElementById('modalAssessment360Detail');
+                    if (!modalEl) {
+                        console.error('❌ Modal element tidak ditemukan!');
+                        alert('Error: Modal element tidak ditemukan');
+                        return;
+                    }
+
+                    let modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (!modalInstance) {
+                        modalInstance = new bootstrap.Modal(modalEl);
+                    }
+                    modalInstance.show();
+
+                    console.log('✅ Modal ditampilkan');
+
+                    // Fetch data
+                    $.ajax({
+                        url: "{{ route('HR.performance.dashboard.assessment360.detailTab') }}",
+                        type: 'GET',
+                        data: { id_karyawan: userId, tahun: tahun },
+                        dataType: 'json',
+                        success: function (res) {
+                            console.log('✅ Response diterima:', res);
+                            $('#modalLoading').hide();
+
+                            if (res.success && res.data && res.data.length > 0) {
+                                if (res.karyawan) {
+                                    const metaText = `${res.karyawan.jabatan} • ${res.karyawan.divisi} • Periode Tahun ${tahun}`;
+                                    $('#modalUserMeta').text(metaText);
+                                }
+
+                                const data = res.data[0];
+
+                                if (!data.data || !data.data.evaluator || !data.data.dataKriteria) {
+                                    console.error('❌ Struktur data tidak valid:', data);
+                                    $('#modalContent').html(`
+                                            <div class="alert alert-danger">
+                                                <i class="mdi mdi-alert-circle-outline me-2"></i>
+                                                Struktur data tidak valid.
+                                            </div>
+                                        `).show();
+                                    return;
+                                }
+
+                                modalEvaluators = data.data.evaluator || [];
+                                modalKriteria = data.data.dataKriteria || [];
+                                modalEvaluated = data.evaluated || {};
+                                modalChart = data.chart || {};
+                                modalAbsensi = data.dataAbsen || {};
+
+                                console.log('📊 Data loaded:', {
+                                    evaluators: modalEvaluators.length,
+                                    kriteria: modalKriteria.length
+                                });
+
+                                try {
+                                    renderModalTabContent();
+
+                                    // ✅ Tampilkan konten dengan fadeIn
+                                    $('#modalContent').fadeIn(300);
+                                    console.log('✅ Modal content rendered');
+                                } catch (renderError) {
+                                    console.error('❌ Error saat render:', renderError);
+                                    console.error('Stack:', renderError.stack);
+                                    $('#modalContent').html(`
+                                            <div class="alert alert-danger">
+                                                <i class="mdi mdi-alert-circle-outline me-2"></i>
+                                                Error saat render: ${renderError.message}
+                                            </div>
+                                        `).show();
+                                }
+                            } else {
+                                console.warn('⚠️ Data tidak ditemukan:', res);
+                                $('#modalContent').html(`
+                                        <div class="alert alert-warning">
+                                            <i class="mdi mdi-alert-circle-outline me-2"></i>
+                                            ${res.message || 'Data tidak ditemukan'}
+                                        </div>
+                                    `).show();
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('❌ AJAX Error:', { xhr, status, error });
+                            $('#modalLoading').hide();
+                            let message = 'Gagal memuat data';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                message = xhr.responseJSON.message;
+                            }
+                            $('#modalContent').html(`
+                                    <div class="alert alert-danger">
+                                        <i class="mdi mdi-alert-circle-outline me-2"></i>
+                                        ${message}
+                                    </div>
+                                `).show();
+                        }
+                    });
+                } catch (error) {
+                    console.error('❌ Error di openAssessment360Modal:', error);
+                    alert('Error: ' + error.message);
+                }
+            };
+
+            // ============================================
+            // FUNGSI RENDER MODAL (GLOBAL - DI LUAR READY)
+            // ============================================
+            function renderModalTabContent() {
+                let contentUtama = $('#content_utama');
+                contentUtama.empty();
+
+                // Render absensi
+                $('#absenSakit').text(modalAbsensi.sakit || 0);
+                $('#absenTelat').text(modalAbsensi.telat || 0);
+                $('#absenIzin').text(modalAbsensi.izin || 0);
+
+                // Render tabs
+                const jenisList = [...new Set(modalEvaluators.map(ev => ev.jenis_penilaian))];
+                let jenisHTML = `<a class="modern-tab-btn active-tab" data-jenis="all"><i class="mdi mdi-layers me-1"></i> Semua</a>`;
+
+                jenisList.forEach(jenis => {
+                    let label, icon;
+                    if (jenis === 'General Manager') { label = 'General Manager'; icon = 'mdi-crown'; }
+                    else if (jenis === 'Manager/SPV/Team Leader (Atasan Langsung)') { label = 'Koordinator'; icon = 'mdi-account-tie'; }
+                    else if (jenis === 'Rekan Kerja (Satu Divisi)') { label = 'Satu Divisi'; icon = 'mdi-account-group'; }
+                    else if (jenis === 'Pekerja (Beda Divisi)') { label = 'Beda Divisi'; icon = 'mdi-account-switch'; }
+                    else if (jenis === 'Self Apprisial') { label = 'Self Appraisal'; icon = 'mdi-account-check'; }
+                    else { label = jenis; icon = 'mdi-account'; }
+                    jenisHTML += `<a class="modern-tab-btn" data-jenis="${jenis}"><i class="mdi ${icon} me-1"></i> ${label}</a>`;
+                });
+                $('#jenis-penilaian-tab').html(jenisHTML);
+
+                // Render info evaluator
+                let listEvaluatorHTML = modalEvaluators.map(ev =>
+                    `<li data-target="${ev.nama}-${ev.jenis_penilaian}" class="list-group-item">
+                                    <i class="mdi mdi-account-circle me-2 text-primary"></i>${ev.nama}
+                                </li>`
+                ).join('');
+
+                contentUtama.append(`
+                                <div class="info-item">
+                                    <div class="info-label"><i class="mdi mdi-file-document-outline me-1"></i> Yang Dinilai</div>
+                                    <div class="info-value">${modalEvaluated.nama || '-'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label"><i class="mdi mdi-account-multiple me-1"></i> Evaluator (${modalEvaluators.length})</div>
+                                    <ul class="evaluator-list">${listEvaluatorHTML}</ul>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <div class="info-item mb-0">
+                                            <div class="info-label"><i class="mdi mdi-calendar me-1"></i> Periode</div>
+                                            <div class="info-value text-center">${modalEvaluated.quartal || '-'}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="info-item mb-0">
+                                            <div class="info-label"><i class="mdi mdi-calendar-range me-1"></i> Tahun</div>
+                                            <div class="info-value text-center">${modalEvaluated.tahun || '-'}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                ${modalEvaluated.catatan && modalEvaluated.catatan !== '-' ? `
+                                    <hr class="my-3">
+                                    <div class="info-item mb-0">
+                                        <div class="info-label"><i class="mdi mdi-note-text me-1"></i> Catatan</div>
+                                        <div class="info-value" style="font-size: 0.85rem; font-weight: 400; color: #4a5568;">${modalEvaluated.catatan}</div>
+                                    </div>
+                                ` : ''}
+                            `);
+
+                // Render tabel
+                renderTabelModal('all');
+            }
+
+            function renderTabelModal(filterJenis) {
+                let content = $('#body_content');
+                content.empty();
+
+                const persentaseJenis = {
+                    'General Manager': 35,
+                    'Manager/SPV/Team Leader (Atasan Langsung)': 30,
+                    'Rekan Kerja (Satu Divisi)': 20,
+                    'Pekerja (Beda Divisi)': 10,
+                    'Self Apprisial': 5,
+                };
+
+                let groupRata2 = {};
+                let filteredEvaluators = filterJenis === 'all'
+                    ? modalEvaluators
+                    : modalEvaluators.filter(ev => ev.jenis_penilaian === filterJenis);
+
+                if (filteredEvaluators.length === 0) {
+                    content.append(
+                        `<tr><td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="mdi mdi-inbox fa-2x mb-2 d-block"></i>Tidak Ada Data
+                                    </td></tr>`
+                    );
+                    return;
+                }
+
+                // Calculate rata-rata per sub-kriteria
+                filteredEvaluators.forEach(evaluator => {
+                    let nilaiList = evaluator.nilai || [];
+                    let nilaiIndex = 0;
+                    modalKriteria.forEach(kriteria => {
+                        kriteria.detailKriteria.forEach(sub => {
+                            const nilaiItem = nilaiList[nilaiIndex++] || { nilai: '-', pesan: '-' };
+                            const nilai = parseFloat(nilaiItem.nilai);
+                            if (sub.tipe_input !== 'textarea' && !isNaN(nilai)) {
+                                groupRata2[evaluator.jenis_penilaian] = groupRata2[evaluator.jenis_penilaian] || {};
+                                groupRata2[evaluator.jenis_penilaian][kriteria.kriteria] = groupRata2[evaluator.jenis_penilaian][kriteria.kriteria] || {};
+                                groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub.sub_kriteria] =
+                                    groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub.sub_kriteria] || [];
+                                groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub.sub_kriteria].push(nilai);
+                            }
+                        });
+                    });
+                });
+
+                let rata2Hasil = {};
+                for (const jenis in groupRata2) {
+                    rata2Hasil[jenis] = {};
+                    for (const kriteria in groupRata2[jenis]) {
+                        rata2Hasil[jenis][kriteria] = {};
+                        for (const sub in groupRata2[jenis][kriteria]) {
+                            let arr = groupRata2[jenis][kriteria][sub];
+                            rata2Hasil[jenis][kriteria][sub] = arr.reduce((a, b) => a + b, 0) / arr.length;
+                        }
+                    }
+                }
+
+                let jenisTotalRaw = {};
+
+                filteredEvaluators.forEach(evaluator => {
+                    content.append(`
+                                    <tr id="${evaluator.nama}-${evaluator.jenis_penilaian}" class="evaluator-header">
+                                        <td colspan="6">
+                                            <i class="mdi mdi-account me-2"></i>${evaluator.nama}
+                                            <span class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size: .75rem;">${evaluator.jenis_penilaian}</span>
+                                        </td>
+                                    </tr>
+                                `);
+
+                    let nilaiList = evaluator.nilai || [];
+                    let nilaiIndex = 0;
+                    let totalSkorEvaluator = 0;
+
+                    modalKriteria.forEach(kriteria => {
+                        const subKriteriaList = kriteria.detailKriteria;
+                        subKriteriaList.forEach((sub, idxSub) => {
+                            const nilaiItem = nilaiList[nilaiIndex++] || { nilai: '-', pesan: '-' };
+                            const nilai = nilaiItem.nilai;
+                            const pesan = nilaiItem.pesan;
+                            const tipe = sub.tipe_input;
+                            const bobot = parseFloat(sub.bobot);
+
+                            let dataNilai = '';
+                            if (tipe === 'textarea') {
+                                dataNilai = `<td colspan="4" style="font-style: italic; color: #64748b;">${pesan && pesan.trim() !== '' ? pesan : '-'}</td>`;
+                            } else {
+                                const nilaiAngka = parseFloat(nilai);
+                                const rataData = rata2Hasil[evaluator.jenis_penilaian]?.[kriteria.kriteria]?.[sub.sub_kriteria];
+                                let rata = '-';
+                                let skor = 0;
+                                if (!isNaN(nilaiAngka)) {
+                                    rata = rataData !== undefined ? rataData : nilaiAngka;
+                                    skor = (rata * bobot) / 100;
+                                    totalSkorEvaluator += skor;
+                                }
+                                dataNilai = `
+                                                <td><span class="badge bg-light text-dark border">${bobot}%</span></td>
+                                                <td class="fw-semibold">${nilai}</td>
+                                                <td>${rata === '-' ? '-' : pengubahFormatModal(rata)}</td>
+                                                <td class="fw-bold text-primary">${rata === '-' ? '-' : pengubahFormatModal(skor)}</td>
+                                            `;
+                            }
+
+                            const kriteriaText = kriteria.kriteria;
+                            const subKriteriaText = sub.sub_kriteria;
+                            const displayKriteria = kriteriaText.length > 30 ? kriteriaText.substring(0, 30) + '...' : kriteriaText;
+                            const displaySubKriteria = subKriteriaText.length > 30 ? subKriteriaText.substring(0, 30) + '...' : subKriteriaText;
+
+                            content.append(`
+                                            <tr>
+                                                ${idxSub === 0 ? `<td class="text-left fw-semibold">${displayKriteria}</td>` : ''}
+                                                <td style="text-align: left;">${displaySubKriteria}</td>
+                                                ${dataNilai}
+                                            </tr>
+                                        `);
+                        });
+                    });
+
+                    content.append(`
+                                    <tr class="total-row">
+                                        <td colspan="5" class="text-end">Total (${evaluator.nama})</td>
+                                        <td class="text-center">${pengubahFormatModal(totalSkorEvaluator)}</td>
+                                    </tr>
+                                `);
+
+                    const jenis = evaluator.jenis_penilaian;
+                    if (!jenisTotalRaw.hasOwnProperty(jenis)) jenisTotalRaw[jenis] = totalSkorEvaluator;
+                });
+
+                let jenisTotalPost = {};
+                for (const jenis in jenisTotalRaw) {
+                    const persen = persentaseJenis[jenis] || 0;
+                    jenisTotalPost[jenis] = (jenisTotalRaw[jenis] * persen) / 100;
+                }
+
+                let totalSemuaSkor = filterJenis === 'all'
+                    ? Object.values(jenisTotalPost).reduce((a, b) => a + b, 0)
+                    : (jenisTotalPost[filterJenis] || 0);
+
+                let grade = '', keterangan = '';
+                if (totalSemuaSkor >= 90) { grade = 'A'; keterangan = 'Sangat Baik'; }
+                else if (totalSemuaSkor >= 80) { grade = 'B'; keterangan = 'Baik'; }
+                else if (totalSemuaSkor >= 70) { grade = 'C'; keterangan = 'Cukup'; }
+                else if (totalSemuaSkor >= 60) { grade = 'D'; keterangan = 'Kurang'; }
+                else { grade = 'E'; keterangan = 'Sangat Kurang'; }
+
+                content.append(`
+                                <tr class="grand-total-row">
+                                    <td colspan="5" class="text-end">Total Semua Nilai</td>
+                                    <td class="text-center fs-5">${pengubahFormatModal(totalSemuaSkor)}</td>
+                                </tr>
+                                <tr class="grand-total-row">
+                                    <td colspan="5" class="text-end">Kriteria</td>
+                                    <td class="text-center">${keterangan}</td>
+                                </tr>
+                                <tr class="grand-total-row">
+                                    <td colspan="5" class="text-end">Grade</td>
+                                    <td class="text-center fs-4 fw-bold">${grade}</td>
+                                </tr>
+                            `);
+            }
+
+            // ============================================
+            // DOCUMENT READY - ACCORDION & CHARTS
+            // ============================================
             $(document).ready(function () {
+                console.log('🚀 Document ready');
+
                 loadData();
 
                 $('#filterForm').on('submit', function (e) {
@@ -809,9 +1195,7 @@
                 $('#btnExpandAll').on('click', function () {
                     $('.user-accordion-body').addClass('show');
                     $('.user-accordion-header').addClass('active');
-                    setTimeout(() => {
-                        initializeAllCharts();
-                    }, 300);
+                    setTimeout(() => { initializeAllCharts(); }, 300);
                 });
 
                 $('#btnCollapseAll').on('click', function () {
@@ -827,7 +1211,6 @@
                                         <p class="mt-2 text-muted">Memuat data...</p>
                                     </div>
                                 `);
-
                     $.ajax({
                         url: "{{ route('HR.performance.dashboard.data') }}",
                         type: 'GET',
@@ -848,488 +1231,196 @@
                         $('#accordionContainer').html('<div class="alert alert-info glass-force">Tidak ada data ditemukan untuk filter ini.</div>');
                         return;
                     }
-
                     let html = '<div id="userAccordionList">';
-
                     users.forEach((user, index) => {
                         const nomor = index + 1;
                         const itemId = `user_acc_${user.id}`;
+                        const safeName = user.nama.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
                         html += `
-                                        <div class="user-accordion-item" data-user-id="${user.id}">
-                                            <div class="user-accordion-header" data-target="#${itemId}">
-                                                <div class="d-flex align-items-center flex-grow-1" style="min-width: 0;">
-                                                    <div class="user-number">${nomor}</div>
-                                                    <div class="user-info-section">
-                                                        <div class="user-name">${user.nama}</div>
-                                                        <div class="user-meta">
-                                                            <span><i class="mdi mdi-briefcase-outline"></i>${user.jabatan}</span>
-                                                            <span><i class="mdi mdi-office-building-outline"></i>${user.divisi}</span>
-                                                        </div>
+                                    <div class="user-accordion-item" data-user-id="${user.id}">
+                                        <div class="user-accordion-header" data-target="#${itemId}">
+                                            <div class="d-flex align-items-center flex-grow-1" style="min-width: 0;">
+                                                <div class="user-number">${nomor}</div>
+                                                <div class="user-info-section">
+                                                    <div class="user-name">${user.nama}</div>
+                                                    <div class="user-meta">
+                                                        <span><i class="mdi mdi-briefcase-outline"></i> ${user.jabatan}</span>
+                                                        <span><i class="mdi mdi-office-building-outline"></i> ${user.divisi}</span>
                                                     </div>
                                                 </div>
-                                                <div class="quick-stats d-none d-md-flex">
-                                                    <div class="mini-stat">
-                                                        <div class="label">KPI</div>
-                                                        <div class="value score-kpi">${user.kpi.score}%</div>
-                                                    </div>
-                                                    <div class="mini-stat">
-                                                        <div class="label">360°</div>
-                                                        <div class="value score-360">${user.assessment_360.score}%</div>
-                                                    </div>
-                                                </div>
-                                                <i class="mdi mdi-chevron-down toggle-icon" style="font-size: 1.5rem;"></i>
                                             </div>
-                                            <div class="user-accordion-body" id="${itemId}">
-                                                <div class="row g-3">
-                                                    <!-- KPI Section -->
-                                                    <div class="col-md-6">
-                                                        <div class="section-card">
-                                                            <div class="section-title">
-                                                                <i class="mdi mdi-chart-timeline-variant-shimmer text-primary"></i>
-                                                                Progress KPI
-                                                            </div>
-                                                            <div class="score-display">
-                                                                <div class="big-score score-kpi">${user.kpi.score}%</div>
-                                                                <span class="grade-badge ${getGradeClass(user.kpi.grade)}">${user.kpi.grade}</span>
-                                                            </div>
-                                                            <div class="progress mt-3" style="height: 8px;">
-                                                                <div class="progress-bar bg-primary" role="progressbar" 
-                                                                     style="width: ${Math.min(user.kpi.score, 100)}%"></div>
-                                                            </div>
-
-                                                            <div class="mt-4">
-                                                                <h6 class="fw-bold text-muted small mb-3">Detail Target KPI (${user.kpi.details.length})</h6>
-                                                                <div class="detail-scroll-container" id="kpi-details-${user.id}">
-                                                                    ${renderKPIDetails(user.kpi.details, user.id)}
-                                                                </div>
+                                            <div class="quick-stats d-none d-md-flex">
+                                                <div class="mini-stat">
+                                                    <div class="label">KPI</div>
+                                                    <div class="value score-kpi">${user.kpi.score}%</div>
+                                                </div>
+                                                <div class="mini-stat">
+                                                    <div class="label">360°</div>
+                                                    <div class="value score-360">${user.assessment_360.score}%</div>
+                                                </div>
+                                            </div>
+                                            <i class="mdi mdi-chevron-down toggle-icon" style="font-size: 1.5rem;"></i>
+                                        </div>
+                                        <div class="user-accordion-body" id="${itemId}">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="section-card">
+                                                        <div class="section-title">
+                                                            <i class="mdi mdi-chart-timeline-variant-shimmer text-primary"></i>
+                                                            Progress KPI
+                                                        </div>
+                                                        <div class="score-display">
+                                                            <div class="big-score score-kpi">${user.kpi.score}%</div>
+                                                            <span class="grade-badge ${getGradeClass(user.kpi.grade)}">${user.kpi.grade}</span>
+                                                        </div>
+                                                        <div class="progress mt-3" style="height: 8px;">
+                                                            <div class="progress-bar bg-primary" role="progressbar"
+                                                                style="width: ${Math.min(user.kpi.score, 100)}%"></div>
+                                                        </div>
+                                                        <div class="mt-4">
+                                                            <h6 class="fw-bold text-muted small mb-3">Detail Target KPI (${user.kpi.details.length})</h6>
+                                                            <div class="detail-scroll-container" id="kpi-details-${user.id}">
+                                                                ${renderKPIDetails(user.kpi.details, user.id)}
                                                             </div>
                                                         </div>
                                                     </div>
-
-                                                    <!-- Assessment 360 Section -->
-                                                    <div class="col-md-6">
-                                                        <div class="section-card">
-                                                            <div class="section-title">
-                                                                <i class="mdi mdi-account-check-outline text-success"></i>
-                                                                Penilaian 360°
-                                                            </div>
-                                                            <div class="score-display">
-                                                                <div class="big-score score-360">${user.assessment_360.score}%</div>
-                                                                <span class="grade-badge ${getGradeClass(user.assessment_360.grade)}">${user.assessment_360.grade}</span>
-                                                            </div>
-                                                            <div class="progress mt-3" style="height: 8px;">
-                                                                <div class="progress-bar bg-success" role="progressbar" 
-                                                                     style="width: ${Math.min(user.assessment_360.score, 100)}%"></div>
-                                                            </div>
-
-                                                            <div class="mt-4">
-                                                                <h6 class="fw-bold text-muted small mb-3">Detail Penilaian (${user.assessment_360.details.length})</h6>
-                                                                <div class="detail-scroll-container" id="assessment-360-details-${user.id}">
-                                                                    ${renderAssessment360Details(user.assessment_360.details, user.id)}
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Tombol Detail 360 -->
-                                                            <button class="btn-detail-360" onclick="openAssessment360Modal(${user.id}, '${user.nama.replace(/'/g, "\\'")}')">
-                                                                <i class="mdi mdi-file-document-outline"></i>
-                                                                Lihat Detail Penilaian 360°
-                                                            </button>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="section-card">
+                                                        <div class="section-title">
+                                                            <i class="mdi mdi-account-check-outline text-success"></i>
+                                                            Penilaian 360°
                                                         </div>
+                                                        <div class="score-display">
+                                                            <div class="big-score score-360">${user.assessment_360.score}%</div>
+                                                            <span class="grade-badge ${getGradeClass(user.assessment_360.grade)}">${user.assessment_360.grade}</span>
+                                                        </div>
+                                                        <div class="progress mt-3" style="height: 8px;">
+                                                            <div class="progress-bar bg-success" role="progressbar"
+                                                                style="width: ${Math.min(user.assessment_360.score, 100)}%"></div>
+                                                        </div>
+                                                        <div class="mt-4">
+                                                            <h6 class="fw-bold text-muted small mb-3">Detail Penilaian (${user.assessment_360.details.length})</h6>
+                                                            <div class="detail-scroll-container" id="assessment-360-details-${user.id}">
+                                                                ${renderAssessment360Details(user.assessment_360.details, user.id)}
+                                                            </div>
+                                                        </div>
+                                                        <button type="button" class="btn-detail-360" data-user-id="${user.id}" data-user-name="${safeName}">
+                                                            <i class="mdi mdi-file-document-outline"></i>
+                                                            Lihat Detail Penilaian 360°
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
                                     `;
                     });
-
                     html += '</div>';
                     $('#accordionContainer').html(html);
                     bindAccordionEvents();
+                    bindModalButtonEvents();
                 }
 
                 function renderKPIDetails(details, userId) {
                     if (!details || details.length === 0) {
                         return '<p class="text-muted text-center py-3">Belum ada target KPI</p>';
                     }
-
                     let html = '';
                     details.forEach((detail, idx) => {
                         const chartId = `kpi-chart-${userId}-${idx}`;
                         const statusClass = detail.status === 'Selesai' ? 'status-selesai' :
                             (detail.status === 'Aktif' ? 'status-aktif' : 'status-belum');
-
                         html += `
-                                        <div class="detail-item">
-                                            <div class="detail-header">
-                                                <div style="flex: 1;">
-                                                    <div class="detail-title">${detail.judul}</div>
-                                                    <div class="detail-subtitle">${detail.asistant_route}</div>
-                                                </div>
-                                                <div class="detail-chart" id="${chartId}"></div>
+                                    <div class="detail-item">
+                                        <div class="detail-header">
+                                            <div style="flex: 1;">
+                                                <div class="detail-title">${detail.judul}</div>
+                                                <div class="detail-subtitle">${detail.asistant_route}</div>
                                             </div>
-                                            <div class="detail-footer">
-                                                <span>Target: ${formatTarget(detail.nilai_target, detail.tipe_target)}</span>
-                                                <span class="status-badge ${statusClass}">${detail.status}</span>
-                                            </div>
+                                            <div class="detail-chart" id="${chartId}"></div>
                                         </div>
+                                        <div class="detail-footer">
+                                            <span>Target: ${formatTarget(detail.nilai_target, detail.tipe_target)}</span>
+                                            <span class="status-badge ${statusClass}">${detail.status}</span>
+                                        </div>
+                                    </div>
                                     `;
                     });
-
                     return html;
                 }
 
-                // Global variables for modal
-                let modalEvaluators = [];
-                let modalKriteria = [];
-                let modalEvaluated = {};
-                let modalChart = {};
-                let modalAbsensi = {};
-
-                // Fungsi untuk membuka modal detail 360
-                window.openAssessment360Modal = function (userId, userName) {
-                    const tahun = $('#filterTahun').val();
-
-                    $('#modalUserName').text(`Detail Penilaian 360° - ${userName}`);
-                    $('#modalUserMeta').text(`Periode Tahun ${tahun}`);
-                    $('#modalUserFoto').attr('src', "{{ asset('assets/img/avatars/1.png') }}");
-
-                    $('#modalLoading').show();
-                    $('#modalContent').hide().html('');
-
-                    const modal = new bootstrap.Modal(document.getElementById('modalAssessment360Detail'));
-                    modal.show();
-
-                    $.ajax({
-                        url: "{{ route('HR.performance.dashboard.assessment360.detailTab') }}",
-                        type: 'GET',
-                        data: {
-                            id_karyawan: userId,
-                            tahun: tahun
-                        },
-                        success: function (res) {
-                            $('#modalLoading').hide();
-                            if (res.success) {
-                                $('#modalUserFoto').attr('src', res.karyawan.foto);
-                                $('#modalUserMeta').text(`${res.karyawan.jabatan} • ${res.karyawan.divisi} • Periode Tahun ${tahun}`);
-
-                                const data = res.data[0];
-                                modalEvaluators = data.data.evaluator;
-                                modalKriteria = data.data.dataKriteria;
-                                modalEvaluated = data.evaluated;
-                                modalChart = data.chart;
-                                modalAbsensi = data.dataAbsen;
-
-                                renderModalTabContent();
-                            } else {
-                                $('#modalContent').html(`<div class="alert alert-warning">${res.message || 'Data tidak ditemukan'}</div>`).show();
-                            }
-                        },
-                        error: function (xhr) {
-                            $('#modalLoading').hide();
-                            let message = 'Gagal memuat data';
-                            if (xhr.responseJSON && xhr.responseJSON.message) {
-                                message = xhr.responseJSON.message;
-                            }
-                            $('#modalContent').html(`<div class="alert alert-warning">${message}</div>`).show();
-                        }
+                function renderAssessment360Details(details, userId) {
+                    if (!details || details.length === 0) {
+                        return '<p class="text-muted text-center py-3">Belum ada penilaian 360°</p>';
+                    }
+                    let html = '';
+                    details.forEach((detail, idx) => {
+                        const chartId = `assessment-chart-${userId}-${idx}`;
+                        html += `
+                                    <div class="detail-item">
+                                        <div class="detail-header">
+                                            <div style="flex: 1;">
+                                                <div class="detail-title">${detail.jenis_penilaian}</div>
+                                                <div class="detail-subtitle">Bobot: ${detail.bobot}% • ${detail.jumlah_evaluator} Evaluator</div>
+                                            </div>
+                                            <div class="detail-chart" id="${chartId}"></div>
+                                        </div>
+                                        <div class="detail-footer">
+                                            <span>Rata-rata Nilai: ${detail.rata_rata_nilai}</span>
+                                            <span class="fw-bold text-success">Score: ${detail.score}%</span>
+                                        </div>
+                                    </div>
+                                    `;
                     });
-                };
-
-                function renderModalTabContent() {
-                    // Render info card
-                    let contentUtama = $('#content_utama');
-                    contentUtama.empty();
-
-                    // Render absensi
-                    $('#absenSakit').text(modalAbsensi.sakit || 0);
-                    $('#absenTelat').text(modalAbsensi.telat || 0);
-                    $('#absenIzin').text(modalAbsensi.izin || 0);
-
-                    // Get unique jenis penilaian
-                    const jenisList = [...new Set(modalEvaluators.map(ev => ev.jenis_penilaian))];
-
-                    // Build tab navigation
-                    let jenisHTML = `
-                <a class="modern-tab-btn active-tab" data-jenis="all">
-                    <i class="mdi mdi-layers me-1"></i> Semua
-                </a>
-            `;
-
-                    jenisList.forEach(jenis => {
-                        let label, icon;
-                        if (jenis === 'General Manager') {
-                            label = 'General Manager';
-                            icon = 'mdi-crown';
-                        } else if (jenis === 'Manager/SPV/Team Leader (Atasan Langsung)') {
-                            label = 'Koordinator';
-                            icon = 'mdi-account-tie';
-                        } else if (jenis === 'Rekan Kerja (Satu Divisi)') {
-                            label = 'Satu Divisi';
-                            icon = 'mdi-account-group';
-                        } else if (jenis === 'Pekerja (Beda Divisi)') {
-                            label = 'Beda Divisi';
-                            icon = 'mdi-account-switch';
-                        } else if (jenis === 'Self Apprisial') {
-                            label = 'Self Appraisal';
-                            icon = 'mdi-account-check';
-                        } else {
-                            label = jenis;
-                            icon = 'mdi-account';
-                        }
-
-                        jenisHTML += `
-                    <a class="modern-tab-btn" data-jenis="${jenis}">
-                        <i class="mdi ${icon} me-1"></i> ${label}
-                    </a>
-                `;
-                    });
-
-                    $('#jenis-penilaian-tab').html(jenisHTML);
-
-                    // Build evaluator list
-                    let listEvaluatorHTML = modalEvaluators.map(ev =>
-                        `<li data-target="${ev.nama}-${ev.jenis_penilaian}" class="list-group-item">
-                    <i class="mdi mdi-account-circle me-2 text-primary"></i>${ev.nama}
-                </li>`
-                    ).join('');
-
-                    contentUtama.append(`
-                <div class="info-item">
-                    <div class="info-label"><i class="mdi mdi-file-document-outline me-1"></i> Yang Dinilai</div>
-                    <div class="info-value">${modalEvaluated.nama}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label"><i class="mdi mdi-account-multiple me-1"></i> Evaluator (${modalEvaluators.length})</div>
-                    <ul class="evaluator-list">${listEvaluatorHTML}</ul>
-                </div>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <div class="info-item mb-0">
-                            <div class="info-label"><i class="mdi mdi-calendar me-1"></i> Periode</div>
-                            <div class="info-value text-center">${modalEvaluated.quartal}</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="info-item mb-0">
-                            <div class="info-label"><i class="mdi mdi-calendar-range me-1"></i> Tahun</div>
-                            <div class="info-value text-center">${modalEvaluated.tahun}</div>
-                        </div>
-                    </div>
-                </div>
-                ${modalEvaluated.catatan && modalEvaluated.catatan !== '-' ? `
-                    <hr class="my-3">
-                    <div class="info-item mb-0">
-                        <div class="info-label"><i class="mdi mdi-note-text me-1"></i> Catatan</div>
-                        <div class="info-value" style="font-size: 0.85rem; font-weight: 400; color: #4a5568;">
-                            ${modalEvaluated.catatan}
-                        </div>
-                    </div>
-                ` : ''}
-            `);
-
-                    // Render table with 'all' filter
-                    renderTabelModal('all');
-
-                    $('#modalContent').show();
+                    return html;
                 }
 
-                // Tab click handler
-                $('#jenis-penilaian-tab').on('click', '.modern-tab-btn', function () {
+                // ============================================
+                // MODAL BUTTON EVENTS
+                // ============================================
+                function bindModalButtonEvents() {
+                    $('.btn-detail-360').off('click').on('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+
+                        const userId = $(this).data('user-id');
+                        const userName = $(this).data('user-name');
+
+                        console.log('🔘 Button diklik:', userId, userName);
+
+                        if (typeof window.openAssessment360Modal === 'function') {
+                            window.openAssessment360Modal(userId, userName);
+                        } else {
+                            console.error('❌ Fungsi openAssessment360Modal tidak ditemukan!');
+                            alert('Error: Fungsi modal tidak tersedia');
+                        }
+                    });
+                }
+
+                function bindAccordionEvents() {
+                    $('.user-accordion-header').off('click').on('click', function (e) {
+                        e.stopPropagation();
+                        const targetId = $(this).data('target');
+                        const $body = $(targetId);
+                        const $header = $(this);
+                        $body.toggleClass('show');
+                        $header.toggleClass('active');
+                        if ($body.hasClass('show')) {
+                            setTimeout(() => { initializeChartsInContainer($body); }, 300);
+                        }
+                    });
+                }
+
+                // ============================================
+                // TAB CLICK HANDLER (Event Delegation)
+                // ============================================
+                $(document).on('click', '#jenis-penilaian-tab .modern-tab-btn', function () {
                     $('#jenis-penilaian-tab .modern-tab-btn').removeClass('active-tab');
                     $(this).addClass('active-tab');
-                    const jenis = $(this).data('jenis');
-                    renderTabelModal(jenis);
+                    renderTabelModal($(this).data('jenis'));
                 });
-
-                function pengubahFormatModal(angka) {
-                    return angka.toLocaleString('id-ID', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
-                }
-
-                function renderTabelModal(filterJenis) {
-                    let content = $('#body_content');
-                    content.empty();
-
-                    const persentaseJenis = {
-                        'General Manager': 35,
-                        'Manager/SPV/Team Leader (Atasan Langsung)': 30,
-                        'Rekan Kerja (Satu Divisi)': 20,
-                        'Pekerja (Beda Divisi)': 10,
-                        'Self Apprisial': 5
-                    };
-
-                    let groupRata2 = {};
-                    let filteredEvaluators = filterJenis === 'all'
-                        ? modalEvaluators
-                        : modalEvaluators.filter(ev => ev.jenis_penilaian === filterJenis);
-
-                    if (filteredEvaluators.length === 0) {
-                        content.append(
-                            `<tr><td colspan="6" class="text-center py-5 text-muted">
-                        <i class="mdi mdi-inbox fa-2x mb-2 d-block"></i>Tidak Ada Data
-                    </td></tr>`
-                        );
-                        return;
-                    }
-
-                    // Calculate rata-rata per sub-kriteria
-                    filteredEvaluators.forEach(evaluator => {
-                        let nilaiList = evaluator.nilai;
-                        let nilaiIndex = 0;
-                        modalKriteria.forEach(kriteria => {
-                            kriteria.detailKriteria.forEach(sub => {
-                                const nilaiItem = nilaiList[nilaiIndex++] || { nilai: '-', pesan: '-' };
-                                const nilai = parseFloat(nilaiItem.nilai);
-                                if (sub.tipe_input !== 'textarea' && !isNaN(nilai)) {
-                                    groupRata2[evaluator.jenis_penilaian] = groupRata2[evaluator.jenis_penilaian] || {};
-                                    groupRata2[evaluator.jenis_penilaian][kriteria.kriteria] = groupRata2[evaluator.jenis_penilaian][kriteria.kriteria] || {};
-                                    groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub.sub_kriteria] =
-                                        groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub.sub_kriteria] || [];
-                                    groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub.sub_kriteria].push(nilai);
-                                }
-                            });
-                        });
-                    });
-
-                    let rata2Hasil = {};
-                    for (const jenis in groupRata2) {
-                        rata2Hasil[jenis] = {};
-                        for (const kriteria in groupRata2[jenis]) {
-                            rata2Hasil[jenis][kriteria] = {};
-                            for (const sub in groupRata2[jenis][kriteria]) {
-                                let arr = groupRata2[jenis][kriteria][sub];
-                                let avg = arr.reduce((a, b) => a + b, 0) / arr.length;
-                                rata2Hasil[jenis][kriteria][sub] = avg;
-                            }
-                        }
-                    }
-
-                    let jenisTotalRaw = {};
-
-                    filteredEvaluators.forEach(evaluator => {
-                        content.append(`
-                    <tr id="${evaluator.nama}-${evaluator.jenis_penilaian}" class="evaluator-header">
-                        <td colspan="6">
-                            <i class="mdi mdi-account me-2"></i>${evaluator.nama} 
-                            <span class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size: .75rem;">${evaluator.jenis_penilaian}</span>
-                        </td>
-                    </tr>
-                `);
-
-                        let nilaiList = evaluator.nilai;
-                        let nilaiIndex = 0;
-                        let totalSkorEvaluator = 0;
-
-                        modalKriteria.forEach(kriteria => {
-                            const subKriteriaList = kriteria.detailKriteria;
-                            subKriteriaList.forEach((sub, idxSub) => {
-                                const nilaiItem = nilaiList[nilaiIndex++] || { nilai: '-', pesan: '-' };
-                                const nilai = nilaiItem.nilai;
-                                const pesan = nilaiItem.pesan;
-                                const tipe = sub.tipe_input;
-                                const bobot = parseFloat(sub.bobot);
-                                let dataNilai = '';
-
-                                if (tipe === 'textarea') {
-                                    dataNilai = `<td colspan="4" style="font-style: italic; color: #64748b;">${pesan && pesan.trim() !== '' ? pesan : '-'}</td>`;
-                                } else {
-                                    const nilaiAngka = parseFloat(nilai);
-                                    const rataData = rata2Hasil[evaluator.jenis_penilaian]?.[kriteria.kriteria]?.[sub.sub_kriteria];
-                                    let rata = '-';
-                                    let skor = 0;
-                                    if (!isNaN(nilaiAngka)) {
-                                        rata = rataData !== undefined ? rataData : nilaiAngka;
-                                        skor = (rata * bobot) / 100;
-                                        totalSkorEvaluator += skor;
-                                    }
-                                    dataNilai = `
-                                <td><span class="badge bg-light text-dark border">${bobot}%</span></td>
-                                <td class="fw-semibold">${nilai}</td>
-                                <td>${rata === '-' ? '-' : pengubahFormatModal(rata)}</td>
-                                <td class="fw-bold text-primary">${rata === '-' ? '-' : pengubahFormatModal(skor)}</td>
-                            `;
-                                }
-
-                                const kriteriaText = kriteria.kriteria;
-                                const subKriteriaText = sub.sub_kriteria;
-                                const isKriteriaLong = kriteriaText.length > 30;
-                                const isSubKriteriaLong = subKriteriaText.length > 30;
-                                const displayKriteria = isKriteriaLong ? kriteriaText.substring(0, 30) + '...' : kriteriaText;
-                                const displaySubKriteria = isSubKriteriaLong ? subKriteriaText.substring(0, 30) + '...' : subKriteriaText;
-
-                                content.append(`
-                            <tr>
-                                ${idxSub === 0 ? `<td class="text-left fw-semibold">${displayKriteria}</td>` : ''}
-                                <td style="text-align: left;">${displaySubKriteria}</td>
-                                ${dataNilai}
-                            </tr>
-                        `);
-                            });
-                        });
-
-                        content.append(`
-                    <tr class="total-row">
-                        <td colspan="5" class="text-end">Total (${evaluator.nama})</td>
-                        <td class="text-center">${pengubahFormatModal(totalSkorEvaluator)}</td>
-                    </tr>
-                `);
-
-                        const jenis = evaluator.jenis_penilaian;
-                        if (!jenisTotalRaw.hasOwnProperty(jenis)) {
-                            jenisTotalRaw[jenis] = totalSkorEvaluator;
-                        }
-                    });
-
-                    let jenisTotalPost = {};
-                    for (const jenis in jenisTotalRaw) {
-                        const persen = persentaseJenis[jenis] || 0;
-                        jenisTotalPost[jenis] = (jenisTotalRaw[jenis] * persen) / 100;
-                    }
-
-                    let totalSemuaSkor = 0;
-                    if (filterJenis === 'all') {
-                        totalSemuaSkor = Object.values(jenisTotalPost).reduce((a, b) => a + b, 0);
-                    } else {
-                        totalSemuaSkor = jenisTotalPost[filterJenis] || 0;
-                    }
-
-                    let grade = '';
-                    let keterangan = '';
-                    if (totalSemuaSkor >= 90) {
-                        grade = 'A';
-                        keterangan = 'Sangat Baik';
-                    } else if (totalSemuaSkor >= 80) {
-                        grade = 'B';
-                        keterangan = 'Baik';
-                    } else if (totalSemuaSkor >= 70) {
-                        grade = 'C';
-                        keterangan = 'Cukup';
-                    } else if (totalSemuaSkor >= 60) {
-                        grade = 'D';
-                        keterangan = 'Kurang';
-                    } else {
-                        grade = 'E';
-                        keterangan = 'Sangat Kurang';
-                    }
-
-                    content.append(`
-                <tr class="grand-total-row">
-                    <td colspan="5" class="text-end">Total Semua Nilai</td>
-                    <td class="text-center fs-5">${pengubahFormatModal(totalSemuaSkor)}</td>
-                </tr>
-                <tr class="grand-total-row">
-                    <td colspan="5" class="text-end">Kriteria</td>
-                    <td class="text-center">${keterangan}</td>
-                </tr>
-                <tr class="grand-total-row">
-                    <td colspan="5" class="text-end">Grade</td>
-                    <td class="text-center fs-4 fw-bold">${grade}</td>
-                </tr>
-            `);
-                }
 
                 // Evaluator list click to scroll
                 $(document).on('click', '.evaluator-list .list-group-item', function () {
@@ -1338,41 +1429,13 @@
                     if (evaluatorRow) {
                         const tableWrapper = $('.scrollable-table-wrapper');
                         const rowOffset = $(evaluatorRow).position().top;
-                        tableWrapper.animate({
-                            scrollTop: tableWrapper.scrollTop() + rowOffset - 50
-                        }, 500);
+                        tableWrapper.animate({ scrollTop: tableWrapper.scrollTop() + rowOffset - 50 }, 500);
                     }
                 });
 
-                window.toggleEvaluatorDetail = function (evalId) {
-                    const $detail = $(`#${evalId}`);
-                    const $icon = $(`#icon_${evalId}`);
-
-                    $detail.toggleClass('show');
-                    if ($detail.hasClass('show')) {
-                        $icon.css('transform', 'rotate(180deg)');
-                    } else {
-                        $icon.css('transform', 'rotate(0deg)');
-                    }
-                };
-
-                function bindAccordionEvents() {
-                    $('.user-accordion-header').off('click').on('click', function () {
-                        const targetId = $(this).data('target');
-                        const $body = $(targetId);
-                        const $header = $(this);
-
-                        $body.toggleClass('show');
-                        $header.toggleClass('active');
-
-                        if ($body.hasClass('show')) {
-                            setTimeout(() => {
-                                initializeChartsInContainer($body);
-                            }, 300);
-                        }
-                    });
-                }
-
+                // ============================================
+                // CHART FUNCTIONS
+                // ============================================
                 function initializeAllCharts() {
                     $('.user-accordion-body.show').each(function () {
                         initializeChartsInContainer($(this));
@@ -1383,9 +1446,7 @@
                     $container.find('.detail-chart[id^="kpi-chart"]').each(function () {
                         const chartId = $(this).attr('id');
                         const parts = chartId.split('-');
-                        const userId = parts[2];
-                        const idx = parts[3];
-
+                        const userId = parts[2], idx = parts[3];
                         if (!$(this).data('chart-initialized')) {
                             const user = window.dashboardData?.users?.find(u => u.id == userId);
                             if (user && user.kpi.details[idx]) {
@@ -1394,13 +1455,10 @@
                             }
                         }
                     });
-
                     $container.find('.detail-chart[id^="assessment-chart"]').each(function () {
                         const chartId = $(this).attr('id');
                         const parts = chartId.split('-');
-                        const userId = parts[2];
-                        const idx = parts[3];
-
+                        const userId = parts[2], idx = parts[3];
                         if (!$(this).data('chart-initialized')) {
                             const user = window.dashboardData?.users?.find(u => u.id == userId);
                             if (user && user.assessment_360.details[idx]) {
@@ -1412,46 +1470,27 @@
                 }
 
                 function createCircularChart(elementId, value, color) {
-                    const options = {
+                    const chart = new ApexCharts(document.querySelector(`#${elementId}`), {
                         series: [value],
-                        chart: {
-                            height: 80,
-                            type: 'radialBar',
-                            sparkline: { enabled: true }
-                        },
+                        chart: { height: 80, type: 'radialBar', sparkline: { enabled: true } },
                         plotOptions: {
                             radialBar: {
-                                startAngle: -90,
-                                endAngle: 270,
+                                startAngle: -90, endAngle: 270,
                                 hollow: { margin: 0, size: '70%' },
                                 track: { background: '#e7e7e7', strokeWidth: '100%', margin: 0 },
                                 dataLabels: {
                                     name: { show: false },
-                                    value: {
-                                        offsetY: -2,
-                                        fontSize: '14px',
-                                        fontWeight: 700,
-                                        color: color
-                                    }
+                                    value: { offsetY: -2, fontSize: '14px', fontWeight: 700, color: color }
                                 }
                             }
                         },
                         fill: {
                             type: 'gradient',
-                            gradient: {
-                                shade: 'light',
-                                shadeIntensity: 0.4,
-                                inverseColors: false,
-                                opacityFrom: 1,
-                                opacityTo: 1,
-                                stops: [0, 50, 53, 91]
-                            }
+                            gradient: { shade: 'light', shadeIntensity: 0.4, inverseColors: false, opacityFrom: 1, opacityTo: 1, stops: [0, 50, 53, 91] }
                         },
                         colors: [color],
                         stroke: { lineCap: 'round' }
-                    };
-
-                    const chart = new ApexCharts(document.querySelector(`#${elementId}`), options);
+                    });
                     chart.render();
                 }
 
@@ -1467,11 +1506,8 @@
                 }
 
                 function formatTarget(value, type) {
-                    if (type === 'rupiah') {
-                        return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
-                    } else if (type === 'persen') {
-                        return value + '%';
-                    }
+                    if (type === 'rupiah') return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+                    else if (type === 'persen') return value + '%';
                     return new Intl.NumberFormat('id-ID').format(value);
                 }
             });
