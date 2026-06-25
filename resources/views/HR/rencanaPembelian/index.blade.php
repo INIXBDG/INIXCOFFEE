@@ -40,259 +40,265 @@
     <div class="tab-content p-3 border border-top-0 rounded-bottom bg-white shadow-sm" id="pembelianTabContent">
         
         <div class="tab-pane fade show active" id="rencana" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="40"></th><th width="50">No</th><th>No. KK</th><th>Tanggal</th>
-                            <th>Total Item</th><th>Total Estimasi Harga</th><th>Status</th><th width="250" class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($rencanas as $index => $row)
-                        <tr class="purchase-row" data-target="#collapseRencana{{ $row->id }}" style="cursor:pointer;">
-                            <td class="text-center"><i class="bi bi-chevron-right toggle-icon"></i></td>
-                            <td>{{ $index + 1 }}</td>
-                            <td><strong>{{ $row->no_kk }}</strong></td>
-                            <td>{{ $row->tanggal_pembelian ? \Carbon\Carbon::parse($row->tanggal_pembelian)->format('d M Y') : '-' }}</td>
-                            <td>{{ $row->details->count() }} Item</td>
-                            <td>Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</td>
-                            <td><span class="badge bg-warning text-dark">{{ $row->status_pembelian }}</span></td>
-                            <td class="text-center action-cell">
-                                <button class="btn btn-sm btn-warning btn-edit text-white" 
-                                    data-id="{{ $row->id }}" data-nokk="{{ $row->no_kk }}" 
-                                    data-tanggal="{{ $row->tanggal_pembelian }}" data-status="{{ $row->status_pembelian }}"
-                                    data-items='@json($row->details)'>Edit</button>
-                                <button class="btn btn-sm btn-primary btn-upload-invoice" data-invoice="{{ $row->invoice ? asset('storage/'.$row->invoice) : '' }}" data-nokk="{{ $row->no_kk }}" data-id="{{ $row->id }}">Invoice</button>
-                                <button class="btn btn-sm btn-secondary btn-update-status" data-id="{{ $row->id }}" data-status="{{ $row->status_pembelian }}">Status</button>
-                                <button class="btn btn-sm btn-danger btn-delete" data-id="{{ $row->id }}">Hapus</button>
-                            </td>
-                        </tr>
-                        <tr class="collapse" id="collapseRencana{{ $row->id }}">
-                            <td colspan="8" class="bg-light p-3 collapse-row-content">
-                                <ul class="nav nav-tabs mb-3" role="tablist">
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#barang-r-{{ $row->id }}" type="button"><i class="bi bi-box-seam"></i> Detail Barang</button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tracking-r-{{ $row->id }}" type="button"><i class="bi bi-clock-history"></i> Riwayat Tracking</button>
-                                    </li>
-                                </ul>
-                                <div class="tab-content p-3 border border-top-0 rounded-bottom bg-white shadow-sm">
-                                    <div class="tab-pane fade show active" id="barang-r-{{ $row->id }}" role="tabpanel">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered bg-white mb-0">
-                                                <thead class="table-secondary"><tr><th width="40">No</th><th>Nama Barang</th><th>Kategori</th><th width="80">Qty</th><th width="130">Harga Satuan</th><th width="130">Subtotal</th><th>Keterangan</th></tr></thead>
-                                                <tbody>
-                                                    @forelse($row->details as $i => $item)
-                                                    <tr>
-                                                        <td>{{ $i + 1 }}</td><td>{{ $item->nama_barang }}</td>
-                                                        <td><span class="badge bg-secondary">{{ $item->kategori ?? '-' }}</span></td>
-                                                        <td class="text-center">{{ $item->qty }}</td>
-                                                        <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-                                                        <td>Rp {{ number_format($item->qty * $item->harga, 0, ',', '.') }}</td>
-                                                        <td>{{ $item->keterangan ?? '-' }}</td>
-                                                    </tr>
-                                                    @empty
-                                                    <tr><td colspan="7" class="text-center text-muted">Tidak ada item</td></tr>
-                                                    @endforelse
-                                                </tbody>
-                                                <tfoot class="table-light"><tr><th colspan="5" class="text-end">Total:</th><th class="text-end">Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</th><th></th></tr></tfoot>
-                                            </table>
+            <div id="accordion-rencana" class="accordion-wrapper">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40"></th><th width="50">No</th><th>No. KK</th><th>Tanggal</th>
+                                <th>Total Item</th><th>Total Estimasi Harga</th><th>Status</th><th width="250" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($rencanas as $index => $row)
+                            <tr class="purchase-row" data-bs-toggle="collapse" data-target="#collapseRencana{{ $row->id }}" style="cursor:pointer;">
+                                <td class="text-center"><i class="bi bi-chevron-right toggle-icon"></i></td>
+                                <td>{{ $index + 1 }}</td>
+                                <td><strong>{{ $row->no_kk }}</strong></td>
+                                <td>{{ $row->tanggal_pembelian ? \Carbon\Carbon::parse($row->tanggal_pembelian)->format('d M Y') : '-' }}</td>
+                                <td>{{ $row->details->count() }} Item</td>
+                                <td>Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</td>
+                                <td><span class="badge bg-warning text-dark">{{ $row->status_pembelian }}</span></td>
+                                <td class="text-center action-cell">
+                                    <button class="btn btn-sm btn-warning btn-edit text-white" 
+                                        data-id="{{ $row->id }}" data-nokk="{{ $row->no_kk }}" 
+                                        data-tanggal="{{ $row->tanggal_pembelian }}" data-status="{{ $row->status_pembelian }}"
+                                        data-items='@json($row->details)'>Edit</button>
+                                    <button class="btn btn-sm btn-primary btn-upload-invoice" data-invoice="{{ $row->invoice ? asset('storage/'.$row->invoice) : '' }}" data-nokk="{{ $row->no_kk }}" data-id="{{ $row->id }}">Invoice</button>
+                                    <button class="btn btn-sm btn-secondary btn-update-status" data-id="{{ $row->id }}" data-status="{{ $row->status_pembelian }}">Status</button>
+                                    <button class="btn btn-sm btn-danger btn-delete" data-id="{{ $row->id }}">Hapus</button>
+                                </td>
+                            </tr>
+                            <tr class="collapse" id="collapseRencana{{ $row->id }}" data-bs-parent="#accordion-rencana">
+                                <td colspan="8" class="bg-light p-3 collapse-row-content">
+                                    <ul class="nav nav-tabs mb-3" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#barang-r-{{ $row->id }}" type="button"><i class="bi bi-box-seam"></i> Detail Barang</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tracking-r-{{ $row->id }}" type="button"><i class="bi bi-clock-history"></i> Riwayat Tracking</button>
+                                        </li>
+                                    </ul>
+                                    <div class="tab-content p-3 border border-top-0 rounded-bottom bg-white shadow-sm">
+                                        <div class="tab-pane fade show active" id="barang-r-{{ $row->id }}" role="tabpanel">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered bg-white mb-0">
+                                                    <thead class="table-secondary"><tr><th width="40">No</th><th>Nama Barang</th><th>Kategori</th><th width="80">Qty</th><th width="130">Harga Satuan</th><th width="130">Subtotal</th><th>Keterangan</th></tr></thead>
+                                                    <tbody>
+                                                        @forelse($row->details as $i => $item)
+                                                        <tr>
+                                                            <td>{{ $i + 1 }}</td><td>{{ $item->nama_barang }}</td>
+                                                            <td><span class="badge bg-secondary">{{ $item->kategori ?? '-' }}</span></td>
+                                                            <td class="text-center">{{ $item->qty }}</td>
+                                                            <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                                                            <td>Rp {{ number_format($item->qty * $item->harga, 0, ',', '.') }}</td>
+                                                            <td>{{ $item->keterangan ?? '-' }}</td>
+                                                        </tr>
+                                                        @empty
+                                                        <tr><td colspan="7" class="text-center text-muted">Tidak ada item</td></tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                    <tfoot class="table-light"><tr><th colspan="5" class="text-end">Total:</th><th class="text-end">Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</th><th></th></tr></tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="tracking-r-{{ $row->id }}" role="tabpanel">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered table-hover bg-white mb-0">
+                                                    <thead class="table-secondary"><tr><th width="50">No</th><th>Aktivitas</th><th>Karyawan</th><th width="180">Tanggal</th></tr></thead>
+                                                    <tbody>
+                                                        @forelse($row->tracking as $i => $item)
+                                                        <tr>
+                                                            <td class="text-center">{{ $i + 1 }}</td>
+                                                            <td>
+                                                                @if(str_contains($item->tracking, 'membuat')) <span class="badge bg-success me-1"><i class="bi bi-plus-circle"></i></span>
+                                                                @elseif(str_contains($item->tracking, 'merubah') || str_contains($item->tracking, 'mengupdate')) <span class="badge bg-warning me-1"><i class="bi bi-pencil"></i></span>
+                                                                @else <span class="badge bg-info me-1"><i class="bi bi-info-circle"></i></span> @endif
+                                                                {{ $item->tracking }}
+                                                            </td>
+                                                            <td>{{ $item->karyawan->nama_lengkap ?? '-' }}</td>
+                                                            <td><small><i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y H:i') }}</small></td>
+                                                        </tr>
+                                                        @empty
+                                                        <tr><td colspan="4" class="text-center text-muted py-3"><i class="bi bi-inbox fs-4 d-block mb-2"></i>Belum ada riwayat tracking</td></tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="tab-pane fade" id="tracking-r-{{ $row->id }}" role="tabpanel">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered table-hover bg-white mb-0">
-                                                <thead class="table-secondary"><tr><th width="50">No</th><th>Aktivitas</th><th>Karyawan</th><th width="180">Tanggal</th></tr></thead>
-                                                <tbody>
-                                                    @forelse($row->tracking as $i => $item)
-                                                    <tr>
-                                                        <td class="text-center">{{ $i + 1 }}</td>
-                                                        <td>
-                                                            @if(str_contains($item->tracking, 'membuat')) <span class="badge bg-success me-1"><i class="bi bi-plus-circle"></i></span>
-                                                            @elseif(str_contains($item->tracking, 'merubah') || str_contains($item->tracking, 'mengupdate')) <span class="badge bg-warning me-1"><i class="bi bi-pencil"></i></span>
-                                                            @else <span class="badge bg-info me-1"><i class="bi bi-info-circle"></i></span> @endif
-                                                            {{ $item->tracking }}
-                                                        </td>
-                                                        <td>{{ $item->karyawan->nama_lengkap ?? '-' }}</td>
-                                                        <td><small><i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y H:i') }}</small></td>
-                                                    </tr>
-                                                    @empty
-                                                    <tr><td colspan="4" class="text-center text-muted py-3"><i class="bi bi-inbox fs-4 d-block mb-2"></i>Belum ada riwayat tracking</td></tr>
-                                                    @endforelse
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data rencana pembelian.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data rencana pembelian.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <div class="tab-pane fade" id="terlaksana" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="40"></th><th width="50">No</th><th>No. KK</th><th>Tanggal</th>
-                            <th>Total Item</th><th>Total Harga</th><th>Status</th><th width="150" class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($pembelian as $index => $row)
-                        <tr class="purchase-row" data-target="#collapseTerlaksana{{ $row->id }}" style="cursor:pointer;">
-                            <td class="text-center"><i class="bi bi-chevron-right toggle-icon"></i></td>
-                            <td>{{ $index + 1 }}</td>
-                            <td><strong>{{ $row->no_kk }}</strong></td>
-                            <td>{{ $row->tanggal_pembelian ? \Carbon\Carbon::parse($row->tanggal_pembelian)->format('d M Y') : '-' }}</td>
-                            <td>{{ $row->details->count() }} Item</td>
-                            <td>Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</td>
-                            <td><span class="badge bg-success">{{ $row->status_pembelian }}</span></td>
-                            <td class="text-center action-cell">
-                                <button class="btn btn-sm btn-primary btn-upload-invoice" data-invoice="{{ $row->invoice ? asset('storage/'.$row->invoice) : '' }}" data-nokk="{{ $row->no_kk }}" data-id="{{ $row->id }}">Invoice</button>
-                            </td>
-                        </tr>
-                        <tr class="collapse" id="collapseTerlaksana{{ $row->id }}">
-                            <td colspan="8" class="bg-light p-3 collapse-row-content">
-                                <ul class="nav nav-tabs mb-3" role="tablist">
-                                    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#barang-t-{{ $row->id }}" type="button"><i class="bi bi-box-seam"></i> Detail Barang</button></li>
-                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tracking-t-{{ $row->id }}" type="button"><i class="bi bi-clock-history"></i> Riwayat Tracking</button></li>
-                                </ul>
-                                <div class="tab-content p-3 border border-top-0 rounded-bottom bg-white shadow-sm">
-                                    <div class="tab-pane fade show active" id="barang-t-{{ $row->id }}" role="tabpanel">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered bg-white mb-0">
-                                                <thead class="table-secondary"><tr><th width="40">No</th><th>Nama Barang</th><th>Kategori</th><th width="80">Qty</th><th width="130">Harga Satuan</th><th width="130">Subtotal</th><th>Keterangan</th></tr></thead>
-                                                <tbody>
-                                                    @forelse($row->details as $i => $item)
-                                                    <tr><td>{{ $i + 1 }}</td><td>{{ $item->nama_barang }}</td><td><span class="badge bg-secondary">{{ $item->kategori ?? '-' }}</span></td><td class="text-center">{{ $item->qty }}</td><td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td><td>Rp {{ number_format($item->qty * $item->harga, 0, ',', '.') }}</td><td>{{ $item->keterangan ?? '-' }}</td></tr>
-                                                    @empty
-                                                    <tr><td colspan="7" class="text-center text-muted">Tidak ada item</td></tr>
-                                                    @endforelse
-                                                </tbody>
-                                                <tfoot class="table-light"><tr><th colspan="5" class="text-end">Total:</th><th class="text-end">Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</th><th></th></tr></tfoot>
-                                            </table>
+            <div id="accordion-terlaksana" class="accordion-wrapper">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40"></th><th width="50">No</th><th>No. KK</th><th>Tanggal</th>
+                                <th>Total Item</th><th>Total Harga</th><th>Status</th><th width="150" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($pembelian as $index => $row)
+                            <tr class="purchase-row" data-bs-toggle="collapse" data-target="#collapseTerlaksana{{ $row->id }}" style="cursor:pointer;">
+                                <td class="text-center"><i class="bi bi-chevron-right toggle-icon"></i></td>
+                                <td>{{ $index + 1 }}</td>
+                                <td><strong>{{ $row->no_kk }}</strong></td>
+                                <td>{{ $row->tanggal_pembelian ? \Carbon\Carbon::parse($row->tanggal_pembelian)->format('d M Y') : '-' }}</td>
+                                <td>{{ $row->details->count() }} Item</td>
+                                <td>Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</td>
+                                <td><span class="badge bg-success">{{ $row->status_pembelian }}</span></td>
+                                <td class="text-center action-cell">
+                                    <button class="btn btn-sm btn-primary btn-upload-invoice" data-invoice="{{ $row->invoice ? asset('storage/'.$row->invoice) : '' }}" data-nokk="{{ $row->no_kk }}" data-id="{{ $row->id }}">Invoice</button>
+                                </td>
+                            </tr>
+                            <tr class="collapse" id="collapseTerlaksana{{ $row->id }}" data-bs-parent="#accordion-terlaksana">
+                                <td colspan="8" class="bg-light p-3 collapse-row-content">
+                                    <ul class="nav nav-tabs mb-3" role="tablist">
+                                        <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#barang-t-{{ $row->id }}" type="button"><i class="bi bi-box-seam"></i> Detail Barang</button></li>
+                                        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tracking-t-{{ $row->id }}" type="button"><i class="bi bi-clock-history"></i> Riwayat Tracking</button></li>
+                                    </ul>
+                                    <div class="tab-content p-3 border border-top-0 rounded-bottom bg-white shadow-sm">
+                                        <div class="tab-pane fade show active" id="barang-t-{{ $row->id }}" role="tabpanel">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered bg-white mb-0">
+                                                    <thead class="table-secondary"><tr><th width="40">No</th><th>Nama Barang</th><th>Kategori</th><th width="80">Qty</th><th width="130">Harga Satuan</th><th width="130">Subtotal</th><th>Keterangan</th></tr></thead>
+                                                    <tbody>
+                                                        @forelse($row->details as $i => $item)
+                                                        <tr><td>{{ $i + 1 }}</td><td>{{ $item->nama_barang }}</td><td><span class="badge bg-secondary">{{ $item->kategori ?? '-' }}</span></td><td class="text-center">{{ $item->qty }}</td><td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td><td>Rp {{ number_format($item->qty * $item->harga, 0, ',', '.') }}</td><td>{{ $item->keterangan ?? '-' }}</td></tr>
+                                                        @empty
+                                                        <tr><td colspan="7" class="text-center text-muted">Tidak ada item</td></tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                    <tfoot class="table-light"><tr><th colspan="5" class="text-end">Total:</th><th class="text-end">Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</th><th></th></tr></tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="tracking-t-{{ $row->id }}" role="tabpanel">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered table-hover bg-white mb-0">
+                                                    <thead class="table-secondary"><tr><th width="50">No</th><th>Aktivitas</th><th>Karyawan</th><th width="180">Tanggal</th></tr></thead>
+                                                    <tbody>
+                                                        @forelse($row->tracking as $i => $item)
+                                                        <tr>
+                                                            <td class="text-center">{{ $i + 1 }}</td>
+                                                            <td>
+                                                                @if(str_contains($item->tracking, 'membuat')) <span class="badge bg-success me-1"><i class="bi bi-plus-circle"></i></span>
+                                                                @elseif(str_contains($item->tracking, 'merubah') || str_contains($item->tracking, 'mengupdate')) <span class="badge bg-warning me-1"><i class="bi bi-pencil"></i></span>
+                                                                @else <span class="badge bg-info me-1"><i class="bi bi-info-circle"></i></span> @endif
+                                                                {{ $item->tracking }}
+                                                            </td>
+                                                            <td>{{ $item->karyawan->nama_lengkap ?? '-' }}</td>
+                                                            <td><small><i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y H:i') }}</small></td>
+                                                        </tr>
+                                                        @empty
+                                                        <tr><td colspan="4" class="text-center text-muted py-3"><i class="bi bi-inbox fs-4 d-block mb-2"></i>Belum ada riwayat tracking</td></tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="tab-pane fade" id="tracking-t-{{ $row->id }}" role="tabpanel">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered table-hover bg-white mb-0">
-                                                <thead class="table-secondary"><tr><th width="50">No</th><th>Aktivitas</th><th>Karyawan</th><th width="180">Tanggal</th></tr></thead>
-                                                <tbody>
-                                                    @forelse($row->tracking as $i => $item)
-                                                    <tr>
-                                                        <td class="text-center">{{ $i + 1 }}</td>
-                                                        <td>
-                                                            @if(str_contains($item->tracking, 'membuat')) <span class="badge bg-success me-1"><i class="bi bi-plus-circle"></i></span>
-                                                            @elseif(str_contains($item->tracking, 'merubah') || str_contains($item->tracking, 'mengupdate')) <span class="badge bg-warning me-1"><i class="bi bi-pencil"></i></span>
-                                                            @else <span class="badge bg-info me-1"><i class="bi bi-info-circle"></i></span> @endif
-                                                            {{ $item->tracking }}
-                                                        </td>
-                                                        <td>{{ $item->karyawan->nama_lengkap ?? '-' }}</td>
-                                                        <td><small><i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y H:i') }}</small></td>
-                                                    </tr>
-                                                    @empty
-                                                    <tr><td colspan="4" class="text-center text-muted py-3"><i class="bi bi-inbox fs-4 d-block mb-2"></i>Belum ada riwayat tracking</td></tr>
-                                                    @endforelse
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data pembelian terlaksana.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data pembelian terlaksana.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <div class="tab-pane fade" id="dibatalkan" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="40"></th><th width="50">No</th><th>No. KK</th><th>Tanggal</th>
-                            <th>Total Item</th><th>Total Harga</th><th>Status</th><th width="100" class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse(($dibatalkan ?? []) as $index => $row)
-                        <tr class="purchase-row" data-target="#collapseDibatalkan{{ $row->id }}" style="cursor:pointer;">
-                            <td class="text-center"><i class="bi bi-chevron-right toggle-icon"></i></td>
-                            <td>{{ $index + 1 }}</td>
-                            <td><strong>{{ $row->no_kk }}</strong></td>
-                            <td>{{ $row->tanggal_pembelian ? \Carbon\Carbon::parse($row->tanggal_pembelian)->format('d M Y') : '-' }}</td>
-                            <td>{{ $row->details->count() }} Item</td>
-                            <td>Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</td>
-                            <td><span class="badge bg-danger">{{ $row->status_pembelian }}</span></td>
-                            <td class="text-center action-cell">
-                                <button class="btn btn-sm btn-danger btn-delete" data-id="{{ $row->id }}">Hapus</button>
-                            </td>
-                        </tr>
-                        <tr class="collapse" id="collapseDibatalkan{{ $row->id }}">
-                            <td colspan="8" class="bg-light p-3 collapse-row-content">
-                                <ul class="nav nav-tabs mb-3" role="tablist">
-                                    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#barang-d-{{ $row->id }}" type="button"><i class="bi bi-box-seam"></i> Detail Barang</button></li>
-                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tracking-d-{{ $row->id }}" type="button"><i class="bi bi-clock-history"></i> Riwayat Tracking</button></li>
-                                </ul>
-                                <div class="tab-content p-3 border border-top-0 rounded-bottom bg-white shadow-sm">
-                                    <div class="tab-pane fade show active" id="barang-d-{{ $row->id }}" role="tabpanel">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered bg-white mb-0">
-                                                <thead class="table-secondary"><tr><th width="40">No</th><th>Nama Barang</th><th>Kategori</th><th width="80">Qty</th><th width="130">Harga Satuan</th><th width="130">Subtotal</th><th>Keterangan</th></tr></thead>
-                                                <tbody>
-                                                    @forelse($row->details as $i => $item)
-                                                    <tr><td>{{ $i + 1 }}</td><td>{{ $item->nama_barang }}</td><td><span class="badge bg-secondary">{{ $item->kategori ?? '-' }}</span></td><td class="text-center">{{ $item->qty }}</td><td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td><td>Rp {{ number_format($item->qty * $item->harga, 0, ',', '.') }}</td><td>{{ $item->keterangan ?? '-' }}</td></tr>
-                                                    @empty
-                                                    <tr><td colspan="7" class="text-center text-muted">Tidak ada item</td></tr>
-                                                    @endforelse
-                                                </tbody>
-                                                <tfoot class="table-light"><tr><th colspan="5" class="text-end">Total:</th><th class="text-end">Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</th><th></th></tr></tfoot>
-                                            </table>
+            <div id="accordion-dibatalkan" class="accordion-wrapper">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40"></th><th width="50">No</th><th>No. KK</th><th>Tanggal</th>
+                                <th>Total Item</th><th>Total Harga</th><th>Status</th><th width="100" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse(($dibatalkan ?? []) as $index => $row)
+                            <tr class="purchase-row" data-bs-toggle="collapse" data-target="#collapseDibatalkan{{ $row->id }}" style="cursor:pointer;">
+                                <td class="text-center"><i class="bi bi-chevron-right toggle-icon"></i></td>
+                                <td>{{ $index + 1 }}</td>
+                                <td><strong>{{ $row->no_kk }}</strong></td>
+                                <td>{{ $row->tanggal_pembelian ? \Carbon\Carbon::parse($row->tanggal_pembelian)->format('d M Y') : '-' }}</td>
+                                <td>{{ $row->details->count() }} Item</td>
+                                <td>Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</td>
+                                <td><span class="badge bg-danger">{{ $row->status_pembelian }}</span></td>
+                                <td class="text-center action-cell">
+                                    <button class="btn btn-sm btn-danger btn-delete" data-id="{{ $row->id }}">Hapus</button>
+                                </td>
+                            </tr>
+                            <tr class="collapse" id="collapseDibatalkan{{ $row->id }}" data-bs-parent="#accordion-dibatalkan">
+                                <td colspan="8" class="bg-light p-3 collapse-row-content">
+                                    <ul class="nav nav-tabs mb-3" role="tablist">
+                                        <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#barang-d-{{ $row->id }}" type="button"><i class="bi bi-box-seam"></i> Detail Barang</button></li>
+                                        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tracking-d-{{ $row->id }}" type="button"><i class="bi bi-clock-history"></i> Riwayat Tracking</button></li>
+                                    </ul>
+                                    <div class="tab-content p-3 border border-top-0 rounded-bottom bg-white shadow-sm">
+                                        <div class="tab-pane fade show active" id="barang-d-{{ $row->id }}" role="tabpanel">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered bg-white mb-0">
+                                                    <thead class="table-secondary"><tr><th width="40">No</th><th>Nama Barang</th><th>Kategori</th><th width="80">Qty</th><th width="130">Harga Satuan</th><th width="130">Subtotal</th><th>Keterangan</th></tr></thead>
+                                                    <tbody>
+                                                        @forelse($row->details as $i => $item)
+                                                        <tr><td>{{ $i + 1 }}</td><td>{{ $item->nama_barang }}</td><td><span class="badge bg-secondary">{{ $item->kategori ?? '-' }}</span></td><td class="text-center">{{ $item->qty }}</td><td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td><td>Rp {{ number_format($item->qty * $item->harga, 0, ',', '.') }}</td><td>{{ $item->keterangan ?? '-' }}</td></tr>
+                                                        @empty
+                                                        <tr><td colspan="7" class="text-center text-muted">Tidak ada item</td></tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                    <tfoot class="table-light"><tr><th colspan="5" class="text-end">Total:</th><th class="text-end">Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</th><th></th></tr></tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="tracking-d-{{ $row->id }}" role="tabpanel">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered table-hover bg-white mb-0">
+                                                    <thead class="table-secondary"><tr><th width="50">No</th><th>Aktivitas</th><th>Karyawan</th><th width="180">Tanggal</th></tr></thead>
+                                                    <tbody>
+                                                        @forelse($row->tracking as $i => $item)
+                                                        <tr>
+                                                            <td class="text-center">{{ $i + 1 }}</td>
+                                                            <td>
+                                                                @if(str_contains($item->tracking, 'membuat')) <span class="badge bg-success me-1"><i class="bi bi-plus-circle"></i></span>
+                                                                @elseif(str_contains($item->tracking, 'merubah') || str_contains($item->tracking, 'mengupdate')) <span class="badge bg-warning me-1"><i class="bi bi-pencil"></i></span>
+                                                                @else <span class="badge bg-info me-1"><i class="bi bi-info-circle"></i></span> @endif
+                                                                {{ $item->tracking }}
+                                                            </td>
+                                                            <td>{{ $item->karyawan->nama_lengkap ?? '-' }}</td>
+                                                            <td><small><i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y H:i') }}</small></td>
+                                                        </tr>
+                                                        @empty
+                                                        <tr><td colspan="4" class="text-center text-muted py-3"><i class="bi bi-inbox fs-4 d-block mb-2"></i>Belum ada riwayat tracking</td></tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="tab-pane fade" id="tracking-d-{{ $row->id }}" role="tabpanel">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered table-hover bg-white mb-0">
-                                                <thead class="table-secondary"><tr><th width="50">No</th><th>Aktivitas</th><th>Karyawan</th><th width="180">Tanggal</th></tr></thead>
-                                                <tbody>
-                                                    @forelse($row->tracking as $i => $item)
-                                                    <tr>
-                                                        <td class="text-center">{{ $i + 1 }}</td>
-                                                        <td>
-                                                            @if(str_contains($item->tracking, 'membuat')) <span class="badge bg-success me-1"><i class="bi bi-plus-circle"></i></span>
-                                                            @elseif(str_contains($item->tracking, 'merubah') || str_contains($item->tracking, 'mengupdate')) <span class="badge bg-warning me-1"><i class="bi bi-pencil"></i></span>
-                                                            @else <span class="badge bg-info me-1"><i class="bi bi-info-circle"></i></span> @endif
-                                                            {{ $item->tracking }}
-                                                        </td>
-                                                        <td>{{ $item->karyawan->nama_lengkap ?? '-' }}</td>
-                                                        <td><small><i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y H:i') }}</small></td>
-                                                    </tr>
-                                                    @empty
-                                                    <tr><td colspan="4" class="text-center text-muted py-3"><i class="bi bi-inbox fs-4 d-block mb-2"></i>Belum ada riwayat tracking</td></tr>
-                                                    @endforelse
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data pembelian dibatalkan.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data pembelian dibatalkan.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -437,38 +443,79 @@
 </div>
 
 <style>
-.toggle-icon { 
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-}
+    .purchase-row {
+        transition: background-color 0.15s ease-in-out;
+        cursor: pointer;
+    }
 
-.purchase-row { 
-    transition: background-color 0.2s ease;
-}
-.purchase-row:hover { 
-    background-color: #f8f9fa; 
-}
+    .purchase-row:hover {
+        background-color: #f8f9fa;
+    }
 
-.collapse-row-content {
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
+    .purchase-row.active {
+        background-color: #e7f1ff;
+        box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.125);
+    }
 
-tr.collapsing {
-    transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
+    .toggle-icon {
+        transition: transform 0.35s ease;
+        display: inline-block;
+        color: #6c757d;
+    }
 
-.purchase-row[aria-expanded="true"] .toggle-icon, 
-.purchase-row.expanded .toggle-icon { 
-    transform: rotate(90deg); 
-}
+    .purchase-row.active .toggle-icon {
+        transform: rotate(90deg);
+        color: #0d6efd;
+    }
 
-td.bg-light {
-    transition: background-color 0.3s ease;
-}
+    tr.collapse {
+        transition: none !important;
+    }
 
-.purchase-row td:first-child { text-align: center; }
-.modal-dialog-scrollable .modal-body { max-height: calc(100vh - 200px); }
-#invoicePreviewContainer iframe, #invoicePreviewContainer img { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-.table-secondary th { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    tr.collapsing {
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+        transition: height 200ms ease-in-out;
+    }
+
+    tr.collapse.show .collapse-row-content {
+        opacity: 1;
+        height: 120px;
+    }
+    tr.collapse.show {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    }
+    .purchase-row td:first-child { 
+        text-align: center; 
+    }
+
+    .modal-dialog-scrollable .modal-body { 
+        max-height: calc(100vh - 200px); 
+    }
+
+    #invoicePreviewContainer iframe, 
+    #invoicePreviewContainer img { 
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+    }
+
+    .table-secondary th { 
+        font-size: 0.85rem; 
+        text-transform: uppercase; 
+        letter-spacing: 0.5px; 
+    }
+
+    .accordion-wrapper {
+        position: relative;
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        border-radius: 0.375rem;
+        overflow: hidden;
+        background: white;
+    }
+
+    .accordion-wrapper .table {
+        margin-bottom: 0;
+    }
 </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -498,34 +545,27 @@ $(document).ready(function() {
         }
 
         const target = $(this).data('target');
-        const icon = $(this).find('.toggle-icon');
-        const currentRow = $(this);
+        const collapseEl = document.querySelector(target);
         
-        const $tabPane = currentRow.closest('.tab-pane');
-        
-        $tabPane.find('.purchase-row').not(currentRow).each(function() {
-            const otherTarget = $(this).data('target');
-            const otherCollapseEl = document.querySelector(otherTarget);
-            const otherIcon = $(this).find('.toggle-icon');
+        if (collapseEl) {
+            const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
             
-            if (otherCollapseEl && otherCollapseEl.classList.contains('show')) {
-                const bsCollapse = bootstrap.Collapse.getInstance(otherCollapseEl);
-                if (bsCollapse) {
-                    bsCollapse.hide();
-                    otherIcon.removeClass('bi-chevron-down').addClass('bi-chevron-right');
-                }
-            }
-        });
-        
-        const collapseEl = toggleCollapse(target);
-        
-        setTimeout(() => {
-            if (collapseEl && collapseEl.classList.contains('show')) {
-                icon.removeClass('bi-chevron-right').addClass('bi-chevron-down');
+            if (collapseEl.classList.contains('show')) {
+                bsCollapse.hide();
             } else {
-                icon.removeClass('bi-chevron-down').addClass('bi-chevron-right');
+                bsCollapse.show();
             }
-        }, 50);
+        }
+    });
+
+    $(document).on('show.bs.collapse', function(e) {
+        const id = '#' + $(e.target).attr('id');
+        $(`.purchase-row[data-target="${id}"]`).addClass('active');
+    });
+
+    $(document).on('hide.bs.collapse', function(e) {
+        const id = '#' + $(e.target).attr('id');
+        $(`.purchase-row[data-target="${id}"]`).removeClass('active');
     });
 
     let itemIndex = 0;

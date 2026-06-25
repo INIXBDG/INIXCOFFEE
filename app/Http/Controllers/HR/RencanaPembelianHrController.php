@@ -171,7 +171,7 @@ class RencanaPembelianHrController extends Controller
     public function updateInvoice(Request $request, $id) 
     {
         $request->validate([
-            'invoice' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048' 
+            'invoice' => 'required|file|mimes:pdf,jpg,jpeg,png' 
         ]);
 
         try {
