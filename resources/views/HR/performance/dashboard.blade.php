@@ -26,8 +26,11 @@
                         <label class="form-label fw-bold text-muted small text-uppercase">Filter Divisi</label>
                         <select name="divisi" id="filterDivisi" class="form-select">
                             <option value="">Semua Divisi</option>
+                            @php
+                                $userDivisi = optional(auth()->user()->karyawan)->divisi;
+                            @endphp
                             @foreach($divisiList as $d)
-                                <option value="{{ $d }}">{{ $d }}</option>
+                                <option value="{{ $d }}" {{ $d == $userDivisi ? 'selected' : '' }}>{{ $d }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -79,14 +82,13 @@
 
         <!-- Accordion Content -->
         <div id="accordionContainer">
-            <div class="text-center py-5">
+            <div class="text-center py-5 container-accordion">
                 <div class="spinner-border text-primary" role="status"></div>
                 <p class="mt-2 text-muted">Memuat data performa...</p>
             </div>
         </div>
     </div>
 
-    {{-- Modal Detail Penilaian 360 (SAMA, tidak ada perubahan) --}}
     {{-- Modal Detail Penilaian 360° --}}
     <div class="modal fade" id="modalAssessment360Detail" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
@@ -193,6 +195,13 @@
     </div>
     @push('styles')
         <style>
+            .container-accordion {
+                display: grid;
+                column-gap: 2rem;
+                grid-template-columns: auto auto;
+                align-items: start;
+            }
+
             .user-accordion-item {
                 background: rgba(255, 255, 255, 0.12);
                 backdrop-filter: blur(12px);
@@ -365,6 +374,61 @@
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
+            }
+
+            .section-header-kpi {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+            }
+
+            .section-header-kpi .section-title {
+                margin-bottom: 0 !important;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .btn-view-all-kpi {
+                background: linear-gradient(135deg, #4e73df, #224abe);
+                color: white;
+                border: none;
+                padding: 0.45rem 0.9rem;
+                border-radius: 8px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                transition: all 0.25s ease;
+                box-shadow: 0 3px 10px rgba(78, 115, 223, 0.25);
+                text-decoration: none;
+                white-space: nowrap;
+            }
+
+            .btn-view-all-kpi:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 18px rgba(78, 115, 223, 0.4);
+                color: white;
+            }
+
+            .btn-view-all-kpi:active {
+                transform: translateY(0);
+            }
+
+            .btn-view-all-kpi i {
+                font-size: 0.95rem;
+            }
+
+            /* Badge persentase yang lebih menonjol */
+            .score-display .big-score {
+                font-variant-numeric: tabular-nums;
+                letter-spacing: -0.5px;
+            }
+
+            .mini-stat .value {
+                font-variant-numeric: tabular-nums;
             }
 
             .score-kpi {
@@ -832,13 +896,13 @@
 
                     // Reset hanya body_content tabel (bukan seluruh modal)
                     $('#body_content').html(`
-                            <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    <i class="mdi mdi-loading mdi-spin fa-2x mb-2 d-block"></i>
-                                    Memuat data...
-                                </td>
-                            </tr>
-                        `);
+                                                                                    <tr>
+                                                                                        <td colspan="6" class="text-center py-5 text-muted">
+                                                                                            <i class="mdi mdi-loading mdi-spin fa-2x mb-2 d-block"></i>
+                                                                                            Memuat data...
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                `);
 
                     // Reset konten utama
                     $('#content_utama').empty();
@@ -880,11 +944,11 @@
                                 if (!data.data || !data.data.evaluator || !data.data.dataKriteria) {
                                     console.error('❌ Struktur data tidak valid:', data);
                                     $('#modalContent').html(`
-                                            <div class="alert alert-danger">
-                                                <i class="mdi mdi-alert-circle-outline me-2"></i>
-                                                Struktur data tidak valid.
-                                            </div>
-                                        `).show();
+                                                                                                    <div class="alert alert-danger">
+                                                                                                        <i class="mdi mdi-alert-circle-outline me-2"></i>
+                                                                                                        Struktur data tidak valid.
+                                                                                                    </div>
+                                                                                                `).show();
                                     return;
                                 }
 
@@ -909,20 +973,20 @@
                                     console.error('❌ Error saat render:', renderError);
                                     console.error('Stack:', renderError.stack);
                                     $('#modalContent').html(`
-                                            <div class="alert alert-danger">
-                                                <i class="mdi mdi-alert-circle-outline me-2"></i>
-                                                Error saat render: ${renderError.message}
-                                            </div>
-                                        `).show();
+                                                                                                    <div class="alert alert-danger">
+                                                                                                        <i class="mdi mdi-alert-circle-outline me-2"></i>
+                                                                                                        Error saat render: ${renderError.message}
+                                                                                                    </div>
+                                                                                                `).show();
                                 }
                             } else {
                                 console.warn('⚠️ Data tidak ditemukan:', res);
                                 $('#modalContent').html(`
-                                        <div class="alert alert-warning">
-                                            <i class="mdi mdi-alert-circle-outline me-2"></i>
-                                            ${res.message || 'Data tidak ditemukan'}
-                                        </div>
-                                    `).show();
+                                                                                                <div class="alert alert-warning">
+                                                                                                    <i class="mdi mdi-alert-circle-outline me-2"></i>
+                                                                                                    ${res.message || 'Data tidak ditemukan'}
+                                                                                                </div>
+                                                                                            `).show();
                             }
                         },
                         error: function (xhr, status, error) {
@@ -933,11 +997,11 @@
                                 message = xhr.responseJSON.message;
                             }
                             $('#modalContent').html(`
-                                    <div class="alert alert-danger">
-                                        <i class="mdi mdi-alert-circle-outline me-2"></i>
-                                        ${message}
-                                    </div>
-                                `).show();
+                                                                                            <div class="alert alert-danger">
+                                                                                                <i class="mdi mdi-alert-circle-outline me-2"></i>
+                                                                                                ${message}
+                                                                                            </div>
+                                                                                        `).show();
                         }
                     });
                 } catch (error) {
@@ -977,41 +1041,41 @@
                 // Render info evaluator
                 let listEvaluatorHTML = modalEvaluators.map(ev =>
                     `<li data-target="${ev.nama}-${ev.jenis_penilaian}" class="list-group-item">
-                                    <i class="mdi mdi-account-circle me-2 text-primary"></i>${ev.nama}
-                                </li>`
+                                                                                            <i class="mdi mdi-account-circle me-2 text-primary"></i>${ev.nama}
+                                                                                        </li>`
                 ).join('');
 
                 contentUtama.append(`
-                                <div class="info-item">
-                                    <div class="info-label"><i class="mdi mdi-file-document-outline me-1"></i> Yang Dinilai</div>
-                                    <div class="info-value">${modalEvaluated.nama || '-'}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label"><i class="mdi mdi-account-multiple me-1"></i> Evaluator (${modalEvaluators.length})</div>
-                                    <ul class="evaluator-list">${listEvaluatorHTML}</ul>
-                                </div>
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <div class="info-item mb-0">
-                                            <div class="info-label"><i class="mdi mdi-calendar me-1"></i> Periode</div>
-                                            <div class="info-value text-center">${modalEvaluated.quartal || '-'}</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="info-item mb-0">
-                                            <div class="info-label"><i class="mdi mdi-calendar-range me-1"></i> Tahun</div>
-                                            <div class="info-value text-center">${modalEvaluated.tahun || '-'}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                ${modalEvaluated.catatan && modalEvaluated.catatan !== '-' ? `
-                                    <hr class="my-3">
-                                    <div class="info-item mb-0">
-                                        <div class="info-label"><i class="mdi mdi-note-text me-1"></i> Catatan</div>
-                                        <div class="info-value" style="font-size: 0.85rem; font-weight: 400; color: #4a5568;">${modalEvaluated.catatan}</div>
-                                    </div>
-                                ` : ''}
-                            `);
+                                                                                        <div class="info-item">
+                                                                                            <div class="info-label"><i class="mdi mdi-file-document-outline me-1"></i> Yang Dinilai</div>
+                                                                                            <div class="info-value">${modalEvaluated.nama || '-'}</div>
+                                                                                        </div>
+                                                                                        <div class="info-item">
+                                                                                            <div class="info-label"><i class="mdi mdi-account-multiple me-1"></i> Evaluator (${modalEvaluators.length})</div>
+                                                                                            <ul class="evaluator-list">${listEvaluatorHTML}</ul>
+                                                                                        </div>
+                                                                                        <div class="row g-2">
+                                                                                            <div class="col-6">
+                                                                                                <div class="info-item mb-0">
+                                                                                                    <div class="info-label"><i class="mdi mdi-calendar me-1"></i> Periode</div>
+                                                                                                    <div class="info-value text-center">${modalEvaluated.quartal || '-'}</div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="col-6">
+                                                                                                <div class="info-item mb-0">
+                                                                                                    <div class="info-label"><i class="mdi mdi-calendar-range me-1"></i> Tahun</div>
+                                                                                                    <div class="info-value text-center">${modalEvaluated.tahun || '-'}</div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        ${modalEvaluated.catatan && modalEvaluated.catatan !== '-' ? `
+                                                                                            <hr class="my-3">
+                                                                                            <div class="info-item mb-0">
+                                                                                                <div class="info-label"><i class="mdi mdi-note-text me-1"></i> Catatan</div>
+                                                                                                <div class="info-value" style="font-size: 0.85rem; font-weight: 400; color: #4a5568;">${modalEvaluated.catatan}</div>
+                                                                                            </div>
+                                                                                        ` : ''}
+                                                                                    `);
 
                 // Render tabel
                 renderTabelModal('all');
@@ -1037,8 +1101,8 @@
                 if (filteredEvaluators.length === 0) {
                     content.append(
                         `<tr><td colspan="6" class="text-center py-5 text-muted">
-                                        <i class="mdi mdi-inbox fa-2x mb-2 d-block"></i>Tidak Ada Data
-                                    </td></tr>`
+                                                                                                <i class="mdi mdi-inbox fa-2x mb-2 d-block"></i>Tidak Ada Data
+                                                                                            </td></tr>`
                     );
                     return;
                 }
@@ -1078,13 +1142,13 @@
 
                 filteredEvaluators.forEach(evaluator => {
                     content.append(`
-                                    <tr id="${evaluator.nama}-${evaluator.jenis_penilaian}" class="evaluator-header">
-                                        <td colspan="6">
-                                            <i class="mdi mdi-account me-2"></i>${evaluator.nama}
-                                            <span class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size: .75rem;">${evaluator.jenis_penilaian}</span>
-                                        </td>
-                                    </tr>
-                                `);
+                                                                                            <tr id="${evaluator.nama}-${evaluator.jenis_penilaian}" class="evaluator-header">
+                                                                                                <td colspan="6">
+                                                                                                    <i class="mdi mdi-account me-2"></i>${evaluator.nama}
+                                                                                                    <span class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size: .75rem;">${evaluator.jenis_penilaian}</span>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        `);
 
                     let nilaiList = evaluator.nilai || [];
                     let nilaiIndex = 0;
@@ -1113,11 +1177,11 @@
                                     totalSkorEvaluator += skor;
                                 }
                                 dataNilai = `
-                                                <td><span class="badge bg-light text-dark border">${bobot}%</span></td>
-                                                <td class="fw-semibold">${nilai}</td>
-                                                <td>${rata === '-' ? '-' : pengubahFormatModal(rata)}</td>
-                                                <td class="fw-bold text-primary">${rata === '-' ? '-' : pengubahFormatModal(skor)}</td>
-                                            `;
+                                                                                                        <td><span class="badge bg-light text-dark border">${bobot}%</span></td>
+                                                                                                        <td class="fw-semibold">${nilai}</td>
+                                                                                                        <td>${rata === '-' ? '-' : pengubahFormatModal(rata)}</td>
+                                                                                                        <td class="fw-bold text-primary">${rata === '-' ? '-' : pengubahFormatModal(skor)}</td>
+                                                                                                    `;
                             }
 
                             const kriteriaText = kriteria.kriteria;
@@ -1126,21 +1190,21 @@
                             const displaySubKriteria = subKriteriaText.length > 30 ? subKriteriaText.substring(0, 30) + '...' : subKriteriaText;
 
                             content.append(`
-                                            <tr>
-                                                ${idxSub === 0 ? `<td class="text-left fw-semibold">${displayKriteria}</td>` : ''}
-                                                <td style="text-align: left;">${displaySubKriteria}</td>
-                                                ${dataNilai}
-                                            </tr>
-                                        `);
+                                                                                                    <tr>
+                                                                                                        ${idxSub === 0 ? `<td class="text-left fw-semibold">${displayKriteria}</td>` : ''}
+                                                                                                        <td style="text-align: left;">${displaySubKriteria}</td>
+                                                                                                        ${dataNilai}
+                                                                                                    </tr>
+                                                                                                `);
                         });
                     });
 
                     content.append(`
-                                    <tr class="total-row">
-                                        <td colspan="5" class="text-end">Total (${evaluator.nama})</td>
-                                        <td class="text-center">${pengubahFormatModal(totalSkorEvaluator)}</td>
-                                    </tr>
-                                `);
+                                                                                            <tr class="total-row">
+                                                                                                <td colspan="5" class="text-end">Total (${evaluator.nama})</td>
+                                                                                                <td class="text-center">${pengubahFormatModal(totalSkorEvaluator)}</td>
+                                                                                            </tr>
+                                                                                        `);
 
                     const jenis = evaluator.jenis_penilaian;
                     if (!jenisTotalRaw.hasOwnProperty(jenis)) jenisTotalRaw[jenis] = totalSkorEvaluator;
@@ -1164,19 +1228,19 @@
                 else { grade = 'E'; keterangan = 'Sangat Kurang'; }
 
                 content.append(`
-                                <tr class="grand-total-row">
-                                    <td colspan="5" class="text-end">Total Semua Nilai</td>
-                                    <td class="text-center fs-5">${pengubahFormatModal(totalSemuaSkor)}</td>
-                                </tr>
-                                <tr class="grand-total-row">
-                                    <td colspan="5" class="text-end">Kriteria</td>
-                                    <td class="text-center">${keterangan}</td>
-                                </tr>
-                                <tr class="grand-total-row">
-                                    <td colspan="5" class="text-end">Grade</td>
-                                    <td class="text-center fs-4 fw-bold">${grade}</td>
-                                </tr>
-                            `);
+            <tr class="grand-total-row">
+                    <td colspan="5" class="text-end">Total Semua Nilai</td>
+                    <td class="text-center fs-5">${pengubahFormatModal(totalSemuaSkor)}</td>
+                </tr>
+            <tr class="grand-total-row">
+                    <td colspan="5" class="text-end">Kriteria</td>
+                    <td class="text-center">${keterangan}</td>
+                </tr>
+            <tr class="grand-total-row">
+                    <td colspan="5" class="text-end">Grade</td>
+                    <td class="text-center fs-4 fw-bold">${grade}</td>
+                </tr>
+                    `);
             }
 
             // ============================================
@@ -1206,11 +1270,11 @@
                 function loadData() {
                     const formData = $('#filterForm').serialize();
                     $('#accordionContainer').html(`
-                                    <div class="text-center py-5">
-                                        <div class="spinner-border text-primary" role="status"></div>
-                                        <p class="mt-2 text-muted">Memuat data...</p>
-                                    </div>
-                                `);
+                                                                                            <div class="text-center py-5">
+                                                                                                <div class="spinner-border text-primary" role="status"></div>
+                                                                                                <p class="mt-2 text-muted">Memuat data...</p>
+                                                                                            </div>
+                                                                                        `);
                     $.ajax({
                         url: "{{ route('HR.performance.dashboard.data') }}",
                         type: 'GET',
@@ -1231,91 +1295,103 @@
                         $('#accordionContainer').html('<div class="alert alert-info glass-force">Tidak ada data ditemukan untuk filter ini.</div>');
                         return;
                     }
-                    let html = '<div id="userAccordionList">';
+                    let html = '<div class="container-accordion" id="userAccordionList">';
                     users.forEach((user, index) => {
                         const nomor = index + 1;
                         const itemId = `user_acc_${user.id}`;
                         const safeName = user.nama.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
-                        html += `
-                                    <div class="user-accordion-item" data-user-id="${user.id}">
-                                        <div class="user-accordion-header" data-target="#${itemId}">
-                                            <div class="d-flex align-items-center flex-grow-1" style="min-width: 0;">
-                                                <div class="user-number">${nomor}</div>
-                                                <div class="user-info-section">
-                                                    <div class="user-name">${user.nama}</div>
-                                                    <div class="user-meta">
-                                                        <span><i class="mdi mdi-briefcase-outline"></i> ${user.jabatan}</span>
-                                                        <span><i class="mdi mdi-office-building-outline"></i> ${user.divisi}</span>
-                                                    </div>
+                        const kpiScoreDisplay = formatPercent(user.kpi.score);
+                        const score360Display = formatPercent(user.assessment_360.score);
+
+                        html += `   
+                                <div class="user-accordion-item" data-user-id="${user.id}">
+                                    <div class="user-accordion-header" data-target="#${itemId}">
+                                        <div class="d-flex align-items-center flex-grow-1" style="min-width: 0;">
+                                            <div class="user-number">${nomor}</div>
+                                            <div class="user-info-section">
+                                                <div class="user-name">${user.nama}</div>
+                                                <div class="user-meta">
+                                                    <span><i class="mdi mdi-briefcase-outline"></i> ${user.jabatan}</span>
+                                                    <span><i class="mdi mdi-office-building-outline"></i> ${user.divisi}</span>
                                                 </div>
                                             </div>
-                                            <div class="quick-stats d-none d-md-flex">
-                                                <div class="mini-stat">
-                                                    <div class="label">KPI</div>
-                                                    <div class="value score-kpi">${user.kpi.score}%</div>
-                                                </div>
-                                                <div class="mini-stat">
-                                                    <div class="label">360°</div>
-                                                    <div class="value score-360">${user.assessment_360.score}%</div>
-                                                </div>
-                                            </div>
-                                            <i class="mdi mdi-chevron-down toggle-icon" style="font-size: 1.5rem;"></i>
                                         </div>
-                                        <div class="user-accordion-body" id="${itemId}">
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <div class="section-card">
+                                        <div class="quick-stats d-none d-md-flex">
+                                            <div class="mini-stat">
+                                                <div class="label">KPI</div>
+                                                <div class="value score-kpi">${kpiScoreDisplay}</div>
+                                            </div>
+                                            <div class="mini-stat">
+                                                <div class="label">360°</div>
+                                                <div class="value score-360">${score360Display}</div>
+                                            </div>
+                                        </div>
+                                        <i class="mdi mdi-chevron-down toggle-icon" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <div class="user-accordion-body" id="${itemId}">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <div class="section-card">
+                                                    <div class="section-header-kpi">
                                                         <div class="section-title">
                                                             <i class="mdi mdi-chart-timeline-variant-shimmer text-primary"></i>
                                                             Progress KPI
                                                         </div>
-                                                        <div class="score-display">
-                                                            <div class="big-score score-kpi">${user.kpi.score}%</div>
-                                                            <span class="grade-badge ${getGradeClass(user.kpi.grade)}">${user.kpi.grade}</span>
-                                                        </div>
-                                                        <div class="progress mt-3" style="height: 8px;">
-                                                            <div class="progress-bar bg-primary" role="progressbar"
-                                                                style="width: ${Math.min(user.kpi.score, 100)}%"></div>
-                                                        </div>
-                                                        <div class="mt-4">
-                                                            <h6 class="fw-bold text-muted small mb-3">Detail Target KPI (${user.kpi.details.length})</h6>
-                                                            <div class="detail-scroll-container" id="kpi-details-${user.id}">
-                                                                ${renderKPIDetails(user.kpi.details, user.id)}
-                                                            </div>
+                                                        <a href="/kpi-data/table-data" class="btn-view-all-kpi" title="Lihat Tabel Data KPI Lengkap">
+                                                            <i class="mdi mdi-table-large"></i>
+                                                            <span class="d-none d-sm-inline">Lihat Semua KPI</span>
+                                                            <span class="d-inline d-sm-none">Tabel</span>
+                                                        </a>
+                                                    </div>
+
+                                                    <div class="score-display">
+                                                        <div class="big-score score-kpi">${kpiScoreDisplay}</div>
+                                                        <span class="grade-badge ${getGradeClass(user.kpi.grade)}">${user.kpi.grade}</span>
+                                                    </div>
+                                                    <div class="progress mt-3" style="height: 8px;">
+                                                        <div class="progress-bar bg-primary" role="progressbar"
+                                                            style="width: ${Math.min(user.kpi.score, 100)}%"></div>
+                                                    </div>
+                                                    <div class="mt-4">
+                                                        <h6 class="fw-bold text-muted small mb-3">Detail Target KPI (${user.kpi.details.length})</h6>
+                                                        <div class="detail-scroll-container" id="kpi-details-${user.id}">
+                                                            ${renderKPIDetails(user.kpi.details, user.id)}
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-6">
-                                                    <div class="section-card">
-                                                        <div class="section-title">
-                                                            <i class="mdi mdi-account-check-outline text-success"></i>
-                                                            Penilaian 360°
-                                                        </div>
-                                                        <div class="score-display">
-                                                            <div class="big-score score-360">${user.assessment_360.score}%</div>
-                                                            <span class="grade-badge ${getGradeClass(user.assessment_360.grade)}">${user.assessment_360.grade}</span>
-                                                        </div>
-                                                        <div class="progress mt-3" style="height: 8px;">
-                                                            <div class="progress-bar bg-success" role="progressbar"
-                                                                style="width: ${Math.min(user.assessment_360.score, 100)}%"></div>
-                                                        </div>
-                                                        <div class="mt-4">
-                                                            <h6 class="fw-bold text-muted small mb-3">Detail Penilaian (${user.assessment_360.details.length})</h6>
-                                                            <div class="detail-scroll-container" id="assessment-360-details-${user.id}">
-                                                                ${renderAssessment360Details(user.assessment_360.details, user.id)}
-                                                            </div>
-                                                        </div>
-                                                        <button type="button" class="btn-detail-360" data-user-id="${user.id}" data-user-name="${safeName}">
-                                                            <i class="mdi mdi-file-document-outline"></i>
-                                                            Lihat Detail Penilaian 360°
-                                                        </button>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="section-card">
+                                                    <div class="section-title">
+                                                        <i class="mdi mdi-account-check-outline text-success"></i>
+                                                        Penilaian 360°
                                                     </div>
+                                                    <div class="score-display">
+                                                        <div class="big-score score-360">${score360Display}</div>
+                                                        <span class="grade-badge ${getGradeClass(user.assessment_360.grade)}">${user.assessment_360.grade}</span>
+                                                    </div>
+                                                    <div class="progress mt-3" style="height: 8px;">
+                                                        <div class="progress-bar bg-success" role="progressbar"
+                                                            style="width: ${Math.min(user.assessment_360.score, 100)}%"></div>
+                                                    </div>
+                                                    <div class="mt-4">
+                                                        <h6 class="fw-bold text-muted small mb-3">Detail Penilaian (${user.assessment_360.details.length})</h6>
+                                                        <div class="detail-scroll-container" id="assessment-360-details-${user.id}">
+                                                            ${renderAssessment360Details(user.assessment_360.details, user.id)}
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" class="btn-detail-360" data-user-id="${user.id}" data-user-name="${safeName}">
+                                                        <i class="mdi mdi-file-document-outline"></i>
+                                                        Lihat Detail Penilaian 360°
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    `;
+                                </div>
+                                `;
                     });
                     html += '</div>';
                     $('#accordionContainer').html(html);
@@ -1327,27 +1403,35 @@
                     if (!details || details.length === 0) {
                         return '<p class="text-muted text-center py-3">Belum ada target KPI</p>';
                     }
+
                     let html = '';
                     details.forEach((detail, idx) => {
                         const chartId = `kpi-chart-${userId}-${idx}`;
                         const statusClass = detail.status === 'Selesai' ? 'status-selesai' :
                             (detail.status === 'Aktif' ? 'status-aktif' : 'status-belum');
+
+                        const progressDisplay = formatPercent(detail.progress);
+
                         html += `
-                                    <div class="detail-item">
-                                        <div class="detail-header">
-                                            <div style="flex: 1;">
-                                                <div class="detail-title">${detail.judul}</div>
-                                                <div class="detail-subtitle">${detail.asistant_route}</div>
-                                            </div>
-                                            <div class="detail-chart" id="${chartId}"></div>
-                                        </div>
-                                        <div class="detail-footer">
-                                            <span>Target: ${formatTarget(detail.nilai_target, detail.tipe_target)}</span>
-                                            <span class="status-badge ${statusClass}">${detail.status}</span>
-                                        </div>
-                                    </div>
-                                    `;
+                        <div class="detail-item">
+                            <div class="detail-header">
+                                <div style="flex: 1;">
+                                    <div class="detail-title">${detail.judul}</div>
+                                    <div class="detail-subtitle">${detail.asistant_route}</div>
+                                </div>
+                                <div class="detail-chart" id="${chartId}"></div>
+                            </div>
+                            <div class="detail-footer">
+                                <div>
+                                    <small class="text-muted d-block">Target: ${formatTarget(detail.nilai_target, detail.tipe_target)}</small>
+                                    <small class="fw-semibold text-primary">Progress: ${progressDisplay}</small>
+                                </div>
+                                <span class="status-badge ${statusClass}">${detail.status}</span>
+                            </div>
+                        </div>
+                        `;
                     });
+
                     return html;
                 }
 
@@ -1358,28 +1442,29 @@
                     let html = '';
                     details.forEach((detail, idx) => {
                         const chartId = `assessment-chart-${userId}-${idx}`;
+                        // ✅ Format persentase dengan koma Indonesia
+                        const scoreDisplay = formatPercent(detail.score);
+                        const rataRataDisplay = formatPercent(detail.rata_rata_nilai);
+
                         html += `
-                                    <div class="detail-item">
-                                        <div class="detail-header">
-                                            <div style="flex: 1;">
-                                                <div class="detail-title">${detail.jenis_penilaian}</div>
-                                                <div class="detail-subtitle">Bobot: ${detail.bobot}% • ${detail.jumlah_evaluator} Evaluator</div>
-                                            </div>
-                                            <div class="detail-chart" id="${chartId}"></div>
-                                        </div>
-                                        <div class="detail-footer">
-                                            <span>Rata-rata Nilai: ${detail.rata_rata_nilai}</span>
-                                            <span class="fw-bold text-success">Score: ${detail.score}%</span>
-                                        </div>
-                                    </div>
-                                    `;
+                <div class="detail-item">
+                    <div class="detail-header">
+                        <div style="flex: 1;">
+                            <div class="detail-title">${detail.jenis_penilaian}</div>
+                            <div class="detail-subtitle">Bobot: ${detail.bobot}% • ${detail.jumlah_evaluator} Evaluator</div>
+                        </div>
+                        <div class="detail-chart" id="${chartId}"></div>
+                    </div>
+                    <div class="detail-footer">
+                        <span>Rata-rata Nilai: ${rataRataDisplay}</span>
+                        <span class="fw-bold text-success">Score: ${scoreDisplay}</span>
+                    </div>
+                </div>
+                `;
                     });
                     return html;
                 }
 
-                // ============================================
-                // MODAL BUTTON EVENTS
-                // ============================================
                 function bindModalButtonEvents() {
                     $('.btn-detail-360').off('click').on('click', function (e) {
                         e.stopPropagation();
@@ -1413,9 +1498,6 @@
                     });
                 }
 
-                // ============================================
-                // TAB CLICK HANDLER (Event Delegation)
-                // ============================================
                 $(document).on('click', '#jenis-penilaian-tab .modern-tab-btn', function () {
                     $('#jenis-penilaian-tab .modern-tab-btn').removeClass('active-tab');
                     $(this).addClass('active-tab');
@@ -1433,9 +1515,6 @@
                     }
                 });
 
-                // ============================================
-                // CHART FUNCTIONS
-                // ============================================
                 function initializeAllCharts() {
                     $('.user-accordion-body.show').each(function () {
                         initializeChartsInContainer($(this));
@@ -1509,6 +1588,23 @@
                     if (type === 'rupiah') return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
                     else if (type === 'persen') return value + '%';
                     return new Intl.NumberFormat('id-ID').format(value);
+                }
+
+                function formatPercent(value) {
+                    if (value === null || value === undefined || value === '' || isNaN(value)) {
+                        return '0,00%';
+                    }
+
+                    let num = Number(value);
+                    if (!isFinite(num)) return '0,00%';
+                    num = Math.max(0, Math.min(100, num));
+                    num = Math.round(num * 100) / 100;
+                    const parts = num.toFixed(2).split('.');
+                    const integerPart = parts[0];
+                    const decimalPart = parts[1];
+
+                    // Ganti titik dengan koma (format Indonesia)
+                    return integerPart + ',' + decimalPart + '%';
                 }
             });
         </script>

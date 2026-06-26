@@ -15769,8 +15769,7 @@ class TargetKPIController extends Controller
     private function calculatePerformanceScore($employee, $tahun)
     {
         $karyawanIds = [$employee->id];
-
-        $targets = targetKPI::with(['detailTargetKPI'])
+        $targets = targetKPI::with(['detailTargetKPI.dataTarget'])
             ->whereYear('created_at', $tahun)
             ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
                 $q->whereIn('id_karyawan', $karyawanIds);
@@ -15779,46 +15778,106 @@ class TargetKPIController extends Controller
 
         if ($targets->isEmpty()) return 0;
 
+        // ✅ DAFTAR ROUTE GENERAL (sama seperti di getKPIDetails)
+        $generalRoutes = [
+            'pemasukan kotor',
+            'pemasukan bersih',
+            'target penjualan project tahunan',
+            'target penjualan tahunan',
+            'rasio biaya operasional terhadap revenue',
+            'meningkatkan revenue perusahaan',
+            'customer acquisition cost',
+            'biaya akuisisi perclient',
+            'performa kpi departemen',
+            'kepuasan pelanggan',
+            'peserta puas dengan pelayanan dan fasilitas training',
+            'penanganan komplain perseta',
+            'penanganan komplain peserta',
+            'outstanding',
+            'laporan analisis keuangan',
+            'pencairan biaya operasional',
+            'penyelesaian tagihan perusahaan',
+            'akurasi pencatatan masuk',
+            'pelaksanaan kegiatan karyawan',
+            'pengeluaran biaya karyawan',
+            'perbaikan kendaraan',
+            'kontrol pengeluaran transportasi',
+            'report kondisi kendaraan',
+            'feedback kenyamanan berkendaran',
+            'feedback kebersihan dan kenyamanan',
+            'kepuasan client itsm',
+            'inovation adaption rate',
+            'availability sistem internal kritis',
+            'meningkatkan kepuasan dan loyalitas peserta/client',
+            'persentase gap kompetensi tim terhadap standar skill',
+            'ketepatan waktu penyelesaian fitur',
+            'mengukur kualitas aplikasi agar minim bug',
+            'konsistensi campaign digital',
+            'efektifitas digital marketing',
+            'keberhasilan support memenuhi sla',
+            'kualitas layanan exam',
+            'kepuasan peserta pelatihan',
+            'upseling lanjutan materi',
+            'presentase kinerja instruktur',
+            'pengembangan kurikulum pelatihan',
+            'peningkatan knowledge sharing',
+            'peningkatan kontribusi pelatihan',
+            'evaluasi kinerja instruktur',
+            'evaluasi kinerja sales',
+            'laporan mom',
+            'akurasi kelengkapan data penjualan',
+            'ketepatan waktu po',
+            'kualitas dokumentasi support dan proctor',
+        ];
+
         $allProgressValues = [];
         $processedTargets = [];
 
         foreach ($targets as $target) {
             foreach ($target->detailTargetKPI as $detail) {
-
                 $assignedIds = $detail->detailPersonKPI
                     ->whereIn('id_karyawan', $karyawanIds)
                     ->pluck('id_karyawan')
                     ->unique()
                     ->toArray();
 
-                if (empty($assignedIds)) {
-                    continue;
-                }
+                if (empty($assignedIds)) continue;
 
                 foreach ($assignedIds as $personId) {
-
                     $targetKey = $target->id . '_' . $detail->id . '_' . $personId;
-                    if (isset($processedTargets[$targetKey])) {
-                        continue;
-                    }
+                    if (isset($processedTargets[$targetKey])) continue;
                     $processedTargets[$targetKey] = true;
 
-                    $result = $this->getCalculationByRoute($target, $personId);
+                    $targetForCalc = $this->prepareTargetForCalculation($target, $detail);
+                    $asistantRoute = strtolower($detail->dataTarget?->asistant_route ?? '');
+
+                    $personIdForCalc = in_array($asistantRoute, $generalRoutes) ? null : $personId;
+
+                    $result = $this->getCalculationByRoute($targetForCalc, $personIdForCalc);
                     if (!$result || !isset($result['progress'])) continue;
 
-                    $rawProgress = $this->normalizeNumber($result['progress']);
-                    $percent = max(0, min(100, round($rawProgress, 2)));
+                    $rawProgress = (float) $result['progress'];
+                    $nilaiTarget = (float) ($detail->dataTarget?->nilai_target ?? $detail->nilai_target);
+                    $tipeTarget = $detail->tipe_target;
 
+                    $percent = 0;
+                    if ($rawProgress > 0 && $nilaiTarget > 0) {
+                        if ($tipeTarget === 'rupiah' || $tipeTarget === 'angka') {
+                            $percent = ($rawProgress / $nilaiTarget) * 100;
+                        } else {
+                            $percent = $rawProgress;
+                        }
+                    }
+
+                    $percent = max(0, min(100, round($percent, 2)));
                     $allProgressValues[] = $percent;
                 }
             }
         }
 
         if (empty($allProgressValues)) return 0;
-
         return round(array_sum($allProgressValues) / count($allProgressValues), 2);
     }
-
     private function calculateGrowthPotential($employee, $tahun)
     {
         $currentProgress = $this->getAverageProgressFromTargets($tahun, $employee->id);
@@ -16601,6 +16660,59 @@ class TargetKPIController extends Controller
             })
             ->get();
 
+        // ✅ DAFTAR ROUTE YANG BERSIFAT GENERAL / PERUSAHAAN / DIVISI
+        // Target ini akan mengambil total data keseluruhan, tidak peduli siapa yang login/ditugaskan
+        $generalRoutes = [
+            'pemasukan kotor',
+            'pemasukan bersih',
+            'target penjualan project tahunan',
+            'target penjualan tahunan',
+            'rasio biaya operasional terhadap revenue',
+            'meningkatkan revenue perusahaan',
+            'customer acquisition cost',
+            'biaya akuisisi perclient',
+            'performa kpi departemen',
+            'kepuasan pelanggan',
+            'peserta puas dengan pelayanan dan fasilitas training',
+            'penanganan komplain perseta',
+            'penanganan komplain peserta',
+            'outstanding',
+            'laporan analisis keuangan',
+            'pencairan biaya operasional',
+            'penyelesaian tagihan perusahaan',
+            'akurasi pencatatan masuk',
+            'pelaksanaan kegiatan karyawan',
+            'pengeluaran biaya karyawan',
+            'perbaikan kendaraan',
+            'kontrol pengeluaran transportasi',
+            'report kondisi kendaraan',
+            'feedback kenyamanan berkendaran',
+            'feedback kebersihan dan kenyamanan',
+            'kepuasan client itsm',
+            'inovation adaption rate',
+            'availability sistem internal kritis',
+            'meningkatkan kepuasan dan loyalitas peserta/client',
+            'persentase gap kompetensi tim terhadap standar skill',
+            'ketepatan waktu penyelesaian fitur',
+            'mengukur kualitas aplikasi agar minim bug',
+            'konsistensi campaign digital',
+            'efektifitas digital marketing',
+            'keberhasilan support memenuhi sla',
+            'kualitas layanan exam',
+            'kepuasan peserta pelatihan',
+            'upseling lanjutan materi',
+            'presentase kinerja instruktur',
+            'pengembangan kurikulum pelatihan',
+            'peningkatan knowledge sharing',
+            'peningkatan kontribusi pelatihan',
+            'evaluasi kinerja instruktur',
+            'evaluasi kinerja sales',
+            'laporan mom',
+            'akurasi kelengkapan data penjualan',
+            'ketepatan waktu po',
+            'kualitas dokumentasi support dan proctor',
+        ];
+
         $details = [];
         foreach ($targets as $target) {
             foreach ($target->detailTargetKPI as $detail) {
@@ -16609,36 +16721,170 @@ class TargetKPIController extends Controller
 
                 if ($assignedPersons->isEmpty()) continue;
 
-                $result = $this->getCalculationByRoute($target, $karyawanId);
-                if (!$result || !isset($result['progress'])) continue;
+                $targetForCalc = $this->prepareTargetForCalculation($target, $detail);
 
-                $rawProgress = $this->normalizeNumber($result['progress']);
+                $asistantRoute = strtolower($detail->dataTarget?->asistant_route ?? '');
+
+                // ✅ LOGIKA PENTING: 
+                // Jika route ada di daftar general, kirim NULL agar ambil data total perusahaan.
+                // Jika tidak ada di daftar (misal: sertifikasi, tugas harian), kirim $karyawanId agar tetap individual.
+                $personIdForCalc = in_array($asistantRoute, $generalRoutes) ? null : $karyawanId;
+
+                $rawProgress = $this->calculateProgressByRoute($asistantRoute, $targetForCalc, $personIdForCalc);
+
                 $nilaiTarget = $detail->dataTarget?->nilai_target ?? $detail->nilai_target;
-                $tipeTarget = $detail->tipe_target;
+                $tipeTarget  = $detail->tipe_target;
 
+                // Hitung persentase berdasarkan tipe target
                 $percent = 0;
-                if ($tipeTarget === 'rupiah' && $nilaiTarget > 0) {
-                    $percent = ($rawProgress / $nilaiTarget) * 100;
-                } elseif ($tipeTarget === 'angka' && $nilaiTarget > 0) {
-                    $percent = ($rawProgress / $nilaiTarget) * 100;
-                } else {
-                    $percent = $rawProgress;
+                if ($rawProgress > 0 && $nilaiTarget > 0) {
+                    if ($tipeTarget === 'rupiah' || $tipeTarget === 'angka') {
+                        $percent = ($rawProgress / $nilaiTarget) * 100;
+                    } else {
+                        $percent = $rawProgress;
+                    }
                 }
 
-                $percent = max(0, min(100, round($percent, 1)));
+                $percent = max(0, min(100, round($percent, 2)));
+
+                Log::info("KPI Detail Progress", [
+                    'target_id' => $target->id,
+                    'detail_id' => $detail->id,
+                    'detail_jangka' => $detail->detail_jangka,
+                    'judul' => $target->judul,
+                    'asistant_route' => $asistantRoute,
+                    'is_general' => is_null($personIdForCalc), // Debugging: true jika general
+                    'raw_progress' => $rawProgress,
+                    'nilai_target' => $nilaiTarget,
+                    'percent' => $percent
+                ]);
 
                 $details[] = [
-                    'judul' => $target->judul,
-                    'asistant_route' => $detail->dataTarget?->asistant_route ?? '-',
-                    'tipe_target' => $tipeTarget,
-                    'nilai_target' => $nilaiTarget,
-                    'progress' => $percent,
-                    'status' => $percent >= 100 ? 'Selesai' : ($percent > 0 ? 'Aktif' : 'Belum Mulai')
+                    'judul'            => $target->judul,
+                    'asistant_route'   => $detail->dataTarget?->asistant_route ?? '-',
+                    'tipe_target'      => $tipeTarget,
+                    'nilai_target'     => $nilaiTarget,
+                    'progress'         => $percent,
+                    'progress_display' => $this->formatProgressDisplay($rawProgress, $tipeTarget),
+                    'status'           => $percent >= 100 ? 'Selesai' : ($percent > 0 ? 'Aktif' : 'Belum Mulai')
                 ];
             }
         }
-
         return $details;
+    }
+
+    /**
+     * ✅ METHOD BARU: Siapkan target untuk kalkulasi
+     * Memastikan detail yang sedang diproses menjadi "first" di detailTargetKPI
+     */
+    private function prepareTargetForCalculation($target, $currentDetail)
+    {
+        // Buat clone target
+        $targetClone = clone $target;
+
+        // Ambil semua detail dan reorder agar currentDetail menjadi first
+        $details = $target->detailTargetKPI->values()->all();
+        $currentIndex = -1;
+
+        foreach ($details as $index => $detail) {
+            if ($detail->id === $currentDetail->id) {
+                $currentIndex = $index;
+                break;
+            }
+        }
+
+        // Jika currentDetail bukan first, swap dengan first
+        if ($currentIndex > 0) {
+            $temp = $details[0];
+            $details[0] = $details[$currentIndex];
+            $details[$currentIndex] = $temp;
+        }
+
+        // Set relation dengan collection yang sudah di-reorder
+        $targetClone->setRelation('detailTargetKPI', collect($details));
+
+        return $targetClone;
+    }
+
+    /**
+     * Hitung progress berdasarkan asistant_route dari $detail yang sedang diproses
+     */
+    private function calculateProgressByRoute(string $asistantRoute, $target, $personId)
+    {
+        return match ($asistantRoute) {
+            'kepuasan pelanggan' => $this->calculateProgressKepuasanPelanggan($target, $personId),
+            'pemasukan kotor' => $this->calculatePemasukanKotor($target, $personId),
+            'pemasukan bersih' => $this->calculatePemasukanBersih($target, $personId),
+            'target penjualan project tahunan' => $this->calculateTargetPenjualanProjectTahunan($target, $personId),
+            'rasio biaya operasional terhadap revenue' => $this->calculateRasioBiayaOperasionalTerhadapRevenue($target, $personId),
+            'performa kpi departemen' => $this->calculatePerformaKPIDepartemen($target, $personId),
+            'peserta puas dengan pelayanan dan fasilitas training' => $this->calculatePesertaPuasDenganPelayananDanFasilitasTraining($target, $personId),
+            'dorong inovasi pelayanan' => $this->calculateDorongInovasiPelayanan($target, $personId),
+            'penanganan komplain perseta', 'penanganan komplain peserta' => $this->calculatePenangananKomplainPerseta($target, $personId),
+            'report persiapan kelas' => $this->calculateReportPersiapanKelas($target, $personId),
+            'outstanding' => $this->calculateOutstanding($target, $personId),
+            'inisiatif efisiensi keuangan' => $this->calculateInisiatifEfisiensiKeuangan($target, $personId),
+            'mengurangi manual work dan error' => $this->calculateMengurangiManualWorkDanError($target, $personId),
+            'laporan analisis keuangan' => $this->calculateLaporanAnalisisKeuangan($target, $personId),
+            'pencairan biaya operasional' => $this->calculatePencairanBiayaOperasional($target, $personId),
+            'penyelesaian tagihan perusahaan' => $this->calculatePenyelesaianTagihanPerusahaan($target, $personId),
+            'akurasi pencatatan masuk' => $this->calculateAkurasiPencatatanMasuk($target, $personId),
+            'pelaksanaan kegiatan karyawan' => $this->calculatePelaksanaanKegiatanKaryawan($target, $personId),
+            'pengeluaran biaya karyawan' => $this->calculatePengeluaranBiayaKaryawan($target, $personId),
+            'administrasi karyawan' => $this->calculateAdministrasiKaryawan($target, $personId),
+            'perbaikan kendaraan' => $this->calculatePerbaikanKendaraan($target, $personId),
+            'kontrol pengeluaran transportasi' => $this->calculateKontrolPengeluaranTransportasi($target, $personId),
+            'report kondisi kendaraan' => $this->calculateReportKondisiKendaraan($target, $personId),
+            'feedback kenyamanan berkendaran' => $this->calculateFeedbackKenyamananBerkendara($target, $personId),
+            'ketepatan waktu po' => $this->calculateKetepatanWaktuPo($target, $personId),
+            'kualitas dokumentasi support dan proctor' => $this->calculatekualitasDokumentasiSupportDanProctor($target, $personId),
+            'feedback kebersihan dan kenyamanan' => $this->calculateFeedbackKebersihanDanKenyamanan($target, $personId),
+            'penyelesaian tugas harian' => $this->calculatePenyelesaianTugasHarian($target, $personId),
+            'kepuasan client itsm' => $this->calculateProgressKepuasanClientITSM($target, $personId),
+            'inovation adaption rate' => $this->calculateInovationAdaptionRate($target, $personId),
+            'availability sistem internal kritis' => $this->calculateAvailabilitySistemInternalKritis($target, $personId),
+            'meningkatkan kepuasan dan loyalitas peserta/client' => $this->calculateMeningkatkanKepuasanDanLoyalitasPeserta($target, $personId),
+            'persentase gap kompetensi tim terhadap standar skill' => $this->calculatePersentaseGapKompetensi($target, $personId),
+            'ketepatan waktu penyelesaian fitur' => $this->calculateProgressKetepatanWaktuPenyelesaianFitur($target, $personId),
+            'mengukur kualitas aplikasi agar minim bug' => $this->calculateMengukurKualitasAplikasiAgarMinimBug($target, $personId),
+            'konsistensi campaign digital' => $this->calculateKonsistensiCampaignDigital($target, $personId),
+            'efektifitas digital marketing' => $this->calculateEfektifitasDiitalMarketing($target, $personId),
+            'keberhasilan support memenuhi sla' => $this->calculateTingkatKeberhasilanSupportMemenuhiSLA($target, $personId),
+            'kualitas layanan exam' => $this->calculateKualitasLayananExam($target, $personId),
+            'kepuasan peserta pelatihan' => $this->calculateKepuasanPesertaPelatihan($target, $personId),
+            'upseling lanjutan materi' => $this->calculateUpselingLanjutanMateri($target, $personId),
+            'sertifikasi kompetensi internal' => $this->calculateSertifikasiKompetensiInternal($target, $personId),
+            'pelatihan kompetensi eksternal' => $this->calculatePelatihanKompetensiEksternal($target, $personId),
+            'presentase kinerja instruktur' => $this->calculatePresentaseKinerjaInstruktur($target, $personId),
+            'pengembangan kurikulum pelatihan' => $this->calculatePengembanganKurikulumPelatihan($target, $personId),
+            'peningkatan knowledge sharing' => $this->calculatePeningkatanKnowledgeSharing($target, $personId),
+            'peningkatan kontribusi pelatihan' => $this->calculatePeningkatanKontribusiPelatihan($target, $personId),
+            'evaluasi kinerja instruktur' => $this->calculateEvaluasiKinerjaInstruktur($target, $personId),
+            'target penjualan tahunan' => $this->calculateTargetPenjualanTahunan($target, $personId),
+            'peningkatan kemampuan kompetensi sales' => $this->calculatePeningkatanKemampuanKompetensiSales($target, $personId),
+            'customer acquisition cost' => $this->calculateCustomerAcquisitionCost($target, $personId),
+            'meningkatkan revenue perusahaan' => $this->calculateMeningkatkanRevenuePerusahaan($target, $personId),
+            'evaluasi kinerja sales' => $this->calculateEvaluasiKinerjaSales($target, $personId),
+            'biaya akuisisi perclient' => $this->calculateBiayaAkuisisiClient($target, $personId),
+            'laporan mom' => $this->calculateLaporanMOM($target, $personId),
+            'akurasi kelengkapan data penjualan' => $this->calculateAkurasiKelengkapanDataPenjualan($target, $personId),
+            'todo administrasi' => $this->calculateTodoAdministrasi($target),
+            default => 0
+        };
+    }
+
+    // Helper untuk memformat tampilan teks progress
+    private function formatProgressDisplay($rawProgress, $tipeTarget)
+    {
+        if ($rawProgress <= 0) return '-';
+
+        if ($tipeTarget === 'rupiah') {
+            return 'Rp ' . number_format((float)$rawProgress, 0, ',', '.');
+        } elseif ($tipeTarget === 'persen') {
+            return round($rawProgress, 2) . '%';
+        }
+
+        return number_format((float)$rawProgress, 0, ',', '.');
     }
 
     private function getAssessment360Details($karyawanId, $tahun)
