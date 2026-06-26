@@ -279,11 +279,20 @@
                         data: { id_rkm: idRkm },
                         dataType: 'json',
                         success: function (response) {
+                            console.log(response);
                             if (response.rkm) {
                                 var rkm = response.rkm;
                                 $('#nama_materi').val(rkm.materi.nama_materi);
-                                $('#tanggal_awal').val(rkm.tanggal_awal);
-                                $('#tanggal_akhir').val(rkm.tanggal_akhir);
+                                var tanggalAwal = rkm.tanggal_awal
+                                    ? rkm.tanggal_awal.split('T')[0]
+                                    : '';
+
+                                var tanggalAkhir = rkm.tanggal_akhir
+                                    ? rkm.tanggal_akhir.split('T')[0]
+                                    : '';
+
+                                $('#tanggal_awal').val(tanggalAwal);
+                                $('#tanggal_akhir').val(tanggalAkhir);
                                 $('#rkm-id').show(); // Menampilkan elemen div data peserta
 
                             } else {
