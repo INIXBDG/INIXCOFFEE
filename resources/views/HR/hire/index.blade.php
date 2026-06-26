@@ -1763,7 +1763,7 @@
 
     <div id="toastContainer"></div>
 
-    <div class="container-fluid px-4 py-4">
+    <div class="container-fluid">
 
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
             <div>

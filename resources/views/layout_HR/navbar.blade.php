@@ -43,21 +43,9 @@
                         <div class="dropdown-divider my-1"></div>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="#">
+                        <a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#exampleModal">
                             <i class="iconify bx bx-user me-2" data-icon="bx:user"></i>
                             <span>My Profile</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="#">
-                            <i class="iconify bx bx-cog me-2" data-icon="bx:cog"></i>
-                            <span>Settings</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="#">
-                            <i class="iconify bx bx-list-ul me-2" data-icon="bx:list-ul"></i>
-                            <span>Activity Log</span>
                         </a>
                     </li>
                     <li>
@@ -75,3 +63,81 @@
         </ul>
     </div>
 </nav>
+<div class="modal fade" id="exampleModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-person-circle me-2"></i>
+                    Profil Akun
+                </h5>
+
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Header Profile -->
+                <div class="text-center mb-4">
+
+                    <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center"
+                        style="width:60px;height:60px;">
+                        <img src="{{ auth()->user()->foto ?? asset('assets/img/avatars/1.png') }}" alt="User Avatar"
+                            class="w-px-1 h-auto rounded-circle">
+                    </div>
+
+                    <h4 class="mt-3 mb-1">
+                        {{ auth()->user()->karyawan->nama_lengkap ?? auth()->user()->username }}
+                    </h4>
+                </div>
+
+                <div class="border rounded-3 p-3">
+
+                    <div class="row mb-3">
+                        <div class="col-4 text-muted">
+                            Username
+                        </div>
+                        <div class="col-8 fw-semibold">
+                            {{ auth()->user()->username }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-4 text-muted">
+                            Email
+                        </div>
+                        <div class="col-8 fw-semibold">
+                            {{ auth()->user()->karyawan->email }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-4 text-muted">
+                            Jabatan
+                        </div>
+                        <div class="col-8 fw-semibold">
+                            {{ auth()->user()->karyawan->jabatan ?? '-' }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-4 text-muted">
+                            Divisi
+                        </div>
+                        <div class="col-8 fw-semibold">
+                            {{ auth()->user()->karyawan->divisi ?? '-' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0">
+                <button class="btn btn-primary w-30" data-bs-dismiss="modal">
+                    Tutup
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -368,25 +368,25 @@
         }
     </style>
 
-    <div class="container-fluid py-4">
-        {{-- ==================== TABS ==================== --}}
-        <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="jobdesk-tab" data-bs-toggle="tab" data-bs-target="#jobdesk-pane"
-                    type="button">Job Desk</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="sop-tab" data-bs-toggle="tab" data-bs-target="#sop-pane"
-                    type="button">SOP</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-pane"
-                    type="button">Job Profile</button>
-            </li>
-        </ul>
+    <div class="container-fluid">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="jobdesk-tab" data-bs-toggle="tab" data-bs-target="#jobdesk-pane"
+                        type="button">Job Desk</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sop-tab" data-bs-toggle="tab" data-bs-target="#sop-pane"
+                        type="button">SOP</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-pane"
+                        type="button">Job Profile</button>
+                </li>
+            </ul>
+        </div>
 
         <div class="tab-content" id="mainTabsContent">
-            {{-- ==================== TAB JOB DESK ==================== --}}
             <div class="tab-pane fade show active" id="jobdesk-pane" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0 fw-bold">Job Desk</h5>
@@ -598,8 +598,11 @@
                                                 </div>
                                             </div>
 
-                                            @if($karyawan->jobProfile)
-                                                @php $data = $karyawan->jobProfile; $isPrivate = true; @endphp
+                                            @if ($karyawan->jobProfile)
+                                                @php
+                                                    $data = $karyawan->jobProfile;
+                                                    $isPrivate = true;
+                                                @endphp
                                                 @include('HR.job_desk._profile_section')
                                             @else
                                                 <div class="empty-text mt-1">Belum ada job profile</div>
@@ -1265,15 +1268,20 @@
                         // MODE UPDATE - data ditemukan
                         isProfileUpdate = true;
                         document.getElementById('modalProfileTitle').innerHTML = `Edit Job Profile — ${namaKaryawan}`;
-                        document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-save me-1"></i>Update';
-                        populateSimpleField('profQualificationContainer', 'qualifications[]', data.qualifications || [], 'Qualification');
-                        populateSimpleField('profDescriptionContainer', 'descriptions[]', data.descriptions || [], 'Job Description');
-                        populateSimpleField('profCompensationContainer', 'compensation_benefit[]', data.compensation_benefit || [], 'Compensation & Benefit');
+                        document.getElementById('btnProfileSubmit').innerHTML =
+                            '<i class="fa-solid fa-save me-1"></i>Update';
+                        populateSimpleField('profQualificationContainer', 'qualifications[]', data.qualifications || [],
+                            'Qualification');
+                        populateSimpleField('profDescriptionContainer', 'descriptions[]', data.descriptions || [],
+                            'Job Description');
+                        populateSimpleField('profCompensationContainer', 'compensation_benefit[]', data
+                            .compensation_benefit || [], 'Compensation & Benefit');
                     } else {
                         // MODE CREATE - data belum ada
                         isProfileUpdate = false;
                         document.getElementById('modalProfileTitle').innerHTML = `Tambah Job Profile — ${namaKaryawan}`;
-                        document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-save me-1"></i>Simpan';
+                        document.getElementById('btnProfileSubmit').innerHTML =
+                            '<i class="fa-solid fa-save me-1"></i>Simpan';
                     }
                     new bootstrap.Modal(document.getElementById('modalProfile')).show();
                 })
@@ -1282,7 +1290,8 @@
                     // Fallback: anggap mode create jika error
                     isProfileUpdate = false;
                     document.getElementById('modalProfileTitle').innerHTML = `Tambah Job Profile — ${namaKaryawan}`;
-                    document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-save me-1"></i>Simpan';
+                    document.getElementById('btnProfileSubmit').innerHTML =
+                        '<i class="fa-solid fa-save me-1"></i>Simpan';
                     new bootstrap.Modal(document.getElementById('modalProfile')).show();
                 });
         }
@@ -1291,16 +1300,16 @@
             e.preventDefault();
             const formData = new FormData(this);
             const karyawanId = document.getElementById('profileKaryawanId').value;
-            
+
             // Tambahkan karyawan_id ke formData jika belum ada
             if (!formData.has('karyawan_id')) {
                 formData.append('karyawan_id', karyawanId);
             }
-            
-            const url = isProfileUpdate 
-                ? `/HR-dashboard/karyawan-profile/${karyawanId}` 
-                : '/HR-dashboard/karyawan-profile';
-            
+
+            const url = isProfileUpdate ?
+                `/HR-dashboard/karyawan-profile/${karyawanId}` :
+                '/HR-dashboard/karyawan-profile';
+
             if (isProfileUpdate) {
                 formData.append('_method', 'PUT');
             }
@@ -1328,7 +1337,7 @@
                 })
                 .catch(err => showAlert('alertContainerProfile', 'error', 'Error: ' + err.message));
         });
-        
+
         function confirmDeleteProfile(karyawanId) {
             if (!confirm('Yakin ingin menghapus Job Profile karyawan ini?')) return;
             fetch(`/HR-dashboard/karyawan-profile/${karyawanId}`, {

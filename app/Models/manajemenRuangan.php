@@ -10,6 +10,4 @@ class manajemenRuangan extends Model
     use HasFactory;
 
     protected $fillable = ['ruangan', 'tanggal', 'jam_mulai', 'jam_selesai', 'kebutuhan', 'keterangan'];
-
-    
 }

@@ -772,7 +772,6 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -821,7 +820,7 @@
             "performa kpi departemen": "/kpi-data/table-data",
             "peserta puas dengan pelayanan dan fasilitas training": "/feedback",
             "dorong inovasi pelayanan": "/kpi-data/table-data",
-            "penanganan komplain perseta": "/komplain-peserta",
+            "penanganan komplain peserta": "/komplain-peserta",
             "report persiapan kelas": "/office/dashboard",
             "outstanding": "/outstanding",
             "inisiatif efisiensi keuangan": "/kpi-data/table-data",
@@ -861,14 +860,16 @@
             "target penjualan tahunan": "/rkm",
             "biaya akuisisi perclient": "/crm/peluang/index",
             "peningkatan kemampuan kompetensi sales": "https://elearning.inixindobdg.co.id/login/index.php?loginredirect=1",
-            "meningkatkan revenue perusahaan": "/rkm",
+            "meningkatkan revenue perusahaan": "/office/approval-pendapatan/index",
             "customer acquisition cost": "/crm/peluang/index",
             "evaluasi kinerja sales": "/crm/aktivitas",
             "laporan mom": "/crm/laporan-harian",
             "akurasi kelengkapan data penjualan": "/crm/laporanPenjualan",
             "todo administrasi": "/crm/todo-administrasi",
             "ketepatan waktu po": "/office/modul/index",
-            "kualitas dokumentasi support dan proctor": "/daftar-peserta-exam"
+            "kualitas dokumentasi support dan proctor": "/daftar-peserta-exam",
+            "pendapatan penjualan project": "/projects/leads",
+            "leads project": "/projects/leads"
         };
 
         $(document).on('click', '.buttonGoRoute', function() {
@@ -1000,6 +1001,12 @@
                 e.preventDefault();
                 const form = $(this);
                 const formData = new FormData(this);
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                isSubmitting = true;
                 $.ajax({
                     url: form.attr('action'),
                     type: 'POST',
@@ -1019,6 +1026,9 @@
                         if (errors) message = Object.values(errors).flat().join('<br>');
                         else if (xhr.responseJSON?.message) message = xhr.responseJSON.message;
                         Swal.fire('Error', message, 'error');
+                    },
+                    complete: function() {
+                        isSubmitting = false;
                     }
                 });
             });
@@ -1143,6 +1153,324 @@
                         const allowedAssistantRoutesForKepuasanPelanggan = ['Kepuasan Pelanggan', 'kepuasan pelanggan'];
                         const allowedAssistantRoutesForLaporanAnalisisKeuangan = ['laporan analisis keuangan'];
 
+                        let contentKalenderInstruktur = '';
+                        const instrukturDetails = Array.isArray(dataDetail.instruktur_details) ? dataDetail.instruktur_details : [];
+                        const hariLiburNasional = dataDetail.hari_libur_nasional || { jumlah: 0, daftar: {} };
+
+                        if (instrukturDetails.length > 0) {
+                            const NAMA_BULAN_KAL = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                            const NAMA_HARI = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+
+                            // Simpan data instruktur ke window
+                            window.__instrukturData = instrukturDetails;
+                            window.__currentMonthIndex = {}; // Track bulan aktif per instruktur
+
+                            // Fungsi untuk render kalender untuk SATU bulan
+                            function buildKalenderBulanHtml(instruktur, bulanKey) {
+                                const kalender = instruktur.kalender || {};
+                                if (!kalender[bulanKey]) return '<div class="text-muted text-center py-4">Tidak ada data untuk bulan ini.</div>';
+
+                                const [thn, bln] = bulanKey.split('-');
+                                const namaBulan = NAMA_BULAN_KAL[parseInt(bln, 10) - 1];
+                                const daysInMonth = new Date(thn, bln, 0).getDate();
+                                const firstDayOfWeek = new Date(thn, parseInt(bln,10)-1, 1).getDay();
+
+                                let cellsHtml = '';
+                                NAMA_HARI.forEach(h => { cellsHtml += `<div class="kal-header">${h}</div>`; });
+                                for (let i = 0; i < firstDayOfWeek; i++) {
+                                    cellsHtml += `<div class="kal-cell kal-empty"></div>`;
+                                }
+                                for (let d = 1; d <= daysInMonth; d++) {
+                                    const cellData = kalender[bulanKey][d] || { status: 'empty', keterangan: '' };
+                                    const statusClass = 'kal-' + cellData.status;
+                                    cellsHtml += `
+                                        <div class="kal-cell ${statusClass}" title="${cellData.keterangan || ''}" data-bs-toggle="tooltip">
+                                            <div class="kal-day">${d}</div>
+                                        </div>
+                                    `;
+                                }
+
+                                const monthStats = Object.values(kalender[bulanKey]).reduce((acc, cur) => {
+                                    acc[cur.status] = (acc[cur.status] || 0) + 1;
+                                    return acc;
+                                }, {});
+
+                                return `
+                                    <div class="kalender-bulan-slide" data-bulan="${bulanKey}">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-semibold mb-0">${namaBulan} ${thn}</h6>
+                                            <div class="d-flex gap-2 small">
+                                                <span class="badge bg-success">Aktif: ${monthStats.working || 0}</span>
+                                                <span class="badge bg-warning text-dark">Cuti: ${monthStats.cuti || 0}</span>
+                                                <span class="badge bg-danger">Libur: ${monthStats.libur || 0}</span>
+                                            </div>
+                                        </div>
+                                        <div class="kalender-grid">${cellsHtml}</div>
+                                    </div>
+                                `;
+                            }
+
+                            // Fungsi navigasi bulan slider
+                            window.showKalenderBulan = function(instrukturId, bulanIndex) {
+                                const instruktur = window.__instrukturData.find(i => i.id == instrukturId);
+                                if (!instruktur) return;
+
+                                const kalender = instruktur.kalender || {};
+                                const bulanKeys = Object.keys(kalender).sort();
+                                const totalBulan = bulanKeys.length;
+
+                                if (totalBulan === 0) return;
+
+                                // Wrap around
+                                if (bulanIndex < 0) bulanIndex = totalBulan - 1;
+                                if (bulanIndex >= totalBulan) bulanIndex = 0;
+
+                                window.__currentMonthIndex[instrukturId] = bulanIndex;
+
+                                const bulanKey = bulanKeys[bulanIndex];
+                                const slideContainer = document.getElementById(`kalenderSlide_${instrukturId}`);
+                                if (slideContainer) {
+                                    slideContainer.innerHTML = buildKalenderBulanHtml(instruktur, bulanKey);
+                                }
+
+                                // Update counter
+                                const counterEl = document.getElementById(`bulanCounter_${instrukturId}`);
+                                if (counterEl) {
+                                    counterEl.textContent = `${bulanIndex + 1} dari ${totalBulan} bulan`;
+                                }
+
+                                // Update tombol
+                                const prevBtn = document.getElementById(`btnPrevBulan_${instrukturId}`);
+                                const nextBtn = document.getElementById(`btnNextBulan_${instrukturId}`);
+                                if (prevBtn) prevBtn.disabled = (totalBulan <= 1);
+                                if (nextBtn) nextBtn.disabled = (totalBulan <= 1);
+                            };
+
+                            // Fungsi untuk render detail cuti
+                            function buildCutiHtml(instruktur) {
+                                const cutiEntries = Object.entries(instruktur.daftar_cuti || {});
+                                if (cutiEntries.length === 0) return '';
+
+                                return `
+                                    <div class="mt-3">
+                                        <h6 class="fw-semibold small text-muted mb-2"><i class="fa-solid fa-suitcase-rolling me-1"></i>Detail Cuti (${cutiEntries.length} hari)</h6>
+                                        <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                            <table class="table table-sm table-bordered mb-0">
+                                                <thead class="table-warning"><tr><th>Tanggal</th><th>Tipe</th><th>Alasan</th></tr></thead>
+                                                <tbody>
+                                                    ${cutiEntries.map(([tgl, dt]) => `
+                                                        <tr>
+                                                            <td class="small">${new Date(tgl).toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'})}</td>
+                                                            <td class="small">${dt.tipe || '-'}</td>
+                                                            <td class="small">${dt.alasan || '-'}</td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+
+                            // Libur Nasional
+                            let liburNasionalHtml = '';
+                            const liburEntries = Object.entries(hariLiburNasional.daftar || {});
+                            if (liburEntries.length > 0) {
+                                liburNasionalHtml = `
+                                    <div class="alert alert-light border mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-flag me-2 text-danger"></i>Hari Libur Nasional</h6>
+                                            <span class="badge bg-danger">${hariLiburNasional.jumlah} Hari</span>
+                                        </div>
+                                        <div class="row g-2" style="max-height: 150px; overflow-y: auto;">
+                                            ${liburEntries.map(([tgl, ket]) => `
+                                                <div class="col-md-6">
+                                                    <div class="small p-2 bg-danger bg-opacity-10 rounded">
+                                                        <strong>${new Date(tgl).toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'})}</strong>
+                                                        <div class="text-muted">${ket}</div>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `;
+                            }
+
+                            let accordionItems = '';
+                            instrukturDetails.forEach((instruktur, idx) => {
+                                const persentaseColor = instruktur.persentase >= 100 ? 'success' : (instruktur.persentase >= 75 ? 'warning' : 'danger');
+                                const kalender = instruktur.kalender || {};
+                                const bulanKeys = Object.keys(kalender).sort();
+                                const totalBulan = bulanKeys.length;
+
+                                // Set bulan pertama sebagai default
+                                window.__currentMonthIndex[instruktur.id] = 0;
+
+                                const cutiHtml = buildCutiHtml(instruktur);
+
+                                accordionItems += `
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="headingInstruktur${idx}">
+                                            <button class="accordion-button ${idx > 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInstruktur${idx}" aria-expanded="${idx === 0 ? 'true' : 'false'}">
+                                                <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                                    <div>
+                                                        <strong>${instruktur.nama}</strong>
+                                                        <div class="small text-muted">${instruktur.kode_karyawan} • ${instruktur.jabatan}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="fw-bold text-${persentaseColor}">${instruktur.persentase}%</div>
+                                                        <div class="small text-muted">${instruktur.jam_aktif} / ${instruktur.target_jam} jam</div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </h2>
+                                        <div id="collapseInstruktur${idx}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}" data-bs-parent="#accordionInstruktur">
+                                            <div class="accordion-body">
+                                                <!-- Ringkasan Statistik -->
+                                                <div class="row g-2 mb-3">
+                                                    <div class="col-6 col-md-3">
+                                                        <div class="p-2 border rounded text-center bg-success-subtle">
+                                                            <div class="small text-muted">Hari Aktif</div>
+                                                            <div class="fw-bold fs-5">${instruktur.total_hari_kerja}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 col-md-3">
+                                                        <div class="p-2 border rounded text-center bg-warning-subtle">
+                                                            <div class="small text-muted">Hari Cuti</div>
+                                                            <div class="fw-bold fs-5">${instruktur.total_hari_cuti}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 col-md-3">
+                                                        <div class="p-2 border rounded text-center bg-danger-subtle">
+                                                            <div class="small text-muted">Hari Libur</div>
+                                                            <div class="fw-bold fs-5">${instruktur.total_hari_libur}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 col-md-3">
+                                                        <div class="p-2 border rounded text-center bg-primary-subtle">
+                                                            <div class="small text-muted">Jam Aktif</div>
+                                                            <div class="fw-bold fs-5">${instruktur.jam_aktif}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Legend -->
+                                                <div class="d-flex flex-wrap gap-2 mb-3 small">
+                                                    <span><span class="kal-legend-box kal-working"></span> Hari Aktif</span>
+                                                    <span><span class="kal-legend-box kal-cuti"></span> Cuti</span>
+                                                    <span><span class="kal-legend-box kal-libur"></span> Libur Nasional</span>
+                                                    <span><span class="kal-legend-box kal-weekend"></span> Weekend</span>
+                                                    <span><span class="kal-legend-box kal-empty"></span> Tidak Ada Aktivitas</span>
+                                                </div>
+
+                                                ${cutiHtml}
+
+                                                <!-- Kalender dengan Slider Bulan -->
+                                                <div class="mt-3">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <h6 class="fw-semibold mb-0"><i class="fa-solid fa-calendar me-2"></i>Kalender Bulanan</h6>
+                                                        <span class="badge bg-info" id="bulanCounter_${instruktur.id}">1 dari ${totalBulan} bulan</span>
+                                                    </div>
+
+                                                    <!-- Navigasi Slider Bulan -->
+                                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-3 p-2 bg-light rounded-3">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnPrevBulan_${instruktur.id}" onclick="showKalenderBulan(${instruktur.id}, window.__currentMonthIndex[${instruktur.id}] - 1)">
+                                                            <i class="fa-solid fa-chevron-left me-1"></i> Bulan Sebelumnya
+                                                        </button>
+
+                                                        <div class="flex-grow-1 text-center">
+                                                            <small class="text-muted">Gunakan tombol atau swipe untuk navigasi</small>
+                                                        </div>
+
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNextBulan_${instruktur.id}" onclick="showKalenderBulan(${instruktur.id}, window.__currentMonthIndex[${instruktur.id}] + 1)">
+                                                            Bulan Selanjutnya <i class="fa-solid fa-chevron-right ms-1"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    <!-- Konten Kalender (hanya 1 bulan) -->
+                                                    <div id="kalenderSlide_${instruktur.id}">
+                                                        ${totalBulan > 0 ? buildKalenderBulanHtml(instruktur, bulanKeys[0]) : '<div class="text-muted text-center py-4">Tidak ada data kalender.</div>'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+
+                            contentKalenderInstruktur = `
+                                <div class="mt-3">
+                                    <div class="card shadow-sm border-0 rounded-4">
+                                        <div class="card-body">
+                                            <h6 class="fw-semibold mb-3"><i class="fa-solid fa-calendar-days me-2"></i>Kalender Kinerja Instruktur</h6>
+                                            ${liburNasionalHtml}
+                                            <div class="accordion" id="accordionInstruktur">
+                                                ${accordionItems}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <style>
+                                    .kalender-grid {
+                                        display: grid;
+                                        grid-template-columns: repeat(7, 1fr);
+                                        gap: 3px;
+                                        background: #f8f9fa;
+                                        padding: 6px;
+                                        border-radius: 8px;
+                                    }
+                                    .kal-header {
+                                        text-align: center;
+                                        font-size: 11px;
+                                        font-weight: 600;
+                                        color: #6c757d;
+                                        padding: 4px 0;
+                                    }
+                                    .kal-cell {
+                                        aspect-ratio: 1;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        border-radius: 4px;
+                                        font-size: 12px;
+                                        cursor: pointer;
+                                        transition: transform 0.15s;
+                                        position: relative;
+                                    }
+                                    .kal-cell:hover { transform: scale(1.1); z-index: 2; }
+                                    .kal-day { font-weight: 500; }
+                                    .kal-empty { background: transparent; }
+                                    .kal-working { background: #d1e7dd; color: #0f5132; }
+                                    .kal-cuti { background: #fff3cd; color: #664d03; }
+                                    .kal-libur { background: #f8d7da; color: #842029; }
+                                    .kal-weekend { background: #e2e3e5; color: #41464b; }
+                                    .kal-legend-box {
+                                        display: inline-block;
+                                        width: 14px;
+                                        height: 14px;
+                                        border-radius: 3px;
+                                        vertical-align: middle;
+                                        margin-right: 4px;
+                                    }
+                                    .kal-legend-box.kal-working { background: #d1e7dd; }
+                                    .kal-legend-box.kal-cuti { background: #fff3cd; }
+                                    .kal-legend-box.kal-libur { background: #f8d7da; }
+                                    .kal-legend-box.kal-weekend { background: #e2e3e5; }
+                                    .kal-legend-box.kal-empty { background: #f8f9fa; border: 1px dashed #adb5bd; }
+
+                                    /* Animasi transisi slide bulan */
+                                    .kalender-bulan-slide {
+                                        animation: slideInBulan 0.3s ease-out;
+                                    }
+                                    @keyframes slideInBulan {
+                                        from { opacity: 0; transform: translateX(20px); }
+                                        to { opacity: 1; transform: translateX(0); }
+                                    }
+                                </style>
+                            `;
+                        }
+
                         let ContentTrafikSales = '';
                         const condition = data.condition || '';
 
@@ -1255,68 +1583,112 @@
                         }
 
                         body.append(`
-                            <div class="modal-header border-0 pb-0">
-                                <h5 class="modal-title fw-bold">${data.judul || 'Detail Target'}</h5>
+                            <div class="modal-header border-0 pb-2">
+                                <div>
+                                    <h5 class="modal-title fw-bold mb-1">${data.judul || 'Detail Target'}</h5>
+                                    <small class="text-muted">${data.jangka_target || '-'}</small>
+                                </div>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                            <div class="modal-body pt-3">
-                                <div class="container-fluid p-3">
-                                    <div class="row g-4">
-                                        <div class="col-lg-8">
-                                            <div class="card shadow h-100">
-                                                <div class="card-body">
-                                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                                        <span class="badge bg-primary">${data.jangka_target || '-'}</span>
-                                                        <span class="badge bg-${bgCard}">${Tercapai}</span>
-                                                    </div>
-                                                    <div class="row text-center mb-3">
-                                                        <div class="col"><small class="text-muted d-block">Target</small><h4 class="fw-bold mb-0" style="font-size: 25px">${targetValue}</h4></div>
-                                                        <div class="col"><small class="text-muted d-block">Progress</small><h1 class="fw-bold text-${bgCard} mb-0" style="font-size: 55px;">${progressValue}</h1></div>
-                                                        <div class="col"><small class="text-muted d-block">Gap</small><h4 class="fw-bold text-danger mb-0" style="font-size: 25px">-${gapValue}</h4></div>
-                                                    </div>
-                                                    <div class="position-relative mb-3">
-                                                        <div class="progress" style="height:18px;">
-                                                            <div class="progress-bar bg-${bgCard} progress-bar-striped progress-bar-animated" style="width: ${widthProgress}%"></div>
-                                                        </div>
-                                                        <div class="position-absolute bg-light top-0" style="left: ${StripedProgress}%; height:18px; width:2px;"></div>
-                                                    </div>
-                                                    <div class="text-muted mb-4"><i class="fa-solid fa-calendar-days me-1"></i> Deadline: <strong>${data.tenggat_waktu || '-'}</strong></div>
-                                                    <div class="row g-4">
-                                                        <div class="col-md-6">
-                                                            <div class="card border-0 shadow-sm rounded-4 kpi-card">
-                                                                <div class="card-body px-4 py-3">
-                                                                    <div class="d-flex align-items-center mb-3"><div class="me-2 rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="fa-solid fa-chart-line text-primary"></i></div><h6 class="mb-0 fw-semibold text-secondary">INFORMASI KPI</h6></div>
-                                                                    <div class="row mb-3"><div class="col-4 label">KPI Divisi</div><div class="col-8 value">${data.divisi_kpi || '-'}</div></div>
-                                                                    <div class="row mb-3"><div class="col-4 label">KPI Jabatan</div><div class="col-8 value">${data.jabatan_kpi || '-'}</div></div>
-                                                                    <div class="row"><div class="col-4 label">Pembuat</div><div class="col-8 value">${data.pembuat || '-'}</div></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <div class="card border-0 shadow-sm rounded-4 participant-card h-100">
-                                                                <div class="card-body px-4 py-3">
-                                                                    <div class="d-flex align-items-center mb-3"><div class="me-2 rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="fa-solid fa-users text-success"></i></div><h6 class="mb-0 fw-semibold text-secondary">KARYAWAN</h6></div>
-                                                                    <div class="participant-list" style="overflow-y: scroll; max-height: 140px;">${karyawanHtml}</div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+
+                            <div class="modal-body pt-2">
+
+                                <!-- HERO KPI -->
+                                <div class="p-4 rounded-4 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="badge bg-${bgCard} px-3 py-2">${Tercapai}</span>
+                                        <span class="text-muted small">
+                                            Deadline: <strong>${data.tenggat_waktu || '-'}</strong>
+                                        </span>
+                                    </div>
+
+                                    <div class="row text-center">
+                                        <div class="col">
+                                            <div class="text-muted small">Target</div>
+                                            <div class="fw-bold fs-4">${targetValue}</div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="text-muted small">Progress</div>
+                                            <div class="fw-bold text-${bgCard}" style="font-size:40px">
+                                                ${progressValue}
                                             </div>
                                         </div>
-                                        <div class="col-lg-4">
-                                            <div class="card shadow h-100">
-                                                <div class="card border-0 shadow-sm rounded-4 h-100">
-                                                    <div class="card-body d-flex flex-column">${contentPieChart}</div>
-                                                </div>
+                                        <div class="col">
+                                            <div class="text-muted small">Gap</div>
+                                            <div class="fw-bold text-danger fs-4">
+                                                -${gapValue}
                                             </div>
                                         </div>
                                     </div>
-                                    ${ContentTrafikSales}
-                                    ${contentStatisticChart}
+
+                                    <div class="progress mt-3" style="height:10px;">
+                                        <div class="progress-bar bg-${bgCard}"
+                                            style="width:${widthProgress}%"></div>
+                                    </div>
                                 </div>
+
+                                <!-- INFO + PARTICIPANT -->
+                                <div class="row g-3">
+
+                                    <!-- KPI INFO -->
+                                    <div class="col-md-6">
+                                        <div class="p-3 border rounded-4 h-100">
+                                            <h6 class="fw-semibold mb-3">Informasi KPI</h6>
+
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span class="text-muted">Divisi</span>
+                                                <span class="fw-semibold">${data.divisi_kpi || '-'}</span>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span class="text-muted">Jabatan</span>
+                                                <span class="fw-semibold">${data.jabatan_kpi || '-'}</span>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Pembuat</span>
+                                                <span class="fw-semibold">${data.pembuat || '-'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- KARYAWAN -->
+                                    <div class="col-md-6">
+                                        <div class="p-3 border rounded-4 h-100">
+                                            <h6 class="fw-semibold mb-3">Karyawan</h6>
+                                            <div style="max-height:140px; overflow:auto;">
+                                                ${karyawanHtml}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="mt-3 p-3 border rounded-4">
+                                    ${contentPieChart}
+                                </div>
+
+                                ${ContentTrafikSales ? `
+                                    <div class="mt-3">
+                                        ${ContentTrafikSales}
+                                    </div>
+                                ` : ''}
+
+                                ${contentStatisticChart ? `
+                                    <div class="mt-3">
+                                        ${contentStatisticChart}
+                                    </div>
+                                ` : ''}
+
+                                ${contentKalenderInstruktur ? contentKalenderInstruktur : ''}
+
                             </div>
-                            <div class="modal-footer border-0"><button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button></div>
+
+                            <div class="modal-footer border-0">
+                                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                    Tutup
+                                </button>
+                            </div>
                         `);
 
                         const NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -1397,6 +1769,13 @@
                                     },
                                     error: function(err) { if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Gagal!', html: err.responseJSON?.message || 'Terjadi kesalahan' }); }
                                 });
+                            });
+
+                            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                            tooltipTriggerList.forEach(el => {
+                                if (el._tooltipInitialized) return;
+                                new bootstrap.Tooltip(el, { placement: 'top' });
+                                el._tooltipInitialized = true;
                             });
 
                             let statisticChart = null;
@@ -1663,10 +2042,12 @@
             Object.entries(groupedByPembuat).forEach(([idPembuat, group]) => {
                 group.targets.forEach(function(item) {
                     let formattedTarget = item.nilai_target;
-                    if (item.tipe_target === 'persen' || item.tipe_target === 'angka') {
+                    if (item.tipe_target === 'persen') {
                         formattedTarget = `${item.nilai_target}%`;
                     } else if (item.tipe_target === 'rupiah') {
                         formattedTarget = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.nilai_target);
+                    } else if (item.tipe_target === 'angka') {
+                        formattedTarget = `${item.nilai_target}`;
                     }
 
                     let jabatanDisplay = '-';

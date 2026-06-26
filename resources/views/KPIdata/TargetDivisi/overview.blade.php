@@ -122,7 +122,8 @@
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
+            z-index: 1;
         }
 
         .emp-card:hover {
@@ -130,9 +131,13 @@
             border-color: #cbd5e1;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 10; 
         }
 
-        /* Status Colors - Only Left Border */
+        .emp-card.dropdown-active {
+            z-index: 1000 !important;
+        }
+
         .emp-card.status-top {
             border-left-color: #10b981;
         }
@@ -406,19 +411,20 @@
                         <button type="submit" class="btn btn-primary flex-grow-1">
                             <i class="fa-solid fa-filter me-1"></i> Filter
                         </button>
-                        <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                                data-bs-toggle="dropdown">
+                        <div class="dropdown" style="position: relative;">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                    id="btnExportMain">
                                 <i class="fa-solid fa-file-export me-1"></i> Export
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" id="exportMainMenu" 
+                                style="display: none; position: absolute; right: 0; top: 100%; z-index: 1000; min-width: 150px; margin-top: 0.25rem;">
                                 <li>
-                                    <a href="#" class="dropdown-item btn-export-dept" data-type="excel">
+                                    <a href="javascript:void(0)" class="dropdown-item btn-export-dept" data-type="excel">
                                         <i class="fa-solid fa-file-excel text-success me-2"></i> Excel
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#" class="dropdown-item btn-export-dept" data-type="pdf">
+                                    <a href="javascript:void(0)" class="dropdown-item btn-export-dept" data-type="pdf">
                                         <i class="fa-solid fa-file-pdf text-danger me-2"></i> PDF
                                     </a>
                                 </li>
@@ -787,20 +793,21 @@
                                     <div class="emp-badge">${info.badge}</div>
                                 </div>
                             </div>
-                            <div class="emp-actions" onclick="event.stopPropagation()">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <div class="emp-actions">
+                                <div class="dropdown" style="position: relative;">
+                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button">
                                         <i class="fas fa-download"></i>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
+                                    <ul class="dropdown-menu dropdown-menu-end emp-export-menu" 
+                                        style="display: none; position: absolute; right: 0; top: 100%; z-index: 9999; min-width: 140px; margin-top: 0.25rem;">
                                         <li>
-                                            <a class="dropdown-item btn-export-emp" href="#"
+                                            <a class="dropdown-item btn-export-emp" href="javascript:void(0)"
                                             data-type="excel" data-id="${emp.id_karyawan}" data-tahun="${year}">
                                                 <i class="fas fa-file-excel text-success me-1"></i> Excel
                                             </a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item btn-export-emp" href="#"
+                                            <a class="dropdown-item btn-export-emp" href="javascript:void(0)"
                                             data-type="pdf" data-id="${emp.id_karyawan}" data-tahun="${year}">
                                                 <i class="fas fa-file-pdf text-danger me-1"></i> PDF
                                             </a>
@@ -1078,34 +1085,100 @@
                 getExportModal().hide();
             });
 
-            /* ── Event Delegation ── */
             document.addEventListener('click', function(e) {
-                // Department export
-                const deptBtn = e.target.closest('.btn-export-dept');
-                if (deptBtn) {
-                    e.preventDefault();
-                    handleDeptExport(deptBtn.dataset.type);
-                    return;
-                }
+                console.log('🔍 Click detected on:', e.target);
+                console.log('🔍 Closest elements:', {
+                    'btn-export-emp': !!e.target.closest('.btn-export-emp'),
+                    'emp-actions button': !!e.target.closest('.emp-actions button'),
+                    'emp-actions': !!e.target.closest('.emp-actions'),
+                    'btn-export-dept': !!e.target.closest('.btn-export-dept'),
+                    'emp-card': !!e.target.closest('.emp-card')
+                });
 
-                // Employee export (inside card)
-                const empExport = e.target.closest('.btn-export-emp');
-                if (empExport) {
+                // 1. Handle Employee Export (Excel/PDF click)
+                const empExportBtn = e.target.closest('.btn-export-emp');
+                if (empExportBtn) {
+                    console.log('✅ Employee export clicked:', empExportBtn.dataset);
                     e.preventDefault();
                     e.stopPropagation();
-                    handleEmpExport(empExport.dataset.type, empExport.dataset.id, empExport.dataset.tahun);
+                    handleEmpExport(empExportBtn.dataset.type, empExportBtn.dataset.id, empExportBtn.dataset.tahun);
+                    // Close dropdown
+                    document.querySelectorAll('.emp-export-menu').forEach(menu => {
+                        menu.style.display = 'none';
+                    });
                     return;
                 }
 
-                // Employee card click (navigate)
+                // 2. Handle Employee Dropdown Toggle
+                const empDropdownBtn = e.target.closest('.emp-actions button');
+                if (empDropdownBtn) {
+                    console.log('✅ Employee dropdown button clicked');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const menu = empDropdownBtn.nextElementSibling;
+                    console.log('📋 Menu found:', menu);
+                    
+                    // Close all other employee dropdowns
+                    document.querySelectorAll('.emp-export-menu').forEach(m => {
+                        if (m !== menu) {
+                            m.style.display = 'none';
+                        }
+                    });
+                    
+                    // Toggle this dropdown
+                    const isVisible = menu.style.display === 'block';
+                    menu.style.display = isVisible ? 'none' : 'block';
+                    console.log('📂 Dropdown toggled:', !isVisible ? 'OPEN' : 'CLOSED');
+                    return;
+                }
+
+                // 3. Close employee dropdowns if clicking outside emp-actions
+                if (!e.target.closest('.emp-actions')) {
+                    document.querySelectorAll('.emp-export-menu').forEach(menu => {
+                        menu.style.display = 'none';
+                    });
+                }
+
+                // 4. Handle Department Export
+                const deptExportBtn = e.target.closest('.btn-export-dept');
+                if (deptExportBtn) {
+                    console.log('✅ Department export clicked');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDeptExport(deptExportBtn.dataset.type);
+                    const deptMenu = document.getElementById('exportMainMenu');
+                    if (deptMenu) deptMenu.style.display = 'none';
+                    return;
+                }
+
+                // 5. Handle Department Dropdown Toggle
+                const deptDropdownBtn = e.target.closest('#btnExportMain');
+                if (deptDropdownBtn) {
+                    console.log('✅ Department dropdown button clicked');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const menu = document.getElementById('exportMainMenu');
+                    const isVisible = menu.style.display === 'block';
+                    menu.style.display = isVisible ? 'none' : 'block';
+                    return;
+                }
+
+                // 6. Close department dropdown if clicking outside
+                if (!e.target.closest('#btnExportMain') && !e.target.closest('#exportMainMenu')) {
+                    const deptMenu = document.getElementById('exportMainMenu');
+                    if (deptMenu) deptMenu.style.display = 'none';
+                }
+
+                // 7. Handle Employee Card Click (Navigate) - ONLY if not clicking actions
                 const empCard = e.target.closest('.emp-card');
                 if (empCard && !e.target.closest('.emp-actions')) {
+                    console.log('✅ Employee card clicked, navigating...');
                     const id = empCard.dataset.id;
                     if (id) window.location.href = `/kpi-data/overview/index/personal/${id}`;
                 }
             });
 
-            /* ── Init ── */
             initYearOptions();
 
             @if (auth()->user()->hasRole('Koordinator') && auth()->user()->karyawan)
@@ -1119,6 +1192,19 @@
 
             loadData();
 
+            document.addEventListener('DOMContentLoaded', function() {
+                const btn = document.querySelector('#btnExportMain, .btn-outline-secondary.dropdown-toggle');
+                
+                if (btn) {
+                    const dropdownInstance = bootstrap.Dropdown.getInstance(btn);
+                    
+                    setTimeout(() => {
+                        if (dropdownInstance) {
+                            dropdownInstance.show();
+                        }
+                    }, 1000);
+                }
+            });
         })();
     </script>
 @endsection

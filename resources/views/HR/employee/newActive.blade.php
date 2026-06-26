@@ -1,7 +1,7 @@
 @extends('layout_HR.app')
 
 @section('content_HR')
-    <div class="container-xxl flex-grow-1 container-p-y">
+    <div class="container-fluid">
 
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
             <div>
