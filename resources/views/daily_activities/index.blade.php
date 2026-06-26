@@ -5,138 +5,152 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css">
 
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0">
-            <i class="fas fa-list-check me-2 text-primary"></i> Daftar Tugas & Aktivitas
-        </h4>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal">
-            <i class="fas fa-plus me-1"></i> Tambah Aktivitas
-        </button>
-    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-12">
 
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="fw-bold text-muted text-center mb-3">Status Tugas</h6>
-                    <div class="d-flex justify-content-around text-center">
-                        <div>
-                            <h3 class="mb-0 text-warning">{{ $inProgressActivities }}</h3>
-                            <small class="text-muted">On Progress</small>
+            <div class="d-flex justify-content-end mb-4">
+                <button class="btn btn-md btn-primary mx-4" data-bs-toggle="modal" data-bs-target="#activityModal" data-toggle="tooltip" title="Tambah Aktivitas Baru">
+                    <i class="fas fa-plus me-1"></i> Tambah Aktivitas Baru
+                </button>
+            </div>
+
+            <div class="row mb-4 mx-2">
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-muted text-center mb-3">Status Tugas</h6>
+                            <div class="d-flex justify-content-around text-center">
+                                <div>
+                                    <h3 class="mb-0 text-warning">{{ $inProgressActivities }}</h3>
+                                    <small class="text-muted">On Progress</small>
+                                </div>
+                                <div>
+                                    <h3 class="mb-0 text-success">{{ $doneActivities }}</h3>
+                                    <small class="text-muted">Selesai</small>
+                                </div>
+                                <div>
+                                    <h3 class="mb-0 text-primary">{{ $totalActivities }}</h3>
+                                    <small class="text-muted">Total</small>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="mb-0 text-success">{{ $doneActivities }}</h3>
-                            <small class="text-muted">Selesai</small>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <h6 class="fw-bold text-muted mb-3">Progres Keseluruhan</h6>
+                            <div class="position-relative d-inline-block">
+                                <canvas id="progressChart" width="100" height="100"></canvas>
+                                <div class="position-absolute top-50 start-50 translate-middle">
+                                    <h4 class="mb-0">{{ $progressPercentage }}%</h4>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">{{ $doneActivities }}/{{ $totalActivities }} Selesai</small>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="mb-0 text-primary">{{ $totalActivities }}</h3>
-                            <small class="text-muted">Total</small>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-muted text-center mb-3">Ringkasan Tenggat Waktu</h6>
+                            <div class="d-flex justify-content-around align-items-center text-center h-75">
+                                <div>
+                                    <h3 class="mb-0 text-danger">{{ $overdueActivities }}</h3>
+                                    <small class="text-muted">Terlambat</small>
+                                </div>
+                                <div class="vr"></div>
+                                <div>
+                                    <h3 class="mb-0 text-info">{{ $dueTodayActivities }}</h3>
+                                    <small class="text-muted">Jatuh Tempo Hari Ini</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-                    <h6 class="fw-bold text-muted mb-3">Progres Keseluruhan</h6>
-                    <div class="position-relative d-inline-block">
-                        <canvas id="progressChart" width="100" height="100"></canvas>
-                        <div class="position-absolute top-50 start-50 translate-middle">
-                            <h4 class="mb-0">{{ $progressPercentage }}%</h4>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <small class="text-muted">{{ $doneActivities }}/{{ $totalActivities }} Selesai</small>
-                    </div>
+            <div class="card m-4 shadow-sm">
+                <div class="card-body table-responsive">
+                    <h3 class="card-title text-center my-3">{{ __('Data Daftar Tugas & Aktivitas') }}</h3>
+                    <table id="activityTable" class="table table-striped text-nowrap" style="width:100%">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Aktivitas</th>
+                                <th>Task Terkait</th>
+                                <th>PIC</th>
+                                <th>Tanggal Mulai</th>
+                                <th>Tanggal Selesai</th>
+                                <th>Status</th>
+                                <th class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($activities as $activity)
+                            <tr data-id="{{ $activity->id }}">
+                                <td>{{ $activity->created_at }}</td>
+                                <td>{{ $activity->activity }}</td>
+                                <td>{{ $activity->task->title ?? '-' }}</td>
+                                <td>{{ $activity->user->karyawan->kode_karyawan ?? '-' }}</td>
+                                <td>{{ \Carbon\Carbon::parse($activity->start_date)->format('d/m/Y') }}</td>
+                                <td>{{ $activity->end_date ? \Carbon\Carbon::parse($activity->end_date)->format('d/m/Y') : '-' }}</td>
+                                <td>
+                                    @if($activity->status == 'Selesai')
+                                        <span class="badge bg-success">Selesai</span>
+                                    @else
+                                        <span class="badge bg-warning text-dark">On Progres</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @php
+                                        $user = auth()->user();
+                                        $picTask = $activity->user->karyawan->kode_karyawan ?? null;
+                                        $kodeKaryawan = $user->karyawan->kode_karyawan ?? null;
+                                        $isPicMatch = $picTask === $kodeKaryawan;
+                                    @endphp
+
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
+                                        <ul class="dropdown-menu shadow">
+                                            <li>
+                                                <button type="button" class="dropdown-item btn-detail-activity" data-id="{{ $activity->id }}">
+                                                    <i class="fas fa-eye me-2"></i> Detail
+                                                </button>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            @if($activity->status != 'Selesai')
+                                                <li>
+                                                    <button type="button"
+                                                        class="dropdown-item text-success btn-update-status"
+                                                        data-id="{{ $activity->id }}"
+                                                        data-activity="{{ $activity->activity }}"
+                                                        {{ !$isPicMatch ? 'disabled' : '' }}
+                                                        title="{{ !$isPicMatch ? 'Hanya PIC task yang dapat menyelesaikan aktivitas ini' : '' }}">
+                                                        <i class="fas fa-check-circle me-2"></i> Selesaikan
+                                                    </button>
+                                                </li>
+                                            @else
+                                                <li>
+                                                    <span class="dropdown-item text-muted">
+                                                        <i class="fas fa-check-double me-2"></i> Selesai
+                                                    </span>
+                                                </li>
+                                            @endif
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </div>
 
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="fw-bold text-muted text-center mb-3">Ringkasan Tenggat Waktu</h6>
-                    <div class="d-flex justify-content-around align-items-center text-center h-75">
-                        <div>
-                            <h3 class="mb-0 text-danger">{{ $overdueActivities }}</h3>
-                            <small class="text-muted">Terlambat</small>
-                        </div>
-                        <div class="vr"></div>
-                        <div>
-                            <h3 class="mb-0 text-info">{{ $dueTodayActivities }}</h3>
-                            <small class="text-muted">Jatuh Tempo Hari Ini</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table id="activityTable" class="table table-hover table-bordered align-middle w-100">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>Aktivitas</th>
-                            <th>Task Terkait</th>
-                            <th>PIC</th>
-                            <th>Tanggal Mulai</th>
-                            <th>Tanggal Selesai</th>
-                            <th>Status</th>
-                            <th class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($activities as $activity)
-                        <tr data-id="{{ $activity->id }}" style="cursor: pointer;" class="activity-row-click">
-                            {{-- {{ $activity }} --}}
-                            <td>{{ $activity->created_at }}</td>
-                            <td>{{ $activity->activity }}</td>
-                            <td>{{ $activity->task->title ?? '-' }}</td>
-                            <td>{{ $activity->user->karyawan->kode_karyawan ?? '-' }}</td>
-                            <td>{{ \Carbon\Carbon::parse($activity->start_date)->format('d/m/Y') }}</td>
-                            <td>{{ $activity->end_date ? \Carbon\Carbon::parse($activity->end_date)->format('d/m/Y') : '-' }}</td>
-                            <td>
-                                @if($activity->status == 'Selesai')
-                                    <span class="badge bg-success">Selesai</span>
-                                @else
-                                    <span class="badge bg-warning text-dark">On Progres</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                @php
-                                    $user = auth()->user();
-                                    $picTask = $activity->user->karyawan->kode_karyawan ?? null;
-                                    $kodeKaryawan = $user->karyawan->kode_karyawan ?? null;
-                                    $isPicMatch = $picTask === $kodeKaryawan;
-                                    // dd($picTask, $kodeKaryawan);
-                                @endphp
-
-                                @if($activity->status != 'Selesai')
-
-                                    <button type="button"
-                                        class="btn btn-sm btn-success btn-update-status"
-                                        data-id="{{ $activity->id }}"
-                                        data-activity="{{ $activity->activity }}"
-                                        {{ !$isPicMatch ? 'disabled' : '' }}
-                                        title="{{ !$isPicMatch ? 'Hanya PIC task yang dapat menyelesaikan aktivitas ini' : '' }}">
-                                        
-                                        <i class="fas fa-check me-1"></i> Selesaikan
-                                    </button>
-
-                                @else
-                                    <span class="text-muted"><i class="fas fa-check-double"></i> Selesai</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
         </div>
     </div>
 
@@ -144,7 +158,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <form id="activityFormDetail" method="POST" action="{{ route('daily-activities.store') }}" enctype="multipart/form-data">
-                    @csrf 
+                    @csrf
                     <div class="modal-header">
                         <h5 class="modal-title" id="activityModalLabel">Tambah Aktivitas Baru</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -246,12 +260,14 @@
 
     <div class="modal fade" id="detailActivityModal" tabindex="-1" aria-labelledby="detailActivityModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="detailActivityModalLabel">Detail Aktivitas</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="detailActivityModalLabel">
+                        <i class="fas fa-clipboard-list me-2"></i> Detail Aktivitas
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-4">
                     <table class="table table-borderless table-sm mb-0">
                         <tbody>
                             <tr>
@@ -292,14 +308,13 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup Detail</button>
                 </div>
             </div>
         </div>
     </div>
-
-    </div>
+</div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
@@ -308,13 +323,14 @@
 
 <script>
     $(document).ready(function() {
-        // Inisialisasi DataTables
+        // Konfigurasi Inisialisasi DataTables Tanpa Parameter ScrollX
+        // Mengingat class table-responsive Bootstrap 5 menangani luapan DOM secara native
         $('#activityTable').DataTable({
             language: {
                 url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json'
             },
-            "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
-            "columnDefs" : [{"targets":[0], "type":"date"}],
+            "order": [[0, 'desc']],
+            "columnDefs": [{"targets": [0], "type": "date"}]
         });
 
         // Inisialisasi Chart.js untuk Donut Chart
@@ -341,6 +357,7 @@
                 }
             }
         });
+
         // Logika Duplikasi Form Tambah Aktivitas
         $('#addActivityBtn').on('click', function() {
             let firstRow = $('.activity-row').first();
@@ -361,57 +378,42 @@
             }
         });
 
-        // Logika Pemanggilan Modal Update Status
+        // Logika Pemanggilan Modal Update Status Melalui Dropdown
         $(document).on('click', '.btn-update-status', function() {
             let activityId = $(this).data('id');
             let activityName = $(this).data('activity');
-            
-            // Setel rute action form
+
             let actionUrl = `/daily-activities/${activityId}/quick-update`;
             $('#updateStatusForm').attr('action', actionUrl);
-            
-            // Setel nama aktivitas pada input readonly
             $('#displayActivityName').val(activityName);
-            
-            // Tampilkan modal
             $('#updateStatusModal').modal('show');
         });
 
-        // Logika Klik Baris Tabel untuk Menampilkan Detail
-        $('#activityTable tbody').on('click', 'tr.activity-row-click', function(e) {
-            // Abaikan interaksi jika area yang diklik adalah tombol, checkbox, atau area aksi
-            if ($(e.target).closest('button, input, a, td:last-child').length > 0) {
-                return;
-            }
-
+        // Logika Klik Tombol Detail pada Dropdown untuk Menampilkan Modal
+        $('#activityTable tbody').on('click', '.btn-detail-activity', function() {
             let activityId = $(this).data('id');
-            
+
             if (!activityId) return;
 
-            // Lakukan pemanggilan AJAX untuk mengambil data detail aktivitas
             $.ajax({
                 url: `/daily-activities/${activityId}`,
                 method: 'GET',
                 success: function(response) {
-                    // Pengisian Data Teks
                     $('#detailTask').text(response.task ? response.task.title : '-');
                     $('#detailActivityName').text(response.activity);
                     $('#detailDescription').text(response.description ? response.description : '-');
-                    
-                    // Format Tanggal
+
                     let startDate = new Date(response.start_date).toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'});
                     let endDate = response.end_date ? new Date(response.end_date).toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}) : '-';
-                    
+
                     $('#detailStartDate').text(startDate);
                     $('#detailEndDate').text(endDate);
-                    
-                    // Format Badge Status
-                    let statusHtml = response.status === 'Selesai' 
-                        ? '<span class="badge bg-success">Selesai</span>' 
+
+                    let statusHtml = response.status === 'Selesai'
+                        ? '<span class="badge bg-success">Selesai</span>'
                         : '<span class="badge bg-warning text-dark">On Progres</span>';
                     $('#detailStatus').html(statusHtml);
 
-                    // Format Tautan Dokumen
                     if (response.doc) {
                         let fileUrl = `{{ asset('storage') }}/${response.doc}`;
                         $('#detailDoc').html(`<a href="${fileUrl}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file-alt me-1"></i> Lihat Dokumen</a>`);
@@ -419,7 +421,6 @@
                         $('#detailDoc').html('<span class="text-muted">Tidak ada dokumen</span>');
                     }
 
-                    // Eksekusi Pemanggilan Modal
                     $('#detailActivityModal').modal('show');
                 },
                 error: function() {

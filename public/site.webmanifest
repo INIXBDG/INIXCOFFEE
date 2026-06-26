@@ -1,6 +1,8 @@
 {
     "name": "InixCoffee",
     "short_name": "InixCoffee",
+    "start_url": "/home",
+    "scope": "/",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",
@@ -22,3 +24,4 @@
     "background_color": "#6A80B9",
     "display": "standalone"
 }
+

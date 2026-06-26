@@ -73,3 +73,7 @@ self.addEventListener('notificationclick', function(event) {
 self.addEventListener('notificationclose', function(event) {
     console.log('[Service Worker] Notification closed');
 });
+
+self.addEventListener('fetch', function(event) {
+    event.respondWith(fetch(event.request));
+});

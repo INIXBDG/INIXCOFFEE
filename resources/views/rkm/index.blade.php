@@ -99,7 +99,7 @@
     </div>
     <div class="row justify-content-center">
         <div class="col-md-12 d-flex my-2 justify-content-end">
-            
+
         </div>
         <div class="col-md-12">
             <div class="card" style="width: 100%">
@@ -223,82 +223,83 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script>
+    
     $(document).ready(function(){
         getDataRKM();
     });
 
-function excelDownloadAdmSales() {
-        var tahun = document.getElementById('tahun').value;
-        var bulan = document.getElementById('bulan').value;
+    function excelDownloadAdmSales() {
+            var tahun = document.getElementById('tahun').value;
+            var bulan = document.getElementById('bulan').value;
 
-        var form = document.createElement('form');
-        form.method = 'POST';
-        form.action = "{{ route('excel.rkmAdmSales') }}";
-        form.style.display = 'none';
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{{ route('excel.rkmAdmSales') }}";
+            form.style.display = 'none';
 
-        var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        var csrf = document.createElement('input');
-        csrf.type = 'hidden';
-        csrf.name = '_token';
-        csrf.value = token;
-        form.appendChild(csrf);
+            var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            var csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = token;
+            form.appendChild(csrf);
 
-        var inputTahun = document.createElement('input');
-        inputTahun.type = 'hidden';
-        inputTahun.name = 'tahun';
-        inputTahun.value = tahun;
-        form.appendChild(inputTahun);
+            var inputTahun = document.createElement('input');
+            inputTahun.type = 'hidden';
+            inputTahun.name = 'tahun';
+            inputTahun.value = tahun;
+            form.appendChild(inputTahun);
 
-        var inputBulan = document.createElement('input');
-        inputBulan.type = 'hidden';
-        inputBulan.name = 'bulan';
-        inputBulan.value = bulan;
-        form.appendChild(inputBulan);
+            var inputBulan = document.createElement('input');
+            inputBulan.type = 'hidden';
+            inputBulan.name = 'bulan';
+            inputBulan.value = bulan;
+            form.appendChild(inputBulan);
 
-        document.body.appendChild(form);
-        form.submit();
+            document.body.appendChild(form);
+            form.submit();
 
-        setTimeout(() => {
-            document.body.removeChild(form);
-        }, 1000);
+            setTimeout(() => {
+                document.body.removeChild(form);
+            }, 1000);
 
-}
+    }
 
-// function getDataRKM() {
-//     var tahun = document.getElementById('tahun').value;
-//     var bulan = document.getElementById('bulan').value;
+    // function getDataRKM() {
+    //     var tahun = document.getElementById('tahun').value;
+    //     var bulan = document.getElementById('bulan').value;
 
-//         var form = document.createElement('form');
-//         form.method = 'POST';
-//         form.action = "{{ route('excel') }}";
-//         form.style.display = 'none';
+    //         var form = document.createElement('form');
+    //         form.method = 'POST';
+    //         form.action = "{{ route('excel') }}";
+    //         form.style.display = 'none';
 
-//         var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-//         var csrf = document.createElement('input');
-//         csrf.type = 'hidden';
-//         csrf.name = '_token';
-//         csrf.value = token;
-//         form.appendChild(csrf);
+    //         var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    //         var csrf = document.createElement('input');
+    //         csrf.type = 'hidden';
+    //         csrf.name = '_token';
+    //         csrf.value = token;
+    //         form.appendChild(csrf);
 
-//         var inputTahun = document.createElement('input');
-//         inputTahun.type = 'hidden';
-//         inputTahun.name = 'tahun';
-//         inputTahun.value = tahun;
-//         form.appendChild(inputTahun);
+    //         var inputTahun = document.createElement('input');
+    //         inputTahun.type = 'hidden';
+    //         inputTahun.name = 'tahun';
+    //         inputTahun.value = tahun;
+    //         form.appendChild(inputTahun);
 
-//         var inputBulan = document.createElement('input');
-//         inputBulan.type = 'hidden';
-//         inputBulan.name = 'bulan';
-//         inputBulan.value = bulan;
-//         form.appendChild(inputBulan);
+    //         var inputBulan = document.createElement('input');
+    //         inputBulan.type = 'hidden';
+    //         inputBulan.name = 'bulan';
+    //         inputBulan.value = bulan;
+    //         form.appendChild(inputBulan);
 
-//         document.body.appendChild(form);
-//         form.submit();
+    //         document.body.appendChild(form);
+    //         form.submit();
 
-//         setTimeout(() => {
-//             document.body.removeChild(form);
-//         }, 1000);
-//     }
+    //         setTimeout(() => {
+    //             document.body.removeChild(form);
+    //         }, 1000);
+    //     }
 
     function getDataRKM() {
         var tahun = document.getElementById('tahun').value;
@@ -487,7 +488,7 @@ function excelDownloadAdmSales() {
                                     // 2. Menu Ajukan Rekomendasi
                                     var instrukturRKM = (rkm.instruktur_all || "").toUpperCase();
                                     var myKode = userKode.toUpperCase();
-                                    var showButton = (jabatan === 'Instruktur' && instrukturRKM.includes(myKode) || jabatan === 'Education Manager' && instrukturRKM.includes(myKode));
+                                    var showButton = (jabatan === 'Instruktur' || jabatan === 'Education Manager');
                                     const idList = rkm.id_all ? String(rkm.id_all).split(',').map(i => i.trim()) : [];
                                     const perusahaanList = rkm.perusahaan.map(p => p.nama_perusahaan);
 
@@ -811,16 +812,16 @@ function excelDownloadAdmSales() {
                                 <label class="form-check-label" for="checkELearning">E-Learning</label>
                             </div>
                         </div>
-    
+
                         <br>
-    
+
                         <div class="form-check mb-2">
                             <input class="form-check-input checklist-item" type="checkbox" value="Kelas" id="checkKelas" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkKelas">Kelas</label>
                         </div>
-    
+
                         <br>
-    
+
                         <div class="form-check mb-2">
                             <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkCb">Coffe Break</label>
@@ -833,9 +834,9 @@ function excelDownloadAdmSales() {
                                 <label class="form-check-label" for="checkCbPeserta">Peserta</label>
                             </div>
                         </div>
-    
+
                         <br>
-    
+
                         <div class="form-check mb-2">
                             <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkMaksi">Makan Siang</label>
@@ -848,9 +849,9 @@ function excelDownloadAdmSales() {
                                 <label class="form-check-label" for="checkMaksiPeserta">Peserta</label>
                             </div>
                         </div>
-    
+
                         <br>
-    
+
                         <div class="form-check mb-2">
                             <input class="form-check-input checklist-item" type="checkbox" value="Keperluan Kelas" id="checkKeperluanKelas" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkKeperluanKelas">Keperluan Kelas</label>
@@ -909,7 +910,7 @@ function excelDownloadAdmSales() {
                                 <label class="form-check-label" for="checkELearning">E-Learning</label>
                             </div>
                         </div>
-    
+
                         <br>
 
                         <div class="form-check mb-2">
@@ -920,9 +921,9 @@ function excelDownloadAdmSales() {
                                 <label class="form-check-label" for="checkCbInstruktur">Instruktur</label>
                             </div>
                         </div>
-    
+
                         <br>
-    
+
                         <div class="form-check mb-2">
                             <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkMaksi">Makan Siang</label>
@@ -978,35 +979,35 @@ function excelDownloadAdmSales() {
                     if (materiTotal > 0) {
                         totalProgress += (materiChecked / materiTotal) * 20;
                     }
-    
+
                     // ===== Kelas (20%) =====
                     if ($('#checkKelas').is(':checked')) {
                         totalProgress += 20;
                     }
-    
+
                     // ===== CB (20%) =====
                     let cbTotal = $('.checkSubCb').length;
                     let cbChecked = $('.checkSubCb:checked').length;
                     if (cbTotal > 0) {
                         totalProgress += (cbChecked / cbTotal) * 20;
                     }
-    
+
                     // ===== Maksi (20%) =====
                     let maksiTotal = $('.checkSubMaksi').length;
                     let maksiChecked = $('.checkSubMaksi:checked').length;
                     if (maksiTotal > 0) {
                         totalProgress += (maksiChecked / maksiTotal) * 20;
                     }
-    
+
                     // ===== Keperluan Kelas (20%) =====
                     let kelasTotal = $('.checkSubKeperluanKelas').length;
                     let kelasChecked = $('.checkSubKeperluanKelas:checked').length;
                     if (kelasTotal > 0) {
                         totalProgress += (kelasChecked / kelasTotal) * 20;
                     }
-    
+
                     let percentage = Math.round(totalProgress);
-    
+
                     $('#checklistProgress')
                         .css('width', percentage + '%')
                         .attr('aria-valuenow', percentage)
@@ -1034,7 +1035,7 @@ function excelDownloadAdmSales() {
                     }
 
                     let percentage = Math.round((kategoriSelesai / totalKategori) * 100);
-    
+
                     $('#checklistProgress')
                         .css('width', percentage + '%')
                         .attr('aria-valuenow', percentage)
@@ -1162,7 +1163,7 @@ function excelDownloadAdmSales() {
             });
 
             $('#modalChecklist').on('hidden.bs.modal', function () {
-                storeChecklistData(false); 
+                storeChecklistData(false);
             });
 
             function storeChecklistData(showAlert = false)

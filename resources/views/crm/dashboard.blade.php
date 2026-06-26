@@ -1416,7 +1416,9 @@
                             <tr>
                                 <td>
                                     ${
-                                        item.contact?.perusahaan
+                                        (item.aktivitas === 'PA' || item.aktivitas === 'Form_Masuk' || item.aktivitas === 'Regis Form') && item.perusahaan_langsung
+                                        ? `${item.perusahaan_langsung.nama_perusahaan ?? '-'} (Perusahaan)`
+                                        : item.contact?.perusahaan
                                         ? `${item.contact.nama ?? '-'} (${item.contact.perusahaan.nama_perusahaan})`
                                         : item.contact
                                         ? `${item.contact.nama ?? '-'}`

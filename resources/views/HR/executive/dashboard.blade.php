@@ -4,23 +4,23 @@
         .executive-card {
             border-radius: 12px;
             border: 1px solid rgba(0, 0, 0, 0.08);
-            transition: all 0.2s ease
+            transition: all 0.2s ease;
         }
 
         .executive-card:hover {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px)
+            transform: translateY(-2px);
         }
 
         .metric-value {
             font-size: 2rem;
             font-weight: 700;
-            line-height: 1.2
+            line-height: 1.2;
         }
 
         .metric-label {
             font-size: 0.875rem;
-            opacity: 0.8
+            opacity: 0.8;
         }
 
         .matrix-cell {
@@ -101,7 +101,6 @@
             flex: 1;
         }
 
-        /* Update existing matrix-grid */
         .matrix-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -113,7 +112,6 @@
             justify-content: space-between;
             margin-top: 0.75rem;
             padding-left: 120px;
-            /* Space for vertical axis */
         }
 
         .bg-star {
@@ -164,7 +162,7 @@
         .chart-container {
             position: relative;
             height: 280px;
-            width: 100%
+            width: 100%;
         }
 
         .filter-select {
@@ -187,44 +185,44 @@
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
             font-size: 0.75rem;
-            font-weight: 600
+            font-weight: 600;
         }
 
         .prediction-high {
             background: #d1fae5;
-            color: #065f46
+            color: #065f46;
         }
 
         .prediction-medium {
             background: #fef3c7;
-            color: #92400e
+            color: #92400e;
         }
 
         .prediction-low {
             background: #fee2e2;
-            color: #991b1b
+            color: #991b1b;
         }
 
         .loading-skeleton {
             background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
             background-size: 200% 100%;
             animation: loading 1.5s infinite;
-            border-radius: 6px
+            border-radius: 6px;
         }
 
         @keyframes loading {
             0% {
-                background-position: 200% 0
+                background-position: 200% 0;
             }
 
             100% {
-                background-position: -200% 0
+                background-position: -200% 0;
             }
         }
 
         .modal-employee-list {
             max-height: 500px;
-            overflow-y: auto
+            overflow-y: auto;
         }
 
         .employee-item {
@@ -287,59 +285,34 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar {
-            width: 6px
+            width: 6px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent
+            background: transparent;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: rgba(0, 0, 0, 0.2);
-            border-radius: 3px
+            border-radius: 3px;
         }
 
         .empty-state {
             text-align: center;
             padding: 3rem 2rem;
-            color: #64748b
+            color: #64748b;
         }
 
         .empty-state i {
             font-size: 3rem;
             margin-bottom: 1rem;
-            opacity: 0.5
+            opacity: 0.5;
         }
 
         .axis-label {
             font-weight: 600;
             font-size: 0.9rem;
             color: #374151;
-        }
-
-        .matrix-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.75rem;
-        }
-
-        .nav-pills-custom .nav-link {
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
-            font-weight: 600;
-            font-size: 0.875rem;
-            cursor: pointer;
-            border: 1px solid transparent;
-        }
-
-        .nav-pills-custom .nav-link:hover {
-            background: #f1f5f9;
-        }
-
-        .nav-pills-custom .nav-link.active {
-            background: #6366f1;
-            color: white;
-            border-color: #4f46e5;
         }
 
         .btn-apply {
@@ -375,20 +348,6 @@
             to {
                 transform: rotate(360deg);
             }
-        }
-
-        .matrix-filter-dropdown .dropdown-item {
-            cursor: pointer;
-            padding: 0.5rem 1rem;
-        }
-
-        .matrix-filter-dropdown .dropdown-item:hover {
-            background: #f1f5f9;
-        }
-
-        .matrix-filter-dropdown .dropdown-item.active {
-            background: #6366f1;
-            color: white;
         }
 
         .toast-container {
@@ -560,191 +519,80 @@
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h5 class="fw-semibold mb-1">Employee Potential Matrix</h5>
-                        <small class="text-muted">Mapping performa dan potensi karyawan</small>
+                        <h5 class="fw-semibold mb-1">Performance vs Potential Matrix</h5>
+                        <small class="text-muted">Horizontal: Performance (KPI) • Vertical: Potential (360°
+                            Assessment)</small>
                     </div>
-                    <ul class="nav nav-pills nav-pills-custom" id="matrixTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="kpi-tab" data-bs-toggle="pill" data-bs-target="#kpi"
-                                type="button" role="tab">
-                                <i class="bi bi-graph-up me-1"></i> Performance (KPI)
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="assessment-tab" data-bs-toggle="pill"
-                                data-bs-target="#assessment" type="button" role="tab">
-                                <i class="bi bi-people me-1"></i> Assessment (360°)
-                            </button>
-                        </li>
-                    </ul>
+                    <div class="text-end">
+                        <small class="text-muted">Klik kotak untuk lihat detail karyawan</small>
+                    </div>
                 </div>
 
-                <div class="tab-content" id="matrixTabContent">
-                    <div class="tab-pane fade show active" id="kpi" role="tabpanel">
-                        <div class="mb-3 d-flex justify-content-between align-items-center">
-                            <div class="axis-label">Performance vs Potential Matrix (KPI Based)</div>
-                            <div class="text-end">
-                                <small class="text-muted">Klik kotak untuk lihat detail karyawan</small>
-                            </div>
-                        </div>
-
-                        <div class="matrix-wrapper">
-                            <div class="matrix-axis-vertical">
-                                <div class="axis-label-vertical">High Potential</div>
-                                <div class="axis-label-vertical">Moderate Potential</div>
-                                <div class="axis-label-vertical">Low Potential</div>
-                            </div>
-
-                            <!-- Matrix Grid -->
-                            <div class="matrix-grid-container">
-                                <div class="matrix-grid mb-3">
-                                    <div class="matrix-cell bg-potential-gem" data-quadrant="potential_gem"
-                                        data-type="kpi">
-                                        <div class="matrix-count" id="countPotentialGem">0</div>
-                                        <div class="matrix-title">"Potential Gem"</div>
-                                        <div class="matrix-desc">High Potential<br>Low Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-high-potential" data-quadrant="high_potential"
-                                        data-type="kpi">
-                                        <div class="matrix-count" id="countHighPotential">0</div>
-                                        <div class="matrix-title">"High Potential"</div>
-                                        <div class="matrix-desc">High Potential<br>Moderate Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-star" data-quadrant="star" data-type="kpi">
-                                        <div class="matrix-count" id="countStar">0</div>
-                                        <div class="matrix-title">"Star"</div>
-                                        <div class="matrix-desc">High Potential<br>High Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-inconsistent" data-quadrant="inconsistent"
-                                        data-type="kpi">
-                                        <div class="matrix-count" id="countInconsistent">0</div>
-                                        <div class="matrix-title">"Inconsistent Player"</div>
-                                        <div class="matrix-desc">Moderate Potential<br>Low Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-core-player" data-quadrant="core_player" data-type="kpi">
-                                        <div class="matrix-count" id="countCorePlayer">0</div>
-                                        <div class="matrix-title">"Core Player"</div>
-                                        <div class="matrix-desc">Moderate Potential<br>Moderate Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-high-performer" data-quadrant="high_performer"
-                                        data-type="kpi">
-                                        <div class="matrix-count" id="countHighPerformer">0</div>
-                                        <div class="matrix-title">"High Performer"</div>
-                                        <div class="matrix-desc">Moderate Potential<br>High Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-risk" data-quadrant="risk" data-type="kpi">
-                                        <div class="matrix-count" id="countRisk">0</div>
-                                        <div class="matrix-title">"Risk"</div>
-                                        <div class="matrix-desc">Low Potential<br>Low Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-average-performer" data-quadrant="average_performer"
-                                        data-type="kpi">
-                                        <div class="matrix-count" id="countAveragePerformer">0</div>
-                                        <div class="matrix-title">"Average Performer"</div>
-                                        <div class="matrix-desc">Low Potential<br>Moderate Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-solid-performer" data-quadrant="solid_performer"
-                                        data-type="kpi">
-                                        <div class="matrix-count" id="countSolidPerformer">0</div>
-                                        <div class="matrix-title">"Solid Performer"</div>
-                                        <div class="matrix-desc">Low Potential<br>High Performance</div>
-                                    </div>
-                                </div>
-
-                                <!-- Horizontal Axis (Performance) -->
-                                <div class="matrix-axis-horizontal">
-                                    <div class="col-4 text-center" style="font-size: 1rem;">Low Performance</div>
-                                    <div class="col-4 text-center" style="font-size: 1rem;">ModeratePerformance</div>
-                                    <div class="col-4 text-center" style="font-size: 1rem;">High Performance</div>
-                                </div>
-                            </div>
-                        </div>
+                <div class="matrix-wrapper">
+                    <div class="matrix-axis-vertical">
+                        <div class="axis-label-vertical">High Potential</div>
+                        <div class="axis-label-vertical">Moderate Potential</div>
+                        <div class="axis-label-vertical">Low Potential</div>
                     </div>
 
-                    <div class="tab-pane fade" id="assessment" role="tabpanel">
-                        <div class="mb-3 d-flex justify-content-between align-items-center">
-                            <div class="axis-label">Performance vs Potential Matrix (360° Assessment)</div>
-                            <div class="text-end">
-                                <small class="text-muted">Klik kotak untuk lihat detail karyawan</small>
+                    <div class="matrix-grid-container">
+                        <div class="matrix-grid mb-3">
+                            <div class="matrix-cell bg-potential-gem" data-quadrant="potential_gem">
+                                <div class="matrix-count" id="countPotentialGem">0</div>
+                                <div class="matrix-title">"Potential Gem"</div>
+                                <div class="matrix-desc">High Potential<br>Low Performance</div>
+                            </div>
+                            <div class="matrix-cell bg-high-potential" data-quadrant="high_potential">
+                                <div class="matrix-count" id="countHighPotential">0</div>
+                                <div class="matrix-title">"High Potential"</div>
+                                <div class="matrix-desc">High Potential<br>Moderate Performance</div>
+                            </div>
+                            <div class="matrix-cell bg-star" data-quadrant="star">
+                                <div class="matrix-count" id="countStar">0</div>
+                                <div class="matrix-title">"Star"</div>
+                                <div class="matrix-desc">High Potential<br>High Performance</div>
+                            </div>
+                            <div class="matrix-cell bg-inconsistent" data-quadrant="inconsistent">
+                                <div class="matrix-count" id="countInconsistent">0</div>
+                                <div class="matrix-title">"Inconsistent Player"</div>
+                                <div class="matrix-desc">Moderate Potential<br>Low Performance</div>
+                            </div>
+                            <div class="matrix-cell bg-core-player" data-quadrant="core_player">
+                                <div class="matrix-count" id="countCorePlayer">0</div>
+                                <div class="matrix-title">"Core Player"</div>
+                                <div class="matrix-desc">Moderate Potential<br>Moderate Performance</div>
+                            </div>
+                            <div class="matrix-cell bg-high-performer" data-quadrant="high_performer">
+                                <div class="matrix-count" id="countHighPerformer">0</div>
+                                <div class="matrix-title">"High Performer"</div>
+                                <div class="matrix-desc">Moderate Potential<br>High Performance</div>
+                            </div>
+                            <div class="matrix-cell bg-risk" data-quadrant="risk">
+                                <div class="matrix-count" id="countRisk">0</div>
+                                <div class="matrix-title">"Risk"</div>
+                                <div class="matrix-desc">Low Potential<br>Low Performance</div>
+                            </div>
+                            <div class="matrix-cell bg-average-performer" data-quadrant="average_performer">
+                                <div class="matrix-count" id="countAveragePerformer">0</div>
+                                <div class="matrix-title">"Average Performer"</div>
+                                <div class="matrix-desc">Low Potential<br>Moderate Performance</div>
+                            </div>
+                            <div class="matrix-cell bg-solid-performer" data-quadrant="solid_performer">
+                                <div class="matrix-count" id="countSolidPerformer">0</div>
+                                <div class="matrix-title">"Solid Performer"</div>
+                                <div class="matrix-desc">Low Potential<br>High Performance</div>
                             </div>
                         </div>
 
-                        <div class="matrix-wrapper">
-                            <div class="matrix-axis-vertical">
-                                <div class="axis-label-vertical">High Potential</div>
-                                <div class="axis-label-vertical">Moderate Potential</div>
-                                <div class="axis-label-vertical">Low Potential</div>
+                        <div class="matrix-axis-horizontal">
+                            <div class="col-4 text-center">
+                                <small class="text-muted fw-medium bg-light px-2 py-1 rounded">Low Performance</small>
                             </div>
-
-                            <!-- Matrix Grid -->
-                            <div class="matrix-grid-container">
-                                <div class="matrix-grid mb-3">
-                                    <div class="matrix-cell bg-potential-gem" data-quadrant="potential_gem"
-                                        data-type="assessment">
-                                        <div class="matrix-count" id="countPotentialGem360">0</div>
-                                        <div class="matrix-title">"Potential Gem"</div>
-                                        <div class="matrix-desc">High Potential<br>Low Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-high-potential" data-quadrant="high_potential"
-                                        data-type="assessment">
-                                        <div class="matrix-count" id="countHighPotential360">0</div>
-                                        <div class="matrix-title">"High Potential"</div>
-                                        <div class="matrix-desc">High Potential<br>Moderate Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-star" data-quadrant="star" data-type="assessment">
-                                        <div class="matrix-count" id="countStar360">0</div>
-                                        <div class="matrix-title">"Star"</div>
-                                        <div class="matrix-desc">High Potential<br>High Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-inconsistent" data-quadrant="inconsistent"
-                                        data-type="assessment">
-                                        <div class="matrix-count" id="countInconsistent360">0</div>
-                                        <div class="matrix-title">"Inconsistent Player"</div>
-                                        <div class="matrix-desc">Moderate Potential<br>Low Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-core-player" data-quadrant="core_player"
-                                        data-type="assessment">
-                                        <div class="matrix-count" id="countCorePlayer360">0</div>
-                                        <div class="matrix-title">"Core Player"</div>
-                                        <div class="matrix-desc">Moderate Potential<br>Moderate Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-high-performer" data-quadrant="high_performer"
-                                        data-type="assessment">
-                                        <div class="matrix-count" id="countHighPerformer360">0</div>
-                                        <div class="matrix-title">"High Performer"</div>
-                                        <div class="matrix-desc">Moderate Potential<br>High Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-risk" data-quadrant="risk" data-type="assessment">
-                                        <div class="matrix-count" id="countRisk360">0</div>
-                                        <div class="matrix-title">"Risk"</div>
-                                        <div class="matrix-desc">Low Potential<br>Low Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-average-performer" data-quadrant="average_performer"
-                                        data-type="assessment">
-                                        <div class="matrix-count" id="countAveragePerformer360">0</div>
-                                        <div class="matrix-title">"Average Performer"</div>
-                                        <div class="matrix-desc">Low Potential<br>Moderate Performance</div>
-                                    </div>
-                                    <div class="matrix-cell bg-solid-performer" data-quadrant="solid_performer"
-                                        data-type="assessment">
-                                        <div class="matrix-count" id="countSolidPerformer360">0</div>
-                                        <div class="matrix-title">"Solid Performer"</div>
-                                        <div class="matrix-desc">Low Potential<br>High Performance</div>
-                                    </div>
-                                </div>
-
-                                <!-- Horizontal Axis (Performance) -->
-                                <div class="matrix-axis-horizontal">
-                                    <div class="col-4 text-center"><small
-                                            class="text-muted fw-medium bg-light px-2 py-1 rounded">Low Performance</small>
-                                    </div>
-                                    <div class="col-4 text-center"><small
-                                            class="text-muted fw-medium bg-light px-2 py-1 rounded">Moderate
-                                            Performance</small></div>
-                                    <div class="col-4 text-center"><small
-                                            class="text-muted fw-medium bg-light px-2 py-1 rounded">High
-                                            Performance</small></div>
-                                </div>
+                            <div class="col-4 text-center">
+                                <small class="text-muted fw-medium bg-light px-2 py-1 rounded">Moderate Performance</small>
+                            </div>
+                            <div class="col-4 text-center">
+                                <small class="text-muted fw-medium bg-light px-2 py-1 rounded">High Performance</small>
                             </div>
                         </div>
                     </div>
@@ -780,15 +628,12 @@
                 tahun: '{{ date('Y') }}',
                 granularity: 'monthly'
             };
-            let lastMatrixData = {
-                kpi: null,
-                assessment: null
-            };
+            let lastMatrixData = null;
 
             const endpoints = {
                 trend: '{{ route('HR.executive.analytics.trend') }}',
                 prediction: '{{ route('HR.executive.analytics.prediction') }}',
-                matrix: '{{ route('HR.executive.analytics.matrix') }}'
+                matrix: '{{ route('HR.executive.analytics.matrix.unified') }}'
             };
 
             function initChart() {
@@ -843,27 +688,16 @@
 
                 try {
                     const params = new URLSearchParams(currentFilters);
-                    const [trendRes, predictionRes, matrixKpiRes, matrixAssessmentRes] = await Promise.all([
+                    const [trendRes, predictionRes, matrixRes] = await Promise.all([
                         fetch(endpoints.trend + '?' + params).then(r => r.json()),
                         fetch(endpoints.prediction + '?' + params).then(r => r.json()),
-                        fetch(endpoints.matrix + '?' + new URLSearchParams({
-                            ...currentFilters,
-                            type: 'kpi'
-                        })).then(r => r.json()),
-                        fetch(endpoints.matrix + '?' + new URLSearchParams({
-                            ...currentFilters,
-                            type: 'assessment'
-                        })).then(r => r.json())
+                        fetch(endpoints.matrix + '?' + params).then(r => r.json())
                     ]);
 
-                    lastMatrixData = {
-                        kpi: matrixKpiRes,
-                        assessment: matrixAssessmentRes
-                    };
-                    updateMetrics(trendRes, predictionRes, matrixKpiRes);
+                    lastMatrixData = matrixRes;
+                    updateMetrics(trendRes, predictionRes, matrixRes);
                     updateChart(trendRes);
-                    updateMatrix(matrixKpiRes, 'kpi');
-                    updateMatrix(matrixAssessmentRes, 'assessment');
+                    updateMatrix(matrixRes);
                     showToast('Data berhasil diperbarui', 'success');
                 } catch (error) {
                     console.error('Error fetching data:', error);
@@ -921,7 +755,8 @@
 
                 ['predNext1', 'predNext2', 'predNext3'].forEach((id, i) => {
                     const el = document.getElementById(id);
-                    if (el) el.textContent = prediction.next_3?.[i] ?? '-';
+                    if (el) el.textContent = prediction.next_3_periods?.[i] ?? prediction.next_3?.[i] ??
+                    '-';
                 });
 
                 const rec = document.getElementById('predictionRecommendation');
@@ -953,10 +788,9 @@
                 chartTrend.update('none');
             }
 
-            function updateMatrix(matrixData, type) {
+            function updateMatrix(matrixData) {
                 if (!matrixData) return;
                 const matrix = matrixData.matrix || {};
-                const suffix = type === 'assessment' ? '360' : '';
 
                 const counts = {
                     star: matrix.star?.length || 0,
@@ -979,7 +813,7 @@
                 ];
 
                 ids.forEach((id, i) => {
-                    const el = document.getElementById(id + suffix);
+                    const el = document.getElementById(id);
                     if (el) el.textContent = counts[keys[i]];
                 });
             }
@@ -1034,35 +868,43 @@
 
                 return employees.map(emp => {
                     const pScore = emp.performance_score || 0;
-                    const gScore = emp.growth_score || 0;
-                    const threeSixty = emp.three_sixty_score || 0;
+                    const gScore = emp.potential_score || emp.growth_score || 0;
+                    const threeSixty = emp.three_sixty_score || gScore;
 
                     const pClass = pScore >= 75 ? 'score-high' : (pScore >= 50 ? 'score-mid' : 'score-low');
                     const gClass = gScore >= 70 ? 'score-high' : (gScore >= 40 ? 'score-mid' : 'score-low');
                     const tClass = threeSixty >= 80 ? 'score-high' : (threeSixty >= 60 ? 'score-mid' :
                         'score-low');
 
-                    return `
-                        <div class="employee-item">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <div class="employee-name">${emp.nama || '-'}</div>
-                                    <div class="employee-meta">${emp.jabatan || '-'} • ${emp.divisi || '-'}</div>
+                        return `
+                            <div class="employee-item">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <div class="employee-name">${emp.nama || '-'}</div>
+                                        <div class="employee-meta">${emp.jabatan || '-'} • ${emp.divisi || '-'}</div>
+                                    </div>
                                 </div>
+
+                                <div class="score-container">
+                                    <span class="score-badge ${pClass}">
+                                        <i class="bi bi-graph-up"></i> ${pScore}%
+                                    </span>
+                                    <span class="score-badge ${gClass}">
+                                        <i class="bi bi-arrow-up-right"></i> ${gScore}%
+                                    </span>
+                                    <span class="score-badge ${tClass}">
+                                        <i class="bi bi-people"></i> ${threeSixty}%
+                                    </span>
+                                </div>
+
+                                ${emp.key_strengths?.length ? `<div class="mt-2"><small class="text-success fw-bold">✓ ${emp.key_strengths.join(', ')}</small></div>` : ''}
+                                ${emp.development_areas?.length ? `<div class="mt-1"><small class="text-warning fw-bold">⚠ ${emp.development_areas.join(', ')}</small></div>` : ''}
                             </div>
-                            <div class="score-container">
-                                <span class="score-badge ${pClass}"><i class="bi bi-graph-up"></i> ${pScore}%</span>
-                                <span class="score-badge ${gClass}"><i class="bi bi-arrow-up-right"></i> ${gScore}%</span>
-                                <span class="score-badge ${tClass}"><i class="bi bi-people"></i> ${threeSixty}%</span>
-                            </div>
-                            ${emp.key_strengths?.length ? `<div class="mt-2"><small class="text-success fw-bold">✓ ${emp.key_strengths.join(', ')}</small></div>` : ''}
-                            ${emp.development_areas?.length ? `<div class="mt-1"><small class="text-warning fw-bold">⚠ ${emp.development_areas.join(', ')}</small></div>` : ''}
-                        </div>
-                    `;
+                        `;
                 }).join('');
             }
 
-            function showModalEmployees(quadrant, type) {
+            function showModalEmployees(quadrant) {
                 const titles = {
                     star: 'Star',
                     high_potential: 'High Potential',
@@ -1075,20 +917,18 @@
                     risk: 'Risk'
                 };
 
-                const typeLabel = type === 'assessment' ? ' (360° Assessment)' : ' (KPI Performance)';
                 const titleEl = document.getElementById('modalMatrixTitle');
-                if (titleEl) titleEl.textContent = `${titles[quadrant] || quadrant}${typeLabel}`;
+                if (titleEl) titleEl.textContent = `${titles[quadrant] || quadrant} (KPI × 360°)`;
 
                 const contentEl = document.getElementById('modalMatrixContent');
                 if (!contentEl) return;
 
-                const data = lastMatrixData[type];
-                if (!data) {
+                if (!lastMatrixData) {
                     contentEl.innerHTML = '<div class="empty-state"><p class="mb-0">Memuat data...</p></div>';
                     return;
                 }
 
-                const matrix = data.matrix || {};
+                const matrix = lastMatrixData.matrix || {};
                 const employees = matrix[quadrant] || [];
                 contentEl.innerHTML = renderEmployeeList(employees);
 
@@ -1131,23 +971,7 @@
                 cell.addEventListener('click', function(e) {
                     e.preventDefault();
                     const quadrant = this.dataset.quadrant;
-                    const type = this.dataset.type || 'kpi';
-                    showModalEmployees(quadrant, type);
-                });
-            });
-
-            document.querySelectorAll('.dropdown-menu .dropdown-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    document.querySelectorAll('.dropdown-menu .dropdown-item').forEach(i => i
-                        .classList.remove('active'));
-                    this.classList.add('active');
-                    const filter = this.dataset.filter;
-                    if (filter) {
-                        const quadrant = this.closest('.card').querySelector(
-                            '.matrix-cell[data-quadrant="' + filter + '"]');
-                        if (quadrant) quadrant.click();
-                    }
+                    showModalEmployees(quadrant);
                 });
             });
 
@@ -1160,4 +984,8 @@
             fetchData();
         });
     </script>
+{{-- <a href="{{ route('HR.executive.index') }}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-eye"></i> evidence data
+    </a> --}}
 @endsection
+            
