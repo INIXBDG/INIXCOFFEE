@@ -176,7 +176,7 @@ class AktivitasController extends Controller
                         $perusahaan = $item->perusahaanLangsung;
                         $namaPerusahaan = $perusahaan?->nama_perusahaan;
                         $idContact = $item->id_contact;
-                    } elseif ($item->aktivitas === 'Form_Masuk') {
+                    } elseif (in_array($item->aktivitas, ['Form_Masuk', 'Regis Form'])) {
                         $perusahaan = $item->perusahaanLangsung;
 
                         if (empty($perusahaan) && !empty($item->contact)) {
@@ -233,7 +233,7 @@ class AktivitasController extends Controller
                     return [
                         'id' => $item->id,
                         'kontak' => $kontak,
-                        'contact_type' => in_array($item->aktivitas, ['PA', 'Form_Masuk']) ? 'perusahaan' : 'contact',
+                        'contact_type' => in_array($item->aktivitas, ['PA', 'Form_Masuk', 'Regis Form']) ? 'perusahaan' : 'contact',
                         'id_sales' => $item->id_sales,
                         'aktivitas' => $aktivitas,
                         'pax' => $item->pax,
