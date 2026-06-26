@@ -617,7 +617,7 @@ class JurnalAkuntansiController extends Controller
         $pdf = Pdf::loadView('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'gm', 'finance', 'listPengajuan', 'netSales', 'sales', 'manager', 'dirut', 'finance', 'ttd_accounting', 'ttd_gm', 'ttd_keuangan', 'terbilang', 'penerima', 'orangluar'))
             ->setPaper('A4', 'portrait');
 
-        return $pdf->download('laporan-jurnal-' . $jurnalAkuntansi->nomor_kk . '.pdf');
+        return $pdf->stream('laporan-jurnal-' . $jurnalAkuntansi->nomor_kk . '.pdf');
     }
 
     private function formatTerbilang($amount)
