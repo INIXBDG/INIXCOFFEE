@@ -162,6 +162,16 @@
                 <span class="menu-link-indicator"></span>
             </a>
         </li>
+
+        <li class="menu-item {{ request()->routeIs('HR.performance.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.performance.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:chart-bar" data-width="20" data-height="20"></i>
+                </span>
+                <span>Performance</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
     </ul>
 
     <div class="sidebar-footer px-3 pt-2 pb-3">
