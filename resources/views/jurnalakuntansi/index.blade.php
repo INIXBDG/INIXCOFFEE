@@ -370,6 +370,39 @@
             </div>
         </div>
 
+        {{-- Modal Pilih Karyawan untuk PDF --}}
+        <div class="modal fade" id="pdfJurnalModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Cetak PDF Jurnal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Pilih Karyawan</label>
+                            <select class="form-control" id="pdf_karyawan_id">
+                                <option value="">-- Pilih Karyawan --</option>
+                                @foreach ($karyawan as $k)
+                                    <option value="{{ $k->id }}">{{ $k->nama_lengkap }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Input Karyawan</label>
+                            <input type="text" name="orang_luar" id="orang_luar" class="form-control">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-danger" id="btn-cetak-pdf">
+                            <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Cetak PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row justify-content-center">
             <div class="col-md-12">
                 <div class="d-flex justify-content-end mb-3 ">
@@ -656,8 +689,7 @@
                                 var actions = '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
                                 actions += '<div class="dropdown-menu px-2">';
                                 actions += '<button type="button" class="btn-edit-jurnal dropdown-item mb-2 rounded-2 bg-primary text-white" data-id="' + row.id + '">Edit</button>';
-                                actions += '<a class="dropdown-item bg-danger text-white rounded-2" href="{{ url('/jurnalakuntansi/pdf') }}/' + row.id + '">PDF</a>';
-                                actions += '</div>';
+                                actions += '<button type="button" class="dropdown-item bg-danger text-white rounded-2 btn-pdf-jurnal" data-id="' + row.id + '">PDF</button>';                                actions += '</div>';
                                 return actions;
                             }
                         }
@@ -903,6 +935,26 @@
                         },
                         error: function () { $('#loadingModal').modal('hide'); $('#loadingModal').attr('inert', true); alert('Terjadi kesalahan validasi.'); }
                     });
+                });
+
+                // Buka modal PDF
+                $('#jurnaltable tbody').on('click', '.btn-pdf-jurnal', function () {
+                    var idJurnal = $(this).data('id');
+                    $('#btn-cetak-pdf').data('jurnal-id', idJurnal);
+                    $('#pdf_karyawan_id').val('');
+                    $('#orang_luar').val('');
+                    $('#pdfJurnalModal').modal('show');
+                });
+
+                // Cetak PDF
+                $('#btn-cetak-pdf').click(function () {
+                    var idJurnal = $(this).data('jurnal-id');
+                    var idKaryawan = $('#pdf_karyawan_id').val();
+                    var orangLuar = $('#orang_luar').val();
+
+                    var url = "{{ url('/jurnalakuntansi/pdf') }}/" + idJurnal + "?id_penerima=" + idKaryawan + "&orang_luar=" + orangLuar;
+                    window.open(url, '_blank');
+                    $('#pdfJurnalModal').modal('hide');
                 });
 
                 // Filter & Reset

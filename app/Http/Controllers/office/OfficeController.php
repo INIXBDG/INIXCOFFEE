@@ -160,30 +160,26 @@ class OfficeController extends Controller
                     $item->event . '|' .
                     $item->tanggal_awal;
             })
-
             ->map(function ($items) {
-
                 $first = $items->first();
 
                 return (object) [
                     'id' => $items->pluck('id')->implode(', '),
-                    'id_all' => $items->pluck('id')->implode(', '),
+                    'id_all' => $items->sortBy('id')->pluck('id')->implode(', '),
                     'materi_key' => $first->materi_key,
                     'ruang' => $first->ruang,
                     'metode_kelas' => $first->metode_kelas,
                     'event' => $first->event,
                     'harga_jual' => $first->harga_jual,
                     'pax' => $first->pax,
-                    'exam' => $items->pluck('exam')->implode(', '),
+                    'exam' => $first->exam,
                     'instruktur_key' => $first->instruktur_key,
                     'instruktur_key2' => $first->instruktur_key2,
                     'asisten_key' => $first->asisten_key,
                     'makanan' => $items->pluck('makanan')->implode(', '),
                     'perusahaan_all' => $items->pluck('perusahaan_key')->implode(', '),
                     'sales_all' => $items->pluck('sales_key')->implode(', '),
-                    'status' => $items->contains('status', 0)
-                        ? 0
-                        : $items->min('status'),
+                    'status' => $items->contains('status', 0) ? 0 : $items->min('status'),
                     'total_pax' => $items->sum('pax'),
                     'tanggal_awal' => $first->tanggal_awal,
                     'tanggal_akhir' => $items->max('tanggal_akhir'),
@@ -196,54 +192,53 @@ class OfficeController extends Controller
                         ->values(),
                 ];
             })
-
             ->values();
 
         foreach ($rkms as $detail_rkm) {
+            $rkmIds = collect(explode(',', $detail_rkm->id_all))
+                ->map(fn($id) => trim($id))
+                ->filter()
+                ->values()
+                ->toArray();
 
-            $singleId = trim(explode(',', $detail_rkm->id)[0]);
-
-            $checklists = ChecklistKeperluan::where('id_rkm', $singleId)
+            $checklists = ChecklistKeperluan::whereIn('id_rkm', $rkmIds)
                 ->with('subChecklistKeperluans')
                 ->whereNotNull('tanggal_keperluan')
                 ->orderBy('tanggal_keperluan', 'asc')
                 ->get()
-                ->keyBy('tanggal_keperluan');
+                ->groupBy('tanggal_keperluan')
+                ->map(function ($items) {
+                    return $items->first();
+                });
 
             $detail_rkm->checklists = $checklists;
 
             foreach ($checklists as $checklist => $item) {
-
                 $progress = 0;
 
                 if ($detail_rkm->metode_kelas === 'Offline') {
-                    // ===== Materi =====
                     $materiChecked =
                         ($item->subChecklistKeperluans?->materi_module ? 1 : 0) +
                         ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
 
                     $progress += ($materiChecked / 2) * 20;
 
-                    // ===== Kelas =====
                     if ($item->kelas) {
                         $progress += 20;
                     }
 
-                    // ===== CB =====
                     $cbChecked =
                         ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0) +
                         ($item->subChecklistKeperluans?->cb_peserta ? 1 : 0);
 
                     $progress += ($cbChecked / 2) * 20;
 
-                    // ===== Maksi =====
                     $maksiChecked =
                         ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0) +
                         ($item->subChecklistKeperluans?->maksi_peserta ? 1 : 0);
 
                     $progress += ($maksiChecked / 2) * 20;
 
-                    // ===== Keperluan Kelas =====
                     $kelasChecked =
                         ($item->subChecklistKeperluans?->kelas_ac ? 1 : 0) +
                         ($item->subChecklistKeperluans?->kelas_jam ? 1 : 0) +
@@ -262,18 +257,13 @@ class OfficeController extends Controller
                     $totalKategori = 3;
                     $kategoriSelesai = 0;
 
-                    // ===== Materi =====
                     $totalMateri = 2;
                     $materiChecked =
                         ($item->subChecklistKeperluans?->materi_module ? 1 : 0) +
                         ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
 
                     $kategoriSelesai += $materiChecked / $totalMateri;
-
-                    // ===== CB =====
                     $kategoriSelesai += ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0);
-
-                    // ===== Maksi =====
                     $kategoriSelesai += ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0);
 
                     $item->progress = round(($kategoriSelesai / $totalKategori) * 100);

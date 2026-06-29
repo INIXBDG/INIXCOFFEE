@@ -104,7 +104,7 @@ function updateCarPosition(totalSales, target) {
 
 function getProjectTarget(year) {
     $.ajax({
-        url: `/getProjectTarget/${year}`,
+        url: `/getProjectTarget/${year}/target-project`,
         type: 'GET',
         dataType: 'json',
         success: function (response) {
@@ -3021,7 +3021,7 @@ $(document).ready(function () {
     // =======================================================================
 
     initializeYearlySales();
-    initializeProjectTarget();
+    // initializeProjectTarget();
 
     // Inisialisasi dropdown filter bulan
     if (typeof loadBulanFilter === 'function') {
@@ -3050,7 +3050,7 @@ $(document).ready(function () {
         let year = $(this).val();
         if (year) {
             initializeYearlySales();
-            initializeProjectTarget(); // TAMBAHKAN INI
+            // initializeProjectTarget();
         }
     });
 

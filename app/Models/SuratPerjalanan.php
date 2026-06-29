@@ -35,9 +35,12 @@ class SuratPerjalanan extends Model
         'durasi',
         'approval_manager',
         'approval_hrd',
+        'approval_gm',
         'approval_direksi',
         'jenis_dinas',
-        'jadwal_RKM'
+        'jadwal_RKM',
+        'approval_finance',
+        'bukti_transfer',
     ];
 
     /**
@@ -55,6 +58,8 @@ class SuratPerjalanan extends Model
         'approval_manager' => 'string',
         'approval_hrd' => 'string',
         'approval_direksi' => 'string',
+        'approval_gm' => 'string',
+        'approval_finance' => 'string',
     ];
 
     public function jurnalAkuntansi()

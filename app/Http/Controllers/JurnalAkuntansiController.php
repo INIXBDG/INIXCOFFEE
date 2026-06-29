@@ -24,7 +24,8 @@ class JurnalAkuntansiController extends Controller
     public function index()
     {
         $no_akun = no_akun::get();
-        return view('jurnalakuntansi.index', compact('no_akun'));
+        $karyawan = karyawan::all();
+        return view('jurnalakuntansi.index', compact('no_akun', 'karyawan'));
     }
 
     private function generateNomorKK($tanggal_transaksi)
@@ -552,9 +553,33 @@ class JurnalAkuntansiController extends Controller
         return redirect()->back()->with('error', 'Format eksport tidak valid.');
     }
 
-    public function eksportPdf($id)
+    public function eksportPdf($id, Request $request)
     {
         $jurnalAkuntansi = JurnalAkuntansi::with('netSales')->findOrFail($id);
+
+        $ttd_accounting = karyawan::where('jabatan', 'Finance & Accounting')
+            ->where('status_aktif', "1")
+            ->select('ttd')
+            ->latest()
+            ->first(); 
+
+        $ttd_gm = karyawan::where('jabatan', 'GM')
+            ->where('status_aktif', "1")
+            ->select('ttd')
+            ->latest()
+            ->first(); 
+
+        $ttd_keuangan = karyawan::where('jabatan', 'Finance & Accounting')
+            ->where('status_aktif', "1")
+            ->select('ttd')
+            ->oldest() 
+            ->first();
+
+        if ((float) $jurnalAkuntansi->kredit === 0.0) {
+            $terbilang = $this->terbilang($jurnalAkuntansi->debit);
+        } else {
+            $terbilang = $this->terbilang($jurnalAkuntansi->kredit);
+        }
 
         $listPengajuan = $jurnalAkuntansi->ListPengajuan();
 
@@ -587,10 +612,47 @@ class JurnalAkuntansiController extends Controller
         $gm = karyawan::where('jabatan', 'GM')->where('status_aktif', "1")->latest()->first();
         $dirut = karyawan::where('jabatan', 'Direktur Utama')->where('status_aktif', "1")->latest()->first();
         $finance = karyawan::where('jabatan', 'Finance & Accounting')->where('status_aktif', "1")->latest()->first();
-        $pdf = Pdf::loadView('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'gm', 'finance', 'listPengajuan', 'netSales', 'sales', 'manager', 'dirut', 'finance'))
+        $penerima = karyawan::find($request->id_penerima) ?? null;
+        $orangluar = $request->orang_luar ?? null;
+        $pdf = Pdf::loadView('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'gm', 'finance', 'listPengajuan', 'netSales', 'sales', 'manager', 'dirut', 'finance', 'ttd_accounting', 'ttd_gm', 'ttd_keuangan', 'terbilang', 'penerima', 'orangluar'))
             ->setPaper('A4', 'portrait');
 
-        return $pdf->download('laporan-jurnal-' . $jurnalAkuntansi->nomor_kk . '.pdf');
+        return $pdf->stream('laporan-jurnal-' . $jurnalAkuntansi->nomor_kk . '.pdf');
+    }
+
+    private function formatTerbilang($amount)
+    {
+        $nilai = abs($amount);
+        $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+
+        if ($nilai < 12) {
+            return " " . $huruf[$nilai];
+        } elseif ($nilai < 20) {
+            return $this->formatTerbilang($nilai - 10) . " belas";
+        } elseif ($nilai < 100) {
+            return $this->formatTerbilang($nilai / 10) . " puluh" . $this->formatTerbilang($nilai % 10);
+        } elseif ($nilai < 200) {
+            return " seratus" . $this->formatTerbilang($nilai - 100);
+        } elseif ($nilai < 1000) {
+            return $this->formatTerbilang($nilai / 100) . " ratus" . $this->formatTerbilang($nilai % 100);
+        } elseif ($nilai < 2000) {
+            return " seribu" . $this->formatTerbilang($nilai - 1000);
+        } elseif ($nilai < 1000000) {
+            return $this->formatTerbilang($nilai / 1000) . " ribu" . $this->formatTerbilang($nilai % 1000);
+        } elseif ($nilai < 1000000000) {
+            return $this->formatTerbilang($nilai / 1000000) . " juta" . $this->formatTerbilang($nilai % 1000000);
+        }
+
+        return "";
+    }
+
+    public function terbilang($nilai)
+    {
+        if ($nilai < 0) {
+            return "Minus " . trim($this->formatTerbilang($nilai)) . " Rupiah";
+        }
+
+        return ucwords(trim($this->formatTerbilang($nilai))) . " Rupiah";
     }
 
     public function otomatisasiJurnal(Request $request)

@@ -89,7 +89,7 @@ class CRMController extends Controller
             $target = TargetActivity::all()->keyBy('id_sales');
 
             // 6. Ambil Aktivitas Berdasarkan Rentang Waktu yang Sudah Dihitung
-            $aktivitas = Aktivitas::with(['contact.perusahaan', 'peserta'])
+            $aktivitas = Aktivitas::with(['contact.perusahaan', 'peserta', 'perusahaanLangsung'])
                 ->whereBetween('waktu_aktivitas', [$startOfWeek, $endOfWeek])
                 ->get();
 
@@ -103,7 +103,7 @@ class CRMController extends Controller
             $endDate = $request->input('end_date');
 
             // 2. Inisialisasi Kueri Aktivitas beserta relasi yang dibutuhkan
-            $aktivitasQuery = Aktivitas::with(['contact.perusahaan', 'peserta']);
+            $aktivitasQuery = Aktivitas::with(['contact.perusahaan', 'peserta', 'perusahaanLangsung']);
 
             // 3. Terapkan logika filter tanggal
             if ($startDate && $endDate) {
