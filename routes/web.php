@@ -830,6 +830,9 @@ Route::prefix('crm')->group(function () {
         Route::post('/transfer', [PerpindahanDBController::class, 'transfer'])->name('transfer');
         Route::get('/history/{id}', [PerpindahanDBController::class, 'exportHistory'])->name('history');
     });
+
+    Route::get('/contact/export-pdf', [ContactController::class, 'exportPdf'])->name('contact.export_pdf');
+
 });
 
 //INVOICE
@@ -1020,7 +1023,7 @@ Route::prefix('office')->group(function () {
     Route::post('/sop-perusahaan/store', [PerusahaanController::class, 'storeSop'])->name('sop.perusahaan.store');
     Route::put('/sop-perusahaan/update/{id}', [PerusahaanController::class, 'updateSop'])->name('sop.perusahaan.update');
     Route::delete('/sop-perusahaan/delete/{id}', [PerusahaanController::class, 'deleteSop'])->name('sop.perusahaan.delete');
-    
+
 
     // administrasi karyawan
     Route::get('data-administrasi/{id}', [AdministrasiKaryawanController::class, 'getData']);
@@ -1626,3 +1629,4 @@ Route::get('/visit-projects/get', [VisitProjectController::class, 'get'])->name(
 Route::post('/visit-projects/store', [VisitProjectController::class, 'store'])->name('visit-projects.store');
 Route::put('/visit-projects/{visitProject}', [VisitProjectController::class, 'update'])->name('visit-projects.update');
 Route::delete('/visit-projects/{visitProject}', [VisitProjectController::class, 'destroy'])->name('visit-projects.destroy');
+
