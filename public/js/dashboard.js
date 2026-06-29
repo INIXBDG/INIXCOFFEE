@@ -104,7 +104,7 @@ function updateCarPosition(totalSales, target) {
 
 function getProjectTarget(year) {
     $.ajax({
-        url: `/getProjectTarget/${year}`,
+        url: `/getProjectTarget/${year}/target-project`,
         type: 'GET',
         dataType: 'json',
         success: function (response) {
