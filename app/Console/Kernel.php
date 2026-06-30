@@ -250,6 +250,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:update-administrasi-karyawan')->daily()->description('app:update-administrasi-karyawan');
         $schedule->command('app:generate-libur-nasional')->daily()->description('app:generate-libur-nasional');
         $schedule->command('perusahaan:evaluasi-status')->daily()->description('perusahaan:evaluasi-status');
+        $schedule->command('app:notification-pembelian-hr')->daily()->description('app:notification-pembelian-hr');
     }
 
     protected function commands(): void

@@ -20,6 +20,10 @@
             </div>
         @endif
 
+        <a href="{{ route('office.indexKegiatan') }}" class="btn btn-secondary mb-3 fw-semibold px-4 py-2">
+            Kembali
+        </a>
+
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-semibold">{{ $kegiatan->nama_kegiatan }}</h5>

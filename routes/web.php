@@ -43,6 +43,7 @@ use App\Http\Controllers\HR\KaryawanProfileController;
 use App\Http\Controllers\HR\KaryawanTaskController;
 use App\Http\Controllers\HR\payrollController;
 use App\Http\Controllers\HR\presenceController;
+use App\Http\Controllers\HR\RencanaPembelianHrController;
 use App\Http\Controllers\HR\RekapSJPController;
 use App\Http\Controllers\HR\ReportController;
 use App\Http\Controllers\HR\SopController;
@@ -76,6 +77,7 @@ use App\Http\Controllers\office\OfficeController;
 use App\Http\Controllers\Office\pickupDriverController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\office\KondisiToolsController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\PenukaranSouvenirController;
@@ -1223,6 +1225,19 @@ Route::prefix('office')
             Route::delete('/delete/{id}', [KoordinasiOfficeBoyController::class, 'delete'])->name('delete');
         });
 
+        Route::prefix('kondisi-tools')->name('KondisiTools.')->group(function() {
+            Route::get('/', [KondisiToolsController::class, 'index'])->name('index');
+            Route::post('/store', [KondisiToolsController::class, 'store'])->name('store');
+            Route::post('/update/{id}', [KondisiToolsController::class, 'update'])->name('update');
+            Route::post('/delete/{id}', [KondisiToolsController::class, 'delete'])->name('delete');
+            Route::get('/get-tools', [KondisiToolsController::class, 'getTools'])->name('get-tools');
+            Route::get('/get-pemeriksaan', [KondisiToolsController::class, 'getPemeriksaan'])->name('get-pemeriksaan');
+            Route::get('/get-template', [KondisiToolsController::class, 'getTemplate'])->name('get-template');
+            Route::post('/import-alat', [KondisiToolsController::class, 'importAlat'])->name('importAlat');
+            Route::get('/export-exel', [KondisiToolsController::class, 'exportExcel'])->name('exportExcel');
+            Route::get('/export-pdf', [KondisiToolsController::class, 'exportPdf'])->name('exportPdf');
+        });
+
         Route::prefix('/rekomendasi-lanjutan')
             ->name('rekomendasiLanjutan.')
             ->group(function () {
@@ -1415,6 +1430,15 @@ Route::get('/no-akun/{id}/edit', [App\Http\Controllers\NoAkunController::class, 
 Route::put('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'update'])->name('no_akun.update');
 Route::delete('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'destroy'])->name('no_akun.destroy');
 Route::post('/no-akun/import', [App\Http\Controllers\NoAkunController::class, 'importExcel'])->name('no_akun.import');
+
+Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() {
+    Route::get('', [RencanaPembelianHrController::class, 'index'])->name('index');
+    Route::post('/store', [RencanaPembelianHrController::class, 'store'])->name('store');
+    Route::post('/update/{id}', [RencanaPembelianHrController::class, 'update'])->name('update');
+    Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');
+    Route::post('/update-nvoice/{id}', [RencanaPembelianHrController::class, 'updateInvoice'])->name('updateInvoice');
+    Route::post('/update-status', [RencanaPembelianHrController::class, 'updateStatus'])->name('updateStatus');
+});
 
 Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::get('/', [HRController::class, 'index'])->name('index');
