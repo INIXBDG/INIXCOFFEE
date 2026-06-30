@@ -47,7 +47,7 @@ class karyawan extends Model
 
     public function rkmsInstruktur()
     {
-        return $this->hasMany(Rkm::class, 'instruktur_key', 'kode_karyawan');
+        return $this->hasMany(RKM::class, 'instruktur_key', 'kode_karyawan');
     }
 
     public function rkmsInstruktur2()
@@ -87,6 +87,11 @@ class karyawan extends Model
     public function educations()
     {
         return $this->hasMany(EducationalBackground::class, 'kode_karyawan', 'kode_karyawan');
+    }
+
+    public function specializations()
+    {
+        return $this->hasMany(SpecializationArea::class, 'kode_instruktur', 'kode_karyawan');
     }
 
     public function laporanSales()
@@ -131,5 +136,34 @@ class karyawan extends Model
     public function logGaji()
     {
         return $this->hasMany(LogGaji::class, 'id_karyawan', 'id');
+    }
+
+    public function getSeminarAndEventsAttribute()
+    {
+        return $this->rkmsInstruktur->where('event', '!=', 'Kelas');
+    }
+
+    public function getTeachingExperiencesAttribute()
+    {
+        $rkms = $this->rkmsInstruktur->where('event', 'Kelas');
+
+        return $rkms->groupBy('materi_key')->map(function ($group) {
+            $materiName = optional($group->first()->materi)->nama_materi ?? 'Unknown Course';
+
+            $companies = $group->map(function ($rkm) {
+                // Gunakan nama perusahaan atau 'Personal' jika null
+                return optional($rkm->perusahaan)->nama_perusahaan ?? 'Personal';
+            })->unique()->values();
+
+            $minYear = $group->min(function ($rkm) {
+                return $rkm->tanggal_awal ? \Carbon\Carbon::parse($rkm->tanggal_awal)->format('Y') : date('Y');
+            });
+
+            return (object)[
+                'course_name' => $materiName,
+                'companies'   => $companies,
+                'year_period' => $minYear . '-now',
+            ];
+        })->values();
     }
 }

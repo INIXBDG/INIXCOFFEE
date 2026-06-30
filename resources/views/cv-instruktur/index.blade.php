@@ -27,6 +27,7 @@
                                         <th scope="col">Nama Lengkap</th>
                                         <th scope="col">Email</th>
                                         <th scope="col">Jabatan</th>
+                                        <th scope="col">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -113,19 +114,34 @@
                             data: "karyawan.nama_lengkap",
                             defaultContent: "-",
                             render: function (data) {
-                                return data ? data : '-';
+                                return data !== null && data !== undefined ? data : '-';
                             }
                         },
                         {
                             data: "karyawan.email",
                             defaultContent: "-",
                             render: function (data) {
-                                return data ? data : '-';
+                                return data !== null && data !== undefined ? data : '-';
                             }
                         },
                         {
                             data: "jabatan",
                             defaultContent: "-"
+                        },
+                        {
+                            data: null,
+                            orderable: false,
+                            searchable: false,
+                            render: function (data, type, row) {
+                                if (row !== null && row !== undefined && row.id !== undefined) {
+                                    return `
+                                        <a href="{{ url('/cv-instruktur') }}/${row.id}" class="btn btn-sm btn-primary">
+                                            Detail
+                                        </a>
+                                    `;
+                                }
+                                return '-';
+                            }
                         }
                     ],
                     order: [[0, 'asc']],
