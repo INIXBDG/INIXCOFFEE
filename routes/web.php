@@ -29,18 +29,25 @@ use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\DashboardItsmController;
 use App\Http\Controllers\DashboardSLAController;
 use App\Http\Controllers\dbklienController;
+use App\Http\Controllers\HR\EmployeeJobDeskController;
 use App\Http\Controllers\examController;
 use App\Http\Controllers\feedbackController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HR\employeeController;
+use App\Http\Controllers\HR\EmployeeStructureController;
 use App\Http\Controllers\HR\FolderController;
 use App\Http\Controllers\HR\hireController;
 use App\Http\Controllers\HR\HRController;
+use App\Http\Controllers\HR\KaryawanProfileController;
+use App\Http\Controllers\HR\KaryawanTaskController;
 use App\Http\Controllers\HR\payrollController;
 use App\Http\Controllers\HR\presenceController;
 use App\Http\Controllers\HR\RencanaPembelianHrController;
+use App\Http\Controllers\HR\RekapSJPController;
 use App\Http\Controllers\HR\ReportController;
+use App\Http\Controllers\HR\SopController;
+use App\Http\Controllers\HR\StructureInixindoController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\InstructorDevelopmentController;
 use App\Http\Controllers\InventarisController;
@@ -108,6 +115,7 @@ use App\Http\Controllers\KoordinasiOfficeBoyController;
 use App\Http\Controllers\Office\OfficeExamController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\ScheduleLogController;
+use App\Http\Controllers\VisitProjectController;
 
 /*
 |--------------------------------------------------------------------------
@@ -375,7 +383,7 @@ Route::get('getOvertimeLemburByKaryawan/{id}/{month}/{year}', [App\Http\Controll
 Route::post('/export-rkm-excel-admsales', [RKMController::class, 'exportExcel'])->name('export.rkm.excel');
 
 Route::get('getYearlySales/{year}', [App\Http\Controllers\HomeController::class, 'getYearSales'])->name('getYearSales');
-Route::get('/getProjectTarget/{year}', [App\Http\Controllers\HomeController::class, 'getProjectTarget'])->name('getProjectTarget');
+Route::get('/getProjectTarget/{year}/target-project', [App\Http\Controllers\HomeController::class, 'getProjectTarget'])->name('getProjectTarget');
 Route::get('getPenjualanPerBulan/{year}', [App\Http\Controllers\ChartController::class, 'getPenjualanPerBulan'])->name('getPenjualanPerBulan');
 Route::get('getPerSalesPerTahun/{year}', [App\Http\Controllers\ChartController::class, 'getPerSalesPerTahun'])->name('getPerSalesPerTahun');
 Route::get('getPerSalesPerQuartal/{year}', [App\Http\Controllers\ChartController::class, 'getPerSalesPerQuartal'])->name('getPerSalesPerQuartal');
@@ -531,8 +539,8 @@ Route::prefix('kpi-data/')
             ->name('karyawan.')
             ->middleware(['auth'])
             ->group(function () {
-            route::get('/get', [TargetKPIController::class, 'getDataTarget'])->name('get');
-        });
+                route::get('/get', [TargetKPIController::class, 'getDataTarget'])->name('get');
+            });
     });
 
 //Project KPI
@@ -590,6 +598,7 @@ Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentControll
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
 Route::put('/suratperjalanan/{id}/approve-direksi/{status}', [App\Http\Controllers\SuratPerjalananController::class, 'approveDireksi'])->name('suratperjalanan.approve.direksi');
+Route::put('/suratperjalanan/{id}/upload-bukti', [App\Http\Controllers\SuratPerjalananController::class, 'uploadBuktiTransfer'])->name('suratperjalanan.uploadBukti');
 Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
 Route::get('/absensi/karyawan', [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
@@ -652,6 +661,7 @@ Route::post('/generate/pdf/peserta/{id}', [OutstandingController::class, 'genera
 Route::post('/rkm/store/absensi', [ControllersRKMController::class, 'storeAbsensi'])->name('storeAbsensi');
 Route::post('/rkm/delete/absensi', [ControllersRKMController::class, 'deleteAbsensi'])->name('deleteAbsensi');
 Route::get('/rkm/uploadSertifikat/{id}', [ControllersRKMController::class, 'uploadSertifikat'])->name('uploadSertifikat');
+Route::post('/rkm/upload-no-resi/{id}', [ControllersRKMController::class, 'uploadNoResi']);
 Route::post('/rkm/store/sertifikat', [ControllersRKMController::class, 'storeSertifikat'])->name('storeSertifikat');
 Route::post('/rkm/delete/sertifikat', [ControllersRKMController::class, 'deleteSertifikat'])->name('deleteSertifikat');
 // web.php
@@ -1006,6 +1016,14 @@ Route::prefix('office')->group(function () {
     Route::post('/delete-tagihan/{id}', [TagihanPerusahaanController::class, 'hapusTagihanPerusahaan'])->name('hapusTagihanPerusahaan');
     Route::get('/tagihan-perusahaan', [TagihanPerusahaanController::class, 'index'])->name('office.tagihanPerusahaan.index');
 
+    // Sop Perusahaan
+    Route::get('/sop-perusahaan', [PerusahaanController::class, 'indexSop'])->name('sop.perusahaan.index');
+    Route::get('/sop-perusahaan/{id}', [PerusahaanController::class, 'detailSop'])->name('sop.perusahaan.detail');
+    Route::post('/sop-perusahaan/store', [PerusahaanController::class, 'storeSop'])->name('sop.perusahaan.store');
+    Route::put('/sop-perusahaan/update/{id}', [PerusahaanController::class, 'updateSop'])->name('sop.perusahaan.update');
+    Route::delete('/sop-perusahaan/delete/{id}', [PerusahaanController::class, 'deleteSop'])->name('sop.perusahaan.delete');
+    
+
     // administrasi karyawan
     Route::get('data-administrasi/{id}', [AdministrasiKaryawanController::class, 'getData']);
     Route::get('administrasi-karyawan', [AdministrasiKaryawanController::class, 'index'])->name('administrasi.karyawan');
@@ -1032,6 +1050,7 @@ Route::prefix('office')->group(function () {
     Route::put('/pic-penagihan/update/{id}', [PicPenagihanController::class, 'update'])->name('picpenagihan.update');
     Route::delete('/pic-penagihan/delete/{id}', [PicPenagihanController::class, 'destroy'])->name('picpenagihan.delete');
     Route::get('/pic-penagihan/pdf/{id}', [PicPenagihanController::class, 'exportPdf'])->name('picpenagihan.pdf');
+
     Route::prefix('approval-pendapatan')->name('approvalPendapatan.')->group(function () {
         Route::get('/index', [ApprovalPendapatanController::class, 'index'])->name('index');
         Route::get('/get/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'get'])->name('get');
@@ -1039,10 +1058,14 @@ Route::prefix('office')->group(function () {
         Route::get('total-tahunan/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'totalTahunan']);
     });
 
-    route::prefix('exam')->name('office.exam.')->group(function() {
+    route::prefix('exam')->name('office.exam.')->group(function () {
         route::get('/index', [OfficeExamController::class, 'indexOffice'])->name('index');
         Route::get('/detail/{id}', [OfficeExamController::class, 'showDetailExam']);
         route::post('/update-bundling', [OfficeExamController::class, 'updateBundling'])->name('updateBundling');
+        
+        Route::get('/rekap', [OfficeExamController::class, 'indexRekap'])->name('rekap.index');
+        Route::get('/rekap/json', [OfficeExamController::class, 'rekapJson'])->name('rekap.json');
+        
         Route::get('/{year}/{month}', [OfficeExamController::class, 'showExamMonth']);
     });
 });
@@ -1422,16 +1445,16 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::prefix('employee')
         ->name('employee.')
         ->group(function () {
-        Route::get('/index', [employeeController::class, 'index'])->name('index');
-        Route::get('/category', [employeeController::class, 'getEmployeesByCategory'])->name('category');
-        Route::get('/data', [employeeController::class, 'getEmployeeData'])->name('data');
-        Route::get('/headcount/trend', [employeeController::class, 'getHeadcountTrend'])->name('trend');
-        Route::get('/headcount/breakdown', [employeeController::class, 'getHeadcountBreakdown'])->name('breakdown');
-        Route::get('/export/trend/csv', [employeeController::class, 'exportHeadcountTrendCsv'])->name('trend.export.csv');
-        Route::get('/export/trend/pdf', [employeeController::class, 'exportHeadcountTrendPdf'])->name('trend.export.pdf');
-        Route::get('/export/breakdown/csv', [employeeController::class, 'exportHeadcountBreakdownCsv'])->name('breakdown.export.csv');
-        Route::get('/export/breakdown/pdf', [employeeController::class, 'exportHeadcountBreakdownPdf'])->name('breakdown.export.pdf');
-    });
+            Route::get('/index', [employeeController::class, 'index'])->name('index');
+            Route::get('/category', [employeeController::class, 'getEmployeesByCategory'])->name('category');
+            Route::get('/data', [employeeController::class, 'getEmployeeData'])->name('data');
+            Route::get('/headcount/trend', [employeeController::class, 'getHeadcountTrend'])->name('trend');
+            Route::get('/headcount/breakdown', [employeeController::class, 'getHeadcountBreakdown'])->name('breakdown');
+            Route::get('/export/trend/csv', [employeeController::class, 'exportHeadcountTrendCsv'])->name('trend.export.csv');
+            Route::get('/export/trend/pdf', [employeeController::class, 'exportHeadcountTrendPdf'])->name('trend.export.pdf');
+            Route::get('/export/breakdown/csv', [employeeController::class, 'exportHeadcountBreakdownCsv'])->name('breakdown.export.csv');
+            Route::get('/export/breakdown/pdf', [employeeController::class, 'exportHeadcountBreakdownPdf'])->name('breakdown.export.pdf');
+        });
     Route::prefix('payroll')
         ->name('payroll.')
         ->group(function () {
@@ -1439,7 +1462,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
             Route::get('/dashboard', [payrollController::class, 'getPayrollDashboard'])->name('dashboard');
             Route::get('/export/csv', [payrollController::class, 'exportPayrollCsv'])->name('export.csv');
             Route::get('/export/pdf', [payrollController::class, 'exportPayrollPdf'])->name('export.pdf');
-    });
+        });
     Route::prefix('absensi')->name('absensi.')->group(function () {
         Route::get('/', [presenceController::class, 'index'])->name('index');
         Route::get('/analytics', [presenceController::class, 'getAttendanceAnalytics'])->name('analytics');
@@ -1455,11 +1478,23 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/trend', [TargetKPIController::class, 'getExecutiveTrend'])->name('trend');
             Route::get('/prediction', [TargetKPIController::class, 'getPredictiveAnalysis'])->name('prediction');
-            Route::get('/matrix', [TargetKPIController::class, 'getPotentialMatrix'])->name('matrix');
+            Route::get('/matrix-unified', [TargetKPIController::class, 'getPotentialMatrixUnified'])->name('matrix.unified');
         });
     });
 
-    Route::prefix('reports')->name('reports.')->group(function() {
+    Route::prefix('performance')->name('performance.')->group(function () {
+        Route::get('/dashboard', [TargetKPIController::class, 'performanceDashboard'])->name('index');
+        Route::get('/dashboard/data', [TargetKPIController::class, 'getPerformanceDashboardData'])->name('dashboard.data');
+        Route::get('/dashboard/assessment-360-detail-tab', [TargetKPIController::class, 'getAssessment360DetailTab'])->name('dashboard.assessment360.detailTab');
+        Route::get('/dashboard/performance-employee-details/{id}', [TargetKPIController::class, 'getPerformanceEmployeeDetails'])->name('dashboard.performanceEmployeeDetails');
+        Route::prefix('analytics')->name('analytics.')->group(function () {
+            Route::get('/trend', [TargetKPIController::class, 'getPerformanceTrend'])->name('trend');
+            Route::get('/prediction', [TargetKPIController::class, 'getPerformancePrediction'])->name('prediction');
+            Route::get('/matrix', [TargetKPIController::class, 'getPerformanceMatrix'])->name('matrix');
+        });
+    });
+
+    Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
 
         Route::get('/create', [ReportController::class, 'create'])->name('create');
@@ -1467,11 +1502,13 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/store', [ReportController::class, 'store'])->name('store');
         Route::get('/{template}/edit', [ReportController::class, 'edit'])->name('edit');
         Route::put('/{template}', [ReportController::class, 'update'])->name('update');
+        Route::delete('/delete/{template}', [ReportController::class, 'destroy'])->name('destroy');
 
         Route::get('/{template}/generate', [ReportController::class, 'generateForm'])->name('generate.form');
         Route::post('/{template}/generate', [ReportController::class, 'generate'])->name('generate');
-        Route::get('/{template}/history', [ReportController::class, 'history'])->name('history');
-        Route::get('/{template}/history/data', [ReportController::class, 'getHistoryData'])->name('history.data');
+        Route::get('/history', [ReportController::class, 'history'])->name('history');
+        Route::get('/history/data', [ReportController::class, 'getHistoryData'])->name('history.data');
+        Route::get('/{generation}/preview', [ReportController::class, 'preview'])->name('preview');
 
         Route::post('/placeholders', [ReportController::class, 'addPlaceholder'])->name('placeholders.store');
         Route::put('/placeholders/{placeholder}', [ReportController::class, 'updatePlaceholder'])->name('placeholders.update');
@@ -1479,10 +1516,13 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
         Route::post('/{template}/settings', [ReportController::class, 'updateSettings'])->name('settings.update');
         Route::get('/generations/{generation}/download', [ReportController::class, 'download'])->name('download');
-        // Tambahkan route ini setelah route report yang sudah ada
+
         Route::get('/create-with-mapping', [ReportController::class, 'createWithMapping'])->name('create.mapping');
         Route::post('/upload-and-map', [ReportController::class, 'uploadAndMap'])->name('upload.map');
         Route::post('/save-with-mapping', [ReportController::class, 'saveWithMapping'])->name('save.mapping');
+
+        Route::post('reports/preview-formula', [ReportController::class, 'previewFormula'])->name('preview.formula');
+        Route::post('reports/{template}/reset-counter/{counterKey}', [ReportController::class, 'resetCounter'])->name('reset.counter');
     });
 
     Route::prefix('hire')->name('hire.')->group(function() {
@@ -1540,6 +1580,63 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::delete('/pelamar/{pelamarFolderId}/restore', [ArsipRekrutmenController::class, 'restorePelamar'])->name('pelamar.restore');
 
     });
+
+    Route::prefix('structure')->name('structure.')->group(function () {
+        Route::get('/',          [StructureInixindoController::class, 'index'])->name('index');
+        Route::get('/api/tree',  [StructureInixindoController::class, 'apiTree'])->name('api.tree');
+        Route::post('/sync',     [StructureInixindoController::class, 'sync'])->name('sync');
+        Route::post('/reorder',  [StructureInixindoController::class, 'reorder'])->name('reorder');
+        Route::put('/update/{id}',  [StructureInixindoController::class, 'update'])->name('update');
+        Route::delete('/{id}',      [StructureInixindoController::class, 'destroy'])->name('destroy');
+        Route::post('/store',      [StructureInixindoController::class, 'store'])->name('store');
+        Route::get('/karyawans', [StructureInixindoController::class, 'getKaryawans'])->name('karyawans');
+        Route::post('/multi-parent', [StructureInixindoController::class, 'setMultiParent'])->name('multiParent');
+    });
+
+    Route::prefix('job-desk')->name('job_desk.')->group(function () {
+        Route::get('/',                 [KaryawanTaskController::class, 'index'])->name('index');
+        Route::post('/store',           [KaryawanTaskController::class, 'store'])->name('store');
+        Route::get('/api/{id}',         [KaryawanTaskController::class, 'show'])->name('show');
+        Route::put('/{id}',             [KaryawanTaskController::class, 'update'])->name('update');
+        Route::delete('/{id}',          [KaryawanTaskController::class, 'destroy'])->name('destroy');
+        Route::get('/org/{orgId}',      [KaryawanTaskController::class, 'getJobDesk'])->name('getByOrg');
+    });
+
+    Route::prefix('sop')->name('sop.')->group(function () {
+        Route::post('/store', [SopController::class, 'store'])->name('store');
+        Route::put('/{id}', [SopController::class, 'update'])->name('update');
+        Route::delete('/{id}', [SopController::class, 'destroy'])->name('destroy');
+        Route::get('/api/{id}', [SopController::class, 'show'])->name('show');
+    });
+
+    Route::prefix('karyawan-profile')->name('profile.')->group(function () {
+        Route::get('/{karyawanId}', [KaryawanProfileController::class, 'show'])->name('show');
+        Route::post('/', [KaryawanProfileController::class, 'store'])->name('store');
+        Route::put('/{karyawanId}', [KaryawanProfileController::class, 'update'])->name('update');
+        Route::delete('/{karyawanId}', [KaryawanProfileController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('rekap-spj')->name('rekap_spj.')->middleware('auth')->group(function () {
+        Route::get('/', [RekapSJPController::class, 'index'])->name('index');
+        Route::get('/load-data', [RekapSJPController::class, 'getRekapData'])->name('load_data');
+        Route::get('/export', [RekapSJPController::class, 'export'])->name('export');
+        Route::get('/ajax/jabatan/{divisi}', [RekapSJPController::class, 'getJabatan']);
+        Route::get('/ajax/karyawan/{jabatan}', [RekapSJPController::class, 'getKaryawan']);
+        Route::get('/export-pdf', [RekapSJPController::class, 'exportPdf'])->name('export_pdf');
+        Route::get('/detail-data', [RekapSJPController::class, 'getDetailData'])->name('detail_data');
+    });
+});
+
+Route::prefix('employee')->name('employee.')->middleware(['auth'])->group(function () {
+    Route::get('/job-desk', [EmployeeJobDeskController::class, 'index'])->name('jobdesk.index');
+    Route::get('/job-desk/api/{id}', [EmployeeJobDeskController::class, 'show'])->name('jobdesk.show');
+    Route::get('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'showProfile'])->name('profile.show');
+    Route::post('/karyawan-profile', [EmployeeJobDeskController::class, 'storeProfile'])->name('profile.store');
+    Route::put('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'updateProfile'])->name('profile.update');
+    Route::delete('/karyawan-profile/{karyawanId}', [EmployeeJobDeskController::class, 'destroyProfile'])->name('profile.destroy');
+
+    Route::get('/structure', [EmployeeStructureController::class, 'index'])->name('structure.index');
+    Route::get('/structure/api/tree', [EmployeeStructureController::class, 'apiTree'])->name('structure.api.tree');
 });
 
 Route::get('/income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
@@ -1551,3 +1648,9 @@ Route::post('/perusahaan/merge', [PerusahaanController::class, 'merge'])->name('
 Route::get('/schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule.index');
 Route::get('/schedule-logs/data', [ScheduleLogController::class, 'data'])->name('schedule.data');
 Route::delete('/schedule-logs/clear-all', [ScheduleLogController::class, 'clearAll'])->name('schedule.clear');
+
+Route::get('/visit-projects', [VisitProjectController::class, 'index'])->name('visit-projects.index');
+Route::get('/visit-projects/get', [VisitProjectController::class, 'get'])->name('visit-projects.get');
+Route::post('/visit-projects/store', [VisitProjectController::class, 'store'])->name('visit-projects.store');
+Route::put('/visit-projects/{visitProject}', [VisitProjectController::class, 'update'])->name('visit-projects.update');
+Route::delete('/visit-projects/{visitProject}', [VisitProjectController::class, 'destroy'])->name('visit-projects.destroy');

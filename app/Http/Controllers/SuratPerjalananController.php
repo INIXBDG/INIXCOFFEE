@@ -50,8 +50,7 @@ class SuratPerjalananController extends Controller
                 ->whereHas('karyawan', function ($query) use ($divisi) {
                     $query->where('divisi', $divisi);
                 })->latest()->get();
-        } elseif (in_array($jabatan, ['HRD', 'Koordinator Office', 'Direktur Utama', 'Direktur', 'GM'])) {
-
+        } elseif (in_array($jabatan, ['HRD', 'Koordinator Office', 'Direktur Utama', 'Direktur', 'GM', 'Finance & Accounting'])) {
             $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')->latest()->get();
         } else {
 
@@ -242,7 +241,9 @@ class SuratPerjalananController extends Controller
 
         $data['approval_manager'] = '0';
         $data['approval_hrd'] = '0';
+        $data['approval_gm'] = '0';
         $data['approval_direksi'] = '0';
+        $data['approval_finance'] = '0';
 
         $suratPerjalanan = SuratPerjalanan::create($data);
 
@@ -295,7 +296,7 @@ class SuratPerjalananController extends Controller
 
         foreach ($users as $user) {
             $receiverId = $user->id;
-            NotificationFacade::send($user, new PengajuanSPJNotification($suratPerjalanan, $path, $type, $receiverId));
+            NotificationFacade::send($user, new ApprovalSPJNotification($suratPerjalanan, $path, $type, $receiverId));
         }
 
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil dibuat.');
@@ -352,9 +353,6 @@ class SuratPerjalananController extends Controller
         return view('suratperjalanan.editspj', compact('suratperjalanan', 'karyawan'));
     }
 
-    /**
-     * Memperbarui surat perjalanan di dalam database.
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -371,72 +369,28 @@ class SuratPerjalananController extends Controller
         $updateData = $request->all();
 
         if ($suratPerjalanan->tipe === 'Domestik') {
+            $updateData['approval_gm'] = '1';
             $updateData['approval_direksi'] = '1';
-        } else {
-            unset($updateData['approval_direksi']);
         }
 
         $suratPerjalanan->update($updateData);
 
-        $this->checkAndCreateJurnalOtomatis($suratPerjalanan);
-
-        // === PERBAIKAN: HAPUS SEMUA LOGIKA kode_karyawan, GUNAKAN id ===
-
-        // 1. Ambil data pengaju
         $karyawanPengaju = karyawan::findOrFail($suratPerjalanan->id_karyawan);
+        $userPengaju = User::where('karyawan_id', $karyawanPengaju->id)->first();
 
-        // 2. Kumpulkan ID karyawan (primary key tabel karyawans) yang akan menerima notifikasi
-        $targetKaryawanIds = [
-            $karyawanPengaju->id, // Pengaju
-        ];
-
-        // Tambahkan Office Manager
-        $officeManager = karyawan::where('jabatan', 'Office Manager')->first();
-        if ($officeManager) $targetKaryawanIds[] = $officeManager->id;
-
-        // Tambahkan Koordinator Office
-        $koorOffice = karyawan::where('jabatan', 'Koordinator Office')->first();
-        if ($koorOffice) $targetKaryawanIds[] = $koorOffice->id;
-
-        // 3. Jika Internasional, tambahkan ID Direksi (Direktur Utama & Direktur)
-        if ($suratPerjalanan->tipe === 'Internasional') {
-            $direksiIds = karyawan::whereIn('jabatan', ['Direktur Utama', 'Direktur'])
-                ->pluck('id') // PENTING: Ambil 'id', BUKAN 'kode_karyawan'
-                ->toArray();
-
-            $targetKaryawanIds = array_merge($targetKaryawanIds, $direksiIds);
-        }
-
-        // 4. Cari User berdasarkan kolom 'karyawan_id' di tabel users
-        // Gunakan array_unique agar tidak ada ID duplikat
-        $users = User::with('karyawan')
-            ->whereIn('karyawan_id', array_unique($targetKaryawanIds))
-            ->get();
-
-        // 5. Kirim Notifikasi
-        $data = $suratPerjalanan;
-        $to = $karyawanPengaju->nama_lengkap;
-        $path = '/suratperjalanan';
-
-        foreach ($users as $user) {
-            // Cek apakah user ini adalah Direksi berdasarkan relasi karyawan
-            $isDireksi = in_array($user->karyawan->jabatan ?? '', ['Direktur Utama', 'Direktur']);
-
-            // Tentukan pesan notifikasi
-            $action = $isDireksi ? 'Menunggu Persetujuan Direksi' : 'Rate SPJ Telah Diisi';
-
-            // Kirim notifikasi dengan parameter baru
-            NotificationFacade::send($user, new ApprovalSPJNotification(
-                $data,
-                $path,
-                $to,
-                $user->id,
-                $action,
-                $isDireksi
+        if ($userPengaju) {
+            NotificationFacade::send($userPengaju, new ApprovalSPJNotification(
+                $suratPerjalanan,
+                '/suratperjalanan',
+                $karyawanPengaju->nama_lengkap,
+                $userPengaju->id,
+                'Silakan Upload Bukti Transfer',
+                false
             ));
         }
 
-        return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil diperbarui.');
+        return redirect()->route('suratperjalanan.index')
+            ->with('success', 'Rate SPJ berhasil disimpan. Pengaju diminta upload bukti transfer.');
     }
 
     /**
@@ -454,41 +408,49 @@ class SuratPerjalananController extends Controller
     {
         $suratPerjalanan = SuratPerjalanan::findOrFail($id);
         $dataToUpdate = [];
+
         if ($request->has('approval_manager')) {
             $dataToUpdate['approval_manager'] = $request->input('approval_manager');
         }
-        if ($request->has('approval_direksi')) {
+        if ($request->has('approval_hrd')) {
+            $dataToUpdate['approval_hrd'] = $request->input('approval_hrd');
+        }
+        if ($request->has('approval_gm')) {
+            $dataToUpdate['approval_gm'] = $request->input('approval_gm');
+            $dataToUpdate['approval_direksi'] = $request->input('approval_gm');
+        }
+        if ($request->has('approval_direksi') && !isset($dataToUpdate['approval_direksi'])) {
             $dataToUpdate['approval_direksi'] = $request->input('approval_direksi');
         }
 
         $suratPerjalanan->update($dataToUpdate);
         $karyawan = karyawan::findOrFail($suratPerjalanan->id_karyawan);
-        $HRD = karyawan::where('jabatan', 'HRD')->first();
-        // $Offman = karyawan::where('jabatan' , 'Office Manager')->first();
-        $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
+        $users = [];
 
-        $this->checkAndCreateJurnalOtomatis($suratPerjalanan);
+        if (isset($dataToUpdate['approval_manager']) && $dataToUpdate['approval_manager'] == '1') {
+            $hrd = karyawan::where('jabatan', 'HRD')->where('status_aktif', '1')->latest()->first();
+            if ($hrd) $users[] = $hrd->kode_karyawan;
+        }
+        if (isset($dataToUpdate['approval_hrd']) && $dataToUpdate['approval_hrd'] == '1') {
+            if ($suratPerjalanan->tipe === 'Internasional') {
+                $gm = karyawan::where('jabatan', 'GM')->first();
+                if ($gm) $users[] = $gm->kode_karyawan;
+            }
+        }
 
-        $users = [
-            $karyawan->kode_karyawan,
-            $HRD->kode_karyawan,
-            $kooroff->kode_karyawan,
-        ];
-
-        // Retrieve the first matching user based on the 'kode_karyawan'
         $users = User::whereHas('karyawan', function ($query) use ($users) {
             $query->whereIn('kode_karyawan', array_filter($users));
         })->get();
 
-        $data = $suratPerjalanan;
-
-        $to = $karyawan->nama_lengkap;
-
-        $path = '/suratperjalanan';
-
         foreach ($users as $user) {
-            $receiverId = $user->id;
-            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to, $receiverId));
+            NotificationFacade::send($user, new ApprovalSPJNotification(
+                $suratPerjalanan,
+                '/suratperjalanan',
+                $karyawan->nama_lengkap,
+                $user->id,
+                'Menunggu Approval',
+                false
+            ));
         }
 
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil disetujui.');
@@ -496,22 +458,22 @@ class SuratPerjalananController extends Controller
 
     private function checkAndCreateJurnalOtomatis($suratPerjalanan)
     {
-        // Cek apakah ketiga approval sudah = 1
-        if (
-            $suratPerjalanan->approval_manager == 1 &&
-            $suratPerjalanan->approval_hrd == 1 &&
-            $suratPerjalanan->approval_direksi == 1
-        ) {
-            // Panggil method auto-create dari JurnalAkuntansiController
+        $allApproved = $suratPerjalanan->approval_manager == 1
+            && $suratPerjalanan->approval_hrd == 1
+            && $suratPerjalanan->approval_direksi == 1
+            && $suratPerjalanan->bukti_transfer; // bukti upload = final
+
+        // Untuk internasional, GM juga harus approve
+        if ($suratPerjalanan->tipe === 'Internasional') {
+            $allApproved = $allApproved && $suratPerjalanan->approval_gm == 1;
+        }
+
+        if ($allApproved) {
             $jurnalController = new JurnalAkuntansiController();
             $result = $jurnalController->autoCreateJurnalSuratPerjalanan($suratPerjalanan->id);
-
-            // Optional: Log atau notifikasi jika perlu
             if ($result['success']) {
-                // Jurnal berhasil dibuat otomatis
                 Log::info("Jurnal otomatis dibuat untuk SPJ ID: {$suratPerjalanan->id}");
             } else {
-                // Gagal membuat jurnal (mungkin sudah ada atau rate_spj kosong)
                 Log::warning("Gagal membuat jurnal otomatis untuk SPJ ID: {$suratPerjalanan->id} - {$result['message']}");
             }
         }
@@ -523,7 +485,7 @@ class SuratPerjalananController extends Controller
 
         $suratPerjalanan->update(['approval_direksi' => $status]);
 
-        $this->checkAndCreateJurnalOtomatis($suratPerjalanan);
+        // $this->checkAndCreateJurnalOtomatis($suratPerjalanan);
 
         if ($request->has('notification_id')) {
             $notification = auth()->user()->notifications()->find($request->notification_id);
@@ -550,5 +512,70 @@ class SuratPerjalananController extends Controller
 
         $message = $status == 1 ? 'Surat perjalanan berhasil disetujui oleh Direksi.' : 'Surat perjalanan berhasil ditolak oleh Direksi.';
         return redirect()->route('suratperjalanan.index')->with('success', $message);
+    }
+
+    public function uploadBuktiTransfer(Request $request, $id)
+    {
+        $suratPerjalanan = SuratPerjalanan::findOrFail($id);
+
+        if ($suratPerjalanan->id_karyawan != auth()->user()->karyawan_id) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk upload bukti transfer SPJ ini.');
+        }
+
+        if ($suratPerjalanan->tipe === 'Domestik') {
+            if ($suratPerjalanan->approval_manager != '1' || $suratPerjalanan->approval_hrd != '1') {
+                return redirect()->back()->with('error', 'Approval Manager & HRD belum lengkap.');
+            }
+        } else {
+            if ($suratPerjalanan->approval_manager != '1' || $suratPerjalanan->approval_hrd != '1' || $suratPerjalanan->approval_gm != '1') {
+                return redirect()->back()->with('error', 'Approval Manager, HRD, & GM belum lengkap.');
+            }
+        }
+
+        if ($suratPerjalanan->bukti_transfer) {
+            return redirect()->back()->with('error', 'Bukti transfer sudah diupload sebelumnya.');
+        }
+
+        $request->validate([
+            'bukti_transfer' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ], [
+            'bukti_transfer.required' => 'Bukti transfer wajib diupload.',
+            'bukti_transfer.mimes' => 'File harus berformat JPG, JPEG, PNG, atau PDF.',
+            'bukti_transfer.max' => 'Ukuran file maksimal 5MB.',
+        ]);
+
+        $file = $request->file('bukti_transfer');
+        $filename = time() . '_bukti_' . $suratPerjalanan->id . '_' . $file->getClientOriginalName();
+        $path = $file->storeAs('bukti_transfer', $filename, 'public');
+
+        $suratPerjalanan->update([
+            'bukti_transfer' => $path,
+        ]);
+
+        $this->checkAndCreateJurnalOtomatis($suratPerjalanan);
+
+        // Notifikasi ke Finance (hanya untuk info bahwa SPJ selesai & jurnal terbentuk)
+        $financeUser = karyawan::where('jabatan', 'Finance & Accounting')
+            ->where('status_aktif', '1')
+            ->latest()
+            ->first();
+
+        if ($financeUser) {
+            $userFinance = User::where('karyawan_id', $financeUser->id)->first();
+            if ($userFinance) {
+                $karyawanPengaju = karyawan::findOrFail($suratPerjalanan->id_karyawan);
+                NotificationFacade::send($userFinance, new ApprovalSPJNotification(
+                    $suratPerjalanan,
+                    '/suratperjalanan',
+                    $karyawanPengaju->nama_lengkap,
+                    $userFinance->id,
+                    'SPJ Selesai - Jurnal Terbentuk',
+                    false
+                ));
+            }
+        }
+
+        return redirect()->route('suratperjalanan.index')
+            ->with('success', 'Bukti transfer berhasil diupload. SPJ selesai & jurnal otomatis terbentuk.');
     }
 }

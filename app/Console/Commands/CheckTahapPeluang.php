@@ -37,12 +37,17 @@ class CheckTahapPeluang extends Command
             if ($item->periode_mulai && $now->greaterThanOrEqualTo($item->periode_mulai)) {
                 $item->update([
                     'tahap' => 'lost',
-                    'lost' => Carbon::now()->format('Y-m-d')
+                    'lost' => Carbon::now()->format('Y-m-d'),
+                    'deleted_at' => $now,
+                    'deleted_by' => null,
                 ]);
 
-                $item->rkm()->update([
-                    'status' => '3'
-                ]);
+                if ($item->rkm) {
+                    $item->rkm->update([
+                        'deleted_at' => $now,
+                        'deleted_by' => null,
+                    ]);
+                }
 
                 continue;
             }
@@ -54,12 +59,17 @@ class CheckTahapPeluang extends Command
                 if ($now->greaterThanOrEqualTo($created->addMonths(3))) {
                     $item->update([
                         'tahap' => 'lost',
-                        'lost' => Carbon::now()->format('Y-m-d')
+                        'lost' => Carbon::now()->format('Y-m-d'),
+                        'deleted_at' => $now,
+                        'deleted_by' => null,
                     ]);
 
-                    $item->rkm()->update([
-                        'status' => '3'
-                    ]);
+                    if ($item->rkm) {
+                        $item->rkm->update([
+                            'deleted_at' => $now,
+                            'deleted_by' => null,
+                        ]);
+                    }
                 }
             }
         }

@@ -126,6 +126,15 @@
             </a>
         </li>
 
+        @if (Auth::user()->jabatan === 'Admin Holding')
+        <li class="menu-item {{ request()->routeIs('office.exam.rekap.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.exam.rekap.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+                <div class="text-truncate" data-i18n="contact">Rekap Exam</div>
+            </a>
+        </li>
+        @endif
+
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Souvenir</span>
         </li>
@@ -271,6 +280,13 @@
                 <a href="/outstanding" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-task"></i>
                     <div class="text-truncate" data-i18n="contact">Outstanding</div>
+                </a>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('sop.perusahaan.index') ? 'active open' : '' }}">
+                <a href="{{ route('sop.perusahaan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-task"></i>
+                    <div class="text-truncate" data-i18n="contact">Persyaratan Dokumen</div>
                 </a>
             </li>
         @endif

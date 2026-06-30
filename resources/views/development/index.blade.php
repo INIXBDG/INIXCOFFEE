@@ -491,8 +491,8 @@
 
                 {{-- TAB 1: Sertifikasi --}}
                 <div class="tab-pane fade show active" id="sertifikasi" role="tabpanel">
-                    <div class="card mt-3 border-top-0">
-                        <div class="card-body">
+                    <div class="card mt-3 border-top-0 shadow-sm">
+                        <div class="card-body table-responsive">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h3 class="card-title">Data Sertifikasi</h3>
                                 @if(!$isReadOnly)
@@ -502,164 +502,162 @@
                                 @endif
                             </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-striped" id="tableSertifikasi">
-                                    <thead>
-                                        <tr>
-                                            <th>Tanggal Dibuat</th>
-                                            <th>Nama Karyawan</th>
-                                            <th>Nama Sertifikat</th>
-                                            <th>Vendor</th>
-                                            <th>Tgl Ujian</th>
-                                            <th>Masa Berlaku</th>
-                                            <th>Harga</th>
-                                            <th>Keterangan</th>
-                                            <th>Status</th>
-                                            <th>Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($sertifikasis as $item)
-                                        @php
-                                            $isExpired = $item->tanggal_berlaku_sampai && \Carbon\Carbon::parse($item->tanggal_berlaku_sampai)->endOfDay()->isPast();
-                                            $finalTracking = $item->pengajuan_barang->tracking->tracking ?? ($item->pelatihan->pengajuan_barang->tracking->tracking ?? null);
-                                            $idPengajuan = $item->pengajuan_barang->id ?? ($item->pelatihan->pengajuan_barang->id ?? null);
-                                        @endphp
+                            <table class="table table-striped text-nowrap" id="tableSertifikasi" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal Dibuat</th>
+                                        <th>Nama Karyawan</th>
+                                        <th>Nama Sertifikat</th>
+                                        <th>Vendor</th>
+                                        <th>Tgl Ujian</th>
+                                        <th>Masa Berlaku</th>
+                                        <th>Harga</th>
+                                        <th>Keterangan</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($sertifikasis as $item)
+                                    @php
+                                        $isExpired = $item->tanggal_berlaku_sampai && \Carbon\Carbon::parse($item->tanggal_berlaku_sampai)->endOfDay()->isPast();
+                                        $finalTracking = $item->pengajuan_barang->tracking->tracking ?? ($item->pelatihan->pengajuan_barang->tracking->tracking ?? null);
+                                        $idPengajuan = $item->pengajuan_barang->id ?? ($item->pelatihan->pengajuan_barang->id ?? null);
+                                    @endphp
 
-                                        <tr>
-                                            <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
-                                            <td>{{ $item->user->karyawan->nama_lengkap ?? '-' }}</td>
-                                            <td>{{ $item->nama_sertifikat }}</td>
-                                            <td>{{ $item->vendor }}</td>
-                                            <td>
-                                                @if($item->tanggal_ujian)
-                                                    {{ \Carbon\Carbon::parse($item->tanggal_ujian)->translatedFormat('d F Y') }}
+                                    <tr>
+                                        <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
+                                        <td>{{ $item->user->karyawan->nama_lengkap ?? '-' }}</td>
+                                        <td>{{ $item->nama_sertifikat }}</td>
+                                        <td>{{ $item->vendor }}</td>
+                                        <td>
+                                            @if($item->tanggal_ujian)
+                                                {{ \Carbon\Carbon::parse($item->tanggal_ujian)->translatedFormat('d F Y') }}
+                                            @else
+                                                <span class="badge bg-secondary">Belum Diisi</span>
+                                            @endif
+                                        </td>
+                                        <td class="{{ $isExpired ? 'text-danger fw-bold' : '' }}">
+                                            @if($item->tanggal_berlaku_dari)
+                                                {{ \Carbon\Carbon::parse($item->tanggal_berlaku_dari)->translatedFormat('d F Y') }} -
+                                                {{ $item->tanggal_berlaku_sampai ? \Carbon\Carbon::parse($item->tanggal_berlaku_sampai)->translatedFormat('d F Y') : 'Seumur Hidup' }}
+                                                @if($isExpired) <div style="font-size: 0.8em;">(Kadaluarsa)</div> @endif
+                                            @else
+                                                <span class="badge bg-secondary">Belum Diisi</span>
+                                            @endif
+                                        </td>
+                                        <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                                        <td>{{($item->keterangan) }}</td>
+
+                                        {{-- KOLOM STATUS --}}
+                                        <td>
+                                            {{-- Prioritas 1: Jika Pending (sedang diperpanjang/baru), tampilkan Pending --}}
+                                            @if($item->status_approval == 'pending')
+                                                <span class="badge bg-warning text-dark">Pending</span>
+
+                                            {{-- Prioritas 2: Jika Rejected --}}
+                                            @elseif($item->status_approval == 'rejected')
+                                                <span class="badge bg-danger">Rejected</span>
+
+                                            {{-- Prioritas 3: Jika Approved, cek Tracking --}}
+                                            @elseif($item->status_approval == 'approved')
+                                                @if($finalTracking)
+                                                    <small class="d-block text-bold" style="font-size: 11px; line-height: 1.2;">
+                                                        {{ $finalTracking }}
+                                                    </small>
                                                 @else
-                                                    <span class="badge bg-secondary">Belum Diisi</span>
+                                                    <span class="badge bg-success">Approved</span>
                                                 @endif
-                                            </td>
-                                            <td class="{{ $isExpired ? 'text-danger fw-bold' : '' }}">
-                                                @if($item->tanggal_berlaku_dari)
-                                                    {{ \Carbon\Carbon::parse($item->tanggal_berlaku_dari)->translatedFormat('d F Y') }} -
-                                                    {{ $item->tanggal_berlaku_sampai ? \Carbon\Carbon::parse($item->tanggal_berlaku_sampai)->translatedFormat('d F Y') : 'Seumur Hidup' }}
-                                                    @if($isExpired) <div style="font-size: 0.8em;">(Kadaluarsa)</div> @endif
-                                                @else
-                                                    <span class="badge bg-secondary">Belum Diisi</span>
-                                                @endif
-                                            </td>
-                                            <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-                                            <td>{{($item->keterangan) }}</td>
 
-                                            {{-- KOLOM STATUS --}}
-                                            <td>
-                                                {{-- Prioritas 1: Jika Pending (sedang diperpanjang/baru), tampilkan Pending --}}
-                                                @if($item->status_approval == 'pending')
-                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                            {{-- Prioritas 4: Sertifikasi (Tanpa pengajuan barang) --}}
+                                            @elseif($item->status_approval == 'sertifikasi')
+                                                <span class="badge bg-info text-dark">Sertifikasi</span>
+                                            @endif
+                                        </td>
 
-                                                {{-- Prioritas 2: Jika Rejected --}}
-                                                @elseif($item->status_approval == 'rejected')
-                                                    <span class="badge bg-danger">Rejected</span>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                                                <div class="dropdown-menu">
 
-                                                {{-- Prioritas 3: Jika Approved, cek Tracking --}}
-                                                @elseif($item->status_approval == 'approved')
-                                                    @if($finalTracking)
-                                                        <small class="d-block text-bold" style="font-size: 11px; line-height: 1.2;">
-                                                            {{ $finalTracking }}
-                                                        </small>
-                                                    @else
-                                                        <span class="badge bg-success">Approved</span>
+                                                    {{-- 1. Link ke Detail Pengajuan Barang --}}
+                                                    @if($idPengajuan)
+                                                        <a class="dropdown-item" href="{{ url('/pengajuanbarang/' . $idPengajuan) }}" target="_blank">
+                                                            <img src="{{ asset('icon/eye.svg') }}" width="16px"> Detail di Pengajuan Barang
+                                                        </a>
+                                                        <li><hr class="dropdown-divider"></li>
                                                     @endif
-
-                                                {{-- Prioritas 4: Sertifikasi (Tanpa pengajuan barang) --}}
-                                                @elseif($item->status_approval == 'sertifikasi')
-                                                    <span class="badge bg-info text-dark">Sertifikasi</span>
-                                                @endif
-                                            </td>
-
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
-                                                    <div class="dropdown-menu">
-
-                                                        {{-- 1. Link ke Detail Pengajuan Barang --}}
-                                                        @if($idPengajuan)
-                                                            <a class="dropdown-item" href="{{ url('/pengajuanbarang/' . $idPengajuan) }}" target="_blank">
-                                                                <img src="{{ asset('icon/eye.svg') }}" width="16px"> Detail di Pengajuan Barang
-                                                            </a>
-                                                            <li><hr class="dropdown-divider"></li>
-                                                        @endif
-                                                        @if(!$isReadOnly)
-                                                            {{-- 2. Menu Bukti Sertifikat --}}
-                                                            @if($item->status_approval === 'approved' || $item->status_approval === 'sertifikasi')
-                                                                @if($item->bukti_sertifikasi)
-                                                                    <a class="dropdown-item" href="{{ asset('storage/' . $item->bukti_sertifikasi) }}" target="_blank">
-                                                                        <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Lihat Bukti Sertifikat
-                                                                    </a>
-                                                                    @if(auth()->id() == $item->user_id)
-                                                                        <button class="dropdown-item" onclick="openUploadBuktiSertifikasiModal('{{ $item->id }}')">
-                                                                            <img src="{{ asset('icon/upload.svg') }}" width="16px"> Ganti Bukti Sertifikat
-                                                                        </button>
-                                                                    @endif
-                                                                @else
-                                                                    @if(auth()->id() == $item->user_id)
-                                                                        <button class="dropdown-item" onclick="openUploadBuktiSertifikasiModal('{{ $item->id }}')">
-                                                                            <img src="{{ asset('icon/upload.svg') }}" width="16px"> Upload Bukti Sertifikat
-                                                                        </button>
-                                                                    @endif
+                                                    @if(!$isReadOnly)
+                                                        {{-- 2. Menu Bukti Sertifikat --}}
+                                                        @if($item->status_approval === 'approved' || $item->status_approval === 'sertifikasi')
+                                                            @if($item->bukti_sertifikasi)
+                                                                <a class="dropdown-item" href="{{ asset('storage/' . $item->bukti_sertifikasi) }}" target="_blank">
+                                                                    <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Lihat Bukti Sertifikat
+                                                                </a>
+                                                                @if(auth()->id() == $item->user_id)
+                                                                    <button class="dropdown-item" onclick="openUploadBuktiSertifikasiModal('{{ $item->id }}')">
+                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Ganti Bukti Sertifikat
+                                                                    </button>
                                                                 @endif
-                                                            @endif
-                                                           
-                                                            {{-- 3. TOMBOL PERPANJANG --}}
-                                                            {{-- Hanya muncul jika status approved dan user adalah pemilik --}}
-                                                            @if($item->status_approval === 'approved' && auth()->id() == $item->user_id)
-                                                                <li><hr class="dropdown-divider"></li>
-                                                                <button class="dropdown-item" onclick='openRenewalModal(@json($item))'>
-                                                                    <img src="{{ asset('icon/refresh.svg') }}" width="16px"> Perpanjang
-                                                                </button>
-                                                            @endif
-
-                                                            {{-- 4. Menu Approval Manager --}}
-                                                            @if(auth()->user()->karyawan->jabatan === 'Education Manager' && $item->status_approval === 'pending')
-                                                                <li><hr class="dropdown-divider"></li>
-                                                                @if($item->pelatihan)
-                                                                    <span class="dropdown-item-text text-muted fst-italic" style="font-size: 11px; max-width: 200px; white-space: normal;">
-                                                                        <i class="bi bi-info-circle"></i> Approval wajib dilakukan via menu <strong>Pelatihan</strong>.
-                                                                    </span>
-                                                                @else
-                                                                    <button class="dropdown-item" onclick="openApproveModal('{{ route('sertifikasi.approve', $item->id) }}')">
-                                                                        <img src="{{ asset('icon/check-circle.svg') }}"> Approval
+                                                            @else
+                                                                @if(auth()->id() == $item->user_id)
+                                                                    <button class="dropdown-item" onclick="openUploadBuktiSertifikasiModal('{{ $item->id }}')">
+                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Upload Bukti Sertifikat
                                                                     </button>
                                                                 @endif
                                                             @endif
-
-                                                            {{-- 5. Edit & Hapus --}}
-                                                            <li><hr class="dropdown-divider"></li>
-                                                            <button class="dropdown-item" onclick='openEditSertifikasi(@json($item))'>
-                                                                <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
-                                                            </button>
-                                                            <form action="{{ route('sertifikasi.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
-                                                                @csrf @method('DELETE')
-                                                                <button type="submit" class="dropdown-item text-danger">
-                                                                    <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
-                                                                </button>
-                                                            </form>
                                                         @endif
-                                                    </div>
+
+                                                        {{-- 3. TOMBOL PERPANJANG --}}
+                                                        {{-- Hanya muncul jika status approved dan user adalah pemilik --}}
+                                                        @if($item->status_approval === 'approved' && auth()->id() == $item->user_id)
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <button class="dropdown-item" onclick='openRenewalModal(@json($item))'>
+                                                                <img src="{{ asset('icon/refresh.svg') }}" width="16px"> Perpanjang
+                                                            </button>
+                                                        @endif
+
+                                                        {{-- 4. Menu Approval Manager --}}
+                                                        @if(auth()->user()->karyawan->jabatan === 'Education Manager' && $item->status_approval === 'pending')
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            @if($item->pelatihan)
+                                                                <span class="dropdown-item-text text-muted fst-italic" style="font-size: 11px; max-width: 200px; white-space: normal;">
+                                                                    <i class="bi bi-info-circle"></i> Approval wajib dilakukan via menu <strong>Pelatihan</strong>.
+                                                                </span>
+                                                            @else
+                                                                <button class="dropdown-item" onclick="openApproveModal('{{ route('sertifikasi.approve', $item->id) }}')">
+                                                                    <img src="{{ asset('icon/check-circle.svg') }}"> Approval
+                                                                </button>
+                                                            @endif
+                                                        @endif
+
+                                                        {{-- 5. Edit & Hapus --}}
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <button class="dropdown-item" onclick='openEditSertifikasi(@json($item))'>
+                                                            <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
+                                                        </button>
+                                                        <form action="{{ route('sertifikasi.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
+                                                            @csrf @method('DELETE')
+                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </div>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
                 {{-- TAB 2: Pelatihan --}}
                 <div class="tab-pane fade" id="pelatihan" role="tabpanel">
-                    <div class="card mt-3 border-top-0">
-                        <div class="card-body">
+                    <div class="card mt-3 border-top-0 shadow-sm">
+                        <div class="card-body table-responsive">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h3 class="card-title">Data Pelatihan</h3>
                                 @if(!$isReadOnly)
@@ -669,110 +667,108 @@
                                 @endif
                             </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-striped" id="tablePelatihan">
-                                    <thead>
-                                        <tr>
-                                            <th>Tanggal Dibuat</th>
-                                            <th>Nama Karyawan</th>
-                                            <th>Nama Pelatihan</th>
-                                            <th>Vendor</th>
-                                            <th>Pelaksanaan</th>
-                                            <th>Keterangan</th>
-                                            <th>Harga</th>
-                                            <th>Status</th>
-                                            <th>Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($pelatihans as $item)
-                                        <tr>
-                                            <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
-                                            <td>{{ $item->user->karyawan->nama_lengkap ?? '-' }}</td>
-                                            <td>{{ $item->nama_pelatihan }}</td>
-                                            <td>{{ $item->vendor }}</td>
-                                            <td>
-                                                {{ \Carbon\Carbon::parse($item->tanggal_mulai)->translatedFormat('d F Y') }} -
-                                                {{ \Carbon\Carbon::parse($item->tanggal_selesai)->translatedFormat('d F Y') }}
-                                            </td>
-                                            <td>{{($item->keterangan) }}</td>
-                                            <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-                                            <td>
-                                                @if($item->pengajuan_barang && $item->pengajuan_barang->tracking)
-                                                    <small class="d-block text-bold" style="font-size: 11px; line-height: 1.2;">
-                                                        {{ $item->pengajuan_barang->tracking->tracking }}
-                                                    </small>
+                            <table class="table table-striped text-nowrap" id="tablePelatihan" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal Dibuat</th>
+                                        <th>Nama Karyawan</th>
+                                        <th>Nama Pelatihan</th>
+                                        <th>Vendor</th>
+                                        <th>Pelaksanaan</th>
+                                        <th>Keterangan</th>
+                                        <th>Harga</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($pelatihans as $item)
+                                    <tr>
+                                        <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
+                                        <td>{{ $item->user->karyawan->nama_lengkap ?? '-' }}</td>
+                                        <td>{{ $item->nama_pelatihan }}</td>
+                                        <td>{{ $item->vendor }}</td>
+                                        <td>
+                                            {{ \Carbon\Carbon::parse($item->tanggal_mulai)->translatedFormat('d F Y') }} -
+                                            {{ \Carbon\Carbon::parse($item->tanggal_selesai)->translatedFormat('d F Y') }}
+                                        </td>
+                                        <td>{{($item->keterangan) }}</td>
+                                        <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                                        <td>
+                                            @if($item->pengajuan_barang && $item->pengajuan_barang->tracking)
+                                                <small class="d-block text-bold" style="font-size: 11px; line-height: 1.2;">
+                                                    {{ $item->pengajuan_barang->tracking->tracking }}
+                                                </small>
+                                            @else
+                                                @if($item->status_approval == 'approved')
+                                                    <span class="badge bg-success">Approved</span>
+                                                @elseif($item->status_approval == 'rejected')
+                                                    <span class="badge bg-danger">Rejected</span>
                                                 @else
-                                                    @if($item->status_approval == 'approved')
-                                                        <span class="badge bg-success">Approved</span>
-                                                    @elseif($item->status_approval == 'rejected')
-                                                        <span class="badge bg-danger">Rejected</span>
-                                                    @else
-                                                        <span class="badge bg-warning text-dark">Pending</span>
-                                                    @endif
+                                                    <span class="badge bg-warning text-dark">Pending</span>
                                                 @endif
-                                            </td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
-                                                    <div class="dropdown-menu">
-                                                        @if($item->pengajuan_barang)
-                                                            <a class="dropdown-item" href="{{ url('/pengajuanbarang/' . $item->pengajuan_barang->id) }}" target="_blank">
-                                                                <img src="{{ asset('icon/eye.svg') }}" width="16px"> Detail di Pengajuan Barang
-                                                            </a>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                                                <div class="dropdown-menu">
+                                                    @if($item->pengajuan_barang)
+                                                        <a class="dropdown-item" href="{{ url('/pengajuanbarang/' . $item->pengajuan_barang->id) }}" target="_blank">
+                                                            <img src="{{ asset('icon/eye.svg') }}" width="16px"> Detail di Pengajuan Barang
+                                                        </a>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                    @endif
+                                                    @if(!$isReadOnly)
+                                                        @if($item->status_approval === 'approved')
+                                                            @if($item->bukti_pelatihan)
+                                                                <a class="dropdown-item" href="{{ asset('storage/' . $item->bukti_pelatihan) }}" target="_blank">
+                                                                    <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Lihat Bukti Pelatihan
+                                                                </a>
+                                                                @if(auth()->id() == $item->user_id)
+                                                                    <button class="dropdown-item" onclick="openUploadBuktiModal('{{ $item->id }}')">
+                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Ganti Bukti Pelatihan
+                                                                    </button>
+                                                                @endif
+                                                            @else
+                                                                @if(auth()->id() == $item->user_id)
+                                                                    <button class="dropdown-item" onclick="openUploadBuktiModal('{{ $item->id }}')">
+                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Upload Bukti Pelatihan
+                                                                    </button>
+                                                                @endif
+                                                            @endif
                                                             <li><hr class="dropdown-divider"></li>
                                                         @endif
-                                                        @if(!$isReadOnly)
-                                                            @if($item->status_approval === 'approved')
-                                                                @if($item->bukti_pelatihan)
-                                                                    <a class="dropdown-item" href="{{ asset('storage/' . $item->bukti_pelatihan) }}" target="_blank">
-                                                                        <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Lihat Bukti Pelatihan
-                                                                    </a>
-                                                                    @if(auth()->id() == $item->user_id)
-                                                                        <button class="dropdown-item" onclick="openUploadBuktiModal('{{ $item->id }}')">
-                                                                            <img src="{{ asset('icon/upload.svg') }}" width="16px"> Ganti Bukti Pelatihan
-                                                                        </button>
-                                                                    @endif
-                                                                @else
-                                                                    @if(auth()->id() == $item->user_id)
-                                                                        <button class="dropdown-item" onclick="openUploadBuktiModal('{{ $item->id }}')">
-                                                                            <img src="{{ asset('icon/upload.svg') }}" width="16px"> Upload Bukti Pelatihan
-                                                                        </button>
-                                                                    @endif
-                                                                @endif
-                                                                <li><hr class="dropdown-divider"></li>
-                                                            @endif
-                                                            @if(auth()->user()->karyawan->jabatan === 'Education Manager' && $item->status_approval === 'pending')
-                                                                <button class="dropdown-item" onclick="openApproveModal('{{ route('pelatihan.approve', $item->id) }}')">
-                                                                    <img src="{{ asset('icon/check-circle.svg') }}"> Approval
-                                                                </button>
-                                                            @endif
-                                                            <button class="dropdown-item" onclick='openEditPelatihan(@json($item))'>
-                                                                <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
+                                                        @if(auth()->user()->karyawan->jabatan === 'Education Manager' && $item->status_approval === 'pending')
+                                                            <button class="dropdown-item" onclick="openApproveModal('{{ route('pelatihan.approve', $item->id) }}')">
+                                                                <img src="{{ asset('icon/check-circle.svg') }}"> Approval
                                                             </button>
-                                                            <form action="{{ route('pelatihan.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
-                                                                @csrf @method('DELETE')
-                                                                <button type="submit" class="dropdown-item text-danger">
-                                                                    <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
-                                                                </button>
-                                                            </form>
                                                         @endif
-                                                    </div>
+                                                        <button class="dropdown-item" onclick='openEditPelatihan(@json($item))'>
+                                                            <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
+                                                        </button>
+                                                        <form action="{{ route('pelatihan.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
+                                                            @csrf @method('DELETE')
+                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </div>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
                 {{-- TAB 3: Specialization Area (NEW) --}}
                 <div class="tab-pane fade" id="specialization" role="tabpanel">
-                    <div class="card mt-3 border-top-0">
-                        <div class="card-body">
+                    <div class="card mt-3 border-top-0 shadow-sm">
+                        <div class="card-body table-responsive">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h3 class="card-title">Data Specialization Area</h3>
                                 @if(!$isReadOnly)
@@ -782,53 +778,51 @@
                                 @endif
                             </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-striped" id="tableSpecialization">
-                                    <thead>
-                                        <tr>
-                                            <th width="5%">No</th>
-                                            <th>Kode Instruktur</th>
-                                            <th>Specialization</th>
-                                            <th>Detail Specialization</th>
-                                            <th>Tanggal Dibuat</th>
-                                            @if(!$isReadOnly)
-                                                <th width="15%">Aksi</th>
-                                            @endif
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($specializations as $index => $item)
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
+                            <table class="table table-striped text-nowrap" id="tableSpecialization" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th width="5%">No</th>
+                                        <th>Kode Instruktur</th>
+                                        <th>Specialization</th>
+                                        <th>Detail Specialization</th>
+                                        <th>Tanggal Dibuat</th>
+                                        @if(!$isReadOnly)
+                                            <th width="15%">Aksi</th>
+                                        @endif
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($specializations as $index => $item)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>
+                                            {{ $item->kode_instruktur }}
+                                        </td>
+                                        <td>{{ $item->specialization }}</td>
+                                        <td>{{ $item->detail_specialization }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
+                                        @if(!$isReadOnly)
                                             <td>
-                                                {{ $item->kode_instruktur }}
-                                            </td>
-                                            <td>{{ $item->specialization }}</td>
-                                            <td>{{ $item->detail_specialization }}</td>
-                                            <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
-                                            @if(!$isReadOnly)
-                                                <td>
-                                                    <div class="dropdown">
-                                                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
-                                                        <div class="dropdown-menu">
-                                                            <button class="dropdown-item" onclick='openEditSpecialization(@json($item))'>
-                                                                <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                                                    <div class="dropdown-menu">
+                                                        <button class="dropdown-item" onclick='openEditSpecialization(@json($item))'>
+                                                            <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
+                                                        </button>
+                                                        <form action="{{ route('specialization.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
+                                                            @csrf @method('DELETE')
+                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
                                                             </button>
-                                                            <form action="{{ route('specialization.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus data ini?');">
-                                                                @csrf @method('DELETE')
-                                                                <button type="submit" class="dropdown-item text-danger">
-                                                                    <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
-                                                                </button>
-                                                            </form>
-                                                        </div>
+                                                        </form>
                                                     </div>
-                                                </td>
-                                            @endif
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                                                </div>
+                                            </td>
+                                        @endif
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -836,9 +830,17 @@
             </div>
         </div>
     </div>
-</div>
 
 <style>
+    .card {
+        max-width: 100%;
+    }
+    .dataTables_wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .cube {
         width: 40px;
         height: 40px;

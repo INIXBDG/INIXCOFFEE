@@ -145,7 +145,6 @@
                                 class="needs-validation" novalidate>
                                 @csrf
 
-                                <!-- Form Kontak -->
                                 <div class="mb-3">
                                     <label class="form-label" for="id_perusahaan">Perusahaan</label>
                                     <select class="form-select" id="id_perusahaan" name="id_contact" required>
@@ -159,7 +158,11 @@
                                     <div class="invalid-feedback">Pilih Perusahaan.</div>
                                 </div>
 
-                                <!-- Form Materi -->
+                                <div class="mb-3">
+                                    <label class="form-label" for="perusahaan_pendaftar">Perusahaan Pendaftar (Opsional)</label>
+                                    <input type="text" class="form-control" id="perusahaan_pendaftar" name="perusahaan_pendaftar">
+                                </div>
+
                                 <div class="mb-3">
                                     <label class="form-label" for="materi">Materi</label>
                                     <select class="form-select" id="materi" name="materi" required>
@@ -171,7 +174,6 @@
                                     <div class="invalid-feedback">Pilih materi.</div>
                                 </div>
 
-                                <!-- Lain-lain -->
                                 <div class="mb-3">
                                     <label class="form-label" for="catatan">Catatan</label>
                                     <textarea class="form-control" id="catatan" name="catatan"></textarea>
@@ -211,12 +213,10 @@
                                         <option value="Inhouse Luar Bandung">Inhouse Luar Bandung</option>
                                         <option value="Offline">Offline</option>
                                         <option value="Virtual">Virtual</option>
-                                        <!-- Tambahkan opsi lain jika diperlukan -->
-                                    </select>
+                                        </select>
                                     <div class="invalid-feedback">Pilih metode kelas.</div>
                                 </div>
 
-                                <!-- Tambahan: Event (Dropdown) -->
                                 <div class="mb-3">
                                     <label class="form-label" for="event">Event</label>
                                     <select class="form-select" id="event" name="event" required>
@@ -230,7 +230,6 @@
                                     <div class="invalid-feedback">Pilih event.</div>
                                 </div>
 
-                                <!-- Tambahan: Exam (Button Toggle) -->
                                 <div class="mb-3">
                                     <label class="form-label">Exam</label>
                                     <div class="form-check form-switch">
@@ -242,7 +241,6 @@
                                     <div class="invalid-feedback">Pilih status exam.</div>
                                 </div>
 
-                                <!-- Tambahan: Authorize (Toggle Switch) -->
                                 <div class="mb-3">
                                     <label class="form-label">Authorize</label>
                                     <div class="form-check form-switch">
@@ -266,7 +264,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Aktivitas yang bisa dikaitkan -->
                                 <div class="mb-3">
                                     <label class="form-label">Pilih Aktivitas (Opsional)</label>
                                     <div id="aktivitasTableWrapper" class="overflow-auto">

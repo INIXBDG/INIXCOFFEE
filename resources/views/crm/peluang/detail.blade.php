@@ -134,6 +134,12 @@
                                     {{ $peluang->perusahaan->nama_perusahaan ?? '-' }}
                                 </dd>
 
+                                <!-- Output Data Perusahaan Pendaftar -->
+                                <dt class="col-sm-4">Perusahaan Pendaftar</dt>
+                                <dd class="col-sm-8">
+                                    {{ $peluang->perusahaan_pendaftar ?? '-' }}
+                                </dd>
+
                                 <dt class="col-sm-4">Sales</dt>
                                 <dd class="col-sm-8">{{ $peluang->id_sales }}</dd>
                             </dl>
@@ -483,6 +489,15 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="edit_perusahaan_pendaftar" class="form-label">Perusahaan Pendaftar (Opsional)</label>
+                                <input type="text" class="form-control" id="edit_perusahaan_pendaftar" name="perusahaan_pendaftar"
+                                    value="{{ old('perusahaan_pendaftar', $peluang->perusahaan_pendaftar) }}">
+                                @error('perusahaan_pendaftar')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="edit_id_materi" class="form-label">Materi</label>
 
                                 <select class="form-select" id="edit_id_materi" disabled>
@@ -635,7 +650,6 @@
                                 <label class="form-check-label" for="authorizeToggle">Authorize</label>
                             </div>
 
-                            <!-- Related Activities -->
                             <div class="mb-3">
                                 <h6 class="fw-bold">Aktivitas Terkait</h6>
                                 <div id="editAktivitasTableWrapper">

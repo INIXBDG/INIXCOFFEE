@@ -19,6 +19,7 @@ use App\Models\nilaifeedback;
 use App\Models\Peluang;
 use Carbon\CarbonImmutable;
 use App\Models\RKM;
+use App\Models\SopPerusahaan;
 use Illuminate\Support\Facades\DB;
 use generateWeeks;
 
@@ -362,6 +363,60 @@ class PerusahaanController extends Controller
                 'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function indexSop(){
+        $perusahaan = Perusahaan::with('sop', 'karyawan')->get();
+        // dd($perusahaan->toArray());
+
+        return view('office.sop.index', compact('perusahaan'));
+    }
+
+    public function detailSop($id){
+        $perusahaan = Perusahaan::with('sop', 'picPenagihan')->findOrFail($id);
+        // dd($perusahaan);
+
+        return view('office.sop.detail', compact('perusahaan'));
+    }
+
+    public function storeSop(Request $request){
+        $request->validate([
+            'judul' => 'required|string',
+            'sop' => 'required|array',
+            'sop.*' => 'required|string',
+        ]);
+
+        SopPerusahaan::create([
+            'id_perusahaan' => $request->id_perusahaan,
+            'judul' => $request->judul,
+            'sop' => json_encode($request->sop),
+        ]);
+
+        return redirect()->route('sop.perusahaan.detail', $request->id_perusahaan)->with('success', 'SOP berhasil ditambahkan!');
+    }
+
+    public function updateSop(Request $request, $id){
+        $request->validate([
+            'judul' => 'required|string',
+            'sop' => 'required|array',
+            'sop.*' => 'required|string',
+        ]);
+
+        $sop = SopPerusahaan::findOrFail($id);
+        $sop->update([
+            'judul' => $request->judul,
+            'sop' => json_encode($request->sop),
+        ]);
+
+        return redirect()->route('sop.perusahaan.detail', $sop->id_perusahaan)->with('success', 'SOP berhasil diperbarui!');
+    }
+
+    public function deleteSop($id){
+        $sop = SopPerusahaan::findOrFail($id);
+        $perusahaanId = $sop->id_perusahaan;
+        $sop->delete();
+
+        return redirect()->route('sop.perusahaan.detail', $perusahaanId)->with('success', 'SOP berhasil dihapus!');
     }
 
 }
