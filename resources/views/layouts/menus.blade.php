@@ -2573,6 +2573,27 @@
                                                                 </div>
                                                             </div>
                                                         @endcan
+                                                        @can('Rencana Pembelian')
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <i class="fa-regular fa-file"
+                                                                                style="font-size: 30px;"></i>
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="{{ route('rencanaPembelian.index') }}"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Rencana Pembelian
+                                                                                </h5>
+                                                                            </a>
+                                                                            <p class="card-text">Pengajuan
+                                                                                Rencana Pembelian.</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endcan
                                                     </div>
                                                 </div>
                                             </div>

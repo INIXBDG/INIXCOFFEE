@@ -126,6 +126,15 @@
             </a>
         </li>
 
+        @if (Auth::user()->jabatan === 'Admin Holding')
+        <li class="menu-item {{ request()->routeIs('office.exam.rekap.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.exam.rekap.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+                <div class="text-truncate" data-i18n="contact">Rekap Exam</div>
+            </a>
+        </li>
+        @endif
+
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Souvenir</span>
         </li>
@@ -187,6 +196,14 @@
                     <div class="text-truncate" data-i18n="contact">Stock Opname</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('office.KondisiTools.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.KondisiTools.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-list-ul"></i>
+                    <div class="text-truncate" data-i18n="contact">Kondisi Tools</div>
+                </a>
+            </li>
+        @endif
+        @if (in_array(Auth::user()->jabatan, ['Customer Care', 'HRD', 'Office Boy']))
             <li class="menu-item {{ request()->routeIs('office.KoordinasiOb.index') ? 'active open' : '' }}">
                 <a href="{{ route('office.KoordinasiOb.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-user-plus"></i>

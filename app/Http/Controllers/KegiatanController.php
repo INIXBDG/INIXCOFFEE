@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Notification;
 use App\Notifications\KoordinasiDriverNotifcation;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Mockery\Expectation;
+use App\Models\PembelianHr;
 
 class KegiatanController extends Controller
 {
@@ -45,8 +46,180 @@ class KegiatanController extends Controller
                 });
             })
             ->get();
+        
+        $dibatalkan = PembelianHr::with('tracking', 'tracking.karyawan', 'details')->where('status_pembelian', 'Dibatalkan')->paginate(10);
+        $user = auth()->user();
 
-        return view('office.rab.index', compact('kegiatan', 'drivers'));
+        $rencanasRaw = PembelianHr::with([
+            'details',
+            'tracking.karyawan'
+        ])
+        ->where('status_pembelian', 'Rencana')
+        ->when(!in_array($user->jabatan, ['HRD', 'GM']), function ($query) use ($user) {
+            $query->where('id_karyawan', $user->id);
+        })
+        ->get()
+        ->map(function ($item) {
+            $item->source = 'pembelian_hr';
+            $item->status = $item->status_pembelian;
+            return $item;
+        });
+
+        $pembelianRaw = PembelianHr::with([
+            'details',
+            'tracking.karyawan'
+        ])
+        ->where('status_pembelian', 'Terlaksana')
+        ->when(!in_array($user->jabatan, ['HRD', 'GM']), function ($query) use ($user) {
+            $query->where('id_karyawan', $user->id);
+        })
+        ->get()
+        ->map(function ($item) {
+            $item->source = 'pembelian_hr';
+            $item->status = $item->status_pembelian;
+            return $item;
+        });
+
+        $kegiatanRencanaRaw = Kegiatan::with([
+            'pengajuan_barang.detail',
+            'rincian'
+        ])
+        ->where('tipe', 'pembelian')
+        ->where('status','!=','selesai')
+        ->get()
+        ->map(function($item){
+
+            $details = collect();
+
+            foreach ($item->rincian as $rincian) {
+
+                $details->push((object)[
+                    'jenis' => 'rincian',
+                    'nama_barang' => $rincian->hal,
+                    'qty' => $rincian->qty,
+                    'harga' => $rincian->harga_satuan,
+                    'url' => null,
+                    'keterangan' => $rincian->rincian,
+                    'tanggal' => $rincian->tanggal
+                ]);
+            }
+
+            foreach ($item->pengajuan_barang as $pengajuan) {
+
+                foreach ($pengajuan->detail as $barang) {
+
+                    $details->push((object)[
+                        'jenis' => 'barang',
+                        'nama_barang' => $barang->nama_barang,
+                        'qty' => $barang->qty,
+                        'harga' => $barang->harga,
+                        'url' => null,
+                        'keterangan' => $barang->keterangan,
+                        'tanggal' => $pengajuan->tanggal_pencairan,
+                    ]);
+                }
+            }
+
+            return (object)[
+                'id' => $item->id,
+                'source' => 'kegiatan',
+                'periode' => Carbon::parse($item->waktu_kegiatan)->translatedFormat('F Y'),
+                'details' => $details,
+                'tracking' => collect(),
+                'kategori' => 'Kegiatan',
+                'status_pembelian' => $item->status,
+                'created_at' => $item->created_at,
+                'menunggu' => $item->menunggu,
+                'approved' => $item->approved,
+                'pencairan' => $item->pencairan,
+                'selesai' => $item->selesai,
+                'invoice' => $item->pengajuan_barang->pluck('invoice')->filter()->implode(', '),
+                'no_kk' => $item->pengajuan_barang->pluck('no_kk')->filter()->implode(', '),
+            ];
+        });
+
+        $kegiatanPembelianRaw = Kegiatan::with([
+            'pengajuan_barang.detail',
+            'rincian'
+        ])
+        ->where('tipe', 'pembelian')
+        ->where('status','selesai')
+        ->get()
+        ->map(function($item){
+
+            $details = collect();
+
+            foreach ($item->rincian as $rincian) {
+
+                $details->push((object)[
+                    'jenis' => 'rincian',
+                    'nama_barang' => $rincian->hal,
+                    'qty' => $rincian->qty,
+                    'harga' => $rincian->harga_satuan,
+                    'url' => null,
+                    'keterangan' => $rincian->rincian,
+                    'tanggal' => $rincian->tanggal
+                ]);
+            }
+
+            foreach ($item->pengajuan_barang as $pengajuan) {
+
+                foreach ($pengajuan->detail as $barang) {
+
+                    $details->push((object)[
+                        'jenis' => 'barang',
+                        'nama_barang' => $barang->nama_barang,
+                        'qty' => $barang->qty,
+                        'harga' => $barang->harga,
+                        'url' => null,
+                        'keterangan' => $barang->keterangan,
+                        'tanggal' => $pengajuan->tanggal_pencairan,
+                    ]);
+                }
+            }
+
+            return (object)[
+                'id' => $item->id,
+                'source' => 'kegiatan',
+                'periode' => Carbon::parse($item->waktu_kegiatan)->translatedFormat('F Y'),
+                'details' => $details,
+                'tracking' => collect(),
+                'kategori' => 'Kegiatan',
+                'status_pembelian' => $item->status,
+                'created_at' => $item->created_at,
+                'menunggu' => $item->menunggu,
+                'approved' => $item->approved,
+                'pencairan' => $item->pencairan,
+                'selesai' => $item->selesai,
+                'invoice' => $item->pengajuan_barang->pluck('invoice')->filter()->implode(', '),
+                'no_kk' => $item->pengajuan_barang->pluck('no_kk')->filter()->implode(', '),
+            ];
+        });
+
+        if (in_array($user->jabatan, ['HRD', 'GM'])) {
+            $rencanas = $rencanasRaw
+                ->concat($kegiatanRencanaRaw)
+                ->sortBy('periode')
+                ->values();
+    
+            $pembelian = $pembelianRaw
+                ->concat($kegiatanPembelianRaw)
+                ->sortBy('periode')
+                ->values();
+        } else {
+            $rencanas = $rencanasRaw
+                ->sortBy('periode')
+                ->values();
+    
+            $pembelian = $pembelianRaw
+                ->sortBy('periode')
+                ->values();
+        }
+
+        $extends = 'layouts_office.app';
+        $section = 'office_contents';
+
+        return view('office.rab.index', compact('kegiatan', 'drivers', 'pembelian', 'rencanas', 'dibatalkan', 'extends', 'section'));
     }
 
     public function show($id)
