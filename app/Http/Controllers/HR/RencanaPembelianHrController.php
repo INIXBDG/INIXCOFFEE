@@ -11,47 +11,209 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Models\Kegiatan;
+use App\Models\karyawan;
 
 class RencanaPembelianHrController extends Controller
 {
-    private function generateNoKK()
-    {
-        $lastPembelian = PembelianHr::latest('id')->first();
-        
-        if (!$lastPembelian) {
-            return 'KK-0001';
-        }
-        
-        $lastKK = $lastPembelian->no_kk;
-        if (preg_match('/KK-(\d+)/', $lastKK, $matches)) {
-            $number = (int) $matches[1];
-            $nextNumber = $number + 1;
-            return 'KK-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
-        }
-        
-        return 'KK-0001';
-    }
 
     public function index()
     {
-        $lastKK = PembelianHr::latest('created_at')->first();
-        $pembelian = PembelianHr::with('tracking', 'tracking.karyawan', 'details')->where('status_pembelian', 'Terlaksana')->paginate(10);
-        $rencanas = PembelianHr::with('tracking', 'tracking.karyawan', 'details')->where('status_pembelian', 'Rencana')->paginate(10);
+        $kegiatan = Kegiatan::all();
+        $drivers = karyawan::where('jabatan', 'Driver')
+            ->where(function ($query) {
+                $query->whereDoesntHave('pickupDriver')->orWhereHas('pickupDriver', function ($q) {
+                    $q->whereIn('status_driver', ['Selesai, Driver Ready']);
+                });
+            })
+            ->get();
+        
         $dibatalkan = PembelianHr::with('tracking', 'tracking.karyawan', 'details')->where('status_pembelian', 'Dibatalkan')->paginate(10);
-        $nextKK = $this->generateNoKK();
+        $user = auth()->user();
 
-        return view('HR.rencanaPembelian.index', compact('pembelian', 'rencanas', 'dibatalkan', 'lastKK', 'nextKK'));
+        $rencanasRaw = PembelianHr::with([
+            'details',
+            'tracking.karyawan'
+        ])
+        ->where('status_pembelian', 'Rencana')
+        ->when(!in_array($user->jabatan, ['HRD', 'GM']), function ($query) use ($user) {
+            $query->where('id_karyawan', $user->id);
+        })
+        ->get()
+        ->map(function ($item) {
+            $item->source = 'pembelian_hr';
+            $item->status = $item->status_pembelian;
+            return $item;
+        });
+
+        $pembelianRaw = PembelianHr::with([
+            'details',
+            'tracking.karyawan'
+        ])
+        ->where('status_pembelian', 'Terlaksana')
+        ->when(!in_array($user->jabatan, ['HRD', 'GM']), function ($query) use ($user) {
+            $query->where('id_karyawan', $user->id);
+        })
+        ->get()
+        ->map(function ($item) {
+            $item->source = 'pembelian_hr';
+            $item->status = $item->status_pembelian;
+            return $item;
+        });
+
+        $kegiatanRencanaRaw = Kegiatan::with([
+            'pengajuan_barang.detail',
+            'rincian'
+        ])
+        ->where('tipe', 'pembelian')
+        ->where('status','!=','selesai')
+        ->get()
+        ->map(function($item){
+
+            $details = collect();
+
+            foreach ($item->rincian as $rincian) {
+
+                $details->push((object)[
+                    'jenis' => 'rincian',
+                    'nama_barang' => $rincian->hal,
+                    'qty' => $rincian->qty,
+                    'harga' => $rincian->harga_satuan,
+                    'url' => null,
+                    'keterangan' => $rincian->rincian,
+                    'tanggal' => $rincian->tanggal
+                ]);
+            }
+
+            foreach ($item->pengajuan_barang as $pengajuan) {
+
+                foreach ($pengajuan->detail as $barang) {
+
+                    $details->push((object)[
+                        'jenis' => 'barang',
+                        'nama_barang' => $barang->nama_barang,
+                        'qty' => $barang->qty,
+                        'harga' => $barang->harga,
+                        'url' => null,
+                        'keterangan' => $barang->keterangan,
+                        'tanggal' => $pengajuan->tanggal_pencairan,
+                    ]);
+                }
+            }
+
+            return (object)[
+                'id' => $item->id,
+                'source' => 'kegiatan',
+                'periode' => Carbon::parse($item->waktu_kegiatan)->translatedFormat('F Y'),
+                'details' => $details,
+                'tracking' => collect(),
+                'kategori' => 'Kegiatan',
+                'status_pembelian' => $item->status,
+                'created_at' => $item->created_at,
+                'menunggu' => $item->menunggu,
+                'approved' => $item->approved,
+                'pencairan' => $item->pencairan,
+                'selesai' => $item->selesai,
+                'invoice' => $item->pengajuan_barang->pluck('invoice')->filter()->implode(', '),
+                'no_kk' => $item->pengajuan_barang->pluck('no_kk')->filter()->implode(', '),
+            ];
+        });
+
+        $kegiatanPembelianRaw = Kegiatan::with([
+            'pengajuan_barang.detail',
+            'rincian'
+        ])
+        ->where('tipe', 'pembelian')
+        ->where('status','selesai')
+        ->get()
+        ->map(function($item){
+
+            $details = collect();
+
+            foreach ($item->rincian as $rincian) {
+
+                $details->push((object)[
+                    'jenis' => 'rincian',
+                    'nama_barang' => $rincian->hal,
+                    'qty' => $rincian->qty,
+                    'harga' => $rincian->harga_satuan,
+                    'url' => null,
+                    'keterangan' => $rincian->rincian,
+                    'tanggal' => $rincian->tanggal
+                ]);
+            }
+
+            foreach ($item->pengajuan_barang as $pengajuan) {
+
+                foreach ($pengajuan->detail as $barang) {
+
+                    $details->push((object)[
+                        'jenis' => 'barang',
+                        'nama_barang' => $barang->nama_barang,
+                        'qty' => $barang->qty,
+                        'harga' => $barang->harga,
+                        'url' => null,
+                        'keterangan' => $barang->keterangan,
+                        'tanggal' => $pengajuan->tanggal_pencairan,
+                    ]);
+                }
+            }
+
+            return (object)[
+                'id' => $item->id,
+                'source' => 'kegiatan',
+                'periode' => Carbon::parse($item->waktu_kegiatan)->translatedFormat('F Y'),
+                'details' => $details,
+                'tracking' => collect(),
+                'kategori' => 'Kegiatan',
+                'status_pembelian' => $item->status,
+                'created_at' => $item->created_at,
+                'menunggu' => $item->menunggu,
+                'approved' => $item->approved,
+                'pencairan' => $item->pencairan,
+                'selesai' => $item->selesai,
+                'invoice' => $item->pengajuan_barang->pluck('invoice')->filter()->implode(', '),
+                'no_kk' => $item->pengajuan_barang->pluck('no_kk')->filter()->implode(', '),
+            ];
+        });
+
+        if (in_array($user->jabatan, ['HRD', 'GM'])) {
+            $rencanas = $rencanasRaw
+                ->concat($kegiatanRencanaRaw)
+                ->sortBy('periode')
+                ->values();
+    
+            $pembelian = $pembelianRaw
+                ->concat($kegiatanPembelianRaw)
+                ->sortBy('periode')
+                ->values();
+        } else {
+            $rencanas = $rencanasRaw
+                ->sortBy('periode')
+                ->values();
+    
+            $pembelian = $pembelianRaw
+                ->sortBy('periode')
+                ->values();
+        }
+
+        $extends = 'layouts.app';
+        $section = 'content';
+
+        return view('office.rab.index', compact('kegiatan', 'drivers', 'pembelian', 'rencanas', 'dibatalkan', 'extends', 'section'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'no_kk' => 'required', 
+            'no_kk' => 'nullable', 
+            'kategori' => 'required',
+            'periode' => 'required|in:Q1,Q2,Q3,Q4',
             'items' => 'required|array|min:1',
             'items.*.nama_barang' => 'required',  
-            'items.*.kategori' => 'required', 
             'items.*.qty' => 'required|integer|min:1', 
             'items.*.harga' => 'required|numeric',
+            'items.*.url' => 'nullable',  
             'items.*.keterangan' => 'nullable',
         ]);
 
@@ -60,15 +222,19 @@ class RencanaPembelianHrController extends Controller
             $pembelian = PembelianHr::create([
                 'no_kk' => $validated['no_kk'],
                 'status_pembelian' => 'Rencana',
+                'periode' => $request->periode,
+                'kategori' => $request->kategori,
+                'periode' => $validated['periode'],
+                'id_karyawan' => auth()->user()->karyawan->id
             ]);
 
             foreach ($validated['items'] as $item) {
                 DetailPembelianHr::create([
                     'id_pembelian' => $pembelian->id,
                     'nama_barang' => $item['nama_barang'],
-                    'kategori' => $item['kategori'],
                     'qty' => $item['qty'],
                     'harga' => (int) $item['harga'],
+                    'url' => $item['url'] ?? null,
                     'keterangan' => $item['keterangan'] ?? null,
                 ]);
             }
@@ -93,15 +259,16 @@ class RencanaPembelianHrController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'no_kk' => 'required',
+            'no_kk' => 'nullable',
+            'kategori' => 'required',
+            'periode' => 'required|in:Q1,Q2,Q3,Q4',
             'status_pembelian' => 'nullable',
-            'tanggal_pembelian' => 'nullable|date',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:detail_pembelian_hrs,id',
             'items.*.nama_barang' => 'required',
-            'items.*.kategori' => 'required',
             'items.*.qty' => 'required|integer|min:1',
             'items.*.harga' => 'required|numeric',
+            'items.*.url' => 'nullable',
             'items.*.keterangan' => 'nullable',
             'deleted_ids' => 'nullable|string',
         ]);
@@ -112,14 +279,12 @@ class RencanaPembelianHrController extends Controller
 
             $updateData = [
                 'no_kk' => $validated['no_kk'],
+                'kategori' => $request->kategori,
+                'periode' => $request->periode,
             ];
 
             if (!empty($validated['status_pembelian'])) {
                 $updateData['status_pembelian'] = $validated['status_pembelian'];
-            }
-
-            if (!empty($validated['tanggal_pembelian'])) {
-                $updateData['tanggal_pembelian'] = $validated['tanggal_pembelian'];
             }
 
             $pembelian->update($updateData);
@@ -134,18 +299,18 @@ class RencanaPembelianHrController extends Controller
                     $detail = DetailPembelianHr::findOrFail($item['id']);
                     $detail->update([
                         'nama_barang' => $item['nama_barang'],
-                        'kategori' => $item['kategori'],
                         'qty' => $item['qty'],
                         'harga' => (int) $item['harga'],
+                        'url' => $item['url'] ?? null,
                         'keterangan' => $item['keterangan'] ?? null,
                     ]);
                 } else {
                     DetailPembelianHr::create([
                         'id_pembelian' => $pembelian->id,
                         'nama_barang' => $item['nama_barang'],
-                        'kategori' => $item['kategori'],
                         'qty' => $item['qty'],
                         'harga' => (int) $item['harga'],
+                        'url' => $item['url'] ?? null,
                         'keterangan' => $item['keterangan'] ?? null,
                     ]);
                 }
@@ -198,19 +363,21 @@ class RencanaPembelianHrController extends Controller
     {
         $request->validate([
             'id_pembelian' => 'required|exists:pembelian_hrs,id',
-            'status' => 'required'
+            'status' => 'required',
+            'alasan_dibatalkan' => 'required_if:status,Dibatalkan'
         ]);
 
         try {
             $pembelian = PembelianHr::findOrFail($request->id_pembelian);
 
-            $updateData = [
-                'status_pembelian' => $request->status
-            ];
-
-            if ($request->status === 'Terlaksana' && empty($pembelian->tanggal_pembelian)) {
-                $updateData['tanggal_pembelian'] = Carbon::now()->format('Y-m-d');
+            if($request->status === 'Terlaksana' && (!$pembelian->invoice || !$pembelian->no_kk)) {
+                return back()->with('error', 'Lengkapi data nomor kk dan invoice untuk update ke terlaksana!');
             }
+
+            $updateData = [
+                'status_pembelian' => $request->status,
+                'alasan_dibatalkan' => $request->alasan_dibatalkan
+            ];
 
             $pembelian->update($updateData);
 
@@ -232,7 +399,7 @@ class RencanaPembelianHrController extends Controller
     {
         try {
             PembelianHr::findOrFail($id)->delete();
-            return back()->with('success', 'dData pembelian berhasil dihapus');
+            return back()->with('success', 'Data pembelian berhasil dihapus');
         } catch (\Exception $e) {
             Log::error('Error update status hr: ' . $e->getMessage());
             return back()->with('error', 'Gagal menghapus data');

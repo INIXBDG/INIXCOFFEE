@@ -11,9 +11,13 @@ class PembelianHr extends Model
 
     protected $fillable = [
         'no_kk',
+        'kategori',
         'status_pembelian',
-        'tanggal_pembelian',
+        'periode',
         'invoice',
+        'alasan_dibatalkan',
+        'id_karyawan',
+        'id_pengajuan'
     ];
 
     public function details()
@@ -24,5 +28,10 @@ class PembelianHr extends Model
     public function tracking()
     {
         return $this->hasMany(TrackingPembelianHr::class, 'id_pembelian', 'id');
+    }
+
+    public function pengajuan()
+    {
+        return $this->belongsTo(PengajuanBarang::class, 'id_pengajuan', 'id');
     }
 }

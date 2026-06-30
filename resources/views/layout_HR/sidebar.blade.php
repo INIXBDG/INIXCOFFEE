@@ -111,8 +111,8 @@
                 <span class="menu-link-indicator"></span>
             </a>
         </li>
-        <li class="menu-item {{ request()->routeIs('HR.rencanaPembelian.*') ? 'active' : '' }}">
-            <a href="{{ route('HR.rencanaPembelian.index') }}" class="menu-link">
+        <li class="menu-item {{ request()->routeIs('rencanaPembelian.*') ? 'active' : '' }}">
+            <a href="{{ route('rencanaPembelian.index') }}" class="menu-link">
                 <span class="menu-link-icon">
                     <i class="iconify menu-icon" data-icon="mdi:cart-arrow-down" data-width="20" data-height="20"></i>
                 </span>

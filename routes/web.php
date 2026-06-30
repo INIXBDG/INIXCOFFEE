@@ -1408,6 +1408,15 @@ Route::put('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'upda
 Route::delete('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'destroy'])->name('no_akun.destroy');
 Route::post('/no-akun/import', [App\Http\Controllers\NoAkunController::class, 'importExcel'])->name('no_akun.import');
 
+Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() {
+    Route::get('', [RencanaPembelianHrController::class, 'index'])->name('index');
+    Route::post('/store', [RencanaPembelianHrController::class, 'store'])->name('store');
+    Route::post('/update/{id}', [RencanaPembelianHrController::class, 'update'])->name('update');
+    Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');
+    Route::post('/update-nvoice/{id}', [RencanaPembelianHrController::class, 'updateInvoice'])->name('updateInvoice');
+    Route::post('/update-status', [RencanaPembelianHrController::class, 'updateStatus'])->name('updateStatus');
+});
+
 Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::get('/', [HRController::class, 'index'])->name('index');
     Route::prefix('employee')
@@ -1448,15 +1457,6 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
             Route::get('/prediction', [TargetKPIController::class, 'getPredictiveAnalysis'])->name('prediction');
             Route::get('/matrix', [TargetKPIController::class, 'getPotentialMatrix'])->name('matrix');
         });
-    });
-
-    Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() {
-        Route::get('', [RencanaPembelianHrController::class, 'index'])->name('index');
-        Route::post('/store', [RencanaPembelianHrController::class, 'store'])->name('store');
-        Route::post('/update/{id}', [RencanaPembelianHrController::class, 'update'])->name('update');
-        Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');
-        Route::post('/update-nvoice/{id}', [RencanaPembelianHrController::class, 'updateInvoice'])->name('updateInvoice');
-        Route::post('/update-status', [RencanaPembelianHrController::class, 'updateStatus'])->name('updateStatus');
     });
 
     Route::prefix('reports')->name('reports.')->group(function() {

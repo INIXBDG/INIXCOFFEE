@@ -12,10 +12,10 @@ class DetailPembelianHr extends Model
     protected $fillable = [
         'id_pembelian',
         'nama_barang',
-        'kategori',
         'qty',
         'harga',
-        'keterangan',
+        'url',
+        'keterangan'
     ];
 
     public function pembelian()

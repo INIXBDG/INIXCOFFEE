@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('pembelian_hrs', function (Blueprint $table) {
             $table->id();
-            $table->string('no_kk')->unique();
+            $table->string('no_kk')->nullable();
+            $table->integer('id_karyawan');
             $table->string('status_pembelian');
-            $table->date('tanggal_pembelian')->nullable();
+            $table->string('kategori');
+            $table->string('periode');
             $table->string('invoice')->nullable();
+            $table->text('alasan_dibatalkan')->nullable();
+            $table->foreignId('id_pengajuan')->nullable()->constrained('pengajuanbarangs')->nullOnDelete();
             $table->timestamps();
         });
     }

@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_pembelian')->constrained('pembelian_hrs')->cascadeOnDelete();
             $table->string('nama_barang');
-            $table->string('kategori');
             $table->integer('qty');
             $table->decimal('harga', 15, 2);
+            $table->text('url')->nullable();
             $table->text('keterangan')->nullable();
             $table->timestamps();
         });
