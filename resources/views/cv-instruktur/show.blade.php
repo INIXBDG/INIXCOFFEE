@@ -39,7 +39,13 @@
                                         </tr>
                                         <tr>
                                             <td>Gender:</td>
-                                            <td>{{ optional($user->karyawan)->gender ?? '-' }}</td>
+                                            <td>
+                                                {{ match(optional($user->karyawan)->gender) {
+                                                    'Laki-laki' => 'Male',
+                                                    'Perempuan' => 'Female',
+                                                    default => '-'
+                                                } }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td>Place of Birth:</td>
