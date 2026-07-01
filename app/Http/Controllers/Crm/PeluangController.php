@@ -292,6 +292,7 @@ class PeluangController extends Controller
             'id_aktivitas' => 'nullable|array',
             'id_aktivitas.*' => 'integer|exists:aktivitas,id',
             'tentatif' => 'nullable|boolean',
+            'perusahaan_pendaftar' => 'nullable|string|max:255',
         ]);
 
         // Validasi data untuk tabel RKM
@@ -503,6 +504,7 @@ class PeluangController extends Controller
                 'tentatif' => 'nullable|boolean',
                 'id_aktivitas' => 'nullable|array',
                 'id_aktivitas.*' => 'integer|exists:aktivitas,id',
+                'perusahaan_pendaftar' => 'nullable|string|max:255',
             ]);
 
             // Start a database transaction
@@ -535,7 +537,7 @@ class PeluangController extends Controller
 
             // Update Peluang
             $peluang->update([
-                'id_contact' => $validated['id_perusahaan'], // TAMBAHKAN BARIS INI
+                'id_contact' => $validated['id_perusahaan'],
                 'materi' => $validated['materi'],
                 'catatan' => $validated['catatan'],
                 'harga' => $validated['harga'],
@@ -545,6 +547,7 @@ class PeluangController extends Controller
                 'periode_mulai' => $validated['periode_mulai'],
                 'periode_selesai' => $validated['periode_selesai'],
                 'tentatif' => $validated['tentatif'] ?? false,
+                'perusahaan_pendaftar' => $validated['perusahaan_pendaftar'] ?? null,
             ]);
 
             // Update Aktivitas: Set id_peluang only for newly selected activities

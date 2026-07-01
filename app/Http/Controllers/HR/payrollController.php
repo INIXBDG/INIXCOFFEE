@@ -370,7 +370,7 @@ class payrollController extends Controller
         $sheet->getStyle('A3:K3')->applyFromArray($headerStyle);
         $sheet->getRowDimension(3)->setRowHeight(25);
 
-        // Data - ALL RECORDS
+      // Data - ALL RECORDS
         $rowNum = 4;
         $i = 1;
         $totals = [

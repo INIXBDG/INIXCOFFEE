@@ -47,4 +47,5 @@ class Sertifikasi extends Model
     {
         return $this->hasOne(Pelatihan::class, 'id_sertifikasi');
     }
+
 }

@@ -9,10 +9,15 @@
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Database Client</h4>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
-                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
-                    Tambah Perusahaan
-                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success" onclick="exportPdf()">
+                        Export PDF
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
+                        onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
+                        Tambah Perusahaan
+                    </button>
+                </div>
             </div>
 
             <!-- Tabel Contact -->
@@ -366,6 +371,14 @@
                     }
                 ],
             });
+
+            window.exportPdf = function() {
+                let salesFilter = document.getElementById('filterSales') ? document.getElementById('filterSales').value : '';
+                let searchFilter = $('#perusahaanTable').DataTable().search() || '';
+
+                let url = "{{ route('contact.export_pdf') }}?sales_key=" + encodeURIComponent(salesFilter) + "&search=" + encodeURIComponent(searchFilter);
+                window.open(url, '_blank');
+            };
 
             // 🔹 Trigger reload kalau filter diganti
             $('#filterSales').on('change', function() {

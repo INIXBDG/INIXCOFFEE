@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AbsensiKaryawan;
 use App\Models\notif;
-use App\Models\Project;
+use App\Models\LeadProject;
 use App\Models\Registrasi;
 use App\Models\RKM;
 use App\Models\target;
@@ -154,10 +154,9 @@ class HomeController extends Controller
             $targetRow = target::where('tahun', $year)->first();
             $targetProject = $targetRow ? (float) $targetRow->target_project : 0;
 
-            // Hitung total nilai_proyek dari project yang phase = 'selesai'
-            $completedSum = Project::where('phase', 'selesai')
-                ->whereYear('tanggal_akhir', $year)
-                ->sum('nilai_proyek');
+            $completedSum = LeadProject::where('status', 'won')
+                ->whereYear('updated_at', $year)
+                ->sum('estimasi_nilai');
 
             // Generate labels untuk ruler (9 titik: 0%, 12.5%, 25%, ... 100%)
             $targetLabels = [];

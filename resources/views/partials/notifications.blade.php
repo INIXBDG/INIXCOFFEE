@@ -368,14 +368,16 @@
         </div>
     @endif
 
-    @if (in_array($tipePesan, ['Menyetujui SPJ', 'Menolak SPJ', 'Menunggu Persetujuan Direksi', 'Rate SPJ Telah Diisi', 'Menunggu Verifikasi Finance']))
+    @if (in_array($tipePesan, ['Menyetujui SPJ', 'Menolak SPJ', 'Menunggu Persetujuan Direksi', 'Menunggu Approval', 'Silakan Upload Bukti Transfer', 'SPJ Selesai - Jurnal Terbentuk']))
         <div class="notification mb-3">
             <p>
                 <strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong>
-                @if($tipePesan == 'Menunggu Persetujuan Direksi')
+                @if($tipePesan == 'Menunggu Persetujuan Direksi' || $tipePesan == 'Menunggu Approval')
                     meminta persetujuan SPJ untuk
-                @elseif($tipePesan == 'Menunggu Verifikasi Finance')
-                    meminta verifikasi keuangan untuk
+                @elseif($tipePesan == 'Silakan Upload Bukti Transfer')
+                    meminta Anda upload bukti transfer untuk
+                @elseif($tipePesan == 'SPJ Selesai - Jurnal Terbentuk')
+                    memberitahu SPJ telah selesai & jurnal terbentuk untuk
                 @else
                     telah {{ $tipePesan }}
                 @endif
@@ -385,7 +387,6 @@
                 {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_pulang'] ?? now())->format('d M Y') }}
             </p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
-
             <div class="d-flex flex-wrap gap-2">
                 <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm">Lihat Selengkapnya</a>
 
@@ -405,13 +406,6 @@
                     </form>
                 @endif
 
-                {{-- Tombol Verifikasi untuk Finance (Membuka Modal Otomatis) --}}
-                @if(isset($notification->data['finance_approval_url']))
-                    <a href="{{ $notification->data['finance_approval_url'] }}" class="btn btn-warning btn-sm">
-                        Verifikasi & Upload Bukti
-                    </a>
-                @endif
-
                 <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf @method('PUT')
                     <button type="submit" class="btn btn-secondary btn-sm">Tandai sebagai Dibaca</button>
@@ -419,6 +413,7 @@
             </div>
         </div>
     @endif
+    
     @if ($tipePesan == 'Outstanding' && \Carbon\Carbon::parse($notification->data['message']['due_date'] ?? now())->gte(\Carbon\Carbon::now()))
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">Perusahaan
@@ -1933,6 +1928,22 @@
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm">Tandai sebagai Dibaca</button>
+                </form>
+            </div>
+        </div>
+    @endif
+    @if ($tipePesan == 'Pengajuan rencana pembelian')
+        <div class="notification mb-3">
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong></p>
+            <p>{{ $notification->data['message']['pesan'] ?? '-' }}</p>
+            <p>Dibuat pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+            <div class="d-flex">
+                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm"
+                    style="margin-right:8px;">Lihat Selengkapnya</a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
                 </form>
             </div>
         </div>

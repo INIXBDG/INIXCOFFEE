@@ -56,11 +56,19 @@
     .signature-box .title-row td {
         height: 18px;
         vertical-align: middle;
+        padding: 3px 5px;
+    }
+
+    .signature-box .signature-row td {
+        height: 42px;
+        vertical-align: middle;
+        padding: 2px 5px;
     }
 
     .signature-box .space-row td {
-        height: 105px;
+        height: 30px;
         vertical-align: middle;
+        padding: 2px 5px;
     }
 
     .info-box td {
@@ -182,8 +190,7 @@
         <tr>
             <td width="45%" style="vertical-align: top;">
                 Terbilang :<br><br>
-                ___________________________________<br><br>
-                ___________________________________
+                {{ $terbilang }}
             </td>
             <td width="55%">
                 <table class="signature-box">
@@ -193,11 +200,40 @@
                         <td>Yang Membayar</td>
                         <td>Yang Menerima</td>
                     </tr>
+
+                    {{-- Row tanda tangan --}}
+                    <tr class="signature-row">
+                        <td>
+                            @if($ttd_accounting)
+                                <img src="{{ public_path('storage/ttd/' . $ttd_accounting->ttd) }}" style="height: 60px; width: auto;">
+                            @endif
+                        </td>
+                        <td>
+                            @if($ttd_gm)
+                                <img src="{{ public_path('storage/ttd/' . $ttd_gm->ttd) }}" style="height: 60px; width: auto;">
+                            @endif
+                        </td>
+                        <td>
+                            @if($ttd_keuangan)
+                                <img src="{{ public_path('storage/ttd/' . $ttd_keuangan->ttd) }}" style="height: 60px; width: auto;">
+                            @endif
+                        </td>
+                        <td>
+                            @if($penerima)
+                                <img src="{{ public_path('storage/ttd/' . $penerima->ttd) }}" style="height: 60px; width: auto;">
+                            @endif
+                        </td>
+                    </tr>
+
                     <tr class="space-row">
                         <td>Accounting</td>
                         <td>Ka. Div</td>
                         <td>Keuangan</td>
-                        <td></td>
+                        @if ($penerima)
+                            <td>{{ $penerima->nama_lengkap ?? '' }}</td>
+                        @else
+                            <td>{{ $orangluar ?? ''}}</td>
+                        @endif
                     </tr>
                 </table>
             </td>
