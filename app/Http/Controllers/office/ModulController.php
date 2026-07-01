@@ -333,10 +333,12 @@ class ModulController extends Controller
         return back()->with('success', 'Data peserta berhasil diperbarui');
     }
 
-    public function uploaded($id){
+    public function uploaded(Request $request, $id){
         $nomor = NomorModul::findOrFail($id);
         $nomor->status = 'Uploaded';
-        $nomor->uploaded = Carbon::now();
+        $nomor->uploaded = $request->uploaded;
+        $nomor->delay = $request->delay;
+        $nomor->keterangan = $request->keterangan;
         $nomor->save();
 
         return back()->with('success', 'Status uploaded berhasil diupdate');

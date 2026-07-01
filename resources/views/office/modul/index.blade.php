@@ -16,7 +16,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
-
         <div class="card border-0 shadow-sm rounded-4 mb-4 glass-force">
             <div class="card-body p-4">
                 <div
@@ -24,38 +23,26 @@
                     <div>
                         <h3 class="mb-2 fw-bold text-dark">{{ $nomor->no_modul }}</h3>
                         <p class="text-muted fs-5 mb-0">{{ $nomor->type }}</p>
+
+                        @if ($nomor->delay)
+                            <span class="badge bg-warning text-dark mt-2">
+                                Delay: {{ $nomor->delay }}
+                            </span>
+                        @endif
+
+                        @if ($nomor->keterangan)
+                            <div class="mt-3">
+                                <strong>Keterangan:</strong>
+                                <p class="text-muted mb-0">{{ $nomor->keterangan }}</p>
+                            </div>
+                        @endif
                     </div>
+
                     <div class="d-flex flex-column flex-sm-row gap-3 align-items-end align-items-sm-center">
-                        @if ($nomor->type == 'Authorize')
-                            <button type="button" class="btn btn-outline-secondary btn-sm btnPdfPeserta"
-                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_peserta }}" data-bs-toggle="modal"
-                                data-bs-target="#modalNotePeserta">
-                                PDF Peserta
-                            </button>
-
-                            <button type="button" class="btn btn-outline-success btn-sm btnExcelPeserta"
-                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_peserta }}" data-bs-toggle="modal"
-                                data-bs-target="#modalExcelPeserta">
-                                <i class="fas fa-file-excel"></i> Excel Peserta
-                            </button>
-
-                            <button type="button" class="btn btn-outline-secondary btn-sm pdfBtn"
-                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_modul }}" data-bs-toggle="modal"
-                                data-bs-target="#noteModal">
-                                PDF Modul
-                            </button>
-                        @endif
-                        @if ($nomor->type == 'Regular')
-                            <button type="button" class="btn btn-outline-secondary btn-sm pdfBtn"
-                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_modul }}" data-bs-toggle="modal"
-                                data-bs-target="#noteModal">
-                                PDF Modul
-                            </button>
-                        @endif
-                        <span
+                       <span
                             class="badge fs-5 px-4 py-3 {{ $nomor->status === 'active' ? 'bg-success' : 'bg-secondary' }}">
                             {{ ucfirst($nomor->status) }}
-                        </span>
+                        </span>                        
                     </div>
                 </div>
             </div>

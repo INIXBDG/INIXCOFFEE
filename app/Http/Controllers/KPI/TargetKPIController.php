@@ -4773,6 +4773,7 @@ class TargetKPIController extends Controller
             }
 
             $uploaded = Carbon::parse($po->uploaded)->startOfDay();
+            $delay = $po->delay;
 
             foreach ($po->moduls as $modul) {
 
@@ -4787,7 +4788,9 @@ class TargetKPIController extends Controller
                 if ($daysBefore >= 7) {
                     $percent = 100;
                 } elseif ($daysBefore > 0) {
-                    $percent = ($daysBefore * 100) / 7;
+                    $percent = ($delay !== null && $delay !== 'Admin')
+                        ? min(100, ($daysBefore * 150) / 7)  // non-Admin 
+                        : ($daysBefore * 100) / 7;  // Admin atau null → normal
                 } else {
                     $percent = 0;
                 }
@@ -8919,6 +8922,7 @@ class TargetKPIController extends Controller
             }
 
             $uploaded = Carbon::parse($po->uploaded)->startOfDay();
+            $delay = $po->delay;
 
             foreach ($po->moduls as $modul) {
 
@@ -8933,11 +8937,13 @@ class TargetKPIController extends Controller
                 if ($daysBefore >= 7) {
                     $percent = 100;
                 } elseif ($daysBefore > 0) {
-                    $percent = ($daysBefore * 100) / 7;
+                    $percent = ($delay !== null && $delay !== 'Admin')
+                        ? min(100, ($daysBefore * 150) / 7)  // non-Admin 
+                        : ($daysBefore * 100) / 7;  // Admin atau null → normal
                 } else {
                     $percent = 0;
                 }
-
+                
                 $percent = round($percent, 1);
 
                 $allPercents[] = $percent;

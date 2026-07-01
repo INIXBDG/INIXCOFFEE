@@ -276,13 +276,13 @@ class OfficeExamController extends Controller
     {
         $query = ModelsEksam::with(
                 'registexam.dokumentasiExam',
-                'materi',
-                'perusahaan',
-                'rkm.instruktur'
+                'rkm.instruktur',
+                'rkm.materi',
             )
             ->where('status', 'Sudah Dikonfirmasi oleh Technical Support')
             ->orWhere('keterangan', 'Selesai');
 
+            
         // ── Filter waktu ──────────────────────────────────────────
         if ($request->filled('tahun')) {
             $query->whereYear('tanggal_pengajuan', $request->tahun);
@@ -324,7 +324,7 @@ class OfficeExamController extends Controller
 
         // ── Group by materi ───────────────────────────────────────
         $materiExam = $exams
-            ->groupBy(fn($e) => $e->materi ?? 'unknown')
+            ->groupBy(fn($e) => $e->materi . " | " . $e->rkm->materi->vendor ?? 'unknown')
             ->map($ringkasan);
 
         // ── Group by perusahaan ───────────────────────────────────
