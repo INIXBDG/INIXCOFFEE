@@ -7,7 +7,7 @@
 
     <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
 
-        <div class="navbar-nav align-items-center">
+        <div class="navbar-nav align-items-center navbar-search">
             <div class="nav-item d-flex align-items-center">
                 <i class="iconify bx bx-search fs-4 lh-0 text-muted me-2" data-icon="bx:search"></i>
                 <input type="text" class="form-control border-0 shadow-none bg-transparent ps-1"

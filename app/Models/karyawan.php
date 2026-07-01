@@ -14,45 +14,20 @@ class karyawan extends Model
     use Notifiable;
     protected $appends = ['hashids'];
 
-    protected $fillable = [
-        'foto',
-        'nip',
-        'nama_lengkap',
-        'email',
-        'divisi',
-        'jabatan',
-        'rekening_maybank',
-        'rekening_bca',
-        'status_aktif',
-        'awal_probation',
-        'akhir_probation',
-        'awal_kontrak',
-        'akhir_kontrak',
-        'awal_tetap',
-        'akhir_tetap',
-        'keterangan',
-        'kode_karyawan',
-        'ttd',
-        'cuti',
-        'email',
-        'whatsapp',
-        'telepon',
-        'gaji',
-        'alamat_lengkap',
-        'gender',
-        'tempat_lahir',
-        'tanggal_lahir',
-        'religion',
-        'provinsi',
-        'kota',
-        'resigned_at',
-        'alasan_resign'
-    ];
+    protected $fillable = ['foto', 'nip', 'nama_lengkap', 'email', 'divisi', 'jabatan', 'rekening_maybank', 'rekening_bca', 'status_aktif', 'awal_probation', 'akhir_probation', 'awal_kontrak', 'akhir_kontrak', 'awal_tetap', 'akhir_tetap', 'keterangan', 'kode_karyawan', 'ttd', 'cuti', 'email', 'whatsapp', 'telepon', 'gaji', 'alamat_lengkap', 'gender', 'tempat_lahir', 'tanggal_lahir', 'religion', 'provinsi', 'kota', 'resigned_at', 'alasan_resign'];
 
     public function user()
     {
         return $this->hasOne(User::class, 'karyawan_id');
     }
+
+    public function divisi()
+    {
+        return $this->hasOne(self::class, 'divisi', 'divisi')
+            ->select('divisi')
+            ->groupBy('divisi');
+    }
+
     public function formPenilaian()
     {
         return $this->hasMany(formPenilaian::class, 'id_karyawan', 'id');
@@ -135,17 +110,15 @@ class karyawan extends Model
     {
         return $this->hasMany(pengajuancuti::class, 'id_karyawan', 'id');
     }
-  
+
     public function administrasiKaryawan()
     {
-        return $this->hasMany(AdministrasiKaryawan::class, 'id_karyawan');   
+        return $this->hasMany(AdministrasiKaryawan::class, 'id_karyawan');
     }
 
     public function jabatan()
     {
-        return $this->belongsToMany(OrgStructure::class, 'karyawan_jabatan')
-                    ->withPivot('is_primary')
-                    ->withTimestamps();
+        return $this->belongsToMany(OrgStructure::class, 'karyawan_jabatan')->withPivot('is_primary')->withTimestamps();
     }
 
     public function jobProfile()

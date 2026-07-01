@@ -42,6 +42,7 @@ use App\Http\Controllers\HR\HRController;
 use App\Http\Controllers\HR\KaryawanProfileController;
 use App\Http\Controllers\HR\KaryawanTaskController;
 use App\Http\Controllers\HR\payrollController;
+use App\Http\Controllers\HR\PerhitunganTunjanganHRController;
 use App\Http\Controllers\HR\presenceController;
 use App\Http\Controllers\HR\RekapSJPController;
 use App\Http\Controllers\HR\ReportController;
@@ -1433,7 +1434,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         ->group(function () {
             Route::get('/index', [payrollController::class, 'index'])->name('index');
             Route::get('/dashboard', [payrollController::class, 'getPayrollDashboard'])->name('dashboard');
-            Route::get('/export/csv', [payrollController::class, 'exportPayrollCsv'])->name('export.csv');
+            Route::get('/export/excel', [payrollController::class, 'exportPayrollExcel'])->name('export.excel');
             Route::get('/export/pdf', [payrollController::class, 'exportPayrollPdf'])->name('export.pdf');
         });
     Route::prefix('absensi')->name('absensi.')->group(function () {
@@ -1451,7 +1452,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('/trend', [TargetKPIController::class, 'getExecutiveTrend'])->name('trend');
             Route::get('/prediction', [TargetKPIController::class, 'getPredictiveAnalysis'])->name('prediction');
-            Route::get('/matrix', [TargetKPIController::class, 'getPotentialMatrix'])->name('matrix');
+            Route::get('/matrix-unified', [TargetKPIController::class, 'getPotentialMatrixUnified'])->name('matrix.unified');
         });
     });
 
@@ -1463,11 +1464,13 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/store', [ReportController::class, 'store'])->name('store');
         Route::get('/{template}/edit', [ReportController::class, 'edit'])->name('edit');
         Route::put('/{template}', [ReportController::class, 'update'])->name('update');
+        Route::delete('/delete/{template}', [ReportController::class, 'destroy'])->name('destroy');
 
         Route::get('/{template}/generate', [ReportController::class, 'generateForm'])->name('generate.form');
         Route::post('/{template}/generate', [ReportController::class, 'generate'])->name('generate');
-        Route::get('/{template}/history', [ReportController::class, 'history'])->name('history');
-        Route::get('/{template}/history/data', [ReportController::class, 'getHistoryData'])->name('history.data');
+        Route::get('/history', [ReportController::class, 'history'])->name('history');
+        Route::get('/history/data', [ReportController::class, 'getHistoryData'])->name('history.data');
+        Route::get('/{generation}/preview', [ReportController::class, 'preview'])->name('preview');
 
         Route::post('/placeholders', [ReportController::class, 'addPlaceholder'])->name('placeholders.store');
         Route::put('/placeholders/{placeholder}', [ReportController::class, 'updatePlaceholder'])->name('placeholders.update');
@@ -1475,10 +1478,13 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
         Route::post('/{template}/settings', [ReportController::class, 'updateSettings'])->name('settings.update');
         Route::get('/generations/{generation}/download', [ReportController::class, 'download'])->name('download');
-        // Tambahkan route ini setelah route report yang sudah ada
+
         Route::get('/create-with-mapping', [ReportController::class, 'createWithMapping'])->name('create.mapping');
         Route::post('/upload-and-map', [ReportController::class, 'uploadAndMap'])->name('upload.map');
         Route::post('/save-with-mapping', [ReportController::class, 'saveWithMapping'])->name('save.mapping');
+
+        Route::post('reports/preview-formula', [ReportController::class, 'previewFormula'])->name('preview.formula');
+        Route::post('reports/{template}/reset-counter/{counterKey}', [ReportController::class, 'resetCounter'])->name('reset.counter');
     });
 
     Route::prefix('hire')->name('hire.')->group(function() {
@@ -1572,7 +1578,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::delete('/{karyawanId}', [KaryawanProfileController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('rekap-spj')->name('rekap_spj.')->middleware('auth')->group(function () {
+    Route::prefix('rekap-spj')->name('rekap_spj.')->group(function () {
         Route::get('/', [RekapSJPController::class, 'index'])->name('index');
         Route::get('/load-data', [RekapSJPController::class, 'getRekapData'])->name('load_data');
         Route::get('/export', [RekapSJPController::class, 'export'])->name('export');
@@ -1580,6 +1586,24 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/ajax/karyawan/{jabatan}', [RekapSJPController::class, 'getKaryawan']);
         Route::get('/export-pdf', [RekapSJPController::class, 'exportPdf'])->name('export_pdf');
         Route::get('/detail-data', [RekapSJPController::class, 'getDetailData'])->name('detail_data');
+    });
+
+    Route::prefix('perhitungan-tunjangan')->name('perhitungan-tunjangan.')->group(function () {
+        Route::get('/',          [payrollController::class, 'indexPerhitungan'])->name('index');
+        Route::get('/karyawan-data', [payrollController::class, 'getKaryawanDataPerhitungan'])->name('karyawan-data');
+        Route::get('/get-data',  [payrollController::class, 'getPayrollDataPerhitungan'])->name('get-data');
+        Route::get('/stats',     [payrollController::class, 'getStatsPerhitungan'])->name('stats');
+        Route::post('/',         [payrollController::class, 'storePerhitungan'])->name('store');
+        Route::get('/{id}',      [payrollController::class, 'showPerhitungan'])->name('show');
+        Route::put('/{id}',      [payrollController::class, 'updatePerhitungan'])->name('update');
+        Route::delete('/{id}',   [payrollController::class, 'destroyPerhitungan'])->name('destroy');
+        Route::post('/{id}/approve', [payrollController::class, 'approvePerhitungan'])->name('approve');
+        Route::get('/perhitungan-tunjangan/export/excel', [payrollController::class, 'exportExcelPerhitungan'])->name('export.excel');
+        Route::get('/perhitungan-tunjangan/export/pdf', [payrollController::class, 'exportPdfPerhitungan'])->name('export.pdf');
+    });
+
+    Route::prefix('perhitungan-pph')->name('perhitungan-pph.')->group(function () {
+        Route::get('/',          [payrollController::class, 'indexPph'])->name('index');
     });
 });
 
