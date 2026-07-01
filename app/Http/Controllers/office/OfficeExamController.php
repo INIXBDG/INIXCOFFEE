@@ -280,7 +280,8 @@ class OfficeExamController extends Controller
                 'perusahaan',
                 'rkm.instruktur'
             )
-            ->where('status', 'Sudah Dikonfirmasi oleh Technical Support');
+            ->where('status', 'Sudah Dikonfirmasi oleh Technical Support')
+            ->orWhere('keterangan', 'Selesai');
 
         // ── Filter waktu ──────────────────────────────────────────
         if ($request->filled('tahun')) {
