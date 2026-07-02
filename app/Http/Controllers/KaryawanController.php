@@ -250,6 +250,7 @@ class KaryawanController extends Controller
 
         $karyawan = User::with('karyawan', 'karyawan.LogGaji')
             ->where('status_akun', '1')
+            ->where('jabatan', '!=', 'Outsource')
             ->get()
             ->groupBy(fn($user) => $user->karyawan->divisi ?? 'Tidak Diketahui');
         // dd($karyawan->toArray());   
@@ -259,18 +260,38 @@ class KaryawanController extends Controller
     public function updateGaji(Request $request, $id)
     {
         $request->validate([
-            'jumlah_gaji' => 'required|numeric|min:0',
+            'jumlah_gaji'       => 'required|numeric|min:0',
+            'tunjangan_jabatan' => 'nullable|numeric|min:0',
+            'bulan'             => 'required|integer|between:1,12',
+            'tahun'             => 'required|integer|min:2000|max:2099',
         ]);
 
-        $karyawan = karyawan::findOrFail($id);
-        $karyawan->update(['gaji' => $request->jumlah_gaji]);
+        $bulanInput = (int) $request->bulan;
+        $tahunInput = (int) $request->tahun;
+        $bulanNow   = (int) Carbon::now()->month;
+        $tahunNow   = (int) Carbon::now()->year;
 
-        $logGaji = new LogGaji();
-        $logGaji->id_karyawan = $id;
-        $logGaji->gaji = $request->jumlah_gaji;
-        $logGaji->tahun = Carbon::now()->year;
-        $logGaji->bulan = Carbon::now()->month;
-        $logGaji->save();
+        $isBulanIni = $bulanInput === $bulanNow && $tahunInput === $tahunNow;
+
+        if ($isBulanIni) {
+            $karyawan = karyawan::findOrFail($id);
+            $karyawan->update([
+                'gaji'              => $request->jumlah_gaji,
+                'tunjangan_jabatan' => $request->tunjangan_jabatan ?? 0,
+            ]);
+        }
+
+        LogGaji::updateOrCreate(
+            [
+                'id_karyawan' => $id,
+                'bulan'       => $bulanInput,
+                'tahun'       => $tahunInput,
+            ],
+            [
+                'gaji'              => $request->jumlah_gaji,
+                'tunjangan_jabatan' => $request->tunjangan_jabatan ?? 0,
+            ]
+        );
 
         return redirect()->route('gaji.index')->with('success', 'Gaji berhasil diperbarui.');
     }

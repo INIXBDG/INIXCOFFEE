@@ -14,7 +14,7 @@ class karyawan extends Model
     use Notifiable;
     protected $appends = ['hashids'];
 
-    protected $fillable = ['foto', 'nip', 'nama_lengkap', 'email', 'divisi', 'jabatan', 'rekening_maybank', 'rekening_bca', 'status_aktif', 'awal_probation', 'akhir_probation', 'awal_kontrak', 'akhir_kontrak', 'awal_tetap', 'akhir_tetap', 'keterangan', 'kode_karyawan', 'ttd', 'cuti', 'email', 'whatsapp', 'telepon', 'gaji', 'alamat_lengkap', 'gender', 'tempat_lahir', 'tanggal_lahir', 'religion', 'provinsi', 'kota', 'resigned_at', 'alasan_resign'];
+    protected $fillable = ['foto', 'nip', 'nama_lengkap', 'email', 'divisi', 'jabatan', 'rekening_maybank', 'rekening_bca', 'status_aktif', 'awal_probation', 'akhir_probation', 'awal_kontrak', 'akhir_kontrak', 'awal_tetap', 'akhir_tetap', 'keterangan', 'kode_karyawan', 'ttd', 'cuti', 'email', 'whatsapp', 'telepon', 'gaji', 'tunjangan_jabatan', 'alamat_lengkap', 'gender', 'tempat_lahir', 'tanggal_lahir', 'religion', 'provinsi', 'kota', 'resigned_at', 'alasan_resign'];
 
     public function user()
     {

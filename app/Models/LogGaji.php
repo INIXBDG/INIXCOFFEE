@@ -9,7 +9,7 @@ class LogGaji extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_karyawan', 'gaji', 'tahun', 'bulan'];
+    protected $fillable = ['id_karyawan', 'gaji', 'tahun', 'bulan', 'tunjangan_jabatan'];
 
     public function karyawan()
     {
