@@ -55,7 +55,7 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
                 @can('Rekap Cuti')
-                    <a href="{{route('pengajuancuti.rekap')}}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Cuti"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Rekap</a>
+                    <a href="{{route('pengajuancuti.rekap')}}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Cuti">Rekap Pengajuan Cuti</a>
                 @endcan
                 <a href="pengajuancuti/create" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Cuti"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Ajukan Cuti</a>
             </div>  
