@@ -96,9 +96,15 @@
                     @if(in_array($users->karyawan->jabatan, ['Instruktur', 'Education Manager']))
                         <div class="card certification-card mb-5">
                             <div class="card-body">
-                                <h5 class="card-title text-dark fw-bold mb-3">
-                                Sertifikasi
-                                </h5>
+
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="card-title text-dark fw-bold mb-0">
+                                        Sertifikasi
+                                    </h5>
+                                    <a href="{{ route('cv-instruktur.pdf', $users->id) }}" class="btn btn-primary btn-sm" target="_blank">
+                                        Export CV Instruktur
+                                    </a>
+                                </div>
 
                                 @if($sertifikasis->count() > 0)
                                     <div class="list-group list-group-flush">

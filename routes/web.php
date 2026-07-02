@@ -1067,10 +1067,10 @@ Route::prefix('office')->group(function () {
         route::get('/index', [OfficeExamController::class, 'indexOffice'])->name('index');
         Route::get('/detail/{id}', [OfficeExamController::class, 'showDetailExam']);
         route::post('/update-bundling', [OfficeExamController::class, 'updateBundling'])->name('updateBundling');
-        
+
         Route::get('/rekap', [OfficeExamController::class, 'indexRekap'])->name('rekap.index');
         Route::get('/rekap/json', [OfficeExamController::class, 'rekapJson'])->name('rekap.json');
-        
+
         Route::get('/{year}/{month}', [OfficeExamController::class, 'showExamMonth']);
     });
 });

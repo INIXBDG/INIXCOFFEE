@@ -6,13 +6,14 @@
     <title>CV Instruktur - {{ optional($user->karyawan)->nama_lengkap ?? 'Unknown' }}</title>
     <style>
         @page {
-            margin: 0px; /* Menghilangkan margin bawaan agar gambar memenuhi seluruh dimensi halaman */
+            margin: 0px;
         }
         body {
             font-family: sans-serif;
-            font-size: 12px;
+            font-size: 13.5px; /* Ukuran font dasar ditingkatkan */
+            font-weight: 500;  /* Ketebalan font dasar ditingkatkan */
             color: #000;
-            margin: 40px 40px 80px 40px; /* Menetapkan area aman konten agar tidak menimpa header/footer gambar template */
+            margin: 40px 40px 80px 40px;
         }
         .bg-template {
             position: fixed;
@@ -20,11 +21,25 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1000; /* Meletakkan gambar di lapisan paling belakang */
+            z-index: -1000;
         }
         .container { width: 100%; margin: 0 auto; }
-        .section-title { font-size: 14px; text-decoration: underline; font-weight: bold; margin-bottom: 10px; margin-top: 20px; }
+
+        .section-title {
+            font-size: 16px; /* Ukuran judul sesi ditingkatkan proporsional */
+            text-decoration: underline;
+            font-weight: bold;
+            margin-bottom: 15px;
+            margin-top: 35px;
+            page-break-after: avoid;
+        }
+
         table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+
+        tr {
+            page-break-inside: avoid;
+        }
+
         .table-borderless td, .table-borderless th { border: none; padding: 4px 0; vertical-align: top; }
         .table-bordered td, .table-bordered th { border: 1px solid #000; padding: 6px; }
         .text-center { text-align: center; }
@@ -34,6 +49,20 @@
         .w-75 { width: 75%; }
         .mb-2 { margin-bottom: 8px; }
         ul { margin-top: 0; padding-left: 20px; }
+
+        .page-break {
+            page-break-before: always;
+        }
+        .attachment-container {
+            width: 100%;
+            text-align: center;
+            padding-top: 20px;
+        }
+        .attachment-image {
+            width: 100%;
+            max-height: 950px;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
@@ -59,7 +88,13 @@
                         </tr>
                         <tr>
                             <td>Gender:</td>
-                            <td>{{ optional($user->karyawan)->gender ?? '-' }}</td>
+                            <td>
+                                {{ match(optional($user->karyawan)->gender) {
+                                    'Laki-laki' => 'Male',
+                                    'Perempuan' => 'Female',
+                                    default => '-'
+                                } }}
+                            </td>
                         </tr>
                         <tr>
                             <td>Place of Birth:</td>
@@ -148,7 +183,7 @@
                         $isRetired = !empty($sertifikat->tanggal_berlaku_sampai) && \Carbon\Carbon::parse($sertifikat->tanggal_berlaku_sampai)->isPast();
                     @endphp
                     <li class="mb-2">
-                        {{ $sertifikat->nama_sertifikat }} {{ $isRetired ? '(retired)' : '' }}
+                        <strong>{{ $sertifikat->nama_sertifikat }}</strong> {{ $isRetired ? '(retired)' : '' }}
                     </li>
                 @endforeach
             @else
@@ -161,7 +196,7 @@
             @if(optional($user->karyawan)->specializations && $user->karyawan->specializations->isNotEmpty())
                 @foreach($user->karyawan->specializations as $sp)
                     <li class="mb-2">
-                        {{ $sp->specialization }}
+                        <strong>{{ $sp->specialization }}</strong>
                         @if($sp->detail_specialization)
                             <br>
                             {{ $sp->detail_specialization }}
@@ -236,5 +271,15 @@
         </table>
 
     </div>
+
+    @if(isset($user->sertifikasis) && $user->sertifikasis->isNotEmpty())
+        @foreach($user->sertifikasis as $sertifikat)
+            @if($sertifikat->bukti_sertifikasi)
+                <div class="page-break attachment-container">
+                    <img src="{{ public_path('storage/' . $sertifikat->bukti_sertifikasi) }}" class="attachment-image" alt="Bukti Sertifikasi">
+                </div>
+            @endif
+        @endforeach
+    @endif
 </body>
 </html>
