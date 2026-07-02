@@ -486,7 +486,7 @@
                 <div class="stat-card h-100">
                     <div class="card-body d-flex justify-content-between align-items-center p-3">
                         <div>
-                            <small>KPI Aktif</small>
+                            <small>KPI Sedang Berjalan</small>
                             <h4 class="mb-0" id="kpiAktif">0</h4>
                         </div>
                         <div class="stat-icon bg-warning bg-opacity-10 text-warning">
@@ -1024,9 +1024,27 @@
                 }
                 tbody.innerHTML = targets.map(t => {
                     const pct = parseFloat((t.progress ?? 0).toFixed(2));
-                    const isDone = t.status === 'Selesai';
-                    const barColor = isDone ? '#10b981' : '#f59e0b';
-                    const badgeCls = isDone ? 'bg-success' : 'bg-warning text-dark';
+                    
+                    let barColor, badgeCls;
+                    switch (t.status) {
+                        case 'Selesai':
+                            barColor = '#10b981';
+                            badgeCls = 'bg-success';
+                            break;
+                        case 'Gagal':
+                            barColor = '#343a40';
+                            badgeCls = 'bg-dark';
+                            break;
+                        case 'Sedang Berjalan':
+                            barColor = '#0d6efd';
+                            badgeCls = 'bg-primary';
+                            break;
+                        case 'Belum Mulai':
+                        default:
+                            barColor = '#6c757d';
+                            badgeCls = 'bg-secondary';
+                            break;
+                    }
                     return `
                         <tr>
                             <td><strong>${t.judul}</strong></td>
