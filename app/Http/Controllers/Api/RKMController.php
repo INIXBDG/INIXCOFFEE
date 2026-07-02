@@ -233,14 +233,11 @@ class RKMController extends Controller
 
     public function getRKMRegist()
     {
-        $today = Carbon::now();
-        $startDate = $today->startOfWeek()->toDateString(); // Tanggal awal minggu ini
-        $endDate = $today->endOfWeek()->toDateString(); // Tanggal akhir minggu ini
-
+        $year = now()->year;
         $rows = RKM::with(['materi:id,nama_materi'])
             ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
             ->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
-            // ->whereBetween('r_k_m_s.tanggal_awal', [$startDate, $endDate])
+            ->whereYear('r_k_m_s.tanggal_awal', $year)
             // ->whereBetween('r_k_m_s.tanggal_akhir', [$startDate, $endDate])
             ->where('materis.nama_materi', 'LIKE', '%' . request('q') . '%')
             ->select('r_k_m_s.*', 'perusahaans.nama_perusahaan')

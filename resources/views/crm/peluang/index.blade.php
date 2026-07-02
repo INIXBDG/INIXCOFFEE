@@ -629,17 +629,27 @@
 
         if (formData !== null) {
             formData.addEventListener('submit', function(e) {
+                // 1. Pengecekan Validasi HTML5
                 if (!this.checkValidity()) {
                     e.preventDefault();
                     e.stopPropagation();
+                    this.classList.add('was-validated');
+                    return;
                 }
+
                 this.classList.add('was-validated');
 
                 if (hargaInput !== null) {
                     hargaInput.value = unformatRupiah(hargaInput.value);
                 }
-                if (netsalesInput !== null) {
+                if (netsalesInput !== null && netsalesInput.value !== '') {
                     netsalesInput.value = unformatRupiah(netsalesInput.value);
+                }
+
+                const submitButton = this.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...';
                 }
             });
         }
