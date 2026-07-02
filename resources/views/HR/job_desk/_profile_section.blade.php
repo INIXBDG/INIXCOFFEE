@@ -8,65 +8,50 @@
     {{-- ========================================= --}}
 
     @if (!empty($data->qualifications) && is_array($data->qualifications) && count($data->qualifications) > 0)
-        <div class="mb-4">
-            <h6 class="fw-bold mb-3" style="color: #333; font-size: 0.95rem;">Qualification</h6>
-            <ul class="list-unstyled mb-0">
-                @foreach ($data->qualifications as $index => $qual)
-                    <li
-                        style="padding: 6px 0 6px 20px; position: relative; color: #444; font-size: 0.9rem; line-height: 1.6;">
-                        <span style="position: absolute; left: 0; color: #999;">{{ $index + 1 }}.</span>
-                        {{ $qual }}
-                    </li>
+        <div class="profile-section">
+            <div class="profile-section-title"><i class="fa-solid fa-graduation-cap" style="color:var(--pri)"></i>Qualification</div>
+            <ul class="profile-list">
+                @foreach ($data->qualifications as $qual)
+                    <li>{{ $qual }}</li>
                 @endforeach
             </ul>
         </div>
     @else
-        <div class="mb-4">
-            <h6 class="fw-bold mb-2" style="color: #333; font-size: 0.95rem;">Qualification</h6>
-            <p class="text-muted mb-0" style="font-size: 0.85rem; font-style: italic;">Belum diisi</p>
+        <div class="profile-section">
+            <div class="profile-section-title"><i class="fa-solid fa-graduation-cap" style="color:var(--pri)"></i>Qualification</div>
+            <div class="empty-text">Belum diisi</div>
         </div>
     @endif
 
     @if (!empty($data->descriptions) && is_array($data->descriptions) && count($data->descriptions) > 0)
-        <div class="mb-4">
-            <h6 class="fw-bold mb-3" style="color: #333; font-size: 0.95rem;">Job Description</h6>
-            <ul class="list-unstyled mb-0">
-                @foreach ($data->descriptions as $index => $desc)
-                    <li
-                        style="padding: 6px 0 6px 20px; position: relative; color: #444; font-size: 0.9rem; line-height: 1.6;">
-                        <span style="position: absolute; left: 0; color: #999;">{{ $index + 1 }}.</span>
-                        {{ $desc }}
-                    </li>
+        <div class="profile-section">
+            <div class="profile-section-title"><i class="fa-solid fa-list-ul" style="color:var(--success)"></i>Job Description</div>
+            <ul class="profile-list">
+                @foreach ($data->descriptions as $desc)
+                    <li>{{ $desc }}</li>
                 @endforeach
             </ul>
         </div>
     @else
-        <div class="mb-4">
-            <h6 class="fw-bold mb-2" style="color: #333; font-size: 0.95rem;">Job Description</h6>
-            <p class="text-muted mb-0" style="font-size: 0.85rem; font-style: italic;">Belum diisi</p>
+        <div class="profile-section">
+            <div class="profile-section-title"><i class="fa-solid fa-list-ul" style="color:var(--success)"></i>Job Description</div>
+            <div class="empty-text">Belum diisi</div>
         </div>
     @endif
 
-    @if (
-        !empty($data->compensation_benefit) &&
-            is_array($data->compensation_benefit) &&
-            count($data->compensation_benefit) > 0)
-        <div class="mb-0">
-            <h6 class="fw-bold mb-3" style="color: #333; font-size: 0.95rem;">Compensation & Benefit</h6>
-            <ul class="list-unstyled mb-0">
-                @foreach ($data->compensation_benefit as $index => $benefit)
-                    <li
-                        style="padding: 6px 0 6px 20px; position: relative; color: #444; font-size: 0.9rem; line-height: 1.6;">
-                        <span style="position: absolute; left: 0; color: #999;">{{ $index + 1 }}.</span>
-                        {{ $benefit }}
-                    </li>
+    @if (!empty($data->compensation_benefit) && is_array($data->compensation_benefit) && count($data->compensation_benefit) > 0)
+        <div class="profile-section">
+            <div class="profile-section-title"><i class="fa-solid fa-coins" style="color:var(--warning)"></i>Compensation & Benefit</div>
+            <ul class="profile-list">
+                @foreach ($data->compensation_benefit as $benefit)
+                    <li>{{ $benefit }}</li>
                 @endforeach
             </ul>
         </div>
     @else
-        <div class="mb-0">
-            <h6 class="fw-bold mb-2" style="color: #333; font-size: 0.95rem;">Compensation & Benefit</h6>
-            <p class="text-muted mb-0" style="font-size: 0.85rem; font-style: italic;">Belum diisi</p>
+        <div class="profile-section">
+            <div class="profile-section-title"><i class="fa-solid fa-coins" style="color:var(--warning)"></i>Compensation & Benefit</div>
+            <div class="empty-text">Belum diisi</div>
         </div>
     @endif
 @else
@@ -74,94 +59,78 @@
     {{-- JOB DESK (Struktur Lama - Tidak Diubah)   --}}
     {{-- ========================================= --}}
 
-    <div class="mb-4">
-        <h6 class="fw-bold mb-2" style="color: #333; font-size: 0.95rem;">Fungsi Utama</h6>
-        <p class="mb-0" style="color: #444; line-height: 1.7; font-size: 0.9rem;">
+    <div class="profile-section">
+        <div class="profile-section-title"><i class="fa-solid fa-bullseye" style="color:var(--pri)"></i>Fungsi Utama</div>
+        <p style="color:var(--gray-700);line-height:1.7;font-size:.875rem;margin-bottom:0">
             {{ $data->fungsi_utama ?: 'Belum diisi' }}
         </p>
     </div>
 
-    <div class="mb-4">
-        <h6 class="fw-bold mb-3" style="color: #333; font-size: 0.95rem;">Spesifikasi</h6>
-
-        @php
-            $specs = [
-                ['label' => 'Tujuan', 'value' => $data->tujuan_jabatan],
-                ['label' => 'Pendidikan', 'value' => $data->kualifikasi_pendidikan],
-                ['label' => 'Pengalaman', 'value' => $data->pengalaman_kerja],
-                ['label' => 'Karakteristik', 'value' => $data->karakteristik_pribadi],
-            ];
-        @endphp
-
-        <div class="row g-3">
+    <div class="profile-section">
+        <div class="profile-section-title"><i class="fa-solid fa-user-tie" style="color:var(--info)"></i>Spesifikasi</div>
+        <div class="row g-2">
+            @php
+                $specs = [
+                    ['label' => 'Tujuan', 'value' => $data->tujuan_jabatan],
+                    ['label' => 'Pendidikan', 'value' => $data->kualifikasi_pendidikan],
+                    ['label' => 'Pengalaman', 'value' => $data->pengalaman_kerja],
+                    ['label' => 'Karakteristik', 'value' => $data->karakteristik_pribadi],
+                ];
+            @endphp
             @foreach ($specs as $spec)
                 <div class="col-md-6">
-                    <div
-                        style="font-size: 0.75rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
-                        {{ $spec['label'] }}
-                    </div>
-                    <div style="color: #333; font-size: 0.9rem; font-weight: 500;">
-                        {{ $spec['value'] ?: '-' }}
+                    <div class="info-card-mini">
+                        <div class="label">{{ $spec['label'] }}</div>
+                        <div class="value" style="font-size:.85rem">{{ $spec['value'] ?: '-' }}</div>
                     </div>
                 </div>
             @endforeach
-
             <div class="col-12">
-                <div
-                    style="font-size: 0.75rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                    Kompetensi</div>
-                @if (!empty($data->kompetensi) && is_array($data->kompetensi) && count($data->kompetensi) > 0)
-                    <div>
-                        @foreach ($data->kompetensi as $k)
-                            <span
-                                style="display: inline-block; background: #f5f5f5; color: #333; padding: 4px 12px; border-radius: 3px; font-size: 0.8rem; margin-right: 6px; margin-bottom: 6px; border: 1px solid #e0e0e0;">
-                                {{ $k }}
-                            </span>
-                        @endforeach
+                <div class="info-card-mini">
+                    <div class="label">Kompetensi</div>
+                    <div class="value mt-1">
+                        @if (!empty($data->kompetensi) && is_array($data->kompetensi) && count($data->kompetensi) > 0)
+                            @foreach ($data->kompetensi as $k)
+                                <span class="kompetensi-tag">{{ $k }}</span>
+                            @endforeach
+                        @else
+                            <span class="empty-text">-</span>
+                        @endif
                     </div>
-                @else
-                    <span style="color: #999; font-size: 0.85rem;">-</span>
-                @endif
+                </div>
             </div>
         </div>
     </div>
 
     @php
         $hierarchicalSections = [
-            ['title' => 'Tugas dan Tanggung Jawab', 'data' => $data->tugas_tanggung_jawab ?? []],
-            ['title' => 'Wewenang', 'data' => $data->wewenang ?? []],
-            ['title' => 'Standard Operating Procedure (SOP)', 'data' => $data->sop ?? []],
+            ['title' => 'Tugas dan Tanggung Jawab', 'data' => $data->tugas_tanggung_jawab ?? [], 'icon' => 'fa-list-check', 'color' => 'var(--pri)'],
+            ['title' => 'Wewenang', 'data' => $data->wewenang ?? [], 'icon' => 'fa-gavel', 'color' => 'var(--success)'],
+            ['title' => 'Standard Operating Procedure (SOP)', 'data' => $data->sop ?? [], 'icon' => 'fa-file-contract', 'color' => 'var(--info)'],
         ];
     @endphp
 
     @foreach ($hierarchicalSections as $section)
-        <div class="mb-4">
-            <h6 class="fw-bold mb-3" style="color: #333; font-size: 0.95rem;">{{ $section['title'] }}</h6>
+        <div class="profile-section">
+            <div class="profile-section-title"><i class="fa-solid {{ $section['icon'] }}" style="color:{{ $section['color'] }}"></i>{{ $section['title'] }}</div>
 
             @if (!empty($section['data']) && is_array($section['data']))
                 @foreach ($section['data'] as $index => $item)
-                    <div
-                        style="background: #f9f9f9; border-left: 3px solid #333; padding: 12px 16px; margin-bottom: 8px; border-radius: 4px;">
-                        <div style="font-weight: 600; color: #222; font-size: 0.9rem; margin-bottom: 8px;">
-                            {{ $index + 1 }}. {{ $item['name'] ?? 'Tidak bernama' }}
-                        </div>
-
+                    <div class="detail-block">
+                        <div class="detail-block-title">{{ $index + 1 }}. {{ $item['name'] ?? 'Tidak bernama' }}</div>
                         @if (!empty($item['details']) && is_array($item['details']))
-                            <ul
-                                style="margin-left: 20px; padding-left: 12px; border-left: 1px dashed #ccc; margin-bottom: 0;">
+                            <ul>
                                 @foreach ($item['details'] as $detail)
-                                    <li style="color: #555; padding: 3px 0; line-height: 1.6; font-size: 0.85rem;">
-                                        {{ $detail }}</li>
+                                    <li>{{ $detail }}</li>
                                 @endforeach
                             </ul>
                         @else
-                            <div style="color: #999; font-size: 0.8rem; font-style: italic; margin-left: 20px;">Tidak
-                                ada detail</div>
+                            <div class="empty-text" style="margin-left:18px">Tidak ada detail</div>
                         @endif
                     </div>
                 @endforeach
             @else
-                <p class="text-muted mb-0" style="font-size: 0.85rem; font-style: italic;">Belum ada data</p>
+                <div class="empty-text">Belum ada data</div>
             @endif
         </div>
     @endforeach

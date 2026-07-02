@@ -19,12 +19,14 @@ class TemplatePlaceholder extends Model
         'options',
         'default_value',
         'sort_order',
+        'config'
     ];
 
     protected $casts = [
         'is_manual' => 'boolean',
         'options' => 'array',
         'sort_order' => 'integer',
+        'config' => 'array'
     ];
 
     public function template(): BelongsTo

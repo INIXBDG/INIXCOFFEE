@@ -83,4 +83,9 @@
         {
             return $this->hasOne(perbaikanKendaraan::class, 'pengajuanbarangs_id');
         }
+
+        public function rencanaPembelian()
+        {
+            return $this->hasOne(PembelianHr::class, 'id_pengajuan', 'id');
+        }
     }

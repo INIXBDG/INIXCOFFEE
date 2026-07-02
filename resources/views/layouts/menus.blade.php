@@ -1287,40 +1287,6 @@
                                                     </div>
                                                 </div>
                                             @endcan
-                                                                                       <div class="col-sm-6 mt-2">
-                                                <div class="card" id="card-hover">
-                                                    <div class="card-body d-flex">
-                                                        <div class="col-md-2">
-                                                            <img src="{{ asset('icon/sliders.svg') }}"
-                                                                class="img-responsive" width="30px">
-                                                        </div>
-                                                        <div class="col-md-10" style="margin-left: 10px">
-                                                            <a href="{{ route('employee.structure.index') }}"
-                                                                class="link stretched-link text-decoration-none">
-                                                                <h5 class="card-title">Struktur Organisasi</h5>
-                                                            </a>
-                                                            <p class="card-text">Lihat struktur organisasi perusahaan<</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 mt-2">
-                                                <div class="card" id="card-hover">
-                                                    <div class="card-body d-flex">
-                                                        <div class="col-md-2">
-                                                            <img src="{{ asset('icon/user.svg') }}"
-                                                                class="img-responsive" width="30px">
-                                                        </div>
-                                                        <div class="col-md-10" style="margin-left: 10px">
-                                                            <a href="{{ route('employee.jobdesk.index') }}"
-                                                                class="link stretched-link text-decoration-none">
-                                                                <h5 class="card-title">Job Karyawan</h5>
-                                                            </a>
-                                                            <p class="card-text">Lihat SOP, Job Desk, dan Job Profile Anda<</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
                                             {{-- @can('View DataKaryawan') --}}
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
@@ -2349,6 +2315,25 @@
                                                                 </div>
                                                             </div>
                                                         @endcan
+                                                        @can('Fitur cv instruktur')
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <i class="fa-solid fa-file-lines"
+                                                                                style="font-size: 30px;"></i>
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="{{ route('cv-instruktur.index') }}"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">CV Instruktur</h5>
+                                                                            </a>
+                                                                            <p class="card-text">untuk melihat dan export cv instruktur.</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endcan
                                                         @can('View RekapInstruktur')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
@@ -2505,6 +2490,40 @@
                                                                 </div>
                                                             </div>
                                                         @endcan
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/sliders.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="{{ route('employee.structure.index') }}"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Struktur Organisasi</h5>
+                                                                        </a>
+                                                                        <p class="card-text">Lihat struktur organisasi perusahaan<</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {{-- <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/user.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="{{ route('employee.jobdesk.index') }}"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Job Karyawan</h5>
+                                                                        </a>
+                                                                        <p class="card-text">Lihat SOP, Job Desk, dan Job Profile Anda<</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div> --}}
                                                         @can('View Inventaris')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
@@ -2568,6 +2587,27 @@
                                                                             </a>
                                                                             <p class="card-text">Pengajuan
                                                                                 Catering</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endcan
+                                                        @can('Rencana Pembelian')
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <i class="fa-regular fa-file"
+                                                                                style="font-size: 30px;"></i>
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="{{ route('rencanaPembelian.index') }}"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Rencana Pembelian
+                                                                                </h5>
+                                                                            </a>
+                                                                            <p class="card-text">Pengajuan
+                                                                                Rencana Pembelian.</p>
                                                                         </div>
                                                                     </div>
                                                                 </div>

@@ -103,11 +103,12 @@
             color: #6366f1;
         }
 
-        /* === Employee List (4 Columns) === */
         .emp-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 0.75rem;
+            position: relative;
+            z-index: 1;
         }
 
         .emp-card {
@@ -122,17 +123,17 @@
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
+            z-index: 1;
         }
 
         .emp-card:hover {
             background: #f8fafc;
             border-color: #cbd5e1;
-            transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 10;
         }
 
-        /* Status Colors - Only Left Border */
         .emp-card.status-top {
             border-left-color: #10b981;
         }
@@ -252,6 +253,30 @@
         .emp-actions {
             flex-shrink: 0;
             margin-left: 0.25rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .emp-export-menu {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 4px);
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            min-width: 130px;
+            z-index: 9999;
+            padding: 4px 0;
+        }
+
+        .emp-export-menu .dropdown-item {
+            font-size: 0.82rem;
+            padding: 0.4rem 0.85rem;
+        }
+
+        .emp-export-menu .dropdown-item:hover {
+            background: #f8fafc;
         }
 
         .emp-actions .dropdown-toggle {
@@ -629,11 +654,9 @@
         (function() {
             'use strict';
 
-            /* ── State ── */
             let kpiChart = null;
             let kpiPieChart = null;
             let exportCtx = {};
-
             let exportModal = null;
 
             function getExportModal() {
@@ -643,7 +666,6 @@
                 return exportModal;
             }
 
-            /* ── Helpers ── */
             function initYearOptions() {
                 const sel = document.getElementById('filterTahun');
                 const cur = new Date().getFullYear();
@@ -707,7 +729,6 @@
                 };
             }
 
-            /* ── Load Data ── */
             function loadData() {
                 const divisi = document.getElementById('selectDivisi').value || 'Education';
                 const tahun = document.getElementById('selectTahun').value || {{ now()->year }};
@@ -719,10 +740,10 @@
 
                 ['employeeList', 'lowPerformanceList'].forEach(id => {
                     document.getElementById(id).innerHTML = `
-                <div class="loading-state">
-                    <i class="fa-solid fa-spinner fa-spin"></i>
-                    <p>Memuat data...</p>
-                </div>`;
+                        <div class="loading-state">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                            <p>Memuat data...</p>
+                        </div>`;
                 });
 
                 fetch(`{{ route('kpi.overview.get') }}?${params}`, {
@@ -740,6 +761,11 @@
                         updateLowPerf(data.karyawan_departemen);
                         updateCharts(data.statistik_karyawan, data.distribusi_nilai);
                         updateTargetTable(data.daftar_target_kpi);
+
+                        const card = document.querySelector('.emp-card');
+                        console.log('emp-card exists:', card);
+                        console.log('emp-actions inside card:', card?.querySelector('.emp-actions'));
+                        console.log('dropdown-toggle inside card:', card?.querySelector('.dropdown-toggle'));
                     })
                     .catch(err => {
                         console.error('Load error:', err);
@@ -751,7 +777,6 @@
                     });
             }
 
-            /* ── Stats ── */
             function updateStats(data) {
                 document.getElementById('totalTarget').textContent = (data.total_target || 0) + ' Target';
                 document.getElementById('rataProgress').textContent = Math.round(data.rata_rata_progress || 0) + '%';
@@ -759,7 +784,6 @@
                 document.getElementById('kpiSelesai').textContent = data.kpi_selesai || 0;
             }
 
-            /* ── Employee Grid ── */
             function updateEmployeeGrid(employees) {
                 const el = document.getElementById('employeeList');
                 if (!employees || !employees.length) {
@@ -772,7 +796,7 @@
                 let html = '<div class="emp-grid">';
 
                 employees.forEach(emp => {
-                    const progress = Math.round(emp.rata_rata_progress || 0);
+                    const progress = Number((emp.rata_rata_progress ?? 0).toFixed(2));
                     const info = classifyEmployee(progress, month);
                     const initial = getInitials(emp.nama);
 
@@ -787,25 +811,22 @@
                                     <div class="emp-badge">${info.badge}</div>
                                 </div>
                             </div>
-                            <div class="emp-actions" onclick="event.stopPropagation()">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <a class="dropdown-item btn-export-emp" href="#"
-                                            data-type="excel" data-id="${emp.id_karyawan}" data-tahun="${year}">
-                                                <i class="fas fa-file-excel text-success me-1"></i> Excel
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item btn-export-emp" href="#"
-                                            data-type="pdf" data-id="${emp.id_karyawan}" data-tahun="${year}">
-                                                <i class="fas fa-file-pdf text-danger me-1"></i> PDF
-                                            </a>
-                                        </li>
-                                    </ul>
+                            <div class="emp-actions">
+                                <button class="btn btn-sm btn-outline-primary emp-export-btn"
+                                    type="button"
+                                    data-id="${emp.id_karyawan}"
+                                    data-tahun="${year}">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <div class="emp-export-menu" style="display:none;">
+                                    <a class="dropdown-item btn-export-emp" href="#"
+                                        data-type="excel" data-id="${emp.id_karyawan}" data-tahun="${year}">
+                                        <i class="fas fa-file-excel text-success me-1"></i> Excel
+                                    </a>
+                                    <a class="dropdown-item btn-export-emp" href="#"
+                                        data-type="pdf" data-id="${emp.id_karyawan}" data-tahun="${year}">
+                                        <i class="fas fa-file-pdf text-danger me-1"></i> PDF
+                                    </a>
                                 </div>
                             </div>
                         </div>`;
@@ -815,7 +836,6 @@
                 el.innerHTML = html;
             }
 
-            /* ── Low Performance ── */
             function updateLowPerf(employees) {
                 const el = document.getElementById('lowPerformanceList');
                 const low = (employees || []).filter(e => (e.rata_rata_progress || 0) < 50);
@@ -825,16 +845,15 @@
                     return;
                 }
                 el.innerHTML = low.map(emp => `
-            <div class="low-perf-item d-flex justify-content-between align-items-center mb-2">
-                <div>
-                    <div class="lp-name">${emp.nama}</div>
-                    <div class="lp-jabatan">${emp.jabatan}</div>
-                </div>
-                <div class="lp-val">${Math.round(emp.rata_rata_progress || 0)}%</div>
-            </div>`).join('');
+                    <div class="low-perf-item d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <div class="lp-name">${emp.nama}</div>
+                            <div class="lp-jabatan">${emp.jabatan}</div>
+                        </div>
+                        <div class="lp-val">${Math.round(emp.rata_rata_progress || 0)}%</div>
+                    </div>`).join('');
             }
 
-            /* ── Charts ── */
             function updateCharts(empStats, distribution) {
                 if (kpiChart) {
                     kpiChart.destroy();
@@ -996,7 +1015,6 @@
                 });
             }
 
-            /* ── Target Table ── */
             function updateTargetTable(targets) {
                 const tbody = document.querySelector('#targetTable tbody');
                 if (!targets || !targets.length) {
@@ -1005,29 +1023,28 @@
                     return;
                 }
                 tbody.innerHTML = targets.map(t => {
-                    const pct = Math.round(t.progress || 0);
+                    const pct = parseFloat((t.progress ?? 0).toFixed(2));
                     const isDone = t.status === 'Selesai';
                     const barColor = isDone ? '#10b981' : '#f59e0b';
                     const badgeCls = isDone ? 'bg-success' : 'bg-warning text-dark';
                     return `
-            <tr>
-                <td><strong>${t.judul}</strong></td>
-                <td>${t.periode}</td>
-                <td>${t.target}</td>
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="progress flex-grow-1" style="height:8px;border-radius:4px;">
-                            <div class="progress-bar" style="width:${pct}%;background:${barColor};"></div>
-                        </div>
-                        <small class="fw-semibold">${pct}%</small>
-                    </div>
-                </td>
-                <td><span class="badge ${badgeCls}">${t.status}</span></td>
-            </tr>`;
+                        <tr>
+                            <td><strong>${t.judul}</strong></td>
+                            <td>${t.periode}</td>
+                            <td>${t.target}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height:8px;border-radius:4px;">
+                                        <div class="progress-bar" style="width:${pct}%;background:${barColor};"></div>
+                                    </div>
+                                    <small class="fw-semibold">${pct}%</small>
+                                </div>
+                            </td>
+                            <td><span class="badge ${badgeCls}">${t.status}</span></td>
+                        </tr>`;
                 }).join('');
             }
 
-            /* ── Export Dept ── */
             function handleDeptExport(type) {
                 const divisi = document.getElementById('selectDivisi').value;
                 const tahun = document.getElementById('selectTahun').value || {{ now()->year }};
@@ -1078,9 +1095,15 @@
                 getExportModal().hide();
             });
 
-            /* ── Event Delegation ── */
             document.addEventListener('click', function(e) {
-                // Department export
+                if (!e.target.closest('.filter-bar .dropdown')) {
+                    document.querySelectorAll('.filter-bar .dropdown-menu').forEach(m => m.classList.remove('show'));
+                }
+
+                if (!e.target.closest('.emp-actions')) {
+                    document.querySelectorAll('.emp-export-menu').forEach(m => m.style.display = 'none');
+                }
+
                 const deptBtn = e.target.closest('.btn-export-dept');
                 if (deptBtn) {
                     e.preventDefault();
@@ -1088,16 +1111,27 @@
                     return;
                 }
 
-                // Employee export (inside card)
+                const exportBtn = e.target.closest('.emp-export-btn');
+                if (exportBtn) {
+                    e.stopPropagation();
+                    const menu = exportBtn.nextElementSibling;
+                    const isOpen = menu.style.display === 'block';
+
+                    document.querySelectorAll('.emp-export-menu').forEach(m => m.style.display = 'none');
+
+                    menu.style.display = isOpen ? 'none' : 'block';
+                    return;
+                }
+
                 const empExport = e.target.closest('.btn-export-emp');
                 if (empExport) {
                     e.preventDefault();
                     e.stopPropagation();
+                    document.querySelectorAll('.emp-export-menu').forEach(m => m.style.display = 'none');
                     handleEmpExport(empExport.dataset.type, empExport.dataset.id, empExport.dataset.tahun);
                     return;
                 }
 
-                // Employee card click (navigate)
                 const empCard = e.target.closest('.emp-card');
                 if (empCard && !e.target.closest('.emp-actions')) {
                     const id = empCard.dataset.id;
@@ -1105,8 +1139,22 @@
                 }
             });
 
-            /* ── Init ── */
             initYearOptions();
+
+            const deptToggle = document.querySelector('.filter-bar .dropdown-toggle');
+            if (deptToggle) {
+                deptToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const menu = this.nextElementSibling;
+
+                    document.querySelectorAll('.filter-bar .dropdown-menu').forEach(m => {
+                        if (m !== menu) m.classList.remove('show');
+                    });
+
+                    menu.classList.toggle('show');
+                });
+            }
 
             @if (auth()->user()->hasRole('Koordinator') && auth()->user()->karyawan)
                 document.getElementById('selectDivisi').value = '{{ auth()->user()->karyawan->divisi }}';

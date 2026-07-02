@@ -95,19 +95,17 @@ class RekomendasiLanjutanController extends Controller
         $request->validate([
             'data' => 'required|array',
             'data.*.id_rkm' => 'required',
-            'data.*.rekomendasi' => 'nullable|array', // Bisa null jika user tidak mengisi untuk salah satu PT
+            'data.*.rekomendasi' => 'nullable|array',
             'data.*.keterangan' => 'nullable|string',
         ]);
 
         try {
-            // Loop setiap item data (per perusahaan/RKM ID)
             foreach ($request->data as $item) {
-                // Cek jika user memilih materi (jika kosong, skip atau hapus data lama)
                 if (!empty($item['rekomendasi'])) {
                     $materi_string = implode(',', $item['rekomendasi']);
 
                     RekomendasiLanjutan::updateOrCreate(
-                        ['id_rkm' => $item['id_rkm']], 
+                        ['id_rkm' => $item['id_rkm']],
                         [
                             'id_materi' => $materi_string,
                             'keterangan' => $item['keterangan'] ?? null

@@ -77,4 +77,9 @@ class User extends Authenticatable
     public function historyNetSales(){
         return $this->hasMany(HistoryNetSales::class, 'id_user');
     }
+
+    public function sertifikasis()
+    {
+        return $this->hasMany(Sertifikasi::class, 'user_id', 'id');
+    }
 }

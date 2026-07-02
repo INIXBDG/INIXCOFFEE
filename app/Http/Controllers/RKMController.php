@@ -30,7 +30,9 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RKMExport;
 use App\Models\Peluang;
 use App\Models\ChecklistKeperluan;
+use App\Models\outstanding;
 use App\Models\SubChecklistKeperluan;
+use App\Models\trackingOutstanding;
 // use Carbon\CarbonImmutable;
 use Carbon\Carbon;
 
@@ -1035,6 +1037,29 @@ class RKMController extends Controller
         }
 
         return view("rkm.uploadSertifikat", compact('rkm'));
+    }
+
+    public function uploadNoResi(Request $request, string $id)
+    {
+        $request->validate([
+            'no_resi' => 'required|string|max:255',
+        ]);
+
+        $outstanding = outstanding::where('id_rkm', $id)->first();
+
+        if (!$outstanding) {
+            return response()->json(['success' => false, 'message' => 'Data outstanding tidak ditemukan'], 404);
+        }
+
+        trackingOutstanding::updateOrCreate(
+            ['id_outstanding' => $outstanding->id],
+            [
+                'status_resi' => $request->no_resi, 
+                'no_resi' => '1'            
+            ]
+        );
+
+        return response()->json(['success' => true, 'message' => 'No resi berhasil disimpan']);
     }
 
     public function storeSertifikat(Request $request)
