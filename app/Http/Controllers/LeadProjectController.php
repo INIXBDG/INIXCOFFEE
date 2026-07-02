@@ -30,6 +30,7 @@ class LeadProjectController extends Controller
             'nama_pic' => 'required|string|max:255',     // Validasi PIC
             'kontak_pic' => 'required|string|max:255',
             'estimasi_nilai' => 'required|numeric',
+            'tahun_periode' => 'nullable|integer', 
         ]);
 
         $currentUserKaryawanId = auth()->user()->karyawan->kode_karyawan ?? null;
@@ -40,6 +41,7 @@ class LeadProjectController extends Controller
             'nama_pic' => $request->nama_pic,            // Penyimpanan Data
             'kontak_pic' => $request->kontak_pic,
             'estimasi_nilai' => $request->estimasi_nilai,
+            'tahun_periode' => $request->tahun_periode,
             'status' => 'penawaran_awal',
             'sales_id' => $currentUserKaryawanId,
         ]);
@@ -118,6 +120,7 @@ class LeadProjectController extends Controller
             'nama_pic' => 'required|string|max:255',
             'kontak_pic' => 'required|string|max:255',
             'estimasi_nilai' => 'required|numeric',
+            'tahun_periode' => 'nullable|integer',
             'perusahaan_id' => 'required|exists:perusahaans,id',
         ]);
 
@@ -131,6 +134,7 @@ class LeadProjectController extends Controller
                 'nama_pic' => $request->nama_pic,
                 'kontak_pic' => $request->kontak_pic,
                 'estimasi_nilai' => $request->estimasi_nilai,
+                'tahun_periode' => $request->tahun_periode,
                 'perusahaan_id' => $request->perusahaan_id,
             ]);
 
@@ -139,6 +143,7 @@ class LeadProjectController extends Controller
                 $lead->project->update([
                     'name' => $request->nama_lead,
                     'nilai_proyek' => $request->estimasi_nilai,
+                    'tahun_periode' => $request->tahun_periode,
                 ]);
             }
 
