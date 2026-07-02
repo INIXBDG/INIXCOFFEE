@@ -20,9 +20,12 @@ class karyawan extends Model
     {
         return $this->hasOne(User::class, 'karyawan_id');
     }
+
     public function divisi()
     {
-        return $this->belongsTo(Divisi::class, 'divisi_id');
+        return $this->hasOne(self::class, 'divisi', 'divisi')
+            ->select('divisi')
+            ->groupBy('divisi');
     }
 
     public function formPenilaian()

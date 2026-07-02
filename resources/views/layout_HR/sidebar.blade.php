@@ -1,4 +1,4 @@
-<aside id="layout-menu" class="layout-menu menu-vertical menu bg-sidebar-premium" style="">
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-sidebar-premium">
 
     <div class="app-brand demo">
         <a href="{{ route('HR.index') }}" class="app-brand-link">
@@ -91,7 +91,6 @@
             </a>
         </li>
 
-
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">
                 <i class="iconify me-1" data-icon="mdi:tune" data-width="14" data-height="14"></i>
@@ -154,6 +153,26 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('HR.perhitungan-tunjangan.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.perhitungan-tunjangan.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:calculator" data-width="20" data-height="20"></i>
+                </span>
+                <span>Perhitungan BPJS</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('HR.perhitungan-pph.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.perhitungan-pph.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:file-percent" data-width="20" data-height="20"></i>
+                </span>
+                <span>Perhitungan PPH 21</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">
                 <i class="iconify me-1" data-icon="mdi:chart-timeline-variant-shimmer" data-width="14"
@@ -205,6 +224,7 @@
     </div>
 
 </aside>
+
 <style>
     .bg-sidebar-premium {
         position: relative;
@@ -221,7 +241,6 @@
         justify-content: center;
     }
 
-    /* Paksa semua icon menumpuk di tengah */
     .brand-icon-wrapper i {
         position: absolute;
         top: 50%;
@@ -231,19 +250,16 @@
         will-change: transform, opacity;
     }
 
-    /* Hapus animasi cycle lama agar tidak bentrok dengan JS */
     .brand-icon-primary,
     .brand-icon-animated {
         position: absolute;
         opacity: 0;
-        filter: drop-shadow(0 0 6px rgba(99, 132, 255, 0.4));
+        filter: drop-shadow(0 0 6px rgba(79, 70, 229, 0.4));
     }
 
     .brand-icon-primary {
         opacity: 1;
     }
-
-    /* Icon pertama tetap terlihat saat load */
 
     /* === PARTICLE EFFECT === */
     .icon-particle {
@@ -251,8 +267,8 @@
         width: 4px;
         height: 4px;
         border-radius: 50%;
-        background: #6384ff;
-        box-shadow: 0 0 6px #38bdf8, 0 0 10px rgba(99, 132, 255, 0.5);
+        background: var(--pri, #4f46e5);
+        box-shadow: 0 0 6px rgba(79, 70, 229, 0.6), 0 0 10px rgba(79, 70, 229, 0.5);
         pointer-events: none;
         opacity: 0;
         transform: translate(-50%, -50%) scale(0);
@@ -263,16 +279,15 @@
             opacity: 1;
             transform: translate(-50%, -50%) scale(1);
         }
-
         100% {
             opacity: 0;
             transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0);
         }
     }
 
-    /* === SISA STYLE TETAP SAMA (Menu, Footer, dll) === */
+    /* === BRAND ACCENT === */
     .brand-accent {
-        background: linear-gradient(135deg, #6384ff, #38bdf8);
+        background: linear-gradient(135deg, var(--pri, #4f46e5), #7c3aed);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -280,15 +295,11 @@
     }
 
     @keyframes accentShift {
-        0% {
-            filter: hue-rotate(0deg);
-        }
-
-        100% {
-            filter: hue-rotate(30deg);
-        }
+        0% { filter: hue-rotate(0deg); }
+        100% { filter: hue-rotate(30deg); }
     }
 
+    /* === MENU LINK === */
     .menu-link {
         border-radius: 8px !important;
         margin: 2px 8px !important;
@@ -299,9 +310,9 @@
     }
 
     .menu-link:hover {
-        background: rgba(99, 132, 255, 0.12) !important;
+        background: rgba(79, 70, 229, 0.1) !important;
         transform: translateX(3px);
-        box-shadow: 0 2px 12px rgba(99, 132, 255, 0.15);
+        box-shadow: 0 2px 12px rgba(79, 70, 229, 0.12);
     }
 
     .menu-link:hover .menu-icon {
@@ -309,8 +320,8 @@
     }
 
     .menu-item.active .menu-link {
-        background: linear-gradient(135deg, rgba(99, 132, 255, 0.25), rgba(56, 189, 248, 0.15)) !important;
-        box-shadow: 0 2px 16px rgba(99, 132, 255, 0.2), inset 0 0 0 1px rgba(99, 132, 255, 0.3);
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(124, 58, 237, 0.1)) !important;
+        box-shadow: 0 2px 16px rgba(79, 70, 229, 0.18), inset 0 0 0 1px rgba(79, 70, 229, 0.25);
         font-weight: 600;
     }
 
@@ -321,9 +332,9 @@
         top: 15%;
         width: 3px;
         height: 70%;
-        background: linear-gradient(180deg, #6384ff, #38bdf8);
+        background: linear-gradient(180deg, var(--pri, #4f46e5), #7c3aed);
         border-radius: 0 3px 3px 0;
-        box-shadow: 0 0 10px rgba(99, 132, 255, 0.5);
+        box-shadow: 0 0 10px rgba(79, 70, 229, 0.5);
     }
 
     .menu-icon {
@@ -352,15 +363,16 @@
     .menu-item.active .menu-link-indicator {
         opacity: 1;
         transform: scale(1);
-        background: linear-gradient(135deg, #6384ff, #38bdf8);
-        box-shadow: 0 0 8px rgba(99, 132, 255, 0.6);
+        background: linear-gradient(135deg, var(--pri, #4f46e5), #7c3aed);
+        box-shadow: 0 0 8px rgba(79, 70, 229, 0.6);
     }
 
     .menu-divider {
-        border-top: 1px solid rgba(99, 132, 255, 0.1) !important;
+        border-top: 1px solid rgba(79, 70, 229, 0.1) !important;
         margin: 8px 16px !important;
     }
 
+    /* === SIDEBAR FOOTER === */
     .sidebar-footer {
         position: relative;
         z-index: 1;
@@ -387,15 +399,8 @@
     }
 
     @keyframes footerIconBob {
-
-        0%,
-        100% {
-            transform: translateY(0);
-        }
-
-        50% {
-            transform: translateY(-3px);
-        }
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-3px); }
     }
 
     .footer-icon-pulse {
@@ -405,31 +410,16 @@
         width: 44px;
         height: 44px;
         margin: -22px 0 0 -22px;
-        background: rgba(99, 132, 255, 0.15);
+        background: rgba(79, 70, 229, 0.15);
         border-radius: 50%;
         animation: footerPulse 20s ease-out infinite;
     }
 
     @keyframes footerPulse {
-        0% {
-            opacity: 0;
-            transform: scale(0.5);
-        }
-
-        3% {
-            opacity: 0.4;
-            transform: scale(1);
-        }
-
-        12% {
-            opacity: 0;
-            transform: scale(1.8);
-        }
-
-        100% {
-            opacity: 0;
-            transform: scale(1.8);
-        }
+        0% { opacity: 0; transform: scale(0.5); }
+        3% { opacity: 0.4; transform: scale(1); }
+        12% { opacity: 0; transform: scale(1.8); }
+        100% { opacity: 0; transform: scale(1.8); }
     }
 
     .btn-footer-custom {
@@ -445,56 +435,28 @@
     }
 
     .btn-footer-custom:hover {
-        border-color: rgba(99, 132, 255, 0.4) !important;
+        border-color: rgba(79, 70, 229, 0.4) !important;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(99, 132, 255, 0.2);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
     }
 
+    /* === MENU ANIMATION === */
     .menu-item {
         opacity: 0;
         transform: translateX(-10px);
         animation: slideInMenu 0.4s ease forwards;
     }
 
-    .menu-item:nth-child(1) {
-        animation-delay: 0.05s;
-    }
-
-    .menu-item:nth-child(2) {
-        animation-delay: 0.10s;
-    }
-
-    .menu-item:nth-child(3) {
-        animation-delay: 0.15s;
-    }
-
-    .menu-item:nth-child(4) {
-        animation-delay: 0.20s;
-    }
-
-    .menu-item:nth-child(5) {
-        animation-delay: 0.25s;
-    }
-
-    .menu-item:nth-child(6) {
-        animation-delay: 0.30s;
-    }
-
-    .menu-item:nth-child(7) {
-        animation-delay: 0.35s;
-    }
-
-    .menu-item:nth-child(8) {
-        animation-delay: 0.40s;
-    }
-
-    .menu-item:nth-child(9) {
-        animation-delay: 0.45s;
-    }
-
-    .menu-item:nth-child(10) {
-        animation-delay: 0.50s;
-    }
+    .menu-item:nth-child(1) { animation-delay: 0.05s; }
+    .menu-item:nth-child(2) { animation-delay: 0.10s; }
+    .menu-item:nth-child(3) { animation-delay: 0.15s; }
+    .menu-item:nth-child(4) { animation-delay: 0.20s; }
+    .menu-item:nth-child(5) { animation-delay: 0.25s; }
+    .menu-item:nth-child(6) { animation-delay: 0.30s; }
+    .menu-item:nth-child(7) { animation-delay: 0.35s; }
+    .menu-item:nth-child(8) { animation-delay: 0.40s; }
+    .menu-item:nth-child(9) { animation-delay: 0.45s; }
+    .menu-item:nth-child(10) { animation-delay: 0.50s; }
 
     @keyframes slideInMenu {
         to {
@@ -512,6 +474,7 @@
         display: none;
     }
 </style>
+
 <script>
     (function() {
         'use strict';
@@ -521,21 +484,18 @@
 
         const icons = Array.from(wrapper.querySelectorAll('i'));
         let currentIndex = 0;
-        const SHOW_DURATION = 4500; // Durasi tampil per icon (ms)
+        const SHOW_DURATION = 4500;
 
-        // Setup awal: hanya icon pertama yang terlihat
         icons.forEach((icon, i) => {
             icon.style.opacity = i === 0 ? '1' : '0';
         });
 
-        // Fungsi membuat partikel percikan
         function spawnParticles() {
-            const count = 8 + Math.floor(Math.random() * 4); // 8-11 partikel per bounce
+            const count = 8 + Math.floor(Math.random() * 4);
             for (let i = 0; i < count; i++) {
                 const p = document.createElement('span');
                 p.className = 'icon-particle';
 
-                // Arah acak melingkar
                 const angle = (i / count) * Math.PI * 2 + (Math.random() * 0.5);
                 const dist = 18 + Math.random() * 12;
                 p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
@@ -547,31 +507,26 @@
             }
         }
 
-        // Fungsi trigger bounce + percikan
         function triggerBounce() {
             const currentIcon = icons[currentIndex];
             if (!currentIcon) return;
 
-            // Bounce 1: Naik & miring sedikit
             currentIcon.style.transition = 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)';
             currentIcon.style.transform = 'translate(-50%, -50%) scale(1.35) rotate(-8deg)';
             spawnParticles();
 
             setTimeout(() => {
-                // Bounce 2: Turun & miring sebaliknya
                 currentIcon.style.transition = 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)';
                 currentIcon.style.transform = 'translate(-50%, -50%) scale(0.85) rotate(5deg)';
                 spawnParticles();
 
                 setTimeout(() => {
-                    // Kembali normal
                     currentIcon.style.transition = 'transform 0.25s ease';
                     currentIcon.style.transform = 'translate(-50%, -50%) scale(1) rotate(0deg)';
                 }, 220);
             }, 240);
         }
 
-        // Fungsi ganti icon
         function switchIcon() {
             const currentIcon = icons[currentIndex];
             currentIcon.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
@@ -581,7 +536,6 @@
             currentIndex = (currentIndex + 1) % icons.length;
             const nextIcon = icons[currentIndex];
 
-            // Reset next icon sebelum fade-in
             nextIcon.style.transition = 'none';
             nextIcon.style.opacity = '0';
             nextIcon.style.transform = 'translate(-50%, -50%) scale(0.5) rotate(-10deg)';
@@ -594,23 +548,17 @@
             });
         }
 
-        // Loop utama
         function startCycle() {
-            // 55% sesi: Bounce 1
             setTimeout(() => triggerBounce(), SHOW_DURATION * 0.55);
-            // 75% sesi: Bounce 2
             setTimeout(() => triggerBounce(), SHOW_DURATION * 0.75);
-            // 92% sesi: Ganti icon
             setTimeout(() => {
                 switchIcon();
-                setTimeout(startCycle, 400); // Buffer kecil sebelum siklus baru
+                setTimeout(startCycle, 400);
             }, SHOW_DURATION * 0.92);
         }
 
-        // Mulai setelah halaman stabil
         setTimeout(startCycle, 1000);
 
-        // === HOVER EFFECTS (Tetap dipertahankan) ===
         wrapper.addEventListener('mouseenter', () => {
             const currentIcon = icons[currentIndex];
             if (currentIcon) {
