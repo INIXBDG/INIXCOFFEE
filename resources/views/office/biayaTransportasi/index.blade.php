@@ -330,7 +330,7 @@
                                     <div class="col-12 col-md-4">
                                         <label class="form-label small">Bukti</label>
                                         <input type="file" name="biaya[${idx}][bukti]" class="form-control"
-                                            accept="image/*" required>
+                                            required>
                                     </div>
                                 </div>
                                 <div class="mt-3">
@@ -557,7 +557,7 @@
                         </div>
                         <div class="col-12 col-md-4">
                             <label class="form-label small">Bukti (Max 2MB)</label>
-                            <input type="file" name="biaya[${idx}][bukti]" class="form-control" accept="image/*" required>
+                            <input type="file" name="biaya[${idx}][bukti]" class="form-control" required>
                         </div>
                     </div>
                     <div class="mt-3">
@@ -632,7 +632,7 @@
 
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Bukti</label>
-                            <input type="file" class="form-control" name="items[${idx}][bukti]" accept="image/*">
+                            <input type="file" class="form-control" name="items[${idx}][bukti]">
                         </div>
                     </div>
                 </div>`;
@@ -883,7 +883,7 @@
 
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold">Bukti</label>
-                                    <input type="file" class="form-control" name="items[${idx}][bukti]" accept="image/*">
+                                    <input type="file" class="form-control" name="items[${idx}][bukti]">
                                 </div>
                             </div>
                         </div>`;

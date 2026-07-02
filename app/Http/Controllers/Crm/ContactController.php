@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ContactController extends Controller
 {
@@ -419,5 +420,84 @@ class ContactController extends Controller
             'recordsFiltered' => $totalRecords,
             'data' => $slicedData
         ]);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $user = Auth::user();
+        $allowedJabatan = [
+            'Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting',
+            'GM', 'Sales', 'Direktur Utama', 'Direktur'
+        ];
+
+        $salesName = null;
+
+        if ($user->jabatan === 'Sales') {
+            $idSales = $user->id_sales;
+            $baseQuery = Perusahaan::with('contacts')->where('sales_key', $idSales);
+
+            // Ekstraksi nama lengkap untuk user Sales yang sedang login
+            if ($user->karyawan) {
+                $salesName = $user->karyawan->nama_lengkap;
+            }
+        } elseif (in_array($user->jabatan, $allowedJabatan)) {
+            $baseQuery = Perusahaan::with('contacts');
+        } else {
+            abort(403, 'Anda tidak memiliki akses ke data ini.');
+        }
+
+        // Ekstraksi nama lengkap berdasarkan filter jika user bukan Sales
+        if ($request->filled('sales_key') && $user->jabatan !== 'Sales') {
+            $baseQuery->where('sales_key', $request->sales_key);
+
+            $salesUser = User::with('karyawan')->where('id_sales', $request->sales_key)
+                ->orWhereHas('karyawan', function ($q) use ($request) {
+                    $q->where('kode_karyawan', $request->sales_key);
+                })->first();
+
+            if ($salesUser && $salesUser->karyawan) {
+                $salesName = $salesUser->karyawan->nama_lengkap;
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $baseQuery->where(function ($q) use ($search) {
+                $q->where('nama_perusahaan', 'like', "%$search%")
+                    ->orWhere('lokasi', 'like', "%$search%")
+                    ->orWhere('sales_key', 'like', "%$search%")
+                    ->orWhere('status', 'like', "%$search%");
+            });
+        }
+
+        $data = $baseQuery->orderBy('id', 'desc')->get();
+
+        $kelasTerakhir = [];
+        $aktivitasTerakhir = [];
+
+        foreach ($data as $item) {
+            $kelasTerakhir[$item->id] = RKM::where('perusahaan_key', $item->id)
+                ->latest()
+                ->with('materi')
+                ->first();
+
+            $contactIds = $item->contacts->pluck('id');
+
+            $aktivitasTerakhir[$item->id] = Aktivitas::whereIn('id_contact', $contactIds)
+                ->latest()
+                ->first();
+        }
+
+        $pdf = Pdf::loadView('crm.contact.pdf', compact('data', 'kelasTerakhir', 'aktivitasTerakhir', 'salesName'));
+
+        // Pembentukan nama file dinamis
+        $fileName = 'Data_Database_Client';
+        if ($salesName) {
+            // Mengganti spasi dengan underscore untuk standar penamaan file
+            $fileName .= '_' . str_replace(' ', '_', $salesName);
+        }
+        $fileName .= '.pdf';
+
+        return $pdf->download($fileName);
     }
 }

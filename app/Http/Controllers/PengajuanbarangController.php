@@ -21,6 +21,8 @@ use App\Models\HistoriPerubahanBarang;
 use App\Models\no_akun;
 use App\Models\PerbaikanKendaraan;
 use Illuminate\Support\Facades\Log;
+use App\Models\PembelianHr;
+use App\Models\TrackingPembelianHr;
 
 class PengajuanBarangController extends Controller
 {
@@ -276,6 +278,20 @@ class PengajuanBarangController extends Controller
         $type = 'Mengajukan Permintaan Barang';
         $path = '/pengajuanbarang';
 
+        if ($request->pembelianHr) {
+            $rencana = PembelianHr::findOrFail($request->id_rencana);
+            $rencana->update([
+                'id_pengajuan' => $PengajuanBarang->id
+            ]);
+
+            $auth = auth()->user()->karyawan;
+            TrackingPembelianHr::create([
+                'id_pembelian' => $rencana->id,
+                'tracking' => $auth->nama_lengkap . ' telah membuat pengajuan barang',
+                'id_karyawan' => $auth->id
+            ]);
+        }
+
         foreach ($users as $user) {
             $receiverId = $user->id;
             NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type, $receiverId));
@@ -436,6 +452,23 @@ class PengajuanBarangController extends Controller
                 $updatePayload['no_kk'] = $request->no_kk;
                 $updatePayload['tanggal_pencairan'] = $request->tanggal_pencairan ?? now();
                 $data->update($updatePayload);
+
+                $pembelianHr = PembelianHr::where('id_pengajuan', $data->id)->first();
+                if (!is_null($pembelianHr)) {
+                    $pembelianHr->update([
+                        'status_pembelian' => 'Terlaksana',
+                        'no_kk' => $request->no_kk,
+                        'invoice' => $data->invoice
+                    ]);
+            
+                    $auth = auth()->user()->karyawan;
+                    TrackingPembelianHr::create([
+                        'id_pembelian' => $pembelianHr->id,
+                        'tracking' => $auth->nama_lengkap . ' telah menyelesaikan rencana pembelian',
+                        'id_karyawan' => $auth->id
+                    ]);
+                }
+                
             } elseif ($status === 'Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager') {
                 $to = $data->karyawan->nama_lengkap;
                 $path = '/pengajuanbarang';
@@ -691,6 +724,20 @@ class PengajuanBarangController extends Controller
             $post->update([
                 'invoice' => $path,
                 'bukti'   => $pathBukti,
+            ]);
+        }
+
+        $pembelianHr = PembelianHr::where('id_pengajuan', $post->id)->first();
+        if (!is_null($pembelianHr)) {
+            $pembelianHr->update([
+                'invoice' => $post->invoice
+            ]);
+    
+            $auth = auth()->user()->karyawan;
+            TrackingPembelianHr::create([
+                'id_pembelian' => $pembelianHr->id,
+                'tracking' => $auth->nama_lengkap . ' telah mengupload invoice',
+                'id_karyawan' => $auth->id
             ]);
         }
 

@@ -14,7 +14,6 @@ class Sertifikasi extends Model
     protected $fillable = [
         'user_id',
         'nama_sertifikat',
-        // 'penyedia',
         'tanggal_ujian',
         'tanggal_berlaku_dari',
         'tanggal_berlaku_sampai',
@@ -47,4 +46,5 @@ class Sertifikasi extends Model
     {
         return $this->hasOne(Pelatihan::class, 'id_sertifikasi');
     }
+
 }

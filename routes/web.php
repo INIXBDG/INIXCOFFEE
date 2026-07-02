@@ -42,7 +42,9 @@ use App\Http\Controllers\HR\HRController;
 use App\Http\Controllers\HR\KaryawanProfileController;
 use App\Http\Controllers\HR\KaryawanTaskController;
 use App\Http\Controllers\HR\payrollController;
+use App\Http\Controllers\HR\PerhitunganTunjanganHRController;
 use App\Http\Controllers\HR\presenceController;
+use App\Http\Controllers\HR\RencanaPembelianHrController;
 use App\Http\Controllers\HR\RekapSJPController;
 use App\Http\Controllers\HR\ReportController;
 use App\Http\Controllers\HR\SopController;
@@ -76,6 +78,7 @@ use App\Http\Controllers\office\OfficeController;
 use App\Http\Controllers\Office\pickupDriverController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\office\KondisiToolsController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\PenukaranSouvenirController;
@@ -114,6 +117,7 @@ use App\Http\Controllers\Office\OfficeExamController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\ScheduleLogController;
 use App\Http\Controllers\VisitProjectController;
+use App\Http\Controllers\CVInstrukturController;
 
 /*
 |--------------------------------------------------------------------------
@@ -830,6 +834,9 @@ Route::prefix('crm')->group(function () {
         Route::post('/transfer', [PerpindahanDBController::class, 'transfer'])->name('transfer');
         Route::get('/history/{id}', [PerpindahanDBController::class, 'exportHistory'])->name('history');
     });
+
+    Route::get('/contact/export-pdf', [ContactController::class, 'exportPdf'])->name('contact.export_pdf');
+
 });
 
 //INVOICE
@@ -1020,7 +1027,7 @@ Route::prefix('office')->group(function () {
     Route::post('/sop-perusahaan/store', [PerusahaanController::class, 'storeSop'])->name('sop.perusahaan.store');
     Route::put('/sop-perusahaan/update/{id}', [PerusahaanController::class, 'updateSop'])->name('sop.perusahaan.update');
     Route::delete('/sop-perusahaan/delete/{id}', [PerusahaanController::class, 'deleteSop'])->name('sop.perusahaan.delete');
-    
+
 
     // administrasi karyawan
     Route::get('data-administrasi/{id}', [AdministrasiKaryawanController::class, 'getData']);
@@ -1060,6 +1067,10 @@ Route::prefix('office')->group(function () {
         route::get('/index', [OfficeExamController::class, 'indexOffice'])->name('index');
         Route::get('/detail/{id}', [OfficeExamController::class, 'showDetailExam']);
         route::post('/update-bundling', [OfficeExamController::class, 'updateBundling'])->name('updateBundling');
+
+        Route::get('/rekap', [OfficeExamController::class, 'indexRekap'])->name('rekap.index');
+        Route::get('/rekap/json', [OfficeExamController::class, 'rekapJson'])->name('rekap.json');
+
         Route::get('/{year}/{month}', [OfficeExamController::class, 'showExamMonth']);
     });
 });
@@ -1217,6 +1228,19 @@ Route::prefix('office')
             Route::post('/update', [KoordinasiOfficeBoyController::class, 'update'])->name('update');
             Route::post('/update-status-{action}/{id}', [KoordinasiOfficeBoyController::class, 'updateStatus'])->name('updateStatus');
             Route::delete('/delete/{id}', [KoordinasiOfficeBoyController::class, 'delete'])->name('delete');
+        });
+
+        Route::prefix('kondisi-tools')->name('KondisiTools.')->group(function() {
+            Route::get('/', [KondisiToolsController::class, 'index'])->name('index');
+            Route::post('/store', [KondisiToolsController::class, 'store'])->name('store');
+            Route::post('/update/{id}', [KondisiToolsController::class, 'update'])->name('update');
+            Route::post('/delete/{id}', [KondisiToolsController::class, 'delete'])->name('delete');
+            Route::get('/get-tools', [KondisiToolsController::class, 'getTools'])->name('get-tools');
+            Route::get('/get-pemeriksaan', [KondisiToolsController::class, 'getPemeriksaan'])->name('get-pemeriksaan');
+            Route::get('/get-template', [KondisiToolsController::class, 'getTemplate'])->name('get-template');
+            Route::post('/import-alat', [KondisiToolsController::class, 'importAlat'])->name('importAlat');
+            Route::get('/export-exel', [KondisiToolsController::class, 'exportExcel'])->name('exportExcel');
+            Route::get('/export-pdf', [KondisiToolsController::class, 'exportPdf'])->name('exportPdf');
         });
 
         Route::prefix('/rekomendasi-lanjutan')
@@ -1412,6 +1436,15 @@ Route::put('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'upda
 Route::delete('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'destroy'])->name('no_akun.destroy');
 Route::post('/no-akun/import', [App\Http\Controllers\NoAkunController::class, 'importExcel'])->name('no_akun.import');
 
+Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() {
+    Route::get('', [RencanaPembelianHrController::class, 'index'])->name('index');
+    Route::post('/store', [RencanaPembelianHrController::class, 'store'])->name('store');
+    Route::post('/update/{id}', [RencanaPembelianHrController::class, 'update'])->name('update');
+    Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');
+    Route::post('/update-nvoice/{id}', [RencanaPembelianHrController::class, 'updateInvoice'])->name('updateInvoice');
+    Route::post('/update-status', [RencanaPembelianHrController::class, 'updateStatus'])->name('updateStatus');
+});
+
 Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::get('/', [HRController::class, 'index'])->name('index');
     Route::prefix('employee')
@@ -1432,7 +1465,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         ->group(function () {
             Route::get('/index', [payrollController::class, 'index'])->name('index');
             Route::get('/dashboard', [payrollController::class, 'getPayrollDashboard'])->name('dashboard');
-            Route::get('/export/csv', [payrollController::class, 'exportPayrollCsv'])->name('export.csv');
+            Route::get('/export/excel', [payrollController::class, 'exportPayrollExcel'])->name('export.excel');
             Route::get('/export/pdf', [payrollController::class, 'exportPayrollPdf'])->name('export.pdf');
         });
     Route::prefix('absensi')->name('absensi.')->group(function () {
@@ -1588,7 +1621,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::delete('/{karyawanId}', [KaryawanProfileController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('rekap-spj')->name('rekap_spj.')->middleware('auth')->group(function () {
+    Route::prefix('rekap-spj')->name('rekap_spj.')->group(function () {
         Route::get('/', [RekapSJPController::class, 'index'])->name('index');
         Route::get('/load-data', [RekapSJPController::class, 'getRekapData'])->name('load_data');
         Route::get('/export', [RekapSJPController::class, 'export'])->name('export');
@@ -1596,6 +1629,24 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/ajax/karyawan/{jabatan}', [RekapSJPController::class, 'getKaryawan']);
         Route::get('/export-pdf', [RekapSJPController::class, 'exportPdf'])->name('export_pdf');
         Route::get('/detail-data', [RekapSJPController::class, 'getDetailData'])->name('detail_data');
+    });
+
+    Route::prefix('perhitungan-tunjangan')->name('perhitungan-tunjangan.')->group(function () {
+        Route::get('/',          [payrollController::class, 'indexPerhitungan'])->name('index');
+        Route::get('/karyawan-data', [payrollController::class, 'getKaryawanDataPerhitungan'])->name('karyawan-data');
+        Route::get('/get-data',  [payrollController::class, 'getPayrollDataPerhitungan'])->name('get-data');
+        Route::get('/stats',     [payrollController::class, 'getStatsPerhitungan'])->name('stats');
+        Route::post('/',         [payrollController::class, 'storePerhitungan'])->name('store');
+        Route::get('/{id}',      [payrollController::class, 'showPerhitungan'])->name('show');
+        Route::put('/{id}',      [payrollController::class, 'updatePerhitungan'])->name('update');
+        Route::delete('/{id}',   [payrollController::class, 'destroyPerhitungan'])->name('destroy');
+        Route::post('/{id}/approve', [payrollController::class, 'approvePerhitungan'])->name('approve');
+        Route::get('/perhitungan-tunjangan/export/excel', [payrollController::class, 'exportExcelPerhitungan'])->name('export.excel');
+        Route::get('/perhitungan-tunjangan/export/pdf', [payrollController::class, 'exportPdfPerhitungan'])->name('export.pdf');
+    });
+
+    Route::prefix('perhitungan-pph')->name('perhitungan-pph.')->group(function () {
+        Route::get('/',          [payrollController::class, 'indexPph'])->name('index');
     });
 });
 
@@ -1626,3 +1677,9 @@ Route::get('/visit-projects/get', [VisitProjectController::class, 'get'])->name(
 Route::post('/visit-projects/store', [VisitProjectController::class, 'store'])->name('visit-projects.store');
 Route::put('/visit-projects/{visitProject}', [VisitProjectController::class, 'update'])->name('visit-projects.update');
 Route::delete('/visit-projects/{visitProject}', [VisitProjectController::class, 'destroy'])->name('visit-projects.destroy');
+
+// CV Instruktur
+Route::get('/cv-instruktur', [CVInstrukturController::class, 'index'])->name('cv-instruktur.index');
+Route::get('/cv-instruktur/data', [CVInstrukturController::class, 'data'])->name('cv-instruktur.data');
+Route::get('/cv-instruktur/{id}', [CVInstrukturController::class, 'show'])->name('cv-instruktur.show');
+Route::get('/cv-instruktur/{id}/pdf', [CVInstrukturController::class, 'downloadPdf'])->name('cv-instruktur.pdf');
