@@ -74,7 +74,7 @@
             <tr>
                 <td class="w-25 text-center">
                     @if(optional($user->karyawan)->foto)
-                        <img src="{{ public_path('storage/posts/'.$user->karyawan->foto) }}" alt="Foto Profile" style="width: 150px; height: 200px; object-fit: cover; border: 1px solid #ccc;">
+                        <img src="{{ public_path('storage/posts/'.$user->karyawan->foto) }}" alt="Foto Profile" style="width: auto; height: 200px; object-fit: cover; border: 1px solid #ccc;">
                     @else
                         <div style="width: 150px; height: 200px; border: 1px solid #ccc; line-height: 200px; text-align: center;">No Image</div>
                     @endif
