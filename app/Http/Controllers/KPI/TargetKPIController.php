@@ -2826,35 +2826,12 @@ class TargetKPIController extends Controller
             return 0;
         }
 
-        $response = Http::get("https://libur.deno.dev/api", [
-            'year' => $tahun
-        ]);
-
-        if ($response->successful()) {
-            foreach ($response->json() as $libur) {
-                HariLibur::updateOrCreate(
-                    ['tanggal' => $libur['date']],
-                    [
-                        'nama' => $libur['name'],
-                        'year' => $tahun,
-                    ]
-                );
-            }
-        }
-
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $hariLibur = HariLibur::where('year', $tahun)->pluck('tanggal')->map(function ($d) {
-            return Carbon::parse($d)->toDateString();
-        })->toArray();
-
         $contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
             ->whereNotNull('upload_date')
-            ->get()
-            ->filter(function ($item) use ($hariLibur) {
-                return !in_array(Carbon::parse($item->upload_date)->toDateString(), $hariLibur);
-            });
+            ->get();
 
         if ($contentSchedules->isEmpty()) {
             return 0;
@@ -2897,7 +2874,7 @@ class TargetKPIController extends Controller
         }
 
         $PS = $totalKonten / ($targetMingguan * $jumlahMinggu);
-        $PS = min($PS, 1);
+        $PS = min($PS, 1); 
 
         $finalScore = ($CS * 0.6) + ($PS * 0.4);
 
@@ -9712,40 +9689,12 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $response = Http::get("https://libur.deno.dev/api", [
-            'year' => $tahun
-        ]);
-
-        if ($response->successful()) {
-            foreach ($response->json() as $libur) {
-                HariLibur::updateOrCreate(
-                    ['tanggal' => $libur['date']],
-                    [
-                        'nama' => $libur['name'],
-                    ]
-                );
-            }
-        }
-
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $hariLibur = HariLibur::where('year', $tahun)
-            ->pluck('tanggal')
-            ->map(function ($tanggal) {
-                return Carbon::parse($tanggal)->toDateString();
-            })
-            ->toArray();
-
         $contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
             ->whereNotNull('upload_date')
-            ->get()
-            ->filter(function ($item) use ($hariLibur) {
-                return !in_array(
-                    Carbon::parse($item->upload_date)->toDateString(),
-                    $hariLibur
-                );
-            });
+            ->get();
 
         if ($contentSchedules->isEmpty()) {
             return [
