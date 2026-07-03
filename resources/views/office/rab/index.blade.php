@@ -19,6 +19,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Error!</strong> {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
 
         @if ($errors->any())
             <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm" role="alert">
@@ -867,7 +874,7 @@
                 <form id="formRekap" method="POST" action="{{ route('rencanaPembelian.storeRekap') }}">
                     @csrf
                     <div class="modal-header">
-                        <h5 class="modal-title" id="formModalLabel">Tambah Rekap Pembelian</h5>
+                        <h5 class="modal-title" id="rekapModalLabel">Tambah Rekap Pembelian</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -1084,7 +1091,7 @@
                                     <span class="text-danger">*</span>
                                 </label>
                                 <select name="tipe" id="linkTipeSelect" class="form-select" required>
-                                    <option value="-">Pilih Jenis Barang</option>
+                                    <option value="">Pilih Jenis Barang</option>
                                     <option value="ATK">ATK</option>
                                     <option value="Elektronik">Elektronik</option>
                                     <option value="Makanan">Makanan</option>
