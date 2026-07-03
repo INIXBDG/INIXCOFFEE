@@ -1092,13 +1092,13 @@ class TargetKPIController extends Controller
         $limit = $request->input('limit', 10); // Parameter paginasi
 
         if (filled($idUser) && filled($typeGet)) {
-            $karyawan = karyawan::find($idUser);
+            $karyawan = Karyawan::find($idUser);
             if (!$karyawan) {
                 return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
             }
             $divisiUser = $karyawan->divisi;
         } else {
-            $karyawan = karyawan::find($id_pembuat);
+            $karyawan = Karyawan::find($id_pembuat);
             if (!$karyawan) {
                 return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
             }
@@ -1107,18 +1107,18 @@ class TargetKPIController extends Controller
 
         $superRoles = ['GM', 'HRD', 'Direktur Utama'];
 
-        if (in_array($user->jabatan, $superRoles)) {
-            $dataJabatan = karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
+        if (in_array($jabatan_pembuat, $superRoles)) {
+            $dataJabatan = Karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
                 ->distinct()
                 ->pluck('jabatan');
         } else {
-            $dataJabatan = karyawan::where('divisi', $divisiUser)
+            $dataJabatan = Karyawan::where('divisi', $divisiUser)
                 ->whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
                 ->distinct()
                 ->pluck('jabatan');
         }
 
-        $query = targetKPI::with([
+        $query = TargetKPI::with([
             'karyawan',
             'detailTargetKPI.dataTarget',
             'detailTargetKPI.detailPersonKPI'
@@ -1129,18 +1129,22 @@ class TargetKPIController extends Controller
                 $q->where('id_karyawan', $idUser);
             });
         } elseif (!in_array($jabatan_pembuat, $superRoles)) {
-            $query->where('id_pembuat', $id_pembuat);
+            $query->whereHas('detailTargetKPI', function ($q) use ($divisiUser) {
+                $q->where('divisi', $divisiUser);
+            });
         }
 
         // Mengganti get() dengan paginate() untuk efisiensi memori
         $paginatedData = $query->paginate($limit);
 
-        // Transformasi koleksi data paginasi
-        $transformedData = $paginatedData->getCollection()->map(function ($item) use ($idUser) {
-            $detail = $item->detailTargetKPI->first();
-            if (!$detail) {
-                return null;
-            }
+        $data = [
+            'detail' => $detailList
+                ->map(function ($item) use ($idUser) {
+                    $detail = $item->detailTargetKPI->first();
+
+                    if (!$detail) {
+                        return null;
+                    }
 
             $tenggat_waktu = null;
             $jangka = strtolower($detail->dataTarget?->jangka_target ?? '');
@@ -1151,9 +1155,8 @@ class TargetKPIController extends Controller
                 $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
             }
 
-            $personId = !empty($idUser) ? (int) $idUser : null;
-            $progress = $this->resolveProgress($item, $personId);
-
+                    $personId = filled($idUser) ? (int) $idUser : null;
+                    $progress = $this->resolveProgress($item, $personId);
             return [
                 'id' => $item->id,
                 'pembuat' => $item->karyawan->nama_lengkap ?? null,
@@ -1181,12 +1184,17 @@ class TargetKPIController extends Controller
         $data = [
             'detail' => $paginatedData, // Mengembalikan struktur paginasi standar Laravel
             'jabatan_list' => $dataJabatan,
-            'routes' => DataTarget::select('asistant_route', 'jangka_target', 'tipe_target', 'nilai_target')->get(),
+            'routes' => DataTarget::select(
+                'asistant_route',
+                'jangka_target',
+                'tipe_target',
+                'nilai_target'
+            )->get(),
         ];
 
         return response()->json($data);
     }
-
+    
     private function resolveProgress($item, $personId)
     {
         $progress = 0;
@@ -4362,7 +4370,7 @@ class TargetKPIController extends Controller
 
         $progress = min(($maxCAC / $actualCAC) * 100, 100);
 
-        return round($progress, 1);
+        return round($progress, 2);
     }
 
     //Adm Sales
