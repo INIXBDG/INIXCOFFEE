@@ -1086,19 +1086,18 @@ class TargetKPIController extends Controller
         $user = auth()->user();
         $id_pembuat = $user->id;
         $jabatan_pembuat = $user->jabatan;
-
         $idUser = $request->idUser;
         $typeGet = $request->typeGet;
-        $limit = $request->input('limit', 10); // Parameter paginasi
 
+        // Ambil data karyawan yang dituju atau karyawan login
         if (filled($idUser) && filled($typeGet)) {
-            $karyawan = Karyawan::find($idUser);
+            $karyawan = karyawan::find($idUser);
             if (!$karyawan) {
                 return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
             }
             $divisiUser = $karyawan->divisi;
         } else {
-            $karyawan = Karyawan::find($id_pembuat);
+            $karyawan = karyawan::find($id_pembuat);
             if (!$karyawan) {
                 return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
             }
@@ -1107,89 +1106,88 @@ class TargetKPIController extends Controller
 
         $superRoles = ['GM', 'HRD', 'Direktur Utama'];
 
-        if (in_array($jabatan_pembuat, $superRoles)) {
-            $dataJabatan = Karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
+        // === JABATAN LIST (untuk filter) ===
+        if (in_array($user->jabatan, $superRoles)) {
+            $dataJabatan = karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
                 ->distinct()
                 ->pluck('jabatan');
         } else {
-            $dataJabatan = Karyawan::where('divisi', $divisiUser)
+            $dataJabatan = karyawan::where('divisi', $divisiUser)
                 ->whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
                 ->distinct()
                 ->pluck('jabatan');
         }
 
-        $query = TargetKPI::with([
+        // === QUERY UTAMA ===
+        $query = targetKPI::with([
             'karyawan',
             'detailTargetKPI.dataTarget',
             'detailTargetKPI.detailPersonKPI'
         ])->whereYear('created_at', now()->year);
 
+        // Kasus khusus: melihat target orang lain (misalnya HRD melihat target karyawan tertentu)
         if (filled($idUser) && filled($typeGet)) {
             $query->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($idUser) {
                 $q->where('id_karyawan', $idUser);
             });
-        } elseif (!in_array($jabatan_pembuat, $superRoles)) {
+        } 
+        // Non-super user → filter berdasarkan divisi
+        elseif (!in_array($jabatan_pembuat, $superRoles)) {
             $query->whereHas('detailTargetKPI', function ($q) use ($divisiUser) {
                 $q->where('divisi', $divisiUser);
             });
         }
+        // Super user → tidak ada filter tambahan (bisa lihat semua divisi)
 
-        // Mengganti get() dengan paginate() untuk efisiensi memori
-        $paginatedData = $query->paginate($limit);
+        $detailList = $query->get();
 
         $data = [
             'detail' => $detailList
                 ->map(function ($item) use ($idUser) {
                     $detail = $item->detailTargetKPI->first();
-
                     if (!$detail) {
                         return null;
                     }
 
-            $tenggat_waktu = null;
-            $jangka = strtolower($detail->dataTarget?->jangka_target ?? '');
-            $detailJangka = $detail->detail_jangka;
+                    $tenggat_waktu = null;
+                    $jangka = strtolower($detail->dataTarget?->jangka_target ?? '');
+                    $detailJangka = $detail->detail_jangka;
 
-            if ($jangka === 'tahunan') {
-                $year = (int) $detailJangka;
-                $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
-            }
+                    switch ($jangka) {
+                        case 'tahunan':
+                            $year = (int) $detailJangka;
+                            $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
+                            break;
+                    }
 
-                    $personId = filled($idUser) ? (int) $idUser : null;
+                    $personId = !empty($idUser) ? (int) $idUser : null;
                     $progress = $this->resolveProgress($item, $personId);
-            return [
-                'id' => $item->id,
-                'pembuat' => $item->karyawan->nama_lengkap ?? null,
-                'id_pembuat' => $item->id_pembuat,
-                'judul' => $item->judul,
-                'deskripsi' => $item->deskripsi,
-                'jabatan' => $item->detailTargetKPI->pluck('jabatan')->unique()->values(),
-                'divisi' => $item->detailTargetKPI->pluck('divisi')->unique()->values(),
-                'asistant_route' => $detail->dataTarget?->asistant_route,
-                'jangka_target' => $detail->dataTarget?->jangka_target,
-                'detail_jangka' => $detail->detail_jangka,
-                'tipe_target' => $detail->dataTarget?->tipe_target,
-                'nilai_target' => $detail->dataTarget?->nilai_target,
-                'manual_value' => $detail->manual_value,
-                'status' => $item->status,
-                'created_at' => $item->created_at,
-                'tenggat_waktu' => $tenggat_waktu,
-                'progress' => $progress,
-            ];
-        })->filter()->values();
 
-        // Menyisipkan kembali data yang telah ditransformasi ke dalam objek paginasi
-        $paginatedData->setCollection($transformedData);
+                    return [
+                        'id' => $item->id,
+                        'pembuat' => $item->karyawan->nama_lengkap ?? null,
+                        'id_pembuat' => $item->id_pembuat,
+                        'judul' => $item->judul,
+                        'deskripsi' => $item->deskripsi,
+                        'jabatan' => $item->detailTargetKPI->pluck('jabatan')->unique()->values(),
+                        'divisi' => $item->detailTargetKPI->pluck('divisi')->unique()->values(),
+                        'asistant_route' => $detail->dataTarget?->asistant_route,
+                        'jangka_target' => $detail->dataTarget?->jangka_target,
+                        'detail_jangka' => $detail->detail_jangka,
+                        'tipe_target' => $detail->dataTarget?->tipe_target,
+                        'nilai_target' => $detail->dataTarget?->nilai_target,
+                        'manual_value' => $detail->manual_value,
+                        'status' => $item->status,
+                        'created_at' => $item->created_at,
+                        'tenggat_waktu' => $tenggat_waktu,
+                        'progress' => $progress,
+                    ];
+                })
+                ->filter()
+                ->values(),
 
-        $data = [
-            'detail' => $paginatedData, // Mengembalikan struktur paginasi standar Laravel
             'jabatan_list' => $dataJabatan,
-            'routes' => DataTarget::select(
-                'asistant_route',
-                'jangka_target',
-                'tipe_target',
-                'nilai_target'
-            )->get(),
+            'routes' => DataTarget::select('asistant_route', 'jangka_target', 'tipe_target', 'nilai_target')->get(),
         ];
 
         return response()->json($data);
@@ -14444,6 +14442,7 @@ class TargetKPIController extends Controller
                 'progress' => $avgTarget,
                 'status' => $status,
             ];
+        }
 
         // Rata-rata progress per karyawan
         $avgPerEmployee = [];
@@ -14508,7 +14507,7 @@ class TargetKPIController extends Controller
                 $employeeTargetsMap
             ),
             'distribusi_nilai' => $distribusi,
-            'daftar_target_kpi' => collect($daftarTargetKPI)->unique('judul')->values()
+            'daftar_target_kpi' => collect($daftarTargetKPI)->unique('judul')->values(),
         ]);
     }
 
