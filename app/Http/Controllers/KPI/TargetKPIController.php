@@ -1185,7 +1185,6 @@ class TargetKPIController extends Controller
                 })
                 ->filter()
                 ->values(),
-
             'jabatan_list' => $dataJabatan,
             'routes' => DataTarget::select('asistant_route', 'jangka_target', 'tipe_target', 'nilai_target')->get(),
         ];
