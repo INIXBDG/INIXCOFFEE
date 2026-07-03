@@ -1185,14 +1185,14 @@ class TargetKPIController extends Controller
                 })
                 ->filter()
                 ->values(),
-
+                            
             'jabatan_list' => $dataJabatan,
             'routes' => DataTarget::select('asistant_route', 'jangka_target', 'tipe_target', 'nilai_target')->get(),
         ];
 
         return response()->json($data);
     }
-    
+
     private function resolveProgress($item, $personId)
     {
         $progress = 0;
@@ -1779,27 +1779,27 @@ class TargetKPIController extends Controller
             $query->whereYear('tanggal_awal', $tahun);
         })
             ->whereNotNull('tanggal_keperluan')
-            ->where('materi', 1)
-            ->where('kelas', 1)
-            ->where('cb', 1)
-            ->where('maksi', 1)
-            ->where('keperluan_kelas', 1)
+            ->where('materi', '1')
+            ->where('kelas', '1')
+            ->where('cb', '1')
+            ->where('maksi', '1')
+            ->where('keperluan_kelas', '1')
             ->whereHas('subChecklistKeperluans', function ($subQuery) {
-                $subQuery->where('materi_module', 1)
-                    ->where('materi_elearning', 1)
-                    ->where('cb_instruktur', 1)
-                    ->where('cb_peserta', 1)
-                    ->where('maksi_instruktur', 1)
-                    ->where('maksi_peserta', 1)
-                    ->where('kelas_ac', 1)
-                    ->where('kelas_jam', 1)
-                    ->where('kelas_buku', 1)
-                    ->where('kelas_pulpen', 1)
-                    ->where('kelas_permen', 1)
-                    ->where('kelas_camilan', 1)
-                    ->where('kelas_minuman', 1)
-                    ->where('kelas_lampu', 1)
-                    ->where('kelas_kondisi_kebersihan', 1);
+                $subQuery->where('materi_module', '1')
+                    ->where('materi_elearning', '1')
+                    ->where('cb_instruktur', '1')
+                    ->where('cb_peserta', '1')
+                    ->where('maksi_instruktur', '1')
+                    ->where('maksi_peserta', '1')
+                    ->where('kelas_ac', '1')
+                    ->where('kelas_jam', '1')
+                    ->where('kelas_buku', '1')
+                    ->where('kelas_pulpen', '1')
+                    ->where('kelas_permen', '1')
+                    ->where('kelas_camilan', '1')
+                    ->where('kelas_minuman', '1')
+                    ->where('kelas_lampu', '1')
+                    ->where('kelas_kondisi_kebersihan', '1');
             })
             ->count();
 
@@ -14532,12 +14532,10 @@ class TargetKPIController extends Controller
                 'nama' => explode(' ', $karyawan->nama_lengkap)[0],
                 'jabatan' => $karyawan->jabatan,
                 'total_target' => $totalTarget,
-                
                 'target_sedang_berjalan' => $statusData['Sedang Berjalan'],
                 'target_selesai'         => $statusData['Selesai'],
                 'target_gagal'           => $statusData['Gagal'],
                 'target_belum_mulai'     => $statusData['Belum Mulai'],
-                
                 'rata_rata_progress' => $rataRataProgress,
                 'daftar_target_pribadi' => $employeeTargetsMap[$karyawan->id] ?? [],
             ];
