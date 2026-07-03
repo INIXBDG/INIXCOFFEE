@@ -564,7 +564,7 @@ function tableKaryawan() {
         columnDefs: [{ targets: [0], type: "date" }]
     });
 }
-
+ 
 function tableFinance(){
     // Get current page for both tables before destroying
     var currentPageBelum = 0;
