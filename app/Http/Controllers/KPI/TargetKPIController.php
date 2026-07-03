@@ -6994,7 +6994,18 @@ class TargetKPIController extends Controller
         $personId = 0;
 
         if (is_null($detail) || is_null($detail->manual_value)) {
-            return 0;
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'dataManual' => [
+                    'manual_document' => $detail->manual_document,
+                ],
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
@@ -7066,7 +7077,18 @@ class TargetKPIController extends Controller
         $personId = 0;
 
         if (is_null($detail) || is_null($detail->manual_value)) {
-            return 0;
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'dataManual' => [
+                    'manual_document' => $detail->manual_document,
+                ],
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
@@ -14167,7 +14189,7 @@ class TargetKPIController extends Controller
                     $processedTargets->push([
                         'id'              => $target->id,
                         'judul'           => $target->judul,
-                        'asistant_route'  => $target->asistant_route,
+                        'asistant_route'  => $detail->dataTarget->asistant_route,
                         'periode'         => $detail->jangka_target . ' ' . $detail->detail_jangka,
                         'tipe_target'     => $tipeTarget,
                         'target'          => $nilaiTarget,
