@@ -16924,6 +16924,7 @@ class TargetKPIController extends Controller
             'akurasi kelengkapan data penjualan',
             'ketepatan waktu po',
             'kualitas dokumentasi support dan proctor',
+            'pendapatan penjualan project',
         ];
 
         $details = [];
@@ -17082,6 +17083,7 @@ class TargetKPIController extends Controller
             'laporan mom' => $this->calculateLaporanMOM($target, $personId),
             'akurasi kelengkapan data penjualan' => $this->calculateAkurasiKelengkapanDataPenjualan($target, $personId),
             'todo administrasi' => $this->calculateTodoAdministrasi($target),
+            'pendapatan penjualan project' => $this->calculatePendapatanPenjualanProject($target, $personId),
             default => 0
         };
     }
