@@ -2334,6 +2334,41 @@
             </div>
         @endforeach
 
+        <!-- Modal Detail Chart -->
+        <div class="modal fade" id="chartDataModal" tabindex="-1" aria-labelledby="chartDataModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl"> <!-- Gunakan modal-xl karena datanya banyak kolom -->
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="chartDataModalLabel">Detail Data: <span id="modalCategoryName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body table-responsive">
+                <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                    <th>No</th>
+                    <th>Perusahaan</th>
+                    <th>Kelas</th>
+                    <th>Sales</th>
+                    <th>Tanggal</th>
+                    <th>Tagihan</th>
+                    <th>Tenggat Waktu</th>
+                    <th>Tanggal Bayar</th>
+                    <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="chartDataModalBody">
+                    <!-- Data akan di-render di sini via JS -->
+                </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+            </div>
+        </div>
+        </div>
+
         @auth
             <style>
                 @keyframes slideIn {
@@ -3141,6 +3176,49 @@
                         return `<span class="badge bg-${color}">${status}</span>`;
                     }
 
+                    function showDetailModal(category, datas, isOutstanding = true) {
+                        // 1. Ubah Judul Modal
+                        document.getElementById('modalCategoryName').innerText = category;
+                        
+                        // 2. Filter Data sesuai kategori yang diklik
+                        let filteredData = [];
+                        if (isOutstanding) {
+                            // Filter berdasarkan key 'status' untuk chart Outstanding
+                            filteredData = datas.filter(item => item.status === category);
+                        } else {
+                            // Filter berdasarkan key 'info' untuk chart Ketepatan
+                            filteredData = datas.filter(item => item.info === category);
+                        }
+
+                        // 3. Render ke Tabel
+                        const tbody = document.getElementById('chartDataModalBody');
+                        tbody.innerHTML = '';
+
+                        if (filteredData.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="9" class="text-center">Tidak ada data.</td></tr>';
+                        } else {
+                            filteredData.forEach((item, index) => {
+                                tbody.innerHTML += `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${item.perusahaan}</td>
+                                        <td>${item.kelas}</td>
+                                        <td>${item.sales}</td>
+                                        <td>${item.tanggal}</td>
+                                        <td>${item.tagihan !== '-' ? 'Rp ' + item.tagihan.toLocaleString('id-ID') : '-'}</td>
+                                        <td>${item.tenggat_waktu}</td>
+                                        <td>${item.tanggal_bayar}</td>
+                                        <td><span class="badge bg-secondary">${item.status}</span></td>
+                                    </tr>
+                                `;
+                            });
+                        }
+
+                        // 4. Tampilkan Modal (Bootstrap 5)
+                        const myModal = new bootstrap.Modal(document.getElementById('chartDataModal'));
+                        myModal.show();
+                    }
+
                     let chartInstanceOutstanding;
 
                     function loadChartOutstanding(year) {
@@ -3224,6 +3302,17 @@
                                     options: {
                                         responsive: true,
                                         maintainAspectRatio: false,
+                                        onClick: (event, elements) => {
+                                            // Cek apakah user benar-benar mengklik slice (potongan pie)
+                                            if (elements.length > 0) {
+                                                const index = elements[0].index; // Index dari data yang diklik (0, 1, 2)
+                                                const labelClicked = data.labels[index]; // "Belum Bayar", "Tepat Waktu", atau "Terlambat"
+                                                
+                                                // Panggil fungsi penampil modal
+                                                // data.datas berasal dari response API Laravel Anda
+                                                showDetailModal(labelClicked, data.datas, true);
+                                            }
+                                        },
                                         plugins: {
                                             legend: {
                                                 position: 'bottom'
@@ -3323,6 +3412,15 @@
                                     options: {
                                         responsive: true,
                                         maintainAspectRatio: false,
+                                        onClick: (event, elements) => {
+                                            if (elements.length > 0) {
+                                                const index = elements[0].index;
+                                                const labelClicked = data.labels[index]; // "Sesuai" atau "Tidak Sesuai"
+                                                
+                                                // isOutstanding diset false agar filter menggunakan item.info
+                                                showDetailModal(labelClicked, data.datas, false);
+                                            }
+                                        },
                                         plugins: {
                                             legend: {
                                                 position: 'bottom'
