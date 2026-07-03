@@ -1091,13 +1091,13 @@ class TargetKPIController extends Controller
         $typeGet = $request->typeGet;
 
         if (filled($idUser) && filled($typeGet)) {
-            $karyawan = karyawan::find($idUser);
+            $karyawan = Karyawan::find($idUser);
             if (!$karyawan) {
                 return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
             }
             $divisiUser = $karyawan->divisi;
         } else {
-            $karyawan = karyawan::find($id_pembuat);
+            $karyawan = Karyawan::find($id_pembuat);
             if (!$karyawan) {
                 return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
             }
@@ -1106,18 +1106,18 @@ class TargetKPIController extends Controller
 
         $superRoles = ['GM', 'HRD', 'Direktur Utama'];
 
-        if (in_array($user->jabatan, $superRoles)) {
-            $dataJabatan = karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
+        if (in_array($jabatan_pembuat, $superRoles)) {
+            $dataJabatan = Karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
                 ->distinct()
                 ->pluck('jabatan');
         } else {
-            $dataJabatan = karyawan::where('divisi', $divisiUser)
+            $dataJabatan = Karyawan::where('divisi', $divisiUser)
                 ->whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
                 ->distinct()
                 ->pluck('jabatan');
         }
 
-        $query = targetKPI::with([
+        $query = TargetKPI::with([
             'karyawan',
             'detailTargetKPI.dataTarget',
             'detailTargetKPI.detailPersonKPI'
@@ -1128,7 +1128,9 @@ class TargetKPIController extends Controller
                 $q->where('id_karyawan', $idUser);
             });
         } elseif (!in_array($jabatan_pembuat, $superRoles)) {
-            $query->where('id_pembuat', $id_pembuat);
+            $query->whereHas('detailTargetKPI', function ($q) use ($divisiUser) {
+                $q->where('divisi', $divisiUser);
+            });
         }
 
         $detailList = $query->get();
@@ -1137,6 +1139,7 @@ class TargetKPIController extends Controller
             'detail' => $detailList
                 ->map(function ($item) use ($idUser) {
                     $detail = $item->detailTargetKPI->first();
+
                     if (!$detail) {
                         return null;
                     }
@@ -1152,7 +1155,7 @@ class TargetKPIController extends Controller
                             break;
                     }
 
-                    $personId = !empty($idUser) ? (int) $idUser : null;
+                    $personId = filled($idUser) ? (int) $idUser : null;
                     $progress = $this->resolveProgress($item, $personId);
 
                     return [
@@ -1178,12 +1181,17 @@ class TargetKPIController extends Controller
                 ->filter()
                 ->values(),
             'jabatan_list' => $dataJabatan,
-            'routes' => DataTarget::select('asistant_route', 'jangka_target', 'tipe_target', 'nilai_target')->get(),
+            'routes' => DataTarget::select(
+                'asistant_route',
+                'jangka_target',
+                'tipe_target',
+                'nilai_target'
+            )->get(),
         ];
 
         return response()->json($data);
     }
-
+    
     private function resolveProgress($item, $personId)
     {
         $progress = 0;
@@ -4359,7 +4367,7 @@ class TargetKPIController extends Controller
 
         $progress = min(($maxCAC / $actualCAC) * 100, 100);
 
-        return round($progress, 1);
+        return round($progress, 2);
     }
 
     //Adm Sales
