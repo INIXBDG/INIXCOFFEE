@@ -19,13 +19,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <strong>Gagal!</strong> {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
 
         @if ($errors->any())
             <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm" role="alert">
@@ -59,10 +52,16 @@
             @endif
 
             <div>
-                <button class="btn btn-primary px-4 shadow-sm d-flex align-items-center gap-2 main-add-btn"
-                    data-tab="pembelian-page" data-bs-toggle="modal" data-bs-target="#formModal" id="btnCreate">
-                    <i class="bi bi-plus-circle"></i> Tambah Rencana Baru
-                </button>
+                <div class="d-flex gap-3">
+                    <button class="btn btn-primary px-4 shadow-sm d-flex align-items-center gap-2 main-add-btn"
+                        data-tab="pembelian-page" data-bs-toggle="modal" data-bs-target="#formModal" id="btnCreate">
+                        <i class="bi bi-plus-circle"></i> Tambah Rencana Baru
+                    </button>
+                    <button class="btn btn-secondary px-4 shadow-sm d-flex align-items-center gap-2 main-add-btn"
+                        data-tab="pembelian-page" data-bs-toggle="modal" data-bs-target="#rekapModal" id="btnAddRekap">
+                        <i class="bi bi-plus-circle"></i> Tambah Rekap Terlaksana
+                    </button>
+                </div>
                 @if($section === 'office_contents')
                     <button class="btn btn-primary px-4 shadow-sm d-flex align-items-center gap-2 main-add-btn d-none"
                         data-tab="rab-page" data-bs-toggle="modal" data-bs-target="#createModal">
@@ -330,7 +329,7 @@
                                                                     <tr><td colspan="7" class="text-center text-muted">Tidak ada item</td></tr>
                                                                     @endforelse
                                                                 </tbody>
-                                                                <tfoot class="table-light"><tr><th colspan="5" class="text-end">Total:</th><th class="text-end">Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</th><th></th></tr></tfoot>
+                                                                <tfoot class="table-light"><tr><th colspan="4" class="text-end">Total:</th><th class="text-end">Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</th><th></th><th></th></tr></tfoot>
                                                             </table>
                                                         </div>
                                                     </div>
@@ -467,7 +466,7 @@
                                                                     <tr><td colspan="7" class="text-center text-muted">Tidak ada item</td></tr>
                                                                     @endforelse
                                                                 </tbody>
-                                                                <tfoot class="table-light"><tr><th colspan="5" class="text-end">Total:</th><th class="text-end">Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</th><th></th></tr></tfoot>
+                                                                <tfoot class="table-light"><tr><th colspan="4" class="text-end">Total:</th><th class="text-end">Rp {{ number_format($row->details->sum(fn($d) => $d->qty * $d->harga), 0, ',', '.') }}</th><th></th><th></th></tr></tfoot>
                                                             </table>
                                                         </div>
                                                     </div>
@@ -807,7 +806,6 @@
                     <div class="modal-body">
                         <input type="hidden" name="deleted_ids" id="deleted_ids" value="">
                         <input type="hidden" name="status_pembelian" id="status_pembelian" value="Rencana">
-                        <input type="hidden" name="kategori" value="Umum">
                         <div class="row mb-3">
                             <div class="col-md-4" id="KKWrapper" style="display:none;">
                                 <label class="form-label">No. KK / No. Pengajuan</label>
@@ -854,6 +852,89 @@
                             </table>
                         </div>
                     </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="rekapModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <form id="formRekap" method="POST" action="{{ route('rencanaPembelian.storeRekap') }}">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="formModalLabel">Tambah Rekap Pembelian</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="status_pembelian" id="status_pembelian" value="Terlaksana">
+                        <div class="row mb-3">
+                            <div class="col-md-4" id="periodeWrapper">
+                                <label class="form-label">Periode <span class="text-danger">*</span></label>
+                                <select name="periode" id="periode" class="form-select" required>
+                                    <option value="">Pilih Periode</option>
+                                    <option value="Q1">Q1</option>
+                                    <option value="Q2">Q2</option>
+                                    <option value="Q3">Q3</option>
+                                    <option value="Q4">Q4</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4" id="KategoriWrapper">
+                                <label class="form-label">Kategori Inventaris <span class="text-danger">*</span></label>
+                                <select name="kategori" id="kategori" class="form-select" required>
+                                    <option value="Inventaris Office">Inventaris Office</option>
+                                    <option value="Inventaris Education">Inventaris Education</option>
+                                    <option value="Inventaris Sales & Marketing">Inventaris Sales & Marketing</option>
+                                    <option value="Inventaris ITSM">Inventaris ITSM</option>
+                                    <option value="Inventaris Kantor">Inventaris Kantor</option>
+                                    <option value="Inventaris Kelas">Inventaris Kelas</option>
+                                </select>
+                            </div>
+                        </div>
+                        <hr>
+
+                        <div class="mt-4">
+                            <h6 class="text-muted mb-3">Daftar Data Pengajuan Barang :</h6>
+
+                            <div class="row g-3 d-flex align-items-end mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small">Pembuat Pengajuan</label>
+                                    <select name="pembuat" id="pembuatPengajuan" class="form-select">
+                                        <option value="" selected>Pilih Karyawan</option>
+                                        @foreach ($karyawans as $karyawan)
+                                            <option value="{{ $karyawan->id }}" {{ auth()->user()->karyawan->id === $karyawan->id ? 'selected' : '' }}>{{ $karyawan->nama_lengkap }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="border-0 col-md-4">
+                                    <button type="button" id="cariDataPengajuanBtn" class="btn btn-primary px-4">
+                                        Cari data
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
+                                <table id="tabelDataPengajuan" class="table table-hover align-middle mb-0">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <td>Nama Barang</td>
+                                            <td>Tanggal Pembelian</td>
+                                            <td>Total Harga</td>
+                                            <td>Diajukan Oleh</td>
+                                            <td></td>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary">Simpan Data</button>
@@ -1173,12 +1254,71 @@
         .accordion-wrapper .table {
             margin-bottom: 0;
         }
+        .dropdown-menu{
+            z-index:99999;
+        }
     </style>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <script>
         const userJabatan = @json(auth()->user()->jabatan);
         const userDivisi = @json(auth()->user()->karyawan->divisi);
+
+        $(document).on('click', '.dropdown-toggle', function (e) {
+            e.stopPropagation();
+
+            const button = $(this);
+            const dropdown = button.parent();
+            const menu = dropdown.children('.dropdown-menu');
+
+            $('body > .dropdown-menu').each(function () {
+                const m = $(this);
+                const parent = m.data('parent');
+
+                if (parent) {
+                    parent.append(m.detach());
+                }
+
+                m.removeAttr('style').removeClass('show');
+            });
+
+            if (menu.parent()[0] !== document.body) {
+                menu.data('parent', dropdown);
+                $('body').append(menu.detach());
+            }
+
+            const rect = this.getBoundingClientRect();
+
+            menu.css({
+                position: 'fixed',
+                top: rect.bottom + 4,
+                left: rect.left,
+                zIndex: 999999
+            }).addClass('show');
+        });
+
+        function closeAllDropdown() {
+            $('body > .dropdown-menu').each(function () {
+                const menu = $(this);
+                const parent = menu.data('parent');
+
+                if (parent) {
+                    parent.append(menu.detach());
+                }
+                menu.removeAttr('style').removeClass('show');
+            });
+        }
+
+        $(document).on('click', function () {
+            closeAllDropdown();
+        });
+
+        $(document).on('click', '.dropdown-menu', function (e) {
+            e.stopPropagation();
+        });
 
         document.addEventListener("DOMContentLoaded", function() {
             const tipeSelect = document.getElementById('tipeRAB');
@@ -1457,6 +1597,108 @@
                 }
             }
 
+            $('#btnAddRekap').click(function() {
+                filterKategori();
+                initKaryawanSelect2();
+            });
+
+            function initKaryawanSelect2() {
+                var $select = $('#pembuatPengajuan');
+                if (typeof $.fn.select2 !== 'function') {
+                    console.error('Select2 belum ter-load!');
+                    return;
+                }
+                var $closestModal = $select.closest('.modal');
+                $select.select2({
+                    width: '100%',
+                    theme: 'bootstrap-5',
+                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                });
+            }
+
+            $('#cariDataPengajuanBtn').on('click', function() {
+                let idPembuat = $('#pembuatPengajuan').val();
+
+                $.ajax({
+                    url: '/rencana-pembelian/get-jurnal',
+                    type: 'GET',
+                    data: {pembuat: idPembuat},
+                    success: function(res) {
+                        let tbody = $('#tabelDataPengajuan tbody');
+                        tbody.empty();
+
+                        if (!res.data || res.data.length === 0) {
+
+                            tbody.append(`
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        Tidak ada data
+                                    </td>
+                                </tr>
+                            `);
+
+                            return;
+                        }
+
+                        res.data.forEach(function (item) {
+
+                            tbody.append(`
+                                <tr>
+                                    <td>${item.nama_barang}</td>
+                                    <td>${item.tanggal}</td>
+                                    <td>Rp ${Number(item.total_harga).toLocaleString('id-ID')}</td>
+                                    <td>${item.diajukan_oleh}</td>
+                                    <td class="text-center">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input
+                                                class="form-check-input pilihPengajuan"
+                                                type="checkbox"
+                                                data-jurnal="${item.id_jurnal}"
+                                                data-pengajuan="${item.id_pengajuan}">
+                                        </div>
+                                    </td>
+                                </tr>
+                            `);
+
+                        });
+                    }
+                })
+            });
+
+            $('#formRekap').on('submit', function(e){
+                $('.selected-item').remove();
+                let total = 0;
+
+                $('.pilihPengajuan:checked').each(function(){
+                    total++;
+
+                    $('<input>')
+                        .attr({
+                            type:'hidden',
+                            name:'items['+total+'][id_jurnal]',
+                            value:$(this).data('jurnal'),
+                            class:'selected-item'
+                        })
+                        .appendTo('#formRekap');
+
+                    $('<input>')
+                        .attr({
+                            type:'hidden',
+                            name:'items['+total+'][id_pengajuan]',
+                            value:$(this).data('pengajuan'),
+                            class:'selected-item'
+                        })
+                        .appendTo('#formRekap');
+
+                });
+
+                if(total==0){
+                    e.preventDefault();
+                    alert('Pilih minimal satu data.');
+                    return;
+                }
+            });
+
             $('#btnCreate').click(function() {
                 $('#formModalLabel').text('Tambah Rencana Pembelian');
                 $('#formPembelian').attr('action', "{{ route('rencanaPembelian.store') }}");
@@ -1472,7 +1714,7 @@
                 itemIndex = 0;
                 addItemRow(); 
 
-                filterKategori()
+                filterKategori();
             });
 
             $(document).on('click', '.btn-edit', function(e) {
@@ -1606,12 +1848,6 @@
                 });
 
             });
-
-            @if ($errors->any())
-                @if ($errors->has('no_kk') || $errors->has('items.*') || $errors->has('periode'))
-                    showModal('formModal');
-                @endif
-            @endif
 
             $(document).on('click', '.btn-link-pengajuan', function(e) {
                 e.preventDefault();
