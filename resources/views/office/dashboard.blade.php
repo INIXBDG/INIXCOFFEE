@@ -1514,6 +1514,28 @@
             {{-- End Chart Cuti --}}
 
             {{-- Total Mengajar Instruktur --}}
+            <div class="modal fade" id="modalDetailMengajar" tabindex="-1">
+                <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-sm rounded-4">
+                        <div class="modal-header border-0 pb-0 px-4 pt-4">
+                            <div class="d-flex flex-column flex-md-row justify-content-center align-items-md-center gap-3 w-100">
+                                <h5 class="modal-title fw-semibold mb-0">Detail Mengajar <span id="detailNamaInstruktur"></span></h5>
+                            </div>
+
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body p-4">
+                            <div id="detailMengajarContent"></div>
+
+                             <div id="detailMengajarPagination"
+                                class="d-flex justify-content-center mt-3">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="col-xl-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
                     <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
@@ -1546,7 +1568,7 @@
                             <div class="col">
                                 <label for="filterMengajarPerBulan" class="mb-1 ms-1">Bulan</label>
                                 <select id="filterMengajarPerBulan" class="form-select mb-3">
-                                    <option value="default" disabled selected>Berdasarkan Bulan</option>
+                                    <option value="default" selected>Berdasarkan Bulan</option>
                                     @php
                                         $bulan_sekarang = now()->month;
                                         $nama_bulan = [
@@ -1572,7 +1594,7 @@
                             <div class="col">
                                 <label for="filterMengajarPerTriwulan" class="mb-1 ms-1">Triwulan</label>
                                 <select id="filterMengajarPerTriwulan" class="form-select mb-3">
-                                    <option value="default" disabled selected>Berdasarkan Triwulan</option>
+                                    <option value="default" selected>Berdasarkan Triwulan</option>
                                     <option value="1">Quarter 1</option>
                                     <option value="2">Quarter 2</option>
                                     <option value="3">Quarter 3</option>
@@ -1590,11 +1612,14 @@
                                         <td class="border-0" style="min-width: 70%">Nama Lengkap</td>
                                         <td class="border-0" style="min-width: 15%">Kode Instruktur</td>
                                         <td class="border-0" style="min-width: 10%">Total Mengajar</td>
+                                        <td class="border-0" style="min-width: 10%">Average Feedback</td>
+                                        <td class="border-0" style="min-width: 10%">Kontribusi (%)</td>
                                     </tr>
                                 </thead>
                                 <tbody class="text-muted fw-medium">
-
                                 </tbody>
+                                <tfoot >
+                                </tfoot>
                             </table>
                         </div>
                     </div>
@@ -2980,19 +3005,44 @@
                         },
                         success: function(res) {
                             let tabelMengajar = $('#tabelTotalMengajar tbody');
+                            let tabelMengajarFooter = $('#tabelTotalMengajar tfoot');
                             tabelMengajar.empty();
+                            tabelMengajarFooter.empty();
                             let data = res.dataMengajar;
+                            let allFeedback = 0;
 
                             $.each(data, function(index, item) {
+                                allFeedback += item.overall_feedback;
+                                
+                                let kontribusi = 0;
+                                if (res.totalKelas > 0 ) {
+                                    kontribusi = (item.totalMengajar / res.totalKelas) * 100;
+                                }
+                                
                                 tabelMengajar.append(`
-                                        <tr>
+                                        <tr id="detailMengajar" data-id="${item.idKaryawan}">
                                             <td>${index + 1}</td>
                                             <td>${item.namaKaryawan}</td>
                                             <td>${item.kodeKaryawan}</td>
                                             <td>${item.totalMengajar}</td>
+                                            <td>${item.overall_feedback}</td>
+                                            <td>${kontribusi.toFixed(2)}%</td>
                                         </tr>
                                     `)
                             });
+
+                            const avgAllFeed = data.length ? Number(allFeedback || 0) / data.length : 0;
+
+                            tabelMengajarFooter.append(`
+                                <tr class="fw-bold fs-6">
+                                    <td></td>
+                                    <td>Total</td>
+                                    <td></td>
+                                    <td>${res.totalKelas}</td>
+                                    <td>${avgAllFeed.toFixed(2)}</td>
+                                    <td>100%</td>
+                                </tr>
+                            `)
 
                             $('#rentangWaktuMengajar').text(res.rentangWaktu);
 
@@ -3024,6 +3074,178 @@
                         }
                     });
                 };
+
+                $(document).on('click', '#detailMengajar', function () {
+                    let id = $(this).data('id');
+
+                    $('#modalDetailMengajar').modal('show');
+                    let detailMengajarData = [];
+                    let currentPage = 1;
+                    const perPage = 5;
+
+                    $.ajax({
+                        url: '/office/detail-data-mengajar/' + id,
+                        type: 'GET',
+                        data: {
+                            filter: currentFilterMengajar.filter,
+                            value: currentFilterMengajar.value,
+                            tahun: currentFilterMengajar.tahun
+                        },
+                        success: function (res) {
+                            
+                            $('#detailNamaInstruktur').text(res.nama_instruktur);
+                            
+                            detailMengajarData = res.data;
+                            currentPage = 1;
+
+                            renderDetailMengajar();
+                        }
+                    });
+
+                    function renderPagination(){
+                        let totalPage = Math.ceil(detailMengajarData.length / perPage);
+                        let html = '';
+
+                        html += `
+                            <nav>
+                                <ul class="pagination pagination-sm">
+                        `;
+
+                        html += `
+                            <li class="page-item ${currentPage==1?'disabled':''}">
+                                <a class="page-link"
+                                href="#"
+                                data-page="${currentPage-1}">
+                                    Previous
+                                </a>
+                            </li>
+                        `;
+
+                        for(let i=1;i<=totalPage;i++){
+
+                            html += `
+                                <li class="page-item ${currentPage==i?'active':''}">
+                                    <a class="page-link"
+                                    href="#"
+                                    data-page="${i}">
+                                        ${i}
+                                    </a>
+                                </li>
+                            `;
+                        }
+
+                        html += `
+                            <li class="page-item ${currentPage==totalPage?'disabled':''}">
+                                <a class="page-link"
+                                href="#"
+                                data-page="${currentPage+1}">
+                                    Next
+                                </a>
+                            </li>
+                        `;
+
+                        html += `
+                                </ul>
+                            </nav>
+                        `;
+
+                        $('#detailMengajarPagination').html(html);
+                    }
+
+                    function renderDetailMengajar(){
+                        let start = (currentPage - 1) * perPage;
+                        let end = start + perPage;
+
+                        let pageData = detailMengajarData.slice(start, end);
+                        let html = '';
+
+                        pageData.forEach(function(item,index){
+
+                            let kelasHtml = '';
+
+                            item.kelas.forEach(function(kelas){
+
+                                kelasHtml += `
+                                    <tr>
+                                        <td>${kelas.minggu}</td>
+                                        <td>${kelas.perusahaan}</td>
+                                        <td>${kelas.metode}</td>
+                                        <td class="text-center">
+                                            ${kelas.feedback ?? '-'}
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+
+                            html += `
+                                <div class="card mb-3 border-0 shadow-sm">
+
+                                    <div class="card-header bg-light">
+                                        <div class="row fw-semibold">
+                                            <div class="col-md-4 text-center">
+                                                Nama Materi
+                                                <br>
+                                                ${item.materi}
+                                            </div>
+
+                                            <div class="col-md-4 text-center">
+                                                Total Mengajar
+                                                <br>
+                                                ${item.jumlah_mengajar}
+                                            </div>
+
+                                            <div class="col-md-4 text-center">
+                                                Rata-rata Feedback
+                                                <br>
+                                                ${item.rata_feedback}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card-body p-0">
+
+                                        <table class="table table-sm table-hover mb-0">
+
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Tanggal</th>
+                                                    <th>Perusahaan</th>
+                                                    <th>Metode Kelas</th>
+                                                    <th width="180" class="text-center">
+                                                        Feedback Per Kelas
+                                                    </th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                ${kelasHtml}
+                                            </tbody>
+
+                                        </table>
+
+                                    </div>
+
+                                </div>
+                            `;
+                        });
+
+                        $('#detailMengajarContent').html(html);
+                        renderPagination();
+                    }
+
+                    $(document).on('click','.page-link',function(e){
+                        e.preventDefault();
+                        let page = Number($(this).data('page'));
+                        let totalPage = Math.ceil(detailMengajarData.length / perPage);
+
+                        if(page < 1 || page > totalPage)
+                            return;
+
+                        currentPage = page;
+                        renderDetailMengajar();
+
+                    });
+                });
 
                 if ($('#sectionOutstanding').length) {
 
@@ -3466,12 +3688,22 @@
                 // reset Filter per bulan
                 $('#filterMengajarPerBulan').change(function() {
                     $('#filterMengajarPerTriwulan').val('default');
+
+                    if ($(this).val() === 'default') {
+                        loadDataMengajar('tahun', $('#filterMengajarPerTahun').val());
+                        return;
+                    }
                     loadDataMengajar('bulan', $(this).val());
                 });
 
                 // reset filter per triwulan
                 $('#filterMengajarPerTriwulan').change(function() {
                     $('#filterMengajarPerBulan').val('default');
+                    
+                    if ($(this).val() === 'default') {
+                        loadDataMengajar('tahun', $('#filterMengajarPerTahun').val());
+                        return;
+                    }
                     loadDataMengajar('triwulan', $(this).val());
                 });
 
