@@ -64,18 +64,21 @@ class rekapInstrukturController extends Controller
         $endOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()->endOfDay()->toDateString();
 
         $data =  RKM::with(['materi', 'peluang', 'exam', 'exam.approvalexam'])
-                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                    ->whereBetween('r_k_m_s.tanggal_awal', [$startOfMonth, $endOfMonth])
-                    ->where('r_k_m_s.status', '0')
-                    ->whereNull('r_k_m_s.deleted_at')
-                    ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1);
-                    })->where(function ($query) {
-                        $query->whereHas('exam.approvalexam', function ($q) {
-                            $q->where('technical_support', 1);
+                        ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                        ->whereBetween('r_k_m_s.tanggal_awal', [$startOfMonth, $endOfMonth])
+                        ->where('r_k_m_s.status', '0')
+                        ->whereNull('r_k_m_s.deleted_at')
+                        ->whereNotIn('r_k_m_s.id', $id_rkm)
+                        ->whereHas('peluang', function ($query) {
+                            $query->where('tentatif', 0);
                         })
-                        ->orWhereDoesntHave('exam.approvalexam');
-                    })->select(
+                        ->where(function ($query) {
+                            $query->whereHas('exam.approvalexam', function ($q) {
+                                $q->where('technical_support', 1);
+                            })
+                            ->orWhereDoesntHave('exam.approvalexam');
+                        })->
+                        select(
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
                         DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
@@ -424,64 +427,22 @@ class rekapInstrukturController extends Controller
 
     public function sinkronData()
     {
-        $data = rekapMengajarInstruktur::with('rkm', 'instruktur')->get();
+        $data = rekapMengajarInstruktur::get();
+
         foreach ($data as $value) {
-            // Mengambil id_rkm dan memisahkannya menjadi array
-            $id_rkm = explode(',', $value->id_rkm); // Gunakan $value->id_rkm
-            $totalPax = 0;
-            $totalFeedbackInstruktur1 = 0;
-            $totalFeedbackInstruktur2 = 0;
-            $totalFeedbackAsisten = 0;
-            $count = 0; // Untuk menghitung jumlah RKM yang diproses
-    
-            foreach ($id_rkm as $rkm_id) {
-                // Mengambil RKM berdasarkan id_rkm
-                $rkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
-                    ->where('id', $rkm_id)
-                    ->first();
-    
-                if ($rkm) { // Pastikan RKM ditemukan
-                    $totalPax += $rkm->pax; // Asumsi bahwa $rkm->pax ada
-    
-                    // Mengambil feedback
-                    $response = $this->feedbackController->getNilaiFeedbackInstRKM($rkm->id);
-                    $feedback = json_decode($response->getContent());
-    
-                    // Menambahkan feedback ke total berdasarkan instruktur
-                    if ($value->id_instruktur == $rkm->instruktur_key) {
-                        $totalFeedbackInstruktur1 += $feedback->average->instruktur ?? 0; 
-                    } elseif ($value->id_instruktur == $rkm->instruktur_key2) {
-                        $totalFeedbackInstruktur2 += $feedback->average->instruktur2 ?? 0;
-                    } elseif ($value->id_instruktur == $rkm->asisten_key) {
-                        $totalFeedbackAsisten += $feedback->average->asisten ?? 0; 
-                    }
-    
-                    $count++; // Meningkatkan jumlah RKM yang diproses
-                }
-            }
-    
-            // Menghitung rata-rata feedback jika ada RKM yang diproses
-            if ($count > 0) {
-                $averageFeedbackInstruktur1 = $count > 0 ? $totalFeedbackInstruktur1 / $count : 0;
-                $averageFeedbackInstruktur2 = $count > 0 ? $totalFeedbackInstruktur2 / $count : 0;
-                $averageFeedbackAsisten = $count > 0 ? $totalFeedbackAsisten / $count : 0;
-    
-                // Memperbarui feedback jika ada perubahan
-                if ($value->id_instruktur == $rkm->instruktur_key && $value->feedback !== $averageFeedbackInstruktur1) {
-                    $value->update(['feedback' => $averageFeedbackInstruktur1]);
-                } elseif ($value->id_instruktur == $rkm->instruktur_key2 && $value->feedback !== $averageFeedbackInstruktur2) {
-                    $value->update(['feedback' => $averageFeedbackInstruktur2]);
-                } elseif ($value->id_instruktur == $rkm->asisten_key && $value->feedback !== $averageFeedbackAsisten) {
-                    $value->update(['feedback' => $averageFeedbackAsisten]);
-                }
-            }
-    
-            // Memperbarui total pax jika ada perubahan
-            if ($value->pax !== $totalPax) {
-                $value->update(['pax' => $totalPax]);
+
+            $ids = array_filter(array_map('trim', explode(',', $value->id_rkm)));
+
+            $totalPax = RKM::whereIn('id', $ids)->sum('pax');
+
+            if ($value->pax != $totalPax) {
+
+                $value->update([
+                    'pax' => $totalPax
+                ]);
             }
         }
-    
+
         return response()->json([
             'success' => true,
             'message' => 'Sudah Di Sinkronisasi, Silahkan Klik ulang Cari Data',
