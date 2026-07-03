@@ -1089,6 +1089,7 @@ class TargetKPIController extends Controller
 
         $idUser = $request->idUser;
         $typeGet = $request->typeGet;
+        $limit = $request->input('limit', 10); // Parameter paginasi
 
         if (filled($idUser) && filled($typeGet)) {
             $karyawan = Karyawan::find($idUser);
@@ -1133,7 +1134,8 @@ class TargetKPIController extends Controller
             });
         }
 
-        $detailList = $query->get();
+        // Mengganti get() dengan paginate() untuk efisiensi memori
+        $paginatedData = $query->paginate($limit);
 
         $data = [
             'detail' => $detailList
@@ -1144,42 +1146,43 @@ class TargetKPIController extends Controller
                         return null;
                     }
 
-                    $tenggat_waktu = null;
-                    $jangka = strtolower($detail->dataTarget?->jangka_target ?? '');
-                    $detailJangka = $detail->detail_jangka;
+            $tenggat_waktu = null;
+            $jangka = strtolower($detail->dataTarget?->jangka_target ?? '');
+            $detailJangka = $detail->detail_jangka;
 
-                    switch ($jangka) {
-                        case 'tahunan':
-                            $year = (int) $detailJangka;
-                            $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
-                            break;
-                    }
+            if ($jangka === 'tahunan') {
+                $year = (int) $detailJangka;
+                $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
+            }
 
                     $personId = filled($idUser) ? (int) $idUser : null;
                     $progress = $this->resolveProgress($item, $personId);
+            return [
+                'id' => $item->id,
+                'pembuat' => $item->karyawan->nama_lengkap ?? null,
+                'id_pembuat' => $item->id_pembuat,
+                'judul' => $item->judul,
+                'deskripsi' => $item->deskripsi,
+                'jabatan' => $item->detailTargetKPI->pluck('jabatan')->unique()->values(),
+                'divisi' => $item->detailTargetKPI->pluck('divisi')->unique()->values(),
+                'asistant_route' => $detail->dataTarget?->asistant_route,
+                'jangka_target' => $detail->dataTarget?->jangka_target,
+                'detail_jangka' => $detail->detail_jangka,
+                'tipe_target' => $detail->dataTarget?->tipe_target,
+                'nilai_target' => $detail->dataTarget?->nilai_target,
+                'manual_value' => $detail->manual_value,
+                'status' => $item->status,
+                'created_at' => $item->created_at,
+                'tenggat_waktu' => $tenggat_waktu,
+                'progress' => $progress,
+            ];
+        })->filter()->values();
 
-                    return [
-                        'id' => $item->id,
-                        'pembuat' => $item->karyawan->nama_lengkap ?? null,
-                        'id_pembuat' => $item->id_pembuat,
-                        'judul' => $item->judul,
-                        'deskripsi' => $item->deskripsi,
-                        'jabatan' => $item->detailTargetKPI->pluck('jabatan')->unique()->values(),
-                        'divisi' => $item->detailTargetKPI->pluck('divisi')->unique()->values(),
-                        'asistant_route' => $detail->dataTarget?->asistant_route,
-                        'jangka_target' => $detail->dataTarget?->jangka_target,
-                        'detail_jangka' => $detail->detail_jangka,
-                        'tipe_target' => $detail->dataTarget?->tipe_target,
-                        'nilai_target' => $detail->dataTarget?->nilai_target,
-                        'manual_value' => $detail->manual_value,
-                        'status' => $item->status,
-                        'created_at' => $item->created_at,
-                        'tenggat_waktu' => $tenggat_waktu,
-                        'progress' => $progress,
-                    ];
-                })
-                ->filter()
-                ->values(),
+        // Menyisipkan kembali data yang telah ditransformasi ke dalam objek paginasi
+        $paginatedData->setCollection($transformedData);
+
+        $data = [
+            'detail' => $paginatedData, // Mengembalikan struktur paginasi standar Laravel
             'jabatan_list' => $dataJabatan,
             'routes' => DataTarget::select(
                 'asistant_route',
@@ -1485,7 +1488,7 @@ class TargetKPIController extends Controller
         $target = (float) $detail->nilai_target;
 
         $query = LeadProject::where('status', 'won')
-            ->whereYear('updated_at', $tahun);
+            ->where('tahun_periode', $tahun);
 
         if ($personId !== null) {
             $kodeKaryawan = Karyawan::where('id', $personId)->value('kode_karyawan');
@@ -2956,7 +2959,7 @@ class TargetKPIController extends Controller
         $target = (float) $detail->nilai_target;
 
         $query = LeadProject::where('status', 'won')
-            ->whereYear('updated_at', $tahun);
+            ->where('tahun_periode', $tahun);
 
         $totalSales = (float) ($query
             ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total_sales'))
@@ -2982,7 +2985,7 @@ class TargetKPIController extends Controller
             return 0;
         }
 
-        $totalLead = LeadProject::whereYear('created_at', $tahun)->count();
+        $totalLead = LeadProject::where('tahun_periode', $tahun)->count();
 
         $progress = ($totalLead / $target) * 100;
 
@@ -5913,14 +5916,14 @@ class TargetKPIController extends Controller
 
         // Query Project & LeadProject untuk breakdown
         $query = LeadProject::where('status', 'won')
-            ->whereYear('updated_at', $tahun);
+            ->where('tahun_periode', $tahun);
 
         if ($kodeKaryawan) {
             $query->where('lead_projects.sales_id', $kodeKaryawan);
         }
 
-        $sales = $query->select('lead_projects.updated_at', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
-            ->groupBy('lead_projects.updated_at')
+        $sales = $query->select('lead_projects.tahun_periode', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
+            ->groupBy('lead_projects.tahun_periode')
             ->get();
 
         $totalSales = 0;
@@ -5929,7 +5932,7 @@ class TargetKPIController extends Controller
         $triwulanDataTemp = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
 
         foreach ($sales as $row) {
-            $date = Carbon::parse($row->updated_at);
+            $date = Carbon::parse($row->tahun_periode);
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
             $total = (float) ($row->total ?? 0);
@@ -6030,11 +6033,10 @@ class TargetKPIController extends Controller
                 $salesKey = $karyawan->kode_karyawan;
                 if (!$salesKey) continue;
 
-                $salesRevenue = LeadProject::where('status', '!=', 'lost')
-                    ->join('projects', 'lead_projects.id', '=', 'projects.lead_id')
-                    ->whereYear('projects.tanggal_awal', $tahun)
+                $salesRevenue = LeadProject::where('status','won')
+                    ->where('lead_projects.tahun_periode', $tahun)
                     ->where('lead_projects.sales_id', $salesKey)
-                    ->select(DB::raw('SUM(projects.nilai_proyek) as total'))
+                    ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
                     ->value('total');
 
                 $salesRevenue = (float) ($salesRevenue ?? 0);
@@ -7010,7 +7012,18 @@ class TargetKPIController extends Controller
         $personId = 0;
 
         if (is_null($detail) || is_null($detail->manual_value)) {
-            return 0;
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'dataManual' => [
+                    'manual_document' => $detail->manual_document,
+                ],
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
@@ -7082,7 +7095,18 @@ class TargetKPIController extends Controller
         $personId = 0;
 
         if (is_null($detail) || is_null($detail->manual_value)) {
-            return 0;
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'dataManual' => [
+                    'manual_document' => $detail->manual_document,
+                ],
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
@@ -9989,14 +10013,14 @@ class TargetKPIController extends Controller
         $karyawanData = null;
 
         $query = LeadProject::where('status', 'won')
-            ->whereYear('updated_at', $tahun);
+            ->where('tahun_periode', $tahun);
 
         if ($kodeKaryawan) {
             $query->where('lead_projects.sales_id', $kodeKaryawan);
         }
 
-        $sales = $query->select('lead_projects.updated_at', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
-            ->groupBy('lead_projects.updated_at')
+        $sales = $query->select('lead_projects.tahun_periode', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
+            ->groupBy('lead_projects.tahun_periode')
             ->get();
 
         $totalSales = 0;
@@ -10005,7 +10029,7 @@ class TargetKPIController extends Controller
         $triwulanDataTemp = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
 
         foreach ($sales as $row) {
-            $date = Carbon::parse($row->tanggal_awal);
+            $date = Carbon::parse($row->tahun_periode);
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
             $total = (float) ($row->total ?? 0);
@@ -10098,11 +10122,10 @@ class TargetKPIController extends Controller
             $salesKey = $karyawan->kode_karyawan;
             if (!$salesKey) continue;
 
-            $salesRevenue = LeadProject::where('status', '!=', 'lost')
-                ->join('projects', 'lead_projects.id', '=', 'projects.lead_id')
-                ->whereYear('projects.tanggal_awal', $tahun)
+            $salesRevenue = LeadProject::where('status', 'won')
+                ->where('lead_projects.tahun_periode', $tahun)
                 ->where('lead_projects.sales_id', $salesKey)
-                ->select(DB::raw('SUM(projects.nilai_proyek) as total'))
+                ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
                 ->value('total');
 
             $salesRevenue = (float) ($salesRevenue ?? 0);
@@ -10187,9 +10210,9 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $leads = LeadProject::whereYear('created_at', $tahun)
-            ->selectRaw('DATE(created_at) as tanggal, COUNT(*) as total')
-            ->groupByRaw('DATE(created_at)')
+        $leads = LeadProject::where('tahun_periode', $tahun)
+            ->selectRaw('DATE(tahun_periode) as tanggal, COUNT(*) as total')
+            ->groupByRaw('DATE(tahun_periode)')
             ->get();
 
         $totalLead = 0;
@@ -14186,7 +14209,7 @@ class TargetKPIController extends Controller
                     $processedTargets->push([
                         'id'              => $target->id,
                         'judul'           => $target->judul,
-                        'asistant_route'  => $target->asistant_route,
+                        'asistant_route'  => $detail->dataTarget->asistant_route,
                         'periode'         => $detail->jangka_target . ' ' . $detail->detail_jangka,
                         'tipe_target'     => $tipeTarget,
                         'target'          => $nilaiTarget,
@@ -14421,10 +14444,10 @@ class TargetKPIController extends Controller
                 'progress' => $avgTarget,
                 'status' => $status,
             ];
-        }
 
         // Rata-rata progress per karyawan
         $avgPerEmployee = [];
+        
         foreach ($employeeProgressMap as $personId => $progressList) {
             if (!empty($progressList)) {
                 $avgPerEmployee[$personId] = round(array_sum($progressList) / count($progressList), 2);
@@ -16907,6 +16930,7 @@ class TargetKPIController extends Controller
             'akurasi kelengkapan data penjualan',
             'ketepatan waktu po',
             'kualitas dokumentasi support dan proctor',
+            'pendapatan penjualan project',
         ];
 
         $details = [];
@@ -17065,6 +17089,7 @@ class TargetKPIController extends Controller
             'laporan mom' => $this->calculateLaporanMOM($target, $personId),
             'akurasi kelengkapan data penjualan' => $this->calculateAkurasiKelengkapanDataPenjualan($target, $personId),
             'todo administrasi' => $this->calculateTodoAdministrasi($target),
+            'pendapatan penjualan project' => $this->calculatePendapatanPenjualanProject($target, $personId),
             default => 0
         };
     }

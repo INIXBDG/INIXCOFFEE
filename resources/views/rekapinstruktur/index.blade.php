@@ -1069,6 +1069,7 @@
                         $('#linkRKM_edit').prop("href", '/rkm/' + rkmData.materi_key + 'ixb' + tanggal + 'ie' + hunta +'ie' + lanbu + 'ixb' + kelas);
                         $('#linkLevel_edit').prop("href", '/cekLevel/' + rkmData.materi_key);
                         $('#materi_key_edit').val(rkmData.materi_key);
+                        $('#feedback_inst_edit').val(data.data.feedback);
                         // Menentukan cek berdasarkan instruktur_key
                         let cek = null;
                         if (rkmData.instruktur_key === instruktur.kode_karyawan) {
@@ -1093,45 +1094,45 @@
             }
         });
     }
-    function generatefeedbackedit(id, cek) {
-        var temp = id.split(',');
-		var totalNilai = 0;
-		var totalCount = 0;
+    // function generatefeedbackedit(id, cek) {
+    //     var temp = id.split(',');
+	// 	var totalNilai = 0;
+	// 	var totalCount = 0;
 
-		var requests = temp.map(function(item) {
-			return $.ajax({
-				url: "{{ route('getNilaiFeedbackInstRKM', ['id' => ':id']) }}".replace(':id', item),
-				type: "GET",
-				dataType: "json"
-			}).then(function(data) {
-				data.feedbacks.forEach(function(fb) {
-					if (cek === 'Instruktur1') {
-						if (fb.instruktur) {
-							totalNilai += fb.instruktur;
-							totalCount++;
-						}
-					} else if (cek === 'Instruktur2') {
-						if (fb.instruktur2) {
-							totalNilai += fb.instruktur2;
-							totalCount++;
-						}
-					} else if (cek === 'Asisten') {
-						if (fb.asisten) {
-							totalNilai += fb.asisten;
-							totalCount++;
-						}
-					}
-				});
-			}).catch(function(error) {
-				console.error("Error fetching data for ID " + item, error);
-			});
-		});
+	// 	var requests = temp.map(function(item) {
+	// 		return $.ajax({
+	// 			url: "{{ route('getNilaiFeedbackInstRKM', ['id' => ':id']) }}".replace(':id', item),
+	// 			type: "GET",
+	// 			dataType: "json"
+	// 		}).then(function(data) {
+	// 			data.feedbacks.forEach(function(fb) {
+	// 				if (cek === 'Instruktur1') {
+	// 					if (fb.instruktur) {
+	// 						totalNilai += fb.instruktur;
+	// 						totalCount++;
+	// 					}
+	// 				} else if (cek === 'Instruktur2') {
+	// 					if (fb.instruktur2) {
+	// 						totalNilai += fb.instruktur2;
+	// 						totalCount++;
+	// 					}
+	// 				} else if (cek === 'Asisten') {
+	// 					if (fb.asisten) {
+	// 						totalNilai += fb.asisten;
+	// 						totalCount++;
+	// 					}
+	// 				}
+	// 			});
+	// 		}).catch(function(error) {
+	// 			console.error("Error fetching data for ID " + item, error);
+	// 		});
+	// 	});
 
-		Promise.all(requests).then(function() {
-			var averageFeedback = totalCount > 0 ? (totalNilai / totalCount) : 0;
-			$('#feedback_inst_edit').val(averageFeedback.toFixed(2));
-		});
-    }
+	// 	Promise.all(requests).then(function() {
+	// 		var averageFeedback = totalCount > 0 ? (totalNilai / totalCount) : 0;
+	// 		$('#feedback_inst_edit').val(averageFeedback.toFixed(2));
+	// 	});
+    // }
     function generatefeedback(id) {
 		var temp = id.split(', '); // Pisahkan ID menjadi array
 		var totalInstruktur1 = 0;

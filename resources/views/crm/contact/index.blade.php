@@ -281,17 +281,17 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="cp">Contact Person (CP)</label>
-                                    <input type="text" class="form-control" id="cp" name="cp" required>
+                                    <input type="text" class="form-control" id="cp" name="cp">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="no_telp">No Telepon</label>
-                                    <input type="text" class="form-control" id="no_telp" name="no_telp" required>
+                                    <input type="text" class="form-control" id="no_telp" name="no_telp">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="email">Email</label>
-                                    <input type="email" class="form-control" id="email" name="email" required>
+                                    <input type="email" class="form-control" id="email" name="email">
                                 </div>
 
                                 <div class="mb-3">
