@@ -790,4 +790,19 @@ public function terbilang($nilai)
 
     return ucwords(trim($this->formatTerbilang($nilai))) . " Rupiah";
 }
+
+public function deleteAll($id)
+{
+    $invoice = Invoice::findOrFail($id);
+    $kwitansi = Kwitansi::where('invoice_id', $id)->first();
+
+    if ($kwitansi) {
+        $kwitansi->delete();
+    }
+
+    // Hapus invoice
+    $invoice->delete();
+
+    return redirect()->route('invoice.index')->with('success', 'Invoice dan Kwitansi terkait berhasil dihapus.');
+}
 }
