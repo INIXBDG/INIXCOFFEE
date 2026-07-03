@@ -956,28 +956,6 @@
                 $preview.removeClass('d-none');
             });
 
-            $.ajax({
-                url: '{{ route('kpi.getDataTarget') }}',
-                type: 'GET',
-                success: function(response) {
-                    const routeSelect = $('#assistant_route');
-                    if (routeSelect.length && response.routes) {
-                        routeSelect.empty().append('<option selected disabled>-- Pilih Assistant Route --</option>');
-                        response.routes.forEach(function(route) {
-                            routeSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
-                        });
-                    }
-                    const jabatanSelect = $('#jabatan');
-                    if (jabatanSelect.length && response.jabatan_list) {
-                        jabatanSelect.empty();
-                        response.jabatan_list.forEach(function(jab) {
-                            jabatanSelect.append(`<option value="${jab}">${jab}</option>`);
-                        });
-                        jabatanSelect.trigger('change');
-                    }
-                }
-            });
-
             $('#jabatan').off('change').on('change', function() {
                 const selectedJabatans = $(this).val() || [];
                 const karyawanSelect = $('#karyawan');
