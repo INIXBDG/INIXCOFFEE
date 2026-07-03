@@ -10,6 +10,7 @@ use App\Models\TunjanganKaryawan;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\PerhitunganTunjanganHR;
+use App\Models\Pph21Karyawan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -75,7 +76,7 @@ class payrollController extends Controller
 
             $payrollList = $eligibleKaryawan->map(function ($emp) use ($tunjanganData, $periodStart, $periodEnd) {
                 $items = $tunjanganData->get($emp->id, collect());
-                $gajiPokok = (float) ($emp->gaji_pokok ?? ($emp->gaji ?? 0));
+                $gajiPokok = (float) ($emp->gaji_pokok ?? ($emp->gaji + $emp->tunjangan_jabatan ?? 0));
 
                 $totalTunjangan = $items->where('jenistunjangan.tipe', 'Tunjangan')->sum('total');
                 $totalPotongan = abs($items->where('jenistunjangan.tipe', 'Potongan')->sum('total'));
@@ -132,9 +133,11 @@ class payrollController extends Controller
                 'sudah_dihitung' => $payrollList->where('status', 'Sudah Dihitung')->count(),
                 'belum_dihitung' => $payrollList->where('status', 'Belum Dihitung')->count(),
                 'total_gaji_pokok' => $payrollList->sum('gaji_pokok'),
-                'total_tunjangan' => $payrollList->filter(function($emp) {
-                    return $emp['tunjangan_bersih'] > 0;
-                })->sum('tunjangan_bersih'),
+                'total_tunjangan' => $payrollList
+                    ->filter(function ($emp) {
+                        return $emp['tunjangan_bersih'] > 0;
+                    })
+                    ->sum('tunjangan_bersih'),
                 'total_potongan' => $payrollList->sum('total_potongan'),
                 'total_gaji_bersih' => $payrollList->sum('gaji_bersih'),
                 'avg_gaji_bersih' => $totalRecords > 0 ? round($payrollList->sum('gaji_bersih') / $totalRecords, 0) : 0,
@@ -266,25 +269,19 @@ class payrollController extends Controller
         $eligibleKaryawan = $baseQuery->get();
         $eligibleIds = $eligibleKaryawan->pluck('id')->toArray();
 
-        $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')
-            ->whereIn('id_karyawan', $eligibleIds)
-            ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->get()
-            ->groupBy('id_karyawan');
+        $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')->whereIn('id_karyawan', $eligibleIds)->where('bulan', $bulan)->where('tahun', $tahun)->get()->groupBy('id_karyawan');
 
         $periodStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
         $periodEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
 
-        // Process all data
         $payrollList = $eligibleKaryawan->map(function ($emp) use ($tunjanganData, $periodStart, $periodEnd) {
             $items = $tunjanganData->get($emp->id, collect());
-            $gajiPokok = (float) ($emp->gaji_pokok ?? ($emp->gaji ?? 0));
+            $gajiPokok = (float) ($emp->gaji_pokok ?? ($emp->gaji + $emp->tunjangan_jabatan ?? 0));
 
             $totalTunjangan = $items->where('jenistunjangan.tipe', 'Tunjangan')->sum('total');
             $totalPotongan = abs($items->where('jenistunjangan.tipe', 'Potongan')->sum('total'));
             $tunjanganBersih = $totalTunjangan - $totalPotongan;
-            
+
             if ($tunjanganBersih < 0) {
                 $tunjanganBersih = 0;
             }
@@ -311,12 +308,10 @@ class payrollController extends Controller
             ];
         });
 
-        // === CREATE EXCEL ===
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Payroll');
 
-        // Styles
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 12],
             'fill' => [
@@ -345,14 +340,12 @@ class payrollController extends Controller
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '000000']]],
         ];
 
-        // Title
         $sheet->mergeCells('A1:K1');
         $sheet->setCellValue('A1', 'LAPORAN PAYROLL');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getRowDimension(1)->setRowHeight(30);
 
-        // Subtitle
         $bulanNama = date('F', mktime(0, 0, 0, $bulan, 10));
         $sheet->mergeCells('A2:K2');
         $sheet->setCellValue('A2', "Periode: {$bulanNama} {$tahun}");
@@ -360,17 +353,11 @@ class payrollController extends Controller
         $sheet->getStyle('A2')->getFont()->setItalic(true);
         $sheet->getRowDimension(2)->setRowHeight(20);
 
-        // Headers
-        $headers = [
-            'No', 'Nama', 'Kode', 'Divisi', 'Jabatan', 
-            'Gaji Pokok', 'Total Tunjangan', 'Tunjangan Bersih', 
-            'Total Potongan', 'Gaji Bersih', 'Status'
-        ];
+        $headers = ['No', 'Nama', 'Kode', 'Divisi', 'Jabatan', 'Gaji Pokok', 'Total Tunjangan', 'Tunjangan Bersih', 'Total Potongan', 'Gaji Bersih', 'Status'];
         $sheet->fromArray($headers, null, 'A3');
         $sheet->getStyle('A3:K3')->applyFromArray($headerStyle);
         $sheet->getRowDimension(3)->setRowHeight(25);
 
-      // Data - ALL RECORDS
         $rowNum = 4;
         $i = 1;
         $totals = [
@@ -394,29 +381,25 @@ class payrollController extends Controller
             $sheet->setCellValue("J{$rowNum}", $row['gaji_bersih']);
             $sheet->setCellValue("K{$rowNum}", $row['status']);
 
-            // Accumulate totals
-            $totals['gaji_pokok'] += (float)$row['gaji_pokok'];
-            $totals['total_tunjangan'] += (float)$row['total_tunjangan'];
-            $totals['tunjangan_bersih'] += (float)$row['tunjangan_bersih'];
-            $totals['total_potongan'] += (float)$row['total_potongan'];
-            $totals['gaji_bersih'] += (float)$row['gaji_bersih'];
+            $totals['gaji_pokok'] += (float) $row['gaji_pokok'];
+            $totals['total_tunjangan'] += (float) $row['total_tunjangan'];
+            $totals['tunjangan_bersih'] += (float) $row['tunjangan_bersih'];
+            $totals['total_potongan'] += (float) $row['total_potongan'];
+            $totals['gaji_bersih'] += (float) $row['gaji_bersih'];
 
             $rowNum++;
         }
 
-        // Apply styles to data
         $lastRow = $rowNum - 1;
         if ($lastRow >= 4) {
             $sheet->getStyle("A4:K{$lastRow}")->applyFromArray($dataStyle);
             $sheet->getStyle("F4:J{$lastRow}")->applyFromArray($currencyStyle);
-            
-            // Auto-size columns
+
             foreach (range('A', 'K') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
         }
 
-        // Total Row
         $totalRow = $rowNum;
         $sheet->mergeCells("A{$totalRow}:E{$totalRow}");
         $sheet->setCellValue("A{$totalRow}", 'TOTAL');
@@ -425,34 +408,37 @@ class payrollController extends Controller
         $sheet->setCellValue("H{$totalRow}", $totals['tunjangan_bersih']);
         $sheet->setCellValue("I{$totalRow}", $totals['total_potongan']);
         $sheet->setCellValue("J{$totalRow}", $totals['gaji_bersih']);
-        
+
         $sheet->getStyle("A{$totalRow}:K{$totalRow}")->applyFromArray($totalStyle);
         $sheet->getStyle("F{$totalRow}:J{$totalRow}")->applyFromArray($currencyStyle);
-        $sheet->getStyle("A{$totalRow}:E{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet
+            ->getStyle("A{$totalRow}:E{$totalRow}")
+            ->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-        // Summary Box
         $summaryRow = $totalRow + 2;
         $sheet->mergeCells("A{$summaryRow}:C{$summaryRow}");
         $sheet->setCellValue("A{$summaryRow}", 'Ringkasan:');
-        $sheet->getStyle("A{$summaryRow}")->getFont()->setBold(true);
-        
+        $sheet
+            ->getStyle("A{$summaryRow}")
+            ->getFont()
+            ->setBold(true);
+
         $summaryRow++;
         $sheet->setCellValue("A{$summaryRow}", 'Total Karyawan:');
         $sheet->setCellValue("B{$summaryRow}", count($payrollList));
-        
+
         $summaryRow++;
         $sheet->setCellValue("A{$summaryRow}", 'Total Gaji Bersih:');
         $sheet->setCellValue("B{$summaryRow}", $totals['gaji_bersih']);
         $sheet->getStyle("B{$summaryRow}")->applyFromArray($currencyStyle);
-        
+
         $sheet->getStyle("A{$summaryRow}:B{$summaryRow}")->applyFromArray($dataStyle);
 
-        // Filename
         $filename = "Payroll_{$bulan}_{$tahun}.xlsx";
 
-        // Output
         $writer = new Xlsx($spreadsheet);
-        
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
@@ -462,7 +448,7 @@ class payrollController extends Controller
         header('Pragma: public');
 
         $writer->save('php://output');
-        exit;
+        exit();
     }
 
     public function exportPayrollPdf(Request $request)
@@ -499,24 +485,19 @@ class payrollController extends Controller
         $eligibleIds = $eligibleKaryawan->pluck('id')->toArray();
         $totalEligible = count($eligibleIds);
 
-        $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')
-            ->whereIn('id_karyawan', $eligibleIds)
-            ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->get()
-            ->groupBy('id_karyawan');
+        $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')->whereIn('id_karyawan', $eligibleIds)->where('bulan', $bulan)->where('tahun', $tahun)->get()->groupBy('id_karyawan');
 
         $periodStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
         $periodEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
 
         $payrollList = $eligibleKaryawan->map(function ($emp) use ($tunjanganData, $periodStart, $periodEnd) {
             $items = $tunjanganData->get($emp->id, collect());
-            $gajiPokok = (float) ($emp->gaji_pokok ?? ($emp->gaji ?? 0));
+            $gajiPokok = (float) ($emp->gaji_pokok ?? ($emp->gaji + $emp->tunjangan_jabatan ?? 0));
 
             $totalTunjangan = $items->where('jenistunjangan.tipe', 'Tunjangan')->sum('total');
             $totalPotongan = abs($items->where('jenistunjangan.tipe', 'Potongan')->sum('total'));
             $tunjanganBersih = $totalTunjangan - $totalPotongan;
-            
+
             if ($tunjanganBersih < 0) {
                 $tunjanganBersih = 0;
             }
@@ -548,9 +529,11 @@ class payrollController extends Controller
             'sudah_dihitung' => $payrollList->where('status', 'Sudah Dihitung')->count(),
             'belum_dihitung' => $payrollList->where('status', 'Belum Dihitung')->count(),
             'total_gaji_pokok' => $payrollList->sum('gaji_pokok'),
-            'total_tunjangan' => $payrollList->filter(function($emp) {
-                return $emp['tunjangan_bersih'] > 0;
-            })->sum('tunjangan_bersih'),
+            'total_tunjangan' => $payrollList
+                ->filter(function ($emp) {
+                    return $emp['tunjangan_bersih'] > 0;
+                })
+                ->sum('tunjangan_bersih'),
             'total_potongan' => $payrollList->sum('total_potongan'),
             'total_gaji_bersih' => $payrollList->sum('gaji_bersih'),
             'avg_gaji_bersih' => $payrollList->count() > 0 ? round($payrollList->sum('gaji_bersih') / $payrollList->count(), 0) : 0,
@@ -664,7 +647,7 @@ class payrollController extends Controller
                 'new_hires' => $newHires,
                 'actives' => $actives,
                 'resigns' => $resigns,
-                'total_gaji' => (float) (LogGaji::where('bulan', $m)->where('tahun', $tahun)->sum('gaji') ?? 0),
+                'total_gaji' => (float) (LogGaji::where('bulan', $m)->where('tahun', $tahun)->selectRaw('SUM(gaji + tunjangan_jabatan) as total')->value('total') ?? 0),
             ];
         }
         return $trend;
@@ -681,13 +664,21 @@ class payrollController extends Controller
         return $count % 2 === 0 ? round(($values[$mid - 1] + $values[$mid]) / 2, 0) : round($values[$mid], 0);
     }
 
-    //perhitungan BPJS
     public function indexPerhitungan(Request $request)
     {
-        $karyawans = karyawan::where('status_aktif', '1')
-            ->where('divisi', '!=', 'Pilih Divisi')
-            ->with(['divisi'])
-            ->orderBy('nama_lengkap', 'asc')
+        $karyawans = Karyawan::with('divisi')
+            ->where(function ($query) {
+                $query->whereIn('jabatan', ['Direktur', 'Direktur Utama'])
+                    ->where('status_aktif', '1');
+            })
+            ->orWhere(function ($query) {
+                $query->where('status_aktif', '1')
+                    ->whereNotIn('jabatan', ['Outsource', 'Pilih Jabatan'])
+                    ->where('kode_karyawan', 'not like', 'OL%')
+                    ->where('divisi', '!=', 'Direksi')
+                    ->whereNotNull('nip');
+            })
+            ->orderBy('nama_lengkap')
             ->get();
 
         $payrollsCollection = PerhitunganTunjanganHR::with(['karyawan.divisi', 'createdBy'])
@@ -703,7 +694,7 @@ class payrollController extends Controller
         $totalKaryawan = $karyawans->count();
         $sudahPayroll = $payrollBulanIni->count();
         $belumPayroll = $totalKaryawan - $sudahPayroll;
-        $totalGaji = $karyawans->sum('gaji');
+        $totalGaji = $karyawans->sum('gaji') + $karyawans->sum('tunjangan_jabatan');
 
         return view('HR.payroll.indexPerhitungan', compact('karyawans', 'payrollsCollection', 'totalKaryawan', 'sudahPayroll', 'belumPayroll', 'totalGaji', 'bulanSekarang', 'tahunSekarang'));
     }
@@ -716,7 +707,15 @@ class payrollController extends Controller
             'tahun' => 'required|integer',
         ]);
 
-        $karyawan = karyawan::with('divisi')->whereNotNull('nip')->findOrFail($request->karyawan_id);
+        $karyawan = karyawan::with('divisi')->findOrFail($request->karyawan_id);
+
+        $pph21Data = Pph21Karyawan::where('karyawan_id', $request->karyawan_id)->first();
+        $gajiDasar = (int) ($karyawan->gaji_pokok ?? ($karyawan->gaji + $karyawan->tunjangan_jabatan ?? 0));
+        $pph21Bulanan = 0;
+        
+        if ($pph21Data && $pph21Data->ptkp) {
+            $pph21Bulanan = $this->hitungPph21Bulanan($gajiDasar, $pph21Data->ptkp);
+        }
 
         $tunjanganList = TunjanganKaryawan::where('id_karyawan', $request->karyawan_id)
             ->where('bulan', $request->bulan)
@@ -739,7 +738,20 @@ class payrollController extends Controller
             ->values()
             ->toArray();
 
-        $existingPayroll = PerhitunganTunjanganHR::where('karyawan_id', $request->karyawan_id)->where('bulan', $request->bulan)->where('tahun', $request->tahun)->first();
+        $existingPayroll = PerhitunganTunjanganHR::where('karyawan_id', $request->karyawan_id)
+            ->where('bulan', $request->bulan)
+            ->where('tahun', $request->tahun)
+            ->first();
+
+        $defaultUmk = $existingPayroll->umk_bandung ?? 2100000;
+        $defaultGajiPokok = $existingPayroll->gaji_pokok ?? $gajiDasar;
+        $defaultSalaryBpjstk = $existingPayroll->salary_bpjstk ?? $defaultGajiPokok;
+
+        $defaultPph21 = $existingPayroll->potongan_pph21 ?? $pph21Bulanan;
+
+        if ($existingPayroll && !empty($existingPayroll->tunjangan_detail)) {
+            $tunjanganDetail = $existingPayroll->tunjangan_detail;
+        }
 
         return response()->json([
             'success' => true,
@@ -749,11 +761,14 @@ class payrollController extends Controller
                 'nama' => $karyawan->nama_lengkap,
                 'jabatan' => $karyawan->jabatan ?? '-',
                 'divisi' => $karyawan->divisi->nama_divisi ?? '-',
-                'gaji_pokok' => (int) ($karyawan->gaji ?? 0),
-                'umk_bandung' => 2100000,
+                'gaji_pokok' => $defaultGajiPokok,
+                'salary_bpjstk' => $defaultSalaryBpjstk,
+                'umk_bandung' => $defaultUmk,
+                'pph21_bulanan' => $defaultPph21,
+                'has_pph21' => $pph21Data ? true : false,
             ],
             'tunjangan_detail' => $tunjanganDetail,
-            'has_tunjangan' => $tunjanganList->isNotEmpty(),
+            'has_tunjangan' => $tunjanganList->isNotEmpty() || ($existingPayroll && !empty($existingPayroll->tunjangan_detail)),
             'existing_payroll' => $existingPayroll ? ['id' => $existingPayroll->id, 'status' => $existingPayroll->status] : null,
         ]);
     }
@@ -763,13 +778,13 @@ class payrollController extends Controller
         $result = [];
         foreach ((array) $tunjangan as $t) {
             $total = (int) ($t['total'] ?? 0);
-            $nama = $t['nama'] ?? null;
-            if ($total <= 0 && empty($nama)) {
+            $nama = trim($t['nama'] ?? '');
+            if ($total <= 0 && $nama === '') {
                 continue;
             }
             $result[] = [
                 'jenis_tunjangan_id' => isset($t['jenis_tunjangan_id']) && $t['jenis_tunjangan_id'] !== '' ? (int) $t['jenis_tunjangan_id'] : null,
-                'nama' => $nama ?: 'Lainnya',
+                'nama' => $nama !== '' ? $nama : 'Lainnya',
                 'total' => $total,
             ];
         }
@@ -784,7 +799,7 @@ class payrollController extends Controller
             'tahun' => 'required|integer',
             'gaji_pokok' => 'required|numeric|min:0',
             'salary_bpjstk' => 'required|numeric|min:0',
-            'umk_bandung' => 'nullable|numeric|min:0',
+            'umk_bandung' => 'required|numeric|min:0',
             'tunjangan' => 'nullable|array',
             'tunjangan.*.jenis_tunjangan_id' => 'nullable',
             'tunjangan.*.nama' => 'nullable|string',
@@ -846,8 +861,6 @@ class payrollController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
-            LogGaji::updateOrCreate(['id_karyawan' => $request->karyawan_id, 'bulan' => $request->bulan, 'tahun' => $request->tahun], ['gaji' => $request->gaji_pokok]);
-
             DB::commit();
 
             return response()->json([
@@ -885,6 +898,7 @@ class payrollController extends Controller
         $request->validate([
             'gaji_pokok' => 'required|numeric|min:0',
             'salary_bpjstk' => 'required|numeric|min:0',
+            'umk_bandung' => 'required|numeric|min:0',
             'tunjangan' => 'nullable|array',
             'tunjangan.*.jenis_tunjangan_id' => 'nullable',
             'tunjangan.*.nama' => 'nullable|string',
@@ -938,8 +952,6 @@ class payrollController extends Controller
                 'total_biaya_perusahaan' => $totalBiayaPerusahaan,
                 'updated_by' => Auth::id(),
             ]);
-
-            LogGaji::updateOrCreate(['id_karyawan' => $perhitungan->karyawan_id, 'bulan' => $perhitungan->bulan, 'tahun' => $perhitungan->tahun], ['gaji' => $request->gaji_pokok]);
 
             DB::commit();
 
@@ -1083,7 +1095,7 @@ class payrollController extends Controller
                 'jabatan' => $emp->jabatan ?? '-',
                 'divisi' => $emp->divisi->nama_divisi ?? '-',
                 'status_aktif' => $emp->status_aktif == '1' ? 'Aktif' : 'Nonaktif',
-                'gaji_pokok' => (int) ($emp->gaji ?? 0),
+                'gaji_pokok' => (int) ($emp->gaji + $emp->tunjangan_jabatan ?? 0),
                 'tunjangan_preview' => $tunjanganData,
                 'payroll' => $payroll
                     ? [
@@ -1127,22 +1139,20 @@ class payrollController extends Controller
         }
 
         $totalGajiBulanan = $payrolls->sum('gaji_pokok');
-        $totalBPJSTKPerusahaan = $payrolls->sum(function($p) {
-            return ($p->jht_perusahaan ?? 0) + ($p->jkm_perusahaan ?? 0) + 
-                ($p->jkk_perusahaan ?? 0) + ($p->jp_perusahaan ?? 0);
+        $totalBPJSTKPerusahaan = $payrolls->sum(function ($p) {
+            return ($p->jht_perusahaan ?? 0) + ($p->jkm_perusahaan ?? 0) + ($p->jkk_perusahaan ?? 0) + ($p->jp_perusahaan ?? 0);
         });
         $totalBPJSKesPerusahaan = $payrolls->sum('bpjs_kes_perusahaan');
-        $totalBPJSTKKaryawan = $payrolls->sum(function($p) {
+        $totalBPJSTKKaryawan = $payrolls->sum(function ($p) {
             return ($p->jht_karyawan ?? 0) + ($p->jp_karyawan ?? 0);
         });
         $totalBPJSKesKaryawan = $payrolls->sum('bpjs_kes_karyawan');
-        
+
         $totalDitanggungPerusahaan = $totalBPJSTKPerusahaan + $totalBPJSKesPerusahaan;
         $totalDitanggungKaryawan = $totalBPJSTKKaryawan + $totalBPJSKesKaryawan;
-        
-        // Hitung untuk 1 tahun
+
         $totalGajiTahunan = $totalGajiBulanan * 12;
-        $batasMaksimal = $totalGajiTahunan * 0.40; // 40%
+        $batasMaksimal = $totalGajiTahunan * 0.4;
         $totalBPJSTahunan = $totalDitanggungPerusahaan * 12;
         $persentase = $totalGajiBulanan > 0 ? ($totalDitanggungPerusahaan / $totalGajiBulanan) * 100 : 0;
 
@@ -1193,7 +1203,6 @@ class payrollController extends Controller
                 'jp_karyawan' => $payrolls->sum('jp_karyawan'),
                 'kes_karyawan' => $payrolls->sum('bpjs_kes_karyawan'),
             ],
-            // Tambahkan ringkasan total biaya BPJS
             'ringkasan_biaya' => [
                 'total_gaji_bulanan' => $totalGajiBulanan,
                 'total_gaji_tahunan' => $totalGajiTahunan,
@@ -1247,6 +1256,42 @@ class payrollController extends Controller
         ];
     }
 
+    private function hitungPph21Bulanan($gajiDasar, $ptkpCode)
+    {
+        $ptkpBulanan = [
+            'TK/0' => 4500000, 'TK/1' => 4875000, 'TK/2' => 5250000, 'TK/3' => 5625000,
+            'K/0' => 4875000, 'K/1' => 5250000, 'K/2' => 5625000, 'K/3' => 6000000,
+        ];
+
+        if (!isset($ptkpBulanan[$ptkpCode]) || !$gajiDasar) {
+            return 0;
+        }
+
+        $gajiTahunan = $gajiDasar * 12;
+        $ptkpTahunan = $ptkpBulanan[$ptkpCode] * 12;
+        $pkp = max(0, $gajiTahunan - $ptkpTahunan);
+
+        $layers = [
+            ['limit' => 60000000, 'rate' => 0.05],
+            ['limit' => 250000000, 'rate' => 0.15],
+            ['limit' => 500000000, 'rate' => 0.25],
+            ['limit' => 5000000000, 'rate' => 0.30],
+            ['limit' => PHP_INT_MAX, 'rate' => 0.35],
+        ];
+
+        $pphTahunan = 0;
+        $prevLimit = 0;
+        foreach ($layers as $layer) {
+            if ($pkp <= 0) break;
+            $taxable = min($pkp, $layer['limit'] - $prevLimit);
+            $pphTahunan += $taxable * $layer['rate'];
+            $pkp -= $taxable;
+            $prevLimit = $layer['limit'];
+        }
+
+        return (int) round($pphTahunan / 12);
+    }
+
     private function respondError($message, $code = 422)
     {
         return response()->json(['success' => false, 'message' => $message], $code);
@@ -1255,67 +1300,56 @@ class payrollController extends Controller
     public function exportExcelPerhitungan(Request $request)
     {
         $data = $this->buildExportData($request);
-        
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        
-        // Set margin
+
         $sheet->getPageMargins()->setTop(0.5);
         $sheet->getPageMargins()->setRight(0.5);
         $sheet->getPageMargins()->setLeft(0.5);
         $sheet->getPageMargins()->setBottom(0.5);
-        
-        // Set orientation landscape
+
         $spreadsheet->getActiveSheet()->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
         $spreadsheet->getActiveSheet()->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
-        
+
         $row = 1;
         $col = 1;
-        
-        // Header
+
         $sheet->setCellValueByColumnAndRow($col, $row, 'LAPORAN PERHITUNGAN PAYROLL DAN BPJS');
         $sheet->mergeCellsByColumnAndRow(1, $row, 22, $row);
         $sheet->getStyleByColumnAndRow($col, $row)->getFont()->setBold(true)->setSize(14);
         $sheet->getStyleByColumnAndRow($col, $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $row++;
-        
+
         $sheet->setCellValueByColumnAndRow($col, $row, 'Periode: ' . $data['periode_label']);
         $sheet->mergeCellsByColumnAndRow(1, $row, 22, $row);
         $sheet->getStyleByColumnAndRow($col, $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $row++;
-        
+
         $sheet->setCellValueByColumnAndRow($col, $row, 'Dicetak: ' . now()->format('d M Y H:i'));
         $sheet->mergeCellsByColumnAndRow(1, $row, 22, $row);
         $row++;
-        $row++; // Empty row
-        
-        // Table Headers
-        $headers = [
-            'No', 'Nama', 'Status', 'Salary Bulan', 'Salary BPJSTK', 'Tunjangan', 'THP', 'UMK Bandung',
-            'JHT Per (3.70%)', 'JKM Per (0.30%)', 'JKK Per (0.24%)', 'JP Per (2.00%)', 'Total BPJS Per',
-            'JHT Kar (2.00%)', 'JP Kar (1.00%)', 'Total BPJS Kar', 'Total Per+Kar',
-            'BPJS Kes Per (4%)', 'BPJS Kes Kar (1%)', 'Ditanggung Per', 'Ditanggung Kar', 'Salary THP Kar'
-        ];
-        
+        $row++;
+
+        $headers = ['No', 'Nama', 'Status', 'Salary Bulan', 'Salary BPJSTK', 'Tunjangan', 'THP', 'UMK Bandung', 'JHT Per (3.70%)', 'JKM Per (0.30%)', 'JKK Per (0.24%)', 'JP Per (2.00%)', 'Total BPJS Per', 'JHT Kar (2.00%)', 'JP Kar (1.00%)', 'Total BPJS Kar', 'Total Per+Kar', 'BPJS Kes Per (4%)', 'BPJS Kes Kar (1%)', 'Ditanggung Per', 'Ditanggung Kar', 'Salary THP Kar'];
+
         $col = 1;
         foreach ($headers as $header) {
             $sheet->setCellValueByColumnAndRow($col, $row, $header);
             $col++;
         }
-        
-        // Style headers
+
         $sheet->getStyleByColumnAndRow(1, $row, 22, $row)->getFont()->setBold(true);
         $sheet->getStyleByColumnAndRow(1, $row, 22, $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyleByColumnAndRow(1, $row, 22, $row)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
         $sheet->getStyleByColumnAndRow(1, $row, 22, $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
         $row++;
-        
-        // Data
+
         $totalGaji = 0;
         $totalDitanggungPer = 0;
         $totalDitanggungKar = 0;
         $no = 1;
-        
+
         foreach ($data['rows'] as $row_data) {
             $col = 1;
             $sheet->setCellValueByColumnAndRow($col++, $row, $no++);
@@ -1326,44 +1360,40 @@ class payrollController extends Controller
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['total_tunjangan']);
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['thp_bersih']);
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['umk_bandung']);
-            
-            // BPJS Perusahaan
+
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['jht_perusahaan']);
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['jkm_perusahaan']);
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['jkk_perusahaan']);
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['jp_perusahaan']);
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['total_bpjs_perusahaan']);
-            
-            // BPJS Karyawan
+
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['jht_karyawan']);
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['jp_karyawan']);
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['total_bpjs_karyawan']);
-            
+
             $total_bpjs = $row_data['total_bpjs_perusahaan'] + $row_data['total_bpjs_karyawan'];
             $sheet->setCellValueByColumnAndRow($col++, $row, $total_bpjs);
-            
+
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['bpjs_kes_perusahaan']);
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['bpjs_kes_karyawan']);
-            
+
             $ditanggung_per = $row_data['total_bpjs_perusahaan'] + $row_data['bpjs_kes_perusahaan'];
             $ditanggung_kar = $row_data['total_bpjs_karyawan'] + $row_data['bpjs_kes_karyawan'];
-            
+
             $sheet->setCellValueByColumnAndRow($col++, $row, $ditanggung_per);
             $sheet->setCellValueByColumnAndRow($col++, $row, $ditanggung_kar);
             $sheet->setCellValueByColumnAndRow($col++, $row, $row_data['thp_bersih']);
-            
-            // Style row
+
             $sheet->getStyleByColumnAndRow(1, $row, 22, $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
             $sheet->getStyleByColumnAndRow(4, $row, 22, $row)->getNumberFormat()->setFormatCode('#,##0.##');
             $sheet->getStyleByColumnAndRow(4, $row, 22, $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            
+
             $totalGaji += $row_data['gaji_pokok'];
             $totalDitanggungPer += $ditanggung_per;
             $totalDitanggungKar += $ditanggung_kar;
             $row++;
         }
-        
-        // Total row
+
         $col = 1;
         $sheet->setCellValueByColumnAndRow($col++, $row, 'TOTAL:');
         $sheet->mergeCellsByColumnAndRow(1, $row, 3, $row);
@@ -1372,102 +1402,85 @@ class payrollController extends Controller
         $sheet->getStyleByColumnAndRow($col, $row)->getFont()->setBold(true);
         $sheet->getStyleByColumnAndRow($col, $row)->getNumberFormat()->setFormatCode('#,##0');
         $sheet->getStyleByColumnAndRow(1, $row, 22, $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-        
-        $row += 3; // Empty rows
-        
-        // Summary section
+
+        $row += 3;
+
         $sheet->setCellValueByColumnAndRow(1, $row, 'RINGKASAN TOTAL BIAYA BPJS');
         $sheet->mergeCellsByColumnAndRow(1, $row, 2, $row);
         $sheet->getStyleByColumnAndRow(1, $row, 2, $row)->getFont()->setBold(true);
         $row++;
-        
+
         $sheet->setCellValueByColumnAndRow(1, $row, 'Total Gaji Karyawan dalam 1 Tahun');
         $sheet->setCellValueByColumnAndRow(2, $row, $totalGaji * 12);
         $sheet->getStyleByColumnAndRow(2, $row)->getNumberFormat()->setFormatCode('#,##0');
         $sheet->getStyleByColumnAndRow(1, $row, 2, $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
         $row++;
-        
+
         $sheet->setCellValueByColumnAndRow(1, $row, 'Batas Maksimal (maks 40%)');
-        $sheet->setCellValueByColumnAndRow(2, $row, $totalGaji * 12 * 0.40);
+        $sheet->setCellValueByColumnAndRow(2, $row, $totalGaji * 12 * 0.4);
         $sheet->getStyleByColumnAndRow(2, $row)->getNumberFormat()->setFormatCode('#,##0');
         $sheet->getStyleByColumnAndRow(1, $row, 2, $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
         $row++;
-        
+
         $sheet->setCellValueByColumnAndRow(1, $row, 'Total BPJS TK & Kes ditanggung pers. Dalam 1 tahun');
         $sheet->setCellValueByColumnAndRow(2, $row, $totalDitanggungPer * 12);
         $sheet->getStyleByColumnAndRow(2, $row)->getNumberFormat()->setFormatCode('#,##0');
         $sheet->getStyleByColumnAndRow(1, $row, 2, $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
         $row++;
-        
+
         $percentage = $totalGaji > 0 ? ($totalDitanggungPer / $totalGaji) * 100 : 0;
 
         $sheet->setCellValueByColumnAndRow(1, $row, 'Persentase');
         $sheet->setCellValueByColumnAndRow(2, $row, $percentage);
-        $sheet->getStyleByColumnAndRow(2, $row)
-            ->getNumberFormat()
-            ->setFormatCode('0.00');
+        $sheet->getStyleByColumnAndRow(2, $row)->getNumberFormat()->setFormatCode('0.00');
 
-        $sheet->getStyleByColumnAndRow(1, $row, 2, $row)
-            ->getFont()
-            ->setBold(true);
+        $sheet->getStyleByColumnAndRow(1, $row, 2, $row)->getFont()->setBold(true);
 
-        $sheet->getStyleByColumnAndRow(1, $row, 2, $row)
-            ->getBorders()
-            ->getAllBorders()
-            ->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyleByColumnAndRow(1, $row, 2, $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
         $style = $sheet->getStyleByColumnAndRow(2, $row);
 
         if ($percentage > 40) {
-            // Merah
-            $style->getFill()
-                ->setFillType(Fill::FILL_SOLID)
-                ->getStartColor()
-                ->setARGB('FFFF0000');
+            $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFF0000');
 
             $style->getFont()->getColor()->setARGB(Color::COLOR_WHITE);
         } else {
-            // Hijau
-            $style->getFill()
-                ->setFillType(Fill::FILL_SOLID)
-                ->getStartColor()
-                ->setARGB('FF00B050');
+            $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF00B050');
 
             $style->getFont()->getColor()->setARGB(Color::COLOR_WHITE);
         }
-        
-        // Auto-size columns
+
         foreach (range('A', 'V') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
-        
+
         $filename = 'Laporan_Payroll_' . ($data['periode_label'] ?? 'Semua') . '_' . date('Ymd') . '.xlsx';
-        
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
-        
+
         $writer = new Xlsx($spreadsheet);
         $writer->save('php://output');
-        exit;
+        exit();
     }
 
     public function exportPdfPerhitungan(Request $request)
     {
         if (!class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Library dompdf belum terinstall'
-            ], 500);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Library dompdf belum terinstall',
+                ],
+                500,
+            );
         }
 
         $data = $this->buildExportData($request);
         $filename = 'Laporan_Payroll_' . ($data['periode_label'] ?? 'Semua') . '_' . date('Ymd') . '.pdf';
 
-        $pdf = Pdf::loadView('HR.exports.perhitungan_pdf', compact('data'))
-            ->setPaper('a4', 'landscape')
-            ->setOption('isHtml5ParserEnabled', true)
-            ->setOption('isRemoteEnabled', true);
+        $pdf = Pdf::loadView('HR.exports.perhitungan_pdf', compact('data'))->setPaper('a4', 'landscape')->setOption('isHtml5ParserEnabled', true)->setOption('isRemoteEnabled', true);
 
         return $pdf->download($filename);
     }
@@ -1479,20 +1492,22 @@ class payrollController extends Controller
         $divisi = $request->get('divisi');
         $status = $request->get('status');
 
-        $bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
         $query = PerhitunganTunjanganHR::with(['karyawan.divisi', 'createdBy']);
 
-        if ($bulan) $query->where('bulan', $bulan);
-        if ($tahun) $query->where('tahun', $tahun);
+        if ($bulan) {
+            $query->where('bulan', $bulan);
+        }
+        if ($tahun) {
+            $query->where('tahun', $tahun);
+        }
         if ($status && !in_array($status, ['sudah', 'belum'])) {
             $query->where('status', $status);
         }
 
         $payrolls = $query->orderBy('tahun', 'desc')->orderBy('bulan', 'desc')->get();
 
-        // Filter divisi jika ada
         if ($divisi) {
             $payrolls = $payrolls->filter(fn($p) => ($p->karyawan->divisi->nama_divisi ?? '-') === $divisi);
         }
@@ -1511,30 +1526,25 @@ class payrollController extends Controller
                 'total_tunjangan' => $totalTunjangan,
                 'thp_bersih' => (int) ($p->thp_bersih ?? 0),
                 'umk_bandung' => (int) ($p->umk_bandung ?? 2100000),
-                
-                // BPJS Perusahaan
+
                 'jht_perusahaan' => (int) ($p->jht_perusahaan ?? 0),
                 'jkm_perusahaan' => (int) ($p->jkm_perusahaan ?? 0),
                 'jkk_perusahaan' => (int) ($p->jkk_perusahaan ?? 0),
                 'jp_perusahaan' => (int) ($p->jp_perusahaan ?? 0),
                 'total_bpjs_perusahaan' => (int) ($p->total_bpjs_perusahaan ?? 0),
-                
-                // BPJS Karyawan
+
                 'jht_karyawan' => (int) ($p->jht_karyawan ?? 0),
                 'jp_karyawan' => (int) ($p->jp_karyawan ?? 0),
                 'total_bpjs_karyawan' => (int) ($p->total_bpjs_karyawan ?? 0),
-                
-                // BPJS Kesehatan
+
                 'bpjs_kes_perusahaan' => (int) ($p->bpjs_kes_perusahaan ?? 0),
                 'bpjs_kes_karyawan' => (int) ($p->bpjs_kes_karyawan ?? 0),
-                
-                // Lainnya
+
                 'potongan_lain' => $potonganLain,
                 'created_by' => $p->createdBy->name ?? '-',
                 'created_at' => $p->created_at ? $p->created_at->format('d/m/Y H:i') : '-',
             ];
         }
-        // Label periode
         if ($bulan && $tahun) {
             $periodeLabel = $bulanNames[(int) $bulan] . ' ' . $tahun;
         } elseif ($tahun) {
@@ -1542,7 +1552,9 @@ class payrollController extends Controller
         } else {
             $periodeLabel = 'Semua Periode';
         }
-        if ($divisi) $periodeLabel .= ' - Divisi ' . $divisi;
+        if ($divisi) {
+            $periodeLabel .= ' - Divisi ' . $divisi;
+        }
 
         return [
             'rows' => $rows,
@@ -1556,10 +1568,73 @@ class payrollController extends Controller
             ],
         ];
     }
-    
 
-    //PPH
-    public function indexPph() {
+    public function indexPph()
+    {
         return view('HR.payroll.indexPPH');
+    }
+
+    public function getPphData()
+    {
+        $karyawans = Karyawan::with('pph21')
+            ->where(function ($query) {
+                $query->whereIn('jabatan', ['Direktur', 'Direktur Utama'])
+                    ->where('status_aktif', '1');
+            })
+            ->orWhere(function ($query) {
+                $query->where('status_aktif', '1')
+                    ->whereNotIn('jabatan', ['Outsource', 'Pilih Jabatan'])
+                    ->where('kode_karyawan', 'not like', 'OL%')
+                    ->where('divisi', '!=', 'Direksi')
+                    ->whereNotNull('nip');
+            })
+            ->get();
+
+        $data = $karyawans->map(function($k) {
+            return [
+                'id' => $k->id,
+                'nip' => $k->nip ?? '-',
+                'nama' => $k->nama_lengkap ?? '-',
+                'jabatan' => $k->jabatan ?? '-',
+                'divisi' => is_object($k->divisi) ? ($k->divisi->nama_divisi ?? '-') : ($k->divisi ?? '-'),
+                'gaji' => $k->gaji ?? 0,
+                'tunjangan_jabatan' => $k->tunjangan_jabatan ?? 0,
+                'pph21' => $k->pph21 ? [
+                    'id' => $k->pph21->id,
+                    'ptkp' => $k->pph21->ptkp,
+                    'menikah' => (int)$k->pph21->status_menikah,
+                    'anak' => $k->pph21->anak ?? [],
+                ] : null
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    public function storePph(Request $request)
+    {
+        $request->validate([
+            'karyawan_id' => 'required|exists:karyawans,id',
+            'ptkp' => 'required|string',
+            'status_menikah' => 'required',
+            'anak' => 'nullable|array',
+        ]);
+
+        Pph21Karyawan::updateOrCreate(
+            ['karyawan_id' => $request->karyawan_id],
+            [
+                'ptkp' => $request->ptkp,
+                'status_menikah' => $request->status_menikah,
+                'anak' => $request->anak ?? [],
+            ]
+        );
+
+        return response()->json(['success' => true, 'message' => 'Data PPH 21 berhasil disimpan!']);
+    }
+
+    public function deletePph($id)
+    {
+        Pph21Karyawan::destroy($id);
+        return response()->json(['success' => true, 'message' => 'Data PPH 21 berhasil dihapus!']);
     }
 }

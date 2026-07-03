@@ -2034,13 +2034,13 @@ class TargetKPIController extends Controller
         $foreignKey = 'id_tagihan_perusahaan';
 
         $latestIds = trackingTagihanPerusahaan::whereBetween(
-            'tanggal_perkiraan_mulai',
-            [$start, $end]
-        )
+                'tanggal_perkiraan_mulai',
+                [$start, $end]
+            )
             ->selectRaw("{$foreignKey}, MAX(id) as latest_id")
             ->groupBy($foreignKey)
             ->pluck('latest_id')
-            ->filter()       // buang null
+            ->filter()
             ->unique()
             ->values();
 
@@ -2055,7 +2055,7 @@ class TargetKPIController extends Controller
         }
 
         $tagihanSelesai = trackingTagihanPerusahaan::whereIn('id', $latestIds)
-            ->where('status', 'selesai')
+            ->where('status', 'Selesai')
             ->where('tracking', 'Selesai')
             ->count();
 
@@ -2825,11 +2825,13 @@ class TargetKPIController extends Controller
     private function calculateKonsistensiCampaignDigital($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
+
         if (!$detail || !$detail->detail_jangka) {
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
+
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             return 0;
         }
@@ -2849,9 +2851,12 @@ class TargetKPIController extends Controller
 
         foreach ($contentSchedules as $schedule) {
             $date = Carbon::parse($schedule->upload_date);
+
             $weekStart = $date->copy()->startOfWeek(Carbon::MONDAY);
             $weekEnd = $date->copy()->endOfWeek(Carbon::SUNDAY);
+
             $weekKey = $weekStart->format('Y-m-d') . '_' . $weekEnd->format('Y-m-d');
+
             $weeklyCounts[$weekKey] = ($weeklyCounts[$weekKey] ?? 0) + 1;
         }
 
@@ -2863,6 +2868,7 @@ class TargetKPIController extends Controller
         foreach ($weeklyCounts as $count) {
             if ($count >= 1) {
                 $totalWeeksWithData++;
+
                 if ($count >= $targetMingguan) {
                     $compliantWeeks++;
                 }
@@ -2874,15 +2880,17 @@ class TargetKPIController extends Controller
         $totalKonten = $contentSchedules->count();
 
         $jumlahMinggu = 0;
-        $current = $start->copy()->startOfWeek(Carbon::MONDAY);
 
-        while ($current <= $end) {
+        $current = $start->copy()->startOfWeek(Carbon::MONDAY);
+        $endOfYearWeek = $end->copy()->endOfWeek(Carbon::SUNDAY);
+
+        while ($current <= $endOfYearWeek) {
             $jumlahMinggu++;
             $current->addWeek();
         }
 
         $PS = $totalKonten / ($targetMingguan * $jumlahMinggu);
-        $PS = min($PS, 1); 
+        $PS = min($PS, 1);
 
         $finalScore = ($CS * 0.6) + ($PS * 0.4);
 
@@ -2973,7 +2981,7 @@ class TargetKPIController extends Controller
 
         $progress = ($totalLead / $target) * 100;
 
-        return round($progress, 2);
+        return round($totalLead);
     }
 
     //Programmer
@@ -3761,7 +3769,7 @@ class TargetKPIController extends Controller
 
         foreach ($detailPersons as $personItem) {
             $validSertifikasi = Pelatihan::where('user_id', $personItem->id_karyawan)
-                ->whereYear('tanggal_selesai', [$startYear, $endYear])
+                ->whereBetween('tanggal_selesai', [$startYear, $endYear])
                 ->count();
 
             if ($personId !== null) {
@@ -6210,7 +6218,6 @@ class TargetKPIController extends Controller
 
                 $route = strtolower($detail->dataTarget?->asistant_route ?? '');
 
-                // skip KPI performa itu sendiri
                 if ($route === 'performa kpi departemen') continue;
 
                 if (!is_null($detail->nilai_target)) {
@@ -9787,9 +9794,11 @@ class TargetKPIController extends Controller
         $totalKonten = $contentSchedules->count();
 
         $jumlahMinggu = 0;
-        $current = $start->copy()->startOfWeek(Carbon::MONDAY);
 
-        while ($current <= $end) {
+        $current = $start->copy()->startOfWeek(Carbon::MONDAY);
+        $endOfYearWeek = $end->copy()->endOfWeek(Carbon::SUNDAY);
+
+        while ($current <= $endOfYearWeek) {
             $jumlahMinggu++;
             $current->addWeek();
         }
@@ -10251,12 +10260,12 @@ class TargetKPIController extends Controller
             $triwulanData["Triwulan_$i"] = $triwulanDataTemp[$i];
         }
 
-        $progress = ($targetTahunan / $totalLead) * 100;
+        $progress = ($totalLead / $targetTahunan) * 100;
 
         $gap = $totalLead - $targetTahunan;
 
         return [
-            'progress' => $progress,
+            'progress' => round($totalLead),
             'gap' => $gap,
             'dataManual' => [
                 'manual_document' => $detail->manual_document,
@@ -14266,15 +14275,13 @@ class TargetKPIController extends Controller
         $divisiFilter = $request->divisi;
         $tahunFilter = $request->tahun;
 
-        // dd($request->all());
-
         if (!$divisiFilter || !$tahunFilter) {
             return response()->json(['message' => 'Divisi dan tahun harus diisi'], 400);
         }
 
-        $currentYear = now()->year; // Tambahan: Ambil tahun saat ini untuk perbandingan status
+        $currentYear = now()->year;
 
-        $karyawanDiDivisi = karyawan::where('divisi', $divisiFilter)
+        $karyawanDiDivisi = Karyawan::where('divisi', $divisiFilter)
             ->where('status_aktif', '1')
             ->where('jabatan', '!=', 'Outsource')
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
@@ -14282,11 +14289,10 @@ class TargetKPIController extends Controller
             ->whereNotNull('nip')
             ->where('divisi', '!=', 'Direksi')
             ->get();
-        // dd($karyawanDiDivisi);
 
         $karyawanIds = $karyawanDiDivisi->pluck('id')->toArray();
-        
-       $allTargets = DetailTargetKPI::with([
+
+        $allTargets = DetailTargetKPI::with([
             'targetKPI',
             'dataTarget',
             'detailPersonKPI.karyawan'
@@ -14296,14 +14302,12 @@ class TargetKPIController extends Controller
                 $q->whereIn('id', $karyawanIds);
             })
             ->get();
-        // dd($allTargets);
 
         $daftarTargetKPI = [];
         $employeeProgressMap = [];
         $employeeTargetStatusMap = [];
-        $processedTargets = [];
-
         $employeeTargetsMap = [];
+        $processedTargets = [];
 
         $distribusi = [
             'Sangat Baik' => 0,
@@ -14315,115 +14319,72 @@ class TargetKPIController extends Controller
 
         foreach ($allTargets as $detail) {
             $target = $detail->targetKPI;
-
-            if (!$target) {
-                continue;
-            }
+            if (!$target) continue;
 
             $nilaiTarget = $detail->dataTarget?->nilai_target ?? $detail->nilai_target;
-            $tipeTarget  = $detail->tipe_target;
+            $tipeTarget = $detail->tipe_target;
 
             $assignedPersons = $detail->detailPersonKPI
                 ->whereIn('id_karyawan', $karyawanIds)
                 ->groupBy('id_karyawan');
 
-            if ($assignedPersons->isEmpty()) {
-                continue;
-            }
+            if ($assignedPersons->isEmpty()) continue;
 
             $targetProgressPercentages = collect();
-            $targetKey = $detail->id;
 
             foreach ($assignedPersons as $personId => $assignments) {
-
-                $uniqueKey = $targetKey . '_' . $personId;
+                $uniqueKey = $detail->id . '_' . $personId;
                 if (isset($processedTargets[$uniqueKey])) {
                     continue;
                 }
+                $processedTargets[$uniqueKey] = true;
 
-                    if (!isset($employeeProgressMap[$personId])) {
-                        $employeeProgressMap[$personId] = [];
-                        // Update struktur map status dengan status baru
-                        $employeeTargetStatusMap[$personId] = [
-                            'Sedang Berjalan' => 0, 
-                            'Selesai' => 0, 
-                            'Gagal' => 0, 
-                            'Belum Mulai' => 0
-                        ];
-                    }
+                if (!isset($employeeProgressMap[$personId])) {
+                    $employeeProgressMap[$personId] = [];
+                    $employeeTargetStatusMap[$personId] = [
+                        'Sedang Berjalan' => 0,
+                        'Selesai' => 0,
+                        'Gagal' => 0,
+                        'Belum Mulai' => 0
+                    ];
+                }
 
                 $rawProgress = $this->resolveProgress($target, $personId);
                 if ($rawProgress === null) {
                     continue;
                 }
 
-                    // FIX: Logika status berdasarkan tahun berjalan dan tahun berakhir
-                    if ($tahunFilter < $currentYear) {
-                        $statusTarget = $percent >= 100 ? 'Selesai' : 'Gagal';
-                    } elseif ($tahunFilter == $currentYear) {
-                        $statusTarget = 'Sedang Berjalan';
-                    } else {
-                        $statusTarget = 'Belum Mulai';
-                    }
+                $percent = max(0, min(100, $rawProgress));
 
-                    $employeeTargetStatusMap[$personId][$statusTarget]++;
-
-                $percent = max(0, min(100, $percent));
-
-                    // Status badge (bg-dark digunakan untuk Gagal agar tidak ada warna merah)
-                    $statusBadge = match ($statusTarget) {
-                        'Selesai'         => 'bg-success',
-                        'Gagal'           => 'bg-dark',
-                        'Sedang Berjalan' => 'bg-primary',
-                        default           => 'bg-secondary',
-                    };
-
-                    if (!isset($employeeTargetsMap[$personId])) {
-                        $employeeTargetsMap[$personId] = [];
-                    }
-
-                    $employeeTargetsMap[$personId][] = [
-                        'judul'           => $target->judul,
-                        'periode'         => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                        'tipe_target'     => $tipeTarget,
-                        'target'          => $nilaiTarget,
-                        'progress'        => round($rawProgress),
-                        'progress_display'=> $progressDisplay,
-                        'progress_percent'=> $percent,
-                        'status'          => $statusTarget,
-                        'status_badge'    => $statusBadge,
-                    ];
-                }
-
-                // Perhitungan rata-rata divisi per target
-                $avgTarget = $targetProgressPercentages->isNotEmpty()
-                    ? round($targetProgressPercentages->avg(), 2)
-                    : 0;
-
-                // FIX: Logika status untuk target keseluruhan divisi
-                if ($tahunFilter < $currentYear) {
-                    $status = $avgTarget >= 100 ? 'Selesai' : 'Gagal';
-                } elseif ($tahunFilter == $currentYear) {
-                    $status = 'Sedang Berjalan';
-                } else {
-                    $status = 'Belum Mulai';
-                }
-
-                if (!isset($employeeTargetsMap[$personId])) {
-                    $employeeTargetsMap[$personId] = [];
-                }
-
-                $statusTarget = match (true) {
-                    $percent >= 100 => 'Selesai',
-                    $rawProgress > 0 => 'Aktif',
-                    default => 'Belum Mulai',
-                };
-
+                // Progress display
                 $progressDisplay = match (true) {
                     $tipeTarget === 'rupiah' => 'Rp ' . number_format($rawProgress, 0, ',', '.'),
                     $tipeTarget === 'persen' => round($rawProgress, 2) . '%',
                     default => number_format($rawProgress, 0, ',', '.'),
                 };
+
+                // Status per karyawan berdasarkan tahun
+                if ($tahunFilter < $currentYear) {
+                    $statusTarget = $percent >= 100 ? 'Selesai' : 'Gagal';
+                } elseif ($tahunFilter == $currentYear) {
+                    $statusTarget = 'Sedang Berjalan';
+                } else {
+                    $statusTarget = 'Belum Mulai';
+                }
+
+                $employeeTargetStatusMap[$personId][$statusTarget]++;
+
+                $statusBadge = match ($statusTarget) {
+                    'Selesai' => 'bg-success',
+                    'Gagal' => 'bg-dark',
+                    'Sedang Berjalan' => 'bg-primary',
+                    default => 'bg-secondary',
+                };
+
+                // Simpan target per karyawan
+                if (!isset($employeeTargetsMap[$personId])) {
+                    $employeeTargetsMap[$personId] = [];
+                }
 
                 $employeeTargetsMap[$personId][] = [
                     'judul' => $target->judul,
@@ -14434,19 +14395,25 @@ class TargetKPIController extends Controller
                     'progress_display' => $progressDisplay,
                     'progress_percent' => $percent,
                     'status' => $statusTarget,
-                    'status_badge' => $statusTarget === 'Selesai'
-                        ? 'bg-success'
-                        : ($statusTarget === 'Aktif'
-                            ? 'bg-warning text-dark'
-                            : 'bg-secondary'),
+                    'status_badge' => $statusBadge,
                 ];
+
+                $targetProgressPercentages->push($percent);
             }
 
+            // Rata-rata target di level divisi
             $avgTarget = $targetProgressPercentages->isNotEmpty()
                 ? round($targetProgressPercentages->avg(), 2)
                 : 0;
 
-            $status = $avgTarget >= 100 ? 'Selesai' : 'Belum Selesai';
+            // Status untuk overview target divisi
+            if ($tahunFilter < $currentYear) {
+                $status = $avgTarget >= 100 ? 'Selesai' : 'Gagal';
+            } elseif ($tahunFilter == $currentYear) {
+                $status = 'Sedang Berjalan';
+            } else {
+                $status = 'Belum Mulai';
+            }
 
             if ($avgTarget > 0) {
                 if ($avgTarget >= 100) {
@@ -14463,13 +14430,14 @@ class TargetKPIController extends Controller
             }
 
             $daftarTargetKPI[] = [
-                'judul' => $detail->targetKPI?->judul,
+                'judul' => $target->judul,
                 'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
                 'target' => $nilaiTarget,
                 'progress' => $avgTarget,
                 'status' => $status,
             ];
 
+        // Rata-rata progress per karyawan
         $avgPerEmployee = [];
         
         foreach ($employeeProgressMap as $personId => $progressList) {
@@ -14482,10 +14450,10 @@ class TargetKPIController extends Controller
             ? round(array_sum($avgPerEmployee) / count($avgPerEmployee), 2)
             : 0;
 
-        // Update perhitungan kpi_aktif dan kpi_selesai berdasarkan status baru
-        $kpiAktif    = collect($daftarTargetKPI)->where('status', 'Sedang Berjalan')->count();
-        $kpiSelesai  = collect($daftarTargetKPI)->where('status', 'Selesai')->count();
-        $kpiGagal    = collect($daftarTargetKPI)->where('status', 'Gagal')->count();
+        // Hitung KPI berdasarkan status
+        $kpiAktif = collect($daftarTargetKPI)->where('status', 'Sedang Berjalan')->count();
+        $kpiSelesai = collect($daftarTargetKPI)->where('status', 'Selesai')->count();
+        $kpiGagal = collect($daftarTargetKPI)->where('status', 'Gagal')->count();
 
         $karyawanDepartemen = $karyawanDiDivisi->map(function ($karyawan) use (
             $employeeProgressMap,
@@ -14493,32 +14461,37 @@ class TargetKPIController extends Controller
             $employeeTargetsMap
         ) {
             $progressList = $employeeProgressMap[$karyawan->id] ?? [];
-            $statusData   = $employeeTargetStatusMap[$karyawan->id] ?? ['Sedang Berjalan' => 0, 'Selesai' => 0, 'Gagal' => 0, 'Belum Mulai' => 0];
-            $avgTarget    = !empty($progressList)
+            $statusData = $employeeTargetStatusMap[$karyawan->id] ?? [
+                'Sedang Berjalan' => 0,
+                'Selesai' => 0,
+                'Gagal' => 0,
+                'Belum Mulai' => 0
+            ];
+
+            $avgTarget = !empty($progressList)
                 ? round(array_sum($progressList) / count($progressList), 2)
                 : 0;
 
             return [
-                'id_karyawan'               => $karyawan->id,
-                'nama'                      => $karyawan->nama_lengkap,
-                'jabatan'                   => $karyawan->jabatan,
-                // Update key status agar sesuai dengan status baru
+                'id_karyawan' => $karyawan->id,
+                'nama' => $karyawan->nama_lengkap,
+                'jabatan' => $karyawan->jabatan,
                 'total_target_sedang_berjalan' => $statusData['Sedang Berjalan'],
-                'total_target_selesai'         => $statusData['Selesai'],
-                'total_target_gagal'           => $statusData['Gagal'],
-                'total_target_belum_mulai'     => $statusData['Belum Mulai'],
-                'jumlah_target'             => count($progressList),
-                'rata_rata_progress'        => $avgTarget,
-                'daftar_target_pribadi'     => $employeeTargetsMap[$karyawan->id] ?? [], 
+                'total_target_selesai' => $statusData['Selesai'],
+                'total_target_gagal' => $statusData['Gagal'],
+                'total_target_belum_mulai' => $statusData['Belum Mulai'],
+                'jumlah_target' => count($progressList),
+                'rata_rata_progress' => $avgTarget,
+                'daftar_target_pribadi' => $employeeTargetsMap[$karyawan->id] ?? [],
             ];
         })->values();
 
         return response()->json([
-            'total_target'       => count($daftarTargetKPI),
+            'total_target' => count($daftarTargetKPI),
             'rata_rata_progress' => $rataRataProgress,
-            'kpi_aktif'          => $kpiAktif, // Sekarang menghitung 'Sedang Berjalan'
-            'kpi_selesai'        => $kpiSelesai,
-            'kpi_gagal'          => $kpiGagal, // Tambahan data gagal
+            'kpi_aktif' => $kpiAktif,
+            'kpi_selesai' => $kpiSelesai,
+            'kpi_gagal' => $kpiGagal,
             'karyawan_departemen' => $karyawanDepartemen,
             'statistik_karyawan' => $this->getEmployeeStatistics(
                 $karyawanIds,
@@ -14526,8 +14499,8 @@ class TargetKPIController extends Controller
                 $employeeTargetStatusMap,
                 $employeeTargetsMap
             ),
-            'distribusi_nilai'   => $distribusi,
-            'daftar_target_kpi'  => collect($daftarTargetKPI)->unique('judul')->values()
+            'distribusi_nilai' => $distribusi,
+            'daftar_target_kpi' => collect($daftarTargetKPI)->unique('judul')->values()
         ]);
     }
 

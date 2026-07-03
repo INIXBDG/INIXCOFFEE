@@ -135,8 +135,9 @@ class ApprovalPendapatanController extends Controller
                     'tanggal_mulai' => $valid?->tanggal_mulai ? Carbon::parse($valid->tanggal_mulai)->format('Y-m-d') : Carbon::parse($rkm->tanggal_awal)->format('Y-m-d'),
                     'tanggal_selesai' => $valid?->tanggal_selesai ? Carbon::parse($valid->tanggal_selesai)->format('Y-m-d') : Carbon::parse($rkm->tanggal_akhir)->format('Y-m-d'),
                     'perusahaan_id' => $valid?->perusahaan ?? $rkm->perusahaan_key,
-                    'exam' => $rkm->eksam ? 'Rp ' . number_format((float) $rkm->eksam->total, 0, ',', '.') : '-',
-                    'exam_value' => $rkm->eksam ? (float) $rkm->eksam->total : 0,
+                    'exam' => ($valid?->exam ?? $rkm->eksam?->total) ? 'Rp ' . number_format((float) ($valid?->exam ?? $rkm->eksam?->total), 0, ',', '.') : '-',
+
+                    'exam_value' => (float) ($valid?->exam ?? $rkm->eksam?->total ?? 0),
                     'tracking' => $rkm->outstanding?->tracking_outstanding ? [
                         'invoice' => (bool)$rkm->outstanding->tracking_outstanding->invoice,
                         'faktur_pajak' => (bool)$rkm->outstanding->tracking_outstanding->faktur_pajak,
@@ -191,17 +192,10 @@ class ApprovalPendapatanController extends Controller
             )
             ->first();
 
-        $examBulanan = Invoice::with('rkm.eksam')
-            ->whereHas('rkm', function ($query) use ($startDate, $endDate, $hariIni) {
-                $query->whereBetween('tanggal_awal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                    ->whereDate('tanggal_awal', '<=', $hariIni);
-            })
-            ->get()
-            ->pluck('rkm')
-            ->unique('id_rkm')
-            ->sum(function ($rkm) {
-                return (float) ($rkm?->eksam?->total ?? 0);
-            });
+        $examBulanan = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
+            ->whereMonth('tanggal_mulai', $bulan)
+            ->where('status', 'valid')
+            ->sum('exam');
 
         if ($footerBulanan) {
             $footerBulanan->total_exam = $examBulanan;
@@ -245,17 +239,9 @@ class ApprovalPendapatanController extends Controller
             )
             ->first();
 
-        $examTahunan = Invoice::with('rkm.eksam')
-            ->whereHas('rkm', function ($query) use ($tahun, $hariIni) {
-                $query->whereYear('tanggal_awal', $tahun)
-                    ->whereDate('tanggal_awal', '<=', $hariIni);
-            })
-            ->get()
-            ->pluck('rkm')
-            ->unique('id_rkm')
-            ->sum(function ($rkm) {
-                return (float) ($rkm?->eksam?->total ?? 0);
-            });
+        $examTahunan = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
+            ->where('status', 'valid')
+            ->sum('exam');
 
         if ($footerTahunan) {
             $footerTahunan->total_exam = $examTahunan;
@@ -301,6 +287,7 @@ class ApprovalPendapatanController extends Controller
             'jenis_transport' => 'nullable|string|max:255',
             'biaya_transport' => 'nullable|numeric',
             'oleh_oleh' => 'nullable|numeric',
+            'exam' => 'nullable|numeric|min:0',
             'total_penjualan_sales' => 'nullable|numeric|min:0',
             'PPN' => 'nullable|numeric',
             'PPH' => 'nullable|numeric',
@@ -345,6 +332,7 @@ class ApprovalPendapatanController extends Controller
                 'jenis_transport' => $validated['jenis_transport'] ?? null,
                 'biaya_transport' => (float) ($validated['biaya_transport'] ?? 0),
                 'oleh_oleh' => (float) ($validated['oleh_oleh'] ?? 0),
+                'exam' => (float) ($validated['exam'] ?? 0),
                 'total_penjualan_bersih' => (float) ($validated['total_penjualan_sales'] ?? 0),
                 'PPN' => (float) ($validated['PPN'] ?? 0),
                 'PPH' => (float) ($validated['PPH'] ?? 0),

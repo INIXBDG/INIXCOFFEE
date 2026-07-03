@@ -49,7 +49,7 @@
                                             $itemLabel =
                                                 $item->nama_lengkap ??
                                                 ($item->nama ??
-                                                    ($item->nama_kegiatan ?? ($item->judul ?? 'Item #' . $itemId)));
+                                                    ($item->nama_lengkap ?? ($item->nama_lengkap ?? 'Item #' . $itemId)));
                                         @endphp
                                         <option value="{{ $itemId }}"
                                             {{ old('source_id') == $itemId ? 'selected' : '' }}>
