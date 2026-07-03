@@ -1647,6 +1647,9 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
     Route::prefix('perhitungan-pph')->name('perhitungan-pph.')->group(function () {
         Route::get('/',          [payrollController::class, 'indexPph'])->name('index');
+        Route::get('/data', [payrollController::class, 'getPphData'])->name('HR.pph21.data');
+        Route::post('/store', [payrollController::class, 'storePph'])->name('HR.pph21.store');
+        Route::delete('/{id}', [payrollController::class, 'deletePph'])->name('HR.pph21.delete');
     });
 });
 

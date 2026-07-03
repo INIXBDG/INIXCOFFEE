@@ -186,7 +186,7 @@
                                 <select name="source_table" id="source_table_select" class="form-select form-select-sm"
                                     required>
                                     <option value="karyawan">Karyawan</option>
-                                    <option value="kegiatan">Kegiatan</option>
+                                    <option value="pelamar">Rekrutan</option>
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm w-100" id="btnLoad">
@@ -273,7 +273,7 @@
                                 <label class="form-label small fw-semibold">Kategori</label>
                                 <select name="category" class="form-select form-select-sm">
                                     <option value="karyawan">Karyawan</option>
-                                    <option value="kegiatan">Kegiatan</option>
+                                    <option value="pelamar">Rekrutan</option>
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm w-100" id="btnSave"
@@ -334,38 +334,6 @@
             const REDIRECT_URL = window.APP_DATA.redirectUrl;
 
             const RELATIONS = {
-                karyawan: {
-                    single: {
-                        divisi: {
-                            label: 'Divisi',
-                            fields: ['nama_divisi', 'kode_divisi']
-                        },
-                        jabatan: {
-                            label: 'Jabatan',
-                            fields: ['nama_jabatan', 'level']
-                        }
-                    },
-                    collection: {
-                        kegiatans: {
-                            label: 'Kegiatan',
-                            fields: ['nama_kegiatan', 'waktu_kegiatan', 'status']
-                        }
-                    }
-                },
-                kegiatan: {
-                    single: {
-                        pic: {
-                            label: 'PIC',
-                            fields: ['nama_lengkap', 'nip']
-                        }
-                    },
-                    collection: {
-                        pesertas: {
-                            label: 'Peserta',
-                            fields: ['nama_lengkap', 'nip']
-                        }
-                    }
-                }
             };
 
             const AUTH_FIELDS = {
@@ -487,6 +455,14 @@
                 const sel = window.getSelection();
                 const text = sel ? sel.toString().trim() : '';
                 if (text.length < 2) return;
+
+                if (text.includes('{') || text.includes('}')) {
+                    alert('Teks yang dipilih mengandung tanda "{" atau "}". ' +
+                        'Ini biasanya sisa placeholder lama di dokumen. ' +
+                        'Hapus dulu tanda kurung tersebut dari file docx, lalu upload ulang.');
+                    sel.removeAllRanges();
+                    return;
+                }
 
                 currentSelection = {
                     text: text,
@@ -1115,7 +1091,11 @@
                     wrapperEl.className = 'text-mapped text-mapped-' + type;
                     wrapperEl.dataset.field = key;
                     wrapperEl.dataset.type = type;
-                    currentSelection.range.surroundContents(wrapperEl);
+
+                    const contents = currentSelection.range.extractContents();
+                    wrapperEl.appendChild(contents);
+                    currentSelection.range.insertNode(wrapperEl);
+
                     const badge = document.createElement('span');
                     badge.className = 'placeholder-badge placeholder-badge-' + type;
                     badge.textContent = key;

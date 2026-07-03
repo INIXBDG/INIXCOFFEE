@@ -277,8 +277,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Exam</label>
-                                    <input type="text" class="form-control bg-light" id="exam" readonly>
-                                    <input type="hidden" id="exam_value">
+                                    <input type="number" id="exam_value" class="form-control" name="exam">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">PPN</label>
@@ -972,6 +971,7 @@
                     jenis_transport: jenisTransport,
                     biaya_transport: $('#biaya_transport').val(),
                     oleh_oleh: $('#oleh_oleh').val(),
+                    exam: $('#exam_value').val(),
                     total_penjualan_sales: $('#total_penjualan_sales').val(),
                     PPN: $('#PPN').val(),
                     PPH: $('#PPH').val(),

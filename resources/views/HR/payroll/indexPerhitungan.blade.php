@@ -613,7 +613,6 @@
     <div id="toast-container"></div>
 
     <div class="container-fluid px-4 py-4">
-
         <div class="d-sm-flex align-items-center justify-content-between page-header">
             <div>
                 <h1 class="page-title">Perhitungan BPJS</h1>
@@ -667,9 +666,10 @@
                         </select>
                         <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter()"><i
                                 class="fa-solid fa-rotate me-1"></i>Reset</button>
-
-                        <button class="btn btn-outline-success" onclick="exportExcel()"><i class="fa-solid fa-file-excel me-2"></i>Export Excel</button>
-                        <button class="btn btn-outline-danger" onclick="exportPdf()"><i class="fa-solid fa-file-pdf me-2"></i>Export PDF</button>
+                        <button class="btn btn-outline-success" onclick="exportExcel()"><i
+                                class="fa-solid fa-file-excel me-2"></i>Export Excel</button>
+                        <button class="btn btn-outline-danger" onclick="exportPdf()"><i
+                                class="fa-solid fa-file-pdf me-2"></i>Export PDF</button>
                     </div>
                 </div>
             </div>
@@ -774,23 +774,16 @@
                                 </h6>
                             </div>
                             <div class="card-body p-4">
-                                {{-- Menambahkan elemen ke-4 ($formula) pada array untuk menampilkan rumus --}}
-                                @foreach ([
-                                    ['JHT – Jaminan Hari Tua', '3.70%', 'Salary BPJSTK', 'Salary BPJSTK × 3.7%'],
-                                    ['JKM – Jaminan Kematian', '0.30%', 'Salary BPJSTK', 'Salary BPJSTK × 0.3%'],
-                                    ['JKK – Jaminan Kecelakaan Kerja', '0.24%', 'Salary BPJSTK', 'Salary BPJSTK × 0.24%'],
-                                    ['JP – Jaminan Pensiun', '2.00%', 'Salary BPJSTK', 'Salary BPJSTK × 2%'],
-                                    ['BPJS Kesehatan', '4.00%', 'UMK Bandung', 'UMK Bandung × 4%']
-                                ] as [$label, $pct, $base, $formula])
+                                @foreach ([['JHT – Jaminan Hari Tua', '3.70%', 'Salary BPJSTK', 'Salary BPJSTK × 3.7%'], ['JKM – Jaminan Kematian', '0.30%', 'Salary BPJSTK', 'Salary BPJSTK × 0.3%'], ['JKK – Jaminan Kecelakaan Kerja', '0.24%', 'Salary BPJSTK', 'Salary BPJSTK × 0.24%'], ['JP – Jaminan Pensiun', '2.00%', 'Salary BPJSTK', 'Salary BPJSTK × 2%'], ['BPJS Kesehatan', '4.00%', 'UMK Bandung', 'UMK Bandung × 4%']] as [$label, $pct, $base, $formula])
                                     <div class="py-2 px-3 rounded mb-2" style="background:rgba(5,150,105,.07)">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div>
-                                                <div class="fw-semibold" style="font-size:.875rem">{{ $label }}</div>
+                                                <div class="fw-semibold" style="font-size:.875rem">{{ $label }}
+                                                </div>
                                                 <small class="text-muted">Dari {{ $base }}</small>
                                             </div>
                                             <span class="badge bg-success fs-6">{{ $pct }}</span>
                                         </div>
-                                        {{-- Menampilkan Rumus --}}
                                         <div class="mt-1 text-muted" style="font-size:.75rem; font-family: monospace;">
                                             <i class="fa-solid fa-calculator me-1"></i> {{ $formula }}
                                         </div>
@@ -806,20 +799,16 @@
                                 <h6 class="mb-0 fw-bold"><i class="fa-solid fa-user me-2"></i>Ditanggung Karyawan</h6>
                             </div>
                             <div class="card-body p-4">
-                                @foreach ([
-                                    ['JHT – Jaminan Hari Tua', '2.00%', 'Salary BPJSTK', 'Salary BPJSTK × 2%'],
-                                    ['JP – Jaminan Pensiun', '1.00%', 'Salary BPJSTK', 'Salary BPJSTK × 1%'],
-                                    ['BPJS Kesehatan', '1.00%', 'UMK Bandung', 'UMK Bandung × 1%']
-                                ] as [$label, $pct, $base, $formula])
+                                @foreach ([['JHT – Jaminan Hari Tua', '2.00%', 'Salary BPJSTK', 'Salary BPJSTK × 2%'], ['JP – Jaminan Pensiun', '1.00%', 'Salary BPJSTK', 'Salary BPJSTK × 1%'], ['BPJS Kesehatan', '1.00%', 'UMK Bandung', 'UMK Bandung × 1%']] as [$label, $pct, $base, $formula])
                                     <div class="py-2 px-3 rounded mb-2" style="background:rgba(2,132,199,.07)">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div>
-                                                <div class="fw-semibold" style="font-size:.875rem">{{ $label }}</div>
+                                                <div class="fw-semibold" style="font-size:.875rem">{{ $label }}
+                                                </div>
                                                 <small class="text-muted">Dari {{ $base }}</small>
                                             </div>
                                             <span class="badge bg-info fs-6">{{ $pct }}</span>
                                         </div>
-                                        {{-- Menampilkan Rumus --}}
                                         <div class="mt-1 text-muted" style="font-size:.75rem; font-family: monospace;">
                                             <i class="fa-solid fa-calculator me-1"></i> {{ $formula }}
                                         </div>
@@ -843,13 +832,13 @@
                     </div>
                 </div>
 
-                {{-- BLOK CONTOH SIMULASI PERHITUNGAN --}}
                 <div class="row mt-4">
                     <div class="col-12">
                         <div class="card card-shell">
                             <div class="card-header"
                                 style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px 10px 0 0;padding:1rem 1.5rem">
-                                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-lightbulb me-2"></i>Contoh Simulasi Perhitungan</h6>
+                                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-lightbulb me-2"></i>Contoh Simulasi
+                                    Perhitungan</h6>
                             </div>
                             <div class="card-body p-4">
                                 <div class="alert alert-light border mb-4" style="font-size:.85rem;">
@@ -859,53 +848,37 @@
                                 </div>
                                 <div class="row g-4">
                                     <div class="col-md-6">
-                                        <h6 class="fw-bold mb-3" style="color:var(--success)"><i class="fa-solid fa-building me-2"></i>Total BPJS Perusahaan</h6>
+                                        <h6 class="fw-bold mb-3" style="color:var(--success)"><i
+                                                class="fa-solid fa-building me-2"></i>Total BPJS Perusahaan</h6>
                                         <div style="font-size:.85rem;">
-                                            <div class="d-flex justify-content-between py-2 border-bottom">
-                                                <span>JHT (3.7% × 10.000.000)</span>
-                                                <span class="fw-bold">Rp 370.000</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom">
-                                                <span>JKM (0.3% × 10.000.000)</span>
-                                                <span class="fw-bold">Rp 30.000</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom">
-                                                <span>JKK (0.24% × 10.000.000)</span>
-                                                <span class="fw-bold">Rp 24.000</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom">
-                                                <span>JP (2% × 10.000.000)</span>
-                                                <span class="fw-bold">Rp 200.000</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom">
-                                                <span>BPJS Kes. (4% × 2.100.000)</span>
-                                                <span class="fw-bold">Rp 84.000</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between py-2 fw-bold" style="color:var(--success)">
-                                                <span>TOTAL PERUSAHAAN</span>
-                                                <span>Rp 708.000</span>
-                                            </div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JHT (3.7%
+                                                    × 10.000.000)</span><span class="fw-bold">Rp 370.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JKM (0.3%
+                                                    × 10.000.000)</span><span class="fw-bold">Rp 30.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JKK (0.24%
+                                                    × 10.000.000)</span><span class="fw-bold">Rp 24.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JP (2% ×
+                                                    10.000.000)</span><span class="fw-bold">Rp 200.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>BPJS Kes.
+                                                    (4% × 2.100.000)</span><span class="fw-bold">Rp 84.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 fw-bold"
+                                                style="color:var(--success)"><span>TOTAL PERUSAHAAN</span><span>Rp
+                                                    708.000</span></div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <h6 class="fw-bold mb-3" style="color:var(--info)"><i class="fa-solid fa-user me-2"></i>Total Potongan BPJS Karyawan</h6>
+                                        <h6 class="fw-bold mb-3" style="color:var(--info)"><i
+                                                class="fa-solid fa-user me-2"></i>Total Potongan BPJS Karyawan</h6>
                                         <div style="font-size:.85rem;">
-                                            <div class="d-flex justify-content-between py-2 border-bottom">
-                                                <span>JHT (2% × 10.000.000)</span>
-                                                <span class="fw-bold">Rp 200.000</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom">
-                                                <span>JP (1% × 10.000.000)</span>
-                                                <span class="fw-bold">Rp 100.000</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom">
-                                                <span>BPJS Kes. (1% × 2.100.000)</span>
-                                                <span class="fw-bold">Rp 21.000</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between py-2 fw-bold" style="color:var(--info)">
-                                                <span>TOTAL POTONGAN KARYAWAN</span>
-                                                <span>Rp 321.000</span>
-                                            </div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JHT (2% ×
+                                                    10.000.000)</span><span class="fw-bold">Rp 200.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JP (1% ×
+                                                    10.000.000)</span><span class="fw-bold">Rp 100.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>BPJS Kes.
+                                                    (1% × 2.100.000)</span><span class="fw-bold">Rp 21.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 fw-bold"
+                                                style="color:var(--info)"><span>TOTAL POTONGAN KARYAWAN</span><span>Rp
+                                                    321.000</span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -975,7 +948,8 @@
                         <div class="card card-shell">
                             <div class="card-body">
                                 <h6 class="fw-bold mb-3" style="font-size:.875rem"><i
-                                        class="fa-solid fa-calculator me-2 text-primary"></i>RINGKASAN TOTAL BIAYA BPJS</h6>
+                                        class="fa-solid fa-calculator me-2 text-primary"></i>RINGKASAN TOTAL BIAYA BPJS
+                                </h6>
                                 <div class="table-responsive">
                                     <table class="table table-bordered mb-0" style="font-size:.85rem">
                                         <thead class="table-light">
@@ -1004,40 +978,34 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                
                                 <div class="row g-3 mt-3">
                                     <div class="col-md-6">
-                                        <div class="p-3 rounded" style="background:var(--gray-50);border:1px solid var(--gray-200)">
-                                            <h6 class="fw-bold mb-2" style="font-size:.8rem;color:var(--gray-600)">Rincian Bulanan</h6>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>Total Gaji Pokok:</span>
-                                                <strong id="ringkasanGajiBulanan">Rp 0</strong>
-                                            </div>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>BPJS Perusahaan:</span>
-                                                <strong class="text-success" id="ringkasanBPJSPerBulan">Rp 0</strong>
-                                            </div>
-                                            <div class="d-flex justify-content-between">
-                                                <span>BPJS Karyawan:</span>
-                                                <strong class="text-info" id="ringkasanBPJSKarBulan">Rp 0</strong>
-                                            </div>
+                                        <div class="p-3 rounded"
+                                            style="background:var(--gray-50);border:1px solid var(--gray-200)">
+                                            <h6 class="fw-bold mb-2" style="font-size:.8rem;color:var(--gray-600)">Rincian
+                                                Bulanan</h6>
+                                            <div class="d-flex justify-content-between mb-2"><span>Total Gaji
+                                                    Pokok:</span><strong id="ringkasanGajiBulanan">Rp 0</strong></div>
+                                            <div class="d-flex justify-content-between mb-2"><span>BPJS
+                                                    Perusahaan:</span><strong class="text-success"
+                                                    id="ringkasanBPJSPerBulan">Rp 0</strong></div>
+                                            <div class="d-flex justify-content-between"><span>BPJS Karyawan:</span><strong
+                                                    class="text-info" id="ringkasanBPJSKarBulan">Rp 0</strong></div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="p-3 rounded" style="background:var(--gray-50);border:1px solid var(--gray-200)">
-                                            <h6 class="fw-bold mb-2" style="font-size:.8rem;color:var(--gray-600)">Rincian Tahunan</h6>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>Total Gaji:</span>
-                                                <strong id="ringkasanGajiTahunanDetail">Rp 0</strong>
-                                            </div>
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>Total BPJS Perusahaan:</span>
-                                                <strong class="text-success" id="ringkasanBPJSPerTahun">Rp 0</strong>
-                                            </div>
-                                            <div class="d-flex justify-content-between">
-                                                <span>Total BPJS Karyawan:</span>
-                                                <strong class="text-info" id="ringkasanBPJSKarTahun">Rp 0</strong>
-                                            </div>
+                                        <div class="p-3 rounded"
+                                            style="background:var(--gray-50);border:1px solid var(--gray-200)">
+                                            <h6 class="fw-bold mb-2" style="font-size:.8rem;color:var(--gray-600)">Rincian
+                                                Tahunan</h6>
+                                            <div class="d-flex justify-content-between mb-2"><span>Total
+                                                    Gaji:</span><strong id="ringkasanGajiTahunanDetail">Rp 0</strong></div>
+                                            <div class="d-flex justify-content-between mb-2"><span>Total BPJS
+                                                    Perusahaan:</span><strong class="text-success"
+                                                    id="ringkasanBPJSPerTahun">Rp 0</strong></div>
+                                            <div class="d-flex justify-content-between"><span>Total BPJS
+                                                    Karyawan:</span><strong class="text-info"
+                                                    id="ringkasanBPJSKarTahun">Rp 0</strong></div>
                                         </div>
                                     </div>
                                 </div>
@@ -1100,8 +1068,7 @@
                                             @foreach ($karyawans as $k)
                                                 <option value="{{ $k->id }}" data-nama="{{ $k->nama_lengkap }}"
                                                     data-nip="{{ $k->nip }}">
-                                                    {{ $k->nama_lengkap }}
-                                                    ({{ $k->jabatan ?? '-' }})
+                                                    {{ $k->nama_lengkap }} ({{ $k->jabatan ?? '-' }})
                                                 </option>
                                             @endforeach
                                         </select>
@@ -1135,24 +1102,31 @@
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
                                 <h6 class="fw-bold mb-3"><i class="fa-solid fa-money-bill-wave me-2 text-primary"></i>Gaji
-                                    Pokok</h6>
+                                    Pokok & Dasar BPJS</h6>
                                 <div class="row g-3 mb-3">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label">Gaji Pokok <span
-                                                class="badge-source badge bg-info ms-1">dari tabel karyawan</span></label>
-                                        <input type="text" class="form-control mono-input readonly-val"
-                                            id="wGajiPokok" readonly>
+                                                class="badge-source badge bg-secondary ms-1">dapat diubah</span></label>
+                                        <input type="text" class="form-control mono-input" id="wGajiPokok"
+                                            oninput="formatAndCalc(this)">
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label">Salary BPJSTK <span
                                                 class="badge-source badge bg-secondary ms-1">dapat diubah</span></label>
                                         <input type="text" class="form-control mono-input" id="wSalaryBPJSTK"
                                             placeholder="0" oninput="formatAndCalc(this)">
-                                        <div class="form-text">Default = gaji pokok. Ubah jika berbeda.</div>
+                                        <div class="form-text">Default = gaji pokok.</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">UMK Bandung <span
+                                                class="badge-source badge bg-secondary ms-1">dapat diubah</span></label>
+                                        <input type="text" class="form-control mono-input" id="wUMK"
+                                            placeholder="0" oninput="formatAndCalc(this)">
                                     </div>
                                 </div>
                                 <hr>
-                                <h6 class="fw-bold mb-2"><i class="fa-solid fa-gift me-2 text-primary"></i>Tunjangan</h6>
+                                <h6 class="fw-bold mb-2"><i class="fa-solid fa-gift me-2 text-primary"></i>Tunjangan
+                                    (Dapat Diubah)</h6>
                                 <div id="tunjanganSourceInfo"></div>
                                 <div class="row g-3" id="tunjanganFields"></div>
                                 <div class="preview-box mt-4">
@@ -1171,27 +1145,36 @@
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
                                 <h6 class="fw-bold mb-2"><i class="fa-solid fa-shield-alt me-2 text-success"></i>BPJS
-                                    (Otomatis Terhitung)</h6>
+                                    (Dapat Diubah Manual)</h6>
                                 <div class="alert alert-info py-2 mb-3">
                                     <i class="fa-solid fa-info-circle me-1"></i>
                                     Dasar BPJSTK: <strong id="dasarBPJSTK">Rp 0</strong> &nbsp;|&nbsp;
-                                    UMK Bandung: <strong>Rp 2.100.000</strong>
+                                    UMK Bandung: <strong id="dasarUMK">Rp 0</strong>
                                 </div>
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-6">
                                         <div class="p-3 rounded"
                                             style="background:rgba(5,150,105,.05);border:1px solid var(--success-light)">
                                             <div class="fw-bold text-success mb-2"
-                                                style="font-size:.8rem;text-transform:uppercase">Perusahaan</div>
+                                                style="font-size:.8rem;text-transform:uppercase">Perusahaan (Dapat Diubah)
+                                            </div>
                                             @foreach ([['b3JHTper', 'JHT 3.7%'], ['b3JKMper', 'JKM 0.3%'], ['b3JKKper', 'JKK 0.24%'], ['b3JPper', 'JP 2%'], ['b3KESper', 'Kes. 4%']] as [$id, $label])
-                                                <div class="d-flex justify-content-between py-1" style="font-size:.82rem">
+                                                <div class="d-flex justify-content-between py-1 align-items-center"
+                                                    style="font-size:.82rem">
                                                     <span class="text-muted">{{ $label }}</span>
-                                                    <span class="fw-semibold" id="{{ $id }}">Rp 0</span>
+                                                    <input type="text"
+                                                        class="form-control form-control-sm mono-input text-end bpjs-input"
+                                                        id="{{ $id }}" style="width: 130px;"
+                                                        oninput="formatBPJSInput(this)">
                                                 </div>
                                             @endforeach
                                             <div class="d-flex justify-content-between pt-2 mt-1 border-top fw-bold text-success"
                                                 style="font-size:.9rem">
-                                                <span>Total</span><span id="b3TotalPer">Rp 0</span>
+                                                <span>Total</span>
+                                                <input type="text"
+                                                    class="form-control form-control-sm mono-input text-end fw-bold bpjs-input"
+                                                    id="b3TotalPer" style="width: 130px;"
+                                                    oninput="formatBPJSInput(this)">
                                             </div>
                                         </div>
                                     </div>
@@ -1199,16 +1182,25 @@
                                         <div class="p-3 rounded"
                                             style="background:rgba(2,132,199,.05);border:1px solid var(--info-light)">
                                             <div class="fw-bold text-info mb-2"
-                                                style="font-size:.8rem;text-transform:uppercase">Karyawan (Potongan)</div>
+                                                style="font-size:.8rem;text-transform:uppercase">Karyawan (Dapat Diubah)
+                                            </div>
                                             @foreach ([['b3JHTkar', 'JHT 2%'], ['b3JPkar', 'JP 1%'], ['b3KESkar', 'Kes. 1%']] as [$id, $label])
-                                                <div class="d-flex justify-content-between py-1" style="font-size:.82rem">
+                                                <div class="d-flex justify-content-between py-1 align-items-center"
+                                                    style="font-size:.82rem">
                                                     <span class="text-muted">{{ $label }}</span>
-                                                    <span class="fw-semibold" id="{{ $id }}">Rp 0</span>
+                                                    <input type="text"
+                                                        class="form-control form-control-sm mono-input text-end bpjs-input"
+                                                        id="{{ $id }}" style="width: 130px;"
+                                                        oninput="formatBPJSInput(this)">
                                                 </div>
                                             @endforeach
                                             <div class="d-flex justify-content-between pt-2 mt-1 border-top fw-bold text-info"
                                                 style="font-size:.9rem">
-                                                <span>Total Potongan</span><span id="b3TotalKar">Rp 0</span>
+                                                <span>Total Potongan</span>
+                                                <input type="text"
+                                                    class="form-control form-control-sm mono-input text-end fw-bold bpjs-input"
+                                                    id="b3TotalKar" style="width: 130px;"
+                                                    oninput="formatBPJSInput(this)">
                                             </div>
                                         </div>
                                     </div>
@@ -1217,13 +1209,23 @@
                                 <h6 class="fw-bold mb-2"><i class="fa-solid fa-minus-circle me-2 text-danger"></i>Potongan
                                     Lainnya <small class="text-muted fw-normal">(input manual)</small></h6>
                                 <div class="row g-3">
-                                    @foreach ([['wPPh', 'PPh 21'], ['wKasbon', 'Kasbon / Pinjaman'], ['wDenda', 'Denda / Telat'], ['wPotLain', 'Potongan Lainnya']] as [$id, $label])
-                                        <div class="col-md-6">
-                                            <label class="form-label">{{ $label }}</label>
-                                            <input type="text" class="form-control mono-input"
-                                                id="{{ $id }}" placeholder="0" oninput="formatAndCalc(this)">
-                                        </div>
-                                    @endforeach
+                                    <div class="col-md-6">
+                                        <label class="form-label">PPh 21 <span class="badge-source badge bg-info ms-1" id="pph21Badge">Auto-fill</span></label>
+                                        <input type="text" class="form-control mono-input" id="wPPh" placeholder="0" oninput="formatAndCalc(this)">
+                                        <div class="form-text" id="pph21Info">Akan terisi otomatis dari data PPH 21 karyawan.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Kasbon / Pinjaman</label>
+                                        <input type="text" class="form-control mono-input" id="wKasbon" placeholder="0" oninput="formatAndCalc(this)">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Denda / Telat</label>
+                                        <input type="text" class="form-control mono-input" id="wDenda" placeholder="0" oninput="formatAndCalc(this)">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Potongan Lainnya</label>
+                                        <input type="text" class="form-control mono-input" id="wPotLain" placeholder="0" oninput="formatAndCalc(this)">
+                                    </div>
                                 </div>
                                 <div class="preview-box mt-4">
                                     <h6><i class="fa-solid fa-calculator me-2"></i>Ringkasan Potongan</h6>
@@ -1322,7 +1324,8 @@
                             class="fa-solid fa-arrow-left me-1"></i>Sebelumnya</button>
                     <button class="btn btn-pri" id="wBtnNext" onclick="wzNext()">Lanjut <i
                             class="fa-solid fa-arrow-right ms-1"></i></button>
-                    <button class="btn btn-success" id="wBtnSave" style="display:none" onclick="savePayroll()">Simpan Payroll</button>
+                    <button class="btn btn-success" id="wBtnSave" style="display:none" onclick="savePayroll()">Simpan
+                        Payroll</button>
                 </div>
             </div>
         </div>
@@ -1381,7 +1384,6 @@
                 },
                 cache: false
             });
-
             initDataTable();
             initAuditTable();
             applyFilter();
@@ -1389,7 +1391,6 @@
             $(document).on('input', '.mono-input:not(.readonly-val)', function() {
                 let raw = $(this).val().replace(/\D/g, '');
                 if (raw) $(this).val(fmtNum(+raw));
-                calcPreview();
             });
 
             $('#tabStatBtn').on('shown.bs.tab', loadStats);
@@ -1565,9 +1566,8 @@
                 bulan: $('#fBulan').val(),
                 tahun: $('#fTahun').val(),
                 divisi: $('#fDivisi').val(),
-                status: $('#fStatus').val(),
+                status: $('#fStatus').val()
             };
-
             $.ajax({
                     url: BASE + '/get-data',
                     method: 'GET',
@@ -1575,23 +1575,14 @@
                     dataType: 'json'
                 })
                 .done(function(res) {
-                    if (!res.success) {
-                        console.warn('API error:', res);
-                        return;
-                    }
-
+                    if (!res.success) return;
                     const data = Array.isArray(res.data) ? res.data : [];
-
                     dtTable.clear().rows.add(data).draw();
                     dtAudit.clear().rows.add(data.filter(d => d.payroll)).draw();
-
-                    const sudah = data.filter(d => d.payroll).length;
-                    const belum = data.filter(d => !d.payroll).length;
-                    $('#statSudah').text(sudah);
-                    $('#statBelum').text(belum);
+                    $('#statSudah').text(data.filter(d => d.payroll).length);
+                    $('#statBelum').text(data.filter(d => !d.payroll).length);
                 })
-                .fail(function(xhr) {
-                    console.error('AJAX Failed:', xhr);
+                .fail(function() {
                     toast('Gagal memuat data filter', 'error');
                 });
         }
@@ -1621,12 +1612,10 @@
         }
 
         function renderTunjItems(detail) {
-            if (!detail || !detail.length) {
-                return '<div class="text-muted" style="font-size:.8rem">— Tidak ada tunjangan —</div>';
-            }
+            if (!detail || !detail.length)
+            return '<div class="text-muted" style="font-size:.8rem">— Tidak ada tunjangan —</div>';
             return detail.map(t =>
-                `<div class="detail-item"><span>${t.nama}</span><span>Rp ${fmtNum(t.total)}</span></div>`
-            ).join('');
+                `<div class="detail-item"><span>${t.nama}</span><span>Rp ${fmtNum(t.total)}</span></div>`).join('');
         }
 
         function renderDetailHtml(data) {
@@ -1683,7 +1672,6 @@
                 const tunjDetail = p.tunjangan_detail || [];
                 if (['draft', 'calculated'].includes(p.status)) $('#detailBtnApprove').removeClass('d-none');
                 if (p.status !== 'paid') $('#detailBtnDelete').removeClass('d-none');
-
                 const tunjHtml = renderTunjItems(tunjDetail);
 
                 $('#detailModalBody').html(`
@@ -1804,14 +1792,19 @@
 
         function renderTunjanganFields(detail) {
             if (!detail || !detail.length) {
-                $('#tunjanganFields').html('');
+                $('#tunjanganFields').html(`
+                    <div class="col-md-12">
+                        <label class="form-label">Total Tunjangan (Manual)</label>
+                        <input type="text" class="form-control mono-input tunj-input" value="0" data-nama="Total Tunjangan" oninput="formatAndCalc(this)">
+                    </div>
+                `);
                 return;
             }
             const html = detail.map(t => `
                 <div class="col-md-6">
                     <label class="form-label">${t.nama}</label>
-                    <input type="text" class="form-control mono-input readonly-val tunj-input" value="${fmtNum(t.total)}" readonly
-                        data-jenis-id="${t.jenis_tunjangan_id ?? ''}" data-nama="${t.nama}">
+                    <input type="text" class="form-control mono-input tunj-input" value="${fmtNum(t.total)}" 
+                        data-jenis-id="${t.jenis_tunjangan_id ?? ''}" data-nama="${t.nama}" oninput="formatAndCalc(this)">
                 </div>`).join('');
             $('#tunjanganFields').html(html);
         }
@@ -1849,6 +1842,22 @@
                         wzTunjReadonly = res.has_tunjangan;
                         $('#wGajiPokok').val(fmtNum(wzEmployee.gaji_pokok));
                         $('#wSalaryBPJSTK').val(fmtNum(wzEmployee.gaji_pokok));
+                        $('#wUMK').val(fmtNum(wzEmployee.umk_bandung || UMK));
+
+                        if (res.karyawan.pph21_bulanan > 0) {
+                            $('#wPPh').val(fmtNum(res.karyawan.pph21_bulanan));
+                            if (res.karyawan.has_pph21) {
+                                $('#pph21Badge').text('Dari Setup PPH 21').removeClass('bg-info bg-secondary').addClass('bg-success');
+                                $('#pph21Info').text('Nilai diambil dari setup PPH 21. Tetap dapat diubah manual jika perlu.');
+                            } else {
+                                $('#pph21Badge').text('Manual').removeClass('bg-info bg-success').addClass('bg-secondary');
+                                $('#pph21Info').text('Karyawan belum punya setup PPH 21. Silakan input manual.');
+                            }
+                        } else {
+                            $('#wPPh').val('');
+                            $('#pph21Badge').text('Tidak Ada').removeClass('bg-info bg-success').addClass('bg-secondary');
+                            $('#pph21Info').text('Karyawan belum memiliki setup PPH 21 atau nilai PPH 21 adalah 0.');
+                        }
 
                         renderTunjanganFields(res.tunjangan_detail);
 
@@ -1856,18 +1865,18 @@
                             const items = res.tunjangan_detail.map(t =>
                                 `<strong>${t.nama}</strong>: Rp ${fmtNum(t.total)}`).join(' | ');
                             $('#tunjanganSourceInfo').html(
-                                `<div class="tunjangan-source-info"><i class="fa-solid fa-circle-check text-info me-2"></i>Tunjangan diambil dari data yang sudah diapprove: ${items}</div>`
+                                `<div class="tunjangan-source-info"><i class="fa-solid fa-circle-check text-info me-2"></i>Tunjangan default dari data approved (dapat diubah): ${items}</div>`
                                 );
                         } else {
                             $('#tunjanganSourceInfo').html(
-                                `<div class="tunjangan-empty-info"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Tidak ada data tunjangan approved untuk periode ini.</div>`
+                                `<div class="tunjangan-empty-info"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Tidak ada data tunjangan approved. Silakan input manual.</div>`
                                 );
                         }
                         calcPreview();
+                        calcBPJS();
                         goStep(2);
                     })
-                    .fail(function(xhr) {
-                        console.error('Gagal memuat data karyawan:', xhr);
+                    .fail(function() {
                         toast('Gagal memuat data karyawan', 'error');
                     })
                     .always(function() {
@@ -1919,14 +1928,17 @@
             goStep(1);
             $('#wKaryawan').val('');
             $('#wz1Alert').addClass('d-none');
-            $('#wSalaryBPJSTK,#wPPh,#wKasbon,#wDenda,#wPotLain').val('');
+            $('#wSalaryBPJSTK,#wPPh,#wKasbon,#wDenda,#wPotLain,#wGajiPokok,#wUMK').val('');
+            $('.bpjs-input').val('');
             $('#tunjanganFields').html('');
             $('#tunjanganSourceInfo').html('');
+            $('#pph21Badge').text('Auto-fill').removeClass('bg-success bg-secondary').addClass('bg-info');
+            $('#pph21Info').text('Akan terisi otomatis dari data PPH 21 karyawan.');
             $('#wizardTitle').text('Buat Payroll Baru');
         }
 
         function calcPreview() {
-            const gaji = wzEmployee ? wzEmployee.gaji_pokok : 0;
+            const gaji = parseNum($('#wGajiPokok').val());
             const tunj = getTunjTotal();
             const thp = gaji + tunj;
             $('#pvGaji').text('Rp ' + fmtNum(gaji));
@@ -1934,35 +1946,38 @@
             $('#pvTHP').text('Rp ' + fmtNum(thp));
         }
 
-        function calcBPJS() {
-            const salary = parseNum($('#wSalaryBPJSTK').val()) || (wzEmployee?.gaji_pokok ?? 0);
-            const umk = wzEmployee?.umk_bandung ?? UMK;
-            const jhtPer = Math.round(salary * 3.7 / 100),
-                jkmPer = Math.round(salary * 0.3 / 100),
-                jkkPer = Math.round(salary * 0.24 / 100),
-                jpPer = Math.round(salary * 2 / 100),
-                kesPer = Math.round(umk * 4 / 100);
-            const totalPer = jhtPer + jkmPer + jkkPer + jpPer + kesPer;
-            const jhtKar = Math.round(salary * 2 / 100),
-                jpKar = Math.round(salary * 1 / 100),
-                kesKar = Math.round(umk * 1 / 100);
-            const totalKar = jhtKar + jpKar + kesKar;
+        function formatAndCalc(el) {
+            let raw = $(el).val().replace(/\D/g, '');
+            if (raw) $(el).val(fmtNum(+raw));
+            calcPreview();
+            calcBPJS();
+        }
 
-            $('#dasarBPJSTK').text('Rp ' + fmtNum(salary));
-            $('#b3JHTper').text('Rp ' + fmtNum(jhtPer));
-            $('#b3JKMper').text('Rp ' + fmtNum(jkmPer));
-            $('#b3JKKper').text('Rp ' + fmtNum(jkkPer));
-            $('#b3JPper').text('Rp ' + fmtNum(jpPer));
-            $('#b3KESper').text('Rp ' + fmtNum(kesPer));
-            $('#b3TotalPer').text('Rp ' + fmtNum(totalPer));
-            $('#b3JHTkar').text('Rp ' + fmtNum(jhtKar));
-            $('#b3JPkar').text('Rp ' + fmtNum(jpKar));
-            $('#b3KESkar').text('Rp ' + fmtNum(kesKar));
-            $('#b3TotalKar').text('Rp ' + fmtNum(totalKar));
+        function formatBPJSInput(el) {
+            let raw = $(el).val().replace(/\D/g, '');
+            if (raw) $(el).val(fmtNum(+raw));
+            recalcBPJSTotals();
+        }
 
-            const gaji = wzEmployee?.gaji_pokok ?? 0;
+        function recalcBPJSTotals() {
+            const idsPer = ['b3JHTper', 'b3JKMper', 'b3JKKper', 'b3JPper', 'b3KESper'];
+            let totalPer = 0;
+            idsPer.forEach(id => totalPer += parseNum($('#' + id).val()));
+            $('#b3TotalPer').val(fmtNum(totalPer));
+
+            const idsKar = ['b3JHTkar', 'b3JPkar', 'b3KESkar'];
+            let totalKar = 0;
+            idsKar.forEach(id => totalKar += parseNum($('#' + id).val()));
+            $('#b3TotalKar').val(fmtNum(totalKar));
+
+            updateTHPBersihPreview();
+        }
+
+        function updateTHPBersihPreview() {
+            const gaji = parseNum($('#wGajiPokok').val());
             const tunj = getTunjTotal();
             const thpKotor = gaji + tunj;
+            const totalKar = parseNum($('#b3TotalKar').val());
             const potLain = ['#wPPh', '#wKasbon', '#wDenda', '#wPotLain'].reduce((s, id) => s + parseNum($(id).val()), 0);
             const thpBersih = thpKotor - totalKar - potLain;
 
@@ -1970,35 +1985,56 @@
             $('#pv3BPJS').text('Rp ' + fmtNum(totalKar));
             $('#pv3Lain').text('Rp ' + fmtNum(potLain));
             $('#pv3THPBersih').text('Rp ' + fmtNum(thpBersih));
+        }
 
-            $(document).off('input.bpjs').on('input.bpjs', '#wPPh,#wKasbon,#wDenda,#wPotLain', function() {
-                const pl = ['#wPPh', '#wKasbon', '#wDenda', '#wPotLain'].reduce((s, id) => s + parseNum($(id)
-                .val()), 0);
-                const net = thpKotor - totalKar - pl;
-                $('#pv3Lain').text('Rp ' + fmtNum(pl));
-                $('#pv3THPBersih').text('Rp ' + fmtNum(net));
-            });
+        function calcBPJS() {
+            const salary = parseNum($('#wSalaryBPJSTK').val()) || parseNum($('#wGajiPokok').val());
+            const umk = parseNum($('#wUMK').val()) || UMK;
+
+            const jhtPer = Math.round(salary * 3.7 / 100);
+            const jkmPer = Math.round(salary * 0.3 / 100);
+            const jkkPer = Math.round(salary * 0.24 / 100);
+            const jpPer = Math.round(salary * 2 / 100);
+            const kesPer = Math.round(umk * 4 / 100);
+
+            const jhtKar = Math.round(salary * 2 / 100);
+            const jpKar = Math.round(salary * 1 / 100);
+            const kesKar = Math.round(umk * 1 / 100);
+
+            $('#dasarBPJSTK').text('Rp ' + fmtNum(salary));
+            $('#dasarUMK').text('Rp ' + fmtNum(umk));
+
+            if (wzStep === 2) {
+                $('#b3JHTper').val(fmtNum(jhtPer));
+                $('#b3JKMper').val(fmtNum(jkmPer));
+                $('#b3JKKper').val(fmtNum(jkkPer));
+                $('#b3JPper').val(fmtNum(jpPer));
+                $('#b3KESper').val(fmtNum(kesPer));
+
+                $('#b3JHTkar').val(fmtNum(jhtKar));
+                $('#b3JPkar').val(fmtNum(jpKar));
+                $('#b3KESkar').val(fmtNum(kesKar));
+            }
+
+            recalcBPJSTotals();
         }
 
         function updateReview() {
             if (!wzEmployee) return;
             const bulan = $('#wBulan').val(),
                 tahun = $('#wTahun').val();
-            const salary = parseNum($('#wSalaryBPJSTK').val()) || wzEmployee.gaji_pokok;
-            const umk = wzEmployee.umk_bandung ?? UMK;
-            const gaji = wzEmployee.gaji_pokok;
+            const gaji = parseNum($('#wGajiPokok').val());
             const tunj = getTunjTotal();
             const thpKotor = gaji + tunj;
-            const jhtPer = Math.round(salary * 3.7 / 100),
-                jkmPer = Math.round(salary * 0.3 / 100),
-                jkkPer = Math.round(salary * 0.24 / 100),
-                jpPer = Math.round(salary * 2 / 100),
-                kesPer = Math.round(umk * 4 / 100);
-            const totalBPJSPer = jhtPer + jkmPer + jkkPer + jpPer + kesPer;
-            const jhtKar = Math.round(salary * 2 / 100),
-                jpKar = Math.round(salary * 1 / 100),
-                kesKar = Math.round(umk * 1 / 100);
-            const totalBPJSKar = jhtKar + jpKar + kesKar;
+
+            const totalBPJSPer = parseNum($('#b3TotalPer').val());
+            const bpjsKesPer = parseNum($('#b3KESper').val());
+            const bpjsTKPer = totalBPJSPer - bpjsKesPer;
+
+            const totalBPJSKar = parseNum($('#b3TotalKar').val());
+            const bpjsKesKar = parseNum($('#b3KESkar').val());
+            const bpjsTKKar = totalBPJSKar - bpjsKesKar;
+
             const potLain = ['#wPPh', '#wKasbon', '#wDenda', '#wPotLain'].reduce((s, id) => s + parseNum($(id).val()), 0);
             const thpBersih = thpKotor - totalBPJSKar - potLain;
             const totalBiaya = thpKotor + totalBPJSPer;
@@ -2008,21 +2044,15 @@
             $('#rv4Gaji').text('Rp ' + fmtNum(gaji));
             $('#rv4Tunj').text('Rp ' + fmtNum(tunj));
             $('#rv4THPKotor').text('Rp ' + fmtNum(thpKotor));
-            $('#rv4BPJSTKper').text('Rp ' + fmtNum(jhtPer + jkmPer + jkkPer + jpPer));
-            $('#rv4BPJSKesper').text('Rp ' + fmtNum(kesPer));
+            $('#rv4BPJSTKper').text('Rp ' + fmtNum(bpjsTKPer));
+            $('#rv4BPJSKesper').text('Rp ' + fmtNum(bpjsKesPer));
             $('#rv4TotalBPJSper').text('Rp ' + fmtNum(totalBPJSPer));
-            $('#rv4BPJSTKkar').text('Rp ' + fmtNum(jhtKar + jpKar));
-            $('#rv4BPJSKeskar').text('Rp ' + fmtNum(kesKar));
+            $('#rv4BPJSTKkar').text('Rp ' + fmtNum(bpjsTKKar));
+            $('#rv4BPJSKeskar').text('Rp ' + fmtNum(bpjsKesKar));
             $('#rv4PotLain').text('Rp ' + fmtNum(potLain));
             $('#rv4TotalPot').text('Rp ' + fmtNum(totalBPJSKar + potLain));
             $('#rv4THPBersih').text('Rp ' + fmtNum(thpBersih));
             $('#rv4TotalBiaya').text('Rp ' + fmtNum(totalBiaya));
-        }
-
-        function formatAndCalc(el) {
-            let raw = $(el).val().replace(/\D/g, '');
-            if (raw) $(el).val(fmtNum(+raw));
-            calcBPJS();
         }
 
         function savePayroll() {
@@ -2031,14 +2061,24 @@
                 karyawan_id: wzEmployee.id,
                 bulan: +$('#wBulan').val(),
                 tahun: +$('#wTahun').val(),
-                gaji_pokok: wzEmployee.gaji_pokok,
-                salary_bpjstk: parseNum($('#wSalaryBPJSTK').val()) || wzEmployee.gaji_pokok,
-                umk_bandung: wzEmployee.umk_bandung ?? UMK,
+                gaji_pokok: parseNum($('#wGajiPokok').val()),
+                salary_bpjstk: parseNum($('#wSalaryBPJSTK').val()),
+                umk_bandung: parseNum($('#wUMK').val()),
                 tunjangan: getTunjanganItems(),
                 'potongan[pph21]': parseNum($('#wPPh').val()),
                 'potongan[kasbon]': parseNum($('#wKasbon').val()),
                 'potongan[denda]': parseNum($('#wDenda').val()),
                 'potongan[lain]': parseNum($('#wPotLain').val()),
+                jht_perusahaan: parseNum($('#b3JHTper').val()),
+                jkm_perusahaan: parseNum($('#b3JKMper').val()),
+                jkk_perusahaan: parseNum($('#b3JKKper').val()),
+                jp_perusahaan: parseNum($('#b3JPper').val()),
+                bpjs_kes_perusahaan: parseNum($('#b3KESper').val()),
+                total_bpjs_perusahaan: parseNum($('#b3TotalPer').val()),
+                jht_karyawan: parseNum($('#b3JHTkar').val()),
+                jp_karyawan: parseNum($('#b3JPkar').val()),
+                bpjs_kes_karyawan: parseNum($('#b3KESkar').val()),
+                total_bpjs_karyawan: parseNum($('#b3TotalKar').val()),
             };
             const url = wzEditId ? BASE + '/' + wzEditId : BASE;
             const method = wzEditId ? 'PUT' : 'POST';
@@ -2154,18 +2194,15 @@
                 }
             });
 
-            const divisiKeys = Object.keys(res.divisi_stats || {});
             if (res.ringkasan_biaya) {
                 const rb = res.ringkasan_biaya;
                 $('#ringkasanTotalGajiTahunan').text('Rp ' + fmtNum(rb.total_gaji_tahunan));
                 $('#ringkasanBatasMaksimal').text('Rp ' + fmtNum(rb.batas_maksimal));
                 $('#ringkasanTotalBPJSTahunan').text('Rp ' + fmtNum(rb.total_bpjs_tahunan));
                 $('#ringkasanPersentase').text(rb.persentase.toFixed(2) + '%');
-                
                 $('#ringkasanGajiBulanan').text('Rp ' + fmtNum(rb.total_gaji_bulanan));
                 $('#ringkasanBPJSPerBulan').text('Rp ' + fmtNum(rb.total_ditanggung_perusahaan));
                 $('#ringkasanBPJSKarBulan').text('Rp ' + fmtNum(rb.total_ditanggung_karyawan));
-                
                 $('#ringkasanGajiTahunanDetail').text('Rp ' + fmtNum(rb.total_gaji_tahunan));
                 $('#ringkasanBPJSPerTahun').text('Rp ' + fmtNum(rb.total_ditanggung_perusahaan * 12));
                 $('#ringkasanBPJSKarTahun').text('Rp ' + fmtNum(rb.total_ditanggung_karyawan * 12));

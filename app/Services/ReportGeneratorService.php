@@ -14,7 +14,7 @@ class ReportGeneratorService
 {
     protected array $allowedModels = [
         'karyawan' => \App\Models\karyawan::class,
-        'kegiatan' => \App\Models\Kegiatan::class,
+        'pelamar' => \App\Models\Pelamar::class,
     ];
 
     protected array $allowedFieldTypes = [
@@ -42,7 +42,7 @@ class ReportGeneratorService
     {
         return [
             'karyawan' => [],
-            'kegiatan' => ['pic', 'pesertas'],
+            'pelamar' => [],
         ][$sourceType] ?? [];
     }
 
@@ -952,6 +952,16 @@ class ReportGeneratorService
             $tempOutput = tempnam(sys_get_temp_dir(), 'docx_noop_');
             copy($docxPath, $tempOutput);
             return $tempOutput;
+        }
+
+        foreach ($replacements as $item) {
+            $find = trim($item['find'] ?? '');
+            if (str_contains($find, '{') || str_contains($find, '}')) {
+                throw new \Exception(
+                    'Teks yang dipilih ("' . $find . '") mengandung tanda kurung kurawal. ' .
+                    'Bersihkan dokumen dari placeholder lama sebelum membuat template baru.'
+                );
+            }
         }
 
         $zip        = new \ZipArchive();
