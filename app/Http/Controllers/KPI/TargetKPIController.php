@@ -1089,7 +1089,6 @@ class TargetKPIController extends Controller
 
         $idUser = $request->idUser;
         $typeGet = $request->typeGet;
-        $limit = $request->input('limit', 10); // Parameter paginasi
 
         if (filled($idUser) && filled($typeGet)) {
             $karyawan = Karyawan::find($idUser);
@@ -1134,8 +1133,7 @@ class TargetKPIController extends Controller
             });
         }
 
-        // Mengganti get() dengan paginate() untuk efisiensi memori
-        $paginatedData = $query->paginate($limit);
+        $detailList = $query->get();
 
         $data = [
             'detail' => $detailList
@@ -1146,43 +1144,42 @@ class TargetKPIController extends Controller
                         return null;
                     }
 
-            $tenggat_waktu = null;
-            $jangka = strtolower($detail->dataTarget?->jangka_target ?? '');
-            $detailJangka = $detail->detail_jangka;
+                    $tenggat_waktu = null;
+                    $jangka = strtolower($detail->dataTarget?->jangka_target ?? '');
+                    $detailJangka = $detail->detail_jangka;
 
-            if ($jangka === 'tahunan') {
-                $year = (int) $detailJangka;
-                $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
-            }
+                    switch ($jangka) {
+                        case 'tahunan':
+                            $year = (int) $detailJangka;
+                            $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
+                            break;
+                    }
 
                     $personId = filled($idUser) ? (int) $idUser : null;
                     $progress = $this->resolveProgress($item, $personId);
-            return [
-                'id' => $item->id,
-                'pembuat' => $item->karyawan->nama_lengkap ?? null,
-                'id_pembuat' => $item->id_pembuat,
-                'judul' => $item->judul,
-                'deskripsi' => $item->deskripsi,
-                'jabatan' => $item->detailTargetKPI->pluck('jabatan')->unique()->values(),
-                'divisi' => $item->detailTargetKPI->pluck('divisi')->unique()->values(),
-                'asistant_route' => $detail->dataTarget?->asistant_route,
-                'jangka_target' => $detail->dataTarget?->jangka_target,
-                'detail_jangka' => $detail->detail_jangka,
-                'tipe_target' => $detail->dataTarget?->tipe_target,
-                'nilai_target' => $detail->dataTarget?->nilai_target,
-                'manual_value' => $detail->manual_value,
-                'status' => $item->status,
-                'created_at' => $item->created_at,
-                'tenggat_waktu' => $tenggat_waktu,
-                'progress' => $progress,
-            ];
-        })->filter()->values();
 
-        // Menyisipkan kembali data yang telah ditransformasi ke dalam objek paginasi
-        $paginatedData->setCollection($transformedData);
-
-        $data = [
-            'detail' => $paginatedData, // Mengembalikan struktur paginasi standar Laravel
+                    return [
+                        'id' => $item->id,
+                        'pembuat' => $item->karyawan->nama_lengkap ?? null,
+                        'id_pembuat' => $item->id_pembuat,
+                        'judul' => $item->judul,
+                        'deskripsi' => $item->deskripsi,
+                        'jabatan' => $item->detailTargetKPI->pluck('jabatan')->unique()->values(),
+                        'divisi' => $item->detailTargetKPI->pluck('divisi')->unique()->values(),
+                        'asistant_route' => $detail->dataTarget?->asistant_route,
+                        'jangka_target' => $detail->dataTarget?->jangka_target,
+                        'detail_jangka' => $detail->detail_jangka,
+                        'tipe_target' => $detail->dataTarget?->tipe_target,
+                        'nilai_target' => $detail->dataTarget?->nilai_target,
+                        'manual_value' => $detail->manual_value,
+                        'status' => $item->status,
+                        'created_at' => $item->created_at,
+                        'tenggat_waktu' => $tenggat_waktu,
+                        'progress' => $progress,
+                    ];
+                })
+                ->filter()
+                ->values(),
             'jabatan_list' => $dataJabatan,
             'routes' => DataTarget::select(
                 'asistant_route',
