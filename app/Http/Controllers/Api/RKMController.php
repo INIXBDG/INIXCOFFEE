@@ -287,12 +287,33 @@ class RKMController extends Controller
         $start = $rkm->tanggal_awal;
         $end = $rkm->tanggal_akhir;
 		$instruktur_key = $rkm->instruktur_key;
-        $rows = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
-            ->where('materi_key', $materi_key)
-			->where('instruktur_key', $instruktur_key)
-            ->where('tanggal_awal', $start)
-            ->whereBetween('tanggal_akhir', [$start, $end])
-            ->get();
+        $rows = RKM::with([
+            'materi',
+            'instruktur',
+            'instruktur2',
+            'asisten',
+            'nilaifeedback',
+            'peluang',
+            'exam',
+            'exam.approvalexam'
+        ])
+        ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+        ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
+        ->where('r_k_m_s.status', '0')
+        ->whereNull('r_k_m_s.deleted_at')
+        ->whereDoesntHave('peluang', function ($query) {
+            $query->where('tentatif', 1);
+        })
+        ->where(function ($query) {
+            $query->whereHas('exam.approvalexam', function ($q) {
+                $q->where('technical_support', 1);
+            })
+            ->orWhereDoesntHave('exam.approvalexam');
+        })
+        ->where('r_k_m_s.materi_key', $materi_key)
+        ->where('r_k_m_s.instruktur_key', $instruktur_key)
+        ->select('r_k_m_s.*')
+        ->get();
 
         $mergedData = [];
 

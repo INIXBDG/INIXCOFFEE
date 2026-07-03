@@ -753,16 +753,35 @@
 
                         // APPROVAL & DELETE
                         actions += `@can("Approval TunjanganEducation")`;
-                        actions += `<button type="button" class="btn btn-sm btn-primary" onclick="approvalModal(${data.id})"> Approve</button>`;
+
+                        const canApprove =
+                            data.tunjangan_feedback !== null &&
+                            data.total_tunjangan !== null;
+
+                        actions += `
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-primary"
+                                onclick="approvalModal(${data.id})"
+                                ${canApprove ? '' : 'disabled'}
+                            >
+                                Approve
+                            </button>
+                        `;
+
                         var destroyUrlTemplate = "{{ route('rekapmengajarinstruktur.destroy', ':id') }}";
                         var url = destroyUrlTemplate.replace(':id', data.id);
-                        actions += `<form onsubmit="return confirm('Apakah Anda Yakin ?');" action="${url}" method="POST">
-                        @csrf
-                        @method("DELETE")
-                        <button type="submit" class="btn btn-sm btn-danger mt-2">
-                        <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
-                        </button>
-                        </form>`;
+
+                        actions += `
+                        <form onsubmit="return confirm('Apakah Anda Yakin ?');" action="${url}" method="POST">
+                            @csrf
+                            @method("DELETE")
+                            <button type="submit" class="btn btn-sm btn-danger mt-2">
+                                <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                            </button>
+                        </form>
+                        `;
+
                         actions += `@endcan`;
 
                         // ELSE (no permission)
