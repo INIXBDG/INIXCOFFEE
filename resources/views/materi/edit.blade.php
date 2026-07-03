@@ -44,6 +44,7 @@
                                     <option @if ($materis->kategori_materi == "Software Engineer") selected @endif value="Software Engineer">Software Engineer</option>
                                     <option @if ($materis->kategori_materi == "Office") selected @endif value="Office">Office</option>
                                     <option @if ($materis->kategori_materi == "Non-IT") selected @endif value="Non-IT">Non-IT</option>
+                                    <option @if ($materis->kategori_materi == "AI") selected @endif value="AI">AI</option>
                                 </select>
                                 @error('kategori_materi')
                                     <span class="invalid-feedback" role="alert">
