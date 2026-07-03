@@ -1477,7 +1477,7 @@ class TargetKPIController extends Controller
         $target = (float) $detail->nilai_target;
 
         $query = LeadProject::where('status', 'won')
-            ->whereYear('updated_at', $tahun);
+            ->where('tahun_periode', $tahun);
 
         if ($personId !== null) {
             $kodeKaryawan = Karyawan::where('id', $personId)->value('kode_karyawan');
@@ -2940,7 +2940,7 @@ class TargetKPIController extends Controller
         $target = (float) $detail->nilai_target;
 
         $query = LeadProject::where('status', 'won')
-            ->whereYear('updated_at', $tahun);
+            ->where('tahun_periode', $tahun);
 
         $totalSales = (float) ($query
             ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total_sales'))
@@ -2966,7 +2966,7 @@ class TargetKPIController extends Controller
             return 0;
         }
 
-        $totalLead = LeadProject::whereYear('created_at', $tahun)->count();
+        $totalLead = LeadProject::where('tahun_periode', $tahun)->count();
 
         $progress = ($totalLead / $target) * 100;
 
@@ -5897,14 +5897,14 @@ class TargetKPIController extends Controller
 
         // Query Project & LeadProject untuk breakdown
         $query = LeadProject::where('status', 'won')
-            ->whereYear('updated_at', $tahun);
+            ->where('tahun_periode', $tahun);
 
         if ($kodeKaryawan) {
             $query->where('lead_projects.sales_id', $kodeKaryawan);
         }
 
-        $sales = $query->select('lead_projects.updated_at', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
-            ->groupBy('lead_projects.updated_at')
+        $sales = $query->select('lead_projects.tahun_periode', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
+            ->groupBy('lead_projects.tahun_periode')
             ->get();
 
         $totalSales = 0;
@@ -5913,7 +5913,7 @@ class TargetKPIController extends Controller
         $triwulanDataTemp = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
 
         foreach ($sales as $row) {
-            $date = Carbon::parse($row->updated_at);
+            $date = Carbon::parse($row->tahun_periode);
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
             $total = (float) ($row->total ?? 0);
@@ -6014,11 +6014,10 @@ class TargetKPIController extends Controller
                 $salesKey = $karyawan->kode_karyawan;
                 if (!$salesKey) continue;
 
-                $salesRevenue = LeadProject::where('status', '!=', 'lost')
-                    ->join('projects', 'lead_projects.id', '=', 'projects.lead_id')
-                    ->whereYear('projects.tanggal_awal', $tahun)
+                $salesRevenue = LeadProject::where('status','won')
+                    ->where('lead_projects.tahun_periode', $tahun)
                     ->where('lead_projects.sales_id', $salesKey)
-                    ->select(DB::raw('SUM(projects.nilai_proyek) as total'))
+                    ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
                     ->value('total');
 
                 $salesRevenue = (float) ($salesRevenue ?? 0);
@@ -9972,14 +9971,14 @@ class TargetKPIController extends Controller
         $karyawanData = null;
 
         $query = LeadProject::where('status', 'won')
-            ->whereYear('updated_at', $tahun);
+            ->where('tahun_periode', $tahun);
 
         if ($kodeKaryawan) {
             $query->where('lead_projects.sales_id', $kodeKaryawan);
         }
 
-        $sales = $query->select('lead_projects.updated_at', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
-            ->groupBy('lead_projects.updated_at')
+        $sales = $query->select('lead_projects.tahun_periode', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
+            ->groupBy('lead_projects.tahun_periode')
             ->get();
 
         $totalSales = 0;
@@ -9988,7 +9987,7 @@ class TargetKPIController extends Controller
         $triwulanDataTemp = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
 
         foreach ($sales as $row) {
-            $date = Carbon::parse($row->tanggal_awal);
+            $date = Carbon::parse($row->tahun_periode);
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
             $total = (float) ($row->total ?? 0);
@@ -10081,11 +10080,10 @@ class TargetKPIController extends Controller
             $salesKey = $karyawan->kode_karyawan;
             if (!$salesKey) continue;
 
-            $salesRevenue = LeadProject::where('status', '!=', 'lost')
-                ->join('projects', 'lead_projects.id', '=', 'projects.lead_id')
-                ->whereYear('projects.tanggal_awal', $tahun)
+            $salesRevenue = LeadProject::where('status', 'won')
+                ->where('lead_projects.tahun_periode', $tahun)
                 ->where('lead_projects.sales_id', $salesKey)
-                ->select(DB::raw('SUM(projects.nilai_proyek) as total'))
+                ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
                 ->value('total');
 
             $salesRevenue = (float) ($salesRevenue ?? 0);
@@ -10170,9 +10168,9 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $leads = LeadProject::whereYear('created_at', $tahun)
-            ->selectRaw('DATE(created_at) as tanggal, COUNT(*) as total')
-            ->groupByRaw('DATE(created_at)')
+        $leads = LeadProject::where('tahun_periode', $tahun)
+            ->selectRaw('DATE(tahun_periode) as tanggal, COUNT(*) as total')
+            ->groupByRaw('DATE(tahun_periode)')
             ->get();
 
         $totalLead = 0;
@@ -14446,9 +14444,9 @@ class TargetKPIController extends Controller
                 'progress' => $avgTarget,
                 'status' => $status,
             ];
-        }
 
         $avgPerEmployee = [];
+        
         foreach ($employeeProgressMap as $personId => $progressList) {
             if (!empty($progressList)) {
                 $avgPerEmployee[$personId] = round(array_sum($progressList) / count($progressList), 2);
@@ -16926,6 +16924,7 @@ class TargetKPIController extends Controller
             'akurasi kelengkapan data penjualan',
             'ketepatan waktu po',
             'kualitas dokumentasi support dan proctor',
+            'pendapatan penjualan project',
         ];
 
         $details = [];
@@ -17084,6 +17083,7 @@ class TargetKPIController extends Controller
             'laporan mom' => $this->calculateLaporanMOM($target, $personId),
             'akurasi kelengkapan data penjualan' => $this->calculateAkurasiKelengkapanDataPenjualan($target, $personId),
             'todo administrasi' => $this->calculateTodoAdministrasi($target),
+            'pendapatan penjualan project' => $this->calculatePendapatanPenjualanProject($target, $personId),
             default => 0
         };
     }

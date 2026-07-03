@@ -155,7 +155,7 @@ class HomeController extends Controller
             $targetProject = $targetRow ? (float) $targetRow->target_project : 0;
 
             $completedSum = LeadProject::where('status', 'won')
-                ->whereYear('updated_at', $year)
+                ->where('tahun_periode', $year)
                 ->sum('estimasi_nilai');
 
             // Generate labels untuk ruler (9 titik: 0%, 12.5%, 25%, ... 100%)
