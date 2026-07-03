@@ -956,26 +956,46 @@
                 $preview.removeClass('d-none');
             });
 
-            
+            $.ajax({
+                url: '{{ route('kpi.getDataTarget') }}',
+                type: 'GET',
+                success: function(response) {
+                    const routeSelect = $('#assistant_route');
+                    if (routeSelect.length && response.routes) {
+                        routeSelect.empty().append('<option selected disabled>-- Pilih Assistant Route --</option>');
+                        response.routes.forEach(function(route) {
+                            routeSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
+                        });
+                    }
+                    const jabatanSelect = $('#jabatan');
+                    if (jabatanSelect.length && response.jabatan_list) {
+                        jabatanSelect.empty();
+                        response.jabatan_list.forEach(function(jab) {
+                            jabatanSelect.append(`<option value="${jab}">${jab}</option>`);
+                        });
+                        jabatanSelect.trigger('change');
+                    }
+                }
+            });
 
-            // $('#jabatan').off('change').on('change', function() {
-            //     const selectedJabatans = $(this).val() || [];
-            //     const karyawanSelect = $('#karyawan');
-            //     karyawanSelect.empty().trigger('change');
-            //     if (selectedJabatans.length === 0) return;
-            //     $.ajax({
-            //         url: '{{ route('kpi.getKaryawanByJabatan') }}',
-            //         type: 'GET',
-            //         data: { jabatan: selectedJabatans },
-            //         success: function(response) {
-            //             karyawanSelect.empty();
-            //             response.forEach(function(emp) {
-            //                 karyawanSelect.append(`<option value="${emp.id}">${emp.text}</option>`);
-            //             });
-            //             karyawanSelect.trigger('change');
-            //         }
-            //     });
-            // });
+            $('#jabatan').off('change').on('change', function() {
+                const selectedJabatans = $(this).val() || [];
+                const karyawanSelect = $('#karyawan');
+                karyawanSelect.empty().trigger('change');
+                if (selectedJabatans.length === 0) return;
+                $.ajax({
+                    url: '{{ route('kpi.getKaryawanByJabatan') }}',
+                    type: 'GET',
+                    data: { jabatan: selectedJabatans },
+                    success: function(response) {
+                        karyawanSelect.empty();
+                        response.forEach(function(emp) {
+                            karyawanSelect.append(`<option value="${emp.id}">${emp.text}</option>`);
+                        });
+                        karyawanSelect.trigger('change');
+                    }
+                });
+            });
 
             $('#targetForm').off('submit').on('submit', function(e) {
                 e.preventDefault();
@@ -1968,53 +1988,26 @@
             });
         });
 
-        function loadContentForm(page = 1) {
+        function loadContentForm() {
             const $contentTarget = $('#content_target');
             $contentTarget.html('<tr><td colspan="10" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><span class="ms-2">Memuat data...</span></td></tr>');
-            
             $.ajax({
                 url: '{{ route('kpi.getDataTarget') }}',
                 type: 'GET',
-                data: {
-                    page: page,
-                    limit: 8 // Menggantikan variabel itemsPerPage statis
-                },
                 cache: false,
                 success: function(response) {
-                    const routeSelect = $('#assistant_route');
-                    if (routeSelect.length && response.routes) {
-                        routeSelect.empty().append('<option selected disabled>-- Pilih Assistant Route --</option>');
-                        response.routes.forEach(function(route) {
-                            routeSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
-                        });
-                    }
-                    
-                    const jabatanSelect = $('#jabatan');
-                    if (jabatanSelect.length && response.jabatan_list) {
-                        jabatanSelect.empty();
-                        response.jabatan_list.forEach(function(jab) {
-                            jabatanSelect.append(`<option value="${jab}">${jab}</option>`);
-                        });
-                        jabatanSelect.trigger('change');
-                    }
-
                     $contentTarget.empty();
-                    
-                    // Mengakses objek paginasi dari respons server
-                    const paginatedData = response.detail;
-                    
-                    if (!paginatedData || !paginatedData.data || paginatedData.data.length === 0) {
+                    if (!response.detail || response.detail.length === 0) {
                         $contentTarget.html('<tr><td colspan="10" class="text-center py-4 text-muted">Tidak ada data target</td></tr>');
-                        $('#paginationContainer').empty();
+                        allTargetData = [];
+                        currentFilteredData = [];
+                        renderPagination();
                         return;
                     }
-                    
-                    // Memproses array data yang sudah terpotong dari server
-                    const processedData = processRawData(paginatedData.data);
-                    
-                    // Merender tabel dan paginasi secara langsung
-                    renderTable(processedData);
-                    renderPagination(paginatedData);
+                    allTargetData = processRawData(response.detail);
+                    currentFilteredData = [...allTargetData];
+                    currentPage = 1;
+                    applyFilterAndRender();
                 },
                 error: function(xhr) {
                     $contentTarget.html('<tr><td colspan="10" class="text-center py-4 text-danger">Gagal memuat data</td></tr>');
@@ -2133,10 +2126,18 @@
             renderPagination();
         }
 
-        function renderTable(pageData) {
+        function renderTable() {
             const $contentTarget = $('#content_target');
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageData = currentFilteredData.slice(start, end);
+
+            if (pageData.length === 0) {
+                $contentTarget.html('<tr><td colspan="10" class="text-center py-4 text-muted">Tidak ada data yang ditemukan</td></tr>');
+                return;
+            }
+
             let allRowsHtml = '';
-            
             pageData.forEach(item => {
                 allRowsHtml += `
                 <tr>
@@ -2164,38 +2165,21 @@
                     </td>
                 </tr>`;
             });
-            
             $contentTarget.html(allRowsHtml);
         }
 
-        function renderPagination(paginatedData) {
+        function renderPagination() {
             const $container = $('#paginationContainer');
             $container.empty();
-            
-            const currentPage = paginatedData.current_page;
-            const totalPages = paginatedData.last_page;
-            
+            const totalPages = Math.ceil(currentFilteredData.length / itemsPerPage);
             if (totalPages <= 1) return;
 
             let paginationHtml = '<ul class="pagination justify-content-center mb-0">';
-            
-            // Tombol Previous
-            paginationHtml += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="loadContentForm(${currentPage - 1}); return false;">Previous</a>
-            </li>`;
-            
-            // Nomor Halaman
+            paginationHtml += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">Previous</a></li>`;
             for (let i = 1; i <= totalPages; i++) {
-                paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="loadContentForm(${i}); return false;">${i}</a>
-                </li>`;
+                paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a></li>`;
             }
-            
-            // Tombol Next
-            paginationHtml += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="loadContentForm(${currentPage + 1}); return false;">Next</a>
-            </li>`;
-            
+            paginationHtml += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">Next</a></li>`;
             paginationHtml += '</ul>';
             $container.html(paginationHtml);
         }

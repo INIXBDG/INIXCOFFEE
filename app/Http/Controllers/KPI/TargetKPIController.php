@@ -1086,18 +1086,18 @@ class TargetKPIController extends Controller
         $user = auth()->user();
         $id_pembuat = $user->id;
         $jabatan_pembuat = $user->jabatan;
-
         $idUser = $request->idUser;
         $typeGet = $request->typeGet;
 
+        // Ambil data karyawan yang dituju atau karyawan login
         if (filled($idUser) && filled($typeGet)) {
-            $karyawan = Karyawan::find($idUser);
+            $karyawan = karyawan::find($idUser);
             if (!$karyawan) {
                 return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
             }
             $divisiUser = $karyawan->divisi;
         } else {
-            $karyawan = Karyawan::find($id_pembuat);
+            $karyawan = karyawan::find($id_pembuat);
             if (!$karyawan) {
                 return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
             }
@@ -1106,32 +1106,38 @@ class TargetKPIController extends Controller
 
         $superRoles = ['GM', 'HRD', 'Direktur Utama'];
 
-        if (in_array($jabatan_pembuat, $superRoles)) {
-            $dataJabatan = Karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
+        // === JABATAN LIST (untuk filter) ===
+        if (in_array($user->jabatan, $superRoles)) {
+            $dataJabatan = karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
                 ->distinct()
                 ->pluck('jabatan');
         } else {
-            $dataJabatan = Karyawan::where('divisi', $divisiUser)
+            $dataJabatan = karyawan::where('divisi', $divisiUser)
                 ->whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])
                 ->distinct()
                 ->pluck('jabatan');
         }
 
-        $query = TargetKPI::with([
+        // === QUERY UTAMA ===
+        $query = targetKPI::with([
             'karyawan',
             'detailTargetKPI.dataTarget',
             'detailTargetKPI.detailPersonKPI'
         ])->whereYear('created_at', now()->year);
 
+        // Kasus khusus: melihat target orang lain (misalnya HRD melihat target karyawan tertentu)
         if (filled($idUser) && filled($typeGet)) {
             $query->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($idUser) {
                 $q->where('id_karyawan', $idUser);
             });
-        } elseif (!in_array($jabatan_pembuat, $superRoles)) {
+        } 
+        // Non-super user → filter berdasarkan divisi
+        elseif (!in_array($jabatan_pembuat, $superRoles)) {
             $query->whereHas('detailTargetKPI', function ($q) use ($divisiUser) {
                 $q->where('divisi', $divisiUser);
             });
         }
+        // Super user → tidak ada filter tambahan (bisa lihat semua divisi)
 
         $detailList = $query->get();
 
@@ -1139,7 +1145,6 @@ class TargetKPIController extends Controller
             'detail' => $detailList
                 ->map(function ($item) use ($idUser) {
                     $detail = $item->detailTargetKPI->first();
-
                     if (!$detail) {
                         return null;
                     }
@@ -1155,7 +1160,7 @@ class TargetKPIController extends Controller
                             break;
                     }
 
-                    $personId = filled($idUser) ? (int) $idUser : null;
+                    $personId = !empty($idUser) ? (int) $idUser : null;
                     $progress = $this->resolveProgress($item, $personId);
 
                     return [
@@ -1181,12 +1186,7 @@ class TargetKPIController extends Controller
                 ->filter()
                 ->values(),
             'jabatan_list' => $dataJabatan,
-            'routes' => DataTarget::select(
-                'asistant_route',
-                'jangka_target',
-                'tipe_target',
-                'nilai_target'
-            )->get(),
+            'routes' => DataTarget::select('asistant_route', 'jangka_target', 'tipe_target', 'nilai_target')->get(),
         ];
 
         return response()->json($data);
@@ -14441,6 +14441,7 @@ class TargetKPIController extends Controller
                 'progress' => $avgTarget,
                 'status' => $status,
             ];
+        }
 
         // Rata-rata progress per karyawan
         $avgPerEmployee = [];
@@ -14505,7 +14506,7 @@ class TargetKPIController extends Controller
                 $employeeTargetsMap
             ),
             'distribusi_nilai' => $distribusi,
-            'daftar_target_kpi' => collect($daftarTargetKPI)->unique('judul')->values()
+            'daftar_target_kpi' => collect($daftarTargetKPI)->unique('judul')->values(),
         ]);
     }
 
