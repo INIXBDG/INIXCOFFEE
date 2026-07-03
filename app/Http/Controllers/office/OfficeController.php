@@ -494,14 +494,14 @@ class OfficeController extends Controller
             'total' => $belum_bayar + $tepat_waktu + $terlambat,
             'datas' => $data->map(function ($item) {
                 return [
-                    'perusahaan' => $item->rkm?->perusahaan->nama_perusahaan ?? '-',
-                    'kelas' => $item->rkm?->materi->nama_materi ?? '-',
-                    'sales' => $item->sales_key ?? '-',
-                    'tanggal' => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
-                    'tagihan' => $item->rkm?->invoice?->amount !== null ? (int) $item->rkm->invoice->amount : '-',
+                   'perusahaan' => $item->rkm?->perusahaan?->nama_perusahaan ?? '-',
+                    'kelas'      => $item->rkm?->materi?->nama_materi ?? '-',
+                    'sales'      => $item->sales_key ?? '-',
+                    'tanggal'    => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
+                    'tagihan'    => $item->rkm?->invoice?->amount !== null ? (int)$item->rkm?->invoice?->amount : '-',
                     'tenggat_waktu' => $item->due_date ?? '-',
                     'tanggal_bayar' => $item->tanggal_bayar ?? '-',
-                    'nominal_pembayaran' => $item->rkm?->invoice?->amount !== null ? (int) $item->rkm->invoice->amount : '-',
+                    'nominal_pembayaran' => $item->rkm?->invoice?->amount !== null ? (int)$item->rkm?->invoice?->amount : '-',
                     'status' => ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) ? "Belum Bayar" : (($item->status_pembayaran == 1 && $item->tanggal_bayar) ? (($item->tanggal_bayar <= $item->due_date) ? "Tepat Waktu" : "Terlambat") : "Belum Bayar"),
                 ];
             })
@@ -530,14 +530,14 @@ class OfficeController extends Controller
             'persen' => $persen,
             'datas' => $data->map(function ($item) {
                 return [
-                    'perusahaan' => $item->rkm?->perusahaan->nama_perusahaan ?? '-',
-                    'kelas' => $item->rkm?->materi->nama_materi ?? '-',
-                    'sales' => $item->sales_key ?? '-',
-                    'tanggal' => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
-                    'tagihan' => $item->rkm?->invoice?->amount !== null ? (int) $item->rkm->invoice->amount : '-',
+                    'perusahaan' => $item->rkm?->perusahaan?->nama_perusahaan ?? '-',
+                    'kelas'      => $item->rkm?->materi?->nama_materi ?? '-',
+                    'sales'      => $item->sales_key ?? '-',
+                    'tanggal'    => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
+                    'tagihan'    => $item->rkm?->invoice?->amount !== null ? (int)$item->rkm?->invoice?->amount : '-',
                     'tenggat_waktu' => $item->due_date ?? '-',
                     'tanggal_bayar' => $item->tanggal_bayar ?? '-',
-                    'nominal_pembayaran' => $item->rkm?->invoice?->amount !== null ? (int) $item->rkm->invoice->amount : '-',
+                    'nominal_pembayaran' => $item->rkm?->invoice?->amount !== null ? (int)$item->rkm?->invoice?->amount : '-',
                     'status' => ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) ? "Belum Bayar" : (($item->status_pembayaran == 1 && $item->tanggal_bayar) ? (($item->tanggal_bayar <= $item->due_date) ? "Tepat Waktu" : "Terlambat") : "Belum Bayar"),
                     'info' => optional($item->rkm?->invoice)->amount !== null ? "Sesuai" : "Tidak Sesuai",
                 ];
