@@ -1347,6 +1347,11 @@ class TargetKPIController extends Controller
             return 0;
         }
 
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+
         $start = "$tahun-01-01";
         $end = "$tahun-12-31";
 
@@ -2423,7 +2428,6 @@ class TargetKPIController extends Controller
         $nilaiTarget = (float) $detail->nilai_target;
 
         $response = Http::get("https://libur.deno.dev/api", ['year' => $tahun]);
-        
         if ($response->successful()) {
             foreach ($response->json() as $libur) {
                 HariLibur::updateOrCreate(
@@ -4165,7 +4169,8 @@ class TargetKPIController extends Controller
         return round($progress, 2);
     }
 
-    private function calculatePembuatanArtikel($item, $personId) {
+        private function calculateEvaluasiKinerjaInstruktur($item, $personId)
+    {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
@@ -4178,25 +4183,60 @@ class TargetKPIController extends Controller
             return 0;
         }
 
-        $startDate = carbon::create($tahun, '01', '01');
-        $endDate = carbon::create($tahun, '12', '31');
-        $response = Http::get('http://202.138.248.36:8003/api/filtered-articles')->json();
+        $nilaiTarget = (float) $detail->nilai_target;
 
-        $apiArtikel = collect($response['data'] ?? []);
+        $instrukturs = Karyawan::where('Divisi', '!=', 'Direksi')
+            ->where('status_aktif', '1')
+            ->where('jabatan', 'Instruktur')
+            ->get();
 
-        $getData = $apiArtikel->filter(function ($item) use ($startDate, $endDate) {
-            $tanggal = Carbon::parse($item['tanggal']);
-
-            return $tanggal->between($startDate, $endDate);
-        });
-
-        $totalData = $getData->count();
-
-        if ($totalData == 0) {
+        if ($instrukturs->isEmpty()) {
             return 0;
         }
 
-        $progress = ($totalData / 24) * 100;
+        $startDate = Carbon::create($tahun, 1, 1);
+        $endDate = min(Carbon::create($tahun, 12, 31), now());
+
+        if ($startDate > $endDate) {
+            return 0;
+        }
+
+        $period = CarbonPeriod::create($startDate, $endDate);
+
+        $activities = ActivityInstruktur::whereYear('created_at', $tahun)
+            ->whereIn('user_id', $instrukturs->pluck('id'))
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->user_id . '_' . Carbon::parse($item->created_at)->format('Y-m-d');
+            });
+
+        $totalHariKerja = 0;
+        $totalAktif = 0;
+
+        foreach ($period as $date) {
+            if ($date->isWeekend()) {
+                continue;
+            }
+
+            $totalHariKerja++;
+            $dateKey = $date->format('Y-m-d');
+
+            foreach ($instrukturs as $instruktur) {
+                $key = $instruktur->id . '_' . $dateKey;
+
+                if (isset($activities[$key])) {
+                    $totalAktif++;
+                }
+            }
+        }
+
+        $totalKemungkinan = $totalHariKerja * $instrukturs->count();
+
+        if ($totalKemungkinan == 0) {
+            return 0;
+        }
+
+        $progress = ($totalAktif / $totalKemungkinan) * 100;
 
         return round($progress, 2);
     }
