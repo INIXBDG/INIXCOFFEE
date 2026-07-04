@@ -218,7 +218,8 @@ class TargetKPIController extends Controller
                 'pengembangan kurikulum pelatihan',
                 'peningkatan knowledge sharing',
                 'peningkatan kontribusi pelatihan',
-                'evaluasi kinerja instruktur'
+                'evaluasi kinerja instruktur',
+                'pembuatan artikel'
             ],
 
             'sales' => [
@@ -651,7 +652,8 @@ class TargetKPIController extends Controller
                 'pengembangan kurikulum pelatihan',
                 'peningkatan knowledge sharing',
                 'peningkatan kontribusi pelatihan',
-                'evaluasi kinerja instruktur'
+                'evaluasi kinerja instruktur',
+                'pembuatan artikel'
             ],
             'sales' => [
                 'target penjualan tahunan',
@@ -1300,6 +1302,8 @@ class TargetKPIController extends Controller
             $progress = $this->calculatePeningkatanKontribusiPelatihan($item, $personId);
         } elseif ($asistantRoute === 'evaluasi kinerja instruktur') {
             $progress = $this->calculateEvaluasiKinerjaInstruktur($item, $personId);
+        } elseif ($asistantRoute === 'pembuatan artikel') {
+            $progress = $this->calculatePembuatanArtikel($item, $personId);
         } elseif ($asistantRoute === 'target penjualan tahunan') {
             $progress = $this->calculateTargetPenjualanTahunan($item, $personId);
         } elseif ($asistantRoute === 'peningkatan kemampuan kompetensi sales') {
@@ -1338,11 +1342,6 @@ class TargetKPIController extends Controller
         }
 
         $tahun = (int) $detail->detail_jangka;
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
-            return 0;
-        }
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
@@ -2424,6 +2423,7 @@ class TargetKPIController extends Controller
         $nilaiTarget = (float) $detail->nilai_target;
 
         $response = Http::get("https://libur.deno.dev/api", ['year' => $tahun]);
+        
         if ($response->successful()) {
             foreach ($response->json() as $libur) {
                 HariLibur::updateOrCreate(
@@ -4165,6 +4165,42 @@ class TargetKPIController extends Controller
         return round($progress, 2);
     }
 
+    private function calculatePembuatanArtikel($item, $personId) {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $startDate = carbon::create($tahun, '01', '01');
+        $endDate = carbon::create($tahun, '12', '31');
+        $response = Http::get('http://202.138.248.36:8003/api/filtered-articles')->json();
+
+        $apiArtikel = collect($response['data'] ?? []);
+
+        $getData = $apiArtikel->filter(function ($item) use ($startDate, $endDate) {
+            $tanggal = Carbon::parse($item['tanggal']);
+
+            return $tanggal->between($startDate, $endDate);
+        });
+
+        $totalData = $getData->count();
+
+        if ($totalData == 0) {
+            return 0;
+        }
+
+        $progress = ($totalData / 24) * 100;
+
+        return round($progress, 2);
+    }
+
     //Sales & Marketing
     //Sales
     private function calculateTargetPenjualanTahunan($item, $personId)
@@ -5033,6 +5069,8 @@ class TargetKPIController extends Controller
             return $this->calculatePeningkatanKontribusiPelatihanDetail($itemDetail);
         } elseif ($route === 'evaluasi kinerja instruktur') {
             return $this->calculateEvaluasiKinerjaInstrukturDetail($itemDetail);
+        } elseif ($route === 'pembuatan artikel') {
+            return $this->calculatePembuatanArtikelDetail($itemDetail);
         }
 
         //Sales & Marketing
@@ -12768,6 +12806,101 @@ class TargetKPIController extends Controller
             'gap' => $gap,
             'pie_chart' => ['above' => $above, 'below' => $below],
             'monthly_data' => $monthlyAverages,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+            'monthly_progress' => $monthlyProgress,
+            'daily_progress_per_month' => $dailyProgressPerMonth,
+        ];
+    }
+
+    private function calculatePembuatanArtikelDetail($itemDetail) {
+        $detail = $itemDetail->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$itemDetail->id}");
+            return 0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$itemDetail->id}");
+            return 0;
+        }
+
+        $startDate = carbon::create($tahun, '01', '01');
+        $endDate = carbon::create($tahun, '12', '31');
+        $response = Http::get('http://202.138.248.36:8003/api/filtered-articles')->json();
+
+        $apiArtikel = collect($response['data'] ?? []);
+
+        $getData = $apiArtikel->filter(function ($item) use ($startDate, $endDate) {
+            $tanggal = Carbon::parse($item['tanggal']);
+
+            return $tanggal->between($startDate, $endDate);
+        });
+
+        $totalData = $getData->count();
+
+        if ($totalData == 0) {
+            return [
+                'progress' => 0,
+                'gap' => -24,
+                'pie_chart' => [
+                    'above' => 0,
+                    'below' => 24,
+                ],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
+        }
+
+        $progress = round(($totalData / 24) * 100, 2);
+        $gap = $totalData - 24;
+
+        $monthlyData = [];
+        $dailyBreakdownPerMonth = [];
+        $monthlyProgress = [];
+        $dailyProgressPerMonth = [];
+
+        foreach ($getData as $item) {
+            $tanggal = Carbon::parse($item['tanggal']);
+
+            $monthKey = $tanggal->format('Y-m');
+            $dayKey = $tanggal->format('Y-m-d');
+
+            if (!isset($monthlyData[$monthKey])) {
+                $monthlyData[$monthKey] = 0;
+            }
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey][$dayKey])) {
+                $dailyBreakdownPerMonth[$monthKey][$dayKey] = 0;
+            }
+
+            $monthlyData[$monthKey]++;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey]++;
+        }
+
+        foreach ($monthlyData as $month => $count) {
+            $monthlyProgress[$month] = round(($count / 24) * 100, 2);
+
+            foreach ($dailyBreakdownPerMonth[$month] as $day => $dailyCount) {
+                $dailyProgressPerMonth[$month][$day] = round(($dailyCount / 24) * 100, 2);
+            }
+        }
+
+        ksort($monthlyData);
+        ksort($dailyBreakdownPerMonth);
+        ksort($monthlyProgress);
+        ksort($dailyProgressPerMonth);
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => [
+                'above' => $totalData,
+                'below' => max(0, 24 - $totalData),
+            ],
+            'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgress,
             'daily_progress_per_month' => $dailyProgressPerMonth,
