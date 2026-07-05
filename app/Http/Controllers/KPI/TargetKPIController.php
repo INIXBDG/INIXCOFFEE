@@ -218,7 +218,8 @@ class TargetKPIController extends Controller
                 'pengembangan kurikulum pelatihan',
                 'peningkatan knowledge sharing',
                 'peningkatan kontribusi pelatihan',
-                'evaluasi kinerja instruktur'
+                'evaluasi kinerja instruktur',
+                'pembuatan artikel'
             ],
 
             'sales' => [
@@ -651,7 +652,8 @@ class TargetKPIController extends Controller
                 'pengembangan kurikulum pelatihan',
                 'peningkatan knowledge sharing',
                 'peningkatan kontribusi pelatihan',
-                'evaluasi kinerja instruktur'
+                'evaluasi kinerja instruktur',
+                'pembuatan artikel'
             ],
             'sales' => [
                 'target penjualan tahunan',
@@ -1300,6 +1302,8 @@ class TargetKPIController extends Controller
             $progress = $this->calculatePeningkatanKontribusiPelatihan($item, $personId);
         } elseif ($asistantRoute === 'evaluasi kinerja instruktur') {
             $progress = $this->calculateEvaluasiKinerjaInstruktur($item, $personId);
+        } elseif ($asistantRoute === 'pembuatan artikel') {
+            $progress = $this->calculatePembuatanArtikel($item, $personId);
         } elseif ($asistantRoute === 'target penjualan tahunan') {
             $progress = $this->calculateTargetPenjualanTahunan($item, $personId);
         } elseif ($asistantRoute === 'peningkatan kemampuan kompetensi sales') {
@@ -1334,11 +1338,6 @@ class TargetKPIController extends Controller
         }
 
         $tahun = (int) $detail->detail_jangka;
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
-            return 0;
-        }
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
@@ -1486,7 +1485,7 @@ class TargetKPIController extends Controller
         $target = (float) $detail->nilai_target;
 
         $query = LeadProject::where('status', 'won')
-            ->where('tahun_periode', $tahun);
+            ->whereYear('updated_at', $tahun);
 
         if ($personId !== null) {
             $kodeKaryawan = Karyawan::where('id', $personId)->value('kode_karyawan');
@@ -2420,6 +2419,7 @@ class TargetKPIController extends Controller
         $nilaiTarget = (float) $detail->nilai_target;
 
         $response = Http::get("https://libur.deno.dev/api", ['year' => $tahun]);
+        
         if ($response->successful()) {
             foreach ($response->json() as $libur) {
                 HariLibur::updateOrCreate(
@@ -2957,7 +2957,7 @@ class TargetKPIController extends Controller
         $target = (float) $detail->nilai_target;
 
         $query = LeadProject::where('status', 'won')
-            ->where('tahun_periode', $tahun);
+            ->whereYear('updated_at', $tahun);
 
         $totalSales = (float) ($query
             ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total_sales'))
@@ -2983,7 +2983,7 @@ class TargetKPIController extends Controller
             return 0;
         }
 
-        $totalLead = LeadProject::where('tahun_periode', $tahun)->count();
+        $totalLead = LeadProject::whereYear('created_at', $tahun)->count();
 
         $progress = ($totalLead / $target) * 100;
 
@@ -4161,6 +4161,42 @@ class TargetKPIController extends Controller
         return round($progress, 2);
     }
 
+    private function calculatePembuatanArtikel($item, $personId) {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $startDate = carbon::create($tahun, '01', '01');
+        $endDate = carbon::create($tahun, '12', '31');
+        $response = Http::get('http://202.138.248.36:8003/api/filtered-articles')->json();
+
+        $apiArtikel = collect($response['data'] ?? []);
+
+        $getData = $apiArtikel->filter(function ($item) use ($startDate, $endDate) {
+            $tanggal = Carbon::parse($item['tanggal']);
+
+            return $tanggal->between($startDate, $endDate);
+        });
+
+        $totalData = $getData->count();
+
+        if ($totalData == 0) {
+            return 0;
+        }
+
+        $progress = ($totalData / 24) * 100;
+
+        return round($progress, 2);
+    }
+
     //Sales & Marketing
     //Sales
     private function calculateTargetPenjualanTahunan($item, $personId)
@@ -5029,6 +5065,8 @@ class TargetKPIController extends Controller
             return $this->calculatePeningkatanKontribusiPelatihanDetail($itemDetail);
         } elseif ($route === 'evaluasi kinerja instruktur') {
             return $this->calculateEvaluasiKinerjaInstrukturDetail($itemDetail);
+        } elseif ($route === 'pembuatan artikel') {
+            return $this->calculatePembuatanArtikelDetail($itemDetail);
         }
 
         //Sales & Marketing
@@ -5914,14 +5952,14 @@ class TargetKPIController extends Controller
 
         // Query Project & LeadProject untuk breakdown
         $query = LeadProject::where('status', 'won')
-            ->where('tahun_periode', $tahun);
+            ->whereYear('updated_at', $tahun);
 
         if ($kodeKaryawan) {
             $query->where('lead_projects.sales_id', $kodeKaryawan);
         }
 
-        $sales = $query->select('lead_projects.tahun_periode', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
-            ->groupBy('lead_projects.tahun_periode')
+        $sales = $query->select('lead_projects.updated_at', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
+            ->groupBy('lead_projects.updated_at')
             ->get();
 
         $totalSales = 0;
@@ -5930,7 +5968,7 @@ class TargetKPIController extends Controller
         $triwulanDataTemp = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
 
         foreach ($sales as $row) {
-            $date = Carbon::parse($row->tahun_periode);
+            $date = Carbon::parse($row->updated_at);
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
             $total = (float) ($row->total ?? 0);
@@ -6031,10 +6069,11 @@ class TargetKPIController extends Controller
                 $salesKey = $karyawan->kode_karyawan;
                 if (!$salesKey) continue;
 
-                $salesRevenue = LeadProject::where('status','won')
-                    ->where('lead_projects.tahun_periode', $tahun)
+                $salesRevenue = LeadProject::where('status', '!=', 'lost')
+                    ->join('projects', 'lead_projects.id', '=', 'projects.lead_id')
+                    ->whereYear('projects.tanggal_awal', $tahun)
                     ->where('lead_projects.sales_id', $salesKey)
-                    ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
+                    ->select(DB::raw('SUM(projects.nilai_proyek) as total'))
                     ->value('total');
 
                 $salesRevenue = (float) ($salesRevenue ?? 0);
@@ -7010,18 +7049,7 @@ class TargetKPIController extends Controller
         $personId = 0;
 
         if (is_null($detail) || is_null($detail->manual_value)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'dataManual' => [
-                    'manual_document' => $detail->manual_document,
-                ],
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return 0;
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
@@ -7093,18 +7121,7 @@ class TargetKPIController extends Controller
         $personId = 0;
 
         if (is_null($detail) || is_null($detail->manual_value)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'dataManual' => [
-                    'manual_document' => $detail->manual_document,
-                ],
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return 0;
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
@@ -10011,14 +10028,14 @@ class TargetKPIController extends Controller
         $karyawanData = null;
 
         $query = LeadProject::where('status', 'won')
-            ->where('tahun_periode', $tahun);
+            ->whereYear('updated_at', $tahun);
 
         if ($kodeKaryawan) {
             $query->where('lead_projects.sales_id', $kodeKaryawan);
         }
 
-        $sales = $query->select('lead_projects.tahun_periode', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
-            ->groupBy('lead_projects.tahun_periode')
+        $sales = $query->select('lead_projects.updated_at', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
+            ->groupBy('lead_projects.updated_at')
             ->get();
 
         $totalSales = 0;
@@ -10027,7 +10044,7 @@ class TargetKPIController extends Controller
         $triwulanDataTemp = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
 
         foreach ($sales as $row) {
-            $date = Carbon::parse($row->tahun_periode);
+            $date = Carbon::parse($row->tanggal_awal);
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
             $total = (float) ($row->total ?? 0);
@@ -10120,10 +10137,11 @@ class TargetKPIController extends Controller
             $salesKey = $karyawan->kode_karyawan;
             if (!$salesKey) continue;
 
-            $salesRevenue = LeadProject::where('status', 'won')
-                ->where('lead_projects.tahun_periode', $tahun)
+            $salesRevenue = LeadProject::where('status', '!=', 'lost')
+                ->join('projects', 'lead_projects.id', '=', 'projects.lead_id')
+                ->whereYear('projects.tanggal_awal', $tahun)
                 ->where('lead_projects.sales_id', $salesKey)
-                ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
+                ->select(DB::raw('SUM(projects.nilai_proyek) as total'))
                 ->value('total');
 
             $salesRevenue = (float) ($salesRevenue ?? 0);
@@ -10208,9 +10226,9 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $leads = LeadProject::where('tahun_periode', $tahun)
-            ->selectRaw('DATE(tahun_periode) as tanggal, COUNT(*) as total')
-            ->groupByRaw('DATE(tahun_periode)')
+        $leads = LeadProject::whereYear('created_at', $tahun)
+            ->selectRaw('DATE(created_at) as tanggal, COUNT(*) as total')
+            ->groupByRaw('DATE(created_at)')
             ->get();
 
         $totalLead = 0;
@@ -12770,6 +12788,101 @@ class TargetKPIController extends Controller
         ];
     }
 
+    private function calculatePembuatanArtikelDetail($itemDetail) {
+        $detail = $itemDetail->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$itemDetail->id}");
+            return 0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$itemDetail->id}");
+            return 0;
+        }
+
+        $startDate = carbon::create($tahun, '01', '01');
+        $endDate = carbon::create($tahun, '12', '31');
+        $response = Http::get('http://202.138.248.36:8003/api/filtered-articles')->json();
+
+        $apiArtikel = collect($response['data'] ?? []);
+
+        $getData = $apiArtikel->filter(function ($item) use ($startDate, $endDate) {
+            $tanggal = Carbon::parse($item['tanggal']);
+
+            return $tanggal->between($startDate, $endDate);
+        });
+
+        $totalData = $getData->count();
+
+        if ($totalData == 0) {
+            return [
+                'progress' => 0,
+                'gap' => -24,
+                'pie_chart' => [
+                    'above' => 0,
+                    'below' => 24,
+                ],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
+        }
+
+        $progress = round(($totalData / 24) * 100, 2);
+        $gap = $totalData - 24;
+
+        $monthlyData = [];
+        $dailyBreakdownPerMonth = [];
+        $monthlyProgress = [];
+        $dailyProgressPerMonth = [];
+
+        foreach ($getData as $item) {
+            $tanggal = Carbon::parse($item['tanggal']);
+
+            $monthKey = $tanggal->format('Y-m');
+            $dayKey = $tanggal->format('Y-m-d');
+
+            if (!isset($monthlyData[$monthKey])) {
+                $monthlyData[$monthKey] = 0;
+            }
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey][$dayKey])) {
+                $dailyBreakdownPerMonth[$monthKey][$dayKey] = 0;
+            }
+
+            $monthlyData[$monthKey]++;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey]++;
+        }
+
+        foreach ($monthlyData as $month => $count) {
+            $monthlyProgress[$month] = round(($count / 24) * 100, 2);
+
+            foreach ($dailyBreakdownPerMonth[$month] as $day => $dailyCount) {
+                $dailyProgressPerMonth[$month][$day] = round(($dailyCount / 24) * 100, 2);
+            }
+        }
+
+        ksort($monthlyData);
+        ksort($dailyBreakdownPerMonth);
+        ksort($monthlyProgress);
+        ksort($dailyProgressPerMonth);
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => [
+                'above' => $totalData,
+                'below' => max(0, 24 - $totalData),
+            ],
+            'monthly_data' => $monthlyData,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+            'monthly_progress' => $monthlyProgress,
+            'daily_progress_per_month' => $dailyProgressPerMonth,
+        ];
+    }
+
     //Sales & Marketing
     //Sales
     private function calculateTargetPenjualanTahunanDetail($itemDetail, $personId)
@@ -14207,7 +14320,7 @@ class TargetKPIController extends Controller
                     $processedTargets->push([
                         'id'              => $target->id,
                         'judul'           => $target->judul,
-                        'asistant_route'  => $detail->dataTarget->asistant_route,
+                        'asistant_route'  => $target->asistant_route,
                         'periode'         => $detail->jangka_target . ' ' . $detail->detail_jangka,
                         'tipe_target'     => $tipeTarget,
                         'target'          => $nilaiTarget,
@@ -14446,7 +14559,6 @@ class TargetKPIController extends Controller
 
         // Rata-rata progress per karyawan
         $avgPerEmployee = [];
-        
         foreach ($employeeProgressMap as $personId => $progressList) {
             if (!empty($progressList)) {
                 $avgPerEmployee[$personId] = round(array_sum($progressList) / count($progressList), 2);
@@ -14507,7 +14619,7 @@ class TargetKPIController extends Controller
                 $employeeTargetsMap
             ),
             'distribusi_nilai' => $distribusi,
-            'daftar_target_kpi' => collect($daftarTargetKPI)->unique('judul')->values(),
+            'daftar_target_kpi' => collect($daftarTargetKPI)->unique('judul')->values()
         ]);
     }
 
@@ -16927,7 +17039,6 @@ class TargetKPIController extends Controller
             'akurasi kelengkapan data penjualan',
             'ketepatan waktu po',
             'kualitas dokumentasi support dan proctor',
-            'pendapatan penjualan project',
         ];
 
         $details = [];
@@ -17086,7 +17197,6 @@ class TargetKPIController extends Controller
             'laporan mom' => $this->calculateLaporanMOM($target, $personId),
             'akurasi kelengkapan data penjualan' => $this->calculateAkurasiKelengkapanDataPenjualan($target, $personId),
             'todo administrasi' => $this->calculateTodoAdministrasi($target),
-            'pendapatan penjualan project' => $this->calculatePendapatanPenjualanProject($target, $personId),
             default => 0
         };
     }

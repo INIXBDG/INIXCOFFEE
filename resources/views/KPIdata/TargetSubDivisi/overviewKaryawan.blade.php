@@ -402,7 +402,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn-action primary">
                             <i class="fa-solid fa-check"></i> Simpan
                         </button>
                     </div>
@@ -435,6 +435,7 @@
             'inisiatif efisiensi keuangan',
             'rasio biaya operasional terhadap revenue',
             'mengurangi manual work dan error',
+            'laporan analisis keuangan',
             'pengeluaran biaya karyawan'
         ];
 
@@ -844,7 +845,8 @@
 
                 const allowedAssistantRouteButtonsManual = [
                     'dorong inovasi pelayanan', 'inisiatif efisiensi keuangan',
-                    'rasio biaya operasional terhadap revenue', 'mengurangi manual work dan error', 'pengeluaran biaya karyawan'
+                    'rasio biaya operasional terhadap revenue', 'mengurangi manual work dan error',
+                    'laporan analisis keuangan', 'pengeluaran biaya karyawan'
                 ];
 
                 let buttonIsiForm = '';
@@ -1104,7 +1106,8 @@
 
                         const allowedDetailAssistantRoutes = ['dorong inovasi pelayanan',
                             'rasio biaya operasional terhadap revenue',
-                            'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'pengeluaran biaya karyawan'
+                            'inisiatif efisiensi keuangan', 'mengurangi manual work dan error',
+                            'laporan analisis keuangan', 'pengeluaran biaya karyawan'
                         ];
                         const allowedDetailAssistantRoutesForRupiah = ['Pemasukan Kotor',
                             'meningkatkan revenue perusahaan'
