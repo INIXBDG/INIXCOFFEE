@@ -16,6 +16,7 @@ class LeadProject extends Model
         'nama_pic',
         'kontak_pic',
         'estimasi_nilai',
+        'tahun_periode',
         'status',
         'sales_id',
     ];
