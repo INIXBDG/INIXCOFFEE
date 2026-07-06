@@ -93,40 +93,65 @@ class RekomendasiLanjutanController extends Controller
 
     public function store(Request $request)
     {
-        // dd($request->all());
-        // Validasi input sebagai array
-        $request->validate([
-            'id_rkm' => 'required',
-            'rekomendasi' => 'nullable|array',
-            'keterangan' => 'nullable|string',
-        ]);
+        // Normalisasi request
+        if ($request->has('data')) {
+            $items = $request->input('data');
+        } else {
+            $items = [[
+                'id_rkm'      => $request->id_rkm,
+                'rekomendasi' => $request->rekomendasi,
+                'keterangan'  => $request->keterangan,
+            ]];
+        }
+
+        $validator = validator(
+            ['items' => $items],
+            [
+                'items' => 'required|array',
+                'items.*.id_rkm' => 'required',
+                'items.*.rekomendasi' => 'nullable|array',
+                'items.*.keterangan' => 'nullable|string',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         try {
-            // foreach ($request->data as $item) {
-               if (!empty($request->rekomendasi)) {
 
-                    $materi_string = implode(',', $request->rekomendasi);
+            foreach ($items as $item) {
 
-                    RekomendasiLanjutan::updateOrCreate(
-                        ['id_rkm' => $request->id_rkm],
-                        [
-                            'id_materi' => $materi_string,
-                            'keterangan' => $request->keterangan
-                        ]
-                    );
-                }
-            // }
+                $materiString = !empty($item['rekomendasi'])
+                    ? implode(',', $item['rekomendasi'])
+                    : null;
+
+                RekomendasiLanjutan::updateOrCreate(
+                    [
+                        'id_rkm' => $item['id_rkm']
+                    ],
+                    [
+                        'id_materi' => $materiString,
+                        'keterangan' => $item['keterangan']
+                    ]
+                );
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Semua rekomendasi berhasil disimpan.'
+                'message' => 'Rekomendasi berhasil disimpan.'
             ]);
 
         } catch (\Exception $e) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => $e->getMessage()
             ], 500);
+
         }
     }
 }

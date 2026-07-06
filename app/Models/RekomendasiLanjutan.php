@@ -14,7 +14,7 @@ class RekomendasiLanjutan extends Model
 
     public function rkm()
     {
-        return $this->belongsTo(RKM::class, 'id_rkm', 'id');
+        return $this->hasMany(RKM::class, 'id_rkm', 'id');
     }
 
     public function materi()
