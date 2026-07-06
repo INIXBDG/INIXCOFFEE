@@ -1320,6 +1320,10 @@ class TargetKPIController extends Controller
             $progress = $this->calculateTodoAdministrasi($item);
         }
 
+        $detail = $item->detailTargetKPI->first();
+        $nilaiTarget = (float) ($detail->dataTarget->nilai_target ?? $detail->nilai_target ?? 0);
+        $progress = $nilaiTarget > 0 ? min($progress, $nilaiTarget) : $progress;
+
         return $progress;
     }
 
