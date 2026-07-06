@@ -38,7 +38,7 @@ use App\Models\Pelatihan;
 use App\Models\Peluang;
 use App\Models\PengajuanBarang;
 use App\Models\PenilaianExam;
-use App\Models\PerbaikanKendaraan;
+use App\Models\perbaikanKendaraan;
 use App\Models\perhitunganNetSales;
 use App\Models\pickupDriver;
 use App\Models\Registrasi;
@@ -2098,10 +2098,11 @@ class TargetKPIController extends Controller
             $netSales = (float) ($row->net_sales ?? 0);
             $jumlahBayar = (float) ($row->jumlah_pembayaran ?? 0);
 
-        $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$startOfYear, $endDate])->get();
+            $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$start, $end])->get();
 
             // Ambil data potongan (boleh null, array, atau json)
             $potongan = $row->jumlah_potongan;
+            $totalPotongan = 0;
 
             if (!empty($potongan)) {
 
@@ -2127,7 +2128,7 @@ class TargetKPIController extends Controller
             }
 
             return optional($item->total_pemasukan_kotor) !== null;
-        })->count();
+        };
 
         $progress = $total > 0 ? round(($sesuai / $total) * 100, 2) : 0;
         return round($progress, 1);
