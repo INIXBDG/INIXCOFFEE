@@ -796,7 +796,7 @@
                 let html = '<div class="emp-grid">';
 
                 employees.forEach(emp => {
-                    const progress = Number((emp.rata_rata_progress ?? 0).toFixed(2));
+                    const progress = Number(Math.round(emp.rata_rata_progress ?? 0));
                     const info = classifyEmployee(progress, month);
                     const initial = getInitials(emp.nama);
 

@@ -14475,11 +14475,16 @@ class TargetKPIController extends Controller
                 }
 
                 $rawProgress = $this->resolveProgress($target, $personId);
+
                 if ($rawProgress === null) {
                     continue;
                 }
 
-                $percent = max(0, min(100, $rawProgress));
+                $percent = $nilaiTarget > 0
+                    ? round(($rawProgress / $nilaiTarget) * 100, 2)
+                    : 0;
+
+                $percent = max(0, min(100, $percent));
 
                 // Progress display
                 $progressDisplay = match (true) {
@@ -14510,6 +14515,8 @@ class TargetKPIController extends Controller
                 if (!isset($employeeTargetsMap[$personId])) {
                     $employeeTargetsMap[$personId] = [];
                 }
+
+                $employeeProgressMap[$personId][] = $percent;
 
                 $employeeTargetsMap[$personId][] = [
                     'judul' => $target->judul,
@@ -14585,7 +14592,8 @@ class TargetKPIController extends Controller
             $employeeTargetStatusMap,
             $employeeTargetsMap
         ) {
-            $progressList = $employeeProgressMap[$karyawan->id] ?? [];
+            $progressList = collect($employeeTargetsMap[$karyawan->id] ?? [])
+                ->pluck('progress_percent');
             $statusData = $employeeTargetStatusMap[$karyawan->id] ?? [
                 'Sedang Berjalan' => 0,
                 'Selesai' => 0,
@@ -14593,8 +14601,8 @@ class TargetKPIController extends Controller
                 'Belum Mulai' => 0
             ];
 
-            $avgTarget = !empty($progressList)
-                ? round(array_sum($progressList) / count($progressList), 2)
+            $rataRataProgress = $progressList->isNotEmpty()
+                ? round($progressList->sum() / $progressList->count(), 2)
                 : 0;
 
             return [
@@ -14606,7 +14614,7 @@ class TargetKPIController extends Controller
                 'total_target_gagal' => $statusData['Gagal'],
                 'total_target_belum_mulai' => $statusData['Belum Mulai'],
                 'jumlah_target' => count($progressList),
-                'rata_rata_progress' => $avgTarget,
+                'rata_rata_progress' => $rataRataProgress,
                 'daftar_target_pribadi' => $employeeTargetsMap[$karyawan->id] ?? [],
             ];
         })->values();
