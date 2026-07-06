@@ -1401,6 +1401,7 @@
                         }
 
                         let bgCard = Tercapai === "Mencapai Target" ? "success" : Tercapai === "Target Gagal" ? "danger" : Tercapai === "Sedang Berjalan" ? "warning" : "secondary";
+                        let gapText = Tercapai === "Mencapai Target" ? "success" : "danger";
 
                         const pieChart = dataDetail.pie_chart || { above: 0, below: 0 };
                         const dataPieChart = {
@@ -1548,7 +1549,7 @@
                         }
 
                         let widthProgress;
-                        if (data.tipe_target === "rupiah" && targetValueRaw > 0) {
+                        if ((data.tipe_target === "rupiah" || data.tipe_target === "angka") && targetValueRaw > 0) {
                             widthProgress = Math.min(100, Number(((progressValueRaw / targetValueRaw) * 100).toFixed(1)));
                         } else {
                             widthProgress = Math.min(100, progressValueRaw || 0);
@@ -1587,8 +1588,8 @@
                                     </div>
                                     <div class="col">
                                         <div class="text-muted small">Gap</div>
-                                        <div class="fw-bold text-danger fs-4">
-                                            -${gapValue}
+                                        <div class="fw-bold text-${gapText} fs-4">
+                                            ${gapValue}
                                         </div>
                                     </div>
                                 </div>
@@ -2027,16 +2028,21 @@
                     let statusText = '';
                     let badgeClass = 'bg-secondary';
                     let progressNumeric = parseFloat(item.progress) || 0;
-                    let progressValueDisplay = progressNumeric + '%';
+                    let progressValueDisplay = progressNumeric;
+                    const target = parseFloat(item.nilai_target) || 0;
+                    const progress = parseFloat(item.progress) || 0;
 
                     if (item.tipe_target === 'rupiah') {
-                        const target = parseFloat(item.nilai_target) || 0;
-                        const progressRupiah = parseFloat(item.progress) || 0;
-                        progressNumeric = target > 0 ? Math.min((progressRupiah / target) * 100, 100) : 0;
-                        progressValueDisplay = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(progressRupiah);
+                        progressNumeric = target > 0 ? Math.min((progress / target) * 100, 100) : 0;
+                        progressValueDisplay = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(progress);
+                    } else if (item.tipe_target === 'angka') {
+                        progressNumeric = target > 0 ? Math.min((progress / target) * 100, 100) : 0;
+                    } else {
+                        progressValueDisplay = progressNumeric + '%';
                     }
 
-                    const lengthProgress = Math.max(0, Math.min(progressNumeric, 100));
+                    const lengthProgress = target > 0 ? Math.min((progress / target) * 100, 100) : 0;
+
                     let isTargetReached = false;
                     if (item.tipe_target === 'angka') {
                         isTargetReached = (item.manual_value ?? 0) >= item.nilai_target;

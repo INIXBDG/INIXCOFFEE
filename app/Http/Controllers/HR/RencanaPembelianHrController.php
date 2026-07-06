@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\Kegiatan;
 use App\Models\karyawan;
+use App\Models\JurnalAkuntansi;
 use App\Models\PengajuanBarang;
 
 class RencanaPembelianHrController extends Controller
@@ -408,7 +409,7 @@ class RencanaPembelianHrController extends Controller
         }
     }
 
-    public function getJurnalAkuntansi(Request $request)
+     public function getJurnalAkuntansi(Request $request)
     {
         $pembuat = $request->pembuat;
 

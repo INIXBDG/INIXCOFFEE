@@ -1535,7 +1535,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="col-xl-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
                     <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
@@ -1556,7 +1555,7 @@
                             <div class="col">
                                 <label for="filterMengajarPerTahun" class="mb-1 ms-1">Tahun</label>
                                 <select id="filterMengajarPerTahun" class="form-select mb-3">
-                                    <option value="default" disabled selected>Berdasarkan Tahun</option>
+                                    <option value="default" selected>Berdasarkan Tahun</option>
                                     @php
                                         $tahun_sekarang = now()->year;
                                         for ($tahun = 2023; $tahun <= $tahun_sekarang + 2; $tahun++) {
@@ -3699,11 +3698,11 @@
                 // reset filter per triwulan
                 $('#filterMengajarPerTriwulan').change(function() {
                     $('#filterMengajarPerBulan').val('default');
-                    
                     if ($(this).val() === 'default') {
                         loadDataMengajar('tahun', $('#filterMengajarPerTahun').val());
                         return;
                     }
+                    
                     loadDataMengajar('triwulan', $(this).val());
                 });
 

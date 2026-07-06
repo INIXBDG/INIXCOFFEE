@@ -178,7 +178,7 @@
                 <div class="text-truncate" data-i18n="contact">Dashboard Souvenir</div>
             </a>
         </li>
-
+        
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Office Boy</span>
         </li>
