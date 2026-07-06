@@ -18,6 +18,7 @@ class ApprovalPendapatanSales extends Model
         'harga_net',
         'pax',
         'diskon',
+        'entertainment',
         'total_diskon',
         'total_pa',
         'total_cashback',
@@ -62,7 +63,7 @@ class ApprovalPendapatanSales extends Model
     {
         return $this->belongsTo(Materi::class, 'materi');
     }
-    
+
     public function dataPerusahaan()
     {
         return $this->belongsTo(Perusahaan::class, 'perusahaan');
