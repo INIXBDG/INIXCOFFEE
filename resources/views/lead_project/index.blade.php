@@ -360,7 +360,6 @@
             $('#edit_kontak_pic').val($(this).data('kontak'));
             $('#edit_estimasi_nilai').val($(this).data('nilai'));
             $('#edit_tahun_periode').val($(this).data('tahun_periode'));
-
             $('#editLeadModal').modal('show');
         });
 

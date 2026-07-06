@@ -30,7 +30,7 @@ class LeadProjectController extends Controller
             'nama_pic' => 'required|string|max:255',     // Validasi PIC
             'kontak_pic' => 'required|string|max:255',
             'estimasi_nilai' => 'required|numeric',
-            'tahun_periode' => 'nullable|integer', 
+            'tahun_periode' => 'required|integer',
         ]);
 
         $currentUserKaryawanId = auth()->user()->karyawan->kode_karyawan ?? null;
@@ -122,6 +122,7 @@ class LeadProjectController extends Controller
             'estimasi_nilai' => 'required|numeric',
             'tahun_periode' => 'nullable|integer',
             'perusahaan_id' => 'required|exists:perusahaans,id',
+            'tahun_periode' => 'required|integer',
         ]);
 
         DB::beginTransaction();
