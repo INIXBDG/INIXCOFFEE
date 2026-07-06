@@ -975,6 +975,7 @@ Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
+    Route::get('/detail-data-mengajar/{id}', [OfficeController::class, 'detailMengajar']);
     Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan']);
     Route::get('/karyawan-information/{id}', [OfficeController::class, 'dataKaryawan']);
     Route::get('/laporan/status-karyawan', [OfficeController::class, 'laporanStatusKaryawan'])->name('office.laporan.status-karyawan');
@@ -1443,6 +1444,8 @@ Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() 
     Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');
     Route::post('/update-nvoice/{id}', [RencanaPembelianHrController::class, 'updateInvoice'])->name('updateInvoice');
     Route::post('/update-status', [RencanaPembelianHrController::class, 'updateStatus'])->name('updateStatus');
+    Route::get('/get-jurnal', [RencanaPembelianHrController::class, 'getJurnalAkuntansi']);
+    Route::post('/store-rekap', [RencanaPembelianHrController::class, 'storeRekap'])->name('storeRekap');
 });
 
 Route::prefix('HR-dashboard')->name('HR.')->group(function () {

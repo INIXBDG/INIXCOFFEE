@@ -1694,13 +1694,11 @@ class TargetKPIController extends Controller
             $manualValue = (float) $detail->manual_value;
 
             if ($manualValue > 0) {
-                $progress = ($manualValue / $nilaiTarget) * 100;
+                $progress = $manualValue;
             }
         }
 
-        $progress = round($progress, 1);
-
-        return round($progress, 1);
+        return round($progress);
     }
 
     private function calculatePenangananKomplainPerseta($item, $personId)
@@ -1872,10 +1870,10 @@ class TargetKPIController extends Controller
         }
 
         if ($manualValue > 0) {
-            $progress = ($manualValue / $targetValue) * 100;
+            $progress = $manualValue;
         }
 
-        return round($progress, 1);
+        return round($progress);
     }
 
     private function calculateMengurangiManualWorkDanError($item, $personId)
@@ -1895,10 +1893,10 @@ class TargetKPIController extends Controller
         }
 
         if ($manualValue > 0) {
-            $progress = ($manualValue / $targetValue) * 100;
+            $progress = $manualValue;
         }
 
-        return round($progress, 1);
+        return round($progress);
     }
 
     private function calculateLaporanAnalisisKeuangan($item, $personId)
@@ -1926,12 +1924,10 @@ class TargetKPIController extends Controller
         }
 
         if ($analisisData > 0) {
-            $progress = ($analisisData / $nilaiTarget) * 100;
+            $progress = $analisisData;
         }
 
-        $progress = round($progress, 1);
-
-        return round($progress, 1);
+        return round($progress);
     }
 
     private function calculatePencairanBiayaOperasional($item, $personId)
@@ -2934,9 +2930,9 @@ class TargetKPIController extends Controller
 
         $filledQuartersCount = count($quartersWith);
 
-        $konsistensiPersen = ($filledQuartersCount / $totalQuarters) * 100;
+        $konsistensiPersen = $filledQuartersCount;
 
-        return (string) round($konsistensiPersen, 1);
+        return (string) round($konsistensiPersen);
     }
 
     //project administrator & usiness support
@@ -3732,12 +3728,12 @@ class TargetKPIController extends Controller
         }
 
         if ($personId !== null) {
-            $progress = min(100, $countAchieved * 100);
+            $progress = max(100, $countAchieved);
         } else {
-            $progress = ($countAchieved / $totalData) * 100;
+            $progress = $countAchieved;
         }
 
-        return round($progress, 1);
+        return round($progress);
     }
 
     private function calculatePelatihanKompetensiEksternal($item, $personId)
@@ -3788,12 +3784,12 @@ class TargetKPIController extends Controller
         }
 
         if ($personId !== null) {
-            $progress = min(100, $countAchieved * 100);
+            $progress = max(100, $countAchieved);
         } else {
-            $progress = ($countAchieved / $totalData) * 100;
+            $progress = $countAchieved;
         }
 
-        return round($progress, 1);
+        return round($progress);
     }
 
     private function calculatePresentaseKinerjaInstruktur($item, $personId)
@@ -3976,12 +3972,12 @@ class TargetKPIController extends Controller
             ->count();
 
         if ($totalBulanDalamTahun == 0) {
-            return 0.0;
+            return 0;
         }
 
-        $progress = ($bulanYangAdaMateri / $totalBulanDalamTahun) * 100;
+        $progress = $bulanYangAdaMateri;
 
-        return round($progress, 1);
+        return round($progress);
     }
 
     private function calculatePeningkatanKnowledgeSharing($item, $personId)
@@ -4015,16 +4011,16 @@ class TargetKPIController extends Controller
         $jumlahMingguTerisi = count($mingguYangSudahJalan);
 
         if ($totalMingguDalamTahun == 0) {
-            $progress = 0.0;
+            $progress = 0;
         } else {
-            $progress = ($jumlahMingguTerisi / $totalMingguDalamTahun) * 100;
+            $progress = $jumlahMingguTerisi;
         }
 
         if ($progress > 100) {
             $progress = 100;
         }
 
-        return round($progress, 1);
+        return round($progress);
     }
 
     private function calculatePeningkatanKontribusiPelatihan($item)
@@ -6585,11 +6581,11 @@ class TargetKPIController extends Controller
             $manualValue = (float) $detail->manual_value;
 
             if ($manualValue > 0) {
-                $progress = ($manualValue / $nilaiTarget) * 100;
+                $progress = $manualValue;
             }
         }
 
-        $progress = round($progress, 1);
+        $progress = round($progress);
         $gapRaw = $progress - $nilaiTarget;
         if ($progress > $nilaiTarget) {
             $gap = 0;
@@ -7049,7 +7045,18 @@ class TargetKPIController extends Controller
         $personId = 0;
 
         if (is_null($detail) || is_null($detail->manual_value)) {
-            return 0;
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'dataManual' => [
+                    'manual_document' => $detail->manual_document,
+                ],
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
@@ -7079,11 +7086,11 @@ class TargetKPIController extends Controller
             $manualValue = (float) $detail->manual_value;
 
             if ($manualValue > 0) {
-                $progress = ($manualValue / $nilaiTarget) * 100;
+                $progress = $manualValue;
             }
         }
 
-        $progress = round($progress, 1);
+        $progress = round($progress);
         $gapRaw = $progress - $nilaiTarget;
         $gap = $nilaiTarget - $manualValue;
 
@@ -7121,7 +7128,18 @@ class TargetKPIController extends Controller
         $personId = 0;
 
         if (is_null($detail) || is_null($detail->manual_value)) {
-            return 0;
+           return [
+                'progress' => 0,
+                'gap' => 0,
+                'dataManual' => [
+                    'manual_document' => $detail->manual_document,
+                ],
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
@@ -7151,11 +7169,11 @@ class TargetKPIController extends Controller
             $manualValue = (float) $detail->manual_value;
 
             if ($manualValue > 0) {
-                $progress = ($manualValue / $nilaiTarget) * 100;
+                $progress = $manualValue;
             }
         }
 
-        $progress = round($progress, 1);
+        $progress = round($progress);
         $gapRaw = $progress - $nilaiTarget;
         $gap = $nilaiTarget - $manualValue;
 
@@ -7222,10 +7240,10 @@ class TargetKPIController extends Controller
         }
 
         if ($analisisData > 0) {
-            $progress = ($analisisData / $nilaiTarget) * 100;
+            $progress = $analisisData;
         }
 
-        $progress = round($progress, 1);
+        $progress = round($progress);
         $gapRaw = $analisisData - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
@@ -9915,10 +9933,10 @@ class TargetKPIController extends Controller
         }
 
         $filledQuartersCount = count($quartersWith);
-        $konsistensiPersen = ((float) $filledQuartersCount / (float) $totalQuarters) * 100;
-        $progress = (float) round($konsistensiPersen, 1);
+        $konsistensiPersen = (float) $filledQuartersCount;
+        $progress = (float) round($konsistensiPersen);
 
-        $gapRaw = (float) ($progress - 100);
+        $gapRaw = (float) ($progress - $nilaiTarget);
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $above = (int) $filledQuartersCount;
@@ -11796,13 +11814,13 @@ class TargetKPIController extends Controller
         }
 
         if ($personId !== null) {
-            $progress = min(100, $countAchieved * 100);
+            $progress = max(100, $countAchieved);
         } else {
-            $progress = ($countAchieved / $totalData) * 100;
+            $progress = $countAchieved;
         }
-        $progress = round($progress, 1);
+        $progress = round($progress);
 
-        $gapRaw = $progress - 100;
+        $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         if ($personId !== null) {
@@ -11947,13 +11965,13 @@ class TargetKPIController extends Controller
         }
 
         if ($personId !== null) {
-            $progress = min(100, $countAchieved * 100);
+            $progress = max(100, $countAchieved);
         } else {
-            $progress = ($countAchieved / $totalData) * 100;
+            $progress = $countAchieved;
         }
-        $progress = round($progress, 1);
+        $progress = round($progress);
 
-        $gapRaw = $progress - 100;
+        $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         if ($personId !== null) {
@@ -12387,10 +12405,10 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $presentase = ($bulanYangAdaMateri / $totalBulanDalamTahun) * 100;
-        $progress = round($presentase, 1);
+        $presentase = $bulanYangAdaMateri;
+        $progress = round($presentase);
 
-        $gapRaw = $progress - 100;
+        $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $above = $bulanYangAdaMateri;
@@ -12488,13 +12506,13 @@ class TargetKPIController extends Controller
 
         $jumlahMingguTerisi = count($mingguYangSudahJalan);
 
-        $progress = $totalMingguDalamTahun == 0 ? 0 : ($jumlahMingguTerisi / $totalMingguDalamTahun) * 100;
+        $progress = $totalMingguDalamTahun == 0 ? 0 : $jumlahMingguTerisi;
 
         if ($progress > 100) {
             $progress = 100;
         }
 
-        $progress = round($progress, 1);
+        $progress = round($progress);
 
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
@@ -14320,7 +14338,7 @@ class TargetKPIController extends Controller
                     $processedTargets->push([
                         'id'              => $target->id,
                         'judul'           => $target->judul,
-                        'asistant_route'  => $target->asistant_route,
+                        'asistant_route'  => $detail->dataTarget->asistant_route,
                         'periode'         => $detail->jangka_target . ' ' . $detail->detail_jangka,
                         'tipe_target'     => $tipeTarget,
                         'target'          => $nilaiTarget,
