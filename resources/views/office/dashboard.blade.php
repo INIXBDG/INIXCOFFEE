@@ -2334,6 +2334,41 @@
             </div>
         @endforeach
 
+        <!-- Modal Detail Chart -->
+        <div class="modal fade" id="chartDataModal" tabindex="-1" aria-labelledby="chartDataModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl"> <!-- Gunakan modal-xl karena datanya banyak kolom -->
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="chartDataModalLabel">Detail Data: <span id="modalCategoryName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body table-responsive">
+                <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                    <th>No</th>
+                    <th>Perusahaan</th>
+                    <th>Kelas</th>
+                    <th>Sales</th>
+                    <th>Tanggal</th>
+                    <th>Tagihan</th>
+                    <th>Tenggat Waktu</th>
+                    <th>Tanggal Bayar</th>
+                    <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="chartDataModalBody">
+                    <!-- Data akan di-render di sini via JS -->
+                </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+            </div>
+        </div>
+        </div>
+
         @auth
             <style>
                 @keyframes slideIn {
@@ -3141,6 +3176,101 @@
                         return `<span class="badge bg-${color}">${status}</span>`;
                     }
 
+                    function showDetailModal(category, datas, isOutstanding = true) {
+                        // 1. Ubah Judul Modal
+                        document.getElementById('modalCategoryName').innerText = category;
+                        
+                        // 2. Filter Data dan Siapkan Header Tabel Dinamis
+                        let filteredData = [];
+                        const thead = document.querySelector('#chartDataModal thead tr');
+
+                        if (isOutstanding) {
+                            // Setup untuk data Grafik Outstanding
+                            filteredData = datas.filter(item => item.status === category);
+                            thead.innerHTML = `
+                                <th>No</th>
+                                <th>Perusahaan</th>
+                                <th>Kelas</th>
+                                <th>Sales</th>
+                                <th>Tanggal</th>
+                                <th>Tagihan</th>
+                                <th>Tenggat Waktu</th>
+                                <th>Tanggal Bayar</th>
+                                <th>Status</th>
+                            `;
+                        } else {
+                            // Setup untuk data Grafik Ketepatan Waktu (Berdasarkan kalkulasi Controller baru)
+                            filteredData = datas.filter(item => item.info === category);
+                            thead.innerHTML = `
+                                <th>No</th>
+                                <th>Perusahaan</th>
+                                <th>Kelas</th>
+                                <th>Tanggal Bayar</th>
+                                <th>Jml Pembayaran</th>
+                                <th>PPN</th>
+                                <th>PPH</th>
+                                <th>Biaya Admin</th>
+                                <th>Total Kotor</th>
+                                <th>Info</th>
+                            `;
+                        }
+
+                        // 3. Render isi ke Tabel
+                        const tbody = document.getElementById('chartDataModalBody');
+                        tbody.innerHTML = '';
+
+                        if (filteredData.length === 0) {
+                            // Tampilkan pesan kosong sesuai jumlah span kolom
+                            const colSpanCount = isOutstanding ? 9 : 10;
+                            tbody.innerHTML = `<tr><td colspan="${colSpanCount}" class="text-center">Tidak ada data.</td></tr>`;
+                        } else {
+                            filteredData.forEach((item, index) => {
+                                if (isOutstanding) {
+                                    // Rendering baris Outstanding
+                                    const tagihanFormatted = (item.tagihan !== '-' && item.tagihan != null) 
+                                        ? 'Rp ' + Number(item.tagihan).toLocaleString('id-ID') 
+                                        : '-';
+                                        
+                                    tbody.innerHTML += `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>${item.perusahaan || '-'}</td>
+                                            <td>${item.kelas || '-'}</td>
+                                            <td>${item.sales || '-'}</td>
+                                            <td>${item.tanggal || '-'}</td>
+                                            <td>${tagihanFormatted}</td>
+                                            <td>${item.tenggat_waktu || '-'}</td>
+                                            <td>${item.tanggal_bayar || '-'}</td>
+                                            <td><span class="badge bg-secondary">${item.status || '-'}</span></td>
+                                        </tr>
+                                    `;
+                                } else {
+                                    // Rendering baris Ketepatan Waktu
+                                    const formatUang = (val) => 'Rp ' + Number(val || 0).toLocaleString('id-ID');
+                                    const badgeColor = item.info === 'Sesuai' ? 'bg-success' : 'bg-danger';
+
+                                    tbody.innerHTML += `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>${item.perusahaan || '-'}</td>
+                                            <td>${item.kelas || '-'}</td>
+                                            <td>${item.tanggal || '-'}</td>
+                                            <td>${formatUang(item.jumlah_pembayaran)}</td>
+                                            <td>${formatUang(item.ppn)}</td>
+                                            <td>${formatUang(item.pph)}</td>
+                                            <td>${formatUang(item.biaya_admin)}</td>
+                                            <td>${formatUang(item.total_penjualan_kotor)}</td>
+                                            <td><span class="badge ${badgeColor}">${item.info || '-'}</span></td>
+                                        </tr>
+                                    `;
+                                }
+                            });
+                        }
+
+                        // 4. Tampilkan Modal
+                        const myModal = new bootstrap.Modal(document.getElementById('chartDataModal'));
+                        myModal.show();
+                    }
                     let chartInstanceOutstanding;
 
                     function loadChartOutstanding(year) {
@@ -3224,6 +3354,17 @@
                                     options: {
                                         responsive: true,
                                         maintainAspectRatio: false,
+                                        onClick: (event, elements) => {
+                                            // Cek apakah user benar-benar mengklik slice (potongan pie)
+                                            if (elements.length > 0) {
+                                                const index = elements[0].index; // Index dari data yang diklik (0, 1, 2)
+                                                const labelClicked = data.labels[index]; // "Belum Bayar", "Tepat Waktu", atau "Terlambat"
+                                                
+                                                // Panggil fungsi penampil modal
+                                                // data.datas berasal dari response API Laravel Anda
+                                                showDetailModal(labelClicked, data.datas, true);
+                                            }
+                                        },
                                         plugins: {
                                             legend: {
                                                 position: 'bottom'
@@ -3323,6 +3464,15 @@
                                     options: {
                                         responsive: true,
                                         maintainAspectRatio: false,
+                                        onClick: (event, elements) => {
+                                            if (elements.length > 0) {
+                                                const index = elements[0].index;
+                                                const labelClicked = data.labels[index]; // "Sesuai" atau "Tidak Sesuai"
+                                                
+                                                // isOutstanding diset false agar filter menggunakan item.info
+                                                showDetailModal(labelClicked, data.datas, false);
+                                            }
+                                        },
                                         plugins: {
                                             legend: {
                                                 position: 'bottom'
