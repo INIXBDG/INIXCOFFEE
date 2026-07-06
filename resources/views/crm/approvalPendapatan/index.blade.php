@@ -242,6 +242,11 @@
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
                                     <input type="number" class="form-control input-calc" id="oleh_oleh" name="oleh_oleh"></div>
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Entertainment</label>
+                                    <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="number" class="form-control input-calc" id="entertainment" name="entertainment"></div>
+                                </div>
 
                                 <div class="col-12 mt-2">
                                     <div class="section-label-bar">
@@ -420,7 +425,8 @@
                 parseNumber($('#total_uang_saku').val()) +
                 parseNumber($('#total_akomodasi').val()) +
                 parseNumber($('#biaya_transport').val()) +
-                parseNumber($('#oleh_oleh').val());
+                parseNumber($('#oleh_oleh').val()) + 
+                parseNumber($('#entertainment').val());
 
             let totalPenjualanSales = Math.max(0, total - deductions);
             if (!manualTotalBersih) {
@@ -520,6 +526,7 @@
                                             <td class="text-end">${formatRupiah(item.total_uang_saku || 0)}</td>
                                             <td class="text-end">${formatRupiah(item.total_akomodasi || 0)}</td>
                                             <td class="text-end">${formatRupiah(item.oleh_oleh || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.entertainment || 0)}</td>
                                             <td>${escapeHtml(item.jenis_transport || '-')}</td>
                                             <td class="text-end">${formatRupiah(item.biaya_transport || 0)}</td>
                                             <td class="text-end">${formatRupiah(item.total_penjualan_sales || 0)}</td>
@@ -543,6 +550,7 @@
                                             <td class="text-end">${formatRupiah(footerBulanan.total_uang_saku || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_akomodasi || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.oleh_oleh || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.entertainment || 0)}</td>
                                             <td class="text-end">-</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.biaya_transport || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_penjualan_sales || 0)}</td>
@@ -557,6 +565,7 @@
                                             <td class="text-end">${formatRupiah(footerTahunan.total_uang_saku || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_akomodasi || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.oleh_oleh || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.entertainment || 0)}</td>
                                             <td class="text-end">-</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.biaya_transport || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_penjualan_sales || 0)}</td>
@@ -593,6 +602,7 @@
                                                         <th>Uang Saku</th>
                                                         <th>Akomodasi</th>
                                                         <th>Oleh-Oleh peserta</th>
+                                                        <th>Entertainment</th>
                                                         <th>Jenis Transport</th>
                                                         <th>Biaya Transport</th>
                                                         <th>Total Penjualan Sales (Bersih)</th>
@@ -664,6 +674,7 @@
             $('#total_uang_saku').val(item.total_uang_saku ?? '');
             $('#total_akomodasi').val(item.total_akomodasi ?? '');
             $('#oleh_oleh').val(item.oleh_oleh ?? '');
+            $('#entertainment').val(item.entertainment ?? '');
             $('#biaya_transport').val(item.biaya_transport ?? '');
 
             if (['Pesawat','Kereta','Bus','Mobil','Travel','Lainnya'].includes(item.jenis_transport)) {
@@ -711,6 +722,7 @@
                     jenis_transport: jenisTransport,
                     biaya_transport: $('#biaya_transport').val(),
                     oleh_oleh: $('#oleh_oleh').val(),
+                    entertainment: $('#entertainment').val(),
                     total_penjualan_sales: $('#total_penjualan_sales').val(),
                     materi: $('#materi').val(),
                     perusahaan: $('#perusahaan').val(),

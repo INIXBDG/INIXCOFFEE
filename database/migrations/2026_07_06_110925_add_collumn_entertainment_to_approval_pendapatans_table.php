@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('approval_pendapatans', function (Blueprint $table) {
+            $table->bigInteger('entertainment')->nullable()->after('diskon');
+        });
+
+        Schema::table('approval_pendapatan_sales', function (Blueprint $table) {
+            $table->bigInteger('entertainment')->nullable()->after('diskon');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('approval_pendapatans', function (Blueprint $table) {
+            //
+        });
+    }
+};
