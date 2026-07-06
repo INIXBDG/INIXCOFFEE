@@ -4481,7 +4481,7 @@ class TargetKPIController extends Controller
             return 0;
         }
 
-        $rkms = RKM::with(['perhitunganNetSales', 'outstanding'])
+        $rkms = RKM::with(['perhitunganNetSales', 'outstanding']) 
             ->whereYear('created_at', $tahun)->get();
 
         $totalRkmDenganPerhitungan = 0;
@@ -4490,14 +4490,15 @@ class TargetKPIController extends Controller
         foreach ($rkms as $rkm) {
             $listPerhitungan = $rkm->perhitunganNetSales;
 
-            if (!$listPerhitungan || (is_object($listPerhitungan) && count($listPerhitungan) == 0)) {
+            if (empty($listPerhitungan)) {
                 continue;
             }
 
             $totalRkmDenganPerhitungan++;
 
             $listOutstanding = $rkm->outstanding;
-            if (!$listOutstanding || (is_object($listOutstanding) && count($listOutstanding) == 0)) {
+
+            if (blank($listOutstanding)) {
                 continue;
             }
 
@@ -13808,14 +13809,15 @@ class TargetKPIController extends Controller
         foreach ($rkms as $rkm) {
             $listPerhitungan = $rkm->perhitunganNetSales;
 
-            if (!$listPerhitungan || (is_object($listPerhitungan) && count($listPerhitungan) == 0)) {
+            if (empty($listPerhitungan)) {
                 continue;
             }
 
             $totalRkmDenganPerhitungan++;
 
             $listOutstanding = $rkm->outstanding;
-            if (!$listOutstanding || (is_object($listOutstanding) && count($listOutstanding) == 0)) {
+
+            if (blank($listOutstanding)) {
                 continue;
             }
 
