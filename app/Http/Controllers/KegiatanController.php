@@ -39,6 +39,7 @@ class KegiatanController extends Controller
     public function index()
     {
         $kegiatan = Kegiatan::all();
+        $karyawans = Karyawan::all();
         $drivers = karyawan::where('jabatan', 'Driver')
             ->where(function ($query) {
                 $query->whereDoesntHave('pickupDriver')->orWhereHas('pickupDriver', function ($q) {
@@ -219,7 +220,7 @@ class KegiatanController extends Controller
         $extends = 'layouts_office.app';
         $section = 'office_contents';
 
-        return view('office.rab.index', compact('kegiatan', 'drivers', 'pembelian', 'rencanas', 'dibatalkan', 'extends', 'section'));
+        return view('office.rab.index', compact('kegiatan', 'drivers', 'pembelian', 'rencanas', 'dibatalkan', 'extends', 'section', 'karyawans'));
     }
 
     public function show($id)
