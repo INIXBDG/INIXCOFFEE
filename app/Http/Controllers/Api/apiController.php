@@ -3,506 +3,360 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ActivityInstruktur;
-use App\Models\dbklien;
-use App\Models\Inventaris;
-use App\Models\jabatan;
-use App\Models\karyawan;
-use App\Models\Materi;
-use App\Models\Nilaifeedback;
-use App\Models\Perusahaan;
-use App\Models\Peserta;
-use App\Models\Registrasi;
-use App\Models\RekomendasiLanjutan;
-use App\Models\RKM;
-use App\Models\User;
-use Carbon\Carbon;
-use DB;
-use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
+use App\Models\RKM;
+use App\Models\karyawan;
+use Illuminate\Support\Carbon;
+use App\Models\Perusahaan;
+use App\Http\Resources\PostResource;
+use App\Models\AbsensiPDF;
+use App\Models\Nilaifeedback;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\RKMExport;
+use App\Exports\RKMExcelAdmsales;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\Storage;
 
-class apiController extends Controller
+class RKMController extends Controller
 {
-    public function getFeedbacks()
+    public function index() {}
+
+    public function showMonth($year, $month)
     {
-        $feedbacks = Nilaifeedback::with('rkm')->whereYear('created_at', '2026')->get();
+        $bulan = $month + 1;
+        $startDate = CarbonImmutable::create($year, $month, 1);
+        $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
+        $now = CarbonImmutable::now()->locale('id_ID');
 
-        // $groupedFeedbacks = $feedbacks->groupBy('id_rkm');
-        $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
-            return
-                $feedback->rkm->materi->nama_materi . '/' .
-                $feedback->rkm->tanggal_awal . '/' .
-                $feedback->rkm->instruktur_key;
-        });
+        $monthRanges = [];
+        $date = $startDate;
 
-        // return $groupedFeedbacks;
-        $averageFeedbacks = [];
+        while ($date->month <= $endDate->month && $date->year <= $endDate->year) {
+            $startOfMonth = $date->startOfMonth();
+            $endOfMonth = $date->addMonth()->endOfMonth();
 
-        foreach ($groupedFeedbacks as $materi_key => $feedbackGroup) {
+            $weekRanges = [];
+            $startOfWeek = $startOfMonth->startOfWeek();
+            while ($startOfWeek->lte($endOfMonth)) {
+                $endOfWeek = $startOfWeek->copy()->endOfWeek();
+                $start = $startOfWeek->format('Y-m-d');
+                $end = $endOfWeek->format('Y-m-d');
+                $startOfWeek = $startOfWeek->addWeek();
+                $rows = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
+                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                    ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
+                    ->whereDoesntHave('peluang', function ($query) {
+                        $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
+                    })->where(function ($query) {
+                        $query->whereHas('exam.approvalexam', function ($q) {
+                            $q->where('technical_support', 1);
+                        })
+                        ->orWhereDoesntHave('exam.approvalexam');
+                    })->select(
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
+                        DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
+                        'r_k_m_s.materi_key',
+                        'r_k_m_s.ruang',
+                        'r_k_m_s.metode_kelas',
+                        'r_k_m_s.event',
+                        DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'), // Gabungkan semua exam
+                        DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'), // Gabungkan semua makanan
+                        DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+                        DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+                        DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                        'r_k_m_s.tanggal_awal',
+                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
+                    )
+                    ->groupBy(
+                        'r_k_m_s.materi_key',
+                        'r_k_m_s.ruang',
+                        'r_k_m_s.metode_kelas',
+                        'r_k_m_s.event',
+                        'r_k_m_s.tanggal_awal'
+                    )
+                    ->orderBy('status_all', 'asc')
+                    ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+                    ->get();
 
-            $first = $feedbackGroup->first();
+                    // return $rows;
 
-            $materi_key     = $first->rkm->materi_key;
-            $nama_materi    = $first->rkm->materi->nama_materi;
-            $instruktur_key = $first->rkm->instruktur_key;
-            $sales_key      = $first->rkm->sales_key;
-            $created_at     = $first->created_at;
-
-            $tanggal_awal = Carbon::parse($first->rkm->tanggal_awal)->format('Y-m-d');
-            $tanggal_akhir = $first->rkm->tanggal_akhir;
-
-            $totalFeedbacks = $feedbackGroup->count();
-
-            // =========================
-            // FIELD GROUP DEFINISI
-            // =========================
-            $groups = [
-                'M'   => ['M1','M2','M3','M4'],
-                'P'   => ['P1','P2','P3','P4','P5','P6','P7','P8'], 
-                'F'   => ['F1','F2','F3','F4','F5'],
-                'I'   => ['I1','I2','I3','I4','I5','I6','I7','I8'],
-                'Ib'  => ['I1b','I2b','I3b','I4b','I5b','I6b','I7b','I8b'],
-                'Ias' => ['I1as','I2as','I3as','I4as','I5as','I6as','I7as','I8as'],
-            ];
-
-            $result = [];
-
-            foreach ($groups as $groupName => $fields) {
-
-                $totalGroupScore = 0;
-                $activeFieldCount = 0;
-
-                foreach ($fields as $field) {
-
-                    // cek apakah kolom ada & ada nilainya
-                    if ($feedbackGroup->whereNotNull($field)->count() > 0) {
-
-                        $fieldTotal = $feedbackGroup->sum(function ($item) use ($field) {
-                            return $item->$field ?? 0;
-                        });
-
-                        $result["average{$field}"] = $totalFeedbacks > 0
-                            ? $fieldTotal / $totalFeedbacks
-                            : 0;
-
-                        $totalGroupScore += $fieldTotal;
-                        $activeFieldCount++;
+                foreach ($rows as $row) {
+                    if ($row->instruktur_all == null) {
+                        $sales_ids = explode(', ', $row->sales_all);
+                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
+                        $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
+                    } else {
+                        $sales_ids = explode(', ', $row->sales_all);
+                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
+                        $instruktur_ids = explode(', ', $row->instruktur_all);
+                        $row->instruktur = Karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
+                        $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     }
                 }
 
-                // Hitung rata-rata group (M, P, F, dst)
-                $result["average{$groupName}"] =
-                    ($totalFeedbacks > 0 && $activeFieldCount > 0)
-                    ? round($totalGroupScore / ($totalFeedbacks * $activeFieldCount), 1)
-                    : 0;
+                $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $rows];
             }
 
-            $averageFeedbacks[] = array_merge([
-                'nama_materi'    => $nama_materi,
-                'materi_key'     => $materi_key,
-                'instruktur_key' => $instruktur_key,
-                'sales_key'      => $sales_key,
-                'tanggal_awal'   => $tanggal_awal,
-                'tanggal_akhir'  => $tanggal_akhir,
-                'created_at'     => $created_at,
-            ], $result);
+            $monthRanges[] = ['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges];
+
+            $date = $date->addMonth();
         }
 
-        // Urutkan hasil berdasarkan tanggal_awal secara descending
-        $sortedFeedbacks = collect($averageFeedbacks)->sortByDesc('created_at')->values()->all();
-
-        // return response()->json(['feedbacks' => $sortedFeedbacks]);
-        return response()->json([
-            'success' => true,
-            'message' => 'List Feedbacks',
-            'data' => $sortedFeedbacks
-            // 'data' => $groupedFeedbacks
-        ]);
-
+        $json = $monthRanges;
+        return new PostResource(true, 'List Detail Bulan RKM', $json);
     }
 
-    public function getMateri()
+    public function exportExcel(Request $request)
     {
-        $materi = Materi::all();
+        $data = $request->input('data');
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan');
 
-        return response()->json([
-            'success' => true,
-            'message' => 'List Materi',
-            'data' => $materi
-        ]);
+        $filename = "RKM_Bulan_{$bulan}_Tahun_{$tahun}_" . date('Ymd_His') . ".xlsx";
+
+        $path = 'exports/' . $filename;
+
+        Excel::store(new RKMExport($data, $bulan), $path, 'local');
+
+        return response()->json(['filename' => $path]);
     }
 
-    public function getMateriInix()
+    public function RKMAPIabsensi($year, $month)
     {
-        $materi = Materi::whereIn('tipe_materi', ['Normal', 'Webinar/Workshop'])->get();
+        $bulan = $month + 1;
+        $startDate = CarbonImmutable::create($year, $month, 1);
+        $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
+        $now = CarbonImmutable::now()->locale('id_ID');
 
-        $groupMateri = $materi->groupBy(function ($item) {
-            return $item->kategori_materi;
-        })->map(function ($group) {
-            return $group->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'nama_materi' => $item->nama_materi,
-                    'kategori_materi' => $item->kategori_materi,
-                    'kode_materi' => $item->kode_materi ? $item->kode_materi : '-',
-                    'vendor' => $item->vendor,
-                    'durasi' => $item->durasi,
-                    'tipe_materi' => $item->tipe_materi,
-                    'status' => $item->status ? $item->status : 'Nonaktif',
-                    'deskripsi' => 'test',
-                    'harga' => '5000000',
-                    'created_at' => $item->created_at,
-                    'updated_at' => $item->updated_at,
-                ];
-            });
-        });
-        return response()->json([
-            'success' => true,
-            'message' => 'List Materi',
-            'data' => $groupMateri
-        ]);
-    }
-    public function getMateriInixByID($id)
-    {
-        $materi = Materi::findOrFail($id);
+        $monthRanges = [];
+        $date = $startDate;
 
-        $materiData = [
-            'id' => $materi->id,
-            'nama_materi' => $materi->nama_materi,
-            'kategori_materi' => $materi->kategori_materi,
-            'kode_materi' => $materi->kode_materi ? $materi->kode_materi : '-',
-            'vendor' => $materi->vendor,
-            'durasi' => $materi->durasi,
-            'status' => $materi->status ? $materi->status : 'Nonaktif',
-            'deskripsi' => 'test',
-            'harga' => '5000000',
-            'created_at' => $materi->created_at,
-            'updated_at' => $materi->updated_at,
-        ];
+        while ($date->month <= $endDate->month && $date->year <= $endDate->year) {
+            $startOfMonth = $date->startOfMonth();
+            $endOfMonth = $date->addMonth()->endOfMonth();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Detail Materi',
-            'data' => $materiData
-        ]);
-    }
-
-
-    public function getMateris()
-    {
-        $perusahaans = Materi::where('nama_materi', 'LIKE', '%' . request('q') . '%')->where('status', 'Aktif')->paginate(20);
-        return response()->json($perusahaans);
-    }
-
-
-
-    public function getJabatan()
-    {
-        $materi = jabatan::all();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Jabatan',
-            'data' => $materi
-        ]);
-    }
-
-    public function getPerusahaanall()
-    {
-        $perusahaan = Perusahaan::with('karyawan')->withCount('rkms', 'peserta', 'contacts', 'peluang')->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List perusahaan',
-            'data' => $perusahaan
-        ]);
-    }
-
-
-    public function getUserall()
-    {
-        // $registrasi = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')->get();
-        $user = User::with('karyawan')->where('status_akun', '1')->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List perusahaan',
-            'data' => $user,
-        ]);
-    }
-
-    public function getUserProject()
-    {
-        // $registrasi = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')->get();
-        $user = karyawan::with('user')->whereIn('divisi', ['Education', 'IT Service Management'])->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List perusahaan',
-            'data' => $user,
-        ]);
-    }
-    public function getRegistrasi(Request $request)
-    {
-        $id_rkm = $request->id_rkm;
-        // $registrasi = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')->get();
-        $user = Registrasi::with('peserta')->where('id_rkm', $id_rkm)->get();
-
-        return response()->json([
-            'data' => $user
-        ]);
-
-    }
-    public function UpcomingRKM(Request $request)
-    {
-        $today = Carbon::now();
-        $startDate = $today->copy()->startOfMonth()->toDateString();
-        $endDate = $today->copy()->addMonths(4)->endOfMonth()->toDateString();
-
-        // Ambil data RKM beserta relasi materi
-        $rows = RKM::with('materi')
-            ->whereBetween('tanggal_awal', [$startDate, $endDate])
-            ->get();
-
-        // Kelompokkan berdasarkan nama materi dan tanggal_awal
-        $grouped = $rows->groupBy(function ($item) {
-            return $item->materi->nama_materi . '|' . $item->tanggal_awal;
-        });
-
-        // Format hasil akhir
-        $result = $grouped->map(function ($items, $key) {
-            [$nama_materi, $tanggal_awal] = explode('|', $key);
-            $tanggal_akhir = $items->first()->tanggal_akhir; // Ambil tanggal_akhir dari item pertama
-
-            return [
-                'nama_materi' => $nama_materi,
-                'tanggal_awal' => $tanggal_awal,
-                'tanggal_akhir' => $tanggal_akhir,
-                'jadwals' => $items, // Seluruh entri RKM dalam grup ini
-            ];
-        })->values();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Upcoming RKM',
-            'data' => $result,
-        ]);
-
-    }
-    public function jadwalRKM(Request $request)
-    {
-        $today = Carbon::now();
-        $startDate = $today->copy()->startOfMonth()->toDateString();
-        $endDate = $today->copy()->addMonths(4)->endOfMonth()->toDateString();
-
-        // Ambil data RKM beserta relasi materi
-        $rows = RKM::with('materi')
-            ->whereBetween('tanggal_awal', [$startDate, $endDate])
-            ->get();
-
-        // Kelompokkan berdasarkan nama materi dan tanggal_awal
-        $grouped = $rows->groupBy(function ($item) {
-            return $item->materi->nama_materi . '|' . $item->tanggal_awal;
-        });
-
-        // Format hasil akhir
-        $result = $grouped->map(function ($items, $key) {
-            [$nama_materi, $tanggal_awal] = explode('|', $key);
-            $tanggal_akhir = $items->first()->tanggal_akhir;
-
-            // Tambahkan bulan sebagai informasi tambahan untuk pengelompokan
-            $bulan = Carbon::parse($tanggal_awal)->format('Y-m');
-
-            return [
-                'nama_materi' => $nama_materi,
-                'tanggal_awal' => $tanggal_awal,
-                'tanggal_akhir' => $tanggal_akhir,
-                'bulan' => $bulan,
-                'jadwals' => $items,
-            ];
-        });
-
-        // Kelompokkan berdasarkan bulan
-        $groupedByMonth = $result->groupBy('bulan')->sortKeys();
-
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Upcoming RKM',
-            'data' => $groupedByMonth,
-        ]);
-    }
-
-
-    public function getInventaris(Request $request)
-    {
-        $data = Inventaris::all();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Inventaris Inixindo',
-            'data' => $data
-        ]);
-    }
-
-    public function CSATinstruktur(Request $request)
-    {
-        $response = $this->getFeedbacks();
-
-        // Ambil data dari JsonResponse
-        $data = collect($response->getData(true)['data']);
-
-        $total = $data->sum('averageI');
-        $count = $data->whereNotNull('averageI')->count();
-
-        $rataRata = $count > 0 ? round($total / $count, 2) : 0;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'CSAT Instruktur',
-            'total' => $total,
-            'rata_rata' => $rataRata
-        ]);
-    }
-
-   public function AktivitasInstruktur(Request $request)
-    {
-        $tahun = Carbon::now()->year;
-        $sharingKnowledge = ActivityInstruktur::where('activity_type', 'Sharing Knowledge')
-            ->whereYear('created_at', $tahun)
-            ->count();
-
-        $pembuatanMateri = ActivityInstruktur::where('activity_type', 'Pembuatan Materi')
-            ->whereYear('created_at', $tahun)
-            ->count();
-
-        $pembuatanSilabus = ActivityInstruktur::where('activity_type', 'Pembuatan Silabus')
-            ->whereYear('created_at', $tahun)
-            ->count();
-
-        return response()->json([
-            'success' => true,
-            'sharingKnowledge' => $sharingKnowledge,
-            'pembuatanMateri' => $pembuatanMateri,
-            'pembuatanSilabus' => $pembuatanSilabus,
-        ]);
-    }
-
-    public function RekomendasiMateri(Request $request)
-    {
-        $tahun = Carbon::now()->year;
-
-        // total rekomendasi berdasarkan RKM tahun ini
-        $total = RekomendasiLanjutan::whereHas('rkm', function ($q) use ($tahun) {
-            $q->whereYear('tanggal_awal', $tahun);
-        })->count();
-
-        // filled = rekomendasi yang keterangannya terisi (bukan null / kosong)
-        $filled = RekomendasiLanjutan::whereHas('rkm', function ($q) use ($tahun) {
-            $q->whereYear('tanggal_awal', $tahun);
-        })
-        // ->whereNotNull('keterangan')
-        // ->where('keterangan', '!=', '')
-        ->count();
-
-        $persen = $total > 0 ? round(($filled / $total) * 100) : 0;
-
-        return response()->json([
-            'success' => true,
-            'persen' => $persen,
-            'total' => $total,
-            'filled' => $filled
-        ]);
-    }
-
-    public function getDBKlien()
-    {
-        $data1 = DB::table('dbkliens')
-            ->leftJoin(
-                'perusahaans',
-                'dbkliens.nama_perusahaan',
-                '=',
-                'perusahaans.id'
-            )
-            ->select(
-                'dbkliens.nama',
-                'dbkliens.jenis_kelamin',
-                'dbkliens.email',
-                'dbkliens.no_hp',
-                'dbkliens.tanggal_lahir',
-                'dbkliens.nama_perusahaan',
-                'perusahaans.lokasi',
-                'dbkliens.sales_key',
-                'dbkliens.nama_materi',
-                'dbkliens.created_at'
-            );
-
-        // ================= DATA 2
-        $data2 = DB::table('registrasis')
-            ->join('pesertas','registrasis.id_peserta','=','pesertas.id')
-            ->join('materis','registrasis.id_materi','=','materis.id')
-            ->leftJoin('perusahaans','pesertas.perusahaan_key','=','perusahaans.id')
-            ->select(
-                'pesertas.nama',
-                'pesertas.jenis_kelamin',
-                'pesertas.email',
-                'pesertas.no_hp',
-                'pesertas.tanggal_lahir',
-                'perusahaans.nama_perusahaan',
-                'perusahaans.lokasi',
-                'perusahaans.sales_key',
-                'materis.nama_materi',
-                'registrasis.created_at'
-            );
-
-        // ================= UNION
-        $union = $data1->unionAll($data2);
-
-        // ================= GROUP PESERTA
-        $data = DB::query()
-            ->fromSub($union, 'x')
-            ->get()
-            ->groupBy(function($item){
-                return
-                    strtolower($item->nama).'|'.
-                    strtolower($item->email).'|'.
-                    strtolower($item->jenis_kelamin);
-            })
-            ->map(function($rows){
-
-                $first = $rows->first();
-
-                // FORMAT NAMA
-                $first->nama_formatted =
-                    \App\Models\Peserta::formatNama(
-                        $first->nama
-                    );
-
-                // USIA
-                $first->usia =
-                    $first->tanggal_lahir
-                    ? Carbon::parse(
-                        $first->tanggal_lahir
-                    )->age
-                    : '';
-
-                // LIST MATERI
-                $first->materi_list =
-                    $rows->pluck('nama_materi')
-                        ->map(function($m){
-                            return $m ?? '-'; // ganti null jadi "-"
+            $weekRanges = [];
+            $startOfWeek = $startOfMonth->startOfWeek();
+            while ($startOfWeek->lte($endOfMonth)) {
+                $endOfWeek = $startOfWeek->copy()->endOfWeek();
+                $start = $startOfWeek->format('Y-m-d');
+                $end = $endOfWeek->format('Y-m-d');
+                $startOfWeek = $startOfWeek->addWeek();
+                $rows = RKM::with(['materi', 'peluang', 'exam', 'exam.approvalexam'])
+                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                    ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
+                    ->where('r_k_m_s.status', '0')
+                    ->whereDoesntHave('peluang', function ($query) {
+                        $query->where('tentatif', 1);
+                    })->where(function ($query) {
+                        $query->whereHas('exam.approvalexam', function ($q) {
+                            $q->where('technical_support', 1);
                         })
-                        ->unique()
-                        ->values();
+                        ->orWhereDoesntHave('exam.approvalexam');
+                    })
+                    ->select(
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
+                        'r_k_m_s.materi_key',
+                        'r_k_m_s.ruang',
+                        'r_k_m_s.metode_kelas',
+                        'r_k_m_s.event',
+                        DB::raw('GROUP_CONCAT(CASE
+                WHEN r_k_m_s.exam = "0" THEN "Tidak"
+                WHEN r_k_m_s.exam = "1" THEN "Ya"
+                ELSE COALESCE(r_k_m_s.exam, "Tidak")
+            END SEPARATOR ", ") AS exam'),
+                        DB::raw('GROUP_CONCAT(CASE
+                WHEN r_k_m_s.makanan = "0" THEN "Tidak Ada"
+                WHEN r_k_m_s.makanan = "1" THEN "Nasi Box"
+                WHEN r_k_m_s.makanan = "2" THEN "Prasmanan"
+                ELSE COALESCE(r_k_m_s.makanan, "Tidak Ada")
+            END SEPARATOR ", ") AS makanan'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+                        DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+                        DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                        'r_k_m_s.tanggal_awal',
+                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
+                    )
+                    ->groupBy(
+                        'r_k_m_s.materi_key',
+                        'r_k_m_s.ruang',
+                        'r_k_m_s.metode_kelas',
+                        'r_k_m_s.event',
+                        'r_k_m_s.tanggal_awal'
+                    )
+                    ->orderBy('status_all', 'asc')
+                    ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+                    ->get();
+                foreach ($rows as $row) {
+                    if ($row->instruktur_all == null) {
+                        $sales_ids = explode(', ', $row->sales_all);
+                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
+                        $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
+                    } else {
+                        $sales_ids = explode(', ', $row->sales_all);
+                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
+                        $instruktur_ids = explode(', ', $row->instruktur_all);
+                        $row->instruktur = Karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
+                        $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
+                    }
+                    $absensiExists = AbsensiPDF::where('id_rkm', $row->id)->exists();
+                    $row->absensi_status = $absensiExists ? 'green' : 'red';
+                }
+
+                // return $rows;
+
+                $weekRanges[] = ['start' => $start, 'end' =>  $end, 'data' => $rows];
+            }
+
+            $monthRanges[] = ['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges];
+
+            $date = $date->addMonth();
+        }
+
+        $json = $monthRanges;
+        return new PostResource(true, 'List Detail Bulan RKM', $json);
+    }
 
 
-                return $first;
+
+    public function getRKMRegist()
+    {
+        $year = now()->year;
+        $rows = RKM::with(['materi:id,nama_materi'])
+            ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+            ->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
+            ->whereYear('r_k_m_s.tanggal_awal', $year)
+            // ->whereBetween('r_k_m_s.tanggal_akhir', [$startDate, $endDate])
+            ->where('materis.nama_materi', 'LIKE', '%' . request('q') . '%')
+            ->select('r_k_m_s.*', 'perusahaans.nama_perusahaan')
+            ->paginate(10);
+        return response()->json($rows);
+
+
+        // $perusahaans = Perusahaan::where('nama_perusahaan', 'LIKE', '%'.request('q').'%')->paginate(10);
+    }
+
+    public function getRKMDetail(Request $request)
+    {
+        $idRkm = $request->id_rkm;
+        $rkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
+            ->where('id', $idRkm)
+            ->first();
+
+        if ($rkm) {
+            return response()->json(['rkm' => $rkm]);
+        } else {
+            return response()->json(['rkm' => null]);
+        }
+    }
+
+    public function getRKMSouvenir(Request $request)
+    {
+        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten', 'souvenirpeserta.regist.peserta', 'souvenirpeserta.souvenir'])
+            ->whereHas('souvenirpeserta')
+            ->latest()
+            ->get();
+
+        if ($rkm->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No RKM found for the current month', 'data' => null]);
+        } else {
+            return response()->json(['success' => true, 'message' => 'List RKM', 'data' => $rkm]);
+        }
+    }
+
+    public function getRKMDetailGroup(Request $request)
+    {
+        $idRkm = $request->id_rkm;
+        $rkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
+            ->where('id', $idRkm)
+            ->first();
+		//dd($rkm);
+        $materi_key = $rkm->materi_key;
+        $start = $rkm->tanggal_awal;
+        $end = $rkm->tanggal_akhir;
+		$instruktur_key = $rkm->instruktur_key;
+        $rows = RKM::with([
+            'materi',
+            'instruktur',
+            'instruktur2',
+            'asisten',
+            'nilaifeedback',
+            'peluang',
+            'exam',
+            'exam.approvalexam'
+        ])
+        ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+        ->whereDate('r_k_m_s.tanggal_awal', $start)
+        ->where('r_k_m_s.status', '0')
+        ->whereNull('r_k_m_s.deleted_at')
+        ->whereDoesntHave('peluang', function ($query) {
+            $query->where('tentatif', 1);
+        })
+        ->where(function ($query) {
+            $query->whereHas('exam.approvalexam', function ($q) {
+                $q->where('technical_support', 1);
             })
-            ->values();
+            ->orWhereDoesntHave('exam.approvalexam');
+        })
+        ->where('r_k_m_s.materi_key', $materi_key)
+        ->where('r_k_m_s.instruktur_key', $instruktur_key)
+        ->orderBy('r_k_m_s.tanggal_awal')
+        ->orderBy('r_k_m_s.tanggal_akhir')
+        ->select('r_k_m_s.*')
+        ->get();
+		
+		//return $rows;
 
-        return response()->json([
-            'data' => $data
-        ]);
+        $mergedData = [];
+
+        foreach ($rows as $row) {
+            // Buat kunci unik berdasarkan materi_key, tanggal_awal, dan tanggal_akhir
+            $key = $row->materi_key . '|' . $row->tanggal_awal;
+            if (!isset($mergedData[$key])) {
+                // Jika kunci belum ada, tambahkan data baru
+                $mergedData[$key] = $row->toArray();
+                $mergedData[$key]['sales_key'] = [$row->sales_key]; // Simpan sales_key dalam array
+                $mergedData[$key]['perusahaan_key'] = [$row->perusahaan_key]; // Simpan perusahaan_key dalam array
+                $mergedData[$key]['pax'] = $row->pax; // Ambil pax
+                $mergedData[$key]['id_rkm'] = [$row->id];
+            } else {
+                // Jika kunci sudah ada, gabungkan data
+                $mergedData[$key]['sales_key'][] = $row->sales_key; // Tambahkan sales_key
+                $mergedData[$key]['perusahaan_key'][] = $row->perusahaan_key; // Tambahkan perusahaan_key
+                $mergedData[$key]['pax'] += $row->pax; // Jumlahkan pax
+                $mergedData[$key]['id_rkm'][] = $row->id;
+            }
+        }
+
+        // Format hasil akhir
+        foreach ($mergedData as $data) {
+            $data['sales_key'] = implode(', ', $data['sales_key']); // Gabungkan sales_key
+            $data['perusahaan_key'] = implode(', ', $data['perusahaan_key']); // Gabungkan perusahaan_key
+            $data['id_rkm'] = implode(', ', $data['id_rkm']);
+            $data['tanggal_awal'] = Carbon::parse($data['tanggal_awal'])->timezone('Asia/Jakarta')->format('Y-m-d');
+            $data['tanggal_akhir'] = Carbon::parse($data['tanggal_akhir'])->timezone('Asia/Jakarta')->format('Y-m-d');
+            $result = $data;
+        }
+
+        // Kembalikan hasil
+        return response()->json($result);
+
+        if ($rkm) {
+            return response()->json($result);
+        } else {
+            return response()->json(['rkm' => null]);
+        }
     }
 }

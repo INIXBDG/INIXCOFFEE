@@ -298,7 +298,7 @@ class RKMController extends Controller
             'exam.approvalexam'
         ])
         ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-        ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
+        ->whereDate('r_k_m_s.tanggal_awal', $start)
         ->where('r_k_m_s.status', '0')
         ->whereNull('r_k_m_s.deleted_at')
         ->whereDoesntHave('peluang', function ($query) {
@@ -312,6 +312,8 @@ class RKMController extends Controller
         })
         ->where('r_k_m_s.materi_key', $materi_key)
         ->where('r_k_m_s.instruktur_key', $instruktur_key)
+        ->orderBy('r_k_m_s.tanggal_awal')
+        ->orderBy('r_k_m_s.tanggal_akhir')
         ->select('r_k_m_s.*')
         ->get();
 
