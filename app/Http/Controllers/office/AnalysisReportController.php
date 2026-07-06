@@ -77,7 +77,7 @@ class AnalysisReportController extends Controller
             'files.*'     => 'file|max:10240',
             'year'        => 'required|digits:4|integer',
             'month'       => 'required|integer|between:1,12',
-            'nilai'       => 'required',
+            'nilai' => 'required|numeric',
         ]);
 
         $filePaths = [];
@@ -111,7 +111,7 @@ class AnalysisReportController extends Controller
             'files.*'     => 'file|max:10240',
             'year'        => 'required|digits:4|integer',
             'month'       => 'required|integer|between:1,12',
-            'nilai'       => 'required'
+            'nilai'       => 'required|numeric',
         ]);
 
         $filePaths = $report->file_paths ?? [];

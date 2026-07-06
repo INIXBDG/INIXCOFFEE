@@ -627,11 +627,10 @@
             const inputReal = document.getElementById('nilai');
 
             inputDisplay.addEventListener('input', function(e) {
+                let isNegative = this.value.startsWith('-');
                 let value = this.value.replace(/\D/g, ''); 
-
-                inputReal.value = value;
-
-                this.value = formatRupiah(value);
+                inputReal.value = isNegative ? '-' + value : value;
+                this.value = isNegative ? '-' + formatRupiah(value) : formatRupiah(value);
             });
 
             function formatRupiah(angka) {
