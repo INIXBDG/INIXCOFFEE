@@ -1592,19 +1592,19 @@ class payrollController extends Controller
 
         $data = $karyawans->map(function($k) {
             return [
-                'id' => $k->id,
-                'nip' => $k->nip ?? '-',
-                'nama' => $k->nama_lengkap ?? '-',
-                'jabatan' => $k->jabatan ?? '-',
-                'divisi' => is_object($k->divisi) ? ($k->divisi->nama_divisi ?? '-') : ($k->divisi ?? '-'),
-                'gaji' => $k->gaji ?? 0,
-                'tunjangan_jabatan' => $k->tunjangan_jabatan ?? 0,
+                'id'                => $k->id,
+                'nip'               => $k->nip ?? '-',
+                'nama'              => $k->nama_lengkap ?? '-',
+                'jabatan'           => $k->jabatan ?? '-',
+                'divisi'            => is_object($k->divisi) ? ($k->divisi->nama_divisi ?? '-') : ($k->divisi ?? '-'),
+                'gaji'              => (int) ($k->gaji ?? 0),
+                'tunjangan_jabatan' => (int) ($k->tunjangan_jabatan ?? 0),
                 'pph21' => $k->pph21 ? [
-                    'id' => $k->pph21->id,
-                    'ptkp' => $k->pph21->ptkp,
-                    'menikah' => (int)$k->pph21->status_menikah,
-                    'anak' => $k->pph21->anak ?? [],
-                ] : null
+                    'id'      => $k->pph21->id,
+                    'ptkp'    => $k->pph21->ptkp,
+                    'menikah' => (int) $k->pph21->status_menikah,
+                    'anak'    => $this->decodeAnak($k->pph21->anak),
+                ] : null,
             ];
         });
 
@@ -1613,28 +1613,59 @@ class payrollController extends Controller
 
     public function storePph(Request $request)
     {
-        $request->validate([
-            'karyawan_id' => 'required|exists:karyawans,id',
-            'ptkp' => 'required|string',
-            'status_menikah' => 'required',
-            'anak' => 'nullable|array',
-        ]);
+        $anak = collect($request->anak ?? [])
+            ->filter(fn($a) => !empty(trim($a['nama'] ?? '')))
+            ->values()
+            ->map(fn($a) => ['nama' => trim($a['nama'])])
+            ->toArray();
 
-        Pph21Karyawan::updateOrCreate(
+        $pph = Pph21Karyawan::updateOrCreate(
             ['karyawan_id' => $request->karyawan_id],
             [
-                'ptkp' => $request->ptkp,
-                'status_menikah' => $request->status_menikah,
-                'anak' => $request->anak ?? [],
+                'ptkp'           => $request->ptkp,
+                'status_menikah' => (int) $request->status_menikah,
+                'anak'           => $anak, // akan di-cast ke JSON di model
             ]
         );
 
-        return response()->json(['success' => true, 'message' => 'Data PPH 21 berhasil disimpan!']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Data PPH 21 berhasil disimpan!',
+            'data'    => [
+                'id'      => $pph->id,
+                'ptkp'    => $pph->ptkp,
+                'menikah' => (int) $pph->status_menikah,
+                'anak'    => $this->decodeAnak($pph->anak),
+            ],
+        ]);
     }
 
     public function deletePph($id)
     {
-        Pph21Karyawan::destroy($id);
-        return response()->json(['success' => true, 'message' => 'Data PPH 21 berhasil dihapus!']);
+        $pph = Pph21Karyawan::find($id);
+        if (!$pph) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data PPH 21 tidak ditemukan.',
+            ], 404);
+        }
+
+        $pph->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data PPH 21 berhasil dihapus!',
+        ]);
+    }
+
+    private function decodeAnak($anak)
+    {
+        if (is_null($anak)) return [];
+        if (is_array($anak)) return $anak;
+        if (is_string($anak)) {
+            $decoded = json_decode($anak, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return [];
     }
 }
