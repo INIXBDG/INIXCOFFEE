@@ -6,6 +6,7 @@ use App\Exports\ChecklistRkmExport;
 use App\Http\Controllers\Controller;
 use App\Models\AbsensiKaryawan;
 use App\Models\AdministrasiKaryawan;
+use App\Models\ApprovalPendapatan;
 use App\Models\ChecklistEksam;
 use App\Models\ChecklistKeperluan;
 use App\Models\eksam;
@@ -301,7 +302,7 @@ class OfficeController extends Controller
         $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')
             ->get();
 
-        
+
         // get data exam
         $exams = eksam::with([
             'materi',
@@ -512,22 +513,62 @@ class OfficeController extends Controller
     {
         $year = $request->year ?? Carbon::now()->year;
 
-        $data = outstanding::with('rkm.invoice')
-            ->whereYear('created_at', $year)
-            ->get();
+        $startOfYear = Carbon::create($year, 1, 1)->startOfDay();
+        $endDate = Carbon::create($year, Carbon::now()->month, Carbon::now()->daysInMonth)->endOfDay();
+
+        $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$startOfYear, $endDate])->get();
 
         $total = $data->count();
 
         $sesuai = $data->filter(function ($item) {
-            return optional($item->rkm?->invoice)->amount !== null;
+            $pembayaran = (float) $item->jumlah_pembayaran;
+            $ppn = (float) $item->PPN;
+            $pph = (float) $item->PPH;
+            $kotor = (float) $item->total_pemasukan_kotor;
+
+            if ($pembayaran === 0.0) {
+                $totalDenganPajak = $pembayaran + $ppn + $pph;
+                return ($totalDenganPajak === $kotor) || ($pembayaran === $kotor);
+            }
+
+            return optional($item->total_pemasukan_kotor) !== null;
         })->count();
 
         $persen = $total > 0 ? round(($sesuai / $total) * 100, 2) : 0;
 
+        $mappedData = $data->map(function ($item) {
+            $invoiceAmount = $item->rkm?->invoice?->amount;
+
+            return [
+                'perusahaan'         => $item->rkm?->perusahaan->nama_perusahaan ?? '-',
+                'kelas'              => $item->rkm?->materi->nama_materi ?? '-',
+                'sales'              => $item->sales_key ?? '-',
+                'tanggal'            => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
+                'tagihan'            => $invoiceAmount !== null ? (int) $invoiceAmount : '-',
+                'tenggat_waktu'      => $item->due_date ?? '-',
+                'tanggal_bayar'      => $item->tanggal_bayar ?? '-',
+                'nominal_pembayaran' => $invoiceAmount !== null ? (int) $invoiceAmount : '-',
+                'status'             => ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar))
+                                        ? "Belum Bayar"
+                                        : (($item->status_pembayaran == 1 && $item->tanggal_bayar)
+                                            ? (($item->tanggal_bayar <= $item->due_date) ? "Tepat Waktu" : "Terlambat")
+                                            : "Belum Bayar"),
+                'info'               => $invoiceAmount !== null ? "Sesuai" : "Tidak Sesuai",
+            ];
+        });
+
         return response()->json([
             'labels' => ['Sesuai', 'Tidak Sesuai'],
-            'data' => [$sesuai, $total - $sesuai],
+            'data'   => [$sesuai, $total - $sesuai],
             'persen' => $persen,
+            'datas'  => $mappedData,
+            'debug'  => [
+                'parameter_year'         => $year,
+                'kalkulasi_total'        => $total,
+                'kalkulasi_sesuai'       => $sesuai,
+                'kalkulasi_tidak_sesuai' => $total - $sesuai,
+                'raw_data'               => $data->toArray()
+            ]
         ]);
     }
 
@@ -1105,7 +1146,7 @@ class OfficeController extends Controller
                 });
             })
             ->latest()
-            
+
             ->paginate(10);
 
         return response()->json($exams);
@@ -1144,7 +1185,7 @@ class OfficeController extends Controller
 
         return redirect()->back()->with('success_exam', 'Exam berhasil di selesaikan');
     }
-  
+
     public function laporanStatusKaryawan(Request $request)
     {
         $tahun = $request->tahun ?? now()->year;
@@ -1255,7 +1296,7 @@ class OfficeController extends Controller
         for ($i = 5; $i >= 0; $i--) {
             $date = $baseDate->copy()->subMonths($i);
             $labels[] = $date->translatedFormat('M Y');
-            
+
             $start = $date->copy()->startOfMonth();
             $end = $date->copy()->endOfMonth();
 
@@ -1279,9 +1320,9 @@ class OfficeController extends Controller
         }
 
         return response()->json([
-            'labels' => $labels, 
-            'kontrak' => $kontrak, 
-            'tetap' => $tetap, 
+            'labels' => $labels,
+            'kontrak' => $kontrak,
+            'tetap' => $tetap,
             'probation' => $probation
         ]);
     }
@@ -1291,7 +1332,7 @@ class OfficeController extends Controller
                     ->whereYear('tanggal_awal', $tahun)
                     ->whereMonth('tanggal_awal', $bulan)
                     ->get();
-    
+
         return response()->json([
             'message' => 'data checklist rkm',
             'data' => $data
