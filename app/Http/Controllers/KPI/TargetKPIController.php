@@ -2086,8 +2086,11 @@ class TargetKPIController extends Controller
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        $start = Carbon::create($tahun, 1, 1)->startOfDay();
+
+        $end = ($tahun == now()->year)
+            ? now()->endOfDay()
+            : Carbon::create($tahun, 12, 31)->endOfDay();
 
         $data = outstanding::whereBetween('created_at', [$start, $end])->get();
 
@@ -2096,24 +2099,34 @@ class TargetKPIController extends Controller
 
         foreach ($data as $row) {
 
-            $netSales = (float) $row->net_sales;
-            $jumlahBayar = (float) $row->jumlah_pembayaran;
+            $netSales = (float) ($row->net_sales ?? 0);
+            $jumlahBayar = (float) ($row->jumlah_pembayaran ?? 0);
 
             $totalPotongan = 0;
 
-            if (!empty($row->jumlah_potongan)) {
-                $potongan = is_array($row->jumlah_potongan)
-                    ? $row->jumlah_potongan
-                    : json_decode($row->jumlah_potongan, true);
+            // Ambil data potongan (boleh null, array, atau json)
+            $potongan = $row->jumlah_potongan;
+
+            if (!empty($potongan)) {
+
+                if (!is_array($potongan)) {
+                    $potongan = json_decode($potongan, true);
+                }
 
                 if (is_array($potongan)) {
-                    foreach ($potongan as $p) {
-                        $totalPotongan += (float) ($p['jumlah'] ?? 0);
+                    foreach ($potongan as $item) {
+                        $totalPotongan += (float) ($item['jumlah'] ?? 0);
                     }
                 }
             }
 
-            if ($netSales == $jumlahBayar || $netSales == ($jumlahBayar + $totalPotongan)) {
+            // Akurat apabila:
+            // 1. Net Sales = Jumlah Pembayaran
+            // 2. Net Sales = Jumlah Pembayaran + Total Potongan
+            if (
+                $netSales == $jumlahBayar ||
+                $netSales == ($jumlahBayar + $totalPotongan)
+            ) {
                 $totalAkurat++;
             }
         }
@@ -2546,35 +2559,43 @@ class TargetKPIController extends Controller
 
         $nilaiTarget = (float) $detail->nilai_target;
 
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        $start = Carbon::create($tahun, 1, 1)->startOfDay();
+
+        $end = ($tahun == now()->year)
+            ? now()->endOfDay()
+            : Carbon::create($tahun, 12, 31)->endOfDay();
 
         $allScores = [];
 
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
+        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])
+            ->whereNotNull('p8')
+            ->where('p8', '<>', '')
+            ->get();
 
-        foreach ($feedbacks as $fb) {
-            $p8 = is_numeric($fb->p8) ? (float) $fb->p8 : 0;
-
-            $avg = ($p8) / 1;
-            $avg = min(4, max(1, $avg));
-            $allScores[] = $avg;
-        }
-
-        if (empty($allScores)) {
-            return 0;
-        }
-
-        $totalResponden = count($allScores);
+        $totalResponden = 0;
         $respondenPuas = 0;
 
-        foreach ($allScores as $skor) {
+        foreach ($feedbacks as $fb) {
+
+            if (!is_numeric($fb->p8)) {
+                continue;
+            }
+
+            $skor = min(4, max(1, (float) $fb->p8));
+
+            $totalResponden++;
+
             if ($skor >= 3.5) {
                 $respondenPuas++;
             }
         }
 
+        if ($totalResponden == 0) {
+            return 0;
+        }
+
         $progress = ($respondenPuas / $totalResponden) * 100;
+
         return round($progress, 1);
     }
 
@@ -4515,8 +4536,22 @@ class TargetKPIController extends Controller
             return 0;
         }
 
-        $rkms = RKM::with(['perhitunganNetSales', 'outstanding']) 
-            ->whereYear('created_at', $tahun)->get();
+        $startDate = Carbon::create($tahun, 1, 1)->startOfDay();
+
+        $endDate = ($tahun == now()->year)
+            ? now()->endOfDay()
+            : Carbon::create($tahun, 12, 31)->endOfDay();
+
+        $rkms = RKM::with(['perhitunganNetSales', 'outstanding', 'peluang']) 
+                    ->whereBetween('tanggal_awal', [$startDate, $endDate])
+                    ->where('status', '0')
+                    ->whereNull('deleted_at')
+                    ->whereHas('peluang', function ($query) {
+                        $query->where('tentatif', 0);
+                    })
+                    ->orderBy('status', 'asc')
+                    ->orderBy('tanggal_awal', 'asc')
+                    ->get();
 
         $totalRkmDenganPerhitungan = 0;
         $totalRkmAkurat = 0;
@@ -4524,7 +4559,7 @@ class TargetKPIController extends Controller
         foreach ($rkms as $rkm) {
             $listPerhitungan = $rkm->perhitunganNetSales;
 
-            if (empty($listPerhitungan)) {
+            if ($listPerhitungan->isEmpty()) {
                 continue;
             }
 
@@ -4687,17 +4722,17 @@ class TargetKPIController extends Controller
         }
 
         try {
-            $apiUrl = env('MOODLE_API_URL');
-            $apiUsername = env('MOODLE_API_USERNAME');
-            $apiPassword = env('MOODLE_API_PASSWORD');
+            // $apiUrl = env('MOODLE_API_URL');
+            // $apiUsername = env('MOODLE_API_USERNAME');
+            // $apiPassword = env('MOODLE_API_PASSWORD');
 
-            $response = Http::withBasicAuth($apiUsername, $apiPassword)
-                ->timeout(15)
-                ->get($apiUrl);
+            // $response = Http::withBasicAuth($apiUsername, $apiPassword)
+            //     ->timeout(15)
+            //     ->get($apiUrl);
 
-            if (!$response->successful()) {
-                return 0;
-            }
+            // if (!$response->successful()) {
+            //     return 0;
+            // }
 
             $moodleData = $response->json();
         } catch (Exception $e) {
@@ -7413,150 +7448,171 @@ class TargetKPIController extends Controller
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
-        if (is_null($detail) || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+        $emptyResponse = [
+            'progress' => 0,
+            'gap' => 0,
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
+            'monthly_progress' => [],
+            'daily_progress_per_month' => [],
+        ];
+
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return $emptyResponse;
         }
 
         $tahun = (int) $detail->detail_jangka;
+        $nilaiTarget = (float) $detail->nilai_target;
 
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $emptyResponse;
         }
 
+        // Year To Date
         $start = Carbon::create($tahun, 1, 1)->startOfDay();
-        $end = Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $data = outstanding::whereBetween('created_at', [$start, $end])->get();
+        $end = ($tahun == now()->year)
+            ? now()->endOfDay()
+            : Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $total = $data->count();
+        $data = Outstanding::whereBetween('created_at', [$start, $end])->get();
+
+        $total = 0;
         $totalAkurat = 0;
 
-        $dailyResult = [];
-        $accurateCount = 0;
-        $notAccurateCount = 0;
+        $monthlyTotal = [];
+        $monthlyAccurate = [];
+
+        $dailyTotal = [];
+        $dailyAccurate = [];
+
+        $dailyBreakdownPerMonth = [];
 
         foreach ($data as $row) {
 
-            $netSales = (float) $row->net_sales;
-            $jumlahBayar = (float) $row->jumlah_pembayaran;
+            // Jika Net Sales kosong tidak ikut dihitung
+            if (is_null($row->net_sales)) {
+                continue;
+            }
+
+            $total++;
+
+            $date = Carbon::parse($row->created_at);
+            $monthKey = $date->format('Y-m');
+            $dateKey = $date->format('Y-m-d');
+
+            // Total data per bulan
+            $monthlyTotal[$monthKey] =
+                ($monthlyTotal[$monthKey] ?? 0) + 1;
+
+            // Total data per hari
+            $dailyTotal[$monthKey][$dateKey] =
+                ($dailyTotal[$monthKey][$dateKey] ?? 0) + 1;
+
+            $netSales = (float) ($row->net_sales ?? 0);
+            $jumlahBayar = (float) ($row->jumlah_pembayaran ?? 0);
 
             $totalPotongan = 0;
 
-            if (!empty($row->jumlah_potongan)) {
-                $potongan = is_array($row->jumlah_potongan)
-                    ? $row->jumlah_potongan
-                    : json_decode($row->jumlah_potongan, true);
+            $potongan = $row->jumlah_potongan;
+
+            if (!empty($potongan)) {
+
+                if (!is_array($potongan)) {
+                    $potongan = json_decode($potongan, true);
+                }
 
                 if (is_array($potongan)) {
-                    foreach ($potongan as $p) {
-                        $totalPotongan += (float) ($p['jumlah'] ?? 0);
+                    foreach ($potongan as $item) {
+                        $totalPotongan += (float) ($item['jumlah'] ?? 0);
                     }
                 }
             }
 
-            $totalHitung = $jumlahBayar + $totalPotongan;
-
-            $isAkurat = round($netSales, 2) == round($totalHitung, 2);
-
-            $tanggal = Carbon::parse($row->created_at);
-            $tanggalKey = $tanggal->format('Y-m-d');
-
-            $dailyResult[$tanggalKey][] = $isAkurat ? 1 : 0;
+            $isAkurat =
+                $netSales == $jumlahBayar ||
+                $netSales == ($jumlahBayar + $totalPotongan);
 
             if ($isAkurat) {
+
                 $totalAkurat++;
-                $accurateCount++;
-            } else {
-                $notAccurateCount++;
+
+                // Akurat per bulan
+                $monthlyAccurate[$monthKey] =
+                    ($monthlyAccurate[$monthKey] ?? 0) + 1;
+
+                // Akurat per hari
+                $dailyAccurate[$monthKey][$dateKey] =
+                    ($dailyAccurate[$monthKey][$dateKey] ?? 0) + 1;
+
+                // Breakdown harian
+                $dailyBreakdownPerMonth[$monthKey][$dateKey] =
+                    ($dailyBreakdownPerMonth[$monthKey][$dateKey] ?? 0) + 1;
             }
         }
 
         if ($total == 0) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $emptyResponse;
         }
 
-        $progress = ($totalAkurat / $total) * 100;
-        $progress = round($progress, 1);
+        // Progress utama
+        $progress = round(($totalAkurat / $total) * 100, 1);
 
-        $nilaiTarget = $detail->nilai_target ?? 0;
+        // Gap
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
+        // Progress bulanan
         $monthlyProgress = [];
+
+        foreach ($monthlyTotal as $month => $jumlah) {
+
+            $accurate = $monthlyAccurate[$month] ?? 0;
+
+            $monthlyProgress[$month] = $jumlah > 0
+                ? round(($accurate / $jumlah) * 100, 1)
+                : 0;
+        }
+
+        // Progress harian
         $dailyProgressPerMonth = [];
 
-        foreach ($dailyResult as $dateStr => $values) {
-            $date = Carbon::parse($dateStr);
-            $monthKey = $date->format('Y-m');
+        foreach ($dailyTotal as $month => $days) {
 
-            $avg = array_sum($values) / count($values) * 100;
-            $avg = round($avg, 1);
+            foreach ($days as $date => $jumlah) {
 
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-                $monthlyProgress[$monthKey] = [];
+                $accurate = $dailyAccurate[$month][$date] ?? 0;
+
+                $dailyProgressPerMonth[$month][$date] = $jumlah > 0
+                    ? round(($accurate / $jumlah) * 100, 1)
+                    : 0;
             }
-            $monthlyData[$monthKey][] = $avg;
-            $monthlyProgress[$monthKey][] = $avg;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-                $dailyProgressPerMonth[$monthKey] = [];
-            }
-            $dailyBreakdownPerMonth[$monthKey][$dateStr] = $avg;
-            $dailyProgressPerMonth[$monthKey][$dateStr] = $avg;
         }
 
-        $monthlyAverages = [];
-        $monthlyProgressAverages = [];
-        foreach ($monthlyData as $month => $values) {
-            $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
-        }
-        foreach ($monthlyProgress as $month => $values) {
-            $monthlyProgressAverages[$month] = round(array_sum($values) / count($values), 1);
-        }
-
-        ksort($monthlyAverages);
+        ksort($monthlyAccurate);
+        ksort($monthlyProgress);
         ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAverages);
         ksort($dailyProgressPerMonth);
 
         return [
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => [
-                'above' => $accurateCount,
-                'below' => $notAccurateCount
+                'above' => $totalAkurat,
+                'below' => max(0, $total - $totalAkurat),
             ],
-            'monthly_data' => $monthlyAverages,
+
+            // Jumlah data akurat per bulan
+            'monthly_data' => $monthlyAccurate,
+
+            // Jumlah data akurat per hari
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAverages,
+
+            // Persentase akurasi per bulan
+            'monthly_progress' => $monthlyProgress,
+
+            // Persentase akurasi per hari
             'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
     }
@@ -8689,24 +8745,32 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        $start = Carbon::create($tahun, 1, 1)->startOfDay();
+
+        $end = ($tahun == now()->year)
+            ? now()->endOfDay()
+            : Carbon::create($tahun, 12, 31)->endOfDay();
 
         $allScores = [];
         $scoreDatePairs = [];
 
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
+        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])
+            ->whereNotNull('p8')
+            ->where('p8', '<>', '')
+            ->get();
 
         foreach ($feedbacks as $fb) {
-            $p8 = is_numeric($fb->p8) ? (float) $fb->p8 : 0;
+            if (!is_numeric($fb->p8)) {
+                continue;
+            }
 
-            $avg = ($p8) / 1;
-            $avg = min(4, max(1, $avg));
+            $score = min(4, max(1, (float) $fb->p8));
 
-            $allScores[] = $avg;
+            $allScores[] = $score;
+
             $scoreDatePairs[] = [
-                'score' => $avg,
-                'date' => $fb->created_at->format('Y-m-d'),
+                'score' => $score,
+                'date' => Carbon::parse($fb->created_at)->format('Y-m-d'),
             ];
         }
 
@@ -8739,38 +8803,51 @@ class TargetKPIController extends Controller
 
         $monthlyData = [];
         $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
+        $monthlyProgressAverages = [];
         $dailyProgressPerMonth = [];
 
         foreach ($scoreDatePairs as $pair) {
+
             $date = Carbon::parse($pair['date']);
             $monthKey = $date->format('Y-m');
             $dayKey = $pair['date'];
-            $score = $pair['score'];
-            $pct = round($score * 25, 1);
 
             if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-                $monthlyProgress[$monthKey] = [];
+                $monthlyData[$monthKey] = [
+                    'total' => 0,
+                    'puas' => 0,
+                    'scores' => []
+                ];
             }
-            $monthlyData[$monthKey][] = $score;
-            $monthlyProgress[$monthKey][] = $pct;
 
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-                $dailyProgressPerMonth[$monthKey] = [];
+            $monthlyData[$monthKey]['total']++;
+            $monthlyData[$monthKey]['scores'][] = $pair['score'];
+
+            if ($pair['score'] >= 3.5) {
+                $monthlyData[$monthKey]['puas']++;
             }
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
-            $dailyProgressPerMonth[$monthKey][$dayKey] = $pct;
+
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $pair['score'];
+
+            $dailyProgressPerMonth[$monthKey][$dayKey] =
+                $pair['score'] >= 3.5 ? 100 : 0;
         }
 
         $monthlyAverages = [];
-        $monthlyProgressAverages = [];
-        foreach ($monthlyData as $month => $dailyVals) {
-            $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-        foreach ($monthlyProgress as $month => $dailyVals) {
-            $monthlyProgressAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
+
+        foreach ($monthlyData as $month => $data) {
+
+            // rata-rata skor bulan tersebut
+            $monthlyAverages[$month] = round(
+                array_sum($data['scores']) / count($data['scores']),
+                1
+            );
+
+            // progress KPI bulan tersebut
+            $monthlyProgressAverages[$month] = round(
+                ($data['puas'] / $data['total']) * 100,
+                1
+            );
         }
 
         ksort($monthlyAverages);
@@ -13760,7 +13837,7 @@ class TargetKPIController extends Controller
         $detail = $details->first();
 
         $nilaiTarget = (float) optional($detail)->nilai_target;
-        $tahun = (int) optional($detail)->detail_jangka ?? now()->year;
+        $tahun = (int) (optional($detail)->detail_jangka ?? now()->year);
 
         if ($details->isEmpty() || $tahun < 2000 || $tahun > now()->year + 5) {
             return [
@@ -13774,24 +13851,60 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $rkms = RKM::with(['perhitunganNetSales', 'outstanding'])
-            ->whereYear('created_at', $tahun)
+        // Year To Date
+        $startDate = Carbon::create($tahun, 1, 1)->startOfDay();
+
+        $endDate = ($tahun == now()->year)
+            ? now()->endOfDay()
+            : Carbon::create($tahun, 12, 31)->endOfDay();
+
+        $rkms = RKM::with([
+                'perhitunganNetSales',
+                'outstanding',
+                'peluang'
+            ])
+            ->whereBetween('tanggal_awal', [$startDate, $endDate])
+            ->where('status', '0')
+            ->whereNull('deleted_at')
+            ->whereHas('peluang', function ($query) {
+                $query->where('tentatif', 0);
+            })
+            ->orderBy('status')
+            ->orderBy('tanggal_awal')
             ->get();
 
         $totalRkmDenganPerhitungan = 0;
         $totalRkmAkurat = 0;
 
+        $monthlyTotal = [];
+        $monthlyAccurate = [];
+
+        $dailyTotal = [];
+        $dailyAccurate = [];
+
         $dailyBreakdownPerMonth = [];
-        $monthlyTotals = [];
 
         foreach ($rkms as $rkm) {
+
             $listPerhitungan = $rkm->perhitunganNetSales;
 
-            if (empty($listPerhitungan)) {
+            if ($listPerhitungan->isEmpty()) {
                 continue;
             }
 
             $totalRkmDenganPerhitungan++;
+
+            $date = Carbon::parse($rkm->tanggal_awal);
+            $monthKey = $date->format('Y-m');
+            $dateKey = $date->format('Y-m-d');
+
+            // Total RKM per bulan
+            $monthlyTotal[$monthKey] =
+                ($monthlyTotal[$monthKey] ?? 0) + 1;
+
+            // Total RKM per hari
+            $dailyTotal[$monthKey][$dateKey] =
+                ($dailyTotal[$monthKey][$dateKey] ?? 0) + 1;
 
             $listOutstanding = $rkm->outstanding;
 
@@ -13801,97 +13914,100 @@ class TargetKPIController extends Controller
 
             $sumKomponen = 0;
 
-            $itemsPerhitungan = $listPerhitungan instanceof \Illuminate\Database\Eloquent\Collection
-                ? $listPerhitungan
-                : [$listPerhitungan];
-
-            foreach ($itemsPerhitungan as $p) {
+            foreach ($listPerhitungan as $p) {
                 $sumKomponen +=
-                    (int)($p->transportasi ?? 0) +
-                    (int)($p->akomodasi_peserta ?? 0) +
-                    (int)($p->akomodasi_tim ?? 0) +
-                    (int)($p->fresh_money ?? 0) +
-                    (int)($p->entertaint ?? 0) +
-                    (int)($p->souvenir ?? 0) +
-                    (int)($p->cashback ?? 0) +
-                    (int)($p->sewa_laptop ?? 0);
+                    (int) ($p->transportasi ?? 0) +
+                    (int) ($p->akomodasi_peserta ?? 0) +
+                    (int) ($p->akomodasi_tim ?? 0) +
+                    (int) ($p->fresh_money ?? 0) +
+                    (int) ($p->entertaint ?? 0) +
+                    (int) ($p->souvenir ?? 0) +
+                    (int) ($p->cashback ?? 0) +
+                    (int) ($p->sewa_laptop ?? 0);
             }
 
             $sumOutstanding = 0;
 
-            $itemsOutstanding = $listOutstanding instanceof \Illuminate\Database\Eloquent\Collection
-                ? $listOutstanding
-                : [$listOutstanding];
-
-            foreach ($itemsOutstanding as $o) {
-                $sumOutstanding += (int)($o->net_sales ?? 0);
+            foreach ($listOutstanding as $o) {
+                $sumOutstanding += (int) ($o->net_sales ?? 0);
             }
 
             if ($sumKomponen === $sumOutstanding) {
+
                 $totalRkmAkurat++;
 
-                $date = \Carbon\Carbon::parse($rkm->created_at);
-                $dateKey = $date->format('Y-m-d');
-                $monthKey = $date->format('Y-m');
+                // Akurat per bulan
+                $monthlyAccurate[$monthKey] =
+                    ($monthlyAccurate[$monthKey] ?? 0) + 1;
 
-                if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                    $dailyBreakdownPerMonth[$monthKey] = [];
-                }
+                // Akurat per hari
+                $dailyAccurate[$monthKey][$dateKey] =
+                    ($dailyAccurate[$monthKey][$dateKey] ?? 0) + 1;
 
-                if (!isset($dailyBreakdownPerMonth[$monthKey][$dateKey])) {
-                    $dailyBreakdownPerMonth[$monthKey][$dateKey] = 0;
-                }
-
-                $dailyBreakdownPerMonth[$monthKey][$dateKey] += 1;
-
-                if (!isset($monthlyTotals[$monthKey])) {
-                    $monthlyTotals[$monthKey] = 0;
-                }
-
-                $monthlyTotals[$monthKey] += 1;
+                // Breakdown harian (jumlah RKM akurat)
+                $dailyBreakdownPerMonth[$monthKey][$dateKey] =
+                    ($dailyBreakdownPerMonth[$monthKey][$dateKey] ?? 0) + 1;
             }
         }
 
-        if ($totalRkmDenganPerhitungan > 0) {
-            $progress = ($totalRkmAkurat / $totalRkmDenganPerhitungan) * 100;
-        } else {
-            $progress = 0;
-        }
+        // Progress utama
+        $progress = $totalRkmDenganPerhitungan > 0
+            ? round(($totalRkmAkurat / $totalRkmDenganPerhitungan) * 100, 1)
+            : 0;
 
-        ksort($monthlyTotals);
-        ksort($dailyBreakdownPerMonth);
-
+        // Monthly Progress
         $monthlyProgress = [];
-        foreach ($monthlyTotals as $month => $value) {
-            $monthlyProgress[$month] = $nilaiTarget > 0
-                ? round(($value / $nilaiTarget) * 100, 1)
+
+        foreach ($monthlyTotal as $month => $total) {
+
+            $accurate = $monthlyAccurate[$month] ?? 0;
+
+            $monthlyProgress[$month] = $total > 0
+                ? round(($accurate / $total) * 100, 1)
                 : 0;
         }
 
+        // Daily Progress
         $dailyProgressPerMonth = [];
-        foreach ($dailyBreakdownPerMonth as $month => $days) {
-            foreach ($days as $date => $value) {
-                $dailyProgressPerMonth[$month][$date] = $nilaiTarget > 0
-                    ? round(($value / $nilaiTarget) * 100, 1)
+
+        foreach ($dailyTotal as $month => $days) {
+
+            foreach ($days as $date => $total) {
+
+                $accurate = $dailyAccurate[$month][$date] ?? 0;
+
+                $dailyProgressPerMonth[$month][$date] = $total > 0
+                    ? round(($accurate / $total) * 100, 1)
                     : 0;
             }
         }
 
+        ksort($monthlyAccurate);
+        ksort($monthlyProgress);
+        ksort($dailyBreakdownPerMonth);
+        ksort($dailyProgressPerMonth);
+
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        $pieChart = [
-            'above' => $totalRkmAkurat,
-            'below' => max(0, $totalRkmDenganPerhitungan - $totalRkmAkurat),
-        ];
-
         return [
-            'progress' => round($progress, 1),
+            'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => $pieChart,
-            'monthly_data' => $monthlyTotals,
+            'pie_chart' => [
+                'above' => $totalRkmAkurat,
+                'below' => max(0, $totalRkmDenganPerhitungan - $totalRkmAkurat),
+            ],
+
+            // Jumlah RKM Akurat per bulan
+            'monthly_data' => $monthlyAccurate,
+
+            // Jumlah RKM Akurat per hari
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+
+            // Persentase akurasi per bulan
             'monthly_progress' => $monthlyProgress,
+
+            // Persentase akurasi per hari
             'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
     }
@@ -14100,15 +14216,15 @@ class TargetKPIController extends Controller
         }
 
         try {
-            $apiUrl = env('MOODLE_API_URL');
-            $apiUsername = env('MOODLE_API_USERNAME');
-            $apiPassword = env('MOODLE_API_PASSWORD');
+            // $apiUrl = env('MOODLE_API_URL');
+            // $apiUsername = env('MOODLE_API_USERNAME');
+            // $apiPassword = env('MOODLE_API_PASSWORD');
 
-            $response = Http::withBasicAuth($apiUsername, $apiPassword)
-                ->timeout(15)
-                ->get($apiUrl);
+            // $response = Http::withBasicAuth($apiUsername, $apiPassword)
+            //     ->timeout(15)
+            //     ->get($apiUrl);
 
-            $moodleRaw = $response->successful() ? $response->json() : [];
+            // $moodleRaw = $response->successful() ? $response->json() : [];
         } catch (Exception $e) {
             $moodleRaw = [];
         }
