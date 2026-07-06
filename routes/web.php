@@ -10,6 +10,7 @@ use App\Http\Controllers\HR\ArsipRekrutmenController;
 use App\Http\Controllers\CateringController;
 use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\Crm\AktivitasController;
+use App\Http\Controllers\Crm\ApprovalPendapatanSalesController;
 use App\Http\Controllers\Crm\CatatanSalesController;
 use App\Http\Controllers\crm\checklistRKMController;
 use App\Http\Controllers\Crm\ContactController;
@@ -118,6 +119,7 @@ use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\ScheduleLogController;
 use App\Http\Controllers\VisitProjectController;
 use App\Http\Controllers\CVInstrukturController;
+use App\Http\Controllers\HR\RekapPenjualanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -838,6 +840,10 @@ Route::prefix('crm')->group(function () {
     Route::get('/contact/export-pdf', [ContactController::class, 'exportPdf'])->name('contact.export_pdf');
 
 });
+
+Route::get('/crm/approval-pendapatan-sales', [ApprovalPendapatanSalesController::class, 'index'])->name('crm.approval.index');
+Route::get('/crm/approval-pendapatan-sales/get/{tahun}/{bulan}', [ApprovalPendapatanSalesController::class, 'get']);
+Route::post('/crm/approval-pendapatan-sales/update/{id}', [ApprovalPendapatanSalesController::class, 'update']);
 
 //INVOICE
 Route::get('/invoice', [InvoiceRKMController::class, 'index'])->name('invoice.index');
@@ -1650,6 +1656,14 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/data', [payrollController::class, 'getPphData'])->name('HR.pph21.data');
         Route::post('/store', [payrollController::class, 'storePph'])->name('HR.pph21.store');
         Route::delete('/{id}', [payrollController::class, 'deletePph'])->name('HR.pph21.delete');
+    });
+
+    Route::prefix('/rekapan-penjualan')->name('rekap-penjualan.')->group(function () {
+        Route::get('/', [RekapPenjualanController::class, 'index'])->name('index');
+        Route::get('/data/{year}/{monthStart?}/{monthEnd?}', [RekapPenjualanController::class, 'getData'])->name('data');
+        Route::get('/materi/{year}', [RekapPenjualanController::class, 'getMateriData'])->name('materi');
+        Route::get('/mingguan/{year}/{month}', [RekapPenjualanController::class, 'getMingguanData'])->name('mingguan');
+        Route::get('/profitabilitas/{year}', [RekapPenjualanController::class, 'getProfitabilitas'])->name('profitabilitas');
     });
 });
 

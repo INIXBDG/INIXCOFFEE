@@ -144,6 +144,16 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('HR.rekap-penjualan.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.rekap-penjualan.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:cash-register" data-width="20" data-height="20"></i>
+                </span>
+                <span>Rekap Penjualan</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
         <li class="menu-item {{ request()->routeIs('HR.perhitungan-tunjangan.*') ? 'active' : '' }}">
             <a href="{{ route('HR.perhitungan-tunjangan.index') }}" class="menu-link">
                 <span class="menu-link-icon">

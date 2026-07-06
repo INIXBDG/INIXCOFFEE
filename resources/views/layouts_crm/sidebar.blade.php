@@ -279,6 +279,19 @@
             </a>
         </li>
 
+        @can('Fitur Pendapatan Sales')
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Administrasi</span>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('crm.approval.index') ? 'active open' : '' }}">
+                <a href="{{ route('crm.approval.index') }}" class="menu-link">
+                    <i class='menu-icon tf-icons bx bx-file-blank'></i>
+                    <div class="text-truncate">Approval Pendapatan</div>
+                </a>
+            </li>
+        @endcan
+
         <li class="menu-item mt-4 mb-4 px-3">
             <a href="{{ route('home') }}" class="btn btn-primary d-flex align-items-center justify-content-center w-100">
                 <i class="bx bx-home me-2"></i>BACK TO INIXCOFFE

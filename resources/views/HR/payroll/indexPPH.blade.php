@@ -250,7 +250,6 @@
                                 <div class="section-divider mb-2"><i class="fa-solid fa-money-bill-wave"></i>Komponen Gaji (Dari Database)</div>
                                 <div class="calculation-preview mb-3">
                                     <div class="calc-row mb-1"><span class="text-muted">Gaji Pokok</span><span class="fw-bold" id="prevGapok">Rp 0</span></div>
-                                    <div class="calc-row mb-1"><span class="text-muted">Tunjangan Jabatan</span><span class="fw-bold" id="prevTunjJab">Rp 0</span></div>
                                     <div class="calc-row calc-total"><span>Total Gaji Dasar (Bulanan)</span><span id="prevBulanan">Rp 0</span></div>
                                 </div>
 
@@ -385,7 +384,7 @@
         }
 
         function getGajiDasar(k) {
-            return (parseInt(k.gaji) || 0) + (parseInt(k.tunjangan_jabatan) || 0);
+            return parseInt(k.gaji) || 0;
         }
 
         function fmtRp(n) { return 'Rp ' + Math.round(n || 0).toLocaleString('id-ID'); }
@@ -512,7 +511,6 @@
             $('#prevNama').text(`${k.nama} (${k.nip})`);
             $('#prevPtkpBadge').text(ptkpCode || '-');
             $('#prevGapok').text(fmtRp(k.gaji || 0));
-            $('#prevTunjJab').text(fmtRp(k.tunjangan_jabatan || 0));
             $('#prevBulanan').text(fmtRp(gajiDasar));
             $('#prevTahunan').text(fmtRp(calc.gajiTahunan));
             $('#prevPtkpCode').text(ptkpCode || '-');
