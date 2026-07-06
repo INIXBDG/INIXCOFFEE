@@ -16,6 +16,7 @@ use App\Models\Nilaifeedback;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RKMExport;
 use App\Exports\RKMExcelAdmsales;
+use App\Models\RekomendasiLanjutan;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Support\Facades\Storage;
@@ -45,7 +46,7 @@ class RKMController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
                 $startOfWeek = $startOfWeek->addWeek();
-                $rows = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
+                $rows = RKM::with(['materi', 'peluang'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
@@ -100,6 +101,12 @@ class RKMController extends Controller
                         $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
                         $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     }
+                    $rkmIds = collect(explode(',', $row->id_all))
+                        ->map(fn ($id) => trim($id))
+                        ->filter();
+
+                    $row->rekomendasi_group = RekomendasiLanjutan::whereIn('id_rkm', $rkmIds)
+                        ->get();
                 }
 
                 $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $rows];
@@ -303,6 +310,9 @@ class RKMController extends Controller
         ->whereNull('r_k_m_s.deleted_at')
         ->whereDoesntHave('peluang', function ($query) {
             $query->where('tentatif', 1);
+        })
+        ->whereHas('peluang', function ($query) {
+            $query->where('tentatif', 0);
         })
         ->where(function ($query) {
             $query->whereHas('exam.approvalexam', function ($q) {

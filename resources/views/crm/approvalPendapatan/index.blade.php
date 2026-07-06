@@ -1,10 +1,10 @@
-@extends('layouts_office.app')
+@extends('layouts_crm.app')
 
-@section('office_contents')
+@section('crm_contents')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <div class="container-fluid mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="m-0 fw-bold">Validasi Laba Kotor</h3>
+            <h3 class="m-0 fw-bold">Validasi Penjualan Sales</h3>
             <span class="badge bg-primary-subtle text-primary-emphasis fs-6 px-3 py-2" id="current-period"></span>
         </div>
 
@@ -53,26 +53,25 @@
         </div>
     </div>
 
-    {{-- ========== MODAL UPDATE (REDESIGNED) ========== --}}
+    {{-- ========== MODAL UPDATE ========== --}}
     <div class="modal fade" id="updateModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg overflow-hidden" style="border-radius:16px;">
 
-                {{-- Modal Header --}}
                 <div class="modal-header px-4 py-3">
                     <div class="d-flex align-items-center gap-3">
                         <div class="modal-icon-wrap d-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-20" style="width:40px;height:40px;">
                             <i class="bi bi-pencil-square fs-5"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title fw-bold mb-0">Update Validasi Pendapatan</h5>
+                            <h5 class="modal-title fw-bold mb-0">Update Validasi Penjualan Sales</h5>
                             <small class="text-white text-opacity-75" id="modal-subtitle">—</small>
                         </div>
                     </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                {{-- Step Indicator --}}
+                {{-- Step Indicator (2 step saja: tidak ada tracking di fitur sales) --}}
                 <div class="px-4 py-2 border-bottom d-flex align-items-center gap-0" style="background:#f8fafc;">
                     <div class="step-pill active" data-step="1">
                         <span class="step-num">1</span>
@@ -83,11 +82,6 @@
                         <span class="step-num">2</span>
                         <span class="step-label">Perhitungan</span>
                     </div>
-                    <div class="step-line"></div>
-                    <div class="step-pill" data-step="3">
-                        <span class="step-num">3</span>
-                        <span class="step-label">Tracking</span>
-                    </div>
                 </div>
 
                 <form id="formUpdate">
@@ -96,13 +90,13 @@
 
                     <div class="modal-body p-0" style="background:#f8fafc;max-height:70vh;overflow-y:auto;">
 
-                        {{-- STEP 1: Informasi Training & Invoice --}}
+                        {{-- STEP 1: Informasi Training --}}
                         <div class="step-content p-4" id="step-1">
                             <div class="row g-3">
                                 <div class="col-12">
                                     <div class="section-label-bar">
                                         <i class="bi bi-file-text me-2 text-primary"></i>
-                                        <span>Informasi Training & Invoice</span>
+                                        <span>Informasi Training</span>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -184,7 +178,6 @@
                                     </div>
                                 </div>
 
-                                {{-- Harga & Pax + Total --}}
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Harga Net</label>
                                     <div class="input-group">
@@ -258,11 +251,11 @@
                                 <div class="col-12 mt-2">
                                     <div class="section-label-bar">
                                         <i class="bi bi-truck me-2 text-warning"></i>
-                                        <span>Transport & Pajak</span>
+                                        <span>Transport</span>
                                     </div>
                                 </div>
 
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Jenis Transportasi</label>
                                     <select class="form-select" id="transportasi_select">
                                         <option value="">Pilih Transportasi</option>
@@ -275,54 +268,10 @@
                                     </select>
                                     <input type="text" class="form-control mt-2 d-none" id="transportasi_manual" placeholder="Transportasi lainnya">
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Biaya Transport</label>
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
                                     <input type="number" class="form-control input-calc" id="biaya_transport" name="biaya_transport"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Exam</label>
-                                    <input type="number" id="exam_value" class="form-control" name="exam">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">PPN</label>
-                                    <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control" id="PPN" name="PPN"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">PPH</label>
-                                    <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control" id="PPH" name="PPH"></div>
-                                </div>
-
-                                <div class="col-12 mt-2">
-                                    <div class="section-label-bar">
-                                        <i class="bi bi-wallet2 me-2 text-info"></i>
-                                        <span>Pembayaran</span>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">PIC</label>
-                                    <input type="text" class="form-control" id="pic" name="pic">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">No. Regist</label>
-                                    <input type="text" class="form-control" id="regist" name="regist">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Jumlah Pembayaran</label>
-                                    <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control" id="jumlah_pembayaran" name="jumlah_pembayaran"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Tanggal Pembayaran</label>
-                                    <input type="date" class="form-control" id="tanggal_pembayaran" name="tanggal_pembayaran">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Biaya Admin</label>
-                                    <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control" id="biaya_admin" name="biaya_admin"></div>
                                 </div>
                             </div>
 
@@ -341,124 +290,6 @@
                                 <button type="button" class="btn btn-light px-4" onclick="goStep(1)">
                                     <i class="bi bi-arrow-left me-1"></i> Kembali
                                 </button>
-                                <button type="button" class="btn btn-primary px-4" onclick="goStep(3)">
-                                    Selanjutnya <i class="bi bi-arrow-right ms-1"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="step-content p-4 d-none" id="step-3">
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="section-label-bar">
-                                        <i class="bi bi-clipboard2-check me-2 text-purple"></i>
-                                        <span>Tracking Outstanding</span>
-                                    </div>
-                                </div>
-
-                                <div class="col-12">
-                                    <div class="tracking-grid">
-                                        {{-- Invoice (auto) --}}
-                                        <div class="tracking-item disabled">
-                                            <div class="tracking-check-wrap">
-                                                <input class="form-check-input" type="checkbox" id="trk_invoice" disabled checked>
-                                            </div>
-                                            <div class="tracking-info">
-                                                <span class="tracking-title">Invoice</span>
-                                                <span class="tracking-desc text-muted small">Otomatis terisi</span>
-                                            </div>
-                                            <span class="badge bg-secondary-subtle text-secondary small">Auto</span>
-                                        </div>
-
-                                        {{-- Faktur Pajak --}}
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap">
-                                                <input class="form-check-input tracking-check" type="checkbox" id="trk_faktur_pajak" name="faktur_pajak" value="1">
-                                            </div>
-                                            <div class="tracking-info">
-                                                <label class="tracking-title" for="trk_faktur_pajak">Faktur Pajak</label>
-                                            </div>
-                                        </div>
-
-                                        {{-- Dokumen Tambahan --}}
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap">
-                                                <input class="form-check-input tracking-check" type="checkbox" id="trk_dokumen_tambahan" name="dokumen_tambahan" value="1">
-                                            </div>
-                                            <div class="tracking-info">
-                                                <label class="tracking-title" for="trk_dokumen_tambahan">Dokumen Tambahan</label>
-                                            </div>
-                                        </div>
-
-                                        {{-- Konfirmasi CS --}}
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap">
-                                                <input class="form-check-input tracking-check" type="checkbox" id="trk_konfir_cs" name="konfir_cs" value="1">
-                                            </div>
-                                            <div class="tracking-info">
-                                                <label class="tracking-title" for="trk_konfir_cs">Konfirmasi Pengiriman RPX</label>
-                                            </div>
-                                        </div>
-
-                                        {{-- Tracking Dokumen --}}
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap">
-                                                <input class="form-check-input tracking-check" type="checkbox" id="trk_tracking_dokumen" name="tracking_dokumen" value="1">
-                                            </div>
-                                            <div class="tracking-info">
-                                                <label class="tracking-title" for="trk_tracking_dokumen">Tracking Dokumen</label>
-                                            </div>
-                                        </div>
-
-                                        {{-- Status Resi --}}
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap">
-                                                <input class="form-check-input tracking-check" type="checkbox" id="trk_no_resi" name="no_resi" value="1">
-                                            </div>
-                                            <div class="tracking-info">
-                                                <label class="tracking-title" for="trk_no_resi">Status Resi</label>
-                                            </div>
-                                        </div>
-
-                                        {{-- Konfirmasi PIC --}}
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap">
-                                                <input class="form-check-input tracking-check" type="checkbox" id="trk_konfir_pic" name="konfir_pic" value="1">
-                                            </div>
-                                            <div class="tracking-info">
-                                                <label class="tracking-title" for="trk_konfir_pic">Konfirmasi PIC</label>
-                                            </div>
-                                        </div>
-
-                                        {{-- Pembayaran --}}
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap">
-                                                <input class="form-check-input tracking-check" type="checkbox" id="trk_pembayaran" name="pembayaran" value="1">
-                                            </div>
-                                            <div class="tracking-info">
-                                                <label class="tracking-title" for="trk_pembayaran">Pembayaran</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Nomor Resi</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white"><i class="bi bi-box-seam text-muted"></i></span>
-                                        <input type="text" class="form-control" id="trk_status_resi" placeholder="Masukkan nomor resi">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Status PIC</label>
-                                    <input type="text" class="form-control tracking-check" id="trk_status_pic" name="status_pic" placeholder="Status PIC">
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-light px-4" onclick="goStep(2)">
-                                    <i class="bi bi-arrow-left me-1"></i> Kembali
-                                </button>
                                 <button type="submit" class="btn btn-success px-5 fw-semibold" id="btnSimpan">
                                     <i class="bi bi-save me-2"></i>Simpan
                                 </button>
@@ -472,7 +303,6 @@
     </div>
 
     <style>
-        /* ===== Table wrapper ===== */
         #weekly-container { overflow-y: hidden; }
         .cursor-pointer { cursor: pointer; }
         .table th { font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; }
@@ -483,10 +313,8 @@
         .table-info td { background-color: #cff4fc !important; color: #055160; border-top: 2px solid #9eeaf9; }
         .table-dark td { background-color: #212529 !important; color: #fff; border-top: 3px double #495057; font-size: .85rem; }
 
-        /* Sync scroll wrapper */
         .sync-scroll-wrapper { overflow-x: auto; }
 
-        /* ===== Modal: Step indicator ===== */
         .step-pill {
             display: flex; align-items: center; gap: 6px;
             padding: 6px 12px; border-radius: 20px;
@@ -505,7 +333,6 @@
         .step-pill.done .step-num { background: #16a34a; color: #fff; }
         .step-line { flex: 1; height: 2px; background: #e5e7eb; min-width: 24px; margin: 0 4px; }
 
-        /* ===== Modal: Section label bars ===== */
         .section-label-bar {
             display: flex; align-items: center;
             font-size: .8rem; font-weight: 700;
@@ -516,32 +343,6 @@
             margin-bottom: 4px;
         }
 
-        /* ===== Tracking grid ===== */
-        .tracking-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 10px;
-        }
-        .tracking-item {
-            display: flex; align-items: center; gap: 12px;
-            background: #fff; border: 1px solid #e5e7eb;
-            border-radius: 10px; padding: 12px 14px;
-            transition: border-color .15s, box-shadow .15s;
-        }
-        .tracking-item:hover:not(.disabled) { border-color: #93c5fd; box-shadow: 0 0 0 3px #dbeafe44; }
-        .tracking-item.disabled { opacity: .55; }
-        .tracking-check-wrap .form-check-input { width: 18px; height: 18px; cursor: pointer; margin: 0; }
-        .tracking-info { flex: 1; }
-        .tracking-title { display: block; font-size: .85rem; font-weight: 600; color: #111827; margin: 0; cursor: pointer; }
-        .tracking-desc { font-size: .75rem; }
-
-        /* Checked state highlight */
-        .tracking-item:has(.form-check-input:checked) {
-            border-color: #6ee7b7;
-            background: #f0fdf4;
-        }
-
-        /* ===== Card gradient ===== */
         .bg-gradient { background: linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%); }
         .badge { font-weight: 500; }
         .form-label { margin-bottom: .35rem; }
@@ -599,12 +400,6 @@
             manualTotalBersih = true;
         });
 
-        $('.input-calc').on('input change', function () {
-            calculateTotal();
-            calculateTotalPenjualanSales();
-        });
-
-        // Delegate for dynamically added inputs in modal
         $(document).on('input change', '.input-calc', function () {
             calculateTotal();
             calculateTotalPenjualanSales();
@@ -630,9 +425,8 @@
                 parseNumber($('#total_uang_saku').val()) +
                 parseNumber($('#total_akomodasi').val()) +
                 parseNumber($('#biaya_transport').val()) +
-                parseNumber($('#oleh_oleh').val()) +
-                parseNumber($('#entertainment').val()) + 
-                parseNumber($('#exam_value').val());
+                parseNumber($('#oleh_oleh').val()) + 
+                parseNumber($('#entertainment').val());
 
             let totalPenjualanSales = Math.max(0, total - deductions);
             if (!manualTotalBersih) {
@@ -640,7 +434,6 @@
             }
         }
 
-        /* ===== Step navigation ===== */
         function goStep(n) {
             $('.step-content').addClass('d-none');
             $('#step-' + n).removeClass('d-none');
@@ -654,7 +447,6 @@
             });
         }
 
-        /* ===== Load Table ===== */
         function loadTable() {
             let bulan = $('#month').val();
             let tahun = $('#year').val();
@@ -668,7 +460,7 @@
             $('#weekly-container').html('');
 
             $.ajax({
-                url: `/office/approval-pendapatan/get/${tahun}/${bulan}`,
+                url: `/crm/approval-pendapatan-sales/get/${tahun}/${bulan}`,
                 type: "GET",
                 success: function (response) {
                     $('#loading-spinner').addClass('d-none');
@@ -707,7 +499,7 @@
                             let rows = '';
 
                             if (weekData.data.length === 0) {
-                                rows = `<tr><td colspan="30" class="text-center">Tidak Ada Data pada Periode Ini</td></tr>`;
+                                rows = `<tr><td colspan="20" class="text-center">Tidak Ada Data pada Periode Ini</td></tr>`;
                             } else {
                                 weekData.data.forEach((item, i) => {
                                     let totalVal = Number(item.total_penjualan_kotor ?? (item.harga * item.pax) ?? 0);
@@ -737,14 +529,7 @@
                                             <td class="text-end">${formatRupiah(item.entertainment || 0)}</td>
                                             <td>${escapeHtml(item.jenis_transport || '-')}</td>
                                             <td class="text-end">${formatRupiah(item.biaya_transport || 0)}</td>
-                                            <td>${item.exam}</td>
                                             <td class="text-end">${formatRupiah(item.total_penjualan_sales || 0)}</td>
-                                            <td class="text-end">${formatRupiah(item.PPN || 0)}</td>
-                                            <td class="text-end">${formatRupiah(item.PPH || 0)}</td>
-                                            <td class="text-end">${escapeHtml(item.jumlah_pembayaran || '-')}</td>
-                                            <td class="text-end">${escapeHtml(item.tanggal_pembayaran || '-')}</td>
-                                            <td class="text-end">${escapeHtml(item.biaya_admin || '-')}</td>
-                                            <td class="text-end">${escapeHtml(item.total_piutang || '-')}</td>
                                             <td>${escapeHtml(item.tanggal_mulai || '-')}</td>
                                             <td>${escapeHtml(item.tanggal_selesai || '-')}</td>
                                         </tr>
@@ -760,7 +545,6 @@
                                             <td colspan="10" class="text-end">TOTAL BULANAN</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_penjualan || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_diskon || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerBulanan.total_diskon || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_pa || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_cashback || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_uang_saku || 0)}</td>
@@ -769,20 +553,12 @@
                                             <td class="text-end">${formatRupiah(footerBulanan.entertainment || 0)}</td>
                                             <td class="text-end">-</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.biaya_transport || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerBulanan.total_exam || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_penjualan_sales || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerBulanan.total_ppn || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerBulanan.total_pph || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerBulanan.jumlah_pembayaran || 0)}</td>
-                                            <td class="text-end">-</td>
-                                            <td class="text-end">${formatRupiah(footerBulanan.biaya_admin || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerBulanan.total_piutang || 0)}</td>
                                             <td colspan="2"></td>
                                         </tr>
                                         <tr class="table-dark fw-bold">
                                             <td colspan="10" class="text-end">TOTAL TAHUNAN</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_penjualan || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerTahunan.total_diskon || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_diskon || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_pa || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_cashback || 0)}</td>
@@ -792,14 +568,7 @@
                                             <td class="text-end">${formatRupiah(footerTahunan.entertainment || 0)}</td>
                                             <td class="text-end">-</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.biaya_transport || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerTahunan.total_exam || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_penjualan_sales || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerTahunan.total_ppn || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerTahunan.total_pph || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerTahunan.jumlah_pembayaran || 0)}</td>
-                                            <td class="text-end">-</td>
-                                            <td class="text-end">${formatRupiah(footerTahunan.biaya_admin || 0)}</td>
-                                            <td class="text-end">${formatRupiah(footerTahunan.total_piutang || 0)}</td>
                                             <td colspan="2"></td>
                                         </tr>
                                     </tfoot>
@@ -809,10 +578,10 @@
                             container.append(`
                                 <div class="card my-1">
                                     <div class="card-body p-2">
-                                        <h3 class="card-title my-1 fs-6 fw-bold">Validasi Laba Kotor</h3>
+                                        <h3 class="card-title my-1 fs-6 fw-bold">Validasi Penjualan Sales</h3>
                                         <p class="card-title my-1 text-muted small">Periode : ${moment(startOfWeek).format('DD MMMM YYYY')} - ${moment(endOfWeek).format('DD MMMM YYYY')}</p>
                                         <div class="sync-scroll-wrapper table-scroll-sync">
-                                            <table class="table table-striped table-hover mb-0" style="min-width:2400px;">
+                                            <table class="table table-striped table-hover mb-0" style="min-width:1900px;">
                                                 <thead>
                                                     <tr>
                                                         <th>No</th>
@@ -836,14 +605,7 @@
                                                         <th>Entertainment</th>
                                                         <th>Jenis Transport</th>
                                                         <th>Biaya Transport</th>
-                                                        <th>Exam</th>
                                                         <th>Total Penjualan Sales (Bersih)</th>
-                                                        <th>PPN</th>
-                                                        <th>PPH</th>
-                                                        <th>Jumlah Pembayaran</th>
-                                                        <th>Tanggal Pembayaran</th>
-                                                        <th>Biaya Admin</th>
-                                                        <th>Total Piutang</th>
                                                         <th>Tanggal Mulai</th>
                                                         <th>Tanggal Selesai</th>
                                                     </tr>
@@ -858,7 +620,6 @@
                         });
                     });
 
-                    // Bind synchronized scroll after all tables are rendered
                     bindSyncScroll();
                 },
                 error: function (xhr) {
@@ -869,7 +630,6 @@
             });
         }
 
-        /* ===== Synchronized horizontal scroll ===== */
         function bindSyncScroll() {
             let $wrappers = $('.table-scroll-sync');
             let isSyncing = false;
@@ -916,25 +676,6 @@
             $('#oleh_oleh').val(item.oleh_oleh ?? '');
             $('#entertainment').val(item.entertainment ?? '');
             $('#biaya_transport').val(item.biaya_transport ?? '');
-            $('#PPN').val(item.PPN ?? '');
-            $('#PPH').val(item.PPH ?? '');
-            $('#jumlah_pembayaran').val(item.jumlah_pembayaran ?? '');
-            $('#tanggal_pembayaran').val(item.tanggal_pembayaran ?? '');
-            $('#biaya_admin').val(item.biaya_admin ?? '');
-            $('#exam').val(item.exam ?? '-');
-            $('#exam_value').val(item.exam_value ?? 0);
-
-            $('.tracking-check').prop('checked', false);
-            if (item.tracking) {
-                if (item.tracking.faktur_pajak)      $('#trk_faktur_pajak').prop('checked', true);
-                if (item.tracking.dokumen_tambahan)  $('#trk_dokumen_tambahan').prop('checked', true);
-                if (item.tracking.konfir_cs)         $('#trk_konfir_cs').prop('checked', true);
-                if (item.tracking.tracking_dokumen)  $('#trk_tracking_dokumen').prop('checked', true);
-                if (item.tracking.no_resi)           $('#trk_no_resi').prop('checked', true);
-                if (item.tracking.pembayaran)        $('#trk_pembayaran').prop('checked', true);
-                $('#trk_status_resi').val(item.tracking.status_resi ?? '');
-                $('#trk_status_pic').val(item.tracking.status_pic ?? '');
-            }
 
             if (['Pesawat','Kereta','Bus','Mobil','Travel','Lainnya'].includes(item.jenis_transport)) {
                 $('#transportasi_select').val(item.jenis_transport);
@@ -955,7 +696,6 @@
             new bootstrap.Modal(document.getElementById('updateModal')).show();
         });
 
-        /* ===== Submit ===== */
         $('#formUpdate').submit(function (e) {
             e.preventDefault();
             let id  = $('#update_id').val();
@@ -965,7 +705,7 @@
             let $btn = $('#btnSimpan');
 
             $.ajax({
-                url: `/office/approval-pendapatan/update/${id}`,
+                url: `/crm/approval-pendapatan-sales/update/${id}`,
                 type: 'POST',
                 data: {
                     _token: "{{ csrf_token() }}",
@@ -983,28 +723,11 @@
                     biaya_transport: $('#biaya_transport').val(),
                     oleh_oleh: $('#oleh_oleh').val(),
                     entertainment: $('#entertainment').val(),
-                    exam: $('#exam_value').val(),
                     total_penjualan_sales: $('#total_penjualan_sales').val(),
-                    PPN: $('#PPN').val(),
-                    PPH: $('#PPH').val(),
-                    jumlah_pembayaran: $('#jumlah_pembayaran').val(),
-                    tanggal_pembayaran: $('#tanggal_pembayaran').val(),
-                    biaya_admin: $('#biaya_admin').val(),
                     materi: $('#materi').val(),
                     perusahaan: $('#perusahaan').val(),
                     tanggal_mulai: $('#tanggal_mulai').val(),
                     tanggal_selesai: $('#tanggal_selesai').val(),
-                    faktur_pajak: $('#trk_faktur_pajak').is(':checked') ? 1 : 0,
-                    dokumen_tambahan: $('#trk_dokumen_tambahan').is(':checked') ? 1 : 0,
-                    konfir_cs: $('#trk_konfir_cs').is(':checked') ? 1 : 0,
-                    tracking_dokumen: $('#trk_tracking_dokumen').is(':checked') ? 1 : 0,
-                    no_resi: $('#trk_no_resi').is(':checked') ? 1 : 0,
-                    konfir_pic: $('#trk_konfir_pic').is(':checked') ? 1 : 0,
-                    pembayaran: $('#trk_pembayaran').is(':checked') ? 1 : 0,
-                    status_resi: $('#trk_status_resi').val(),
-                    status_pic: $('#trk_status_pic').val(),
-                    total: $('#total').val(),
-                    total_penjualan_kotor: $('#total').val(),
                 },
                 beforeSend: function () {
                     $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...');

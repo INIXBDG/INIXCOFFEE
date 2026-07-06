@@ -11,10 +11,7 @@ class ApprovalPendapatan extends Model
 
     protected $table = 'approval_pendapatans';
 
-    protected $fillable = ['id_rkm', 'no_faktur', 'no_invoice', 'harga_net', 'pax', 'diskon', 'total_diskon', 'total_pa', 'total_cashback',
-     'total_uang_saku', 'total_akomodasi', 'jenis_akomodasi', 'jenis_transport', 'biaya_transport', 'oleh_oleh', 'total_penjualan_sales', 
-     'PPN', 'PPH', 'status', 'materi', 'tanggal_mulai', 'tanggal_selesai', 'perusahaan', 'jumlah_pembayaran', 'tanggal_pembayaran', 
-     'biaya_admin', 'total_penjualan_kotor', 'exam', 'total_penjualan_bersih'];
+    protected $fillable = ['id_rkm', 'no_faktur', 'no_invoice', 'harga_net', 'pax', 'diskon', 'entertainment', 'total_diskon', 'total_pa', 'total_cashback', 'total_uang_saku', 'total_akomodasi', 'jenis_akomodasi', 'jenis_transport', 'biaya_transport', 'oleh_oleh', 'total_penjualan_sales', 'PPN', 'PPH', 'status', 'materi', 'tanggal_mulai', 'tanggal_selesai', 'perusahaan', 'jumlah_pembayaran', 'tanggal_pembayaran', 'biaya_admin', 'total_penjualan_kotor', 'exam', 'total_penjualan_bersih'];
 
     public function dataMateri()
     {

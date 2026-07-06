@@ -402,7 +402,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn-action primary">
+                        <button type="submit" class="btn btn-primary">
                             <i class="fa-solid fa-check"></i> Simpan
                         </button>
                     </div>
@@ -435,7 +435,6 @@
             'inisiatif efisiensi keuangan',
             'rasio biaya operasional terhadap revenue',
             'mengurangi manual work dan error',
-            'laporan analisis keuangan',
             'pengeluaran biaya karyawan'
         ];
 
@@ -826,7 +825,7 @@
                 let yearBadgeColor = 'bg-primary';
                 let perubahanProgressRupiah;
 
-                if (target.tipe_target === 'rupiah') {
+                if (target.tipe_target === 'rupiah' || target.tipe_target === 'angka' ) {
                     perubahanProgressRupiah = (target.progress / target.target) * 100;
                 } else {
                     perubahanProgressRupiah = target.progress;
@@ -841,12 +840,12 @@
                 let realisasiChange;
                 if (target.tipe_target === "rupiah") realisasiChange = "Rp " + Number(target.progress)
                     .toLocaleString("id-ID");
+                else if (target.tipe_target === "angka") realisasiChange = target.progress;
                 else realisasiChange = target.progress + "%";
 
                 const allowedAssistantRouteButtonsManual = [
                     'dorong inovasi pelayanan', 'inisiatif efisiensi keuangan',
-                    'rasio biaya operasional terhadap revenue', 'mengurangi manual work dan error',
-                    'laporan analisis keuangan', 'pengeluaran biaya karyawan'
+                    'rasio biaya operasional terhadap revenue', 'mengurangi manual work dan error', 'pengeluaran biaya karyawan'
                 ];
 
                 let buttonIsiForm = '';
@@ -1099,15 +1098,17 @@
                                 const rawProgress = (data.data_detail.progress / data.nilai_target) *
                                     100;
                                 FormatedProgress = Math.min(rawProgress, 100).toFixed(2);
-                            } else {
+                            } else if (data.tipe_target === "angka") {
+                                FormatedProgress = (data.data_detail.progress / data.nilai_target) * 100;
+                            }
+                            else {
                                 FormatedProgress = Math.min(data.data_detail.progress, 100).toFixed(2);
                             }
                         }
 
                         const allowedDetailAssistantRoutes = ['dorong inovasi pelayanan',
                             'rasio biaya operasional terhadap revenue',
-                            'inisiatif efisiensi keuangan', 'mengurangi manual work dan error',
-                            'laporan analisis keuangan', 'pengeluaran biaya karyawan'
+                            'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'pengeluaran biaya karyawan'
                         ];
                         const allowedDetailAssistantRoutesForRupiah = ['Pemasukan Kotor',
                             'meningkatkan revenue perusahaan'

@@ -65,6 +65,9 @@ class rekapInstrukturController extends Controller
         $data =  RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$startOfMonth, $endOfMonth])
+                    ->whereHas('peluang', function ($query) {
+                        $query->where('tentatif', 0);
+                    })
                     ->whereDoesntHave('peluang', function ($query) {
                         $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
                     })->where(function ($query) {
