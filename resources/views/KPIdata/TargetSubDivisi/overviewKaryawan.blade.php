@@ -825,7 +825,7 @@
                 let yearBadgeColor = 'bg-primary';
                 let perubahanProgressRupiah;
 
-                if (target.tipe_target === 'rupiah') {
+                if (target.tipe_target === 'rupiah' || target.tipe_target === 'angka' ) {
                     perubahanProgressRupiah = (target.progress / target.target) * 100;
                 } else {
                     perubahanProgressRupiah = target.progress;
@@ -840,6 +840,7 @@
                 let realisasiChange;
                 if (target.tipe_target === "rupiah") realisasiChange = "Rp " + Number(target.progress)
                     .toLocaleString("id-ID");
+                else if (target.tipe_target === "angka") realisasiChange = target.progress;
                 else realisasiChange = target.progress + "%";
 
                 const allowedAssistantRouteButtonsManual = [
@@ -1097,7 +1098,10 @@
                                 const rawProgress = (data.data_detail.progress / data.nilai_target) *
                                     100;
                                 FormatedProgress = Math.min(rawProgress, 100).toFixed(2);
-                            } else {
+                            } else if (data.tipe_target === "angka") {
+                                FormatedProgress = (data.data_detail.progress / data.nilai_target) * 100;
+                            }
+                            else {
                                 FormatedProgress = Math.min(data.data_detail.progress, 100).toFixed(2);
                             }
                         }
