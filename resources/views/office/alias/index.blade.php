@@ -16,6 +16,7 @@
                             <th class="text-center" style="width: 50px;">No</th>
                             <th>Nama Materi</th>
                             <th>Alias</th>
+                            <th>Kode Alias</th>
                             <th>Kategori Exam</th>
                             <th class="text-center" style="width: 80px;">Aksi</th>
                         </tr>
@@ -46,6 +47,10 @@
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-muted">Alias</label>
                     <input type="text" id="edit-alias" class="form-control" placeholder="Masukkan alias">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted">Kode Alias</label>
+                    <input type="text" id="edit-kode-alias" class="form-control" placeholder="Masukkan kode alias">
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-muted">Kategori Exam</label>
@@ -97,6 +102,12 @@ $(function () {
                     : '<span class="text-muted fst-italic small">-</span>'
             },
             {
+                data: 'kode_alias',
+                render: val => val
+                    ? `<span class="text-secondary fw-normal">${val}</span>`
+                    : '<span class="text-muted fst-italic small">-</span>'
+            },
+            {
                 data: 'kategori_exam',
                 render: val => val
                     ? val
@@ -112,7 +123,8 @@ $(function () {
                         data-id="${row.id}"
                         data-nama="${row.nama_materi ?? ''}"
                         data-alias="${row.alias ?? ''}"
-                        data-kategori="${row.kategori_exam ?? ''}">
+                        data-kategori="${row.kategori_exam ?? ''}"
+                        data-kode_alias="${row.kode_alias ?? ''}">
                         Edit
                     </button>
                 `
@@ -135,6 +147,7 @@ $(function () {
         $('#edit-id').val(btn.data('id'));
         $('#edit-nama-materi').val(btn.data('nama'));
         $('#edit-alias').val(btn.data('alias'));
+        $('#edit-kode-alias').val(btn.data('kode_alias'));
         $('#edit-kategori').val(btn.data('kategori'));
         $('#edit-alert').addClass('d-none').text('');
         $('#modalEdit').modal('show');
@@ -149,6 +162,7 @@ $(function () {
             method: 'POST',
             data: {
                 alias:         $('#edit-alias').val().trim(),
+                kode_alias:    $('#edit-kode-alias').val().trim(),
                 kategori_exam: $('#edit-kategori').val().trim(),
                 _token:        '{{ csrf_token() }}',
                 _method:       'PUT'

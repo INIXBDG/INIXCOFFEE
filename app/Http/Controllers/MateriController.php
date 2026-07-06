@@ -324,13 +324,14 @@ class MateriController extends Controller
     }
 
     public function indexJsonAlias(){
-        $materi = Materi::where('status', 'aktif')->select(['id', 'nama_materi', 'alias', 'kategori_exam'])->get();
+        $materi = Materi::where('status', 'aktif')->select(['id', 'nama_materi', 'alias', 'kode_alias', 'kategori_exam'])->get();
         return response()->json($materi);
     }
 
     public function updateAlias(Request $request, $id){
         $materi = Materi::findOrFail($id);
         $materi->alias = $request->input('alias');
+        $materi->kode_alias = $request->input('kode_alias');
         $materi->kategori_exam = $request->input('kategori_exam');
         $materi->save();
 

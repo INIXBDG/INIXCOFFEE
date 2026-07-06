@@ -83,7 +83,6 @@ class ModulController extends Controller
         ]);
 
         $total   = $request->jumlah * $request->harga_satuan;
-        $materi  = Materi::findOrFail($request->materi_id);
         $nomor   = NomorModul::findOrFail($request->no_modul);
 
         if ($nomor->type == 'Authorize') {
@@ -97,8 +96,7 @@ class ModulController extends Controller
 
         Modul::create([
             'no_modul'      => $request->no_modul,
-            'kode_materi'   => $materi->kode_materi,
-            'nama_materi'   => $materi->nama_materi,
+            'id_materi'     => $request->materi_id,
             'awal_training' => $request->awal_training,
             'akhir_training' => $request->akhir_training,
             'jumlah'        => $request->jumlah,
@@ -125,14 +123,11 @@ class ModulController extends Controller
         ]);
 
         $modul = Modul::findOrFail($id);
-        $materi = Materi::findOrFail($request->materi_id);
 
         $total = $request->jumlah * $request->harga_satuan;
 
         $modul->update([
-            'materi_id'        => $materi->id,
-            'kode_materi'      => $materi->kode_materi,
-            'nama_materi'      => $materi->nama_materi,
+            'id_materi'        => $request->materi_id,
             'awal_training'    => $request->awal_training,
             'akhir_training'   => $request->akhir_training,
             'jumlah'           => $request->jumlah,

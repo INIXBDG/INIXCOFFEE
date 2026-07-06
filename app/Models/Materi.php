@@ -20,6 +20,7 @@ class Materi extends Model
         'tipe_materi',
         'silabus',
         'alias',
+        'kode_alias',
         'kategori_exam',
     ];
 

@@ -10,6 +10,7 @@ class Modul extends Model
     use HasFactory;
     protected $fillable = [
         'no_modul',
+        'id_materi',
         'kode_materi',
         'nama_materi',
         'awal_training',
@@ -27,5 +28,10 @@ class Modul extends Model
     public function pesertaModul()
     {
         return $this->hasMany(PesertaModul::class, 'modul', 'id');
+    }
+
+    public function materi()
+    {
+        return $this->belongsTo(Materi::class, 'id_materi', 'id');
     }
 }

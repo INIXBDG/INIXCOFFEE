@@ -91,8 +91,8 @@
                                 data-akhir="{{ $m->akhir_training }}" data-jumlah="{{ $m->jumlah }}"
                                 data-harga_satuan="{{ $m->harga_satuan }}" data-total="{{ $m->total }}"
                                 data-note="{{ $m->note ?? '' }}">
-                                <td>{{ $m->kode_materi ?? '-' }}</td>
-                                <td>{{ $m->nama_materi }}</td>
+                                <td>{{ $m->materi->kode_alias ?? $m->materi->kode_materi ?? '-' }}</td>
+                                <td>{{ $m->materi->alias ?? $m->materi->nama_materi }}</td>
                                 <td>{{ \Carbon\Carbon::parse($m->awal_training)->translatedFormat('d M Y') }} s/d
                                     {{ \Carbon\Carbon::parse($m->akhir_training)->translatedFormat('d M Y') }}</td>
                                 <td>{{ $m->jumlah }}</td>
@@ -128,7 +128,7 @@
                                 <th>Nama Peserta</th>
                                 <th>Instansi</th>
                                 <th>Email</th>
-                                <td>Periode</td>
+                                <th>Periode</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -192,7 +192,7 @@
                                         <option value="">-- Pilih Materi --</option>
                                         @foreach ($materi as $item)
                                             <option value="{{ $item->id }}">
-                                                {{ $item->nama_materi }} | {{ $item->kode_materi ?? '-' }}
+                                                {{ $item->alias ?? $item->nama_materi }} | {{ $item->kode_alias ?? $item->kode_materi ?? '-' }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -259,7 +259,7 @@
                                         <option value="">-- Pilih Materi --</option>
                                         @foreach ($materi as $item)
                                             <option value="{{ $item->id }}">
-                                                {{ $item->nama_materi }} | {{ $item->kode_materi ?? '-' }}
+                                                {{ $item->alias ?? $item->nama_materi ?? '-' }} | {{ $item->kode_alias ?? $item->kode_materi ?? '-' }}
                                             </option>
                                         @endforeach
                                     </select>
