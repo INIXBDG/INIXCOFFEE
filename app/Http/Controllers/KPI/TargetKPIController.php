@@ -3661,11 +3661,27 @@ class TargetKPIController extends Controller
         if ($personId !== null) {
             $kodeKaryawan = karyawan::where('id', $personId)->first();
 
-            $rkmQuery = RKM::whereBetween('created_at', [$start, $end])
-                ->where('instruktur_key', $kodeKaryawan->kode_karyawan)
-                ->where('tanggal_akhir', '<', now());
+            $rkmQuery = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
+                        ->whereBetween('tanggal_awal', [$start, $end])->where('tanggal_akhir', '<', now())
+                        ->where('status', '0')
+                        ->whereNull('r_k_m_s.deleted_at')
+                        ->whereHas('peluang', function ($query) {
+                            $query->where('tentatif', 0);
+                        })
+                        ->orderBy('status', 'asc')
+                        ->orderBy('tanggal_awal', 'asc')
+                        ->get();
         } else {
-            $rkmQuery = RKM::whereBetween('created_at', [$start, $end])->where('tanggal_akhir', '<', now());
+            $rkmQuery = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
+                        ->whereBetween('tanggal_awal', [$start, $end])->where('tanggal_akhir', '<', now())
+                        ->where('status', '0')
+                        ->whereNull('r_k_m_s.deleted_at')
+                        ->whereHas('peluang', function ($query) {
+                            $query->where('tentatif', 0);
+                        })
+                        ->orderBy('status', 'asc')
+                        ->orderBy('tanggal_awal', 'asc')
+                        ->get();
         }
 
         $totalData = $rkmQuery->count();
@@ -3814,44 +3830,44 @@ class TargetKPIController extends Controller
             return 0.0;
         }
 
-        $isMonthly = true;
         $jamKerjaPerHari = 9;
 
-        $now = Carbon::now();
+        $today = Carbon::today();
+
+        $startDate = Carbon::create($tahun, 1, 1)->startOfYear();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Jika KPI tahun sekarang -> hitung sampai hari ini
+        | Jika KPI tahun lalu -> hitung sampai akhir tahun
+        |--------------------------------------------------------------------------
+        */
+        $endDate = ($tahun == $today->year)
+            ? $today
+            : Carbon::create($tahun, 12, 31)->endOfYear();
 
         $liburNasional = HariLibur::pluck('tanggal')
             ->map(fn($t) => Carbon::parse($t)->toDateString())
             ->toArray();
 
-        $startMonth = $now->copy()->startOfMonth();
-        $endMonth   = $now->copy()->endOfMonth();
-        $hariKerjaPerbulan = 0;
+        /*
+        |--------------------------------------------------------------------------
+        | Hitung hari kerja dalam periode
+        |--------------------------------------------------------------------------
+        */
+        $hariKerjaPeriode = 0;
 
-        for ($date = $startMonth->copy(); $date->lte($endMonth); $date->addDay()) {
-            if (!$date->isWeekend() && !in_array($date->toDateString(), $liburNasional)) {
-                $hariKerjaPerbulan++;
+        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+
+            if (
+                !$date->isWeekend() &&
+                !in_array($date->toDateString(), $liburNasional)
+            ) {
+                $hariKerjaPeriode++;
             }
         }
 
-        $startYear = $now->copy()->startOfYear();
-        $endYear   = $now->copy()->endOfYear();
-        $hariKerjaPertahun = 0;
-
-        for ($date = $startYear->copy(); $date->lte($endYear); $date->addDay()) {
-            if (!$date->isWeekend() && !in_array($date->toDateString(), $liburNasional)) {
-                $hariKerjaPertahun++;
-            }
-        }
-
-        if ($isMonthly) {
-            $startDate = Carbon::create($tahun, now()->month, 1)->startOfMonth();
-            $endDate   = $startDate->copy()->endOfMonth();
-            $targetJamPerOrang = $jamKerjaPerHari * $hariKerjaPerbulan;
-        } else {
-            $startDate = Carbon::create($tahun, 1, 1)->startOfYear();
-            $endDate   = Carbon::create($tahun, 12, 31)->endOfYear();
-            $targetJamPerOrang = $jamKerjaPerHari * $hariKerjaPertahun;
-        }
+        $targetJamPerOrang = $hariKerjaPeriode * $jamKerjaPerHari;
 
         $totalJamMengajar = 0;
 
@@ -4125,31 +4141,48 @@ class TargetKPIController extends Controller
 
         $period = CarbonPeriod::create($startDate, $endDate);
 
-        $activities = ActivityInstruktur::whereYear('created_at', $tahun)
+        $liburNasional = HariLibur::whereBetween('tanggal', [$startDate, $endDate])
+                ->pluck('tanggal')
+                ->map(fn($tanggal) => Carbon::parse($tanggal)->toDateString())
+                ->toArray();
+
+        $activities = ActivityInstruktur::whereYear('activity_date', $tahun)
             ->whereIn('user_id', $instrukturs->pluck('id'))
             ->get()
             ->groupBy(function ($item) {
-                return $item->user_id . '_' . Carbon::parse($item->created_at)->format('Y-m-d');
+                return $item->user_id . '_' . Carbon::parse($item->activity_date)->format('Y-m-d');
             });
 
         $totalHariKerja = 0;
         $totalAktif = 0;
 
         foreach ($period as $date) {
-            if ($date->isWeekend()) {
+
+            $dateKey = $date->toDateString();
+
+            // Skip Sabtu, Minggu, dan Hari Libur Nasional
+            if (
+                $date->isWeekend() ||
+                in_array($dateKey, $liburNasional)
+            ) {
                 continue;
             }
 
             $totalHariKerja++;
-            $dateKey = $date->format('Y-m-d');
+
+            $aktifHariIni = 0;
 
             foreach ($instrukturs as $instruktur) {
+
                 $key = $instruktur->id . '_' . $dateKey;
 
                 if (isset($activities[$key])) {
                     $totalAktif++;
+                    $aktifHariIni++;
                 }
             }
+
+            $dailyValues[$dateKey] = $aktifHariIni;
         }
 
         $totalKemungkinan = $totalHariKerja * $instrukturs->count();
@@ -12063,44 +12096,44 @@ class TargetKPIController extends Controller
             return $emptyResponse;
         }
 
-        $isMonthly = true;
         $jamKerjaPerHari = 9;
 
-        $now = Carbon::now();
+        $today = Carbon::today();
+
+        $startDate = Carbon::create($tahun, 1, 1)->startOfYear();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Jika KPI tahun sekarang -> hitung sampai hari ini
+        | Jika KPI tahun lalu -> hitung sampai akhir tahun
+        |--------------------------------------------------------------------------
+        */
+        $endDate = ($tahun == $today->year)
+            ? $today
+            : Carbon::create($tahun, 12, 31)->endOfYear();
 
         $liburNasional = HariLibur::pluck('tanggal')
             ->map(fn($t) => Carbon::parse($t)->toDateString())
             ->toArray();
 
-        $startMonth = $now->copy()->startOfMonth();
-        $endMonth   = $now->copy()->endOfMonth();
-        $hariKerjaPerbulan = 0;
+        /*
+        |--------------------------------------------------------------------------
+        | Hitung hari kerja dalam periode
+        |--------------------------------------------------------------------------
+        */
+        $hariKerjaPeriode = 0;
 
-        for ($date = $startMonth->copy(); $date->lte($endMonth); $date->addDay()) {
-            if (!$date->isWeekend() && !in_array($date->toDateString(), $liburNasional)) {
-                $hariKerjaPerbulan++;
+        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+
+            if (
+                !$date->isWeekend() &&
+                !in_array($date->toDateString(), $liburNasional)
+            ) {
+                $hariKerjaPeriode++;
             }
         }
 
-        $startYear = $now->copy()->startOfYear();
-        $endYear   = $now->copy()->endOfYear();
-        $hariKerjaPertahun = 0;
-
-        for ($date = $startYear->copy(); $date->lte($endYear); $date->addDay()) {
-            if (!$date->isWeekend() && !in_array($date->toDateString(), $liburNasional)) {
-                $hariKerjaPertahun++;
-            }
-        }
-
-        if ($isMonthly) {
-            $startDate = Carbon::create($tahun, now()->month, 1)->startOfMonth();
-            $endDate   = $startDate->copy()->endOfMonth();
-            $targetJamPerOrang = $jamKerjaPerHari * $hariKerjaPerbulan;
-        } else {
-            $startDate = Carbon::create($tahun, 1, 1)->startOfYear();
-            $endDate   = Carbon::create($tahun, 12, 31)->endOfYear();
-            $targetJamPerOrang = $jamKerjaPerHari * $hariKerjaPertahun;
-        }
+        $targetJamPerOrang = $hariKerjaPeriode * $jamKerjaPerHari;
 
         $totalJamMengajar = 0;
         $dailyValues = [];
@@ -12730,11 +12763,15 @@ class TargetKPIController extends Controller
         }
 
         $period = CarbonPeriod::create($startDate, $endDate);
+        $liburNasional = HariLibur::whereBetween('tanggal', [$startDate, $endDate])
+            ->pluck('tanggal')
+            ->map(fn($tanggal) => Carbon::parse($tanggal)->toDateString())
+            ->toArray();
 
-        $activities = ActivityInstruktur::whereYear('created_at', $tahun)
+        $activities = ActivityInstruktur::whereYear('activity_date', $tahun)
             ->get()
             ->groupBy(function ($item) {
-                return $item->user_id . '_' . Carbon::parse($item->created_at)->format('Y-m-d');
+                return $item->user_id . '_' . Carbon::parse($item->activity_date)->format('Y-m-d');
             });
 
         $totalHariKerja = 0;
@@ -12742,14 +12779,25 @@ class TargetKPIController extends Controller
         $dailyValues = [];
 
         foreach ($period as $date) {
-            if ($date->isWeekend()) continue;
+
+            $dateKey = $date->toDateString();
+
+            // Skip Sabtu, Minggu, dan Hari Libur Nasional
+            if (
+                $date->isWeekend() ||
+                in_array($dateKey, $liburNasional)
+            ) {
+                continue;
+            }
 
             $totalHariKerja++;
-            $dateKey = $date->format('Y-m-d');
+
             $aktifHariIni = 0;
 
             foreach ($instrukturs as $instruktur) {
+
                 $key = $instruktur->id . '_' . $dateKey;
+
                 if (isset($activities[$key])) {
                     $totalAktif++;
                     $aktifHariIni++;
