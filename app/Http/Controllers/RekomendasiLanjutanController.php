@@ -57,8 +57,10 @@ class RekomendasiLanjutanController extends Controller
 
                 $rows = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
                     ->whereBetween('tanggal_awal', [$start, $end])
-                    ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1);
+                    ->where('status', '0')
+                    ->whereNull('r_k_m_s.deleted_at')
+                    ->whereHas('peluang', function ($query) {
+                        $query->where('tentatif', 0);
                     })
                     ->orderBy('status', 'asc')
                     ->orderBy('tanggal_awal', 'asc')

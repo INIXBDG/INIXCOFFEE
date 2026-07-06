@@ -304,6 +304,9 @@ class RKMController extends Controller
         ->whereDoesntHave('peluang', function ($query) {
             $query->where('tentatif', 1);
         })
+        ->whereHas('peluang', function ($query) {
+            $query->where('tentatif', 0);
+        })
         ->where(function ($query) {
             $query->whereHas('exam.approvalexam', function ($q) {
                 $q->where('technical_support', 1);

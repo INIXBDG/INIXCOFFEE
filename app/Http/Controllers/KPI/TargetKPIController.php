@@ -1776,7 +1776,9 @@ class TargetKPIController extends Controller
 
         $nilaiTarget = (float) $detail->nilai_target;
 
-        $totalRkm = RKM::whereYear('tanggal_awal', $tahun)->count();
+        $totalRkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
+                ->where('status', '0')
+                ->whereYear('tanggal_awal', $tahun)->count();
 
         $totalTuntas = ChecklistKeperluan::whereHas('rkm', function ($query) use ($tahun) {
             $query->whereYear('tanggal_awal', $tahun);
@@ -6721,7 +6723,9 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $totalRkm = RKM::whereYear('tanggal_awal', $tahun)->count();
+        $totalRkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
+                ->where('status', '0')
+                ->whereYear('tanggal_awal', $tahun)->count();
 
         $checklistItems = ChecklistKeperluan::whereHas('rkm', function ($query) use ($tahun) {
             $query->whereYear('tanggal_awal', $tahun);
