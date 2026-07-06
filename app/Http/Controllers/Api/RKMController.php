@@ -316,14 +316,12 @@ class RKMController extends Controller
         ->orderBy('r_k_m_s.tanggal_akhir')
         ->select('r_k_m_s.*')
         ->get();
-		
-		//return $rows;
 
         $mergedData = [];
 
         foreach ($rows as $row) {
             // Buat kunci unik berdasarkan materi_key, tanggal_awal, dan tanggal_akhir
-            $key = $row->materi_key . '|' . $row->tanggal_awal;
+            $key = $row->materi_key . '|' . $row->tanggal_awal . '|' . $row->tanggal_akhir;
             if (!isset($mergedData[$key])) {
                 // Jika kunci belum ada, tambahkan data baru
                 $mergedData[$key] = $row->toArray();
@@ -351,7 +349,7 @@ class RKMController extends Controller
         }
 
         // Kembalikan hasil
-        return response()->json($result);
+        // return response()->json($result);
 
         if ($rkm) {
             return response()->json($result);
