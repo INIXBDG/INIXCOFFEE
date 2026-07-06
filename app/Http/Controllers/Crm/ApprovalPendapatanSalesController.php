@@ -115,6 +115,7 @@ class ApprovalPendapatanSalesController extends Controller
                     'total_uang_saku' => (float) ($valid?->total_uang_saku ?? 0),
                     'total_akomodasi' => (float) ($valid?->total_akomodasi ?? 0),
                     'oleh_oleh' => (float) ($valid?->oleh_oleh ?? 0),
+                    'entertainment' => (float) ($valid?->entertainment ?? 0),
                     'total_penjualan_sales' => (float) ($valid?->total_penjualan_sales ?? 0),
                     'jenis_transport' => $valid?->jenis_transport ?? '-',
                     'biaya_transport' => (float) ($valid?->biaya_transport ?? 0),
@@ -154,6 +155,7 @@ class ApprovalPendapatanSalesController extends Controller
                 SUM(CAST(total_uang_saku AS UNSIGNED)) as total_uang_saku,
                 SUM(CAST(total_akomodasi AS UNSIGNED)) as total_akomodasi,
                 SUM(CAST(oleh_oleh AS UNSIGNED)) as oleh_oleh,
+                SUM(CAST(entertainment AS UNSIGNED)) as entertainment,
                 SUM(CAST(total_penjualan_sales AS UNSIGNED)) as total_penjualan_sales,
                 SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport
             ",
@@ -185,6 +187,7 @@ class ApprovalPendapatanSalesController extends Controller
                 SUM(CAST(total_uang_saku AS UNSIGNED)) as total_uang_saku,
                 SUM(CAST(total_akomodasi AS UNSIGNED)) as total_akomodasi,
                 SUM(CAST(oleh_oleh AS UNSIGNED)) as oleh_oleh,
+                SUM(CAST(entertainment AS UNSIGNED)) as entertainment,
                 SUM(CAST(total_penjualan_sales AS UNSIGNED)) as total_penjualan_sales,
                 SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport
             ",
@@ -200,6 +203,7 @@ class ApprovalPendapatanSalesController extends Controller
                 'total_uang_saku' => 0,
                 'total_akomodasi' => 0,
                 'oleh_oleh' => 0,
+                'entertainment' => 0,
                 'total_penjualan_sales' => 0,
                 'biaya_transport' => 0,
             ];
@@ -228,6 +232,7 @@ class ApprovalPendapatanSalesController extends Controller
             'jenis_transport' => 'nullable|string|max:255',
             'biaya_transport' => 'nullable|numeric',
             'oleh_oleh' => 'nullable|numeric',
+            'entertainment' => 'nullable|numeric',
             'total_penjualan_sales' => 'nullable|numeric|min:0',
             'materi' => 'nullable',
             'perusahaan' => 'nullable',
@@ -256,6 +261,7 @@ class ApprovalPendapatanSalesController extends Controller
                 'jenis_transport' => $validated['jenis_transport'] ?? null,
                 'biaya_transport' => (float) ($validated['biaya_transport'] ?? 0),
                 'oleh_oleh' => (float) ($validated['oleh_oleh'] ?? 0),
+                'entertainment' => (float) ($validated['entertainment'] ?? 0),
                 'total_penjualan_sales' => (float) ($validated['total_penjualan_sales'] ?? 0),
                 'status' => 'valid',
                 'materi' => $validated['materi'] ?? null,
