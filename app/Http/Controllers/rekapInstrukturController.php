@@ -63,14 +63,17 @@ class rekapInstrukturController extends Controller
         $startOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->startOfDay()->toDateString();
         $endOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()->endOfDay()->toDateString();
 
-        $data =  RKM::with(['materi', 'peluang', 'exam', 'exam.approvalexam'])
-                        ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                        ->whereBetween('r_k_m_s.tanggal_awal', [$startOfMonth, $endOfMonth])
-                        ->where('r_k_m_s.status', '0')
-                        ->whereNull('r_k_m_s.deleted_at')
-                        ->whereNotIn('r_k_m_s.id', $id_rkm)
-                        ->whereHas('peluang', function ($query) {
-                            $query->where('tentatif', 0);
+        $data =  RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
+                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                    ->whereBetween('r_k_m_s.tanggal_awal', [$startOfMonth, $endOfMonth])
+                    ->whereHas('peluang', function ($query) {
+                        $query->where('tentatif', 0);
+                    })
+                    ->whereDoesntHave('peluang', function ($query) {
+                        $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
+                    })->where(function ($query) {
+                        $query->whereHas('exam.approvalexam', function ($q) {
+                            $q->where('technical_support', 1);
                         })
                         ->where(function ($query) {
                             $query->whereHas('exam.approvalexam', function ($q) {
