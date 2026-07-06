@@ -91,28 +91,29 @@ class RekomendasiLanjutanController extends Controller
 
     public function store(Request $request)
     {
+        // dd($request->all());
         // Validasi input sebagai array
         $request->validate([
-            'data' => 'required|array',
-            'data.*.id_rkm' => 'required',
-            'data.*.rekomendasi' => 'nullable|array',
-            'data.*.keterangan' => 'nullable|string',
+            'id_rkm' => 'required',
+            'rekomendasi' => 'nullable|array',
+            'keterangan' => 'nullable|string',
         ]);
 
         try {
-            foreach ($request->data as $item) {
-                if (!empty($item['rekomendasi'])) {
-                    $materi_string = implode(',', $item['rekomendasi']);
+            // foreach ($request->data as $item) {
+               if (!empty($request->rekomendasi)) {
+
+                    $materi_string = implode(',', $request->rekomendasi);
 
                     RekomendasiLanjutan::updateOrCreate(
-                        ['id_rkm' => $item['id_rkm']],
+                        ['id_rkm' => $request->id_rkm],
                         [
                             'id_materi' => $materi_string,
-                            'keterangan' => $item['keterangan'] ?? null
+                            'keterangan' => $request->keterangan
                         ]
                     );
                 }
-            }
+            // }
 
             return response()->json([
                 'success' => true,

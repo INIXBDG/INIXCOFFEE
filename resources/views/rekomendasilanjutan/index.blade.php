@@ -333,7 +333,7 @@
                             var rekomendasiNamaMateri = '-';
                             var rawIds = '';
                             var ketText = '-';
-                            console.log();
+                            console.log(rkm.rekomendasilanjutan);
                             if (rkm.rekomendasilanjutan) {
                                 rawIds = rkm.rekomendasilanjutan.id_materi || ''; // Contoh: "1,2"
                                 ketText = rkm.rekomendasilanjutan.keterangan || '-';
