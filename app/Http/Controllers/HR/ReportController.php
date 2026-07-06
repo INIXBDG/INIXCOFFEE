@@ -4,7 +4,7 @@ namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
 use App\Models\karyawan;
-use App\Models\Kegiatan;
+use App\Models\Pelamar;
 use App\Models\ReportTemplate;
 use App\Models\TemplatePlaceholder;
 use App\Models\ReportGeneration;
@@ -365,7 +365,6 @@ class ReportController extends Controller
         $sourceTable = $template->source_table ?? '';
         $sourceData = !empty($sourceTable) ? $this->getSourceOptions($sourceTable) : collect();
         
-        // Sort placeholders: non-manual dulu, lalu manual, berdasarkan sort_order
         $placeholders = $template->placeholders->sortBy(fn($p) => [
             $this->isManualFieldType($p->field_type) ? 1 : 0, 
             $p->sort_order
@@ -770,6 +769,7 @@ class ReportController extends Controller
             'formula' => [
                 'template' => 'required|string',
                 'counter_key' => 'nullable|string|max:100',
+                'last_number' => 'nullable|integer|min:0',
             ],
             'auth_field' => [
                 'field' => 'required|string',
@@ -929,7 +929,7 @@ class ReportController extends Controller
     {
         $allowedKeys = match ($fieldType) {
             'auto_date' => ['day_format', 'month_format', 'year_format', 'separator', 'label'],
-            'formula' => ['template', 'counter_key', 'label'],
+            'formula' => ['template', 'counter_key', 'last_number', 'label'],
             'auth_field' => ['field', 'label'],
             'relation_single' => ['relation', 'field', 'label'],
             'loop_manual' => ['columns', 'label'],
@@ -981,7 +981,7 @@ class ReportController extends Controller
     {
         return [
             'karyawan' => 'Data Karyawan',
-            'kegiatan' => 'Data Kegiatan',
+            'pelamar' => 'Data Rekturan',
         ];
     }
 
@@ -989,7 +989,7 @@ class ReportController extends Controller
     {
         return match ($sourceTable) {
             'karyawan' => karyawan::class,
-            'kegiatan' => Kegiatan::class,
+            'pelamar' => Pelamar::class,
             default => throw new \Exception('Source table tidak dikenali: ' . $sourceTable),
         };
     }
@@ -998,7 +998,7 @@ class ReportController extends Controller
     {
         return match ($sourceTable) {
             'karyawan' => karyawan::orderBy('nama_lengkap')->get(['id', 'nip', 'nama_lengkap']),
-            'kegiatan' => Kegiatan::orderBy('nama_kegiatan')->get(['id', 'nama_kegiatan']),
+            'pelamar' => Pelamar::orderBy('nama_lengkap')->get(['id', 'nama_lengkap']),
             default => collect(),
         };
     }
@@ -1026,13 +1026,25 @@ class ReportController extends Controller
                 'akhir_tetap' => 'Tanggal Akhir Tetap',
                 'email' => 'Email',
             ],
-            'kegiatan' => [
-                'nama_kegiatan' => 'Nama Kegiatan',
-                'waktu_kegiatan' => 'Tanggal & Waktu Kegiatan',
-                'lama_kegiatan' => 'Durasi',
-                'pic' => 'PIC',
-                'status' => 'Status',
+            'pelamar' => [
+                'nama_lengkap' => 'Nama Lengkap',
+                'email' => 'Email',
+                'no_telepon' => 'No. Telepon',
+                'domisili' => 'domisili',
+                'tanggal_lahir' => 'Tanggal Lahir',
                 'realisasi' => 'Realisasi',
+                'jenis_kelamin' => 'Jenis Kelamin',
+                'divisi' => 'Divisi',
+                'jabatan' => 'Jabatan',
+                'detail_jabatan' => 'Spesifikasi Jabatan',
+                'tanggal_melamar' => 'Tanggal Melamar',
+                'sumber_lamaran' => 'Sumber Melamar',
+                'gaji_ditawarkan' => 'Gaji Ditawarkan',
+                'tunjangan_makan' => 'Tunjangan Makan',
+                'tunjangan_transport' => 'Tunjangan Transportasi',
+                'tanggal_mulai_kerja' => 'Tanggal Masuk Kerja',
+                'status_kepegawaian' => 'Status Kepegawaian',
+                'nik_karyawan' => 'NIK Karyawan',
             ],
         ];
     }

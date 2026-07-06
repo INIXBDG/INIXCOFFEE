@@ -12,7 +12,7 @@
                             {{-- Section Header Divisi --}}
                             <thead>
                                 <tr>
-                                    <th colspan="5" class="bg-primary bg-opacity-10 text-primary border-top border-primary border-opacity-25 py-2 px-3">
+                                    <th colspan="6" class="bg-primary bg-opacity-10 text-primary border-top border-primary border-opacity-25 py-2 px-3">
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="fw-bold" style="color: #ffffff;">{{ $divisi }}</span>
                                             <span class="badge bg-opacity-75 fw-normal">{{ count($users) }} karyawan</span>
@@ -23,7 +23,8 @@
                                     <th class="text-center" style="width: 50px;">No</th>
                                     <th>Nama</th>
                                     <th>Jabatan</th>
-                                    <th>Gaji Saat Ini</th>
+                                    <th>Gaji</th>
+                                    <th>Tunjangan Jabatan</th>
                                     <th class="text-center" style="width: 100px;">Aksi</th>
                                 </tr>
                             </thead>
@@ -34,6 +35,7 @@
                                         <td>{{ $item->karyawan->nama_lengkap }}</td>
                                         <td class="text-muted">{{ $item->karyawan->jabatan ?? '-' }}</td>
                                         <td class="fw-semibold">Rp {{ number_format($item->karyawan->gaji, 0, ',', '.') }}</td>
+                                        <td class="fw-semibold">Rp {{ number_format($item->karyawan->tunjangan_jabatan, 0, ',', '.') }}</td>
                                         <td class="text-center">
                                             <button
                                                 type="button"
@@ -47,6 +49,7 @@
                                                 data-divisi="{{ $item->karyawan->divisi ?? '-' }}"
                                                 data-gaji="{{ $item->karyawan->gaji }}"
                                                 data-log="{{ json_encode($item->karyawan->logGaji) }}"
+                                                data-tunjangan="{{ $item->karyawan->tunjangan_jabatan ?? 0 }}"
                                             >
                                                 Detail
                                             </button>
@@ -93,7 +96,7 @@
                         </div>
                         <div class="col-md-6 d-flex align-items-center">
                             <div class="p-3 bg-light rounded w-100 text-center">
-                                <div class="text-muted small mb-1">Gaji Saat Ini</div>
+                                <div class="text-muted small mb-1">Total</div>
                                 <div class="fs-5 fw-bold text-primary" id="detail-gaji">-</div>
                             </div>
                         </div>
@@ -102,25 +105,86 @@
                     <hr>
 
                     <div class="mb-3">
-                        <h6 class="fw-semibold mb-2">Ubah Gaji</h6>
                         <form id="formEditGaji" method="POST">
                             @csrf
                             @method('PUT')
-                            <div class="input-group">
-                                <span class="input-group-text">Rp</span>
-                                <input
-                                    type="number"
-                                    id="input-gaji-baru"
-                                    name="jumlah_gaji"
-                                    class="form-control"
-                                    min="0"
-                                    step="1"
-                                    placeholder="Masukkan nominal gaji baru"
-                                    required
-                                >
-                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            <h6 class="fw-semibold mb-3">Ubah Data Gaji</h6>
+
+                            <div class="row g-3">
+                                {{-- Gaji Pokok --}}
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Gaji Pokok</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rp</span>
+                                        <input
+                                            type="number"
+                                            id="input-gaji-baru"
+                                            name="jumlah_gaji"
+                                            class="form-control"
+                                            min="0"
+                                            step="1"
+                                            placeholder="Nominal gaji pokok"
+                                            required
+                                        >
+                                    </div>
+                                </div>
+
+                                {{-- Tunjangan Jabatan --}}
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Tunjangan Jabatan</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rp</span>
+                                        <input
+                                            type="number"
+                                            id="input-tunjangan"
+                                            name="tunjangan_jabatan"
+                                            class="form-control"
+                                            min="0"
+                                            step="1"
+                                            placeholder="Nominal tunjangan"
+                                        >
+                                    </div>
+                                </div>
+
+                                {{-- Bulan --}}
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Bulan</label>
+                                    <select id="input-bulan" name="bulan" class="form-select" required>
+                                        <option value="" disabled selected>Pilih bulan</option>
+                                        <option value="1">Januari</option>
+                                        <option value="2">Februari</option>
+                                        <option value="3">Maret</option>
+                                        <option value="4">April</option>
+                                        <option value="5">Mei</option>
+                                        <option value="6">Juni</option>
+                                        <option value="7">Juli</option>
+                                        <option value="8">Agustus</option>
+                                        <option value="9">September</option>
+                                        <option value="10">Oktober</option>
+                                        <option value="11">November</option>
+                                        <option value="12">Desember</option>
+                                    </select>
+                                </div>
+
+                                {{-- Tahun --}}
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">Tahun</label>
+                                    <input
+                                        type="number"
+                                        id="input-tahun"
+                                        name="tahun"
+                                        class="form-control"
+                                        min="2000"
+                                        max="2099"
+                                        placeholder="Contoh: 2025"
+                                        required
+                                    >
+                                </div>
                             </div>
-                            <div class="form-text">Nominal dalam Rupiah, tanpa titik atau koma.</div>
+
+                            <div class="form-text mb-3">Nominal dalam Rupiah, tanpa titik atau koma.</div>
+
+                            <button type="submit" class="btn btn-primary w-100">Simpan Perubahan</button>
                         </form>
                     </div>
 
@@ -135,6 +199,7 @@
                                     <th class="text-center">Bulan</th>
                                     <th class="text-center">Tahun</th>
                                     <th>Gaji</th>
+                                    <th>Tunjangan Jabatan</th>
                                     <th class="text-center">Dicatat</th>
                                 </tr>
                             </thead>
@@ -169,11 +234,17 @@
                 const divisi  = btn.getAttribute('data-divisi');
                 const gaji    = parseInt(btn.getAttribute('data-gaji')) || 0;
                 const log     = JSON.parse(btn.getAttribute('data-log') || '[]');
+                const tunjangan = parseInt(btn.getAttribute('data-tunjangan')) || 0;
+                document.getElementById('input-tunjangan').value = btn.getAttribute('data-tunjangan') || 0;
+
+                const now = new Date();
+                document.getElementById('input-bulan').value = now.getMonth() + 1; // bulan saat ini sebagai default
+                document.getElementById('input-tahun').value  = now.getFullYear();
 
                 document.getElementById('detail-nama').textContent    = nama;
                 document.getElementById('detail-jabatan').textContent = jabatan;
                 document.getElementById('detail-divisi').textContent  = divisi;
-                document.getElementById('detail-gaji').textContent    = 'Rp ' + gaji.toLocaleString('id-ID');
+                document.getElementById('detail-gaji').textContent    = 'Rp ' + (gaji + tunjangan).toLocaleString('id-ID');
 
                 const form = document.getElementById('formEditGaji');
                 form.action = '{{ url("gaji") }}/' + id;
@@ -186,10 +257,14 @@
                     return;
                 }
 
-                log.sort((a, b) => b.id - a.id);
-                
+                log.sort((a, b) => {
+                    if (b.tahun !== a.tahun) return b.tahun - a.tahun; 
+                    return b.bulan - a.bulan;                           
+                });                
+
                 tbody.innerHTML = log.map((row, i) => {
                     const gajiFormatted = 'Rp ' + parseInt(row.gaji).toLocaleString('id-ID');
+                    const tunjanganFormatted = 'Rp ' + parseInt(row.tunjangan_jabatan || 0).toLocaleString('id-ID');
                     const tanggal = row.created_at
                         ? new Date(row.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
                         : '-';
@@ -200,6 +275,7 @@
                             <td class="text-center">${bulanNames[row.bulan] ?? row.bulan}</td>
                             <td class="text-center">${row.tahun}</td>
                             <td>${gajiFormatted}</td>
+                            <td>${tunjanganFormatted}</td>
                             <td class="text-center text-muted small">${tanggal}</td>
                         </tr>
                     `;
