@@ -7,14 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\PembelianHr;
 use App\Models\TrackingPembelianHr;
 use App\Models\DetailPembelianHr;
-use App\Models\JurnalAkuntansi;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\Kegiatan;
 use App\Models\karyawan;
-use App\Models\PengajuanBarang;
 
 class RencanaPembelianHrController extends Controller
 {
@@ -22,7 +20,6 @@ class RencanaPembelianHrController extends Controller
     public function index()
     {
         $kegiatan = Kegiatan::all();
-        $karyawans = Karyawan::all();
         $drivers = karyawan::where('jabatan', 'Driver')
             ->where(function ($query) {
                 $query->whereDoesntHave('pickupDriver')->orWhereHas('pickupDriver', function ($q) {
@@ -203,7 +200,7 @@ class RencanaPembelianHrController extends Controller
         $extends = 'layouts.app';
         $section = 'content';
 
-        return view('office.rab.index', compact('kegiatan', 'drivers', 'pembelian', 'rencanas', 'dibatalkan', 'extends', 'section', 'karyawans'));
+        return view('office.rab.index', compact('kegiatan', 'drivers', 'pembelian', 'rencanas', 'dibatalkan', 'extends', 'section'));
     }
 
     public function store(Request $request)
@@ -227,6 +224,7 @@ class RencanaPembelianHrController extends Controller
                 'status_pembelian' => 'Rencana',
                 'periode' => $request->periode,
                 'kategori' => $request->kategori,
+                'periode' => $validated['periode'],
                 'id_karyawan' => auth()->user()->karyawan->id
             ]);
 
@@ -405,112 +403,6 @@ class RencanaPembelianHrController extends Controller
         } catch (\Exception $e) {
             Log::error('Error update status hr: ' . $e->getMessage());
             return back()->with('error', 'Gagal menghapus data');
-        }
-    }
-
-    public function getJurnalAkuntansi(Request $request)
-    {
-        $pembuat = $request->pembuat;
-
-        $jurnalAkuntansi = JurnalAkuntansi::whereNotNull('id_pengajuan_barang')->get();
-
-        $data = $jurnalAkuntansi->map(function ($jurnal) use ($pembuat) {
-
-            $idsPengajuan = is_array($jurnal->id_pengajuan_barang)
-                ? $jurnal->id_pengajuan_barang
-                : json_decode($jurnal->id_pengajuan_barang, true);
-
-            $pengajuanBarang = PengajuanBarang::whereIn('id', $idsPengajuan ?? [])
-                ->where('id_karyawan', $pembuat)
-                ->with(['detail','karyawan'])
-                ->get();
-
-            if ($pengajuanBarang->isEmpty()) {
-                return null;
-            }
-
-            $namaBarang = $pengajuanBarang
-                ->flatMap(fn($p) => $p->detail->pluck('nama_barang'))
-                ->implode(', ');
-
-            return [
-                'id_jurnal'            => $jurnal->id,
-                'id_pengajuan'  => $idsPengajuan,
-                'nama_barang'          => $namaBarang,
-                'total_harga'          => $jurnal->kredit,
-                'tanggal'              => $jurnal->tanggal_transaksi,
-                'diajukan_oleh'        => optional($pengajuanBarang->first()->karyawan)->nama_lengkap,
-            ];
-
-        })->filter()->values();
-
-        return response()->json([
-            'data' => $data
-        ]);
-    }
-
-    public function storeRekap(Request $request) 
-    {
-        $request->validate([
-            'items.*.id_pengajuan' => 'required|exists:pengajuanbarangs,id',
-            'items.*.id_jurnal' => 'required|exists:jurnal_akuntansis,id',
-            'kategori' => 'required',
-            'periode' => 'required|in:Q1,Q2,Q3,Q4',
-        ]);
-
-        DB::beginTransaction();
-        try{
-
-            foreach($request->items as $item){
-                $jurnal = JurnalAkuntansi::findOrFail($item['id_jurnal']);
-
-                $pengajuan = PengajuanBarang::with([
-                    'detail',
-                    'karyawan'
-                ])->findOrFail($item['id_pengajuan']);
-
-                $exists = PembelianHr::where('id_pengajuan', $pengajuan->id)->exists();
-
-                if ($exists) {
-                    continue;
-                }
-
-                $pembelian = PembelianHr::create([
-                    'no_kk'=>$jurnal->nomor_kk,
-                    'id_karyawan'=>$pengajuan->id_karyawan,
-                    'status_pembelian'=>'Terlaksana',
-                    'periode'=>$request->periode,
-                    'kategori'=>$request->kategori,
-                    'invoice'=>$pengajuan->invoice,
-                    'id_pengajuan'=>$pengajuan->id
-                ]);
-
-                foreach($pengajuan->detail as $detail){
-                    DetailPembelianHr::create([
-                        'id_pembelian'=>$pembelian->id,
-                        'nama_barang'=>$detail->nama_barang,
-                        'qty'=>$detail->qty,
-                        'harga'=>$detail->harga,
-                        'keterangan'=>$detail->keterangan,
-                    ]);
-                }
-
-                TrackingPembelianHr::create([
-                    'id_pembelian'=>$pembelian->id,
-                    'tracking'=>$pengajuan->karyawan->nama_lengkap.' telah membuat rencana pembelian',
-                    'id_karyawan'=>$pengajuan->id_karyawan,
-                    'created_at'=>$pengajuan->created_at,
-                    'updated_at'=>$pengajuan->updated_at,
-                ]);
-            }
-
-            DB::commit();
-            return back()->with('success','Rencana pembelian berhasil dibuat.');
-        } catch(\Exception $e){
-
-            DB::rollBack();
-            Log::error($e);
-            return back()->with('error','Gagal membuat rekap.');
         }
     }
 }

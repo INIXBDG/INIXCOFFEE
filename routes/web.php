@@ -847,7 +847,6 @@ Route::get('/invoice/{id}', [InvoiceRKMController::class, 'show'])->name('invoic
 Route::get('/invoice/{id}/edit', [InvoiceRKMController::class, 'edit'])->name('invoice.edit');
 Route::put('/invoice/{id}', [InvoiceRKMController::class, 'update'])->name('invoice.update'); // Ga tau, kayaknya ga kepake
 Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('invoice.destroy'); // Ga tau, kayaknya ga kepake
-Route::delete('/invoice/delete/{id}', [InvoiceRKMController::class, 'deleteAll'])->name('invoice.delete');
 Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])->name('invoices.export-pdf');
 Route::get('/invoices/{id}/export-excel', [InvoiceRKMController::class, 'exportExcel'])->name('invoices.export-excel');
 Route::get('/invoice/download/{id}', [InvoiceRKMController::class, 'downloadPDF'])->name('download.pdf');
@@ -976,7 +975,6 @@ Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
-    Route::get('/detail-data-mengajar/{id}', [OfficeController::class, 'detailMengajar']);
     Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan']);
     Route::get('/karyawan-information/{id}', [OfficeController::class, 'dataKaryawan']);
     Route::get('/laporan/status-karyawan', [OfficeController::class, 'laporanStatusKaryawan'])->name('office.laporan.status-karyawan');
@@ -1445,8 +1443,6 @@ Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() 
     Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');
     Route::post('/update-nvoice/{id}', [RencanaPembelianHrController::class, 'updateInvoice'])->name('updateInvoice');
     Route::post('/update-status', [RencanaPembelianHrController::class, 'updateStatus'])->name('updateStatus');
-    Route::get('/get-jurnal', [RencanaPembelianHrController::class, 'getJurnalAkuntansi']);
-    Route::post('/store-rekap', [RencanaPembelianHrController::class, 'storeRekap'])->name('storeRekap');
 });
 
 Route::prefix('HR-dashboard')->name('HR.')->group(function () {
