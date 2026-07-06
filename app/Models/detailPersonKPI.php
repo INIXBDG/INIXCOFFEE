@@ -13,8 +13,6 @@ class detailPersonKPI extends Model
         'id_target',
         'detailTargetKey',
         'id_karyawan',
-        'presentase_kemampuan',
-        'presentase_standar',
     ];
 
     public function detailTargetKPI()
