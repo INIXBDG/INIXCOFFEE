@@ -43,6 +43,8 @@ class payrollController extends Controller
 
             $baseQuery = Karyawan::query()
                 ->whereNot('jabatan', 'Pilih Jabatan')
+                ->whereNot('jabatan', 'Outsourcing')
+                ->whereNot('divisi', 'Pilih Divisi')
                 ->where('status_aktif', '1');
 
             if (!empty($search)) {
@@ -234,6 +236,8 @@ class payrollController extends Controller
 
         $baseQuery = Karyawan::query()
             ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNot('jabatan', 'Outsourcing')
+            ->whereNot('divisi', 'Pilih Divisi')
             ->where('status_aktif', '1');
 
         if (!empty($search)) {
@@ -439,6 +443,8 @@ class payrollController extends Controller
 
         $baseQuery = Karyawan::query()
             ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNot('jabatan', 'Outsourcing')
+            ->whereNot('divisi', 'Pilih Divisi')
             ->where('status_aktif', '1');
 
         if (!empty($search)) {
@@ -638,6 +644,7 @@ class payrollController extends Controller
         $karyawans = Karyawan::with('divisi')
             ->where('status_aktif', '1')
             ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNot('divisi', 'Pilih Divisi')
             ->orderBy('nama_lengkap')
             ->get();
 
@@ -1539,6 +1546,7 @@ class payrollController extends Controller
         $karyawans = Karyawan::with('pph21')
             ->where('status_aktif', '1')
             ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNot('divisi', 'Pilih Divisi')
             ->get();
 
         $data = $karyawans->map(function($k) {
