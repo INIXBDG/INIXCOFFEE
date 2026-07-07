@@ -4067,19 +4067,13 @@ class TargetKPIController extends Controller
         $endDate = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
         $targetKelas = 357;
 
-        $totalKelasOffline = 0;
-        $totalKelasVirtual = 0;
-        $totalKelasInhouse = 0;
+        $totalKelas = 0;
         $totalKelasOL = 0;
 
-        $rkmQuery = RKM::with(['peluang'])
-            ->where('tanggal_awal', '<=', $endDate)
+        $rkmQuery = RKM::where('tanggal_awal', '<=', $endDate)
             ->where('tanggal_akhir', '>=', $startDate)
             ->whereNotNull('instruktur_key')
-            ->where('instruktur_key', '!=', '-')
-            ->whereHas('peluang', function ($query) {
-                        $query->where('tentatif', 0);
-                    });
+            ->where('instruktur_key', '!=', '-');
 
         $rkms = $rkmQuery->get();
         $processedRkmIds = [];
@@ -4099,22 +4093,11 @@ class TargetKPIController extends Controller
             if ($isOLClass) {
                 $totalKelasOL += 1;
             } else {
-                // Klasifikasi berdasarkan tipe kelas
-                // Pastikan properti 'tipe_kelas' sesuai dengan nama kolom di tabel RKM
-                $tipeKelas = $rkm->tipe_kelas;
-
-                if ($tipeKelas === 'Virtual') {
-                    $totalKelasVirtual += 1;
-                } elseif ($tipeKelas === 'Offline') {
-                    $totalKelasOffline += 1;
-                } elseif ($tipeKelas === 'Inhouse Bandung' || $tipeKelas === 'Inhouse Luar Bandung') {
-                    $totalKelasInhouse += 1;
-                }
+                $totalKelas += 1;
             }
         }
 
-        // Akumulasi total kelas internal (Offline, Virtual, dan Inhouse)
-        $totalKelasValid = $totalKelasOffline + $totalKelasVirtual + $totalKelasInhouse;
+        $totalKelasValid = $totalKelas;
 
         if ($targetKelas <= 0) {
             return 0.0;
@@ -12673,7 +12656,6 @@ class TargetKPIController extends Controller
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
-        // Modifikasi: Menyesuaikan struktur breakdown default
         $emptyResponse = [
             'progress' => 0,
             'gap' => 0,
@@ -12682,7 +12664,7 @@ class TargetKPIController extends Controller
             'daily_breakdown_per_month' => [],
             'monthly_progress' => [],
             'daily_progress_per_month' => [],
-            'class_breakdown' => ['offline' => 0, 'virtual' => 0, 'inhouse' => 0],
+            'class_breakdown' => ['offline' => 0, 'online' => 0],
         ];
 
         if (is_null($detail) || is_null($detail->nilai_target) || is_null($detail->detail_jangka)) {
@@ -12703,23 +12685,15 @@ class TargetKPIController extends Controller
             return $emptyResponse;
         }
 
-        $rkmQuery = RKM::with(['peluang'])
-            ->where('tanggal_awal', '<=', $endDate)
+        $rkmQuery = RKM::where('tanggal_awal', '<=', $endDate)
             ->where('tanggal_akhir', '>=', $startDate)
             ->whereNotNull('instruktur_key')
-            ->where('instruktur_key', '!=', '-')
-            ->whereHas('peluang', function ($query) {
-                        $query->where('tentatif', 0);
-                    });
+            ->where('instruktur_key', '!=', '-');
 
         $rkms = $rkmQuery->get();
         $processedRkmIds = [];
 
         $totalKelas = 0;
-        $totalKelasOffline = 0;
-        $totalKelasVirtual = 0;
-        $totalKelasInhouse = 0;
-        $totalKelasOL = 0;
         $dailyValues = [];
 
         foreach ($rkms as $rkm) {
@@ -12728,37 +12702,6 @@ class TargetKPIController extends Controller
 
             $classDate = Carbon::parse($rkm->tanggal_awal);
             if ($classDate < $startDate || $classDate > $endDate) continue;
-
-            // Modifikasi: Filter Orang Luar (OL)
-            $isOLClass = (
-                $rkm->instruktur_key === 'OL' ||
-                $rkm->instruktur_key2 === 'OL' ||
-                $rkm->asisten_key === 'OL'
-            );
-
-            if ($isOLClass) {
-                $totalKelasOL += 1;
-                continue; 
-            }
-
-            // Modifikasi: Klasifikasi dan Validasi Tipe Kelas
-            $tipeKelas = $rkm->tipe_kelas;
-            $isValidType = false;
-
-            if ($tipeKelas === 'Virtual') {
-                $totalKelasVirtual += 1;
-                $isValidType = true;
-            } elseif ($tipeKelas === 'Offline') {
-                $totalKelasOffline += 1;
-                $isValidType = true;
-            } elseif ($tipeKelas === 'Inhouse Bandung' || $tipeKelas === 'Inhouse Luar Bandung') {
-                $totalKelasInhouse += 1;
-                $isValidType = true;
-            }
-
-            if (!$isValidType) {
-                continue;
-            }
 
             $dateKey = $classDate->format('Y-m-d');
             $totalKelas += 1;
@@ -12811,12 +12754,7 @@ class TargetKPIController extends Controller
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgress,
             'daily_progress_per_month' => $dailyProgressPerMonth,
-            // Modifikasi: Mengembalikan hasil penghitungan breakdown yang valid
-            'class_breakdown' => [
-                'offline' => $totalKelasOffline,
-                'virtual' => $totalKelasVirtual,
-                'inhouse' => $totalKelasInhouse,
-            ],
+            'class_breakdown' => [],
         ];
     }
 
