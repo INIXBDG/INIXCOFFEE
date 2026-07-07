@@ -41,20 +41,9 @@ class payrollController extends Controller
             $page = max(1, (int) $request->input('page', 1));
             $perPage = 15;
 
-            $excludedJabatan = ['Direktur', 'Direktur Utama'];
-
             $baseQuery = Karyawan::query()
-                ->whereNot('jabatan', 'Outsource')
-                ->where('kode_karyawan', 'NOT LIKE', 'OL%')
                 ->whereNot('jabatan', 'Pilih Jabatan')
-                ->whereNotNull('nip')
-                ->whereNot('divisi', 'Direksi')
-                ->where('status_aktif', '1')
-                ->whereNotIn('jabatan', $excludedJabatan)
-                ->whereRaw('LOWER(jabatan) != ?', ['outsource'])
-                ->where(function ($q) {
-                    $q->whereNull('kode_karyawan')->orWhere('kode_karyawan', 'not like', '%OL%');
-                });
+                ->where('status_aktif', '1');
 
             if (!empty($search)) {
                 $baseQuery->where(function ($q) use ($search) {
@@ -242,20 +231,10 @@ class payrollController extends Controller
         ini_set('memory_limit', '512M');
         set_time_limit(300);
 
-        $excludedJabatan = ['Direktur', 'Direktur Utama'];
 
         $baseQuery = Karyawan::query()
-            ->whereNot('jabatan', 'Outsource')
-            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNot('jabatan', 'Pilih Jabatan')
-            ->whereNotNull('nip')
-            ->whereNot('divisi', 'Direksi')
-            ->where('status_aktif', '1')
-            ->whereNotIn('jabatan', $excludedJabatan)
-            ->whereRaw('LOWER(jabatan) != ?', ['outsource'])
-            ->where(function ($q) {
-                $q->whereNull('kode_karyawan')->orWhere('kode_karyawan', 'not like', '%OL%');
-            });
+            ->where('status_aktif', '1');
 
         if (!empty($search)) {
             $baseQuery->where(function ($q) use ($search) {
@@ -457,20 +436,10 @@ class payrollController extends Controller
         $tahun = (int) $request->input('year', now()->year);
         $search = $request->input('search', '');
 
-        $excludedJabatan = ['Direktur', 'Direktur Utama'];
 
         $baseQuery = Karyawan::query()
-            ->whereNot('jabatan', 'Outsource')
-            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNot('jabatan', 'Pilih Jabatan')
-            ->whereNotNull('nip')
-            ->whereNot('divisi', 'Direksi')
-            ->where('status_aktif', '1')
-            ->whereNotIn('jabatan', $excludedJabatan)
-            ->whereRaw('LOWER(jabatan) != ?', ['outsource'])
-            ->where(function ($q) {
-                $q->whereNull('kode_karyawan')->orWhere('kode_karyawan', 'not like', '%OL%');
-            });
+            ->where('status_aktif', '1');
 
         if (!empty($search)) {
             $baseQuery->where(function ($q) use ($search) {
@@ -667,17 +636,8 @@ class payrollController extends Controller
     public function indexPerhitungan(Request $request)
     {
         $karyawans = Karyawan::with('divisi')
-            ->where(function ($query) {
-                $query->whereIn('jabatan', ['Direktur', 'Direktur Utama'])
-                    ->where('status_aktif', '1');
-            })
-            ->orWhere(function ($query) {
-                $query->where('status_aktif', '1')
-                    ->whereNotIn('jabatan', ['Outsource', 'Pilih Jabatan'])
-                    ->where('kode_karyawan', 'not like', 'OL%')
-                    ->where('divisi', '!=', 'Direksi')
-                    ->whereNotNull('nip');
-            })
+            ->where('status_aktif', '1')
+            ->whereNot('jabatan', 'Pilih Jabatan')
             ->orderBy('nama_lengkap')
             ->get();
 
@@ -1577,17 +1537,8 @@ class payrollController extends Controller
     public function getPphData()
     {
         $karyawans = Karyawan::with('pph21')
-            ->where(function ($query) {
-                $query->whereIn('jabatan', ['Direktur', 'Direktur Utama'])
-                    ->where('status_aktif', '1');
-            })
-            ->orWhere(function ($query) {
-                $query->where('status_aktif', '1')
-                    ->whereNotIn('jabatan', ['Outsource', 'Pilih Jabatan'])
-                    ->where('kode_karyawan', 'not like', 'OL%')
-                    ->where('divisi', '!=', 'Direksi')
-                    ->whereNotNull('nip');
-            })
+            ->where('status_aktif', '1')
+            ->whereNot('jabatan', 'Pilih Jabatan')
             ->get();
 
         $data = $karyawans->map(function($k) {
