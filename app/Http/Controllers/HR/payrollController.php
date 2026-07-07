@@ -43,6 +43,7 @@ class payrollController extends Controller
 
             $baseQuery = Karyawan::query()
                 ->whereNot('jabatan', 'Pilih Jabatan')
+                ->whereNot('jabatan', 'Outsourcing')
                 ->whereNot('divisi', 'Pilih Divisi')
                 ->where('status_aktif', '1');
 
@@ -235,6 +236,7 @@ class payrollController extends Controller
 
         $baseQuery = Karyawan::query()
             ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNot('jabatan', 'Outsourcing')
             ->whereNot('divisi', 'Pilih Divisi')
             ->where('status_aktif', '1');
 
@@ -441,6 +443,7 @@ class payrollController extends Controller
 
         $baseQuery = Karyawan::query()
             ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNot('jabatan', 'Outsourcing')
             ->whereNot('divisi', 'Pilih Divisi')
             ->where('status_aktif', '1');
 
