@@ -681,7 +681,7 @@
             let targetLabels = statistikTargets.map(item => item.judul.length > 20 ? item.judul.substring(0, 20) + '...' :
                 item.judul);
             let targetProgress = statistikTargets.map(item => {
-                if (item.tipe_target === "rupiah") {
+                if (item.tipe_target === "rupiah" || item.tipe_target === "angka" ) {
                     if (!item.target || item.target === 0) return 0;
                     return Math.round((item.progress / item.target) * 100);
                 } else {
