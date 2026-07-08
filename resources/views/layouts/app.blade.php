@@ -601,20 +601,20 @@
             <div class="col-md-4 col-sm-4 col-xs-4 d-flex justify-content-start" id="navbarkiri">
                 <ul class="navbar-nav">
                     <li class="nav-item d-flex">
-                        <!-- Tombol Home -->
-                        <a class="nav-link" style="margin: 7px 3px 0px 3px" href="{{ url('/home') }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Home">
+                        <a class="nav-link" style="margin: 7px 3px 0px 3px" href="{{ url('/home') }}"
+                            data-bs-toggle="tooltip" data-bs-placement="top" title="Home">
                             <img src="{{ asset('icon/home.svg') }}" class="img-responsive" width="30px">
                         </a>
-
-                        <!-- Tombol Notifikasi -->
-                        <a class="nav-link position-relative" style="margin: 7px 3px 0px 3px" href="#" data-bs-toggle="modal" data-bs-target="#notificationModal">
+                        <a class="nav-link position-relative" style="margin: 7px 3px 0px 3px" href="#"
+                            data-bs-toggle="modal" data-bs-target="#notificationModal">
                             <img src="{{ asset('icon/whitebell.svg') }}" class="img-responsive" width="30px">
-
-                            <!-- 🔔 Badge jumlah notifikasi -->
-                            <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ auth()->user()->unreadNotifications->count() }}
-                                <span class="visually-hidden">unread notifications</span>
-                            </span>
+                            @if (auth()->user()->unreadNotifications->count() > 0)
+                                <span
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    {{ auth()->user()->unreadNotifications->count() }}
+                                    <span class="visually-hidden">unread notifications</span>
+                                </span>
+                            @endif
                         </a>
                     </li>
 
