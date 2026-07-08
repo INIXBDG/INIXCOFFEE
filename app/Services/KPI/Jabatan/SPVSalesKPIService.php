@@ -4,28 +4,20 @@ namespace App\Services\KPI\Jabatan;
 
 use App\Models\Aktivitas;
 use App\Models\ApprovalPendapatan;
-use App\Models\checklistRKM;
 use App\Models\detailPersonKPI;
-use App\Models\DokumentasiExam;
 use App\Models\karyawan;
-use App\Models\LaporanHarianSales;
-use App\Models\NomorModul;
 use App\Models\perhitunganNetSales;
-use App\Models\Registrasi;
-use App\Models\RKM;
-use App\Models\TodoAdministrasi;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
+use App\Services\KPI\Jabatan\GMKPIService;
 use Illuminate\Support\Facades\Log;
 
 class SPVSalesKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function calculateMeningkatkanRevenuePerusahaan($item, $personId)
+    public function calculateMeningkatkanRevenuePerusahaan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
 
@@ -55,7 +47,7 @@ class SPVSalesKPIService
         return round($progress);
     }
 
-    private function calculateMeningkatkanRevenuePerusahaanDetail($itemDetail)
+    public function calculateMeningkatkanRevenuePerusahaanDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -151,7 +143,7 @@ class SPVSalesKPIService
         ];
     }
 
-    private function calculateCustomerAcquisitionCost($item, $personId)
+    public function calculateCustomerAcquisitionCost($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -169,7 +161,7 @@ class SPVSalesKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $labaKotor = $this->calculatePemasukanKotor($item, $personId);
+        $labaKotor = app(GMKPIService::class)->calculatePemasukanKotor($item, $personId);
 
         if ($labaKotor == 0) {
             return 0;
@@ -214,7 +206,7 @@ class SPVSalesKPIService
         return round($progress, 1);
     }
 
-    private function calculateEvaluasiKinerjaSales($item, $personId)
+    public function calculateEvaluasiKinerjaSales($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -230,7 +222,7 @@ class SPVSalesKPIService
 
         $nilaiTarget = (float) $detail->nilai_target;
 
-        $Saless = Karyawan::where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi')
+        $Saless = karyawan::where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi')
             ->where('jabatan', 'Sales')
             ->get();
 
@@ -289,7 +281,7 @@ class SPVSalesKPIService
         return round($progress, 2);
     }
 
-    private function calculateEvaluasiKinerjaSalesDetail($itemDetail)
+    public function calculateEvaluasiKinerjaSalesDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 

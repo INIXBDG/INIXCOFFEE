@@ -7,15 +7,13 @@ use App\Models\NomorModul;
 use App\Models\Registrasi;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class AdminHoldingKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function calculateKetepatanWaktuPo($item)
+    public function calculateKetepatanWaktuPo($item)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -85,7 +83,7 @@ class AdminHoldingKPIService
         return round($progress, 1);
     }
 
-    private function calculateKetepatanWaktuPoDetail($itemDetail)
+    public function calculateKetepatanWaktuPoDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -256,7 +254,7 @@ class AdminHoldingKPIService
         ];
     }
 
-    private function calculatekualitasDokumentasiSupportDanProctor($item, $personId)
+    public function calculatekualitasDokumentasiSupportDanProctor($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -289,7 +287,7 @@ class AdminHoldingKPIService
         return round($progress, 2);
     }
 
-    private function calculatekualitasDokumentasiSupportDanProctorDetail($itemDetail)
+    public function calculatekualitasDokumentasiSupportDanProctorDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 

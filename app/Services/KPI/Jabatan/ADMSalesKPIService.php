@@ -3,24 +3,19 @@
 namespace App\Services\KPI\Jabatan;
 
 use App\Models\checklistRKM;
-use App\Models\DokumentasiExam;
 use App\Models\LaporanHarianSales;
-use App\Models\NomorModul;
-use App\Models\Registrasi;
 use App\Models\RKM;
 use App\Models\TodoAdministrasi;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ADMSalesKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function calculateLaporanMOM($item)
+    public function calculateLaporanMOM($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -77,7 +72,7 @@ class ADMSalesKPIService
         return round($progress, 1);
     }
 
-    private function calculateLaporanMOMDetail($itemDetail)
+    public function calculateLaporanMOMDetail($itemDetail, $personId = null)
     {
         $details = $itemDetail->detailTargetKPI;
 
@@ -86,28 +81,8 @@ class ADMSalesKPIService
         $tahun = (int) optional($firstDetail)->detail_jangka;
         $nilaiTarget = (float) optional($firstDetail)->nilai_target;
 
-        if ($details->isEmpty() || $nilaiTarget <= 0) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
-        }
-
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+        if ($details->isEmpty() || $nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return $this->getDefaultDetailResponse();
         }
 
         $momCount = LaporanHarianSales::whereYear('created_at', $tahun)->count();
@@ -222,7 +197,7 @@ class ADMSalesKPIService
         ];
     }
 
-    private function calculateAkurasiKelengkapanDataPenjualan($item, $personId)
+    public function calculateAkurasiKelengkapanDataPenjualan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -312,7 +287,7 @@ class ADMSalesKPIService
         return round($persentase, 1);
     }
 
-    private function calculateAkurasiKelengkapanDataPenjualanDetail($itemDetail, $personId)
+    public function calculateAkurasiKelengkapanDataPenjualanDetail($itemDetail, $personId = null)
     {
         $details = $itemDetail->detailTargetKPI;
         $detail = $details->first();
@@ -321,18 +296,9 @@ class ADMSalesKPIService
         $tahun = (int) (optional($detail)->detail_jangka ?? now()->year);
 
         if ($details->isEmpty() || $tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
-        // Year To Date
         $startDate = Carbon::create($tahun, 1, 1)->startOfDay();
 
         $endDate = ($tahun == now()->year)
@@ -379,13 +345,8 @@ class ADMSalesKPIService
             $monthKey = $date->format('Y-m');
             $dateKey = $date->format('Y-m-d');
 
-            // Total RKM per bulan
-            $monthlyTotal[$monthKey] =
-                ($monthlyTotal[$monthKey] ?? 0) + 1;
-
-            // Total RKM per hari
-            $dailyTotal[$monthKey][$dateKey] =
-                ($dailyTotal[$monthKey][$dateKey] ?? 0) + 1;
+            $monthlyTotal[$monthKey] = ($monthlyTotal[$monthKey] ?? 0) + 1;
+            $dailyTotal[$monthKey][$dateKey] = ($dailyTotal[$monthKey][$dateKey] ?? 0) + 1;
 
             $listOutstanding = $rkm->outstanding;
 
@@ -417,46 +378,30 @@ class ADMSalesKPIService
 
                 $totalRkmAkurat++;
 
-                // Akurat per bulan
-                $monthlyAccurate[$monthKey] =
-                    ($monthlyAccurate[$monthKey] ?? 0) + 1;
-
-                // Akurat per hari
-                $dailyAccurate[$monthKey][$dateKey] =
-                    ($dailyAccurate[$monthKey][$dateKey] ?? 0) + 1;
-
-                // Breakdown harian (jumlah RKM akurat)
-                $dailyBreakdownPerMonth[$monthKey][$dateKey] =
-                    ($dailyBreakdownPerMonth[$monthKey][$dateKey] ?? 0) + 1;
+                $monthlyAccurate[$monthKey] = ($monthlyAccurate[$monthKey] ?? 0) + 1;
+                $dailyAccurate[$monthKey][$dateKey] = ($dailyAccurate[$monthKey][$dateKey] ?? 0) + 1;
+                $dailyBreakdownPerMonth[$monthKey][$dateKey] = ($dailyBreakdownPerMonth[$monthKey][$dateKey] ?? 0) + 1;
             }
         }
 
-        // Progress utama
         $progress = $totalRkmDenganPerhitungan > 0
             ? round(($totalRkmAkurat / $totalRkmDenganPerhitungan) * 100, 1)
             : 0;
 
-        // Monthly Progress
         $monthlyProgress = [];
 
         foreach ($monthlyTotal as $month => $total) {
-
             $accurate = $monthlyAccurate[$month] ?? 0;
-
             $monthlyProgress[$month] = $total > 0
                 ? round(($accurate / $total) * 100, 1)
                 : 0;
         }
 
-        // Daily Progress
         $dailyProgressPerMonth = [];
 
         foreach ($dailyTotal as $month => $days) {
-
             foreach ($days as $date => $total) {
-
                 $accurate = $dailyAccurate[$month][$date] ?? 0;
-
                 $dailyProgressPerMonth[$month][$date] = $total > 0
                     ? round(($accurate / $total) * 100, 1)
                     : 0;
@@ -478,22 +423,14 @@ class ADMSalesKPIService
                 'above' => $totalRkmAkurat,
                 'below' => max(0, $totalRkmDenganPerhitungan - $totalRkmAkurat),
             ],
-
-            // Jumlah RKM Akurat per bulan
             'monthly_data' => $monthlyAccurate,
-
-            // Jumlah RKM Akurat per hari
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-
-            // Persentase akurasi per bulan
             'monthly_progress' => $monthlyProgress,
-
-            // Persentase akurasi per hari
             'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
     }
 
-    private function calculateTodoAdministrasi($item)
+    public function calculateTodoAdministrasi($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
 
@@ -523,31 +460,21 @@ class ADMSalesKPIService
         return round($progress, 1);
     }
 
-    private function calculateTodoAdministrasiDetail($itemDetail)
+    public function calculateTodoAdministrasiDetail($itemDetail, $personId = null)
     {
         $details = $itemDetail->detailTargetKPI;
 
         $tahun = (int) optional($details->first())->detail_jangka;
         $nilaiTarget = (float) optional($details->first())->nilai_target;
 
-        $default = [
-            'progress' => 0,
-            'gap' => 0,
-            'pie_chart' => ['above' => 0, 'below' => 0],
-            'monthly_data' => [],
-            'daily_breakdown_per_month' => [],
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
-        ];
-
         if ($details->isEmpty() || $tahun < 2000 || $tahun > now()->year + 5) {
-            return $default;
+            return $this->getDefaultDetailResponse();
         }
 
         $todos = TodoAdministrasi::whereYear('created_at', $tahun)->get();
 
         if ($todos->isEmpty()) {
-            return $default;
+            return $this->getDefaultDetailResponse();
         }
 
         $totalData = $todos->count();
@@ -628,4 +555,4 @@ class ADMSalesKPIService
             'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
     }
-}    
+}

@@ -508,7 +508,7 @@ class EducationManagerKPIService
 
         $nilaiTarget = (float) $detail->nilai_target;
 
-        $instrukturs = Karyawan::where('Divisi', '!=', 'Direksi')
+        $instrukturs = karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')
             ->where('jabatan', 'Instruktur')
             ->get();
@@ -606,7 +606,7 @@ class EducationManagerKPIService
             return $emptyResponse;
         }
 
-        $instrukturs = Karyawan::where('Divisi', '!=', 'Direksi')
+        $instrukturs = karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)
             ->where('jabatan', 'Instruktur')
             ->get();
