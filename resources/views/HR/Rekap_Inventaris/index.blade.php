@@ -95,15 +95,33 @@
                     <span class="fw-semibold text-dark">{{ now()->translatedFormat('l, d F Y') }}</span>
                 </p>
             </div>
-            <div>
-                <a href="#" id="btn_export_pdf" class="btn btn-danger me-2">
-                    <i class="fa-solid fa-file-pdf me-1"></i> Export PDF
+            <div class="d-flex flex-wrap gap-2 align-items-center justify-content-md-end mt-2 mt-sm-0">
+                <button type="button" class="btn btn-primary px-3" data-bs-toggle="modal" data-bs-target="#modalTambah">
+                    <i class="fa-solid fa-plus me-1"></i> Tambah Data
+                </button>
+                <a href="{{ route('HR.rekap_inventaris.sync') }}" class="btn btn-info text-white px-3">
+                    <i class="fa-solid fa-rotate me-1"></i> Sinkronisasi
                 </a>
-                <a href="#" id="btn_export" class="btn btn-success me-2">
-                    <i class="fa-solid fa-file-excel me-1"></i> Export Excel
+                <div class="dropdown">
+                    <button class="btn btn-success text-white dropdown-toggle px-3" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-download me-1"></i> Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+                        <li>
+                            <a class="dropdown-item" href="#" id="btn_export">
+                                <i class="fa-solid fa-file-excel text-success me-2"></i> Export Excel
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="btn_export_pdf">
+                                <i class="fa-solid fa-file-pdf text-danger me-2"></i> Export PDF
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <a href="{{ route('IndexInventaris') }}" class="btn btn-secondary px-3">
+                    <i class="fa-solid fa-list me-1"></i> Daftar Inventaris
                 </a>
-                <a href="{{ route('IndexInventaris') }}" class="btn btn-primary"><i class="fa-solid fa-arrow-right me-1"></i>
-                    Lihat Data Inventaris</a>
             </div>
         </div>
 
@@ -136,7 +154,7 @@
                         <label class="form-label fw-semibold">Tahun</label>
                         <select class="form-select" id="filter_tahun" name="tahun">
                             @for ($y = date('Y'); $y >= 2023; $y--)
-                                <option value="{{ $y }}" {{ $y == date('Y') ? 'selected' : '' }}>
+                                <option value="{{ $y }}" {{ $y == ($defaultTahun ?? date('Y')) ? 'selected' : '' }}>
                                     {{ $y }}</option>
                             @endfor
                         </select>
@@ -349,9 +367,12 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>No</th>
+                                    <th>ID Barang</th>
+                                    <th>ID Inventaris</th>
                                     <th>Tanggal Beli</th>
                                     <th>No. KK</th>
                                     <th>Nama Barang</th>
+                                    <th>Qty</th>
                                     <th>Kategori</th>
                                     <th>Lokasi</th>
                                     <th>Keterangan</th>
@@ -360,12 +381,14 @@
                             </thead>
                             <tbody id="tbody_modal_detail">
                                 <tr>
-                                    <td colspan="8" class="text-center py-4 text-muted">Memuat data...</td>
+                                    <td colspan="11" class="text-center py-4 text-muted">Memuat data...</td>
                                 </tr>
                             </tbody>
                             <tfoot id="tfoot_modal_detail" class="d-none">
                                 <tr>
-                                    <td colspan="7" class="text-end fw-bold">TOTAL:</td>
+                                    <td colspan="6" class="text-end fw-bold">TOTAL KESELURUHAN:</td>
+                                    <td class="text-center fw-bold" id="total_qty_modal_detail">0</td>
+                                    <td colspan="3"></td>
                                     <td class="text-end fw-bold" id="total_modal_detail">Rp 0</td>
                                 </tr>
                             </tfoot>
@@ -375,6 +398,106 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Import Excel -->
+    <div class="modal fade" id="modalImport" tabindex="-1" aria-labelledby="modalImportLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalImportLabel">Import Data Rekap Inventaris</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('HR.rekap_inventaris.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Pilih File Excel (.xlsx, .xls, .csv)</label>
+                            <input type="file" name="file" id="file" class="form-control" accept=".xlsx,.xls,.csv" required>
+                            <small class="text-muted d-block mt-1">
+                                Pastikan file memiliki kolom: <strong>Nama Barang</strong> (atau <em>Name</em>) dan <strong>Kategori</strong>.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Import Sekarang</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Data -->
+    <div class="modal fade" id="modalTambah" tabindex="-1" aria-labelledby="modalTambahLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTambahLabel">Tambah Data Rekap Inventaris</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('HR.rekap_inventaris.store') }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label fw-bold">Nama Barang <span class="text-danger">*</span></label>
+                                <input type="text" name="name" id="name" class="form-control" placeholder="Contoh: Laptop Dell XPS" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="kategori" class="form-label fw-bold">Kategori <span class="text-danger">*</span></label>
+                                <select name="kategori" id="kategori" class="form-select" required>
+                                    <option value="Office">Office</option>
+                                    <option value="Kelas">Kelas</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Sales/Tim Digital">Sales/Tim Digital</option>
+                                    <option value="ITSM">ITSM</option>
+                                    <option value="Cicilan Kendaraan">Cicilan Kendaraan</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="qty" class="form-label fw-bold">Qty (Jumlah) <span class="text-danger">*</span></label>
+                                <input type="number" name="qty" id="qty" class="form-control" min="1" value="1" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="total_harga" class="form-label fw-bold">Total Harga (Rp) <span class="text-danger">*</span></label>
+                                <input type="number" name="total_harga" id="total_harga" class="form-control" min="0" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="waktu_pembelian" class="form-label fw-bold">Tanggal Pembelian <span class="text-danger">*</span></label>
+                                <input type="date" name="waktu_pembelian" id="waktu_pembelian" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="idinventaris" class="form-label fw-bold">ID Inventaris</label>
+                                <input type="text" name="idinventaris" id="idinventaris" class="form-control" placeholder="Contoh: INV-10024">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="ruangan" class="form-label fw-bold">Lokasi/Ruangan</label>
+                                <input type="text" name="ruangan" id="ruangan" class="form-control" placeholder="Contoh: Ruang IT">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="no_kk" class="form-label fw-bold">No. KK</label>
+                                <input type="text" name="no_kk" id="no_kk" class="form-control" placeholder="Contoh: KK-001">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deskripsi" class="form-label fw-bold">Keterangan</label>
+                            <textarea name="deskripsi" id="deskripsi" class="form-control" rows="3" placeholder="Tambahkan deskripsi barang..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan Data</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -743,15 +866,20 @@
                 let tableData = [];
                 
                 if(response.data.length === 0) {
-                    $('#tbody_modal_detail').html('<tr><td colspan="8" class="text-center py-4 text-muted">Tidak ada data.</td></tr>');
+                    $('#tbody_modal_detail').html('<tr><td colspan="11" class="text-center py-4 text-muted">Tidak ada data.</td></tr>');
                 } else {
+                    let totalQty = 0;
                     $.each(response.data, function(index, item) {
                         grandTotal += parseFloat(item.total);
+                        totalQty += parseInt(item.qty || 1);
                         tableData.push([
                             index + 1,
+                            item.idbarang || '-',
+                            item.idinventaris || '-',
                             item.tanggal,
                             item.no_kk,
                             item.nama_barang,
+                            item.qty || 1,
                             item.kategori,
                             item.lokasi,
                             item.keterangan,
@@ -761,6 +889,7 @@
 
                     $('#tbody_modal_detail').empty();
                     $('#tfoot_modal_detail').removeClass('d-none');
+                    $('#total_qty_modal_detail').text(totalQty);
                     $('#total_modal_detail').text(formatRupiah(grandTotal));
 
                     $('#tableModalDetail').DataTable({
@@ -781,8 +910,8 @@
                             }
                         },
                         columnDefs: [
-                            { targets: 7, className: 'text-end' },
-                            { targets: [0, 2], className: 'text-center' }
+                            { targets: 10, className: 'text-end' },
+                            { targets: [0, 1, 2, 4, 6], className: 'text-center' }
                         ],
                         order: [[0, 'asc']],
                         pageLength: 10,
@@ -791,7 +920,7 @@
                 }
             }
         }).fail(function() {
-            $('#tbody_modal_detail').html('<tr><td colspan="8" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>');
+            $('#tbody_modal_detail').html('<tr><td colspan="11" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>');
         });
     });
     </script>

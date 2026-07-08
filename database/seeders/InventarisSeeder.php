@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\RekapInventaris;
+use App\Models\Inventaris;
 use Carbon\Carbon;
 
 class InventarisSeeder extends Seeder
@@ -21,13 +21,19 @@ class InventarisSeeder extends Seeder
             $header = fgetcsv($file); // Lewati header
 
             while (($row = fgetcsv($file)) !== FALSE) {
-                RekapInventaris::create([
+                $total_harga = (float)str_replace(['Rp', '.', ','], '', $row[2]);
+                Inventaris::create([
                     'name' => $row[1],
                     'kategori' => 'Office',
                     'qty' => 1,
-                    'total_harga' => str_replace(['Rp', '.', ','], '', $row[2]),
+                    'total_harga' => $total_harga,
                     'waktu_pembelian' => date('Y-m-d', strtotime($row[3])),
                     'no_kk' => $row[5] ?? 'KK-GEN',
+                    'kodebarang' => 'INV',
+                    'type' => 'NE',
+                    'harga_beli' => $total_harga,
+                    'satuan' => 'unit',
+                    'kondisi' => 'baik',
                 ]);
             }
             fclose($file);
@@ -164,12 +170,14 @@ class InventarisSeeder extends Seeder
 
         // Seed mock data
         foreach ($mockItems as $item) {
-            $year = Carbon::parse($item['waktu_pembelian'])->format('y');
-            $randomCode = strtoupper(substr($item['kategori'], 0, 3)) . rand(100, 999);
-            $idbarang = sprintf('INX/%s/%s/%d', $year, $randomCode, rand(1, 10));
+            $randomCode = strtoupper(substr($item['kategori'], 0, 3));
+            if (strlen($randomCode) < 3) {
+                $randomCode = str_pad($randomCode, 3, 'X');
+            }
+            $randomCode = substr($randomCode, 0, 3);
 
-            RekapInventaris::create([
-                'idbarang' => $idbarang,
+            Inventaris::create([
+                'idinventaris' => 'INV-' . rand(10000, 99999),
                 'name' => $item['name'],
                 'kategori' => $item['kategori'],
                 'qty' => $item['qty'],
@@ -177,10 +185,15 @@ class InventarisSeeder extends Seeder
                 'waktu_pembelian' => $item['waktu_pembelian'],
                 'ruangan' => $item['ruangan'],
                 'no_kk' => $item['no_kk'],
-                'deskripsi' => $item['deskripsi']
+                'deskripsi' => $item['deskripsi'],
+                'kodebarang' => $randomCode,
+                'type' => ($item['kategori'] === 'ITSM' || $item['kategori'] === 'Sales/Tim Digital') ? 'E' : 'NE',
+                'harga_beli' => $item['total_harga'] / $item['qty'],
+                'satuan' => 'unit',
+                'kondisi' => 'baik',
             ]);
         }
 
-        $this->command->info("Sukses menyemai " . count($mockItems) . " data tiruan Rekap Inventaris.");
+        $this->command->info("Sukses menyemai " . count($mockItems) . " data tiruan Inventaris.");
     }
 }

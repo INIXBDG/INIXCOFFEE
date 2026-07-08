@@ -58,12 +58,14 @@
         <thead>
             <tr>
                 <th width="5%">No</th>
-                <th width="12%">Tanggal Beli</th>
-                <th width="15%">No. KK</th>
-                <th width="23%">Nama Barang</th>
-                <th width="15%">Kategori</th>
-                <th width="15%">Lokasi</th>
-                <th width="15%">Harga</th>
+                <th width="15%">ID Barang</th>
+                <th width="15%">ID Inventaris</th>
+                <th width="10%">Tanggal Beli</th>
+                <th width="10%">No. KK</th>
+                <th width="15%">Nama Barang</th>
+                <th width="10%">Kategori</th>
+                <th width="10%">Lokasi</th>
+                <th width="10%">Harga</th>
             </tr>
         </thead>
         <tbody>
@@ -73,6 +75,8 @@
                 @php $grandTotal += $item->harga; @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
+                    <td>{{ $item->idbarang ?? '-' }}</td>
+                    <td>{{ $item->idinventaris ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($item->tanggal_beli)->translatedFormat('d F Y') }}</td>
                     <td>{{ $item->no_kk }}</td>
                     <td>{{ $item->nama_barang }}</td>
@@ -82,13 +86,13 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center">Tidak ada data inventaris pada periode/filter ini.</td>
+                    <td colspan="9" class="text-center">Tidak ada data inventaris pada periode/filter ini.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="6" class="text-end fw-bold">TOTAL KESELURUHAN</td>
+                <td colspan="8" class="text-end fw-bold">TOTAL KESELURUHAN</td>
                 <td class="text-end fw-bold">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
             </tr>
         </tfoot>

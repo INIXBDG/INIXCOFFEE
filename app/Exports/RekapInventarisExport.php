@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\RekapInventaris;
+use App\Models\Inventaris;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -21,7 +21,7 @@ class RekapInventarisExport implements FromCollection, WithHeadings, WithMapping
 
     public function collection()
     {
-        $query = RekapInventaris::query();
+        $query = Inventaris::query();
 
         $tahun = $this->request->tahun ?? date('Y');
         $query->whereYear('waktu_pembelian', $tahun);
@@ -59,6 +59,8 @@ class RekapInventarisExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
+            'ID Barang',
+            'ID Inventaris',
             'Tanggal Beli',
             'No. KK',
             'Nama Barang',
@@ -71,6 +73,8 @@ class RekapInventarisExport implements FromCollection, WithHeadings, WithMapping
     public function map($item): array
     {
         return [
+            $item->idbarang,
+            $item->idinventaris,
             $item->waktu_pembelian ? Carbon::parse($item->waktu_pembelian)->format('d-m-Y') : '',
             $item->no_kk,
             $item->name,
