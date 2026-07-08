@@ -29,106 +29,84 @@ class tunjanganEducationController extends Controller
     }
 
     public function getListRekapInstruktur($bulan, $tahun)
-    {
-        $caseMonth = "
-            CASE
-                WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
-                    THEN MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
-                ELSE MONTH(rekap_mengajar_instrukturs.tanggal_awal)
-            END
-        ";
+{
+    $caseMonth = "
+        CASE
+            WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
+                THEN MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
+            ELSE MONTH(rekap_mengajar_instrukturs.tanggal_awal)
+        END
+    ";
 
-        $caseYear = "
-            CASE
-                WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
-                    THEN YEAR(rekap_mengajar_instrukturs.tanggal_akhir)
-                ELSE YEAR(rekap_mengajar_instrukturs.tanggal_awal)
-            END
-        ";
+    $caseYear = "
+        CASE
+            WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
+                THEN YEAR(rekap_mengajar_instrukturs.tanggal_akhir)
+            ELSE YEAR(rekap_mengajar_instrukturs.tanggal_awal)
+        END
+    ";
 
-        $collection = rekapMengajarInstruktur::with('instruktur')
-            ->select(
-                'rekap_mengajar_instrukturs.*',
-                DB::raw("($caseMonth) as bulan_berlaku"),
-                DB::raw("($caseYear) as tahun_berlaku")
-            )
-            ->whereRaw("($caseMonth) = ?", [$bulan])
-            ->whereRaw("($caseYear) = ?", [$tahun])
-            ->get();
+    // Pakai DB::raw hanya dalam select (atau selectRaw)
+    $collection = rekapMengajarInstruktur::with('instruktur')
+        ->select('rekap_mengajar_instrukturs.*', DB::raw("($caseMonth) as bulan_berlaku"), DB::raw("($caseYear) as tahun_berlaku"))
+        // untuk filtering gunakan whereRaw dengan string CASE asli (bukan objek)
+        ->whereRaw("($caseMonth) = ?", [$bulan])
+        ->whereRaw("($caseYear) = ?", [$tahun])
+        ->get();
 
-        $data = $collection->map(function ($item) {
+    // Kumpulkan firstIdRkm untuk menghindari N+1
+    $firstIds = $collection->map(function ($item) {
+        $ids = array_filter(array_map('trim', explode(',', $item->id_rkm ?? '')));
+        return $ids[0] ?? null;
+    })->filter()->unique()->values()->all();
 
-            $ids = array_filter(array_map('trim', explode(',', $item->id_rkm ?? '')));
-
-            $rkms = collect();
-
-            if (!empty($ids)) {
-                $rkms = RKM::with([
-                        'sales',
-                        'materi',
-                        'instruktur',
-                        'perusahaan',
-                        'instruktur2',
-                        'asisten',
-                        'peluang'
-                    ])
-                    ->whereIn('id', $ids)
-                    ->where('status', '0')
-                    ->whereNull('deleted_at')
-                    ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1);
-                    })
-                    ->where(function ($query) {
-                        $query->whereHas('exam.approvalexam', function ($q) {
-                            $q->where('technical_support', 1);
-                        })
-                        ->orWhereDoesntHave('exam.approvalexam');
-                    })
-                    ->get();
-            }
-
-            // RKM pertama untuk kompatibilitas view lama
-            $rkm = $rkms->first();
-
-            return [
-                'id' => $item->id,
-                'id_rkm' => $item->id_rkm,
-                'id_instruktur' => $item->id_instruktur,
-                'feedback' => $item->feedback,
-                'pax' => $item->pax,
-                'level' => $item->level,
-                'durasi' => $item->durasi,
-                'tanggal_awal' => $item->tanggal_awal,
-                'tanggal_akhir' => $item->tanggal_akhir,
-                'bulan' => $item->bulan,
-                'tahun' => $item->tahun,
-                'poin_durasi' => $item->poin_durasi,
-                'poin_pax' => $item->poin_pax,
-                'tunjangan_feedback' => $item->tunjangan_feedback,
-                'total_tunjangan' => $item->total_tunjangan,
-                'status' => $item->status,
-                'keterangan' => $item->keterangan,
-                'created_at' => $item->created_at,
-                'updated_at' => $item->updated_at,
-                'bulan_berlaku' => $item->bulan_berlaku,
-                'tahun_berlaku' => $item->tahun_berlaku,
-
-                // kompatibel dengan kode lama
-                'rkm' => $rkm,
-
-                // jika nanti ingin menampilkan seluruh RKM
-                'rkms' => $rkms,
-
-                'instruktur' => $item->instruktur,
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List data',
-            'data' => $data,
-        ]);
+    // Ambil RKM sekaligus (eager with materi)
+    $rkmMap = [];
+    if (!empty($firstIds)) {
+        $rkms = Rkm::with('materi')->whereIn('id', $firstIds)->get()->keyBy('id');
+        $rkmMap = $rkms->all();
     }
+
+    // Map hasil akhir
+    $data = $collection->map(function ($item) use ($rkmMap) {
+        $ids = array_filter(array_map('trim', explode(',', $item->id_rkm ?? '')));
+        $firstId = $ids[0] ?? null;
+        $rkmData = $firstId && isset($rkmMap[$firstId]) ? $rkmMap[$firstId] : null;
+
+        return [
+            'id' => $item->id,
+            'id_rkm' => $item->id_rkm,
+            'id_instruktur' => $item->id_instruktur,
+            'feedback' => $item->feedback,
+            'pax' => $item->pax,
+            'level' => $item->level,
+            'durasi' => $item->durasi,
+            'tanggal_awal' => $item->tanggal_awal,
+            'tanggal_akhir' => $item->tanggal_akhir,
+            'bulan' => $item->bulan,
+            'tahun' => $item->tahun,
+            'poin_durasi' => $item->poin_durasi,
+            'poin_pax' => $item->poin_pax,
+            'tunjangan_feedback' => $item->tunjangan_feedback,
+            'total_tunjangan' => $item->total_tunjangan,
+            'status' => $item->status,
+            'keterangan' => $item->keterangan,
+            'created_at' => $item->created_at,
+            'updated_at' => $item->updated_at,
+            // kolom tambahan dari CASE
+            'bulan_berlaku' => $item->bulan_berlaku,
+            'tahun_berlaku' => $item->tahun_berlaku,
+            'rkm' => $rkmData,
+            'instruktur' => $item->instruktur,
+        ];
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'List data',
+        'data' => $data,
+    ]);
+}
 
     public function update($id, Request $request)
     {

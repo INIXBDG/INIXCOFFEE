@@ -111,17 +111,10 @@
                                                     ->toArray();
                                             @endphp
                                             <div class="d-flex gap-2">
-                                                <a href="{{ route('download.pdf', ['id' => $rkm->invoice->id, 'peserta[]' => $peserta]) }}" class="btn btn-primary" style="display: inline;">
+                                                <a href="{{ route('download.pdf', ['id' => $rkm->invoice->id, 'peserta[]' => $peserta]) }}" class="btn btn-primary">
                                                     Pdf
                                                 </a>
-                                                 <a href="{{ route('invoice.create', $rkm->id) }}" class="btn btn-primary btn-sm" style="display: inline;">
-                                                     Edit
-                                                 </a>
-                                                 <form action="{{ route('invoice.delete', $rkm->invoice->id) }}" method="POST" style="display: inline;">
-                                                     @csrf
-                                                     @method('DELETE')
-                                                     <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus invoice ini?')">Delete</button>
-                                                 </form>
+                                                 <a href="{{ route('invoice.create', $rkm->id) }}" class="btn btn-primary btn-sm">Edit</a>
                                             </div>
                                         </td>
                                     </tr>
