@@ -1645,6 +1645,8 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
             Route::get('/export-excel', [App\Http\Controllers\HR\MaintenanceController::class, 'export_excel'])->name('export_excel');
             Route::post('/store', [App\Http\Controllers\HR\MaintenanceController::class, 'store'])->name('store');
             Route::post('/{id}/done', [App\Http\Controllers\HR\MaintenanceController::class, 'markAsDone'])->name('markAsDone');
+            Route::post('/import', [App\Http\Controllers\HR\MaintenanceController::class, 'import'])->name('import');
+            Route::get('/template-excel', [App\Http\Controllers\HR\MaintenanceController::class, 'template_excel'])->name('template_excel');
         });
 
     Route::prefix('rekap-spj')->name('rekap_spj.')->group(function () {

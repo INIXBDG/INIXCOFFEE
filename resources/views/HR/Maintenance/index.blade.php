@@ -74,6 +74,25 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
+        
+        @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-1"></i> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
+
+        @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-1"></i> <strong>Peringatan!</strong>
+            <ul class="mb-0 mt-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
 
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
             <div>
@@ -93,9 +112,10 @@
                 <a href="{{ route('HR.maintenance.export_excel') }}" id="btn_export_excel" class="btn btn-success me-2" target="_blank">
                     <i class="fa-solid fa-file-excel me-1"></i> Export Excel
                 </a>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahJadwal">
-                    <i class="fa-solid fa-plus me-1"></i> Tambah Jadwal
+                <button type="button" class="btn btn-info text-white me-2" data-bs-toggle="modal" data-bs-target="#modalImportExcel">
+                    <i class="fa-solid fa-file-import me-1"></i> Import Excel
                 </button>
+
             </div>
         </div>
 
@@ -106,20 +126,18 @@
                         <label class="form-label fw-semibold">Jenis Aset/Sistem (Kategori)</label>
                         <select class="form-select" id="filter_jenis" name="jenis">
                             <option value="">-- Semua Jenis --</option>
-                            <option value="Hardware" {{ request('jenis') == 'Hardware' ? 'selected' : '' }}>Hardware (Perangkat Keras)</option>
-                            <option value="Software" {{ request('jenis') == 'Software' ? 'selected' : '' }}>Software (Sistem/Aplikasi)</option>
-                            <option value="Jaringan" {{ request('jenis') == 'Jaringan' ? 'selected' : '' }}>Jaringan (Network)</option>
-                            <option value="Fasilitas" {{ request('jenis') == 'Fasilitas' ? 'selected' : '' }}>Fasilitas Gedung</option>
+                            @foreach($kategoris as $kategori)
+                                <option value="{{ $kategori }}" {{ request('jenis') == $kategori ? 'selected' : '' }}>{{ $kategori }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">Lokasi/Divisi</label>
                         <select class="form-select" id="filter_lokasi" name="lokasi">
                             <option value="">-- Semua Lokasi --</option>
-                            <option value="IT" {{ request('lokasi') == 'IT' ? 'selected' : '' }}>IT & Network</option>
-                            <option value="Finance" {{ request('lokasi') == 'Finance' ? 'selected' : '' }}>Finance</option>
-                            <option value="Marketing" {{ request('lokasi') == 'Marketing' ? 'selected' : '' }}>Marketing</option>
-                            <option value="Gedung Utama" {{ request('lokasi') == 'Gedung Utama' ? 'selected' : '' }}>Gedung Utama</option>
+                            @foreach($divisis as $divisi)
+                                <option value="{{ $divisi }}" {{ request('lokasi') == $divisi ? 'selected' : '' }}>{{ $divisi }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -232,6 +250,7 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th width="5%">NO</th>
+                                        <th>ID SERVICE</th>
                                         <th>NAMA BARANG</th>
                                         <th>KATEGORI</th>
                                         <th>TEKNISI</th>
@@ -244,6 +263,7 @@
                                     @forelse($mendatang as $index => $item)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
+                                            <td class="text-primary fw-bold">MNT-{{ str_pad($item->id, 4, '0', STR_PAD_LEFT) }}</td>
                                             <td class="fw-semibold">{{ $item->nama_barang }}</td>
                                             <td>
                                                 <span class="badge bg-secondary">{{ $item->kategori }}</span>
@@ -255,7 +275,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center py-4 text-muted">Belum ada jadwal mendatang.</td>
+                                            <td colspan="8" class="text-center py-4 text-muted">Belum ada jadwal mendatang.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -276,6 +296,7 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th width="5%">NO</th>
+                                        <th>ID SERVICE</th>
                                         <th>NAMA BARANG</th>
                                         <th>KATEGORI</th>
                                         <th>TEKNISI</th>
@@ -289,6 +310,7 @@
                                     @forelse($sedangDikerjakan as $index => $item)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
+                                            <td class="text-primary fw-bold">MNT-{{ str_pad($item->id, 4, '0', STR_PAD_LEFT) }}</td>
                                             <td class="fw-semibold">{{ $item->nama_barang }}</td>
                                             <td>
                                                 <span class="badge bg-warning text-dark">{{ $item->kategori }}</span>
@@ -308,13 +330,13 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="8" class="text-center py-4 text-muted">Belum ada data maintenance yang sedang dikerjakan.</td>
+                                            <td colspan="9" class="text-center py-4 text-muted">Belum ada data maintenance yang sedang dikerjakan.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="6" class="text-end">TOTAL BIAYA:</td>
+                                        <td colspan="7" class="text-end">TOTAL BIAYA:</td>
                                         <td class="text-end fw-bold">Rp {{ number_format($sedangDikerjakan->sum('biaya'), 0, ',', '.') }}</td>
                                         <td></td>
                                     </tr>
@@ -330,6 +352,7 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th width="5%">NO</th>
+                                        <th>ID SERVICE</th>
                                         <th>NAMA BARANG</th>
                                         <th>KATEGORI</th>
                                         <th>TEKNISI</th>
@@ -342,6 +365,7 @@
                                     @forelse($riwayat as $index => $item)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
+                                            <td class="text-primary fw-bold">MNT-{{ str_pad($item->id, 4, '0', STR_PAD_LEFT) }}</td>
                                             <td class="fw-semibold">{{ $item->nama_barang }}</td>
                                             <td><span class="badge bg-success">{{ $item->kategori }}</span></td>
                                             <td>{{ $item->teknisi ?? '-' }}</td>
@@ -351,13 +375,13 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center py-4 text-muted">Belum ada data riwayat maintenance.</td>
+                                            <td colspan="8" class="text-center py-4 text-muted">Belum ada data riwayat maintenance.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="6" class="text-end">TOTAL BIAYA:</td>
+                                        <td colspan="7" class="text-end">TOTAL BIAYA:</td>
                                         <td class="text-end fw-bold">Rp {{ number_format($riwayat->sum('biaya'), 0, ',', '.') }}</td>
                                     </tr>
                                 </tfoot>
@@ -369,15 +393,31 @@
                     <div class="tab-pane fade" id="tab-statistik" role="tabpanel">
                         @if(count($statistik) > 0)
                             <div class="row">
-                                <div class="col-md-6 mb-4">
+                                <div class="col-md-4 mb-4">
                                     <div class="card border-0 shadow-sm h-100">
                                         <div class="card-body">
-                                            <h6 class="fw-bold mb-3">Diagram Pengeluaran per Kategori</h6>
+                                            <h6 class="fw-bold mb-3 text-center text-secondary">Pengeluaran per Kategori</h6>
                                             <div id="chartBiaya"></div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6 mb-4">
+                                <div class="col-md-4 mb-4">
+                                    <div class="card border-0 shadow-sm h-100">
+                                        <div class="card-body">
+                                            <h6 class="fw-bold mb-3 text-center text-secondary">Distribusi Tiket per Divisi</h6>
+                                            <div id="chartDivisi"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-4">
+                                    <div class="card border-0 shadow-sm h-100">
+                                        <div class="card-body">
+                                            <h6 class="fw-bold mb-3 text-center text-secondary">Tren Biaya Bulanan</h6>
+                                            <div id="chartBulan"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mb-4">
                                     <div class="table-responsive">
                                         <table class="table table-bordered table-striped align-middle">
                                             <thead class="table-primary text-center">
@@ -426,82 +466,42 @@
         </div>
     </div>
 
-    <!-- Modal Tambah Jadwal -->
-    <div class="modal fade" id="modalTambahJadwal" tabindex="-1" aria-labelledby="modalTambahJadwalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <form action="{{ route('HR.maintenance.store') }}" method="POST">
+
+
+    <!-- Modal Import Excel -->
+    <div class="modal fade" id="modalImportExcel" tabindex="-1" aria-labelledby="modalImportExcelLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title fw-bold" id="modalImportExcelLabel"><i class="fa-solid fa-file-excel me-2"></i> Migrasi Data Laporan</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('HR.maintenance.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title text-white fw-bold" id="modalTambahJadwalLabel">
-                            <i class="fa-solid fa-file-circle-plus me-1"></i> Tambah Jadwal / Data Maintenance
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
                     <div class="modal-body p-4">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Kategori Maintenance</label>
-                                <select name="kategori" class="form-select" required>
-                                    <option value="">-- Pilih Kategori --</option>
-                                    <option value="Hardware">Hardware (Perangkat Keras)</option>
-                                    <option value="Software">Software (Sistem/Aplikasi)</option>
-                                    <option value="Jaringan">Jaringan (Network)</option>
-                                    <option value="Fasilitas">Fasilitas Gedung</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Divisi / Lokasi</label>
-                                <select name="divisi" class="form-select" required>
-                                    <option value="">-- Pilih Divisi / Lokasi --</option>
-                                    <option value="IT">IT & Network</option>
-                                    <option value="Finance">Finance</option>
-                                    <option value="Marketing">Marketing</option>
-                                    <option value="Gedung Utama">Gedung Utama</option>
-                                </select>
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-semibold">Teknisi / Penanggung Jawab</label>
-                                <select name="teknisi" class="form-select">
-                                    <option value="">-- Pilih Teknisi (Opsional) --</option>
-                                    @foreach($teknisis as $teknisi)
-                                        <option value="{{ $teknisi->nama_lengkap }}">{{ $teknisi->nama_lengkap }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-semibold">Nama Barang / Aset</label>
-                                <input type="text" name="nama_barang" list="asetList" class="form-control" placeholder="Pilih atau ketik nama barang..." required>
-                                <datalist id="asetList">
-                                    @foreach($inventaris as $aset)
-                                        <option value="{{ $aset->name }}">({{ $aset->kodebarang }})</option>
-                                    @endforeach
-                                </datalist>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Tanggal Mulai</label>
-                                <input type="date" name="tanggal_mulai" class="form-control" value="{{ date('Y-m-d') }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">No. KK / Voucher</label>
-                                <input type="text" name="no_voucher" class="form-control" placeholder="Masukkan nomor referensi">
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-semibold">Harga / Biaya (Rp)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">Rp</span>
-                                    <input type="number" name="biaya" class="form-control" placeholder="0" required min="0">
-                                </div>
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-semibold">Keterangan</label>
-                                <textarea name="keterangan" class="form-control" rows="3" placeholder="Tuliskan keterangan detail pemeliharaan..."></textarea>
-                            </div>
+                        <div class="alert alert-info shadow-sm">
+                            <i class="fa-solid fa-circle-info me-1"></i> <strong>Instruksi Migrasi:</strong>
+                            <ul class="mb-0 mt-2 ps-3">
+                                <li>Pastikan format tabel sesuai dengan format standar yang disediakan.</li>
+                                <li>Baris pertama pada file excel harus berupa <strong>Header</strong>.</li>
+                                <li>Pastikan kolom Nama Barang terisi.</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3 text-center">
+                            <a href="{{ route('HR.maintenance.template_excel') }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fa-solid fa-download me-1"></i> Unduh Format Standar
+                            </a>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Pilih File Excel (.xlsx, .xls, .csv)</label>
+                            <input class="form-control" type="file" name="file_excel" accept=".xlsx, .xls, .csv" required>
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fa-solid fa-xmark me-1"></i> Batal</button>
-                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Simpan Data</button>
+                        <button type="submit" class="btn btn-info text-white"><i class="fa-solid fa-cogs me-1"></i> Unggah Data</button>
                     </div>
                 </form>
             </div>
@@ -528,8 +528,10 @@
             // }
 
             // Chart Render if stats exist
+            // Chart Render if stats exist
             @if(count($statistik) > 0)
-                var options = {
+                // 1. Chart Biaya per Kategori (Bar)
+                var optionsBiaya = {
                     series: [{
                         name: 'Total Biaya (Rp)',
                         data: [
@@ -547,12 +549,11 @@
                         bar: {
                             borderRadius: 4,
                             horizontal: false,
-                            columnWidth: '50%'
+                            columnWidth: '55%',
+                            distributed: true
                         }
                     },
-                    dataLabels: {
-                        enabled: false
-                    },
+                    dataLabels: { enabled: false },
                     xaxis: {
                         categories: [
                             @foreach($statistik as $stat)
@@ -567,7 +568,7 @@
                             }
                         }
                     },
-                    colors: ['#4f46e5'],
+                    legend: { show: false },
                     tooltip: {
                         y: {
                             formatter: function (val) {
@@ -576,13 +577,104 @@
                         }
                     }
                 };
+                var chartBiaya = new ApexCharts(document.querySelector("#chartBiaya"), optionsBiaya);
+                chartBiaya.render();
 
-                var chart = new ApexCharts(document.querySelector("#chartBiaya"), options);
-                chart.render();
+                // 2. Chart Tiket per Divisi (Donut)
+                var optionsDivisi = {
+                    series: [
+                        @foreach($statistikDivisi as $stat)
+                            {{ $stat->total_tiket }},
+                        @endforeach
+                    ],
+                    labels: [
+                        @foreach($statistikDivisi as $stat)
+                            '{{ $stat->divisi }}',
+                        @endforeach
+                    ],
+                    chart: {
+                        type: 'donut',
+                        height: 300,
+                    },
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '65%'
+                            }
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        formatter: function (val) {
+                            return val.toFixed(1) + "%"
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                };
+                var chartDivisi = new ApexCharts(document.querySelector("#chartDivisi"), optionsDivisi);
+                chartDivisi.render();
+
+                // 3. Chart Tren Biaya Bulanan (Area)
+                var monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+                var optionsBulan = {
+                    series: [{
+                        name: 'Total Biaya',
+                        data: [
+                            @foreach($statistikBulan as $stat)
+                                {{ $stat->total_biaya }},
+                            @endforeach
+                        ]
+                    }],
+                    chart: {
+                        type: 'area',
+                        height: 300,
+                        toolbar: { show: false }
+                    },
+                    dataLabels: { enabled: false },
+                    stroke: { curve: 'smooth', width: 2 },
+                    xaxis: {
+                        categories: [
+                            @foreach($statistikBulan as $stat)
+                                monthNames[{{ $stat->bulan - 1 }}],
+                            @endforeach
+                        ]
+                    },
+                    yaxis: {
+                        labels: {
+                            formatter: function (value) {
+                                if (value >= 1000000) return "Rp " + (value / 1000000).toFixed(1) + "M";
+                                return "Rp " + value.toLocaleString("id-ID");
+                            }
+                        }
+                    },
+                    colors: ['#10b981'],
+                    fill: {
+                        type: 'gradient',
+                        gradient: {
+                            shadeIntensity: 1,
+                            opacityFrom: 0.7,
+                            opacityTo: 0.1,
+                            stops: [0, 90, 100]
+                        }
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: function (val) {
+                                return "Rp " + val.toLocaleString("id-ID")
+                            }
+                        }
+                    }
+                };
+                var chartBulan = new ApexCharts(document.querySelector("#chartBulan"), optionsBulan);
+                chartBulan.render();
                 
                 // Re-render chart when tab is shown to fix visibility issues
                 document.getElementById('tab-statistik-btn').addEventListener('shown.bs.tab', function () {
-                    chart.windowResize();
+                    chartBiaya.windowResize();
+                    chartDivisi.windowResize();
+                    chartBulan.windowResize();
                 })
             @endif
         });

@@ -29,6 +29,7 @@
         <thead>
             <tr>
                 <th width="5%">NO</th>
+                <th>ID SERVICE</th>
                 <th>NAMA ASET/SISTEM</th>
                 <th>TEKNISI</th>
                 <th>KATEGORI</th>
@@ -40,6 +41,7 @@
             @forelse($mendatang as $item)
             <tr>
                 <td class="text-center">{{ $loop->iteration }}</td>
+                <td class="text-center">MNT-{{ str_pad($item->id, 4, '0', STR_PAD_LEFT) }}</td>
                 <td>{{ $item->nama_barang }}</td>
                 <td>{{ $item->teknisi }}</td>
                 <td>{{ $item->kategori }}</td>
@@ -48,13 +50,13 @@
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="text-center">Tidak ada jadwal mendatang.</td>
+                <td colspan="7" class="text-center">Tidak ada jadwal mendatang.</td>
             </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="5" class="text-right">TOTAL BIAYA:</td>
+                <td colspan="6" class="text-right">TOTAL BIAYA:</td>
                 <td class="text-right">Rp {{ number_format($mendatang->sum('biaya'), 0, ',', '.') }}</td>
             </tr>
         </tfoot>
@@ -65,7 +67,9 @@
         <thead>
             <tr>
                 <th width="5%">NO</th>
+                <th>ID SERVICE</th>
                 <th>NAMA ASET/SISTEM</th>
+                <th>TEKNISI</th>
                 <th>KATEGORI</th>
                 <th>TANGGAL MULAI</th>
                 <th class="text-right">BIAYA</th>
@@ -75,6 +79,7 @@
             @forelse($sedangDikerjakan as $item)
             <tr>
                 <td class="text-center">{{ $loop->iteration }}</td>
+                <td class="text-center">MNT-{{ str_pad($item->id, 4, '0', STR_PAD_LEFT) }}</td>
                 <td>{{ $item->nama_barang }}</td>
                 <td>{{ $item->teknisi }}</td>
                 <td>{{ $item->kategori }}</td>
@@ -83,13 +88,13 @@
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="text-center">Tidak ada jadwal yang sedang dikerjakan.</td>
+                <td colspan="7" class="text-center">Tidak ada jadwal yang sedang dikerjakan.</td>
             </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="5" class="text-right">TOTAL BIAYA:</td>
+                <td colspan="6" class="text-right">TOTAL BIAYA:</td>
                 <td class="text-right">Rp {{ number_format($sedangDikerjakan->sum('biaya'), 0, ',', '.') }}</td>
             </tr>
         </tfoot>
@@ -100,7 +105,9 @@
         <thead>
             <tr>
                 <th width="5%">NO</th>
+                <th>ID SERVICE</th>
                 <th>NAMA ASET/SISTEM</th>
+                <th>TEKNISI</th>
                 <th>KATEGORI</th>
                 <th>TANGGAL SELESAI</th>
                 <th class="text-right">BIAYA</th>
@@ -110,6 +117,7 @@
             @forelse($riwayat as $item)
             <tr>
                 <td class="text-center">{{ $loop->iteration }}</td>
+                <td class="text-center">MNT-{{ str_pad($item->id, 4, '0', STR_PAD_LEFT) }}</td>
                 <td>{{ $item->nama_barang }}</td>
                 <td>{{ $item->teknisi }}</td>
                 <td>{{ $item->kategori }}</td>
@@ -118,13 +126,13 @@
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="text-center">Tidak ada riwayat maintenance.</td>
+                <td colspan="7" class="text-center">Tidak ada riwayat maintenance.</td>
             </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="5" class="text-right">TOTAL BIAYA:</td>
+                <td colspan="6" class="text-right">TOTAL BIAYA:</td>
                 <td class="text-right">Rp {{ number_format($riwayat->sum('biaya'), 0, ',', '.') }}</td>
             </tr>
         </tfoot>
