@@ -1637,6 +1637,16 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::delete('/{karyawanId}', [KaryawanProfileController::class, 'destroy'])->name('destroy');
     });
 
+    Route::prefix('maintenance')
+        ->name('maintenance.')
+        ->group(function () {
+            Route::get('/', [App\Http\Controllers\HR\MaintenanceController::class, 'index'])->name('index');
+            Route::get('/export-pdf', [App\Http\Controllers\HR\MaintenanceController::class, 'export_pdf'])->name('export_pdf');
+            Route::get('/export-excel', [App\Http\Controllers\HR\MaintenanceController::class, 'export_excel'])->name('export_excel');
+            Route::post('/store', [App\Http\Controllers\HR\MaintenanceController::class, 'store'])->name('store');
+            Route::post('/{id}/done', [App\Http\Controllers\HR\MaintenanceController::class, 'markAsDone'])->name('markAsDone');
+        });
+
     Route::prefix('rekap-spj')->name('rekap_spj.')->group(function () {
         Route::get('/', [RekapSJPController::class, 'index'])->name('index');
         Route::get('/load-data', [RekapSJPController::class, 'getRekapData'])->name('load_data');
