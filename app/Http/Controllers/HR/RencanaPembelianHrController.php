@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use App\Models\PembelianHr;
 use App\Models\TrackingPembelianHr;
 use App\Models\DetailPembelianHr;
-use App\Models\JurnalAkuntansi;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;

@@ -120,7 +120,6 @@ class LeadProjectController extends Controller
             'nama_pic' => 'required|string|max:255',
             'kontak_pic' => 'required|string|max:255',
             'estimasi_nilai' => 'required|numeric',
-            'tahun_periode' => 'nullable|integer',
             'perusahaan_id' => 'required|exists:perusahaans,id',
             'tahun_periode' => 'required|integer',
         ]);
@@ -144,7 +143,6 @@ class LeadProjectController extends Controller
                 $lead->project->update([
                     'name' => $request->nama_lead,
                     'nilai_proyek' => $request->estimasi_nilai,
-                    'tahun_periode' => $request->tahun_periode,
                 ]);
             }
 

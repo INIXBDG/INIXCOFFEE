@@ -1593,7 +1593,7 @@
                             <div class="col">
                                 <label for="filterMengajarPerTriwulan" class="mb-1 ms-1">Triwulan</label>
                                 <select id="filterMengajarPerTriwulan" class="form-select mb-3">
-                                    <option value="default" selected>Berdasarkan Triwulan</option>
+                                    <option value="default" disabled selected>Berdasarkan Triwulan</option>
                                     <option value="1">Quarter 1</option>
                                     <option value="2">Quarter 2</option>
                                     <option value="3">Quarter 3</option>
@@ -1616,6 +1616,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="text-muted fw-medium">
+
                                 </tbody>
                                 <tfoot >
                                 </tfoot>
@@ -3744,12 +3745,14 @@
                         loadDataMengajar('tahun', $('#filterMengajarPerTahun').val());
                         return;
                     }
+
                     loadDataMengajar('bulan', $(this).val());
                 });
 
                 // reset filter per triwulan
                 $('#filterMengajarPerTriwulan').change(function() {
                     $('#filterMengajarPerBulan').val('default');
+
                     if ($(this).val() === 'default') {
                         loadDataMengajar('tahun', $('#filterMengajarPerTahun').val());
                         return;
