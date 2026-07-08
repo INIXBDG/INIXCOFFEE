@@ -1800,7 +1800,6 @@
                         </div>
                     </div>
                     <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">
-                        <div class="row">
                             @can('Fitur Menu RKM')
                                 <div class="row">
                                     <div class="col-md-12 mt-1">
@@ -1982,7 +1981,7 @@
                                                             </div>
                                                         </div>
                                                     @endcan
-                                                    @can('Komplain Peserta')
+                                                    @can('View Komplain Peserta')
                                                         <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
@@ -2006,7 +2005,6 @@
                                     </div>
                                 @endcan
                                 @can('Fitur Menu Finance')
-                                    <div class="row">
                                         {{-- RKM --}}
                                         <div class="col-md-12 mt-1">
                                             <div class="card">
@@ -2191,9 +2189,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                 @endcan
-                                <div class="row">
                                     <div class="col-md-12 mt-1">
                                         <div class="card">
                                             <div class="card-body">
@@ -2225,9 +2221,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
                                 @can('Fitur Menu Education')
-                                    <div class="row">
                                         <div class="col-md-12 mt-1">
                                             <div class="card">
                                                 <div class="card-body">
@@ -2421,10 +2415,8 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                 @endcan
                                 @can('Fitur Menu Office')
-                                    <div class="row">
                                         <div class="col-md-12 mt-1">
                                             <div class="card">
                                                 <div class="card-body">
@@ -2617,10 +2609,8 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                 @endcan
                                 @can('Fitur CRM')
-                                    <div class="row">
                                         <div class="col-md-12 mt-1">
                                             <div class="card">
                                                 <div class="card-body">
@@ -2673,10 +2663,8 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                 @endcan
                                 @can('Fitur Menu Manajemen')
-                                    <div class="row">
                                         <div class="col-md-12 mt-1">
                                             <div class="card">
                                                 <div class="card-body">
@@ -2705,10 +2693,8 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                 @endcan
                                 @can('Fitur Menu Project')
-                                    <div class="row">
                                         <div class="col-md-12 mt-1">
                                             <div class="card">
                                                 <div class="card-body">
@@ -2813,11 +2799,9 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                 @endcan
 
                             </div>
-                        </div>
                     </div>
                 </div>
             </div>

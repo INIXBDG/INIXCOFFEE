@@ -23,3 +23,11 @@ window.Echo = new Echo({
 });
 
 console.log("Echo SIAP! Menghubungkan ke ws://127.0.0.1:6001");
+
+let token = document.head.querySelector('meta[name="csrf-token"]');
+
+if (token) {
+    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+} else {
+    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
+}

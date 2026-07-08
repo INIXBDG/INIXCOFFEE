@@ -74,6 +74,23 @@ self.addEventListener('notificationclose', function(event) {
     console.log('[Service Worker] Notification closed');
 });
 
+// self.addEventListener('fetch', function(event) {
+//     event.respondWith(fetch(event.request));
+// });
+
 self.addEventListener('fetch', function(event) {
-    event.respondWith(fetch(event.request));
+    // Deteksi permintaan dokumen HTML
+    if (event.request.mode === 'navigate' || (event.request.method === 'GET' && event.request.headers.get('accept').includes('text/html'))) {
+        event.respondWith(
+            // Strategi Network First
+            fetch(event.request.url).then(function(networkResponse) {
+                return networkResponse;
+            }).catch(function(error) {
+                // Jatuh kembali (fallback) ke cache hanya jika jaringan luring penuh
+                return caches.match(event.request);
+            })
+        );
+    } else {
+        // Pertahankan logika caching aset statis (CSS, JS, Gambar) yang sudah ada sebelumnya di sini
+    }
 });
