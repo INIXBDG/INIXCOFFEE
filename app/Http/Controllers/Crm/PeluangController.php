@@ -25,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\CommentNotification;
+use App\Notifications\PoReminder;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
@@ -590,7 +591,9 @@ class PeluangController extends Controller
             'rkm.eksam',
             'rkm.outstanding',
             'rkm.registrasi',
-            'rkm.analisisrkm'
+            'rkm.analisisrkm',
+            'perusahaan',
+            'rkm.materi'
         )->where('id', $id)->firstOrFail();
 
         DB::transaction(function () use ($peluang, $request) {
@@ -686,6 +689,16 @@ class PeluangController extends Controller
                     $peluang->rkm->status = '0';
                     $peluang->rkm->save();
                 }
+                
+                $user = User::where('jabatan', 'Admin Holding')->where('status_akun', '1')->get();
+                $data = [
+                    'perusahaan' => $peluang->perusahaan->nama_perusahaan ?? 'N/A',
+                    'materi' => $peluang->rkm->materi->nama_materi ?? 'N/A',
+                    'periode' => $peluang->rkm?->tanggal_awal . ' - ' . $peluang->rkm?->tanggal_akhir ?? 'N/A',
+                    'path' => $peluang->rkm->path ?? 'N/A',
+                ];
+                Notification::send($user, new PoReminder($data));
+
             }
 
             $peluang->save();

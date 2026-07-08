@@ -3402,45 +3402,97 @@
                         // 1. Ubah Judul Modal
                         document.getElementById('modalCategoryName').innerText = category;
                         
-                        // 2. Filter Data sesuai kategori yang diklik
+                        // 2. Filter Data dan Siapkan Header Tabel Dinamis
                         let filteredData = [];
+                        const thead = document.querySelector('#chartDataModal thead tr');
+
                         if (isOutstanding) {
-                            // Filter berdasarkan key 'status' untuk chart Outstanding
+                            // Setup untuk data Grafik Outstanding
                             filteredData = datas.filter(item => item.status === category);
+                            thead.innerHTML = `
+                                <th>No</th>
+                                <th>Perusahaan</th>
+                                <th>Kelas</th>
+                                <th>Sales</th>
+                                <th>Tanggal</th>
+                                <th>Tagihan</th>
+                                <th>Tenggat Waktu</th>
+                                <th>Tanggal Bayar</th>
+                                <th>Status</th>
+                            `;
                         } else {
-                            // Filter berdasarkan key 'info' untuk chart Ketepatan
+                            // Setup untuk data Grafik Ketepatan Waktu (Berdasarkan kalkulasi Controller baru)
                             filteredData = datas.filter(item => item.info === category);
+                            thead.innerHTML = `
+                                <th>No</th>
+                                <th>Perusahaan</th>
+                                <th>Kelas</th>
+                                <th>Tanggal Bayar</th>
+                                <th>Jml Pembayaran</th>
+                                <th>PPN</th>
+                                <th>PPH</th>
+                                <th>Biaya Admin</th>
+                                <th>Total Kotor</th>
+                                <th>Info</th>
+                            `;
                         }
 
-                        // 3. Render ke Tabel
+                        // 3. Render isi ke Tabel
                         const tbody = document.getElementById('chartDataModalBody');
                         tbody.innerHTML = '';
 
                         if (filteredData.length === 0) {
-                            tbody.innerHTML = '<tr><td colspan="9" class="text-center">Tidak ada data.</td></tr>';
+                            // Tampilkan pesan kosong sesuai jumlah span kolom
+                            const colSpanCount = isOutstanding ? 9 : 10;
+                            tbody.innerHTML = `<tr><td colspan="${colSpanCount}" class="text-center">Tidak ada data.</td></tr>`;
                         } else {
                             filteredData.forEach((item, index) => {
-                                tbody.innerHTML += `
-                                    <tr>
-                                        <td>${index + 1}</td>
-                                        <td>${item.perusahaan}</td>
-                                        <td>${item.kelas}</td>
-                                        <td>${item.sales}</td>
-                                        <td>${item.tanggal}</td>
-                                        <td>${item.tagihan !== '-' ? 'Rp ' + item.tagihan.toLocaleString('id-ID') : '-'}</td>
-                                        <td>${item.tenggat_waktu}</td>
-                                        <td>${item.tanggal_bayar}</td>
-                                        <td><span class="badge bg-secondary">${item.status}</span></td>
-                                    </tr>
-                                `;
+                                if (isOutstanding) {
+                                    // Rendering baris Outstanding
+                                    const tagihanFormatted = (item.tagihan !== '-' && item.tagihan != null) 
+                                        ? 'Rp ' + Number(item.tagihan).toLocaleString('id-ID') 
+                                        : '-';
+                                        
+                                    tbody.innerHTML += `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>${item.perusahaan || '-'}</td>
+                                            <td>${item.kelas || '-'}</td>
+                                            <td>${item.sales || '-'}</td>
+                                            <td>${item.tanggal || '-'}</td>
+                                            <td>${tagihanFormatted}</td>
+                                            <td>${item.tenggat_waktu || '-'}</td>
+                                            <td>${item.tanggal_bayar || '-'}</td>
+                                            <td><span class="badge bg-secondary">${item.status || '-'}</span></td>
+                                        </tr>
+                                    `;
+                                } else {
+                                    // Rendering baris Ketepatan Waktu
+                                    const formatUang = (val) => 'Rp ' + Number(val || 0).toLocaleString('id-ID');
+                                    const badgeColor = item.info === 'Sesuai' ? 'bg-success' : 'bg-danger';
+
+                                    tbody.innerHTML += `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>${item.perusahaan || '-'}</td>
+                                            <td>${item.kelas || '-'}</td>
+                                            <td>${item.tanggal || '-'}</td>
+                                            <td>${formatUang(item.jumlah_pembayaran)}</td>
+                                            <td>${formatUang(item.ppn)}</td>
+                                            <td>${formatUang(item.pph)}</td>
+                                            <td>${formatUang(item.biaya_admin)}</td>
+                                            <td>${formatUang(item.total_penjualan_kotor)}</td>
+                                            <td><span class="badge ${badgeColor}">${item.info || '-'}</span></td>
+                                        </tr>
+                                    `;
+                                }
                             });
                         }
 
-                        // 4. Tampilkan Modal (Bootstrap 5)
+                        // 4. Tampilkan Modal
                         const myModal = new bootstrap.Modal(document.getElementById('chartDataModal'));
                         myModal.show();
                     }
-
                     let chartInstanceOutstanding;
 
                     function loadChartOutstanding(year) {

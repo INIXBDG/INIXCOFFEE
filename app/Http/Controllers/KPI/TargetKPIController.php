@@ -1132,7 +1132,7 @@ class TargetKPIController extends Controller
             $query->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($idUser) {
                 $q->where('id_karyawan', $idUser);
             });
-        }
+        } 
         // Non-super user → filter berdasarkan divisi
         elseif (!in_array($jabatan_pembuat, $superRoles)) {
             $query->whereHas('detailTargetKPI', function ($q) use ($divisiUser) {
@@ -1187,7 +1187,7 @@ class TargetKPIController extends Controller
                 })
                 ->filter()
                 ->values(),
-
+                            
             'jabatan_list' => $dataJabatan,
             'routes' => DataTarget::select('asistant_route', 'jangka_target', 'tipe_target', 'nilai_target')->get(),
         ];
@@ -1323,6 +1323,10 @@ class TargetKPIController extends Controller
         } elseif ($asistantRoute === 'todo administrasi') {
             $progress = $this->calculateTodoAdministrasi($item);
         }
+
+        $detail = $item->detailTargetKPI->first();
+        $nilaiTarget = (float) ($detail->dataTarget->nilai_target ?? $detail->nilai_target ?? 0);
+        $progress = $nilaiTarget > 0 ? min($progress, $nilaiTarget) : $progress;
 
         return $progress;
     }
@@ -1929,9 +1933,7 @@ class TargetKPIController extends Controller
             $progress = $analisisData;
         }
 
-        $progress = round($progress, 1);
-
-        return round($progress, 1);
+        return round($progress);
     }
 
     private function calculatePencairanBiayaOperasional($item, $personId)
@@ -2408,7 +2410,7 @@ class TargetKPIController extends Controller
         $nilaiTarget = (float) $detail->nilai_target;
 
         $response = Http::get("https://libur.deno.dev/api", ['year' => $tahun]);
-
+        
         if ($response->successful()) {
             foreach ($response->json() as $libur) {
                 HariLibur::updateOrCreate(
@@ -4789,6 +4791,7 @@ class TargetKPIController extends Controller
             }
 
             $uploaded = Carbon::parse($po->uploaded)->startOfDay();
+            $delay = $po->delay;
 
             foreach ($po->moduls as $modul) {
 
@@ -4803,7 +4806,9 @@ class TargetKPIController extends Controller
                 if ($daysBefore >= 7) {
                     $percent = 100;
                 } elseif ($daysBefore > 0) {
-                    $percent = ($daysBefore * 100) / 7;
+                    $percent = ($delay !== null && $delay !== 'Admin')
+                        ? min(100, ($daysBefore * 150) / 7)  // non-Admin 
+                        : ($daysBefore * 100) / 7;  // Admin atau null → normal
                 } else {
                     $percent = 0;
                 }
@@ -8956,6 +8961,7 @@ class TargetKPIController extends Controller
             }
 
             $uploaded = Carbon::parse($po->uploaded)->startOfDay();
+            $delay = $po->delay;
 
             foreach ($po->moduls as $modul) {
 
@@ -8970,11 +8976,13 @@ class TargetKPIController extends Controller
                 if ($daysBefore >= 7) {
                     $percent = 100;
                 } elseif ($daysBefore > 0) {
-                    $percent = ($daysBefore * 100) / 7;
+                    $percent = ($delay !== null && $delay !== 'Admin')
+                        ? min(100, ($daysBefore * 150) / 7)  // non-Admin 
+                        : ($daysBefore * 100) / 7;  // Admin atau null → normal
                 } else {
                     $percent = 0;
                 }
-
+                
                 $percent = round($percent, 1);
 
                 $allPercents[] = $percent;

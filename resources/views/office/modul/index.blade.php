@@ -16,7 +16,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
-
         <div class="card border-0 shadow-sm rounded-4 mb-4 glass-force">
             <div class="card-body p-4">
                 <div
@@ -24,38 +23,26 @@
                     <div>
                         <h3 class="mb-2 fw-bold text-dark">{{ $nomor->no_modul }}</h3>
                         <p class="text-muted fs-5 mb-0">{{ $nomor->type }}</p>
+
+                        @if ($nomor->delay)
+                            <span class="badge bg-warning text-dark mt-2">
+                                Delay: {{ $nomor->delay }}
+                            </span>
+                        @endif
+
+                        @if ($nomor->keterangan)
+                            <div class="mt-3">
+                                <strong>Keterangan:</strong>
+                                <p class="text-muted mb-0">{{ $nomor->keterangan }}</p>
+                            </div>
+                        @endif
                     </div>
+
                     <div class="d-flex flex-column flex-sm-row gap-3 align-items-end align-items-sm-center">
-                        @if ($nomor->type == 'Authorize')
-                            <button type="button" class="btn btn-outline-secondary btn-sm btnPdfPeserta"
-                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_peserta }}" data-bs-toggle="modal"
-                                data-bs-target="#modalNotePeserta">
-                                PDF Peserta
-                            </button>
-
-                            <button type="button" class="btn btn-outline-success btn-sm btnExcelPeserta"
-                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_peserta }}" data-bs-toggle="modal"
-                                data-bs-target="#modalExcelPeserta">
-                                <i class="fas fa-file-excel"></i> Excel Peserta
-                            </button>
-
-                            <button type="button" class="btn btn-outline-secondary btn-sm pdfBtn"
-                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_modul }}" data-bs-toggle="modal"
-                                data-bs-target="#noteModal">
-                                PDF Modul
-                            </button>
-                        @endif
-                        @if ($nomor->type == 'Regular')
-                            <button type="button" class="btn btn-outline-secondary btn-sm pdfBtn"
-                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_modul }}" data-bs-toggle="modal"
-                                data-bs-target="#noteModal">
-                                PDF Modul
-                            </button>
-                        @endif
-                        <span
+                       <span
                             class="badge fs-5 px-4 py-3 {{ $nomor->status === 'active' ? 'bg-success' : 'bg-secondary' }}">
                             {{ ucfirst($nomor->status) }}
-                        </span>
+                        </span>                        
                     </div>
                 </div>
             </div>
@@ -104,8 +91,8 @@
                                 data-akhir="{{ $m->akhir_training }}" data-jumlah="{{ $m->jumlah }}"
                                 data-harga_satuan="{{ $m->harga_satuan }}" data-total="{{ $m->total }}"
                                 data-note="{{ $m->note ?? '' }}">
-                                <td>{{ $m->kode_materi ?? '-' }}</td>
-                                <td>{{ $m->nama_materi }}</td>
+                                <td>{{ $m->materi->kode_alias ?? $m->materi->kode_materi ?? '-' }}</td>
+                                <td>{{ $m->materi->alias ?? $m->materi->nama_materi }}</td>
                                 <td>{{ \Carbon\Carbon::parse($m->awal_training)->translatedFormat('d M Y') }} s/d
                                     {{ \Carbon\Carbon::parse($m->akhir_training)->translatedFormat('d M Y') }}</td>
                                 <td>{{ $m->jumlah }}</td>
@@ -141,7 +128,7 @@
                                 <th>Nama Peserta</th>
                                 <th>Instansi</th>
                                 <th>Email</th>
-                                <td>Periode</td>
+                                <th>Periode</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -205,7 +192,7 @@
                                         <option value="">-- Pilih Materi --</option>
                                         @foreach ($materi as $item)
                                             <option value="{{ $item->id }}">
-                                                {{ $item->nama_materi }} | {{ $item->kode_materi ?? '-' }}
+                                                {{ $item->alias ?? $item->nama_materi }} | {{ $item->kode_alias ?? $item->kode_materi ?? '-' }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -272,7 +259,7 @@
                                         <option value="">-- Pilih Materi --</option>
                                         @foreach ($materi as $item)
                                             <option value="{{ $item->id }}">
-                                                {{ $item->nama_materi }} | {{ $item->kode_materi ?? '-' }}
+                                                {{ $item->alias ?? $item->nama_materi ?? '-' }} | {{ $item->kode_alias ?? $item->kode_materi ?? '-' }}
                                             </option>
                                         @endforeach
                                     </select>

@@ -35,6 +35,7 @@
                                 <th>No Modul</th>
                                 <th>Type</th>
                                 <th>Status</th>
+                                <th>Uploaded</th>
                                 <th class="text-center pe-4" style="width: 22%">Aksi</th>
                             </tr>
                         </thead>
@@ -52,6 +53,11 @@
                                     <td>
                                         <span class="badge {{ $item->status == 'active' ? 'bg-success' : 'bg-secondary' }}">
                                             {{ ucfirst($item->status) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ $item->uploaded ? \Carbon\Carbon::parse($item->uploaded)->format('d M Y') : '-' }}
                                         </span>
                                     </td>
                                     <td class="text-center">
@@ -73,13 +79,12 @@
                                             </button>
 
                                             @if ($item->status !== 'Uploaded')
-                                                <form action="{{ route('office.modul.update.status.nomor', $item->id)}}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('PUT')
-                                                    <button type="submit" class="btn btn-outline-success btn-sm">
-                                                        Uploaded
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn btn-outline-success btn-sm uploadedBtn"
+                                                    data-id="{{ $item->id }}"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#uploaded">
+                                                    Uploaded
+                                                </button>
                                             @endif
 
                                             <form action="{{ route('office.modul.delete.nomor', $item->id) }}"
@@ -198,6 +203,43 @@
         </div>
     </div>
 
+    {{-- Uploaded Modal --}}
+    <div class="modal fade" id="uploaded" tabindex="-1" aria-labelledby="uploadedModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form id="uploadedForm" method="POST" class="modal-content shadow-lg border-0 rounded-4">
+                @csrf
+                @method('PUT')
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="uploadedModalLabel">Konfirmasi Upload Modul</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-2">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tanggal Upload</label>
+                        <input type="date" name="uploaded" class="form-control form-control-lg" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Delayed <span class="text-muted fw-normal">(opsional)</span></label>
+                        <select name="delay" class="form-select form-select-lg">
+                            <option value="" disabled selected>Pilih...</option>
+                            <option value="Client">Client</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Keterangan <span class="text-muted fw-normal">(opsional)</span></label>
+                        <textarea name="keterangan" class="form-control" rows="4"
+                            placeholder="Tuliskan keterangan tambahan..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success px-4">Konfirmasi Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     {{-- Scripts --}}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -208,6 +250,8 @@
                 const id = $(this).data('id');
                 const no = $(this).data('no');
                 const type = $(this).data('type');
+                const delay = $(this).data('delay');
+                const keterangan = $(this).data('keterangan');
 
                 $('#edit_no_modul').val(no);
                 $('#edit_type').val(type);
@@ -222,6 +266,20 @@
 
                 const route = '{{ route('office.modul.download.pdf', ':id') }}';
                 $('#noteForm').attr('action', route.replace(':id', id));
+            });
+
+            // Uploaded Modal
+            $('.uploadedBtn').on('click', function () {
+                const id = $(this).data('id');
+    
+                const today = new Date().toISOString().split('T')[0];
+                $('[name="uploaded"]').val(today);
+    
+                $('[name="delay"]').val('');
+                $('[name="keterangan"]').val('');
+    
+                const route = '{{ route('office.modul.update.status.nomor', ':id') }}';
+                $('#uploadedForm').attr('action', route.replace(':id', id));
             });
         });
     </script>

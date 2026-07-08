@@ -1948,5 +1948,26 @@
             </div>
         </div>
     @endif
+
+    @if ($tipePesan == 'PO Reminder')
+        <div class="notification mb-3" style="border-left: 4px solid #dc3545; padding-left: 12px;">
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong></p>
+            <p>{{ $notification->data['message']['materi'] ?? '-' }}</p>
+            <p>Perusahaan: {{ $notification->data['message']['perusahaan'] ?? '-' }}</p>
+            <p>Periode: {{ $notification->data['message']['periode'] ?? '-' }}</p>
+            <p>Dibuat pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+
+            <p class="text-danger fw-bold">Mohon segera melakukan pre order modul</p>
+            <div class="d-flex">
+                <a href="{{ route('office.modul.index')}}" class="btn btn-primary btn-sm"
+                    style="margin-right:8px;">Pesan Modul</a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
+                </form>
+            </div>
+        </div>
+    @endif
     <hr>
 @endforeach

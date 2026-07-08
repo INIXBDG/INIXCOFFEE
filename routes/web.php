@@ -3,6 +3,7 @@
 use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\ActivityInstrukturController;
 use App\Http\Controllers\AdministrasiKaryawanController;
+use App\Http\Controllers\AliasController;
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\ApprovalPendapatanController;
 use App\Http\Controllers\approvedNetSalesController;
@@ -1079,6 +1080,12 @@ Route::prefix('office')->group(function () {
         Route::get('/rekap/json', [OfficeExamController::class, 'rekapJson'])->name('rekap.json');
 
         Route::get('/{year}/{month}', [OfficeExamController::class, 'showExamMonth']);
+    });
+
+    Route::prefix('alias')->name('office.alias.')->group(function () {
+        Route::get('/index', [MateriController::class, 'indexAlias'])->name('index');
+        Route::get('/index/json', [MateriController::class, 'indexJsonAlias'])->name('index.json');
+        Route::put('/update/{id}', [MateriController::class, 'updateAlias'])->name('update');
     });
 });
 
