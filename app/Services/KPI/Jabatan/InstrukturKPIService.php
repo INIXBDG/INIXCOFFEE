@@ -20,7 +20,7 @@ class InstrukturKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function calculatePresentaseKinerjaInstruktur($item, $personId)
+    public function calculatePresentaseKinerjaInstruktur($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         
@@ -170,7 +170,7 @@ class InstrukturKPIService
         return round($persentase, 2);
     }
 
-    private function calculatePresentaseKinerjaInstrukturDetail($itemDetail, $personId)
+    public function calculatePresentaseKinerjaInstrukturDetail($itemDetail, $personId)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -248,9 +248,9 @@ class InstrukturKPIService
             ->toArray();
 
         if ($personId !== null) {
-            $instrukturList = Karyawan::where('id', $personId)->get();
+            $instrukturList = karyawan::where('id', $personId)->get();
         } else {
-            $instrukturList = Karyawan::where('status_aktif', '1')
+            $instrukturList = karyawan::where('status_aktif', '1')
                 ->whereNot('jabatan', 'Outsource')
                 ->where('kode_karyawan', 'NOT LIKE', 'OL%')
                 ->whereNot('jabatan', 'Pilih Jabatan')
@@ -299,7 +299,7 @@ class InstrukturKPIService
 
             $cutiDates = [];
             $cutiDetailList = [];
-            $cutis = \App\Models\pengajuancuti::where('id_karyawan', $instruktur->id)
+            $cutis = pengajuancuti::where('id_karyawan', $instruktur->id)
                 ->where('tanggal_awal', '<=', $endDate)
                 ->where('tanggal_akhir', '>=', $startDate)
                 ->get();
@@ -488,7 +488,7 @@ class InstrukturKPIService
         ];
     }
 
-    private function calculateKepuasanPesertaPelatihan($item, $personId)
+    public function calculateKepuasanPesertaPelatihan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -611,7 +611,7 @@ class InstrukturKPIService
         return round($progress, 1);
     }
 
-    private function calculateKepuasanPesertaPelatihanDetail($itemDetail, $personId)
+    public function calculateKepuasanPesertaPelatihanDetail($itemDetail, $personId)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -821,7 +821,7 @@ class InstrukturKPIService
         ];
     }
 
-    private function calculateUpselingLanjutanMateri($item, $personId): float
+    public function calculateUpselingLanjutanMateri($item, $personId): float
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -880,7 +880,7 @@ class InstrukturKPIService
         return round($presentase, 1);
     }
 
-    private function calculateUpselingLanjutanMateriDetail($itemDetail, $personId): array
+    public function calculateUpselingLanjutanMateriDetail($itemDetail, $personId): array
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -1043,7 +1043,7 @@ class InstrukturKPIService
         ];
     }
 
-    private function calculateSertifikasiKompetensiInternal($item, $personId)
+    public function calculateSertifikasiKompetensiInternal($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -1102,7 +1102,7 @@ class InstrukturKPIService
         return round($progress);
     }
 
-    private function calculateSertifikasiKompetensiInternalDetail($itemDetail, $personId)
+    public function calculateSertifikasiKompetensiInternalDetail($itemDetail, $personId)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -1257,7 +1257,7 @@ class InstrukturKPIService
         ];
     }
 
-    private function calculatePelatihanKompetensiEksternal($item, $personId)
+    public function calculatePelatihanKompetensiEksternal($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -1313,7 +1313,7 @@ class InstrukturKPIService
         return round($progress);
     }
 
-    private function calculatePelatihanKompetensiEksternalDetail($itemDetail, $personId)
+    public function calculatePelatihanKompetensiEksternalDetail($itemDetail, $personId)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 

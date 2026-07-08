@@ -9,15 +9,13 @@ use App\Models\Kegiatan;
 use App\Models\TunjanganKaryawan;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class HRDKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function calculatePelaksanaanKegiatanKaryawan($item, $personId)
+    public function calculatePelaksanaanKegiatanKaryawan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -68,34 +66,18 @@ class HRDKPIService
         return round($progress, 1);
     }
 
-    private function calculatePelaksanaanKegiatanKaryawanDetail($itemDetail)
+    public function calculatePelaksanaanKegiatanKaryawanDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
         if (is_null($detail) || is_null($detail->manual_value)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $tahun = (int) $detail->detail_jangka;
 
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
@@ -142,15 +124,7 @@ class HRDKPIService
         }
 
         if ($totalKegiatan == 0) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $progress = ($totalKehadiranValid / $totalKegiatan) * 100;
@@ -210,7 +184,7 @@ class HRDKPIService
         ];
     }
 
-    private function calculatePengeluaranBiayaKaryawan($item, $personId)
+    public function calculatePengeluaranBiayaKaryawan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -255,15 +229,12 @@ class HRDKPIService
             ->get();
 
         foreach ($kegiatans as $kegiatan) {
-
             $kegiatanRealisasi += (float) $kegiatan->realisasi;
 
             if ($kegiatan->pengajuan_barang) {
                 foreach ($kegiatan->pengajuan_barang as $pengajuan) {
-
                     if ($pengajuan->detail) {
                         foreach ($pengajuan->detail as $d) {
-
                             $qty = (float) ($d->qty ?? 0);
                             $harga = (float) ($d->harga ?? 0);
 
@@ -297,35 +268,30 @@ class HRDKPIService
         return round($progress, 1);
     }
 
-    private function calculatePengeluaranBiayaKaryawanDetail($itemDetail)
+    public function calculatePengeluaranBiayaKaryawanDetail($itemDetail, $personId = null)
     {
-        $defaultResponse = [
-            'progress' => 0,
-            'gap' => 0,
-            'pie_chart' => ['above' => 0, 'below' => 0],
-            'monthly_data' => [],
-            'daily_breakdown_per_month' => [],
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
-            'dataManual' => [
-                'gaji' => 0,
-                'bpjs' => 0,
-                'rekrutmen' => 0,
-                'manual_document' => null,
-            ],
-        ];
-
         $detail = $itemDetail->detailTargetKPI->first();
 
+        $defaultDataManual = [
+            'gaji' => 0,
+            'bpjs' => 0,
+            'rekrutmen' => 0,
+            'manual_document' => null,
+        ];
+
         if (!$detail || !is_numeric($detail->detail_jangka)) {
-            return $defaultResponse;
+            return array_merge($this->getDefaultDetailResponse(), [
+                'dataManual' => $defaultDataManual
+            ]);
         }
 
         $tahun = (int) $detail->detail_jangka;
         $nilaiTarget = (int) $detail->nilai_target;
 
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return $defaultResponse;
+            return array_merge($this->getDefaultDetailResponse(), [
+                'dataManual' => $defaultDataManual
+            ]);
         }
 
         $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
@@ -337,7 +303,7 @@ class HRDKPIService
         $bpjsManual = (float) ($parts[1] ?? 0);
         $rekrutmenManual = (float) ($parts[2] ?? 0);
 
-        $defaultResponse['dataManual'] = [
+        $dataManual = [
             'gaji' => $gaji,
             'bpjs' => $bpjsManual,
             'rekrutmen' => $rekrutmenManual,
@@ -366,15 +332,12 @@ class HRDKPIService
             ->get();
 
         foreach ($kegiatans as $kegiatan) {
-
             $kegiatanRealisasi += (float) $kegiatan->realisasi;
 
             if ($kegiatan->pengajuan_barang) {
                 foreach ($kegiatan->pengajuan_barang as $pengajuan) {
-
                     if ($pengajuan->detail) {
                         foreach ($pengajuan->detail as $d) {
-
                             $qty = (float) ($d->qty ?? 0);
                             $harga = (float) ($d->harga ?? 0);
 
@@ -407,15 +370,12 @@ class HRDKPIService
         $gap = 0;
         if ($progress <= $nilaiTarget) {
             $gap = $progress - $nilaiTarget;
-        } else {
-            $gap = 0;
         }
-
 
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'dataManual' => $defaultResponse['dataManual'],
+            'dataManual' => $dataManual,
             'pie_chart' => [
                 'above' => $score,
                 'below' => 4 - $score
@@ -427,7 +387,7 @@ class HRDKPIService
         ];
     }
 
-    private function calculateAdministrasiKaryawan($item, $personId)
+    public function calculateAdministrasiKaryawan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -480,34 +440,18 @@ class HRDKPIService
         return round($progress, 2);
     }
 
-    private function calculateAdministrasiKaryawanDetail($itemDetail, $personId)
+    public function calculateAdministrasiKaryawanDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("detailTargetKPI atau detail_jangka tidak ditemukan untuk item ID: {$itemDetail->id}");
-            return [
-                'progress'               => 0,
-                'gap'                    => 0,
-                'pie_chart'              => ['above' => 0, 'below' => 0],
-                'monthly_data'           => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress'       => [],
-                'daily_progress_per_month'  => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $tahun = (int) $detail->detail_jangka;
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk item ID: {$itemDetail->id}");
-            return [
-                'progress'               => 0,
-                'gap'                    => 0,
-                'pie_chart'              => ['above' => 0, 'below' => 0],
-                'monthly_data'           => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress'       => [],
-                'daily_progress_per_month'  => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $allData = AdministrasiKaryawan::whereYear('created_at', $tahun)->get();

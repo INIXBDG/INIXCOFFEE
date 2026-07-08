@@ -2,17 +2,21 @@
 
 namespace App\Services\KPI\Jabatan;
 
+use App\Models\outstanding; // Capitalized model name
+use App\Models\PengajuanBarang;
+use App\Models\AnalysisReport;
+use App\Models\ApprovalPendapatan;
+use App\Models\trackingTagihanPerusahaan;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class FinanceAccountingKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function calculateOutstanding($item, $personId)
+    public function calculateOutstanding($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -35,7 +39,7 @@ class FinanceAccountingKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $outstandings = Outstanding::whereBetween('created_at', [$start, $end])->get();
+        $outstandings = outstanding::whereBetween('created_at', [$start, $end])->get();
 
         if ($outstandings->isEmpty()) {
             return 0;
@@ -55,52 +59,28 @@ class FinanceAccountingKPIService
         return round($presentase, 1);
     }
 
-    private function calculateOutstandingDetail($itemDetail)
+    public function calculateOutstandingDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
         if (!$detail || !is_numeric($detail->nilai_target) || !is_numeric($detail->detail_jangka)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $outstandings = Outstanding::whereBetween('created_at', [$start, $end])->get();
+        $outstandings = outstanding::whereBetween('created_at', [$start, $end])->get();
 
         if ($outstandings->isEmpty()) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $totalData = $outstandings->count();
@@ -111,20 +91,15 @@ class FinanceAccountingKPIService
         $below = $totalData - $above;
 
         $progress = $totalData > 0 ? ($above / $totalData) * 100 : 0;
-
         $progress = round($progress, 1);
 
         $gapRaw = $progress - $nilaiTarget;
-
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $monthlyData = [];
         $dailyBreakdownPerMonth = [];
         $monthlyProgress = [];
         $dailyProgressPerMonth = [];
-
-        $monthlyTarget = $nilaiTarget / 12;
-        $dailyTarget = $nilaiTarget / 365;
 
         foreach ($outstandings as $data) {
             $date = Carbon::parse($data->created_at);
@@ -192,7 +167,7 @@ class FinanceAccountingKPIService
         ];
     }
 
-    private function calculateInisiatifEfisiensiKeuangan($item, $personId)
+    public function calculateInisiatifEfisiensiKeuangan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -215,90 +190,50 @@ class FinanceAccountingKPIService
         return round($progress);
     }
 
-    private function calculateInisiatifEfisiensiKeuanganDetail($itemDetail)
+    public function calculateInisiatifEfisiensiKeuanganDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
-        $item = $itemDetail;
-        $personId = 0;
-
         if (is_null($detail) || is_null($detail->manual_value)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'dataManual' => [
-                    'manual_document' => $detail->manual_document,
-                ],
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return array_merge($this->getDefaultDetailResponse(), [
+                'dataManual' => ['manual_document' => $detail->manual_document ?? null],
+            ]);
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
         $manualValue = (float) $detail->manual_value;
-
-        if ($manualValue == null) {
-            return 0;
-        }
-
         $tahun = (int) $detail->detail_jangka;
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return array_merge($this->getDefaultDetailResponse(), [
+                'dataManual' => ['manual_document' => $detail->manual_document ?? null],
+            ]);
         }
 
         $progress = 0;
 
-        if (!is_null($detail->manual_value)) {
-            $manualValue = (float) $detail->manual_value;
-
-            if ($manualValue > 0) {
-                $progress = $manualValue;
-            }
+        if ($manualValue > 0) {
+            $progress = $manualValue;
         }
 
         $progress = round($progress);
         $gapRaw = $progress - $nilaiTarget;
         $gap = $nilaiTarget - $manualValue;
 
-        return [
+        return array_merge($this->getDefaultDetailResponse(), [
             'progress' => $progress,
             'gap' => $gap,
             'dataManual' => [
                 'manual_document' => $detail->manual_document,
             ],
-            'pie_chart' => ['above' => 0, 'below' => 0],
-            'monthly_data' => [],
-            'daily_breakdown_per_month' => [],
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
-        ];
+        ]);
     }
 
-    private function calculateMengurangiManualWorkDanError($item, $personId)
+    public function calculateMengurangiManualWorkDanError($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -321,90 +256,50 @@ class FinanceAccountingKPIService
         return round($progress);
     }
 
-    private function calculateMengurangiManualWorkDanErrorDetail($itemDetail)
+    public function calculateMengurangiManualWorkDanErrorDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
-        $item = $itemDetail;
-        $personId = 0;
-
         if (is_null($detail) || is_null($detail->manual_value)) {
-           return [
-                'progress' => 0,
-                'gap' => 0,
-                'dataManual' => [
-                    'manual_document' => $detail->manual_document,
-                ],
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return array_merge($this->getDefaultDetailResponse(), [
+                'dataManual' => ['manual_document' => $detail->manual_document ?? null],
+            ]);
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
         $manualValue = (float) $detail->manual_value;
-
-        if ($manualValue == null) {
-            return 0;
-        }
-
         $tahun = (int) $detail->detail_jangka;
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return array_merge($this->getDefaultDetailResponse(), [
+                'dataManual' => ['manual_document' => $detail->manual_document ?? null],
+            ]);
         }
 
         $progress = 0;
 
-        if (!is_null($detail->manual_value)) {
-            $manualValue = (float) $detail->manual_value;
-
-            if ($manualValue > 0) {
-                $progress = $manualValue;
-            }
+        if ($manualValue > 0) {
+            $progress = $manualValue;
         }
 
         $progress = round($progress);
         $gapRaw = $progress - $nilaiTarget;
         $gap = $nilaiTarget - $manualValue;
 
-        return [
+        return array_merge($this->getDefaultDetailResponse(), [
             'progress' => $progress,
             'gap' => $gap,
             'dataManual' => [
                 'manual_document' => $detail->manual_document,
             ],
-            'pie_chart' => ['above' => 0, 'below' => 0],
-            'monthly_data' => [],
-            'daily_breakdown_per_month' => [],
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
-        ];
+        ]);
     }
 
-    private function calculateLaporanAnalisisKeuangan($item, $personId)
+    public function calculateLaporanAnalisisKeuangan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -418,15 +313,9 @@ class FinanceAccountingKPIService
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
-
         $analisisData = AnalysisReport::where('year', $tahun)->count();
 
         $progress = 0;
-
-        if ($analisisData == 0) {
-            return 0;
-        }
 
         if ($analisisData > 0) {
             $progress = $analisisData;
@@ -435,54 +324,33 @@ class FinanceAccountingKPIService
         return round($progress);
     }
 
-    private function calculateLaporanAnalisisKeuanganDetail($itemDetail)
+    public function calculateLaporanAnalisisKeuanganDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
+        $emptyResponse = array_merge($this->getDefaultDetailResponse(), [
+            'analisa_data' => []
+        ]);
+
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'analisa_data' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $emptyResponse;
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
 
-        $GetanalisisData = AnalysisReport::where('year', $tahun);
+        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return $emptyResponse;
+        }
 
+        $GetanalisisData = AnalysisReport::where('year', $tahun);
         $analisisData = $GetanalisisData->count();
+        $analisaData = $GetanalisisData->get();
 
         $above = $analisisData;
         $bellow = $nilaiTarget - $analisisData;
 
-        $analisaData = $GetanalisisData->get();
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'analisa_data' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
-        }
-
         $progress = 0;
-
-        if ($analisisData == 0) {
-            return 0;
-        }
-
         if ($analisisData > 0) {
             $progress = $analisisData;
         }
@@ -491,22 +359,18 @@ class FinanceAccountingKPIService
         $gapRaw = $analisisData - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        return [
+        return array_merge($this->getDefaultDetailResponse(), [
             'progress' => $progress,
             'gap' => $gap,
             'dataManual' => [
-                'manual_document' => $detail->manual_document,
+                'manual_document' => $detail->manual_document ?? null,
             ],
             'pie_chart' => ['above' => $above, 'below' => $bellow],
-            'monthly_data' => [],
-            'daily_breakdown_per_month' => [],
             'analisa_data' => $analisaData,
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
-        ];
+        ]);
     }
 
-    private function calculatePencairanBiayaOperasional($item, $personId)
+    public function calculatePencairanBiayaOperasional($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -519,8 +383,6 @@ class FinanceAccountingKPIService
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
-
-        $nilaiTarget = (float) $detail->nilai_target;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -589,34 +451,19 @@ class FinanceAccountingKPIService
         return round($progress, 1);
     }
 
-    private function calculatePencairanBiayaOperasionalDetail($itemDetail, $personId)
+    public function calculatePencairanBiayaOperasionalDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $tahun = (int) $detail->detail_jangka;
+        $nilaiTarget = (float) $detail->nilai_target;
 
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
@@ -710,7 +557,6 @@ class FinanceAccountingKPIService
 
         $progress = $totalPengajuan > 0 ? round(($jumlahSesuai / $totalPengajuan) * 100, 1) : 0;
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
@@ -764,7 +610,7 @@ class FinanceAccountingKPIService
         ];
     }
 
-    private function calculatePenyelesaianTagihanPerusahaan($item, $personId)
+    public function calculatePenyelesaianTagihanPerusahaan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
 
@@ -785,10 +631,7 @@ class FinanceAccountingKPIService
 
         $foreignKey = 'id_tagihan_perusahaan';
 
-        $latestIds = trackingTagihanPerusahaan::whereBetween(
-                'tanggal_perkiraan_mulai',
-                [$start, $end]
-            )
+        $latestIds = trackingTagihanPerusahaan::whereBetween('tanggal_perkiraan_mulai', [$start, $end])
             ->selectRaw("{$foreignKey}, MAX(id) as latest_id")
             ->groupBy($foreignKey)
             ->pluck('latest_id')
@@ -816,40 +659,18 @@ class FinanceAccountingKPIService
         return round($progress, 1);
     }
 
-    private function calculatePenyelesaianTagihanPerusahaanDetail($itemDetail, $personId)
+    public function calculatePenyelesaianTagihanPerusahaanDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => [
-                    'above' => 0,
-                    'below' => 0
-                ],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $tahun = (int) $detail->detail_jangka;
 
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => [
-                    'above' => 0,
-                    'below' => 0
-                ],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
@@ -861,18 +682,7 @@ class FinanceAccountingKPIService
             ->pluck('latest_id');
 
         if ($latestIds->isEmpty()) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => [
-                    'above' => 0,
-                    'below' => 0
-                ],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $dataTagihan = trackingTagihanPerusahaan::whereIn('id', $latestIds)->get();
@@ -916,29 +726,17 @@ class FinanceAccountingKPIService
 
             $pct = $isSelesai * 100;
 
-            $monthlyData[$monthKey]['total'] =
-                ($monthlyData[$monthKey]['total'] ?? 0) + 1;
+            $monthlyData[$monthKey]['total'] = ($monthlyData[$monthKey]['total'] ?? 0) + 1;
+            $monthlyData[$monthKey]['selesai'] = ($monthlyData[$monthKey]['selesai'] ?? 0) + $isSelesai;
 
-            $monthlyData[$monthKey]['selesai'] =
-                ($monthlyData[$monthKey]['selesai'] ?? 0) + $isSelesai;
+            $monthlyProgress[$monthKey]['total'] = ($monthlyProgress[$monthKey]['total'] ?? 0) + 1;
+            $monthlyProgress[$monthKey]['selesai'] = ($monthlyProgress[$monthKey]['selesai'] ?? 0) + $pct;
 
-            $monthlyProgress[$monthKey]['total'] =
-                ($monthlyProgress[$monthKey]['total'] ?? 0) + 1;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey]['total'] = ($dailyBreakdownPerMonth[$monthKey][$dayKey]['total'] ?? 0) + 1;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey]['selesai'] = ($dailyBreakdownPerMonth[$monthKey][$dayKey]['selesai'] ?? 0) + $isSelesai;
 
-            $monthlyProgress[$monthKey]['selesai'] =
-                ($monthlyProgress[$monthKey]['selesai'] ?? 0) + $pct;
-
-            $dailyBreakdownPerMonth[$monthKey][$dayKey]['total'] =
-                ($dailyBreakdownPerMonth[$monthKey][$dayKey]['total'] ?? 0) + 1;
-
-            $dailyBreakdownPerMonth[$monthKey][$dayKey]['selesai'] =
-                ($dailyBreakdownPerMonth[$monthKey][$dayKey]['selesai'] ?? 0) + $isSelesai;
-
-            $dailyProgressPerMonth[$monthKey][$dayKey]['total'] =
-                ($dailyProgressPerMonth[$monthKey][$dayKey]['total'] ?? 0) + 1;
-
-            $dailyProgressPerMonth[$monthKey][$dayKey]['selesai'] =
-                ($dailyProgressPerMonth[$monthKey][$dayKey]['selesai'] ?? 0) + $pct;
+            $dailyProgressPerMonth[$monthKey][$dayKey]['total'] = ($dailyProgressPerMonth[$monthKey][$dayKey]['total'] ?? 0) + 1;
+            $dailyProgressPerMonth[$monthKey][$dayKey]['selesai'] = ($dailyProgressPerMonth[$monthKey][$dayKey]['selesai'] ?? 0) + $pct;
         }
 
         $monthlyAverages = [];
@@ -948,18 +746,14 @@ class FinanceAccountingKPIService
             $total = (int) ($data['total'] ?? 0);
             $selesai = (int) ($data['selesai'] ?? 0);
 
-            $monthlyAverages[$month] = $total > 0
-                ? round(($selesai / $total) * 100, 1)
-                : 0;
+            $monthlyAverages[$month] = $total > 0 ? round(($selesai / $total) * 100, 1) : 0;
         }
 
         foreach ($monthlyProgress as $month => $data) {
             $total = (int) ($data['total'] ?? 0);
             $selesai = (float) ($data['selesai'] ?? 0);
 
-            $monthlyProgressAverages[$month] = $total > 0
-                ? round(($selesai / $total), 1)
-                : 0;
+            $monthlyProgressAverages[$month] = $total > 0 ? round(($selesai / $total), 1) : 0;
         }
 
         foreach ($dailyBreakdownPerMonth as $month => $days) {
@@ -967,9 +761,7 @@ class FinanceAccountingKPIService
                 $total = (int) ($data['total'] ?? 0);
                 $selesai = (int) ($data['selesai'] ?? 0);
 
-                $dailyBreakdownPerMonth[$month][$day] = $total > 0
-                    ? round(($selesai / $total) * 100, 1)
-                    : 0;
+                $dailyBreakdownPerMonth[$month][$day] = $total > 0 ? round(($selesai / $total) * 100, 1) : 0;
             }
         }
 
@@ -978,9 +770,7 @@ class FinanceAccountingKPIService
                 $total = (int) ($data['total'] ?? 0);
                 $selesai = (float) ($data['selesai'] ?? 0);
 
-                $dailyProgressPerMonth[$month][$day] = $total > 0
-                    ? round(($selesai / $total), 1)
-                    : 0;
+                $dailyProgressPerMonth[$month][$day] = $total > 0 ? round(($selesai / $total), 1) : 0;
             }
         }
 
@@ -1003,7 +793,7 @@ class FinanceAccountingKPIService
         ];
     }
 
-    private function calculateAkurasiPencatatanMasuk($item, $personId)
+    public function calculateAkurasiPencatatanMasuk($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -1017,230 +807,151 @@ class FinanceAccountingKPIService
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
-        $start = Carbon::create($tahun, 1, 1)->startOfDay();
+        $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
+        $endDate = Carbon::create($tahun, Carbon::now()->month, Carbon::now()->daysInMonth)->endOfDay();
 
-        $end = ($tahun == now()->year)
-            ? now()->endOfDay()
-            : Carbon::create($tahun, 12, 31)->endOfDay();
+        $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$startOfYear, $endDate])->get();
 
-        $data = outstanding::whereBetween('created_at', [$start, $end])->get();
+        $total = $data->count();
 
-        $totalTagihan = $data->count();
-        $totalAkurat = 0;
+        $sesuai = $data->filter(function ($row) {
+            $pembayaran = (float) $row->jumlah_pembayaran;
+            $ppn = (float) $row->PPN;
+            $pph = (float) $row->PPH;
+            $kotor = (float) $row->total_pemasukan_kotor;
 
-        foreach ($data as $row) {
-
-            $netSales = (float) ($row->net_sales ?? 0);
-            $jumlahBayar = (float) ($row->jumlah_pembayaran ?? 0);
-
-            $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$startOfYear, $endDate])->get();
-
-            // Ambil data potongan (boleh null, array, atau json)
-            $potongan = $row->jumlah_potongan;
-
-            if (!empty($potongan)) {
-
-                if (!is_array($potongan)) {
-                    $potongan = json_decode($potongan, true);
-                }
-
-                if (is_array($potongan)) {
-                    foreach ($potongan as $item) {
-                        $totalPotongan += (float) ($item['jumlah'] ?? 0);
-                    }
-                }
+            if ($pembayaran === 0.0) {
+                $totalDenganPajak = $pembayaran + $ppn + $pph;
+                return ($totalDenganPajak === $kotor) || ($pembayaran === $kotor);
             }
 
-            // Akurat apabila:
-            // 1. Net Sales = Jumlah Pembayaran
-            // 2. Net Sales = Jumlah Pembayaran + Total Potongan
-            if (
-                $netSales == $jumlahBayar ||
-                $netSales == ($jumlahBayar + $totalPotongan)
-            ) {
-                $totalAkurat++;
-            }
-
-            return optional($item->total_pemasukan_kotor) !== null;
+            return optional($row->total_pemasukan_kotor) !== null;
         })->count();
 
         $progress = $total > 0 ? round(($sesuai / $total) * 100, 2) : 0;
         return round($progress, 1);
     }
 
-    private function calculateAkurasiPencatatanMasukDetail($itemDetail)
+    public function calculateAkurasiPencatatanMasukDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
-        $emptyResponse = [
-            'progress' => 0,
-            'gap' => 0,
-            'pie_chart' => ['above' => 0, 'below' => 0],
-            'monthly_data' => [],
-            'daily_breakdown_per_month' => [],
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
-        ];
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return $emptyResponse;
+        if (is_null($detail) || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return $this->getDefaultDetailResponse();
         }
 
         $tahun = (int) $detail->detail_jangka;
-        $nilaiTarget = (float) $detail->nilai_target;
 
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return $emptyResponse;
+            return $this->getDefaultDetailResponse();
         }
 
-        // Year To Date
-        $start = Carbon::create($tahun, 1, 1)->startOfDay();
+        $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
+        $endDate = Carbon::create($tahun, Carbon::now()->month, Carbon::now()->daysInMonth)->endOfDay();
 
-        $end = ($tahun == now()->year)
-            ? now()->endOfDay()
-            : Carbon::create($tahun, 12, 31)->endOfDay();
+        $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$startOfYear, $endDate])->get();
 
-        $data = Outstanding::whereBetween('created_at', [$start, $end])->get();
-
-        $total = 0;
+        $total = $data->count();
         $totalAkurat = 0;
 
-        $monthlyTotal = [];
-        $monthlyAccurate = [];
-
-        $dailyTotal = [];
-        $dailyAccurate = [];
-
-        $dailyBreakdownPerMonth = [];
+        $dailyResult = [];
+        $accurateCount = 0;
+        $notAccurateCount = 0;
 
         foreach ($data as $row) {
+            
+            $pembayaran = (float) $row->jumlah_pembayaran;
+            $ppn = (float) $row->PPN;
+            $pph = (float) $row->PPH;
+            $kotor = (float) $row->total_pemasukan_kotor;
 
-            // Jika Net Sales kosong tidak ikut dihitung
-            if (is_null($row->net_sales)) {
-                continue;
+            $isAkurat = false;
+
+            if ($pembayaran === 0.0) {
+                $totalDenganPajak = $pembayaran + $ppn + $pph;
+                $isAkurat = ($totalDenganPajak === $kotor) || ($pembayaran === $kotor);
+            } else {
+                $isAkurat = optional($row->total_pemasukan_kotor) !== null;
             }
 
-            $total++;
+            $tanggal = Carbon::parse($row->tanggal_mulai);
+            $tanggalKey = $tanggal->format('Y-m-d');
 
-            $date = Carbon::parse($row->created_at);
-            $monthKey = $date->format('Y-m');
-            $dateKey = $date->format('Y-m-d');
-
-            // Total data per bulan
-            $monthlyTotal[$monthKey] =
-                ($monthlyTotal[$monthKey] ?? 0) + 1;
-
-            // Total data per hari
-            $dailyTotal[$monthKey][$dateKey] =
-                ($dailyTotal[$monthKey][$dateKey] ?? 0) + 1;
-
-            $netSales = (float) ($row->net_sales ?? 0);
-            $jumlahBayar = (float) ($row->jumlah_pembayaran ?? 0);
-
-            $totalPotongan = 0;
-
-            $potongan = $row->jumlah_potongan;
-
-            if (!empty($potongan)) {
-
-                if (!is_array($potongan)) {
-                    $potongan = json_decode($potongan, true);
-                }
-
-                if (is_array($potongan)) {
-                    foreach ($potongan as $item) {
-                        $totalPotongan += (float) ($item['jumlah'] ?? 0);
-                    }
-                }
-            }
-
-            $isAkurat =
-                $netSales == $jumlahBayar ||
-                $netSales == ($jumlahBayar + $totalPotongan);
+            $dailyResult[$tanggalKey][] = $isAkurat ? 1 : 0;
 
             if ($isAkurat) {
-
                 $totalAkurat++;
-
-                // Akurat per bulan
-                $monthlyAccurate[$monthKey] =
-                    ($monthlyAccurate[$monthKey] ?? 0) + 1;
-
-                // Akurat per hari
-                $dailyAccurate[$monthKey][$dateKey] =
-                    ($dailyAccurate[$monthKey][$dateKey] ?? 0) + 1;
-
-                // Breakdown harian
-                $dailyBreakdownPerMonth[$monthKey][$dateKey] =
-                    ($dailyBreakdownPerMonth[$monthKey][$dateKey] ?? 0) + 1;
+                $accurateCount++;
+            } else {
+                $notAccurateCount++;
             }
         }
 
         if ($total == 0) {
-            return $emptyResponse;
+            return $this->getDefaultDetailResponse();
         }
 
-        // Progress utama
-        $progress = round(($totalAkurat / $total) * 100, 1);
+        $progress = ($totalAkurat / $total) * 100;
+        $progress = round($progress, 1);
 
-        // Gap
+        $nilaiTarget = (float) $detail->nilai_target;
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
         if ($gap === '') {
             $gap = '0';
         }
 
-        // Progress bulanan
+        $monthlyData = [];
+        $dailyBreakdownPerMonth = [];
         $monthlyProgress = [];
-
-        foreach ($monthlyTotal as $month => $jumlah) {
-
-            $accurate = $monthlyAccurate[$month] ?? 0;
-
-            $monthlyProgress[$month] = $jumlah > 0
-                ? round(($accurate / $jumlah) * 100, 1)
-                : 0;
-        }
-
-        // Progress harian
         $dailyProgressPerMonth = [];
 
-        foreach ($dailyTotal as $month => $days) {
+        foreach ($dailyResult as $dateStr => $values) {
+            $date = Carbon::parse($dateStr);
+            $monthKey = $date->format('Y-m');
 
-            foreach ($days as $date => $jumlah) {
+            $avg = array_sum($values) / count($values) * 100;
+            $avg = round($avg, 1);
 
-                $accurate = $dailyAccurate[$month][$date] ?? 0;
-
-                $dailyProgressPerMonth[$month][$date] = $jumlah > 0
-                    ? round(($accurate / $jumlah) * 100, 1)
-                    : 0;
+            if (!isset($monthlyData[$monthKey])) {
+                $monthlyData[$monthKey] = [];
+                $monthlyProgress[$monthKey] = [];
             }
+            $monthlyData[$monthKey][] = $avg;
+            $monthlyProgress[$monthKey][] = $avg;
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+                $dailyBreakdownPerMonth[$monthKey] = [];
+                $dailyProgressPerMonth[$monthKey] = [];
+            }
+            $dailyBreakdownPerMonth[$monthKey][$dateStr] = $avg;
+            $dailyProgressPerMonth[$monthKey][$dateStr] = $avg;
         }
 
-        ksort($monthlyAccurate);
-        ksort($monthlyProgress);
+        $monthlyAverages = [];
+        $monthlyProgressAverages = [];
+        foreach ($monthlyData as $month => $values) {
+            $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
+        }
+        foreach ($monthlyProgress as $month => $values) {
+            $monthlyProgressAverages[$month] = round(array_sum($values) / count($values), 1);
+        }
+
+        ksort($monthlyAverages);
         ksort($dailyBreakdownPerMonth);
+        ksort($monthlyProgressAverages);
         ksort($dailyProgressPerMonth);
 
         return [
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => [
-                'above' => $totalAkurat,
-                'below' => max(0, $total - $totalAkurat),
+                'above' => $accurateCount,
+                'below' => $notAccurateCount
             ],
-
-            // Jumlah data akurat per bulan
-            'monthly_data' => $monthlyAccurate,
-
-            // Jumlah data akurat per hari
+            'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-
-            // Persentase akurasi per bulan
-            'monthly_progress' => $monthlyProgress,
-
-            // Persentase akurasi per hari
+            'monthly_progress' => $monthlyProgressAverages,
             'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
     }
