@@ -38,7 +38,7 @@ use App\Models\Pelatihan;
 use App\Models\Peluang;
 use App\Models\PengajuanBarang;
 use App\Models\PenilaianExam;
-use App\Models\perbaikanKendaraan;
+use App\Models\PerbaikanKendaraan;
 use App\Models\perhitunganNetSales;
 use App\Models\pickupDriver;
 use App\Models\Registrasi;
@@ -2086,23 +2086,48 @@ class TargetKPIController extends Controller
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
+        $start = Carbon::create($tahun, 1, 1)->startOfDay();
 
-        $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
-        $endDate = Carbon::create($tahun, Carbon::now()->month, Carbon::now()->daysInMonth)->endOfDay();
+        $end = ($tahun == now()->year)
+            ? now()->endOfDay()
+            : Carbon::create($tahun, 12, 31)->endOfDay();
+
+        $data = outstanding::whereBetween('created_at', [$start, $end])->get();
+
+        $totalTagihan = $data->count();
+        $totalAkurat = 0;
+
+        foreach ($data as $row) {
+
+            $netSales = (float) ($row->net_sales ?? 0);
+            $jumlahBayar = (float) ($row->jumlah_pembayaran ?? 0);
 
         $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$startOfYear, $endDate])->get();
 
-        $total = $data->count();
+            // Ambil data potongan (boleh null, array, atau json)
+            $potongan = $row->jumlah_potongan;
 
-        $sesuai = $data->filter(function ($item) {
-            $pembayaran = (float) $item->jumlah_pembayaran;
-            $ppn = (float) $item->PPN;
-            $pph = (float) $item->PPH;
-            $kotor = (float) $item->total_pemasukan_kotor;
+            if (!empty($potongan)) {
 
-            if ($pembayaran === 0.0) {
-                $totalDenganPajak = $pembayaran + $ppn + $pph;
-                return ($totalDenganPajak === $kotor) || ($pembayaran === $kotor);
+                if (!is_array($potongan)) {
+                    $potongan = json_decode($potongan, true);
+                }
+
+                if (is_array($potongan)) {
+                    foreach ($potongan as $item) {
+                        $totalPotongan += (float) ($item['jumlah'] ?? 0);
+                    }
+                }
+            }
+
+            // Akurat apabila:
+            // 1. Net Sales = Jumlah Pembayaran
+            // 2. Net Sales = Jumlah Pembayaran + Total Potongan
+            if (
+                $netSales == $jumlahBayar ||
+                $netSales == ($jumlahBayar + $totalPotongan)
+            ) {
+                $totalAkurat++;
             }
 
             return optional($item->total_pemasukan_kotor) !== null;
@@ -4524,7 +4549,7 @@ class TargetKPIController extends Controller
             ? now()->endOfDay()
             : Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $rkms = RKM::with(['perhitunganNetSales', 'outstanding', 'peluang']) 
+        $rkms = RKM::with(['perhitunganNetSales', 'outstanding', 'peluang'])
                     ->whereBetween('tanggal_awal', [$startDate, $endDate])
                     ->where('status', '0')
                     ->whereNull('deleted_at')
@@ -7503,150 +7528,174 @@ class TargetKPIController extends Controller
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
-        if (is_null($detail) || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+        $emptyResponse = [
+            'progress' => 0,
+            'gap' => 0,
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
+            'monthly_progress' => [],
+            'daily_progress_per_month' => [],
+        ];
+
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return $emptyResponse;
         }
 
         $tahun = (int) $detail->detail_jangka;
+        $nilaiTarget = (float) $detail->nilai_target;
 
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $emptyResponse;
         }
 
-        // Penyesuaian alur rentang waktu sesuai fungsi referensi
-        $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
-        $endDate = Carbon::create($tahun, Carbon::now()->month, Carbon::now()->daysInMonth)->endOfDay();
+        // Year To Date
+        $start = Carbon::create($tahun, 1, 1)->startOfDay();
 
-        // Penyesuaian model data
-        $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$startOfYear, $endDate])->get();
+        $end = ($tahun == now()->year)
+            ? now()->endOfDay()
+            : Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $total = $data->count();
+        $data = Outstanding::whereBetween('created_at', [$start, $end])->get();
+
+        $total = 0;
         $totalAkurat = 0;
 
-        $dailyResult = [];
-        $accurateCount = 0;
-        $notAccurateCount = 0;
+        $monthlyTotal = [];
+        $monthlyAccurate = [];
+
+        $dailyTotal = [];
+        $dailyAccurate = [];
+
+        $dailyBreakdownPerMonth = [];
 
         foreach ($data as $row) {
-            
-            // Penyesuaian logika bisnis akurasi
-            $pembayaran = (float) $row->jumlah_pembayaran;
-            $ppn = (float) $row->PPN;
-            $pph = (float) $row->PPH;
-            $kotor = (float) $row->total_pemasukan_kotor;
 
-            $isAkurat = false;
-
-            if ($pembayaran === 0.0) {
-                $totalDenganPajak = $pembayaran + $ppn + $pph;
-                $isAkurat = ($totalDenganPajak === $kotor) || ($pembayaran === $kotor);
-            } else {
-                $isAkurat = optional($row->total_pemasukan_kotor) !== null;
+            // Jika Net Sales kosong tidak ikut dihitung
+            if (is_null($row->net_sales)) {
+                continue;
             }
 
-            // Penyesuaian atribut referensi tanggal (tanggal_mulai)
-            $tanggal = Carbon::parse($row->tanggal_mulai);
-            $tanggalKey = $tanggal->format('Y-m-d');
+            $total++;
 
-            $dailyResult[$tanggalKey][] = $isAkurat ? 1 : 0;
+            $date = Carbon::parse($row->created_at);
+            $monthKey = $date->format('Y-m');
+            $dateKey = $date->format('Y-m-d');
+
+            // Total data per bulan
+            $monthlyTotal[$monthKey] =
+                ($monthlyTotal[$monthKey] ?? 0) + 1;
+
+            // Total data per hari
+            $dailyTotal[$monthKey][$dateKey] =
+                ($dailyTotal[$monthKey][$dateKey] ?? 0) + 1;
+
+            $netSales = (float) ($row->net_sales ?? 0);
+            $jumlahBayar = (float) ($row->jumlah_pembayaran ?? 0);
+
+            $totalPotongan = 0;
+
+            $potongan = $row->jumlah_potongan;
+
+            if (!empty($potongan)) {
+
+                if (!is_array($potongan)) {
+                    $potongan = json_decode($potongan, true);
+                }
+
+                if (is_array($potongan)) {
+                    foreach ($potongan as $item) {
+                        $totalPotongan += (float) ($item['jumlah'] ?? 0);
+                    }
+                }
+            }
+
+            $isAkurat =
+                $netSales == $jumlahBayar ||
+                $netSales == ($jumlahBayar + $totalPotongan);
 
             if ($isAkurat) {
+
                 $totalAkurat++;
-                $accurateCount++;
-            } else {
-                $notAccurateCount++;
+
+                // Akurat per bulan
+                $monthlyAccurate[$monthKey] =
+                    ($monthlyAccurate[$monthKey] ?? 0) + 1;
+
+                // Akurat per hari
+                $dailyAccurate[$monthKey][$dateKey] =
+                    ($dailyAccurate[$monthKey][$dateKey] ?? 0) + 1;
+
+                // Breakdown harian
+                $dailyBreakdownPerMonth[$monthKey][$dateKey] =
+                    ($dailyBreakdownPerMonth[$monthKey][$dateKey] ?? 0) + 1;
             }
         }
 
         if ($total == 0) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $emptyResponse;
         }
 
-        $progress = ($totalAkurat / $total) * 100;
-        $progress = round($progress, 1);
+        // Progress utama
+        $progress = round(($totalAkurat / $total) * 100, 1);
 
-        $nilaiTarget = (float) $detail->nilai_target;
+        // Gap
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
         if ($gap === '') {
             $gap = '0';
         }
 
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
+        // Progress bulanan
         $monthlyProgress = [];
+
+        foreach ($monthlyTotal as $month => $jumlah) {
+
+            $accurate = $monthlyAccurate[$month] ?? 0;
+
+            $monthlyProgress[$month] = $jumlah > 0
+                ? round(($accurate / $jumlah) * 100, 1)
+                : 0;
+        }
+
+        // Progress harian
         $dailyProgressPerMonth = [];
 
-        foreach ($dailyResult as $dateStr => $values) {
-            $date = Carbon::parse($dateStr);
-            $monthKey = $date->format('Y-m');
+        foreach ($dailyTotal as $month => $days) {
 
-            $avg = array_sum($values) / count($values) * 100;
-            $avg = round($avg, 1);
+            foreach ($days as $date => $jumlah) {
 
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-                $monthlyProgress[$monthKey] = [];
+                $accurate = $dailyAccurate[$month][$date] ?? 0;
+
+                $dailyProgressPerMonth[$month][$date] = $jumlah > 0
+                    ? round(($accurate / $jumlah) * 100, 1)
+                    : 0;
             }
-            $monthlyData[$monthKey][] = $avg;
-            $monthlyProgress[$monthKey][] = $avg;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-                $dailyProgressPerMonth[$monthKey] = [];
-            }
-            $dailyBreakdownPerMonth[$monthKey][$dateStr] = $avg;
-            $dailyProgressPerMonth[$monthKey][$dateStr] = $avg;
         }
 
-        $monthlyAverages = [];
-        $monthlyProgressAverages = [];
-        foreach ($monthlyData as $month => $values) {
-            $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
-        }
-        foreach ($monthlyProgress as $month => $values) {
-            $monthlyProgressAverages[$month] = round(array_sum($values) / count($values), 1);
-        }
-
-        ksort($monthlyAverages);
+        ksort($monthlyAccurate);
+        ksort($monthlyProgress);
         ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAverages);
         ksort($dailyProgressPerMonth);
 
         return [
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => [
-                'above' => $accurateCount,
-                'below' => $notAccurateCount
+                'above' => $totalAkurat,
+                'below' => max(0, $total - $totalAkurat),
             ],
-            'monthly_data' => $monthlyAverages,
+
+            // Jumlah data akurat per bulan
+            'monthly_data' => $monthlyAccurate,
+
+            // Jumlah data akurat per hari
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAverages,
+
+            // Persentase akurasi per bulan
+            'monthly_progress' => $monthlyProgress,
+
+            // Persentase akurasi per hari
             'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
     }
