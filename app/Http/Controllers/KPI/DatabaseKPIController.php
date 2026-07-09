@@ -7,7 +7,7 @@ use App\Models\activityLog;
 use App\Models\formPenilaian;
 use App\Models\karyawan;
 use App\Models\kategoriKPI;
-use App\Models\NilaiKPI;
+use App\Models\nilaiKPI;
 use App\Models\nilaiKPI as ModelsNilaiKPI;
 use App\Models\pengajuancuti;
 use App\Models\RKM;
@@ -108,7 +108,7 @@ class DatabaseKPIController extends Controller
     public function UptimePresentase()
     {
         $now = Carbon::now();
-        
+
         $weekStart = $now->copy()->startOfWeek();
         $weekEnd = $now->copy()->endOfWeek();
         $monthStart = $now->copy()->startOfMonth();
@@ -122,7 +122,7 @@ class DatabaseKPIController extends Controller
         if ($response->failed() || $response->body() === 'FILE_NOT_FOUND') {
             return response()->json(['error' => 'Tidak bisa mengambil file dari Server CCTV'], 404);
         }
-        
+
         $content = $response->body();
         $lines   = array_filter(explode("\n", $content));
 
@@ -173,7 +173,7 @@ class DatabaseKPIController extends Controller
         $totalMonthMinutes = $monthStart->diffInMinutes($monthEnd) + 1;
         $apkMonthPercent = $totalMonthMinutes > 0 ? (($totalMonthMinutes - $apkMonthDowntime) / $totalMonthMinutes) * 100 : 0;
 
-        
+
         $latteWeekTotal = activityLog::where('url', 'https://192.168.95.60:8002/')
             ->whereBetween('created_at', [$weekStart, $weekEnd])
             ->count();
@@ -999,7 +999,7 @@ class DatabaseKPIController extends Controller
                 ->get()
                 ->groupBy('jenis_penilaian');
 
-            $nilaiAll = NilaiKPI::where('id_evaluated', $id_karyawan)
+            $nilaiAll = nilaiKPI::where('id_evaluated', $id_karyawan)
                 ->where('kode_form', $kodeForm)
                 ->where('status', '1')
                 ->get();
@@ -1081,7 +1081,7 @@ class DatabaseKPIController extends Controller
         ]);
 
         foreach ($request->id_nilai as $index => $id) {
-            $nilaiModel = NilaiKPI::find($id);
+            $nilaiModel = nilaiKPI::find($id);
             if ($nilaiModel) {
                 $nilaiModel->nilai = $request->nilai[$index];
                 $nilaiModel->status = '1';
@@ -1431,7 +1431,7 @@ class DatabaseKPIController extends Controller
                     'jenis_penilaian'  => $jenis_penilaian,
                 ]);
 
-                $nilaiExists = NilaiKPI::where('id_evaluator', $id_evaluator)
+                $nilaiExists = nilaiKPI::where('id_evaluator', $id_evaluator)
                     ->where('id_evaluated', $id_evaluated)
                     ->where('kode_form', $kode_form)
                     ->where('jenis_penilaian', $jenis_penilaian)
@@ -1440,7 +1440,7 @@ class DatabaseKPIController extends Controller
 
                 if (!$nilaiExists) {
                     foreach ($dataKategori as $kategori) {
-                        NilaiKPI::create([
+                        nilaiKPI::create([
                             'id_evaluator'    => $id_evaluator,
                             'id_evaluated'    => $id_evaluated,
                             'kode_form'       => $kode_form,
@@ -1470,7 +1470,7 @@ class DatabaseKPIController extends Controller
                     ];
 
                     $url = url('getFormPenilaian/' . $kode_form . '/' . $id_evaluated);
-                    
+
                     Notification::send($user, new penilaianExcangheNotifikasi($dummyComment, $url, $user->id));
                 }
             }
@@ -1658,7 +1658,7 @@ class DatabaseKPIController extends Controller
     public function loadTemplate($kodeForm)
     {
         $forms = formPenilaian::where('kode_form', $kodeForm)->get();
-        
+
         if ($forms->isEmpty()) {
             return response()->json(['error' => 'Template tidak ditemukan'], 404);
         }
@@ -1688,11 +1688,11 @@ class DatabaseKPIController extends Controller
         // Group sub_kriteria berdasarkan kode_kategori
         foreach ($subKriterias as $sub) {
             $kIdx = array_search($sub->kode_kategori, array_column($data['kriteria'], 'kode_kategori'));
-            
+
             if ($kIdx === false) {
                 // Cari nama_penilaian dari form yang memiliki kode_kategori ini
                 $formWithCategory = $forms->firstWhere('kode_kategori', $sub->kode_kategori);
-                
+
                 $data['kriteria'][] = [
                     'kode_kategori' => $sub->kode_kategori,
                     'nama_penilaian' => $formWithCategory ? $formWithCategory->nama_penilaian : $firstForm->nama_penilaian,
@@ -1703,7 +1703,7 @@ class DatabaseKPIController extends Controller
 
             // Ambil dari eager loaded relationship
             $tipes = $sub->tipeKategoriTabels;
-            
+
             $data['kriteria'][$kIdx]['sub_kriteria'][] = [
                 'id_kategori' => $sub->id,
                 'judul_kategori' => $sub->judul_kategori,
@@ -1967,7 +1967,7 @@ class DatabaseKPIController extends Controller
             'isEvaluator' => true
         ]);
     }
-    
+
     public function createKategori()
     {
         $data = karyawan::all();
@@ -2208,7 +2208,7 @@ class DatabaseKPIController extends Controller
         }
 
         $groupedByQuartal = $allForms->groupBy('quartal')->sortKeysDesc();
-        
+
         $listPeriode = $groupedByQuartal->map(function($items, $quartal) {
             return [
                 'quartal' => $quartal,
@@ -2262,7 +2262,7 @@ class DatabaseKPIController extends Controller
 
                     $subKriteriaArray = [];
                     foreach ($subKriterias as $kriteria) {
-                        $nilai = NilaiKPI::where('id_evaluator', $evaluator->id_evaluator)
+                        $nilai = nilaiKPI::where('id_evaluator', $evaluator->id_evaluator)
                             ->where('id_evaluated', $id_karyawan)
                             ->where('kode_form', $evaluator->kode_form)
                             ->where('kode_kategori', $kode_kategori)
@@ -2339,7 +2339,7 @@ class DatabaseKPIController extends Controller
             ]);
         }
 
-        $dataNilai = NilaiKPI::whereIn('id_evaluator', $idEvaluators)
+        $dataNilai = nilaiKPI::whereIn('id_evaluator', $idEvaluators)
             ->where('id_evaluated', $id_karyawan)
             ->whereIn('kode_form', $kodeFormList)
             ->whereIn('kode_kategori', $kodeKategoriList)
@@ -2357,7 +2357,7 @@ class DatabaseKPIController extends Controller
             ]);
         }
 
-        $deletedNilai = NilaiKPI::whereIn('id_evaluator', $idEvaluators)
+        $deletedNilai = nilaiKPI::whereIn('id_evaluator', $idEvaluators)
             ->where('id_evaluated', $id_karyawan)
             ->whereIn('kode_form', $kodeFormList)
             ->whereIn('kode_kategori', $kodeKategoriList)
@@ -2697,7 +2697,7 @@ class DatabaseKPIController extends Controller
         $deletedShare = 0;
 
         if ($idEvaluators->isNotEmpty()) {
-            $deletedNilai = NilaiKPI::whereIn('id_evaluator', $idEvaluators)
+            $deletedNilai = nilaiKPI::whereIn('id_evaluator', $idEvaluators)
                 ->where('id_evaluated', $id_karyawan)
                 ->whereIn('kode_form', $kodeFormList)
                 ->whereIn('kode_kategori', $kodeKategoriList)
@@ -2763,7 +2763,7 @@ class DatabaseKPIController extends Controller
             ->where('id_evaluator', $id_evaluator)
             ->delete();
 
-        $deletedNilai = NilaiKPI::where('kode_form', $kodeFormGlobal)
+        $deletedNilai = nilaiKPI::where('kode_form', $kodeFormGlobal)
             ->where('id_evaluator', $id_evaluator)
             ->where('jenis_penilaian', $jenisPenilaian)
             ->delete();
@@ -2883,14 +2883,14 @@ class DatabaseKPIController extends Controller
         if (!$isPrivileged) $totalSemua->where('id_evaluated', $idUserLogin);
         $totalSemua = $totalSemua->count();
 
-        $totalDilaksanakan = NilaiKPI::whereBetween('created_at', [$startDate, $endDate])
+        $totalDilaksanakan = nilaiKPI::whereBetween('created_at', [$startDate, $endDate])
             ->where('status', '1')
             ->selectRaw('COUNT(*) as jumlah')
             ->groupBy('id_evaluator', 'id_evaluated', 'kode_form', 'jenis_penilaian');
         if (!$isPrivileged) $totalDilaksanakan->where('id_evaluated', $idUserLogin);
         $totalDilaksanakan = $totalDilaksanakan->get()->count();
 
-        $totalBelumDilaksanakan = NilaiKPI::whereBetween('created_at', [$startDate, $endDate])
+        $totalBelumDilaksanakan = nilaiKPI::whereBetween('created_at', [$startDate, $endDate])
             ->where('status', '0')
             ->selectRaw('COUNT(*) as jumlah')
             ->groupBy('id_evaluator', 'id_evaluated', 'kode_form', 'jenis_penilaian');
@@ -2983,7 +2983,7 @@ class DatabaseKPIController extends Controller
             $skorJenis = [];
 
             foreach ($evaluators as $eval) {
-                $nilaiCollection = NilaiKPI::where('id_evaluator', $eval->id_evaluator)
+                $nilaiCollection = nilaiKPI::where('id_evaluator', $eval->id_evaluator)
                     ->where('id_evaluated', $evaluatedId)
                     ->where('kode_form', $kodeForm)
                     ->where('jenis_penilaian', $eval->jenis_penilaian)
