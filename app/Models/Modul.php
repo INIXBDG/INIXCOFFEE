@@ -30,8 +30,25 @@ class Modul extends Model
         return $this->hasMany(PesertaModul::class, 'modul', 'id');
     }
 
-    public function materi()
+    // 2. Buat Accessor khusus untuk menangani fallback
+    public function getDetailMateriAttribute()
     {
-        return $this->belongsTo(Materi::class, 'id_materi', 'id');
+        // Prioritas 1: Jika id_materi ada, langsung cari berdasarkan ID (lebih cepat)
+        if (!empty($this->id_materi)) {
+            $materi = Materi::find($this->id_materi);
+            if ($materi) {
+                return $materi;
+            }
+        }
+
+        // Prioritas 2 & 3: Jika id_materi kosong, cari berdasarkan nama atau kode
+        return Materi::where(function ($query) {
+            if (!empty($this->nama_materi)) {
+                $query->where('nama_materi', $this->nama_materi);
+            }
+            if (!empty($this->kode_materi)) {
+                $query->orWhere('kode_materi', $this->kode_materi);
+            }
+        })->first();
     }
 }

@@ -43,9 +43,12 @@ class payrollController extends Controller
 
             $baseQuery = Karyawan::query()
                 ->whereNot('jabatan', 'Pilih Jabatan')
-                ->whereNot('jabatan', 'Outsourcing')
+                ->whereNot('jabatan', 'Outsource')
                 ->whereNot('divisi', 'Pilih Divisi')
-                ->where('status_aktif', '1');
+                ->where('status_aktif', '1')
+                ->whereNot(function ($query) {
+                    $query->where('kode_karyawan', 'like', '%OL%');
+                });
 
             if (!empty($search)) {
                 $baseQuery->where(function ($q) use ($search) {
@@ -60,7 +63,12 @@ class payrollController extends Controller
             $eligibleIds = $eligibleKaryawan->pluck('id')->toArray();
             $totalEligible = count($eligibleIds);
 
-            $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')->whereIn('id_karyawan', $eligibleIds)->where('bulan', $bulan)->where('tahun', $tahun)->get()->groupBy('id_karyawan');
+            $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')
+                ->whereIn('id_karyawan', $eligibleIds)
+                ->where('bulan', $bulan)
+                ->where('tahun', $tahun)
+                ->get()
+                ->groupBy('id_karyawan');
 
             $periodStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
             $periodEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
@@ -78,6 +86,7 @@ class payrollController extends Controller
                     $tunjanganBersih = 0;
                 }
 
+                // Gaji bersih individu tetap melibatkan tunjangan (seperti semula)
                 $gajiBersih = $gajiPokok + $tunjanganBersih;
 
                 $awalProbation = $emp->awal_probation ? Carbon::parse($emp->awal_probation) : null;
@@ -104,7 +113,7 @@ class payrollController extends Controller
                                 'tipe' => optional($i->jenistunjangan)->tipe,
                                 'keterangan' => $i->keterangan,
                                 'nilai' => (float) $i->total,
-                            ],
+                            ]
                         )
                         ->values(),
                 ];
@@ -119,6 +128,12 @@ class payrollController extends Controller
             $monthlyTrend = $this->calculateMonthlyTrend($tahun);
             $topDeductions = $this->calculateTopDeductions($payrollList, $bulan, $tahun);
 
+            // MENGHITUNG TOTAL PAYROLL (Tanpa Tunjangan: Gaji Pokok - Potongan)
+            $totalPayroll = $payrollList->sum(function ($emp) {
+                $hasil = $emp['gaji_pokok'] - $emp['total_potongan'];
+                return $hasil > 0 ? $hasil : 0;
+            });
+
             $summary = [
                 'total_karyawan' => $totalEligible,
                 'sudah_dihitung' => $payrollList->where('status', 'Sudah Dihitung')->count(),
@@ -130,7 +145,10 @@ class payrollController extends Controller
                     })
                     ->sum('tunjangan_bersih'),
                 'total_potongan' => $payrollList->sum('total_potongan'),
-                'total_gaji_bersih' => $payrollList->sum('gaji_bersih'),
+                
+                // PERUBAHAN: total_gaji_bersih diganti menjadi total_payroll 
+                'total_payroll' => $totalPayroll,
+                
                 'avg_gaji_bersih' => $totalRecords > 0 ? round($payrollList->sum('gaji_bersih') / $totalRecords, 0) : 0,
                 'median_gaji_bersih' => $this->calculateMedian($payrollList->pluck('gaji_bersih')->toArray()),
                 'new_hire_count' => $payrollList->where('status', 'New Hire')->count(),

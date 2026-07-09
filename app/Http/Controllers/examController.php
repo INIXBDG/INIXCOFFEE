@@ -245,11 +245,20 @@ class examController extends Controller
     {
         $existingRKMs = eksam::pluck('id_rkm')->toArray();
 
-        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
-            ->where('exam', '1')
-            ->whereNotIn('id', $existingRKMs)
-            ->orderBy('tanggal_awal', 'desc')
-            ->get();
+        // $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
+        //     ->where('exam', '1')
+        //     ->orderBy('tanggal_awal', 'desc')
+        //     ->get();
+        $rkm = RKM::with(['materi', 'peluang', 'rekomendasilanjutan', 'sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
+                ->where('status', '0')
+                ->whereNull('deleted_at')
+                ->whereHas('peluang', function ($query) {
+                    $query->where('tentatif', 0);
+                })
+                ->whereNotIn('id', $existingRKMs)
+                ->orderBy('status', 'asc')
+                ->orderBy('tanggal_awal', 'desc')
+                ->get();
 
         return response()->json([
             'success' => true,

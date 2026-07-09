@@ -370,7 +370,7 @@
                     $('#sumTotal').text(res.summary.total_karyawan);
                     $('#sumDone').text(res.summary.sudah_dihitung);
                     $('#sumPending').text(res.summary.belum_dihitung);
-                    $('#sumGross').text(formatIDR(res.summary.total_gaji_bersih));
+                    $('#sumGross').text(formatIDR(res.summary.total_payroll));
                     $('#sumAvg').text(formatIDR(res.summary.avg_gaji_bersih));
                     $('#sumMedian').text(formatIDR(res.summary.median_gaji_bersih));
                     $('#sumAllowance').text(formatIDR(res.summary.total_tunjangan));
