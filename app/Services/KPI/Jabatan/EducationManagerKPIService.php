@@ -17,7 +17,7 @@ class EducationManagerKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function calculatePengembanganKurikulumPelatihan($item, $personId)
+    public function calculatePengembanganKurikulumPelatihan($item, $personId)
         {
             $detail = $item->detailTargetKPI->first();
             if (!$detail || !$detail->detail_jangka) {
@@ -54,7 +54,7 @@ class EducationManagerKPIService
             return round($progress);
     }
 
-    private function calculatePengembanganKurikulumPelatihanDetail($itemDetail)
+    public function calculatePengembanganKurikulumPelatihanDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -154,7 +154,7 @@ class EducationManagerKPIService
         ];
     }
 
-    private function calculatePeningkatanKnowledgeSharing($item, $personId)
+    public function calculatePeningkatanKnowledgeSharing($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -197,7 +197,7 @@ class EducationManagerKPIService
         return round($progress);
     }
 
-    private function calculatePeningkatanKnowledgeSharingDetail($itemDetail)
+    public function calculatePeningkatanKnowledgeSharingDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -324,7 +324,7 @@ class EducationManagerKPIService
         ];
     }
 
-    private function calculatePeningkatanKontribusiPelatihan($item)
+    public function calculatePeningkatanKontribusiPelatihan($item)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -386,7 +386,7 @@ class EducationManagerKPIService
         return $progress;
     }
 
-    private function calculatePeningkatanKontribusiPelatihanDetail($itemDetail)
+    public function calculatePeningkatanKontribusiPelatihanDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -492,7 +492,7 @@ class EducationManagerKPIService
         ];
     }
 
-    private function calculateEvaluasiKinerjaInstruktur($item, $personId)
+    public function calculateEvaluasiKinerjaInstruktur($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -581,7 +581,7 @@ class EducationManagerKPIService
         return round($progress, 2);
     }
 
-    private function calculateEvaluasiKinerjaInstrukturDetail($itemDetail)
+    public function calculateEvaluasiKinerjaInstrukturDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -721,7 +721,7 @@ class EducationManagerKPIService
         ];
     }
 
-    private function calculatePembuatanArtikel($item, $personId) {
+    public function calculatePembuatanArtikel($item, $personId) {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
@@ -757,7 +757,7 @@ class EducationManagerKPIService
         return round($progress, 2);
     }
 
-    private function calculatePembuatanArtikelDetail($itemDetail) {
+    public function calculatePembuatanArtikelDetail($itemDetail) {
         $detail = $itemDetail->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$itemDetail->id}");

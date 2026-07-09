@@ -11,7 +11,7 @@ use App\Traits\TimeCalculationTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
-class ProgammerKPIService
+class ProgrammerKPIService
 {
     use KPIDefaultResponseTrait, TimeCalculationTrait;
 
