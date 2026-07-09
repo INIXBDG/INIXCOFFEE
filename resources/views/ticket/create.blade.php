@@ -8,12 +8,11 @@
                 <div class="card-body" id="card">
                 <a href="{{ url()->previous() }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
                 <h5 class="card-title text-center mb-4">{{ __('Ticketing') }}</h5>
-                    <form method="POST" action="{{ route('tickets.store') }}">
+                    <form id="form-ticketing" method="POST" action="{{ route('tickets.store') }}">
                         @csrf
                         <div class="row mb-3">
                             <label for="nama_karyawan" class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }}</label>
                             <div class="col-md-6">
-                                {{-- {{auth()->user()->karyawan->divisi}} --}}
                                 @if (auth()->user()->karyawan->divisi == 'IT Service Management')
                                     <select name="nama_karyawan" id="nama_karyawan" class="form-select">
                                         <option value="" selected>Pilih Karyawan</option>
@@ -66,8 +65,7 @@
                             <div class="col-md-6">
                                 <select id="kategori" class="form-select @error('kategori') is-invalid @enderror" name="kategori" required autocomplete="kategori" autofocus>
                                     <option value="" selected>Pilih Kategori</option>
-                                    <!-- Opsi akan diisi oleh jQuery -->
-                                </select>
+                                    </select>
                                 @error('kategori')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -90,7 +88,7 @@
 
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn click-primary">
+                                <button type="submit" id="btn-submit" class="btn click-primary">
                                     {{ __('Simpan') }}
                                 </button>
                             </div>
@@ -104,6 +102,17 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
+    
+    // --- TAMBAHAN UNTUK MENCEGAH DOUBLE CLICK ---
+    $('#form-ticketing').on('submit', function() {
+        // Disable tombol submit
+        $('#btn-submit').prop('disabled', true);
+        
+        // Opsional: Ubah teks tombol agar user tahu sedang memproses
+        $('#btn-submit').text('Menyimpan...'); 
+    });
+    // ---------------------------------------------
+
      // Simpan divisi default saat halaman dimuat
     const defaultDivisi = "{{ auth()->user()->karyawan->divisi }}";
     

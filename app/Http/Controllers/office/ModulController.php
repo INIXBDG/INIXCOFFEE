@@ -61,11 +61,16 @@ class ModulController extends Controller
         $perusahaan = Perusahaan::all();
         $peserta = PesertaModul::with('perusahaan')->where('no_modul', $id)->get();
 
-        $modul = $modul->map(function ($item) {
-            $materi_asli = Materi::where('nama_materi', $item->nama_materi)->first();
-            $item->materi_id = $materi_asli ? $materi_asli->id : null;
-            return $item;
-        });
+        // $modul = $modul->map(function ($item) {
+        //     // Gunakan closure untuk membungkus kondisi where dan orWhere
+        //     $materi_asli = Materi::where(function ($query) use ($item) {
+        //         $query->where('nama_materi', $item->nama_materi)
+        //             ->orWhere('kode_materi', $item->kode_materi);
+        //     })->first();
+
+        //     $item->materi_id = $materi_asli ? $materi_asli->id : null;
+        //     return $item;
+        // });
 
         return view('office.modul.index', compact('nomor', 'modul', 'materi', 'perusahaan', 'peserta'));
     }
@@ -86,23 +91,28 @@ class ModulController extends Controller
         $nomor   = NomorModul::findOrFail($request->no_modul);
 
         if ($nomor->type == 'Authorize') {
+            $modulCount = Modul::where('no_modul', $request->no_modul)->count();
 
-            $modul = Modul::where('no_modul', $request->no_modul)->count();
-
-            if ($modul >= 1) {
+            if ($modulCount >= 1) {
                 return back()->with('error', 'Modul untuk Authorize hanya boleh 1. Data sudah tersedia.');
             }
         }
 
+        // 1. Ambil data materi berdasarkan ID yang dikirim dari form
+        $materi = Materi::findOrFail($request->materi_id);
+
+        // 2. Masukkan kode_materi dan nama_materi ke dalam create
         Modul::create([
-            'no_modul'      => $request->no_modul,
-            'id_materi'     => $request->materi_id,
-            'awal_training' => $request->awal_training,
+            'no_modul'       => $request->no_modul,
+            'id_materi'      => $request->materi_id,
+            'kode_materi'    => $materi->kode_materi ?? '-', // Gunakan fallback '-' jika null di master materi
+            'nama_materi'    => $materi->nama_materi ?? '-', 
+            'awal_training'  => $request->awal_training,
             'akhir_training' => $request->akhir_training,
-            'jumlah'        => $request->jumlah,
-            'harga_satuan'  => $request->harga_satuan,
-            'total'         => $total,
-            'note'          => $request->note,
+            'jumlah'         => $request->jumlah,
+            'harga_satuan'   => $request->harga_satuan,
+            'total'          => $total,
+            'note'           => $request->note,
         ]);
 
         return redirect()

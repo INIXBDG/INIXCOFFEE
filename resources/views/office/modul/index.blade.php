@@ -91,8 +91,8 @@
                                 data-akhir="{{ $m->akhir_training }}" data-jumlah="{{ $m->jumlah }}"
                                 data-harga_satuan="{{ $m->harga_satuan }}" data-total="{{ $m->total }}"
                                 data-note="{{ $m->note ?? '' }}">
-                                <td>{{ $m->materi->kode_alias ?? $m->materi->kode_materi ?? '-' }}</td>
-                                <td>{{ $m->materi->alias ?? $m->materi->nama_materi }}</td>
+                                <td>{{ $m->detail_materi?->kode_alias ?? $m->detail_materi?->kode_materi ?? '-' }}</td>
+                                <td>{{ $m->detail_materi?->alias ?? $m->detail_materi?->nama_materi ?? '-' }}</td>
                                 <td>{{ \Carbon\Carbon::parse($m->awal_training)->translatedFormat('d M Y') }} s/d
                                     {{ \Carbon\Carbon::parse($m->akhir_training)->translatedFormat('d M Y') }}</td>
                                 <td>{{ $m->jumlah }}</td>
@@ -405,6 +405,7 @@
                             <label>Instansi Peserta</label>
                             <select name="perusahaan_id" id="edit_perusahaan_id" class="form-select select2">
                                 <option value="">-- Tanpa Instansi --</option>
+                                <option value="Inixindo Bandung">Inixindo Bandung</option>
                                 @foreach ($perusahaan as $item)
                                     <option value="{{ $item->id }}">{{ $item->nama_perusahaan }} |
                                         {{ $item->lokasi ?: '-' }}</option>
