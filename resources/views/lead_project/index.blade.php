@@ -273,7 +273,11 @@
                         actions += 'Actions ';
                         actions += '</button>';
                         actions += '<div class="dropdown-menu shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
-                        actions += '<a class="dropdown-item btn-edit-status" href="#" data-id="' + row.id + '" data-status="' + row.status + '">Perbarui Tahapan</a>';
+                        actions += '<a class="dropdown-item btn-edit-status" href="#"'
+                        + ' data-id="' + row.id + '"'
+                        + ' data-status="' + row.status + '"'
+                        + ' data-nama="' + row.nama_lead + '">'
+                        + 'Perbarui Tahapan</a>';
                         actions += '<a class="dropdown-item btn-edit-lead" href="#" \
                         data-id="' + row.id + '" \
                         data-nama="' + row.nama_lead + '" \
@@ -360,7 +364,7 @@
             $('#edit_kontak_pic').val($(this).data('kontak'));
             $('#edit_estimasi_nilai').val($(this).data('nilai'));
             $('#edit_tahun_periode').val($(this).data('tahun_periode'));
-            $('#editLeadModal').modal('show');
+            $('#updateStatusModal').modal('show');
         });
 
         $('#formUpdateStatus').on('submit', function(e) {

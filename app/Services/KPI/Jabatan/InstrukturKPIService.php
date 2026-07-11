@@ -835,34 +835,24 @@ class InstrukturKPIService
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
-
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-        if ($personId !== null) {
-            $kodeKaryawan = karyawan::where('id', $personId)->first();
 
-            $rkmQuery = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
-                        ->whereBetween('tanggal_awal', [$start, $end])->where('tanggal_akhir', '<', now())
-                        ->where('status', '0')
-                        ->whereNull('r_k_m_s.deleted_at')
-                        ->whereHas('peluang', function ($query) {
-                            $query->where('tentatif', 0);
-                        })
-                        ->orderBy('status', 'asc')
-                        ->orderBy('tanggal_awal', 'asc')
-                        ->get();
-        } else {
-            $rkmQuery = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
-                        ->whereBetween('tanggal_awal', [$start, $end])->where('tanggal_akhir', '<', now())
-                        ->where('status', '0')
-                        ->whereNull('r_k_m_s.deleted_at')
-                        ->whereHas('peluang', function ($query) {
-                            $query->where('tentatif', 0);
-                        })
-                        ->orderBy('status', 'asc')
-                        ->orderBy('tanggal_awal', 'asc')
-                        ->get();
+        // PERBAIKAN: Hapus eager loading yang tidak perlu (with) dan perbaiki struktur query
+        $rkmQuery = RKM::whereBetween('tanggal_awal', [$start, $end])
+            ->where('tanggal_akhir', '<', now())
+            ->where('status', '0')
+            ->whereNull('r_k_m_s.deleted_at')
+            ->whereHas('peluang', function ($query) {
+                $query->where('tentatif', 0);
+            });
+
+        // PERBAIKAN: Terapkan filter instruktur_key jika personId ada
+        if ($personId !== null) {
+            $kodeKaryawan = karyawan::find($personId);
+            if ($kodeKaryawan) {
+                $rkmQuery->where('instruktur_key', $kodeKaryawan->kode_karyawan);
+            }
         }
 
         $totalData = $rkmQuery->count();
@@ -872,84 +862,52 @@ class InstrukturKPIService
         }
 
         $rkmIds = $rkmQuery->pluck('id');
-
         $totalRekomendasi = RekomendasiLanjutan::whereIn('id_rkm', $rkmIds)->count();
 
-        $presentase = ($totalRekomendasi / $totalData) * 100;
-
-        return round($presentase, 1);
+        return round(($totalRekomendasi / $totalData) * 100, 1);
     }
 
     public function calculateUpselingLanjutanMateriDetail($itemDetail, $personId): array
     {
         $detail = $itemDetail->detailTargetKPI->first();
+        $emptyResponse = [
+            'progress' => 0, 'gap' => 0, 'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [], 'daily_breakdown_per_month' => [],
+            'monthly_progress' => [], 'daily_progress_per_month' => [],
+        ];
 
-        if (!$detail) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
-        }
+        if (!$detail) return $emptyResponse;
 
         $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $emptyResponse;
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
+        // PERBAIKAN: Samakan kondisi query dengan fungsi primer agar data sinkron
+        $rkmQuery = RKM::whereBetween('created_at', [$start, $end])
+            ->where('tanggal_akhir', '<', now())
+            ->where('status', '0')
+            ->whereNull('r_k_m_s.deleted_at')
+            ->whereHas('peluang', function ($query) {
+                $query->where('tentatif', 0);
+            });
+
+        // Terapkan filter instruktur_key
         if ($personId !== null) {
-            $kodeKaryawan = karyawan::where('id', $personId)->first();
-
-            if (!$kodeKaryawan) {
-                return [
-                    'progress' => 0,
-                    'gap' => 0,
-                    'pie_chart' => ['above' => 0, 'below' => 0],
-                    'monthly_data' => [],
-                    'daily_breakdown_per_month' => [],
-                    'monthly_progress' => [],
-                    'daily_progress_per_month' => [],
-                ];
-            }
-
-            $rkmQuery = RKM::whereBetween('created_at', [$start, $end])
-                ->where('instruktur_key', $kodeKaryawan->kode_karyawan)
-                ->where('tanggal_akhir', '<', now());
-        } else {
-            $rkmQuery = RKM::whereBetween('created_at', [$start, $end])
-                ->where('tanggal_akhir', '<', now());
+            $kodeKaryawan = karyawan::find($personId);
+            if (!$kodeKaryawan) return $emptyResponse;
+            
+            $rkmQuery->where('instruktur_key', $kodeKaryawan->kode_karyawan);
         }
 
         $rkms = $rkmQuery->get(['id', 'created_at']);
 
-        if ($rkms->isEmpty()) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
-        }
+        if ($rkms->isEmpty()) return $emptyResponse;
 
         $rkmIds = $rkms->pluck('id');
         $rekomendasiRkmIds = RekomendasiLanjutan::whereIn('id_rkm', $rkmIds)->pluck('id_rkm');
@@ -957,89 +915,59 @@ class InstrukturKPIService
 
         $totalData = $rkms->count();
         $totalRekomendasi = 0;
-
         $dailyData = [];
         $monthlyDataRaw = [];
 
+        // Looping pemrosesan per tanggal (Sudah efisien)
         foreach ($rkms as $rkm) {
             $hasRekom = $hasRekomendasiMap->has($rkm->id);
-            if ($hasRekom) {
-                $totalRekomendasi++;
-            }
+            if ($hasRekom) $totalRekomendasi++;
 
             $dateObj = Carbon::parse($rkm->created_at);
             $dayKey = $dateObj->format('Y-m-d');
             $monthKey = $dateObj->format('Y-m');
 
             $dailyData[$dayKey]['total'] = ($dailyData[$dayKey]['total'] ?? 0) + 1;
+            $monthlyDataRaw[$monthKey]['total'] = ($monthlyDataRaw[$monthKey]['total'] ?? 0) + 1;
+            
             if ($hasRekom) {
                 $dailyData[$dayKey]['rekom'] = ($dailyData[$dayKey]['rekom'] ?? 0) + 1;
-            }
-
-            $monthlyDataRaw[$monthKey]['total'] = ($monthlyDataRaw[$monthKey]['total'] ?? 0) + 1;
-            if ($hasRekom) {
                 $monthlyDataRaw[$monthKey]['rekom'] = ($monthlyDataRaw[$monthKey]['rekom'] ?? 0) + 1;
             }
         }
 
         $progress = $totalData > 0 ? round(($totalRekomendasi / $totalData) * 100, 1) : 0;
-
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        $above = $totalRekomendasi;
-        $below = $totalData - $totalRekomendasi;
-
         $monthlyAverages = [];
-        $monthlyProgress = [];
         foreach ($monthlyDataRaw as $month => $data) {
-            $rekom = $data['rekom'] ?? 0;
-
-            $rate = $data['total'] > 0
-                ? ($rekom / $data['total']) * 100
-                : 0;
-
+            $rate = $data['total'] > 0 ? ($data['rekom'] ?? 0) / $data['total'] * 100 : 0;
             $monthlyAverages[$month] = round($rate, 1);
-            $monthlyProgress[$month] = round($rate, 1);
         }
         ksort($monthlyAverages);
-        ksort($monthlyProgress);
 
         $dailyBreakdownPerMonth = [];
-        $dailyProgressPerMonth = [];
-
         foreach ($dailyData as $dayKey => $data) {
-            $dateObj = Carbon::parse($dayKey);
-            $monthKey = $dateObj->format('Y-m');
-
-            $rekom = $data['rekom'] ?? 0;
-
-            $rate = $data['total'] > 0
-                ? ($rekom / $data['total']) * 100
-                : 0;
-
-            $roundedRate = round($rate, 1);
-
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $roundedRate;
-            $dailyProgressPerMonth[$monthKey][$dayKey] = $roundedRate;
+            $monthKey = Carbon::parse($dayKey)->format('Y-m');
+            $rate = $data['total'] > 0 ? ($data['rekom'] ?? 0) / $data['total'] * 100 : 0;
+            
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = round($rate, 1);
         }
-
         ksort($dailyBreakdownPerMonth);
-        ksort($dailyProgressPerMonth);
-
+        
         foreach ($dailyBreakdownPerMonth as $month => $days) {
             ksort($dailyBreakdownPerMonth[$month]);
-            ksort($dailyProgressPerMonth[$month]);
         }
 
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => ['above' => $above, 'below' => $below],
+            'pie_chart' => ['above' => $totalRekomendasi, 'below' => $totalData - $totalRekomendasi],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgress,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
+            'monthly_progress' => $monthlyAverages, // Menggunakan referensi yang sama agar hemat iterasi
+            'daily_progress_per_month' => $dailyBreakdownPerMonth, // Sama seperti di atas
         ];
     }
 

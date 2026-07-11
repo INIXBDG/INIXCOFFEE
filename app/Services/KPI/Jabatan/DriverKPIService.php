@@ -670,7 +670,7 @@ class DriverKPIService
         ];
     }
 
-    public function calculateFeedbackKenyamananBerkendara($item, $personId)
+    public function calculateFeedbackKenyamananBerkendara($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -685,26 +685,26 @@ class DriverKPIService
         }
 
         $start = Carbon::create($tahun, 1, 1)->startOfDay();
+        $end = ($tahun == now()->year) ? now()->endOfDay() : Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $end = ($tahun == now()->year)
-            ? now()->endOfDay()
-            : Carbon::create($tahun, 12, 31)->endOfDay();
+        $query = Nilaifeedback::whereBetween('created_at', [$start, $end])
+            ->whereNotNull('P8')
+            ->where('P8', '<>', '');
 
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])
-            ->whereNotNull('p8')
-            ->where('p8', '<>', '')
-            ->get();
+        // PERBAIKAN: Aktifkan jika butuh filter khusus driver / person tertentu
+        // if ($personId) {
+        //     $query->where('driver_id', $personId); // Sesuaikan dengan foreign key Anda
+        // }
+
+        $feedbacks = $query->get();
 
         $totalResponden = 0;
         $respondenPuas = 0;
 
         foreach ($feedbacks as $fb) {
-            if (!is_numeric($fb->p8)) {
-                continue;
-            }
+            if (!is_numeric($fb->P8)) continue;
 
-            $skor = min(4, max(1, (float) $fb->p8));
-
+            $skor = min(4, max(1, (float) $fb->P8));
             $totalResponden++;
 
             if ($skor >= 3.5) {
@@ -712,9 +712,7 @@ class DriverKPIService
             }
         }
 
-        if ($totalResponden == 0) {
-            return 0;
-        }
+        if ($totalResponden == 0) return 0;
 
         $progress = ($respondenPuas / $totalResponden) * 100;
 
@@ -737,101 +735,92 @@ class DriverKPIService
         }
 
         $start = Carbon::create($tahun, 1, 1)->startOfDay();
+        $end = ($tahun == now()->year) ? now()->endOfDay() : Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $end = ($tahun == now()->year)
-            ? now()->endOfDay()
-            : Carbon::create($tahun, 12, 31)->endOfDay();
+        $query = Nilaifeedback::whereBetween('created_at', [$start, $end])
+            ->whereNotNull('P8')
+            ->where('P8', '<>', '');
 
-        $allScores = [];
-        $scoreDatePairs = [];
+            
+        // if ($personId) {
+        //     $query->where('driver_id', $personId);
+        // }
 
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])
-            ->whereNotNull('p8')
-            ->where('p8', '<>', '')
-            ->get();
+        $feedbacks = $query->get();
+            // dd($feedbacks);
+
+
+        if ($feedbacks->isEmpty()) return $this->getDefaultDetailResponse();
+
+        $totalResponden = 0;
+        $respondenPuas = 0;
+        
+        $monthlyDataRaw = [];
+        $dailyDataRaw = [];
 
         foreach ($feedbacks as $fb) {
-            if (!is_numeric($fb->p8)) {
-                continue;
+            if (!is_numeric($fb->P8)) continue;
+
+            $score = min(4, max(1, (float) $fb->P8));
+            $isPuas = $score >= 3.5 ? 1 : 0;
+
+            $totalResponden++;
+            if ($isPuas) $respondenPuas++;
+
+            $date = Carbon::parse($fb->created_at);
+            $monthKey = $date->format('Y-m');
+            $dayKey = $date->format('Y-m-d');
+
+            // Kumpulkan Data Bulanan
+            if (!isset($monthlyDataRaw[$monthKey])) {
+                $monthlyDataRaw[$monthKey] = ['total' => 0, 'puas' => 0, 'scores' => []];
             }
+            $monthlyDataRaw[$monthKey]['total']++;
+            $monthlyDataRaw[$monthKey]['puas'] += $isPuas;
+            $monthlyDataRaw[$monthKey]['scores'][] = $score;
 
-            $score = min(4, max(1, (float) $fb->p8));
-
-            $allScores[] = $score;
-
-            $scoreDatePairs[] = [
-                'score' => $score,
-                'date' => Carbon::parse($fb->created_at)->format('Y-m-d'),
-            ];
-        }
-
-        if (empty($allScores)) {
-            return $this->getDefaultDetailResponse();
-        }
-
-        $totalResponden = count($allScores);
-        $respondenPuas = 0;
-
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
-                $respondenPuas++;
+            // PERBAIKAN BUG: Kumpulkan Data Harian (Menghindari Data Tertimpa)
+            if (!isset($dailyDataRaw[$monthKey][$dayKey])) {
+                $dailyDataRaw[$monthKey][$dayKey] = ['total' => 0, 'puas' => 0, 'scores' => []];
             }
+            $dailyDataRaw[$monthKey][$dayKey]['total']++;
+            $dailyDataRaw[$monthKey][$dayKey]['puas'] += $isPuas;
+            $dailyDataRaw[$monthKey][$dayKey]['scores'][] = $score;
         }
 
-        $progress = ($respondenPuas / $totalResponden) * 100;
-        $progress = round($progress, 1);
+        if ($totalResponden == 0) return $this->getDefaultDetailResponse();
 
+        $progress = round(($respondenPuas / $totalResponden) * 100, 1);
+        
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
+        $monthlyAverages = [];
         $monthlyProgressAverages = [];
+        $dailyBreakdownPerMonth = [];
         $dailyProgressPerMonth = [];
 
-        foreach ($scoreDatePairs as $pair) {
-            $date = Carbon::parse($pair['date']);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $pair['date'];
-
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [
-                    'total' => 0,
-                    'puas' => 0,
-                    'scores' => []
-                ];
-            }
-
-            $monthlyData[$monthKey]['total']++;
-            $monthlyData[$monthKey]['scores'][] = $pair['score'];
-
-            if ($pair['score'] >= 3.5) {
-                $monthlyData[$monthKey]['puas']++;
-            }
-
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $pair['score'];
-
-            $dailyProgressPerMonth[$monthKey][$dayKey] =
-                $pair['score'] >= 3.5 ? 100 : 0;
+        // Kalkulasi Rata-rata Bulanan
+        foreach ($monthlyDataRaw as $month => $data) {
+            $monthlyAverages[$month] = round(array_sum($data['scores']) / count($data['scores']), 1);
+            $monthlyProgressAverages[$month] = round(($data['puas'] / $data['total']) * 100, 1);
         }
 
-        $monthlyAverages = [];
-
-        foreach ($monthlyData as $month => $data) {
-            $monthlyAverages[$month] = round(
-                array_sum($data['scores']) / count($data['scores']),
-                1
-            );
-
-            $monthlyProgressAverages[$month] = round(
-                ($data['puas'] / $data['total']) * 100,
-                1
-            );
+        // Kalkulasi Rata-rata Harian
+        foreach ($dailyDataRaw as $month => $days) {
+            foreach ($days as $day => $data) {
+                // Rata-rata skor hari itu
+                $dailyBreakdownPerMonth[$month][$day] = round(array_sum($data['scores']) / count($data['scores']), 1);
+                // Persentase yang puas di hari itu
+                $dailyProgressPerMonth[$month][$day] = round(($data['puas'] / $data['total']) * 100, 1);
+            }
+            ksort($dailyBreakdownPerMonth[$month]);
+            ksort($dailyProgressPerMonth[$month]);
         }
 
         ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
         ksort($monthlyProgressAverages);
+        ksort($dailyBreakdownPerMonth);
         ksort($dailyProgressPerMonth);
 
         return [
@@ -841,10 +830,10 @@ class DriverKPIService
                 'above' => $respondenPuas,
                 'below' => $totalResponden - $respondenPuas,
             ],
-            'monthly_data' => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAverages,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
+            'monthly_data' => $monthlyAverages, // Rata-rata skor per bulan (skala 1-4)
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth, // Rata-rata skor per hari (skala 1-4)
+            'monthly_progress' => $monthlyProgressAverages, // Persentase yang puas per bulan (0-100%)
+            'daily_progress_per_month' => $dailyProgressPerMonth, // Persentase yang puas per hari (0-100%)
         ];
     }
 }
