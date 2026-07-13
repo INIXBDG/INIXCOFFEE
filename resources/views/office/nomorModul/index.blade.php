@@ -168,6 +168,10 @@
                             <option value="Authorize">Authorize</option>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Uploaded</label>
+                        <input type="date" class="form-control form-control-lg" name="uploaded" id="uploaded">
+                    </div>
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
