@@ -16,6 +16,16 @@ class FinanceAccountingKPIService
 {
     use KPIDefaultResponseTrait;
 
+    // Tambahkan helper ini di dalam class yang sama, atau pastikan method ini sudah ada
+    private function isTepatTenggat($data) 
+    {
+        if ($data->status_pembayaran != 1 || empty($data->tanggal_bayar) || empty($data->due_date)) {
+            return false;
+        }
+        // Gunakan lte (kurang dari atau sama dengan) agar pembayaran di hari H dianggap tepat waktu
+        return \Carbon\Carbon::parse($data->tanggal_bayar)->lte(\Carbon\Carbon::parse($data->due_date));
+    }
+
     public function calculateOutstanding($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
@@ -47,12 +57,8 @@ class FinanceAccountingKPIService
 
         $totalData = $outstandings->count();
 
-        $tepatTenggat = $outstandings->filter(function ($data) {
-            return $data->status_pembayaran == 1
-                && $data->tanggal_bayar
-                && $data->due_date
-                && Carbon::parse($data->tanggal_bayar)->lt(Carbon::parse($data->due_date));
-        })->count();
+        // Menggunakan helper untuk filter
+        $tepatTenggat = $outstandings->filter(fn($d) => $this->isTepatTenggat($d))->count();
 
         $presentase = ($tepatTenggat / $totalData) * 100;
 
@@ -85,9 +91,9 @@ class FinanceAccountingKPIService
 
         $totalData = $outstandings->count();
 
-        $tepatTenggat = $outstandings->where('due_date', '<', 'tanggal_bayar')->where('status_pembayaran', '1');
-
-        $above = $tepatTenggat->count();
+        // PERBAIKAN: Gunakan helper isTepatTenggat untuk menghitung jumlah yang tepat tenggat,
+        // menggantikan metode where() yang keliru.
+        $above = $outstandings->filter(fn($d) => $this->isTepatTenggat($d))->count();
         $below = $totalData - $above;
 
         $progress = $totalData > 0 ? ($above / $totalData) * 100 : 0;
@@ -106,7 +112,8 @@ class FinanceAccountingKPIService
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
-            $isTepat = $data->status_pembayaran == '1' && $data->tanggal_bayar && $data->due_date && Carbon::parse($data->tanggal_bayar)->lt(Carbon::parse($data->due_date)) ? 1 : 0;
+            // PERBAIKAN: Memastikan pemanggilan isTepatTenggat yang benar.
+            $isTepat = $this->isTepatTenggat($data) ? 1 : 0;
             $pct = $isTepat * 100;
 
             if (!isset($monthlyData[$monthKey])) {
@@ -610,51 +617,37 @@ class FinanceAccountingKPIService
         ];
     }
 
-    public function calculatePenyelesaianTagihanPerusahaan($item, $personId)
+    public function calculatePenyelesaianTagihanPerusahaan($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
-
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
-            return 0;
-        }
+        if ($tahun < 2000 || $tahun > now()->year + 5) return 0;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $foreignKey = 'id_tagihan_perusahaan';
+        // ANTI GAGAL: Ambil semua data, urutkan dari ID terbesar, lalu buang duplikat ID Tagihan di level Collection PHP
+        $latestTagihan = trackingTagihanPerusahaan::whereBetween('tanggal_perkiraan_mulai', [$start, $end])
+            // ->when($personId, fn($q) => $q->where('pic_id', $personId)) // BUKA KOMENTAR INI JIKA MAU DIFILTER KHUSUS UNTUK RIFA / PER-USER
+            ->orderBy('id', 'desc')
+            ->get()
+            ->unique('id_tagihan_perusahaan');
+        
 
-        $latestIds = trackingTagihanPerusahaan::whereBetween('tanggal_perkiraan_mulai', [$start, $end])
-            ->selectRaw("{$foreignKey}, MAX(id) as latest_id")
-            ->groupBy($foreignKey)
-            ->pluck('latest_id')
-            ->filter()
-            ->unique()
-            ->values();
+        $totalTagihan = $latestTagihan->count();
+        if ($totalTagihan <= 0) return 0;
 
-        if ($latestIds->isEmpty()) {
-            return 0;
-        }
+        // Hitung menggunakan trim() dan strtolower() agar kebal terhadap spasi gaib dan huruf besar/kecil
+        $tagihanSelesai = $latestTagihan->filter(function ($row) {
+            return strtolower(trim($row->status)) === 'selesai' && strtolower(trim($row->tracking)) === 'selesai';
+        })->count();
 
-        $totalTagihan = $latestIds->count();
-
-        if ($totalTagihan <= 0) {
-            return 0;
-        }
-
-        $tagihanSelesai = trackingTagihanPerusahaan::whereIn('id', $latestIds)
-            ->where('status', 'Selesai')
-            ->where('tracking', 'Selesai')
-            ->count();
-
-        $progress = ($tagihanSelesai / max($totalTagihan, 1)) * 100;
+        $progress = ($tagihanSelesai / $totalTagihan) * 100;
 
         return round($progress, 1);
     }
@@ -662,133 +655,106 @@ class FinanceAccountingKPIService
     public function calculatePenyelesaianTagihanPerusahaanDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
+        $emptyResponse = [
+            'progress' => 0, 'gap' => 0, 'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [], 'daily_breakdown_per_month' => [],
+            'monthly_progress' => [], 'daily_progress_per_month' => [],
+        ];
 
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return $this->getDefaultDetailResponse();
-        }
+        // if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        //     return $emptyResponse;
+        // }
 
         $tahun = (int) $detail->detail_jangka;
-
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return $this->getDefaultDetailResponse();
-        }
+        if ($tahun < 2000 || $tahun > now()->year + 5) return $emptyResponse;
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $latestIds = trackingTagihanPerusahaan::whereBetween('tanggal_perkiraan_mulai', [$start, $end])
-            ->selectRaw('id_tagihan_perusahaan, MAX(id) as latest_id')
-            ->groupBy('id_tagihan_perusahaan')
-            ->pluck('latest_id');
+        // Samakan metode penarikan data dengan Primer
+        $latestTagihan = trackingTagihanPerusahaan::whereBetween('tanggal_perkiraan_mulai', [$start, $end])
+            ->orderBy('id', 'desc')
+            ->get()
+            ->unique('id_tagihan_perusahaan');
+            // dd($latestTagihan);
 
-        if ($latestIds->isEmpty()) {
-            return $this->getDefaultDetailResponse();
-        }
 
-        $dataTagihan = trackingTagihanPerusahaan::whereIn('id', $latestIds)->get();
+        $totalTagihan = $latestTagihan->count();
 
-        $totalTagihan = $dataTagihan->count();
+        if ($totalTagihan <= 0) return $emptyResponse;
 
-        $tagihanSelesai = $dataTagihan->filter(function ($row) {
-            return $row->status === 'selesai' && $row->tracking === 'Selesai';
-        })->count();
+        $tagihanSelesai = $latestTagihan->filter(function ($row) {
+            return strtolower(trim($row->status)) === 'selesai';
+        })->count();    
 
-        $progress = $totalTagihan > 0
-            ? round(($tagihanSelesai / $totalTagihan) * 100, 1)
-            : 0;
-
+        $progress = round(($tagihanSelesai / $totalTagihan) * 100, 1);
+        
         $nilaiTarget = (float) $detail->nilai_target;
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $above = $tagihanSelesai;
-        $below = $totalTagihan - $tagihanSelesai;
+        $below = max(0, $totalTagihan - $tagihanSelesai);
 
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
+        $monthlyDataRaw = [];
+        $dailyDataRaw = [];
 
-        foreach ($dataTagihan as $tagihan) {
-            if (!$tagihan->tanggal_perkiraan_mulai) {
-                continue;
-            }
+        foreach ($latestTagihan as $tagihan) {
+            if (!$tagihan->tanggal_perkiraan_mulai) continue;
 
             $date = Carbon::parse($tagihan->tanggal_perkiraan_mulai);
-
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
-            $isSelesai = (
-                $tagihan->status === 'selesai' &&
-                $tagihan->tracking === 'Selesai'
-            ) ? 1 : 0;
+            // Pengecekan Aman (Trim + Lower)
+            $isSelesai = (strtolower(trim($tagihan->status)) === 'selesai' && strtolower(trim($tagihan->tracking)) === 'selesai') ? 1 : 0;
 
-            $pct = $isSelesai * 100;
+            $monthlyDataRaw[$monthKey]['total'] = ($monthlyDataRaw[$monthKey]['total'] ?? 0) + 1;
+            $monthlyDataRaw[$monthKey]['selesai'] = ($monthlyDataRaw[$monthKey]['selesai'] ?? 0) + $isSelesai;
 
-            $monthlyData[$monthKey]['total'] = ($monthlyData[$monthKey]['total'] ?? 0) + 1;
-            $monthlyData[$monthKey]['selesai'] = ($monthlyData[$monthKey]['selesai'] ?? 0) + $isSelesai;
-
-            $monthlyProgress[$monthKey]['total'] = ($monthlyProgress[$monthKey]['total'] ?? 0) + 1;
-            $monthlyProgress[$monthKey]['selesai'] = ($monthlyProgress[$monthKey]['selesai'] ?? 0) + $pct;
-
-            $dailyBreakdownPerMonth[$monthKey][$dayKey]['total'] = ($dailyBreakdownPerMonth[$monthKey][$dayKey]['total'] ?? 0) + 1;
-            $dailyBreakdownPerMonth[$monthKey][$dayKey]['selesai'] = ($dailyBreakdownPerMonth[$monthKey][$dayKey]['selesai'] ?? 0) + $isSelesai;
-
-            $dailyProgressPerMonth[$monthKey][$dayKey]['total'] = ($dailyProgressPerMonth[$monthKey][$dayKey]['total'] ?? 0) + 1;
-            $dailyProgressPerMonth[$monthKey][$dayKey]['selesai'] = ($dailyProgressPerMonth[$monthKey][$dayKey]['selesai'] ?? 0) + $pct;
+            $dailyDataRaw[$monthKey][$dayKey]['total'] = ($dailyDataRaw[$monthKey][$dayKey]['total'] ?? 0) + 1;
+            $dailyDataRaw[$monthKey][$dayKey]['selesai'] = ($dailyDataRaw[$monthKey][$dayKey]['selesai'] ?? 0) + $isSelesai;
         }
 
         $monthlyAverages = [];
-        $monthlyProgressAverages = [];
+        $monthlyProgress = [];
+        $dailyBreakdownPerMonth = [];
+        $dailyProgressPerMonth = [];
 
-        foreach ($monthlyData as $month => $data) {
-            $total = (int) ($data['total'] ?? 0);
-            $selesai = (int) ($data['selesai'] ?? 0);
-
-            $monthlyAverages[$month] = $total > 0 ? round(($selesai / $total) * 100, 1) : 0;
+        foreach ($monthlyDataRaw as $month => $data) {
+            $total = $data['total'];
+            $selesai = $data['selesai'];
+            $rate = $total > 0 ? round(($selesai / $total) * 100, 1) : 0;
+            
+            $monthlyAverages[$month] = $rate; 
+            $monthlyProgress[$month] = $rate; 
         }
 
-        foreach ($monthlyProgress as $month => $data) {
-            $total = (int) ($data['total'] ?? 0);
-            $selesai = (float) ($data['selesai'] ?? 0);
-
-            $monthlyProgressAverages[$month] = $total > 0 ? round(($selesai / $total), 1) : 0;
-        }
-
-        foreach ($dailyBreakdownPerMonth as $month => $days) {
+        foreach ($dailyDataRaw as $month => $days) {
             foreach ($days as $day => $data) {
-                $total = (int) ($data['total'] ?? 0);
-                $selesai = (int) ($data['selesai'] ?? 0);
-
-                $dailyBreakdownPerMonth[$month][$day] = $total > 0 ? round(($selesai / $total) * 100, 1) : 0;
+                $total = $data['total'];
+                $selesai = $data['selesai'];
+                $rate = $total > 0 ? round(($selesai / $total) * 100, 1) : 0;
+                
+                $dailyBreakdownPerMonth[$month][$day] = $rate;
+                $dailyProgressPerMonth[$month][$day] = $rate;
             }
-        }
-
-        foreach ($dailyProgressPerMonth as $month => $days) {
-            foreach ($days as $day => $data) {
-                $total = (int) ($data['total'] ?? 0);
-                $selesai = (float) ($data['selesai'] ?? 0);
-
-                $dailyProgressPerMonth[$month][$day] = $total > 0 ? round(($selesai / $total), 1) : 0;
-            }
+            ksort($dailyBreakdownPerMonth[$month]);
+            ksort($dailyProgressPerMonth[$month]);
         }
 
         ksort($monthlyAverages);
         ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAverages);
+        ksort($monthlyProgress);
         ksort($dailyProgressPerMonth);
 
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => [
-                'above' => $above,
-                'below' => $below
-            ],
+            'pie_chart' => ['above' => $above, 'below' => $below],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAverages,
+            'monthly_progress' => $monthlyProgress,
             'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
     }

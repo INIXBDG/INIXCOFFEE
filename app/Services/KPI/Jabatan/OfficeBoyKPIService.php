@@ -238,54 +238,66 @@ class OfficeBoyKPIService
         }
 
         $jumlahTugas = $tugas->count();
-        $jumlahTugasSelesai = $tugas->where('status', '1')->count();
+        // Diseragamkan menggunakan filter collection agar aman dari tipe data string/int
+        $jumlahTugasSelesai = $tugas->filter(fn($t) => $t->status == 1)->count();
 
-        $progress = ($jumlahTugasSelesai / $jumlahTugas) * 100;
-        $progress = round($progress, 1);
+        $progress = round(($jumlahTugasSelesai / $jumlahTugas) * 100, 1);
 
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+        if ($gap === '') $gap = '0';
 
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
+        // Array penampung akumulasi data mentah
+        $monthlyDataRaw = [];
+        $dailyDataRaw = [];
 
         foreach ($tugas as $t) {
             $date = Carbon::parse($t->created_at);
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
-            $score = $t->status == 1 ? 100 : 0;
+            $isSelesai = $t->status == 1 ? 1 : 0;
 
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-                $monthlyProgress[$monthKey] = [];
+            // Kumpulkan akumulasi bulanan
+            if (!isset($monthlyDataRaw[$monthKey])) {
+                $monthlyDataRaw[$monthKey] = ['total' => 0, 'selesai' => 0];
             }
-            $monthlyData[$monthKey][] = $score;
-            $monthlyProgress[$monthKey][] = $score;
+            $monthlyDataRaw[$monthKey]['total']++;
+            $monthlyDataRaw[$monthKey]['selesai'] += $isSelesai;
 
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-                $dailyProgressPerMonth[$monthKey] = [];
+            // Kumpulkan akumulasi harian (Mencegah Bug Timpa Data)
+            if (!isset($dailyDataRaw[$monthKey][$dayKey])) {
+                $dailyDataRaw[$monthKey][$dayKey] = ['total' => 0, 'selesai' => 0];
             }
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
-            $dailyProgressPerMonth[$monthKey][$dayKey] = $score;
+            $dailyDataRaw[$monthKey][$dayKey]['total']++;
+            $dailyDataRaw[$monthKey][$dayKey]['selesai'] += $isSelesai;
         }
 
         $monthlyAverages = [];
         $monthlyProgressAverages = [];
-        foreach ($monthlyData as $month => $vals) {
-            $monthlyAverages[$month] = round(array_sum($vals) / count($vals), 1);
+        $dailyBreakdownPerMonth = [];
+        $dailyProgressPerMonth = [];
+
+        // Hitung persentase bulanan
+        foreach ($monthlyDataRaw as $month => $data) {
+            $persentase = round(($data['selesai'] / $data['total']) * 100, 1);
+            $monthlyAverages[$month] = $persentase; 
+            $monthlyProgressAverages[$month] = $persentase; 
         }
-        foreach ($monthlyProgress as $month => $vals) {
-            $monthlyProgressAverages[$month] = round(array_sum($vals) / count($vals), 1);
+
+        // Hitung persentase harian
+        foreach ($dailyDataRaw as $month => $days) {
+            foreach ($days as $day => $data) {
+                $persentase = round(($data['selesai'] / $data['total']) * 100, 1);
+                $dailyBreakdownPerMonth[$month][$day] = $persentase;
+                $dailyProgressPerMonth[$month][$day] = $persentase;
+            }
+            ksort($dailyBreakdownPerMonth[$month]);
+            ksort($dailyProgressPerMonth[$month]);
         }
 
         ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
         ksort($monthlyProgressAverages);
-        ksort($dailyProgressPerMonth);
 
         return [
             'progress' => $progress,
