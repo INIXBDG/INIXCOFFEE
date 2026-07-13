@@ -4,6 +4,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    @php
+        $allowedPositions = [
+            'Direktur Utama',
+            'Direktur',
+            'Education Manager',
+            'GM',
+            'SPV Sales',
+            'Koordinator ITSM',
+        ];
+    @endphp
+
     {{-- ===== STYLE KHUSUS HALAMAN INI ===== --}}
     <style>
         /* Profile Card */
@@ -211,9 +222,13 @@
     </div>
 
     <div class="container flex-grow-1 mt-4">
-        <div class="mb-2 mt-2 p-3 text-end">
-            <a href="{{ route('kpi.overview.index') }}" class="btn btn-secondary">Kembali</a>
-        </div>
+        @if(in_array(auth()->user()->jabatan, $allowedPositions))
+            <div class="mb-2 mt-2 p-3 text-end">
+                <a href="{{ route('kpi.overview.index') }}" class="btn btn-secondary">
+                    Kembali
+                </a>
+            </div>
+        @endif
         {{-- Profile Card --}}
         <div class="profile-card">
             <div class="d-flex align-items-center flex-wrap gap-4">

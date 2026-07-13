@@ -2,7 +2,7 @@
 
 namespace App\Services\KPI\Jabatan;
 
-use App\Models\PerbaikanKendaraan;
+use App\Models\perbaikanKendaraan;
 use App\Models\pickupDriver;
 use App\Models\KondisiKendaraan;
 use App\Models\HariLibur;
@@ -37,8 +37,8 @@ class DriverKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $totalQuery = PerbaikanKendaraan::whereBetween('created_at', [$start, $end]);
-        $selesaiQuery = PerbaikanKendaraan::whereBetween('created_at', [$start, $end])
+        $totalQuery = perbaikanKendaraan::whereBetween('created_at', [$start, $end]);
+        $selesaiQuery = perbaikanKendaraan::whereBetween('created_at', [$start, $end])
             ->where('status', 'Selesai');
 
         if ($personId !== null) {
@@ -77,11 +77,11 @@ class DriverKPIService
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
         if ($personId !== null) {
-            $allRepairs = PerbaikanKendaraan::whereBetween('created_at', [$start, $end])
+            $allRepairs = perbaikanKendaraan::whereBetween('created_at', [$start, $end])
                 ->where('id_user', $personId)
                 ->get();
         } else {
-            $allRepairs = PerbaikanKendaraan::whereBetween('created_at', [$start, $end])->get();
+            $allRepairs = perbaikanKendaraan::whereBetween('created_at', [$start, $end])->get();
         }
 
         $totalData = $allRepairs->count();

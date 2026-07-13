@@ -15,7 +15,7 @@ class HRDKPIService
 {
     use KPIDefaultResponseTrait;
 
-    public function calculatePelaksanaanKegiatanKaryawan($item, $personId)
+    public function calculatePelaksanaanKegiatanKaryawan($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -66,7 +66,7 @@ class HRDKPIService
         return round($progress, 1);
     }
 
-    public function calculatePelaksanaanKegiatanKaryawanDetail($itemDetail, $personId = null)
+    public function calculatePelaksanaanKegiatanKaryawanDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -184,7 +184,7 @@ class HRDKPIService
         ];
     }
 
-    public function calculatePengeluaranBiayaKaryawan($item, $personId)
+    public function calculatePengeluaranBiayaKaryawan($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -268,7 +268,7 @@ class HRDKPIService
         return round($progress, 1);
     }
 
-    public function calculatePengeluaranBiayaKaryawanDetail($itemDetail, $personId = null)
+    public function calculatePengeluaranBiayaKaryawanDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -387,7 +387,7 @@ class HRDKPIService
         ];
     }
 
-    public function calculateAdministrasiKaryawan($item, $personId)
+    public function calculateAdministrasiKaryawan($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -440,7 +440,7 @@ class HRDKPIService
         return round($progress, 2);
     }
 
-    public function calculateAdministrasiKaryawanDetail($itemDetail, $personId = null)
+    public function calculateAdministrasiKaryawanDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {

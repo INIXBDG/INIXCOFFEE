@@ -321,7 +321,7 @@ class SalesKPIService
             ->get();
 
         $actualCAC = 0;
-        
+
         // Memanggil metode calculatePemasukanKotor dari GMKPIService
         $targetTahunan = app(GMKPIService::class)->calculatePemasukanKotor($item, $personId);
 
@@ -358,7 +358,7 @@ class SalesKPIService
         return round($progress, 2);
     }
 
-    public function calculateCustomerAcquisitionCostDetail($itemDetail, $personId = null)
+    public function calculateBiayaAkuisisiClientDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -373,68 +373,97 @@ class SalesKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
         // Memanggil metode calculatePemasukanKotor dari GMKPIService
-        $labaKotor = app(GMKPIService::class)->calculatePemasukanKotor($itemDetail, $personId);
+        $targetTahunanUnit = app(GMKPIService::class)->calculatePemasukanKotor($itemDetail, $personId);
 
-        if ($labaKotor == 0) {
-            return $this->getDefaultDetailResponse();
-        }
+        $peluangs = Peluang::with('rkm.perhitunganNetSales')
+            ->whereYear('created_at', $tahun)
+            ->get();
 
-        $karyawanIds = detailPersonKPI::where('detailTargetKey', $detail->id)->pluck('id_karyawan');
-        $kodeKaryawanList = karyawan::whereIn('id', $karyawanIds)->pluck('kode_karyawan')->filter();
+        $actualCAC = 0;
+        $dailyBreakdownPerMonth = [];
 
-        if ($kodeKaryawanList->isEmpty()) {
-            return $this->getDefaultDetailResponse();
-        }
+        $maxCAC = ($nilaiTarget / 100) * $targetTahunanUnit;
 
-        $totalBiayaAkuisisi = perhitunganNetSales::whereHas('rkm', function ($query) use ($kodeKaryawanList, $tahun) {
-            $query->whereIn('sales_key', $kodeKaryawanList)
-                ->whereYear('tanggal_awal', $tahun);
-        })
-            ->whereBetween('tgl_pa', [$start, $end])
-            ->get()
-            ->sum(function ($record) {
-                return ($record->transportasi ?? 0) +
-                    ($record->akomodasi_peserta ?? 0) +
-                    ($record->akomodasi_tim ?? 0) +
-                    ($record->fresh_money ?? 0) +
-                    ($record->entertaint ?? 0) +
-                    ($record->souvenir ?? 0) +
-                    ($record->cashback ?? 0) +
-                    ($record->sewa_laptop ?? 0);
-            });
+        foreach ($peluangs as $p) {
+            if ($p->tahap !== 'merah') {
+                continue;
+            }
 
-        if ($totalBiayaAkuisisi > ($labaKotor * ($nilaiTarget / 100))) {
-            $totalBiayaAkuisisi = $labaKotor * ($nilaiTarget / 100);
+            $totalBiayaPeluang = 0;
+            if ($p->rkm && $p->rkm->perhitunganNetSales) {
+                foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
+                    $totalBiayaPeluang += ($perhitungan->transportasi ?? 0)
+                        + ($perhitungan->akomodasi_peserta ?? 0)
+                        + ($perhitungan->akomodasi_tim ?? 0)
+                        + ($perhitungan->fresh_money ?? 0)
+                        + ($perhitungan->entertaint ?? 0)
+                        + ($perhitungan->souvenir ?? 0)
+                        + ($perhitungan->cashback ?? 0)
+                        + ($perhitungan->sewa_laptop ?? 0);
+                }
+            }
+
+            $actualCAC += $totalBiayaPeluang;
+
+            $date = Carbon::parse($p->created_at);
+            $dateKey = $date->format('Y-m-d');
+            $monthKey = $date->format('Y-m');
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey][$dateKey])) {
+                $dailyBreakdownPerMonth[$monthKey][$dateKey] = 0;
+            }
+            $dailyBreakdownPerMonth[$monthKey][$dateKey] += $totalBiayaPeluang;
         }
 
         $progress = 0;
-
-        if ($totalBiayaAkuisisi > 0) {
-            $rasio = ($totalBiayaAkuisisi / $labaKotor) * 100;
-            $batas = $nilaiTarget;
-            $progress = ($batas / $rasio) * 100;
+        if ($actualCAC > 0) {
+            $progress = min(($maxCAC / $actualCAC) * 100, 100);
         }
 
-        $progress = round($progress, 1);
+        $monthlyData = [];
+        foreach ($dailyBreakdownPerMonth as $month => $days) {
+            $monthlyData[$month] = round(array_sum($days) / count($days), 1);
+        }
 
+        ksort($monthlyData);
+        ksort($dailyBreakdownPerMonth);
+
+        $monthlyProgress = [];
+        $dailyProgressPerMonth = [];
+
+        foreach ($monthlyData as $month => $value) {
+            $monthlyProgress[$month] = $maxCAC > 0 ? round(($value / $maxCAC) * 100, 1) : 0;
+        }
+
+        foreach ($dailyBreakdownPerMonth as $month => $days) {
+            foreach ($days as $day => $value) {
+                if (!isset($dailyProgressPerMonth[$month])) {
+                    $dailyProgressPerMonth[$month] = [];
+                }
+                $dailyProgressPerMonth[$month][$day] = $maxCAC > 0 ? round(($value / $maxCAC) * 100, 1) : 0;
+            }
+        }
+
+        $gapRaw = $maxCAC - $actualCAC;
         if ($progress > $nilaiTarget) {
             $gapRaw = 0;
-        } else {
-            $gapRaw = $progress - $nilaiTarget;
         }
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        $above = $progress >= $nilaiTarget ? 1 : 0;
-        $below = 1 - $above;
-
         return array_merge($this->getDefaultDetailResponse(), [
-            'progress' => $progress,
+            'progress' => round($progress, 1),
+            'actual_cac' => $actualCAC,
+            'max_cac' => $maxCAC,
             'gap' => $gap,
-            'pie_chart' => ['above' => $above, 'below' => $below],
+            'pie_chart' => [
+                'above' => $actualCAC > $maxCAC ? 1 : 0,
+                'below' => $actualCAC <= $maxCAC ? 1 : 0
+            ],
+            'monthly_data' => $monthlyData,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+            'monthly_progress' => $monthlyProgress,
+            'daily_progress_per_month' => $dailyProgressPerMonth,
         ]);
     }
 
@@ -487,7 +516,7 @@ class SalesKPIService
             // $moodleData = $response->json();
 
             // Mock Data if API is commented out
-            $moodleData = []; 
+            $moodleData = [];
         } catch (\Exception $e) {
             return 0;
         }
