@@ -200,6 +200,7 @@ class ModulController extends Controller
     {
         $request->validate([
             'no_modul'  => 'required',
+            'uploaded'  => 'nullable',
             'type'      => 'in:Regular,Authorize',
         ]);
 
@@ -208,6 +209,7 @@ class ModulController extends Controller
         $nomor->update([
             'no_modul' => $request->no_modul,
             'type' => $request->type,
+            'uploaded' => $request->uploaded,
         ]);
 
         if ($request->type === 'Regular') {
