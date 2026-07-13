@@ -121,6 +121,7 @@ use App\Http\Controllers\ScheduleLogController;
 use App\Http\Controllers\VisitProjectController;
 use App\Http\Controllers\CVInstrukturController;
 use App\Http\Controllers\HR\RekapPenjualanController;
+use App\Http\Controllers\HR\RekapInventarisController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1671,6 +1672,21 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/{id}/approve', [payrollController::class, 'approvePerhitungan'])->name('approve');
         Route::get('/perhitungan-tunjangan/export/excel', [payrollController::class, 'exportExcelPerhitungan'])->name('export.excel');
         Route::get('/perhitungan-tunjangan/export/pdf', [payrollController::class, 'exportPdfPerhitungan'])->name('export.pdf');
+    });
+
+    Route::prefix('rekap-inventaris')->name('rekap_inventaris.')->middleware('auth')->group(function () {
+        Route::get('/', [RekapInventarisController::class, 'index'])->name('index');
+        Route::get('/load-data', [RekapInventarisController::class, 'getRekapData'])->name('load_data');
+        Route::get('/export', [RekapInventarisController::class, 'export'])->name('export');
+        
+        Route::get('/ajax/lokasi/{kategori}', [RekapInventarisController::class, 'getLokasi']);
+        Route::get('/ajax/jenis/{lokasi}', [RekapInventarisController::class, 'getJenis']);
+        
+        Route::get('/export-pdf', [RekapInventarisController::class, 'exportPdf'])->name('export_pdf');
+        Route::get('/detail-data', [RekapInventarisController::class, 'getDetailData'])->name('detail_data');
+        Route::post('/store', [RekapInventarisController::class, 'store'])->name('store');
+        Route::post('/import', [RekapInventarisController::class, 'import'])->name('import');
+        Route::get('/sync', [RekapInventarisController::class, 'syncFromInventaris'])->name('sync');
     });
 
     Route::prefix('perhitungan-pph')->name('perhitungan-pph.')->group(function () {
