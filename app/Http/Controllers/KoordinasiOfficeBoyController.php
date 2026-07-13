@@ -106,62 +106,77 @@ class KoordinasiOfficeBoyController extends Controller
     {
         try {
             $data = $request->all();
-            $action = $data['action'];
-            $id = $data['id'];
+            $action = $data['action'] ?? '';
+            $id = $data['id'] ?? 0;
+
+            Log::info('Update From Telegram Diterima', [
+                'action' => $action,
+                'id'     => $id
+            ]);
 
             $this->updateStatus($action, $id);
 
-            return response()->json([
-                'success' => true,
-            ]);
+            return response()->json(['success' => true]);
         } catch (\Exception $e) {
-            Log::error('Update From Telegram Error : ', $e->getMessage());
+            Log::error('Update From Telegram Error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString()
+            ]);
+
+            return response()->json(['success' => false], 500);
         }
     }
-
     public function webhook(Request $request)
     {
-        $request = $request->all();
+        Log::info('=== TELEGRAM WEBHOOK DITERIMA ===', [
+            'all_data' => $request->all()
+        ]);
 
-        if (!isset($request['callback_query'])) {
-            return response()->json([
-                'success' => true,
-            ]);
+        if (!$request->has('callback_query')) {
+            Log::info('Webhook: Bukan callback_query');
+            return response()->json(['success' => true]);
         }
 
         try {
-            $callback = $request['callback_query'];
-            $data = $callback['data'];
-            $parts = explode(':', $data);
-            $action = $parts[0];
-            $id = $parts[1] ?? 0;
+            $callback = $request->input('callback_query');
+            $callbackData = $callback['data'] ?? '';
 
-            Log::info("Koordinasi OB Update | Action : $action | KoordinasiID : $id ");
+            Log::info('Callback Data Diterima', [
+                'data' => $callbackData,
+                'from' => $callback['from'] ?? 'unknown'
+            ]);
 
-            Http::withoutVerifying()
+            $parts = explode(':', $callbackData);
+            $action = $parts[0] ?? '';
+            $id = isset($parts[1]) ? (int)$parts[1] : 0;
+
+            Log::info("Memproses Action", ['action' => $action, 'id' => $id]);
+
+            // Forward ke internal endpoint
+            $response = Http::withoutVerifying()
                 ->withHeaders([
                     'Accept' => 'application/json',
                     'X-Webhook-Secret' => 'RAHASIA_KITA',
                 ])
-                ->timeout(5)
+                ->timeout(10)
                 ->post('https://coffee.inixindobdg.co.id/api/koordinasi-ob/updateFromTelegram', [
                     'action' => $action,
                     'id' => $id,
                 ]);
 
-            return response()->json([
-                'success' => true,
+            Log::info('Forward ke updateFromTelegram selesai', [
+                'status' => $response->status(),
+                'body'   => $response->json()
             ]);
+
+            return response()->json(['success' => true]);
         } catch (\Throwable $e) {
             Log::error('Webhook Error', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace'   => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ]);
+            return response()->json(['success' => false], 500);
         }
     }
 }
