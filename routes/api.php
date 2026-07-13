@@ -90,3 +90,4 @@ Route::prefix('pickup-driver')->group(function () {
 
 // update koordinasi ob
 Route::post('/koordinasi-ob/updateFromTelegram', [KoordinasiOfficeBoyController::class, 'updateFromTelegram']);
+Route::post('/koordinasi-ob/webhook', [KoordinasiOfficeBoyController::class, 'webhook'])->name('koordinasi-ob.webhook');
