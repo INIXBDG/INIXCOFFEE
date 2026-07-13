@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\tracking_pengajuan_barang;
 use App\Models\PengajuanBarang;
 
-class PerbaikanKendaraan extends Model
+class perbaikanKendaraan extends Model
 {
     use HasFactory;
 
