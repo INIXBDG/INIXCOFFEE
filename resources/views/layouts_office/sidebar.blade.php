@@ -148,6 +148,13 @@
         </li>
         @endif
 
+        <li class="menu-item {{ request()->routeIs('office.exam.po-exam-sertifa.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.exam.po-exam-sertifa.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-spreadsheet"></i>
+                <div class="text-truncate" data-i18n="contact">PO Exam Sertifa</div>
+            </a>
+        </li>
+
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Souvenir</span>
         </li>
