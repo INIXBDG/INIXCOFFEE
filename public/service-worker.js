@@ -83,7 +83,7 @@ self.addEventListener('fetch', function(event) {
     if (event.request.mode === 'navigate' || (event.request.method === 'GET' && event.request.headers.get('accept').includes('text/html'))) {
         event.respondWith(
             // Strategi Network First
-            fetch(event.request.url).then(function(networkResponse) {
+            fetch(event.request).then(function(networkResponse) {
                 return networkResponse;
             }).catch(function(error) {
                 // Jatuh kembali (fallback) ke cache hanya jika jaringan luring penuh
