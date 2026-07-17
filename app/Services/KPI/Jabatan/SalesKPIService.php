@@ -14,6 +14,7 @@ use App\Traits\KPIDefaultResponseTrait;
 use App\Services\KPI\Jabatan\GMKPIService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SalesKPIService
@@ -470,89 +471,68 @@ class SalesKPIService
     public function calculatePeningkatanKemampuanKompetensiSales($item, $personId)
     {
         $nilaiUkur = 90;
-        $totalPenilaian = 0;
-        $totalMelebihiNilaiUkur = 0;
 
-        $karyawanJabatan = karyawan::where('divisi', 'Sales & Marketing')
-            ->where('status_aktif', '1')
-            ->where('jabatan', '!=', 'Tim Digital')
-            ->where('jabatan', '!=', 'GM')
-            ->pluck('jabatan')
-            ->map(fn($jabatan) => strtolower(trim($jabatan)))
-            ->unique()
-            ->toArray();
+        $jabatanSales = ['Sales', 'SPV Sales', 'Adm Sales'];
 
-        $userQuery = User::whereHas('karyawan', function ($query) use ($personId, $karyawanJabatan) {
-            $query->where('divisi', 'Sales & Marketing')
-                ->whereIn('jabatan', $karyawanJabatan);
-
-            if ($personId !== null) {
-                $query->where('id', $personId);
-            }
-        });
-
-        $salesUsernames = $userQuery->pluck('username')
-            ->filter()
+        // 1. Standarisasi daftar username dari database (lowercase & trim)
+        $allowedUsernames = User::whereIn('jabatan', $jabatanSales)
+            ->pluck('username')
+            ->filter() // Mengabaikan nilai null
             ->map(fn($username) => strtolower(trim($username)))
             ->toArray();
 
-        if (empty($salesUsernames)) {
+        $response = Http::get('https://coffee.inixindobdg.co.id/api/moodle-grades-sharingknowledge');
+        if (!$response->successful()) {
             return 0;
         }
 
-        try {
-            // Uncomment API logic if needed
-            // $apiUrl = env('MOODLE_API_URL');
-            // $apiUsername = env('MOODLE_API_USERNAME');
-            // $apiPassword = env('MOODLE_API_PASSWORD');
+        $dataKnowledge = json_decode($response->body(), true);
 
-            // $response = Http::withBasicAuth($apiUsername, $apiPassword)
-            //     ->timeout(15)
-            //     ->get($apiUrl);
-
-            // if (!$response->successful()) {
-            //     return 0;
-            // }
-            // $moodleData = $response->json();
-
-            // Mock Data if API is commented out
-            $moodleData = [];
-        } catch (\Exception $e) {
+        if (json_last_error() !== JSON_ERROR_NONE || !isset($dataKnowledge['data'])) {
             return 0;
         }
 
-        if (empty($moodleData) || !is_array($moodleData) || !isset($moodleData['data'])) {
-            return 0;
-        }
+        // 2. Standarisasi username dari API Moodle saat dibungkus ke dalam Collection
+        $collection = collect($dataKnowledge['data']['data'] ?? [])->map(function ($row) {
+            if (isset($row['username'])) {
+                $row['username'] = strtolower(trim($row['username']));
+            }
+            return $row;
+        });
 
-        $moodleDataValid = array_values($moodleData['data']);
-        $moodleDataCount = count($moodleDataValid);
+        if ($personId !== null) {
+            $userLogin = User::find($personId);
 
-        for ($i = 0; $i < $moodleDataCount; $i++) {
-            if (!isset($moodleDataValid[$i]) || !is_array($moodleDataValid[$i])) {
-                continue;
+            if (!$userLogin || empty($userLogin->username)) {
+                return 0;
             }
 
-            $data = $moodleDataValid[$i];
-            $moodleUsername = strtolower(trim($data['username'] ?? ''));
+            // 3. Standarisasi username milik user yang dicek
+            $loginUsername = strtolower(trim($userLogin->username));
 
-            if (in_array($moodleUsername, $salesUsernames)) {
-                $totalPenilaian++;
-                $score = (float) ($data['score'] ?? 0);
-
-                if ($score > $nilaiUkur) {
-                    $totalMelebihiNilaiUkur++;
-                }
+            if (!in_array($loginUsername, $allowedUsernames)) {
+                return 0;
             }
+
+            // Pencarian kini 100% aman karena kedua sisi sudah lowercase & tanpa spasi
+            $filteredData = $collection->where('username', $loginUsername);
+        } else {
+            // Pencarian global divisi kini 100% aman
+            $filteredData = $collection->whereIn('username', $allowedUsernames);
         }
 
+        $totalPenilaian = $filteredData->count();
         if ($totalPenilaian === 0) {
             return 0;
         }
 
+        $totalMelebihiNilaiUkur = $filteredData->filter(function ($row) use ($nilaiUkur) {
+            return (float) ($row['score'] ?? 0) > $nilaiUkur;
+        })->count();
+
         $progress = ($totalMelebihiNilaiUkur / $totalPenilaian) * 100;
 
-        return round($progress, 1);
+        return round($progress, 2);
     }
 
     public function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail, $personId = null)
@@ -571,73 +551,88 @@ class SalesKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $karyawanJabatan = karyawan::where('divisi', 'Sales & Marketing')
-            ->where('status_aktif', '1')
-            ->whereNotIn('jabatan', ['Tim Digital', 'GM'])
-            ->pluck('jabatan')
-            ->map(fn($jabatan) => strtolower(trim($jabatan)))
-            ->unique()
-            ->toArray();
-
-        $userQuery = User::whereHas('karyawan', function ($query) use ($personId, $karyawanJabatan) {
-            $query->where('divisi', 'Sales & Marketing')
-                ->whereIn('jabatan', $karyawanJabatan);
-
-            if ($personId !== null) {
-                $query->where('id', $personId);
-            }
-        });
-
-        $salesUsernames = $userQuery->pluck('username')
+        // 1. Standarisasi daftar username dari database (lowercase & trim)
+        $jabatanSales = ['Sales', 'SPV Sales', 'Adm Sales']; // Diselaraskan
+        $allowedUsernames = User::whereIn('jabatan', $jabatanSales)
+            ->pluck('username')
             ->filter()
             ->map(fn($username) => strtolower(trim($username)))
             ->toArray();
 
-        if (empty($salesUsernames)) {
+        if (empty($allowedUsernames)) {
             return $this->getDefaultDetailResponse();
         }
 
+        // 2. Inisialisasi Pencarian Individu DI LUAR LOOP (Mencegah Query N+1)
+        $loginUsername = null;
+        if ($personId !== null) {
+            $userLogin = User::find($personId);
+
+            if (!$userLogin || empty($userLogin->username)) {
+                return $this->getDefaultDetailResponse();
+            }
+
+            // Standarisasi username karyawan yang sedang dicek
+            $loginUsername = strtolower(trim($userLogin->username));
+
+            // Jika username-nya bukan bagian dari tim sales, kembalikan default
+            if (!in_array($loginUsername, $allowedUsernames)) {
+                return $this->getDefaultDetailResponse();
+            }
+        }
+
+        // 3. Integrasi Data API HTTP Client
         try {
-            // Uncomment API logic if needed
-            // $apiUrl = env('MOODLE_API_URL');
-            // $apiUsername = env('MOODLE_API_USERNAME');
-            // $apiPassword = env('MOODLE_API_PASSWORD');
-
-            // $response = Http::withBasicAuth($apiUsername, $apiPassword)
-            //     ->timeout(15)
-            //     ->get($apiUrl);
-            // $moodleRaw = $response->successful() ? $response->json() : [];
-
-            // Mock Data
-            $moodleRaw = [];
+            $response = Http::get('https://coffee.inixindobdg.co.id/api/moodle-grades-sharingknowledge');
+            if (!$response->successful()) {
+                return $this->getDefaultDetailResponse();
+            }
+            $dataKnowledge = json_decode($response->body(), true);
         } catch (\Exception $e) {
-            $moodleRaw = [];
-        }
-
-        if (empty($moodleRaw['data']) || !is_array($moodleRaw['data'])) {
             return $this->getDefaultDetailResponse();
         }
 
+        $moodleData = $dataKnowledge['data']['data'] ?? null;
+        if (empty($moodleData) || !is_array($moodleData)) {
+            return $this->getDefaultDetailResponse();
+        }
+
+        // 4. Inisialisasi Struktur Penampung Data
         $totalPenilaian = 0;
         $totalMelebihiNilaiUkur = 0;
-        $dailyBreakdownPerMonth = [];
+
         $monthlyDataTemp = [];
+        $dailyBreakdownPerMonth = [];
 
-        $moodleDataValid = array_values($moodleRaw['data']);
-        $moodleDataCount = count($moodleDataValid);
-
-        for ($i = 0; $i < $moodleDataCount; $i++) {
-            $data = $moodleDataValid[$i];
-            if (!isset($data['username'])) {
+        // 5. Pengolahan Data Menggunakan Foreach
+        foreach ($moodleData as $data) {
+            if (empty($data['username'])) {
                 continue;
             }
 
-            $moodleUsername = strtolower(trim($data['username']));
+            // Standarisasi username dari API
+            $usernameData = strtolower(trim($data['username']));
             $dateString = $data['activity_submitted_at'] ?? $data['activity_created_at'] ?? null;
 
-            if (in_array($moodleUsername, $salesUsernames) && $dateString) {
+            // Kondisional Filter Username
+            $isValidUser = false;
+            if ($personId !== null) {
+                // Mode individu: Cukup cek kecocokan 1 vs 1 (yang mana loginUsername sudah terfilter di allowedUsernames sebelumnya)
+                if ($usernameData === $loginUsername) {
+                    $isValidUser = true;
+                }
+            } else {
+                // Mode global divisi: Cek ke dalam array whitelist
+                if (in_array($usernameData, $allowedUsernames)) {
+                    $isValidUser = true;
+                }
+            }
+
+            // Jika User Valid dan memiliki tanggal
+            if ($isValidUser && $dateString) {
                 $date = Carbon::parse($dateString);
 
+                // Filter berdasarkan jangka tahun target KPI
                 if ($date->year === $tahun) {
                     $totalPenilaian++;
                     $score = (float) ($data['score'] ?? 0);
@@ -648,21 +643,33 @@ class SalesKPIService
                     if ($score > $nilaiUkur) {
                         $totalMelebihiNilaiUkur++;
 
+                        // Simpan jumlah data absolut yang memenuhi standar
+                        $monthlyDataTemp[$monthKey] = ($monthlyDataTemp[$monthKey] ?? 0) + 1;
+
                         if (!isset($dailyBreakdownPerMonth[$monthKey])) {
                             $dailyBreakdownPerMonth[$monthKey] = [];
                         }
                         $dailyBreakdownPerMonth[$monthKey][$dateKey] = ($dailyBreakdownPerMonth[$monthKey][$dateKey] ?? 0) + 1;
-                        $monthlyDataTemp[$monthKey] = ($monthlyDataTemp[$monthKey] ?? 0) + 1;
                     }
                 }
             }
         }
 
-        $progress = 0;
-        if ($totalPenilaian > 0) {
-            $progress = round(($totalMelebihiNilaiUkur / $totalPenilaian) * 100, 1);
+        // Jika tidak ada total data penilaian sama sekali
+        if ($totalPenilaian === 0) {
+            return $this->getDefaultDetailResponse();
         }
 
+        // 6. Kalkulasi Progress Utama & Gap
+        $progress = round(($totalMelebihiNilaiUkur / $totalPenilaian) * 100, 2);
+
+        $gap = 0;
+        if ($progress <= $nilaiTarget) {
+            $gapRaw = $progress - $nilaiTarget;
+            $gap = rtrim(rtrim(sprintf('%.2f', $gapRaw), '0'), '.');
+        }
+
+        // 7. Mempertahankan Format Output Sesuai Spesifikasi Grafik Frontend
         $monthlyData = [];
         foreach ($monthlyDataTemp as $month => $total) {
             $monthlyData[$month] = round($total, 1);
@@ -674,29 +681,24 @@ class SalesKPIService
         $monthlyProgress = [];
         foreach ($monthlyData as $month => $value) {
             $monthlyProgress[$month] = $nilaiTarget > 0
-                ? round(($value / $nilaiTarget) * 100, 1)
+                ? round(($value / $nilaiTarget) * 100, 2)
                 : 0;
         }
 
         $dailyProgressPerMonth = [];
         foreach ($dailyBreakdownPerMonth as $month => $days) {
+            ksort($dailyBreakdownPerMonth[$month]); // Urutkan tanggal harian secara kronologis
             foreach ($days as $date => $value) {
                 $dailyProgressPerMonth[$month][$date] = $nilaiTarget > 0
-                    ? round(($value / $nilaiTarget) * 100, 1)
+                    ? round(($value / $nilaiTarget) * 100, 2)
                     : 0;
             }
-        }
-
-        $gap = 0;
-        if ($progress <= $nilaiTarget) {
-            $gapRaw = $progress - $nilaiTarget;
-            $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
         }
 
         $countAbove = $totalMelebihiNilaiUkur;
         $countBelow = $totalPenilaian - $totalMelebihiNilaiUkur;
 
-        return [
+        return array_merge($this->getDefaultDetailResponse(), [
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => [
@@ -707,6 +709,6 @@ class SalesKPIService
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgress,
             'daily_progress_per_month' => $dailyProgressPerMonth,
-        ];
+        ]);
     }
 }
