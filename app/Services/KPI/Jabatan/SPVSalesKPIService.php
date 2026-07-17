@@ -8,9 +8,9 @@ use App\Models\detailPersonKPI;
 use App\Models\karyawan;
 use App\Models\perhitunganNetSales;
 use App\Traits\KPIDefaultResponseTrait;
+use App\Models\ApprovalPendapatanSales;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use App\Services\KPI\Jabatan\GMKPIService;
 use Illuminate\Support\Facades\Log;
 
 class SPVSalesKPIService
@@ -147,69 +147,89 @@ class SPVSalesKPIService
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
-            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            Log::warning("calculateCustomerAcquisitionCost: Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
-            return 0;
+        $target = $detail->nilai_target; // Konversi ke float untuk akurasi komparasi
+        $start = Carbon::create($tahun, 1, 1)->startOfDay();
+        $end = Carbon::create($tahun, Carbon::now()->month, Carbon::now()->daysInMonth)->endOfDay();
+
+        Log::info("calculateCustomerAcquisitionCost - Inisialisasi Parameter", [
+            'target_id' => $item->id,
+            'person_id' => $personId,
+            'tahun' => $tahun,
+            'nilai_target_persentase' => $target,
+            'start_date' => $start->toDateString(),
+            'end_date' => $end->toDateString(),
+        ]);
+
+        $data = ApprovalPendapatanSales::with('pendapatan')
+                ->whereBetween('tanggal_mulai', [$start, $end])
+                ->get();
+
+        Log::info("calculateCustomerAcquisitionCost - Kueri Selesai", [
+            'jumlah_data_ditemukan' => $data->count(),
+        ]);
+
+        if ($data->isEmpty()) return 0;
+
+        $totalDataAkuisisi = 0;
+        $dataAkuisisiTidakTerdata = 0;
+        $achieve = 0;
+
+        foreach ($data as $index => $row) {
+            $hargaNet = ($row->pendapatan?->pax ?? 0) * ($row->pendapatan?->harga_net ?? 0);
+
+            $biayaPenjualan = ($row->total_pa + $row->oleh_oleh + $row->entertainment +
+                                    $row->total_cashback + $row->total_uang_saku +
+                                    $row->total_akomodasi + $row->biaya_transport);
+
+            $selisihBiayaUtama = ($row->harga_net * $row->pax) - $hargaNet;
+
+            if ($biayaPenjualan > $selisihBiayaUtama) {
+                $selisihBiaya = $biayaPenjualan - $selisihBiayaUtama;
+            } else {
+                $selisihBiaya = 0;
+            }
+
+            if ($selisihBiaya <= 0) {
+                $dataAkuisisiTidakTerdata++;
+                continue;
+            } else {
+                $totalDataAkuisisi++;
+
+                if ($hargaNet > 0) {
+                    $persentase = ($selisihBiaya / $hargaNet) * 100;
+
+                    $isAchieved = $persentase <= 10;
+
+                    if ($isAchieved) {
+                        $achieve++;
+                    }
+                } else {
+                    Log::warning("calculateCustomerAcquisitionCost - Harga Net = 0 (Pembagian Dihindari)", [
+                        'row_id' => $row->id ?? 'unknown',
+                    ]);
+                }
+            }
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-        $labaKotor = app(GMKPIService::class)->calculatePemasukanKotor($item, $personId);
-
-        if ($labaKotor == 0) {
-            return 0;
+        if ($data->count() > 0) {
+            $progress = round(($achieve + $dataAkuisisiTidakTerdata) / $data->count() * 100, 2);
+        } else {
+            $progress = 0;
         }
 
-        $karyawanIds = detailPersonKPI::where('detailTargetKey', $detail->id)->pluck('id_karyawan');
-        $kodeKaryawanList = karyawan::whereIn('id', $karyawanIds)->pluck('kode_karyawan')->filter();
-
-        if ($kodeKaryawanList->isEmpty()) {
-            return 0;
-        }
-
-        $totalBiayaAkuisisi = perhitunganNetSales::whereHas('rkm', function ($query) use ($kodeKaryawanList, $tahun) {
-            $query->whereIn('sales_key', $kodeKaryawanList)
-                ->whereYear('tanggal_awal', $tahun);
-        })
-            ->whereBetween('tgl_pa', [$start, $end])
-            ->get()
-            ->sum(function ($record) {
-                return ($record->transportasi ?? 0) +
-                    ($record->akomodasi_peserta ?? 0) +
-                    ($record->akomodasi_tim ?? 0) +
-                    ($record->fresh_money ?? 0) +
-                    ($record->entertaint ?? 0) +
-                    ($record->souvenir ?? 0) +
-                    ($record->cashback ?? 0) +
-                    ($record->sewa_laptop ?? 0);
-            });
-
-        if ($totalBiayaAkuisisi > ($labaKotor * ($nilaiTarget / 100))) {
-            $totalBiayaAkuisisi = $labaKotor * ($nilaiTarget / 100);
-        }
-
-        $progress = 0;
-
-        if ($totalBiayaAkuisisi > 0) {
-            $rasio = ($totalBiayaAkuisisi / $labaKotor) * 100;
-            $batas = $nilaiTarget;
-            $progress = ($batas / $rasio) * 100;
-        }
-
-        return round($progress, 1);
+        return $progress;
     }
 
     public function calculateCustomerAcquisitionCostDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
+        // 1. Validasi Input
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             return $this->getDefaultDetailResponse();
         }
@@ -217,72 +237,117 @@ class SPVSalesKPIService
         $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
 
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
             return $this->getDefaultDetailResponse();
         }
 
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        $start = Carbon::create($tahun, 1, 1)->startOfDay();
+        $end = Carbon::create($tahun, 12, 31)->endOfDay();
 
-        // Memanggil metode calculatePemasukanKotor dari GMKPIService
-        $labaKotor = app(GMKPIService::class)->calculatePemasukanKotor($itemDetail, $personId);
+        // 2. Ambil data dengan relasi
+        $data = ApprovalPendapatanSales::with('pendapatan')
+                ->whereBetween('tanggal_mulai', [$start, $end])
+                ->get();
 
-        if ($labaKotor == 0) {
+        if ($data->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        $karyawanIds = detailPersonKPI::where('detailTargetKey', $detail->id)->pluck('id_karyawan');
-        $kodeKaryawanList = karyawan::whereIn('id', $karyawanIds)->pluck('kode_karyawan')->filter();
+        // 3. Inisialisasi Variabel Kalkulasi
+        $totalDataAkuisisi = 0;
+        $dataAkuisisiTidakTerdata = 0;
+        $achieve = 0;
 
-        if ($kodeKaryawanList->isEmpty()) {
-            return $this->getDefaultDetailResponse();
+        $totalDataPerMonth = [];
+        $achievedDataPerMonth = [];
+        $totalDataPerDay = [];
+        $achievedDataPerDay = [];
+
+        // 4. Proses Iterasi dengan Logika Baru
+        foreach ($data as $row) {
+            $date = Carbon::parse($row->tanggal_mulai);
+            $dateKey = $date->format('Y-m-d');
+            $monthKey = $date->format('Y-m');
+
+            // Inisialisasi array matriks
+            $totalDataPerMonth[$monthKey] = ($totalDataPerMonth[$monthKey] ?? 0) + 1;
+            $totalDataPerDay[$monthKey][$dateKey] = ($totalDataPerDay[$monthKey][$dateKey] ?? 0) + 1;
+
+            $achievedDataPerMonth[$monthKey] = $achievedDataPerMonth[$monthKey] ?? 0;
+            $achievedDataPerDay[$monthKey][$dateKey] = $achievedDataPerDay[$monthKey][$dateKey] ?? 0;
+
+            // Kalkulasi Biaya
+            $hargaNet = ($row->pendapatan?->pax ?? 0) * ($row->pendapatan?->harga_net ?? 0);
+            $biayaPenjualan = (float) ($row->total_pa + $row->oleh_oleh + $row->entertainment +
+                                    $row->total_cashback + $row->total_uang_saku +
+                                    $row->total_akomodasi + $row->biaya_transport);
+
+            $selisihBiayaUtama = (float) (($row->harga_net * $row->pax) - $hargaNet);
+            $selisihBiaya = ($biayaPenjualan > $selisihBiayaUtama) ? ($biayaPenjualan - $selisihBiayaUtama) : 0;
+
+            $isRowAchieved = false;
+
+            // Validasi Capaian (Achieved)
+            if ($selisihBiaya <= 0) {
+                $dataAkuisisiTidakTerdata++;
+                $isRowAchieved = true;
+            } else {
+                $totalDataAkuisisi++;
+                if ($hargaNet > 0) {
+                    $persentase = ($selisihBiaya / $hargaNet) * 100;
+                    if ($persentase <= 10) {
+                        $achieve++;
+                        $isRowAchieved = true;
+                    }
+                }
+            }
+
+            // Perekaman Data Capaian ke Matriks
+            if ($isRowAchieved) {
+                $achievedDataPerMonth[$monthKey]++;
+                $achievedDataPerDay[$monthKey][$dateKey]++;
+            }
         }
 
-        $totalBiayaAkuisisi = perhitunganNetSales::whereHas('rkm', function ($query) use ($kodeKaryawanList, $tahun) {
-            $query->whereIn('sales_key', $kodeKaryawanList)
-                ->whereYear('tanggal_awal', $tahun);
-        })
-            ->whereBetween('tgl_pa', [$start, $end])
-            ->get()
-            ->sum(function ($record) {
-                return ($record->transportasi ?? 0) +
-                    ($record->akomodasi_peserta ?? 0) +
-                    ($record->akomodasi_tim ?? 0) +
-                    ($record->fresh_money ?? 0) +
-                    ($record->entertaint ?? 0) +
-                    ($record->souvenir ?? 0) +
-                    ($record->cashback ?? 0) +
-                    ($record->sewa_laptop ?? 0);
-            });
+        // 5. Kalkulasi Progress Utama
+        $totalCount = $data->count();
+        $progress = $totalCount > 0 ? round((($achieve + $dataAkuisisiTidakTerdata) / $totalCount) * 100, 2) : 0;
 
-        if ($totalBiayaAkuisisi > ($labaKotor * ($nilaiTarget / 100))) {
-            $totalBiayaAkuisisi = $labaKotor * ($nilaiTarget / 100);
+        // 6. Penyiapan Data Grafik Bulanan dan Harian
+        $monthlyData = [];
+        $monthlyProgress = [];
+        $dailyBreakdownPerMonth = [];
+        $dailyProgressPerMonth = [];
+
+        foreach ($totalDataPerMonth as $month => $total) {
+            $capaianBulanan = $achievedDataPerMonth[$month];
+            $monthlyData[$month] = $capaianBulanan;
+            $monthlyProgress[$month] = $total > 0 ? round(($capaianBulanan / $total) * 100, 2) : 0;
         }
 
-        $progress = 0;
-
-        if ($totalBiayaAkuisisi > 0) {
-            $rasio = ($totalBiayaAkuisisi / $labaKotor) * 100;
-            $batas = $nilaiTarget;
-            $progress = ($batas / $rasio) * 100;
+        foreach ($totalDataPerDay as $month => $days) {
+            foreach ($days as $date => $total) {
+                $capaianHarian = $achievedDataPerDay[$month][$date];
+                $dailyBreakdownPerMonth[$month][$date] = $capaianHarian;
+                $dailyProgressPerMonth[$month][$date] = $total > 0 ? round(($capaianHarian / $total) * 100, 2) : 0;
+            }
         }
 
-        $progress = round($progress, 1);
-
-        if ($progress > $nilaiTarget) {
-            $gapRaw = 0;
-        } else {
-            $gapRaw = $progress - $nilaiTarget;
-        }
+        // 7. Kalkulasi Metrik Final
+        $gapRaw = ($progress > $nilaiTarget) ? 0 : ($progress - $nilaiTarget);
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        $above = $progress >= $nilaiTarget ? 1 : 0;
-        $below = 1 - $above;
-
         return array_merge($this->getDefaultDetailResponse(), [
-            'progress' => $progress,
+            'progress' => round($progress, 1),
             'gap' => $gap,
-            'pie_chart' => ['above' => $above, 'below' => $below],
+            'pie_chart' => [
+                'above' => $achieve + $dataAkuisisiTidakTerdata,
+                'below' => ($achieve + $dataAkuisisiTidakTerdata) - $data->count()
+            ],
+            'monthly_data' => $monthlyData,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+            'monthly_progress' => $monthlyProgress,
+            'daily_progress_per_month' => $dailyProgressPerMonth,
         ]);
     }
 

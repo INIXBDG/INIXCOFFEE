@@ -2,6 +2,7 @@
 
 namespace App\Services\KPI\Jabatan;
 
+use App\Models\ApprovalPendapatanSales;
 use App\Models\Peluang;
 use App\Models\RKM;
 use App\Models\karyawan;
@@ -314,47 +315,83 @@ class SalesKPIService
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        $start = Carbon::create($tahun, 1, 1)->startOfDay();
+        $end = Carbon::create($tahun, Carbon::now()->month, Carbon::now()->daysInMonth)->endOfDay();
 
         $nilaiTarget = (float) $detail->nilai_target;
 
-        $peluang = Peluang::with('rkm.perhitunganNetSales')
-            ->whereYear('created_at', $tahun)
-            ->get();
+        if ($personId !== null) {
+            $karyawan = Karyawan::find($personId);
 
-        $actualCAC = 0;
+            if ($karyawan) {
+                $data = ApprovalPendapatanSales::with(['pendapatan', 'rkm'])
+                    ->whereHas('rkm', function ($query) use ($karyawan) {
+                        $query->where('sales_key', $karyawan->kode_karyawan);
+                    })
+                    ->whereBetween('tanggal_mulai', [$start, $end])
+                    ->get();
+            } else {
+                $data = collect();
+                Log::warning("Karyawan tidak ditemukan untuk personId: {$personId}");
+            }
+        } else {
+            $data = ApprovalPendapatanSales::with('pendapatan')
+                ->whereBetween('tanggal_mulai', [$start, $end])
+                ->get();
+        }
 
-        // Memanggil metode calculatePemasukanKotor dari GMKPIService
-        $targetTahunan = app(GMKPIService::class)->calculatePemasukanKotor($item, $personId);
+        Log::info("calculateCustomerAcquisitionCost - Kueri Selesai", [
+            'jumlah_data_ditemukan' => $data->count(),
+        ]);
 
-        foreach ($peluang as $p) {
-            if ($p->tahap === 'merah') {
-                if ($p->rkm && $p->rkm->perhitunganNetSales) {
-                    foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
-                        $actualCAC +=
-                            ($perhitungan->transportasi ?? 0) +
-                            ($perhitungan->akomodasi_peserta ?? 0) +
-                            ($perhitungan->akomodasi_tim ?? 0) +
-                            ($perhitungan->fresh_money ?? 0) +
-                            ($perhitungan->entertaint ?? 0) +
-                            ($perhitungan->souvenir ?? 0) +
-                            ($perhitungan->cashback ?? 0) +
-                            ($perhitungan->sewa_laptop ?? 0);
+        if ($data->isEmpty()) return 0;
+
+        $totalDataAkuisisi = 0;
+        $dataAkuisisiTidakTerdata = 0;
+        $achieve = 0;
+
+        foreach ($data as $index => $row) {
+            $hargaNet = ($row->pendapatan?->pax ?? 0) * ($row->pendapatan?->harga_net ?? 0);
+
+            $biayaPenjualan = ($row->total_pa + $row->oleh_oleh + $row->entertainment +
+                                    $row->total_cashback + $row->total_uang_saku +
+                                    $row->total_akomodasi + $row->biaya_transport);
+
+            $selisihBiayaUtama = ($row->harga_net * $row->pax) - $hargaNet;
+
+            if ($biayaPenjualan > $selisihBiayaUtama) {
+                $selisihBiaya = $biayaPenjualan - $selisihBiayaUtama;
+            } else {
+                $selisihBiaya = 0;
+            }
+
+            if ($selisihBiaya <= 0) {
+                $dataAkuisisiTidakTerdata++;
+                continue;
+            } else {
+                $totalDataAkuisisi++;
+
+                if ($hargaNet > 0) {
+                    $persentase = ($selisihBiaya / $hargaNet) * 100;
+
+                    $isAchieved = $persentase <= 10;
+
+                    if ($isAchieved) {
+                        $achieve++;
                     }
+                } else {
+                    Log::warning("calculateCustomerAcquisitionCost - Harga Net = 0 (Pembagian Dihindari)", [
+                        'row_id' => $row->id ?? 'unknown',
+                    ]);
                 }
             }
         }
 
-        if ($actualCAC <= 0) {
-            return 0.0;
+        if ($data->count() > 0) {
+            $progress = round(($achieve + $dataAkuisisiTidakTerdata) / $data->count() * 100, 2);
+        } else {
+            $progress = 0;
         }
-
-        $maxCAC = ($nilaiTarget / 100) * $targetTahunan;
-
-        if ($maxCAC <= 0) {
-            return 0.0;
-        }
-
-        $progress = min(($maxCAC / $actualCAC) * 100, 100);
 
         return round($progress, 2);
     }
@@ -363,6 +400,7 @@ class SalesKPIService
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
+        // 1. Validasi Input
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             return $this->getDefaultDetailResponse();
         }
@@ -370,96 +408,127 @@ class SalesKPIService
         $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
 
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
             return $this->getDefaultDetailResponse();
         }
 
-        // Memanggil metode calculatePemasukanKotor dari GMKPIService
-        $targetTahunanUnit = app(GMKPIService::class)->calculatePemasukanKotor($itemDetail, $personId);
+        $start = Carbon::create($tahun, 1, 1)->startOfDay();
+        $end = Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $peluangs = Peluang::with('rkm.perhitunganNetSales')
-            ->whereYear('created_at', $tahun)
-            ->get();
+        // 2. Kueri Antarmuka Database dengan Filter Personalia
+        if ($personId !== null) {
+            $karyawan = Karyawan::find($personId);
 
-        $actualCAC = 0;
-        $dailyBreakdownPerMonth = [];
-
-        $maxCAC = ($nilaiTarget / 100) * $targetTahunanUnit;
-
-        foreach ($peluangs as $p) {
-            if ($p->tahap !== 'merah') {
-                continue;
+            if ($karyawan) {
+                $data = ApprovalPendapatanSales::with(['pendapatan', 'rkm'])
+                    ->whereHas('rkm', function ($query) use ($karyawan) {
+                        $query->where('sales_key', $karyawan->kode_karyawan);
+                    })
+                    ->whereBetween('tanggal_mulai', [$start, $end])
+                    ->get();
+            } else {
+                $data = collect();
             }
+        } else {
+            $data = ApprovalPendapatanSales::with('pendapatan')
+                ->whereBetween('tanggal_mulai', [$start, $end])
+                ->get();
+        }
 
-            $totalBiayaPeluang = 0;
-            if ($p->rkm && $p->rkm->perhitunganNetSales) {
-                foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
-                    $totalBiayaPeluang += ($perhitungan->transportasi ?? 0)
-                        + ($perhitungan->akomodasi_peserta ?? 0)
-                        + ($perhitungan->akomodasi_tim ?? 0)
-                        + ($perhitungan->fresh_money ?? 0)
-                        + ($perhitungan->entertaint ?? 0)
-                        + ($perhitungan->souvenir ?? 0)
-                        + ($perhitungan->cashback ?? 0)
-                        + ($perhitungan->sewa_laptop ?? 0);
-                }
-            }
+        if ($data->isEmpty()) {
+            return $this->getDefaultDetailResponse();
+        }
 
-            $actualCAC += $totalBiayaPeluang;
+        // 3. Inisialisasi Variabel Kalkulasi Matriks
+        $totalDataAkuisisi = 0;
+        $dataAkuisisiTidakTerdata = 0;
+        $achieve = 0;
 
-            $date = Carbon::parse($p->created_at);
+        $totalDataPerMonth = [];
+        $achievedDataPerMonth = [];
+        $totalDataPerDay = [];
+        $achievedDataPerDay = [];
+
+        // 4. Proses Iterasi dan Evaluasi Data
+        foreach ($data as $row) {
+            $date = Carbon::parse($row->tanggal_mulai);
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
 
-            if (!isset($dailyBreakdownPerMonth[$monthKey][$dateKey])) {
-                $dailyBreakdownPerMonth[$monthKey][$dateKey] = 0;
+            // Perekaman jumlah data keseluruhan
+            $totalDataPerMonth[$monthKey] = ($totalDataPerMonth[$monthKey] ?? 0) + 1;
+            $totalDataPerDay[$monthKey][$dateKey] = ($totalDataPerDay[$monthKey][$dateKey] ?? 0) + 1;
+
+            $achievedDataPerMonth[$monthKey] = $achievedDataPerMonth[$monthKey] ?? 0;
+            $achievedDataPerDay[$monthKey][$dateKey] = $achievedDataPerDay[$monthKey][$dateKey] ?? 0;
+
+            // Kalkulasi parameter persentase
+            $hargaNet = ($row->pendapatan?->pax ?? 0) * ($row->pendapatan?->harga_net ?? 0);
+            $biayaPenjualan = (float) ($row->total_pa + $row->oleh_oleh + $row->entertainment +
+                                    $row->total_cashback + $row->total_uang_saku +
+                                    $row->total_akomodasi + $row->biaya_transport);
+
+            $selisihBiayaUtama = (float) (($row->harga_net * $row->pax) - $hargaNet);
+            $selisihBiaya = ($biayaPenjualan > $selisihBiayaUtama) ? ($biayaPenjualan - $selisihBiayaUtama) : 0;
+
+            $isRowAchieved = false;
+
+            // Validasi Capaian (Sesuai Logika Utama)
+            if ($selisihBiaya <= 0) {
+                $dataAkuisisiTidakTerdata++;
+                $isRowAchieved = true;
+            } else {
+                $totalDataAkuisisi++;
+                if ($hargaNet > 0) {
+                    $persentase = ($selisihBiaya / $hargaNet) * 100;
+                    if ($persentase <= 10) {
+                        $achieve++;
+                        $isRowAchieved = true;
+                    }
+                }
             }
-            $dailyBreakdownPerMonth[$monthKey][$dateKey] += $totalBiayaPeluang;
+
+            // Perekaman data sukses ke matriks
+            if ($isRowAchieved) {
+                $achievedDataPerMonth[$monthKey]++;
+                $achievedDataPerDay[$monthKey][$dateKey]++;
+            }
         }
 
-        $progress = 0;
-        if ($actualCAC > 0) {
-            $progress = min(($maxCAC / $actualCAC) * 100, 100);
-        }
+        // 5. Kalkulasi Metrik Kemajuan (Progress) Keseluruhan
+        $totalCount = $data->count();
+        $progress = $totalCount > 0 ? round((($achieve + $dataAkuisisiTidakTerdata) / $totalCount) * 100, 2) : 0;
 
+        // 6. Penyiapan Struktur Data Grafik API
         $monthlyData = [];
-        foreach ($dailyBreakdownPerMonth as $month => $days) {
-            $monthlyData[$month] = round(array_sum($days) / count($days), 1);
-        }
-
-        ksort($monthlyData);
-        ksort($dailyBreakdownPerMonth);
-
         $monthlyProgress = [];
+        $dailyBreakdownPerMonth = [];
         $dailyProgressPerMonth = [];
 
-        foreach ($monthlyData as $month => $value) {
-            $monthlyProgress[$month] = $maxCAC > 0 ? round(($value / $maxCAC) * 100, 1) : 0;
+        foreach ($totalDataPerMonth as $month => $total) {
+            $capaianBulanan = $achievedDataPerMonth[$month];
+            $monthlyData[$month] = $capaianBulanan;
+            $monthlyProgress[$month] = $total > 0 ? round(($capaianBulanan / $total) * 100, 2) : 0;
         }
 
-        foreach ($dailyBreakdownPerMonth as $month => $days) {
-            foreach ($days as $day => $value) {
-                if (!isset($dailyProgressPerMonth[$month])) {
-                    $dailyProgressPerMonth[$month] = [];
-                }
-                $dailyProgressPerMonth[$month][$day] = $maxCAC > 0 ? round(($value / $maxCAC) * 100, 1) : 0;
+        foreach ($totalDataPerDay as $month => $days) {
+            foreach ($days as $date => $total) {
+                $capaianHarian = $achievedDataPerDay[$month][$date];
+                $dailyBreakdownPerMonth[$month][$date] = $capaianHarian;
+                $dailyProgressPerMonth[$month][$date] = $total > 0 ? round(($capaianHarian / $total) * 100, 2) : 0;
             }
         }
 
-        $gapRaw = $maxCAC - $actualCAC;
-        if ($progress > $nilaiTarget) {
-            $gapRaw = 0;
-        }
+        // 7. Kalkulasi Varians (Gap)
+        $gapRaw = ($progress > $nilaiTarget) ? 0 : ($progress - $nilaiTarget);
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         return array_merge($this->getDefaultDetailResponse(), [
             'progress' => round($progress, 1),
-            'actual_cac' => $actualCAC,
-            'max_cac' => $maxCAC,
             'gap' => $gap,
             'pie_chart' => [
-                'above' => $actualCAC > $maxCAC ? 1 : 0,
-                'below' => $actualCAC <= $maxCAC ? 1 : 0
+                'above' => $progress >= $nilaiTarget ? 1 : 0,
+                'below' => $progress < $nilaiTarget ? 1 : 0
             ],
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,

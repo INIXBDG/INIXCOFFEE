@@ -68,4 +68,9 @@ class ApprovalPendapatanSales extends Model
     {
         return $this->belongsTo(Perusahaan::class, 'perusahaan');
     }
+
+    public function pendapatan()
+    {
+        return $this->hasOne(ApprovalPendapatan::class, 'id_rkm', 'id_rkm');
+    }
 }
