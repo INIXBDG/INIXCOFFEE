@@ -20,13 +20,15 @@ use Illuminate\Support\Facades\Cache;
 use App\Exports\PickupDriverReportExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Controllers\TelegramController;
 use App\Models\outstanding;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class pickupDriverController extends Controller
 {
+    private const BOT_TOKEN = '8619211414:AAHnpchtKmY_FEKrOnj1VQTUsYKqp3Smuhw';
+    private const CHAT_ID = '-1003758833562';
+
     public function index()
     {
         $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
@@ -205,19 +207,9 @@ class pickupDriverController extends Controller
             'waktu' => $request->waktu ?? [],
             'detail' => $request->detail ?? [],
             'log_text' => null,
-            'path' => $path,
         ];
 
-        try {
-            Http::withHeaders([
-                'Accept' => 'application/json',
-                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
-            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramData);
-
-        } catch (\Exception $e) {
-            // Log error jika Laravel A down
-            Log::error("Gagal mengirim webhook: " . $e->getMessage());
-        }
+        $this->sendTelegramNotification($telegramData);
 
         return response()->json([
             'success' => true,
@@ -358,19 +350,9 @@ class pickupDriverController extends Controller
             'waktu' => [],
             'detail' => [],
             'log_text' => null,
-            'path' => '/office/pickup-driver/index',
         ];
 
-        try {
-            Http::withHeaders([
-                'Accept' => 'application/json',
-                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
-            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramPayload);
-
-        } catch (\Exception $e) {
-            // Log error jika Laravel A down
-            Log::error("Gagal mengirim webhook: " . $e->getMessage());
-        }
+        $this->sendTelegramNotification($telegramPayload);
 
         return response()->json([
             'success' => true,
@@ -465,19 +447,9 @@ class pickupDriverController extends Controller
             'waktu' => [],
             'detail' => [],
             'log_text' => 'KM: ' . ($request->KM_awal ?? '-') . ' KM → ' . ($request->KM_akhir ?? '-') . ' KM',
-            'path' => '/office/pickup-driver/index',
         ];
 
-        try {
-            Http::withHeaders([
-                'Accept' => 'application/json',
-                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
-            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramPayload);
-
-        } catch (\Exception $e) {
-            // Log error jika Laravel A down
-            Log::error("Gagal mengirim webhook: " . $e->getMessage());
-        }
+        $this->sendTelegramNotification($telegramPayload);
 
         return response()->json([
             'success' => true,
@@ -555,20 +527,10 @@ class pickupDriverController extends Controller
             'waktu' => [],
             'detail' => [],
             'log_text' => null,
-            'path' => '/office/pickup-driver/index',
             'state' => 'delete',
         ];
 
-        try {
-            Http::withHeaders([
-                'Accept' => 'application/json',
-                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
-            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramPayload);
-
-        } catch (\Exception $e) {
-            // Log error jika Laravel A down
-            Log::error("Gagal mengirim webhook: " . $e->getMessage());
-        }
+        $this->sendTelegramNotification($telegramPayload);
 
         $data->delete();
         return response()->json(['message' => 'Data berhasil dihapus']);
@@ -732,53 +694,25 @@ class pickupDriverController extends Controller
             'waktu' => collect($request->details)->pluck('waktu')->toArray(),
             'detail' => collect($request->details)->pluck('detail')->toArray(),
             'log_text' => implode("\n", $logParts),
-            'path' => '/office/pickup-driver/index',
         ];
 
-        try {
-            Http::withHeaders([
-                'Accept' => 'application/json',
-                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
-            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramPayload);
-
-        } catch (\Exception $e) {
-            // Log error jika Laravel A down
-            Log::error("Gagal mengirim webhook: " . $e->getMessage());
-        }
+        $this->sendTelegramNotification($telegramPayload);
 
         return response()->json(['success' => true, 'message' => 'Koordinasi berhasil diperbarui.']);
     }
 
-    public function actionTerimaFromTelegramToken(Request $request)
+    private function processTerimaFromTelegram(int $id): array
     {
-        if (
-            $request->header('X-Webhook-Secret')
-            !== 'RAHASIA_KITA'
-        ) {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        $id = $request->id_pengajuan;
-
-        $pickupDriver = pickupDriver::with('detailPickupDriver')
-            ->findOrFail($id);
+        $pickupDriver = pickupDriver::with('detailPickupDriver')->findOrFail($id);
 
         if ($pickupDriver->status_apply != 0) {
-            return [
-                'success' => false,
-                'message' => '⚠️ Status koordinasi sudah berubah.'
-            ];
+            return ['success' => false, 'message' => '⚠️ Status koordinasi sudah berubah.'];
         }
 
         $detail = $pickupDriver->detailPickupDriver->first();
 
         if (!$detail) {
-            return [
-                'success' => false,
-                'message' => 'Detail pickup tidak ditemukan.'
-            ];
+            return ['success' => false, 'message' => 'Detail pickup tidak ditemukan.'];
         }
 
         if ($detail->tipe === 'Penjemputan') {
@@ -798,26 +732,13 @@ class pickupDriverController extends Controller
         $driver = karyawan::find($pickupDriver->id_karyawan);
         $detailTipe = $pickupDriver->detailPickupDriver->pluck('tipe')->toArray();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tracking
-        |--------------------------------------------------------------------------
-        */
         TrackingPickupDriver::create([
             'pickup_driver_id' => $pickupDriver->id,
-            'status' => 'Koordinasi diterima melalui Telegram, status menjadi ' .
-                $statusDriver .
-                ' dengan kendaraan ' .
-                ($pickupDriver->kendaraan ?? '-'),
+            'status' => 'Koordinasi diterima melalui Telegram, status menjadi ' . $statusDriver . ' dengan kendaraan ' . ($pickupDriver->kendaraan ?? '-'),
             'diubah_oleh' => $driver->id,
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Telegram Notification
-        |--------------------------------------------------------------------------
-        */
-        $telegramPayload = [
+        $this->sendTelegramNotification([
             'title' => '🔄 Status Diperbarui',
             'id_pengajuan' => $pickupDriver->id,
             'creator_name' => 'Telegram Bot',
@@ -832,83 +753,540 @@ class pickupDriverController extends Controller
             'waktu' => [],
             'detail' => [],
             'log_text' => null,
-            'path' => '/office/pickup-driver/index',
+        ]);
+
+        return ['success' => true, 'message' => '✅ Koordinasi berhasil diterima!'];
+    }
+
+    private function getSummaryMessage(int $id): array
+    {
+        $pickupDriver = pickupDriver::with(['karyawan', 'pembuat', 'detailPickupDriver'])->findOrFail($id);
+        
+        $coordinationData = [
+            'id_pengajuan' => $pickupDriver->id,
+            'creator_name' => $pickupDriver->pembuat?->nama_lengkap ?? '-',
+            'driver_name' => $pickupDriver->karyawan?->nama_lengkap ?? '-',
+            'budget' => $pickupDriver->budget,
+            'tanggal_pembuatan' => $pickupDriver->created_at,
+            'status_text' => $pickupDriver->status_driver ?? 'Menunggu',
+            'status_apply' => $pickupDriver->status_apply,
+            'tipe' => $pickupDriver->detailPickupDriver->pluck('tipe')->toArray(),
+            'lokasi' => $pickupDriver->detailPickupDriver->pluck('lokasi')->toArray(),
+            'tanggal' => $pickupDriver->detailPickupDriver->pluck('tanggal_keberangkatan')->toArray(),
+            'waktu' => $pickupDriver->detailPickupDriver->pluck('waktu_keberangkatan')->toArray(),
         ];
 
-        try {
-            Http::withHeaders([
-                'Accept' => 'application/json',
-                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
-            ])->post('https://inixindobdg.co.id/api/new-pickup-driver-notification', $telegramPayload);
+        $formatted = $this->formatCoordinationMessage($coordinationData);
+        $formatted['id'] = $id;
+        
+        return $formatted;
+    }
 
-        } catch (\Exception $e) {
-            // Log error jika Laravel A down
-            Log::error("Gagal mengirim webhook: " . $e->getMessage());
+    private function getSummaryTextAndButtons(int $id): array
+    {
+        $pickupDriver = pickupDriver::with(['karyawan', 'pembuat', 'detailPickupDriver'])->findOrFail($id);
+
+        $budgetText = $pickupDriver->budget ? 'Rp ' . number_format($pickupDriver->budget, 0, ',', '.') : 'Tidak Ada Budget';
+        $time = \Carbon\Carbon::parse($pickupDriver->created_at)->format('d M Y, H:i');
+        $status = $pickupDriver->status_driver ?? 'Menunggu';
+
+        $detailsText = '';
+        $tipes = $pickupDriver->detailPickupDriver->pluck('tipe')->toArray();
+        $lokasis = $pickupDriver->detailPickupDriver->pluck('lokasi')->toArray();
+        $tanggals = $pickupDriver->detailPickupDriver->pluck('tanggal_keberangkatan')->map(fn($t) => \Carbon\Carbon::parse($t)->format('d M Y'))->toArray();
+        $waktus = $pickupDriver->detailPickupDriver->pluck('waktu_keberangkatan')->map(fn($t) => substr($t, 0, 5))->toArray();
+
+        if (count($tipes) > 0) {
+            foreach ($tipes as $i => $tipe) {
+                $lokasi = $lokasis[$i] ?? '-';
+                $tanggal = $tanggals[$i] ?? '-';
+                $waktu = $waktus[$i] ?? '-';
+                $detailsText .= "• <b>{$tipe}</b>\n  {$lokasi}\n  {$tanggal} | {$waktu}\n\n";
+            }
         }
+
+        $messageBody = "ID: <code>#{$pickupDriver->id}</code>\n" .
+                       "Dibuat: " . ($pickupDriver->pembuat?->nama_lengkap ?? '-') . "\n" .
+                       "Driver: " . ($pickupDriver->karyawan?->nama_lengkap ?? '-') . "\n" .
+                       "Budget: {$budgetText}\n" .
+                       "Waktu: {$time}\n" .
+                       "Status: {$status}\n" .
+                       "──────────────\n" .
+                       ($detailsText ? "<b>Rincian Perjalanan:</b>\n{$detailsText}" : '');
+
+        $buttons = [
+            [['text' => '🔍 Lihat Detail', 'callback_data' => "detail_{$pickupDriver->id}"]]
+        ];
+
+        if ($pickupDriver->status_apply == 0) {
+            $buttons[] = [['text' => '✅ Terima', 'callback_data' => "terima_{$pickupDriver->id}"]];
+        } else {
+            $buttons[] = [['text' => '✅ Sudah Diterima', 'callback_data' => "sudah_terima_{$pickupDriver->id}"]];
+        }
+
         return [
-            'success' => true,
-            'message' => '✅ Koordinasi berhasil diterima!'
+            'text' => "<b>🆕 Koordinasi Driver</b>\n──────────────\n" . $messageBody,
+            'buttons' => $buttons
+        ];
+    }
+    private function getDetailMessage(int $id): string
+    {
+        $pickupDriver = pickupDriver::with([
+            'karyawan', 'pembuat', 'detailPickupDriver', 'biayaTransportasi', 'Tracking'
+        ])->findOrFail($id);
+
+        $uangKepakai = $pickupDriver->biayaTransportasi->sum('harga') ?? 0;
+        $sisaBudget = ($pickupDriver->budget ?? 0) - $uangKepakai;
+
+        $lines = [];
+        $lines[] = "<b>DETAIL LENGKAP #{$pickupDriver->id}</b>";
+        $lines[] = "──────────────";
+        $lines[] = "<b>Driver:</b> " . ($pickupDriver->karyawan?->nama_lengkap ?? '-');
+        $lines[] = "<b>Pembuat:</b> " . ($pickupDriver->pembuat?->nama_lengkap ?? '-');
+        $lines[] = "<b>Kendaraan:</b> " . ($pickupDriver->kendaraan ?? 'Belum dipilih');
+        $lines[] = "<b>Status:</b> " . ($pickupDriver->status_driver ?? '-');
+        $lines[] = "<b>Budget:</b> " . ($pickupDriver->budget ? 'Rp ' . number_format($pickupDriver->budget, 0, ',', '.') : 'Tidak Ada');
+        $lines[] = "<b>Terpakai:</b> " . ($uangKepakai > 0 ? 'Rp ' . number_format($uangKepakai, 0, ',', '.') : 'Rp 0');
+        
+        if ($pickupDriver->budget) {
+            $sisaText = $sisaBudget < 0 ? '<b>Rp ' . number_format($sisaBudget, 0, ',', '.') . '</b>' : 'Rp ' . number_format($sisaBudget, 0, ',', '.');
+            $lines[] = "<b>Sisa:</b> " . $sisaText;
+        }
+
+        if ($pickupDriver->KM_awal || $pickupDriver->KM_akhir) {
+            $lines[] = "<b>KM:</b> " . ($pickupDriver->KM_awal ?? '-') . " → " . ($pickupDriver->KM_akhir ?? '-');
+        }
+
+        $lines[] = "──────────────";
+        $lines[] = "<b>Rincian Rute:</b>";
+        
+        if ($pickupDriver->detailPickupDriver->isNotEmpty()) {
+            foreach ($pickupDriver->detailPickupDriver as $index => $d) {
+                $tanggal = \Carbon\Carbon::parse($d->tanggal_keberangkatan)->format('d M Y');
+                $waktu = substr($d->waktu_keberangkatan, 0, 5);
+                $lines[] = ($index + 1) . ". <b>{$d->tipe}</b>: {$d->lokasi}";
+                $lines[] = "   {$tanggal} | {$waktu}";
+            }
+        } else {
+            $lines[] = "   <i>Tidak ada detail rute.</i>";
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function sendTelegramNotification(array $coordinationData): void
+    {
+        $formatted = $this->formatCoordinationMessage($coordinationData);
+        $this->sendTelegramMessage($formatted);
+    }
+
+    private function formatCoordinationMessage(array $coordinationData): array
+    {
+        $id = $coordinationData['id_pengajuan'] ?? '-';
+        $creator = $coordinationData['creator_name'] ?? '-';
+        $driver = $coordinationData['driver_name'] ?? '-';
+        $budget = isset($coordinationData['budget']) && $coordinationData['budget'] ? 'Rp ' . number_format($coordinationData['budget'], 0, ',', '.') : 'Tidak Ada Budget';
+        $time = isset($coordinationData['tanggal_pembuatan']) ? \Carbon\Carbon::parse($coordinationData['tanggal_pembuatan'])->format('d M Y, H:i') : '-';
+        $status = $coordinationData['status_text'] ?? '-';
+        $statusApply = $coordinationData['status_apply'] ?? 0;
+        $logText = $coordinationData['log_text'] ?? null;
+        $state = $coordinationData['state'] ?? null;
+
+        $detailsText = '';
+        if ($logText) {
+            $detailsText = $logText;
+        } else {
+            $tipes = $coordinationData['tipe'] ?? [];
+            $lokasis = $coordinationData['lokasi'] ?? [];
+            $tanggals = $coordinationData['tanggal'] ?? [];
+            $waktus = $coordinationData['waktu'] ?? [];
+            $details = $coordinationData['detail'] ?? [];
+
+            if (is_array($tipes) && count($tipes) > 0) {
+                foreach ($tipes as $i => $tipe) {
+                    $lokasi = $lokasis[$i] ?? '-';
+                    $tanggal = $tanggals[$i] ?? '-';
+                    $waktu = $waktus[$i] ?? '-';
+                    $info = $details[$i] ?? '-';
+                    $detailsText .= "• <b>{$tipe}</b>\n  {$lokasi}\n  {$tanggal} | {$waktu}\n  {$info}\n\n";
+                }
+            }
+        }
+
+        $message = "ID: <code>#{$id}</code>\n" . "Dibuat: {$creator}\n" . "Driver: {$driver}\n" . "Budget: {$budget}\n" . "Waktu: {$time}\n" . "Status: {$status}\n" . "──────────────\n" . ($detailsText ? "<b>Rincian Perjalanan:</b>\n{$detailsText}" : '');
+
+        $buttons = [['text' => '🔍 Lihat Detail', 'callback_data' => "detail_{$id}"]];
+
+        if ($statusApply == 0 && !$state) {
+            $buttons[] = ['text' => '✅ Terima', 'callback_data' => "terima_{$id}"];
+        }
+
+        if ($statusApply == 1) {
+            $buttons[] = ['text' => '🏁 Selesaikan', 'callback_data' => "selesaikan_{$id}"];
+        }
+
+        return [
+            'title' => $coordinationData['title'] ?? '🆕 Koordinasi Driver',
+            'message' => $message,
+            'buttons' => $buttons,
+            'id' => $id,
+            'status_apply' => $statusApply,
         ];
     }
 
-    // public function actionSelesaikanFromTelegramToken(Request $request)
-    // {
-    //     if (
-    //         $request->header('X-Webhook-Secret')
-    //         !== 'RAHASIA_KITA'
-    //     ) {
-    //         return response()->json([
-    //             'message' => 'Unauthorized'
-    //         ], 403);
-    //     }
+    private function startKepulanganFlow(int $userId, int $pickupId, int $chatId): void
+    {
+        Cache::put("telegram_kepulangan_{$userId}", [
+            'step' => 'km_awal',
+            'pickup_id' => $pickupId,
+            'chat_id' => $chatId,
+        ], now()->addMinutes(10));
+
+        $this->sendTelegramMessageToChat($chatId, [
+            'title' => '🏁 Input Kepulangan',
+            'message' => "Silakan <b>reply pesan ini</b> dan ketik <b>KM Awal</b> kendaraan.\n\n<i>Contoh: 12000</i>",
+            'buttons' => [['text' => '❌ Batalkan', 'callback_data' => "batal_kepulangan"]]
+        ]);
+    }
+
+    private function processKepulanganInput(int $userId, string $text, int $chatId): void
+    {
+        $state = Cache::get("telegram_kepulangan_{$userId}");
         
-    //     $id = $request->id_pengajuan;
+        if (!$state) {
+            return;
+        }
 
-    //     $pickupDriver = pickupDriver::with('detailPickupDriver')
-    //         ->findOrFail($id);
+        if (!is_numeric($text)) {
+            $this->sendTelegramMessageToChat($chatId, [
+                'title' => '⚠️ Input Tidak Valid',
+                'message' => "Mohon <b>reply pesan ini</b> dengan <b>angka saja</b>.\n\n<i>Contoh: 12000</i>",
+            ]);
+            return;
+        }
 
-    //     if ($pickupDriver->status_apply != 1) {
-    //         return [
-    //             'success' => false,
-    //             'message' => '⚠️ Koordinasi belum dalam status Diterima.'
-    //         ];
-    //     }
+        $kmInput = (int) $text;
+        $pickupId = $state['pickup_id'];
 
-    //     $pickupDriver->status_apply = 2;
-    //     $pickupDriver->status_driver = 'Selesai, Driver Ready';
-    //     $pickupDriver->waktu_kepulangan = now();
+        if ($state['step'] === 'km_awal') {
+            Cache::put("telegram_kepulangan_{$userId}", [
+                'step' => 'km_akhir',
+                'pickup_id' => $pickupId,
+                'chat_id' => $chatId,
+                'km_awal' => $kmInput,
+            ], now()->addMinutes(10));
 
-    //     $pickupDriver->save();
+            $this->sendTelegramMessageToChat($chatId, [
+                'title' => '🏁 Input KM Akhir',
+                'message' => "KM Awal tersimpan: <b>{$kmInput}</b>\n\nSekarang <b>reply pesan ini</b> dan ketik <b>KM Akhir</b>.\n\n<i>Contoh: 12050</i>",
+                'buttons' => [['text' => '❌ Batalkan', 'callback_data' => "batal_kepulangan"]]
+            ]);
 
-    //     $driver = karyawan::find($pickupDriver->id_karyawan);
+        } elseif ($state['step'] === 'km_akhir') {
+            $kmAwal = $state['km_awal'];
+            $kmAkhir = $kmInput;
 
-    //     $detailTipe = $pickupDriver->detailPickupDriver()
-    //         ->pluck('tipe')
-    //         ->toArray();
+            if ($kmAkhir < $kmAwal) {
+                $this->sendTelegramMessageToChat($chatId, [
+                    'title' => '⚠️ Validasi Gagal',
+                    'message' => "KM Akhir (<b>{$kmAkhir}</b>) tidak boleh lebih kecil dari KM Awal (<b>{$kmAwal}</b>).\n\nSilakan <b>reply pesan ini</b> dan ketik ulang KM Akhir.",
+                ]);
+                return;
+            }
 
-    //     $telegramPayload = [
-    //         'title' => '🏁 Koordinasi Selesai',
-    //         'id_pengajuan' => $pickupDriver->id,
-    //         'creator_name' => 'Telegram Bot',
-    //         'driver_name' => $driver->nama_lengkap ?? '-',
-    //         'budget' => $pickupDriver->budget,
-    //         'tanggal_pembuatan' => now(),
-    //         'status_text' => 'Selesai, Driver Ready',
-    //         'status_apply' => $pickupDriver->status_apply,
-    //         'tipe' => $detailTipe,
-    //         'lokasi' => [],
-    //         'tanggal' => [],
-    //         'waktu' => [],
-    //         'detail' => [],
-    //         'log_text' => null,
-    //     ];
+            $pickup = pickupDriver::findOrFail($pickupId);
+            $jarak = $kmAkhir - $kmAwal;
+            
+            $vehicleConfig = [
+                'Innova' => ['fuelPrice' => 14500, 'kmPerLiter' => 8],
+                'H1' => ['fuelPrice' => 12500, 'kmPerLiter' => 5],
+            ];
+            
+            $vehicleType = $pickup->kendaraan ?? 'Innova';
+            $config = $vehicleConfig[$vehicleType] ?? $vehicleConfig['Innova'];
+            $ratePerKm = $config['fuelPrice'] / $config['kmPerLiter'];
 
-    //     return [
-    //         'success' => true,
-    //         'message' => '🏁 Koordinasi berhasil diselesaikan!'
-    //     ];
-    // }
+            Cache::put("telegram_kepulangan_{$userId}", [
+                'step' => 'konfirmasi',
+                'pickup_id' => $pickupId,
+                'chat_id' => $chatId,
+                'km_awal' => $kmAwal,
+                'km_akhir' => $kmAkhir,
+            ], now()->addMinutes(10));
 
+            $this->sendTelegramMessageToChat($chatId, [
+                'title' => '✅ Konfirmasi Kepulangan',
+                'message' => "KM Awal: <b>{$kmAwal}</b>\n" .
+                             "KM Akhir: <b>{$kmAkhir}</b>\n" .
+                             "Jarak: <b>{$jarak} KM</b>\n" .
+                             "Apakah data sudah benar?",
+                'buttons' => [
+                    ['text' => '✅ Ya, Simpan', 'callback_data' => "konfirmasi_kepulangan"],
+                    ['text' => '❌ Batalkan', 'callback_data' => "batal_kepulangan"]
+                ]
+            ]);
+        }
+    }
+
+    private function saveKepulangan(int $userId, int $chatId): void
+    {
+        $state = Cache::get("telegram_kepulangan_{$userId}");
+
+        if (!$state || $state['step'] !== 'konfirmasi') {
+            return;
+        }
+
+        $pickup = pickupDriver::findOrFail($state['pickup_id']);
+
+        $waktuKepulangan = now()->format('H:i:s');
+
+        $pickup->waktu_kepulangan = $waktuKepulangan;
+        $pickup->status_apply = 2;
+        $pickup->status_driver = 'Selesai, Driver Ready';
+        $pickup->KM_awal = $state['km_awal'];
+        $pickup->KM_akhir = $state['km_akhir'];
+        $pickup->save();
+
+        Cache::forget("telegram_kepulangan_{$userId}");
+
+        $this->sendTelegramMessageToChat($chatId, [
+            'title' => '✅ Koordinasi Selesai',
+            'message' => "Data kepulangan berhasil disimpan:\n\n" .
+                "KM Awal : <b>{$pickup->KM_awal}</b>\n" .
+                "KM Akhir : <b>{$pickup->KM_akhir}</b>\n" .
+                "Waktu Diterima : <b>{$pickup->created_at}</b>\n" .
+                "Waktu Kepulangan : <b>{$pickup->waktu_kepulangan}</b>\n",
+        ]);
+    }
+
+    private function sendTelegramMessageToChat(int $chatId, array $data): bool
+    {
+        try {
+            $title = $data['title'] ?? 'Notifikasi';
+            $message = $data['message'] ?? '';
+            $buttons = $data['buttons'] ?? [];
+
+            $text = "<b>{$title}</b>\n";
+            $text .= "──────────────\n";
+            $text .= $message;
+
+            $payload = [
+                'chat_id' => $chatId,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+                'disable_web_page_preview' => true,
+            ];
+
+            if (!empty($buttons)) {
+                $keyboard = array_map(function ($btn) {
+                    return ['text' => $btn['text'], 'callback_data' => $btn['callback_data'] ?? ''];
+                }, $buttons);
+
+                $payload['reply_markup'] = json_encode([
+                    'inline_keyboard' => [$keyboard],
+                ]);
+            }
+
+            $response = Http::timeout(10)->post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/sendMessage', $payload);
+
+            if ($response->successful()) {
+                Log::info('Telegram message sent to chat', ['chat_id' => $chatId]);
+                return true;
+            }
+
+            Log::error('Gagal mengirim Telegram message', [
+                'response' => $response->body(),
+                'payload' => $payload,
+            ]);
+            return false;
+        } catch (\Exception $e) {
+            Log::error('Telegram send error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function sendTelegramMessage(array $data): bool
+    {
+        try {
+            $title = $data['title'] ?? 'Notifikasi';
+            $message = $data['message'] ?? '';
+            $buttons = $data['buttons'] ?? [];
+
+            $text = "<b>{$title}</b>\n";
+            $text .= "──────────────\n";
+            $text .= strip_tags($message);
+
+            $payload = [
+                'chat_id' => self::CHAT_ID,
+                'text' => $text,
+                'parse_mode' => 'HTML',
+                'disable_web_page_preview' => true,
+            ];
+
+            if (!empty($buttons)) {
+                $keyboard = array_map(function ($btn) {
+                    $button = [
+                        'text' => $btn['text'],
+                    ];
+
+                    if (isset($btn['url'])) {
+                        $button['url'] = $btn['url'];
+                    }
+
+                    if (isset($btn['callback_data'])) {
+                        $button['callback_data'] = $btn['callback_data'];
+                    }
+
+                    return $button;
+                }, $buttons);
+
+                $payload['reply_markup'] = json_encode([
+                    'inline_keyboard' => [$keyboard],
+                ]);
+            }
+
+            $response = Http::timeout(10)->post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/sendMessage', $payload);
+
+            if ($response->successful()) {
+                Log::info('Telegram Pickup Driver terkirim', ['chat_id' => self::CHAT_ID]);
+                return true;
+            }
+
+            Log::error('Gagal mengirim Telegram Pickup Driver', [
+                'response' => $response->body(),
+                'payload' => $payload,
+            ]);
+            return false;
+        } catch (\Exception $e) {
+            Log::error('Telegram Pickup Driver send error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function webhook(Request $request)
+    {
+        Log::info('Webhook Pickup Driver Incoming Request:', $request->all());
+
+        if (isset($request['message']['text'])) {
+            $message = $request['message'];
+            $chatId = $message['chat']['id'];
+            $userId = $message['from']['id'];
+            $text = trim($message['text']);
+            
+            $isReplyToBot = isset($message['reply_to_message']['from']['id']) && 
+                           $message['reply_to_message']['from']['id'] == $request['message']['from']['id'];
+            
+            $isReplyToKmRequest = isset($message['reply_to_message']['text']) && 
+                                  (str_contains($message['reply_to_message']['text'], 'KM Awal') || 
+                                   str_contains($message['reply_to_message']['text'], 'KM Akhir'));
+
+            if (Cache::has("telegram_kepulangan_{$userId}") && $isReplyToKmRequest) {
+                $this->processKepulanganInput($userId, $text, $chatId);
+                return response()->json(['success' => true]);
+            }
+        }
+
+        // Handle callback query (tombol)
+        if (!isset($request['callback_query'])) {
+            return response()->json(['success' => true]);
+        }
+
+        $callback = $request['callback_query'];
+        $callbackId = $callback['id'];
+        $data = $callback['data'];
+        $userId = $callback['from']['id'];
+        
+        $messageId = $callback['message']['message_id'] ?? null;
+        $chatId = $callback['message']['chat']['id'] ?? self::CHAT_ID;
+
+        try {
+            if (str_starts_with($data, 'terima_')) {
+                $id = (int) str_replace('terima_', '', $data);
+                $result = $this->processTerimaFromTelegram($id);
+                
+                Http::post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/answerCallbackQuery', [
+                    'callback_query_id' => $callbackId,
+                    'text' => $result['message'],
+                ]);
+
+            } elseif (str_starts_with($data, 'detail_')) {
+                $id = (int) str_replace('detail_', '', $data);
+                
+                Http::post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/answerCallbackQuery', [
+                    'callback_query_id' => $callbackId,
+                ]);
+
+                $detailText = $this->getDetailMessage($id);
+                
+                Http::post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/editMessageText', [
+                    'chat_id' => $chatId,
+                    'message_id' => $messageId,
+                    'text' => $detailText,
+                    'parse_mode' => 'HTML',
+                    'reply_markup' => json_encode([
+                        'inline_keyboard' => [
+                            [['text' => '⬅️ Kembali ke Ringkasan', 'callback_data' => "back_{$id}"]]
+                        ]
+                    ])
+                ]);
+
+            } elseif (str_starts_with($data, 'back_')) {
+                $id = (int) str_replace('back_', '', $data);
+                
+                Http::post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/answerCallbackQuery', [
+                    'callback_query_id' => $callbackId,
+                ]);
+
+                $summary = $this->getSummaryTextAndButtons($id);
+
+                Http::post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/editMessageText', [
+                    'chat_id' => $chatId,
+                    'message_id' => $messageId,
+                    'text' => $summary['text'],
+                    'parse_mode' => 'HTML',
+                    'reply_markup' => json_encode([
+                        'inline_keyboard' => $summary['buttons']
+                    ])
+                ]);
+
+            } elseif (str_starts_with($data, 'selesaikan_')) {
+                $id = (int) str_replace('selesaikan_', '', $data);
+                
+                Http::post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/answerCallbackQuery', [
+                    'callback_query_id' => $callbackId,
+                ]);
+
+                $this->startKepulanganFlow($userId, $id, $chatId);
+
+            } elseif ($data === 'konfirmasi_kepulangan') {
+                Http::post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/answerCallbackQuery', [
+                    'callback_query_id' => $callbackId,
+                    'text' => '✅ Data disimpan!',
+                ]);
+
+                $this->saveKepulangan($userId, $chatId);
+
+            } elseif ($data === 'batal_kepulangan') {
+                Cache::forget("telegram_kepulangan_{$userId}");
+                
+                Http::post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/answerCallbackQuery', [
+                    'callback_query_id' => $callbackId,
+                    'text' => '❌ Dibatalkan',
+                ]);
+            }
+
+        } catch (\Throwable $e) {
+            Log::error('Gagal memproses callback Pickup Driver', ['message' => $e->getMessage()]);
+            
+            Http::post('https://api.telegram.org/bot' . self::BOT_TOKEN . '/answerCallbackQuery', [
+                'callback_query_id' => $callbackId,
+                'text' => '❌ Gagal memproses aksi.',
+                'show_alert' => true,
+            ]);
+        }
+
+        return response()->json(['success' => true]);
+    }
     private function telegramResponse($message)
     {
         if (request()->has('from_telegram') || str_contains(request()->header('User-Agent') ?? '', 'Telegram')) {
