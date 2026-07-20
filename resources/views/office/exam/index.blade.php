@@ -56,7 +56,6 @@
         </div>
 
         <div class="row justify-content-center">
-            <div class="col-md-12 d-flex my-2 justify-content-end"></div>
             <div class="col-md-12">
                 <div class="card" style="width: 100%">
                     <div class="card-body d-flex justify-content-center">
@@ -108,6 +107,8 @@
                         </div>
                     </div>
                 </div>
+
+
                 <div class="row my-2">
                     <div class="col-md-12" id="content">
                     </div>
@@ -547,7 +548,7 @@
                 // URL PDF Peserta
                 var pdfUrl = rkm.pdf_peserta;
                 if (pdfUrl && !pdfUrl.startsWith('http')) {
-                    pdfUrl = '{{ asset('storage') }}/' + pdfUrl;
+                    pdfUrl = "{{ asset('storage') }}/" + pdfUrl;
                 }
 
                 // Badge Status RKM
@@ -606,7 +607,7 @@
                     // URL File Invoice
                     var invoiceUrl = eksam.file_invoice;
                     if (invoiceUrl && !invoiceUrl.startsWith('http')) {
-                        invoiceUrl = '{{ asset('storage') }}/' + invoiceUrl;
+                        invoiceUrl = "{{ asset('storage') }}/" + invoiceUrl;
                     }
 
                     html += '<div class="detail-card" style="box-shadow:none; border:1px solid #ddd;">';

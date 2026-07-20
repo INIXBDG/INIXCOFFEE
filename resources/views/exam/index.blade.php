@@ -78,6 +78,10 @@
                         width="30px"> Rekap Exam</a>
                 {{-- @endcan --}}
 
+                @php
+                    $poExamItems = \App\Models\PoExamSertifa::with(['materi', 'perusahaan'])->latest()->get();
+                @endphp
+
                 <div class="card m-4">
                     <div class="card-body table-responsive">
                         <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Exam') }}</h3>
@@ -96,6 +100,38 @@
                                 </tr>
                             </thead>
                             <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card m-4">
+                    <div class="card-body table-responsive">
+                        <h3 class="card-title text-center my-1">{{ __('Data Exam Sertifa') }}</h3>
+                        <table class="table table-striped" id="poExamTableIndex">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Materi</th>
+                                    <th>Tanggal Exam</th>
+                                    <th>Perusahaan</th>
+                                    <th>Pax</th>
+                                    <th>Harga</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($poExamItems as $index => $item)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>{{ $item->materi->nama_materi ?? '-' }}</td>
+                                        <td>{{ $item->tanggal_exam ? \Carbon\Carbon::parse($item->tanggal_exam)->format('d M Y') : '-' }}</td>
+                                        <td>{{ $item->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                        <td>{{ $item->pax ?? '-' }}</td>
+                                        <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="6" class="text-center text-muted">Belum ada data PO Exam Sertifa</td></tr>
+                                @endforelse
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -212,6 +248,12 @@
                 if (idSales == 'VN' || userRole == 'SPV Sales') { var idSales = ""; }
                 if (userRole == "Technical Support") { var idInstruktur = ""; }
 
+                $('#poExamTableIndex').DataTable({
+                    "language": {
+                        "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json"
+                    }
+                });
+
                 var tableIndex1 = 1;
                 var tableIndex2 = 1;
                 var tableIndex3 = 1;
@@ -263,11 +305,9 @@
                             "data": null,
                             "render": function (data, type, row) {
                                 var actions = "";
-                                actions += '@if (auth()->user()->can('Create Exam'))'
-                                    actions += '<a href="/pengajuanExam/' + data.id + '" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
-                                actions += '@else';
-                                    actions += '<a href="/pengajuanExam/' + data.id + '" class="btn disabled btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
-                                actions += '@endif';
+                                actions += '@can("Create Exam")';
+                                actions += '<a href="/pengajuanExam/' + data.id + '" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
+                                actions += '@endcan';
                                 return actions;
                             }
                         },
@@ -417,12 +457,10 @@
                                 actions += '<div class="dropdown">';
                                 actions += '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
                                 actions += '<div class="dropdown-menu">';
-                                actions += '<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '">Detail</a>';
+                                actions += '<a class="dropdown-item" href="/exam/' + row.id + '">Detail</a>';
 
                                 // Penempatan fungsi Assign Peserta agar berlaku universal untuk ID Exam
-                                actions += '@can("Daftar Peserta Exam")';
                                 actions += '<a class="dropdown-item text-primary" href="/daftar-peserta-exam/create/' + row.id + '"><i class="fas fa-users"></i> Assign Peserta</a>';
-                                actions += '@endcan';
                                 actions += '<div class="dropdown-divider"></div>';
 
                                 var tglMulai = row.tanggal_mulai ? row.tanggal_mulai : '';
@@ -458,20 +496,24 @@
                                 if (row.status == '3') {
                                     var roomAssigned = row.rkm && row.rkm.ruang && row.rkm.ruang !== 'Exam';
                                     if (!roomAssigned) {
-                                        actions += '@can("Edit Exam")<a class="dropdown-item" href="{{ route('exam.assignRoom', '') }}/' + row.id + '"><i class="fas fa-home"></i> Assign Ruangan</a>@endcan';
+                                        actions += '@can("Edit Exam")';
+                                        actions += '<a class="dropdown-item" href="/exam/assign-room/' + row.id + '"><i class="fas fa-home"></i> Assign Ruangan</a>';
+                                        actions += '@endcan';
                                     } else {
                                         actions += '<a class="dropdown-item text-success" href="#"><i class="fas fa-check"></i> Ruangan: ' + (row.rkm.ruang || '-') + '</a>';
                                     }
                                     actions += '<div class="dropdown-divider"></div>';
                                 }
 
-                                actions += '@can("Edit Exam")<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '/edit">Edit</a>@endcan';
+                                actions += '@can("Edit Exam")';
+                                actions += '<a class="dropdown-item" href="/exam/' + row.id + '/edit">Edit</a>';
+                                actions += '@endcan';
 
                                 var examSalesKey = row.sales_key || (row.rkm?.sales_key) || '';
                                 var canDelete = (userJabatan.trim() === 'SPV Sales') || (examSalesKey === userIdSales);
 
                                 if (canDelete) {
-                                    actions += '<form onsubmit="return confirm(\'Yakin ingin menghapus Exam ini? Tindakan tidak dapat dibatalkan.\');" action="{{ url('/exam') }}/' + row.id + '" method="POST">';
+                                    actions += '<form onsubmit="return confirm(\'Yakin ingin menghapus Exam ini? Tindakan tidak dapat dibatalkan.\');" action="/exam/' + row.id + '" method="POST">';
                                     actions += '@csrf @method("DELETE")';
                                     actions += '<button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash"></i> Hapus</button>';
                                     actions += '</form>';
