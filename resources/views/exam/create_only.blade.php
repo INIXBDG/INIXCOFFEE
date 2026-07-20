@@ -7,7 +7,9 @@
             <div class="card">
                 <div class="card-body" id="card">
                     <h5 class="card-title text-center mb-4">{{ __('Tambah Exam Only') }}</h5>
-                    <form method="POST" action="{{ route('exam.storeOnly') }}">
+
+                    <!-- Penambahan ID form-exam-only -->
+                    <form id="form-exam-only" method="POST" action="{{ route('exam.storeOnly') }}">
                         @csrf
 
                         <div class="row mb-3">
@@ -31,7 +33,8 @@
                                 @enderror
                             </div>
                         </div>
-                        <!-- Bagian select sales yang perlu diperbaiki -->
+
+                        <!-- Bagian select sales -->
                         @if($isSPVSales)
                         <div class="row mb-3">
                             <label for="selected_sales" class="col-md-4 col-form-label text-md-start">Pilih Sales</label>
@@ -39,7 +42,6 @@
                                 <select name="selected_sales" id="selected_sales" class="form-control @error('selected_sales') is-invalid @enderror" required>
                                     <option value="">-- Pilih Sales --</option>
                                     @foreach($salesEmployees as $sales)
-                                        <!-- GANTI: Gunakan id sebagai value, bukan nama_lengkap -->
                                         <option value="{{ $sales->id }}" {{ old('selected_sales') == $sales->id ? 'selected' : '' }}>
                                             {{ $sales->nama_lengkap }} ({{ $sales->kode_karyawan }})
                                         </option>
@@ -54,6 +56,7 @@
                             </div>
                         </div>
                         @endif
+
                         <div class="row mb-3">
                             <label for="materi" class="col-md-4 col-form-label text-md-start">Materi</label>
                             <div class="col-md-6">
@@ -238,7 +241,8 @@
                                 <input type="hidden" name="tipe" value="exam_only">
                                 <input type="hidden" name="harga_total_rupiah" id="harga_total_rupiah">
                                 <input type="hidden" name="total_final" id="total_final">
-                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                <!-- Penambahan ID btn-submit-exam-only -->
+                                <button type="submit" id="btn-submit-exam-only" class="btn btn-primary">Simpan</button>
                             </div>
                         </div>
                     </form>
@@ -306,7 +310,8 @@ $(document).ready(function() {
 
     // Remove Rupiah format for calculations
     function removeRupiahFormat(angka) {
-        return parseFloat(angka.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        if (!angka) return 0;
+        return parseFloat(angka.toString().replace(/[^\d,]/g, '').replace(',', '.'));
     }
 
     // Validate numeric input
@@ -426,8 +431,11 @@ $(document).ready(function() {
         $('#total_final').val(totalNet);
     }
 
-    // Validate before submit
-    $('form').on('submit', function(e) {
+    // --- INTEGRASI KONSTANTA VALIDASI TOMBOL GLOBAL ---
+    // Mengganti selektor $('form') menjadi ID spesifik
+    $('#form-exam-only').on('submit', function(e) {
+
+        // 1. Validasi Kondisional Khusus Formulir
         @if($isSPVSales)
         if (!$('#selected_sales').val()) {
             alert('Pilih sales karyawan terlebih dahulu!');
@@ -452,7 +460,15 @@ $(document).ready(function() {
             return false;
         }
 
-        // Remove format only for editable fields
+        // 2. Eksekusi Penguncian Tombol
+        const submitButton = document.getElementById('btn-submit-exam-only');
+        if (!ButtonValidator.lock(submitButton)) {
+            // Batalkan pengiriman jika tombol sudah terkunci
+            e.preventDefault();
+            return false;
+        }
+
+        // 3. Pemrosesan Format Data (Hapus format Rupiah sebelum pengiriman)
         $('#harga').val(removeRupiahFormat($('#harga').val()));
         $('#kurs').val(removeRupiahFormat($('#kurs').val()));
         $('#biaya_admin').val(removeRupiahFormat($('#biaya_admin').val()));

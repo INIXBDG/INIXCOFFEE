@@ -419,7 +419,6 @@ class examController extends Controller
         try {
             $rkmSource = RKM::with('materi', 'perusahaan')->where('id', $request->id_rkm)->first();
             if ($request->pax > $rkmSource->pax) {
-                // dd($request->pax, $rkmSource->pax);
                 return redirect()->back()->with('error', 'Pax tidak boleh lebih dari ' . $rkmSource->pax);
             }
             $data = $request->validate([
@@ -442,35 +441,10 @@ class examController extends Controller
 
             DB::transaction(function () use ($request, $rkmSource, $invoice, $status) {
 
-                $newRkm = RKM::create([
-                    'sales_key' => $rkmSource->sales_key,
-                    'materi_key' => $rkmSource->materi_key,
-                    'perusahaan_key' => $rkmSource->perusahaan_key,
-                    'harga_jual' => $rkmSource->harga_jual,
-                    'pax' => $request->pax,
-                    'isi_pax' => $request->pax,
-                    'tanggal_awal' => $rkmSource->tanggal_awal,
-                    'tanggal_akhir' => $rkmSource->tanggal_akhir,
-                    'metode_kelas' => $rkmSource->metode_kelas,
-                    'event' => $rkmSource->event,
-                    'ruang' => $rkmSource->ruang,
-                    'instruktur_key' => $rkmSource->instruktur_key,
-                    'instruktur_key2' => $rkmSource->instruktur_key2,
-                    'asisten_key' => $rkmSource->asisten_key,
-                    'status' => $rkmSource->status,
-                    'exam' => $rkmSource->exam,
-                    'authorize' => $rkmSource->authorize,
-                    'registrasi_form' => $rkmSource->registrasi_form,
-                    'quartal' => $rkmSource->quartal,
-                    'bulan' => $rkmSource->bulan,
-                    'tahun' => $rkmSource->tahun,
-                    'makanan' => $rkmSource->makanan,
-                ]);
-
                 $exam = eksam::create([
                     'tanggal_pengajuan' => $request->tanggal_pengajuan,
                     'materi' => $request->materi,
-                    'id_rkm' => $newRkm->id,
+                    'id_rkm' => $rkmSource->id,
                     'perusahaan' => $request->perusahaan,
                     'mata_uang' => $request->mata_uang,
                     'harga' => $request->harga,
@@ -490,7 +464,7 @@ class examController extends Controller
                 if ($rkmSource->materi->vendor == 'EC-Council' || str_contains($rkmSource->materi->nama_materi, 'BNSP') || $request->skipApproval) {
                     approvalexam::create([
                         'id_exam' => $exam->id,
-                        'sales' => $newRkm->sales_key,
+                        'sales' => $rkmSource->sales_key,
                         'spv_sales' => true,
                         'technical_support' => false,
                         'office_manager' => true,
@@ -499,7 +473,7 @@ class examController extends Controller
                 } else {
                     approvalexam::create([
                         'id_exam' => $exam->id,
-                        'sales' => $newRkm->sales_key,
+                        'sales' => $rkmSource->sales_key,
                         'spv_sales' => false,
                         'technical_support' => false,
                         'office_manager' => false,
@@ -796,18 +770,18 @@ class examController extends Controller
                 }, [
                     $approval->sales
                 ]);
-    
+
                 $users = User::whereHas('karyawan', function ($query) use ($users) {
                     $query->whereIn('kode_karyawan', array_filter($users));
                 })->get();
-    
+
                 $path = '/exam/' . $id;
-    
+
                 foreach ($users as $user) {
                     $receiverId = $user->id;
                     NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
                 }
-    
+
                 $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
                 $users = array_map(function ($user) {
                     return $user === '-' ? null : $user;
@@ -815,13 +789,13 @@ class examController extends Controller
                     $approval->ttd_ts,
                     $finance->kode_karyawan
                 ]);
-    
+
                 $users = User::whereHas('karyawan', function ($query) use ($users) {
                     $query->whereIn('kode_karyawan', array_filter($users));
                 })->get();
-    
+
                 $path = '/exam/' . $id;
-    
+
                 foreach ($users as $user) {
                     $receiverId = $user->id;
                     NotificationFacade::send($user, new BayarExamNotification($data, $path, $receiverId));
@@ -1127,7 +1101,7 @@ class examController extends Controller
         return response()->json([
             'message' => 'success',
             'kurs' => (int) $eksam->kurs,
-            'kurs_admin' => (int) $eksam->kurs_dollar 
+            'kurs_admin' => (int) $eksam->kurs_dollar
         ]);
     }
     public function updateKurs($id, Request $request) {
