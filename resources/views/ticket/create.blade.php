@@ -31,7 +31,7 @@
                                     </span>
                                 @enderror
                             </div>
-                        </div> 
+                        </div>
                         <div class="row mb-3">
                             <label for="divisi" class="col-md-4 col-form-label text-md-start">{{ __('Divisi') }}</label>
                             <div class="col-md-6">
@@ -42,7 +42,7 @@
                                     </span>
                                 @enderror
                             </div>
-                        </div>    
+                        </div>
                         <div class="row mb-3">
                             <label for="keperluan" class="col-md-4 col-form-label text-md-start">{{ __('Keperluan') }}</label>
                             <div class="col-md-6">
@@ -84,7 +84,7 @@
                                     </span>
                                 @enderror
                             </div>
-                        </div>                        
+                        </div>
 
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">
@@ -99,37 +99,42 @@
         </div>
     </div>
 </div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
-    
-    // --- TAMBAHAN UNTUK MENCEGAH DOUBLE CLICK ---
-    $('#form-ticketing').on('submit', function() {
-        // Disable tombol submit
-        $('#btn-submit').prop('disabled', true);
-        
-        // Opsional: Ubah teks tombol agar user tahu sedang memproses
-        $('#btn-submit').text('Menyimpan...'); 
-    });
-    // ---------------------------------------------
 
-     // Simpan divisi default saat halaman dimuat
+    // --- INTEGRASI KONSTANTA VALIDASI TOMBOL GLOBAL ---
+    $('#form-ticketing').on('submit', function(e) {
+        const submitButton = document.getElementById('btn-submit');
+
+        // Eksekusi fungsi penguncian dari objek global
+        if (!ButtonValidator.lock(submitButton)) {
+            // Batalkan pengiriman formulir jika tombol sudah terkunci
+            e.preventDefault();
+            return false;
+        }
+    });
+    // --------------------------------------------------
+
+    // Simpan divisi default saat halaman dimuat
     const defaultDivisi = "{{ auth()->user()->karyawan->divisi }}";
-    
+
     // Jika user adalah IT Service Management, tambahkan event listener
     @if (auth()->user()->karyawan->divisi == 'IT Service Management')
         $('#nama_karyawan').on('change', function() {
             const selectedOption = $(this).find('option:selected');
             const divisiValue = selectedOption.data('divisi') || defaultDivisi;
-            
+
             $('#divisi').val(divisiValue);
         });
-        
+
         // Trigger change event saat halaman dimuat jika ada nilai yang sudah dipilih
         if ($('#nama_karyawan').val()) {
             $('#nama_karyawan').trigger('change');
         }
     @endif
+
     // Definisikan opsi untuk setiap keperluan
     const kategoriOptions = {
         'Technical Support': [
@@ -142,21 +147,21 @@ $(document).ready(function() {
             {value: 'Flyer', text: 'Flyer'},
             {value: 'Banner Cetak', text: 'Banner Cetak'},
             {value: 'Konten (Video)', text: 'Konten (Video)'},
-            {value: 'Kerja Sama Mitra', text: 'Kerja Sama Mitra'}            
+            {value: 'Kerja Sama Mitra', text: 'Kerja Sama Mitra'}
         ],
         'Programming': [
             {value: 'Request', text: 'Request'},
             {value: 'Error (Aplikasi)', text: 'Error (Aplikasi)'}
         ]
     };
-    
+
     // Fungsi untuk mengupdate opsi kategori
     function updateKategoriOptions() {
         const selectedKeperluan = $('#keperluan').val();
-        
+
         // Kosongkan dropdown kategori dan tambahkan opsi default
         $('#kategori').html('<option value="" selected>Pilih Kategori</option>');
-        
+
         // Jika keperluan dipilih, tambahkan opsi yang sesuai
         if (selectedKeperluan && kategoriOptions[selectedKeperluan]) {
             $.each(kategoriOptions[selectedKeperluan], function(index, option) {
@@ -167,13 +172,12 @@ $(document).ready(function() {
             });
         }
     }
-    
+
     // Jalankan pertama kali saat halaman dimuat
     updateKategoriOptions();
-    
+
     // Tambahkan event listener untuk perubahan keperluan
     $('#keperluan').on('change', updateKategoriOptions);
 });
 </script>
-
 @endsection

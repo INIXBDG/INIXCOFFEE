@@ -10,7 +10,9 @@
                         <img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back
                     </a> --}}
                     <h5 class="card-title text-center mb-4">{{ __('Tambah Pengajuan Exam') }}</h5>
-                    <form method="POST" action="{{ route('exam.store') }}">
+
+                    <!-- Penambahan ID form-pengajuan-exam -->
+                    <form id="form-pengajuan-exam" method="POST" action="{{ route('exam.store') }}">
                         @csrf
 
                         <div class="row mb-3">
@@ -192,7 +194,8 @@
 
                         <div class="row mb-0">
                             <div class="col-md-8 offset-md-4">
-                                <button type="submit" class="btn click-primary">
+                                <!-- Penambahan ID btn-submit-exam -->
+                                <button type="submit" id="btn-submit-exam" class="btn click-primary">
                                     {{ __('Simpan') }}
                                 </button>
                             </div>
@@ -204,11 +207,10 @@
         </div>
     </div>
 </div>
+
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-{{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-price-format/2.2.0/jquery.priceformat.min.js" integrity="sha512-qHlEL6N+fxDGsJoPhq/jFcxJkRURgMerSFixe39WoYaB2oj91lvJXYDVyEO1+tOuWO+sBtUGHhl3v3hUp1tGMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> --}}
 <script>
-
 $(document).ready(function() {
     var today = new Date().toISOString().split('T')[0];
     $('#tanggal_pengajuan').val(today);
@@ -273,29 +275,35 @@ $(document).ready(function() {
 
     // Function to remove Rupiah format before calculations
     function removeRupiahFormat(angka) {
-        return parseFloat(angka.replace(/[^\d,]/g, '').replace(',', '.'));
+        if (!angka) return 0;
+        return parseFloat(angka.toString().replace(/[^\d,]/g, '').replace(',', '.'));
     }
 
     paxInput.change(function() {
         // Mengambil nilai dari input pax
-            var pax = parseInt(paxInput.val());
-            var hargaRupiah = $('#harga_rupiah').val()
-            var totalRupiah = removeRupiahFormat(hargaRupiah) * pax;
-            // console.log(totalRupiah);
-            totalInput.val(formatRupiah(totalRupiah));
+        var pax = parseInt(paxInput.val()) || 0;
+        var hargaRupiah = $('#harga_rupiah').val();
+        var totalRupiah = removeRupiahFormat(hargaRupiah) * pax;
+        totalInput.val(formatRupiah(totalRupiah));
     });
 
-    $('form').on('submit', function() {
+    $('#form-pengajuan-exam').on('submit', function(e) {
+        const submitButton = document.getElementById('btn-submit-exam');
+
+        // Eksekusi fungsi penguncian dari objek global
+        if (!ButtonValidator.lock(submitButton)) {
+            // Batalkan pengiriman formulir jika tombol sudah terkunci
+            e.preventDefault();
+            return false;
+        }
+
+        // Pemrosesan Data (Hapus Format Rupiah) sebelum pengiriman dieksekusi
         $('#kurs').val(removeRupiahFormat($('#kurs').val()));
         $('#kurs_dollar').val(removeRupiahFormat($('#kurs_dollar').val()));
         $('#harga_rupiah').val(removeRupiahFormat($('#harga_rupiah').val()));
         $('#total').val(removeRupiahFormat($('#total').val()));
     });
 });
-
-
 </script>
 @endpush
-
 @endsection
-
