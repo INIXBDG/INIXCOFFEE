@@ -81,6 +81,7 @@ use App\Http\Controllers\Office\pickupDriverController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\office\KondisiToolsController;
+use App\Http\Controllers\office\PoExamSertifaController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\PenukaranSouvenirController;
@@ -117,7 +118,6 @@ use App\Http\Controllers\IncomeStatementController;
 use App\Http\Controllers\KoordinasiOfficeBoyController;
 use App\Http\Controllers\Office\OfficeExamController;
 use App\Http\Controllers\PerusahaanController;
-use App\Http\Controllers\PoExamSertifaController;
 use App\Http\Controllers\ScheduleLogController;
 use App\Http\Controllers\VisitProjectController;
 use App\Http\Controllers\CVInstrukturController;
@@ -1077,12 +1077,19 @@ Route::prefix('office')->group(function () {
         route::get('/index', [OfficeExamController::class, 'indexOffice'])->name('index');
         Route::get('/detail/{id}', [OfficeExamController::class, 'showDetailExam']);
         route::post('/update-bundling', [OfficeExamController::class, 'updateBundling'])->name('updateBundling');
-        Route::resource('/po-exam-sertifa', PoExamSertifaController::class)->only(['index','store','update','destroy'])->names('po-exam-sertifa');
 
         Route::get('/rekap', [OfficeExamController::class, 'indexRekap'])->name('rekap.index');
         Route::get('/rekap/json', [OfficeExamController::class, 'rekapJson'])->name('rekap.json');
 
         Route::get('/{year}/{month}', [OfficeExamController::class, 'showExamMonth'])->where(['year' => '[0-9]+', 'month' => '[0-9]+']);
+    });
+
+    route::prefix('certifa')->name('office.certifa.')->group(function () {
+        Route::get('/data', [PoExamSertifaController::class, 'getData'])->name('data');
+        Route::get('index', [PoExamSertifaController::class, 'index'])->name('index');
+        Route::post('/store', [PoExamSertifaController::class, 'store'])->name('store');
+        Route::put('/update/{id}', [PoExamSertifaController::class, 'update'])->name('update');
+        Route::delete('/destroy/{id}', [PoExamSertifaController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('alias')->name('office.alias.')->group(function () {

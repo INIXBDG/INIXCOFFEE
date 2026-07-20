@@ -106,7 +106,7 @@
 
                 <div class="card m-4">
                     <div class="card-body table-responsive">
-                        <h3 class="card-title text-center my-1">{{ __('PO Exam Sertifa') }}</h3>
+                        <h3 class="card-title text-center my-1">{{ __('Data Exam Sertifa') }}</h3>
                         <table class="table table-striped" id="poExamTableIndex">
                             <thead>
                                 <tr>
