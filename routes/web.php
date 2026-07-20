@@ -1252,6 +1252,7 @@ Route::prefix('office')
             Route::post('/update', [KoordinasiOfficeBoyController::class, 'update'])->name('update');
             Route::post('/update-status-{action}/{id}', [KoordinasiOfficeBoyController::class, 'updateStatus'])->name('updateStatus');
             Route::delete('/delete/{id}', [KoordinasiOfficeBoyController::class, 'delete'])->name('delete');
+            Route::get('/detail/{id}', [KoordinasiOfficeBoyController::class, 'telegramDetail'])->name('telegram.detail');
         });
 
         Route::prefix('kondisi-tools')->name('KondisiTools.')->group(function() {
