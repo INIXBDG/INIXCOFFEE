@@ -82,7 +82,7 @@
                                                 <button type="button" class="btn btn-outline-success btn-sm uploadedBtn"
                                                     data-id="{{ $item->id }}"
                                                     data-bs-toggle="modal"
-                                                    data-bs-target="#uploaded">
+                                                    data-bs-target="#uploadedModal">
                                                     Uploaded
                                                 </button>
                                             @endif
@@ -170,7 +170,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Uploaded</label>
-                        <input type="date" class="form-control form-control-lg" name="uploaded" id="uploaded">
+                        <input type="date" class="form-control form-control-lg" name="uploaded" id="edit_uploaded">
                     </div>
                 </div>
                 <div class="modal-footer border-0">
@@ -208,7 +208,7 @@
     </div>
 
     {{-- Uploaded Modal --}}
-    <div class="modal fade" id="uploaded" tabindex="-1" aria-labelledby="uploadedModalLabel" aria-hidden="true">
+    <div class="modal fade" id="uploadedModal" tabindex="-1" aria-labelledby="uploadedModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form id="uploadedForm" method="POST" class="modal-content shadow-lg border-0 rounded-4">
                 @csrf
@@ -275,13 +275,13 @@
             // Uploaded Modal
             $('.uploadedBtn').on('click', function () {
                 const id = $(this).data('id');
-    
+
                 const today = new Date().toISOString().split('T')[0];
-                $('[name="uploaded"]').val(today);
-    
-                $('[name="delay"]').val('');
-                $('[name="keterangan"]').val('');
-    
+                $('#uploadedForm [name="uploaded"]').val(today);
+
+                $('#uploadedForm [name="delay"]').val('');
+                $('#uploadedForm [name="keterangan"]').val('');
+
                 const route = '{{ route('office.modul.update.status.nomor', ':id') }}';
                 $('#uploadedForm').attr('action', route.replace(':id', id));
             });
