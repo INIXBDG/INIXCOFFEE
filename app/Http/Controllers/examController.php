@@ -8,6 +8,7 @@ use App\Models\changeexam;
 use App\Models\eksam;
 use App\Models\karyawan;
 use App\Models\listexam;
+use App\Models\PoExamSertifa;
 use App\Models\Materi;
 use App\Models\Perusahaan;
 use App\Models\RKM;
@@ -303,6 +304,13 @@ class examController extends Controller
             'message' => 'List Registrasi',
             'data' => $rkm,
         ]);
+    }
+
+    public function getPoExamSertifa()
+    {
+        $data = PoExamSertifa::with(['materi', 'perusahaan'])->latest()->get();
+
+        return response()->json(['data' => $data]);
     }
 
     public function updateTanggal(Request $request, $id)

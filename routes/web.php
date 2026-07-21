@@ -297,6 +297,7 @@ Route::get('getRegistrasiall', [App\Http\Controllers\RegistrasiController::class
 Route::get('getPesertaall', [App\Http\Controllers\PesertaController::class, 'getPesertaall'])->name('getPesertaall');
 Route::get('getExam', [App\Http\Controllers\examController::class, 'getExam'])->name('getExam');
 Route::get('getExamKondisi', [App\Http\Controllers\examController::class, 'getExamKondisi'])->name('getExamKondisi');
+Route::get('/get-po-exam-sertifa', [examController::class, 'getPoExamSertifa'])->name('getPoExamSertifa');
 Route::post('/exam/{id}/upload-invoice', [examController::class, 'uploadInvoice'])->name('exam.uploadInvoice');
 Route::post('/exam/{id}/update-kurs', [examController::class, 'updateKurs'])->name('exam.updateKurs');
 Route::get('/exam/get-kurs/{id}', [examController::class, 'getKurs'])->name('exam.getKurs');
@@ -1688,10 +1689,10 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/', [RekapInventarisController::class, 'index'])->name('index');
         Route::get('/load-data', [RekapInventarisController::class, 'getRekapData'])->name('load_data');
         Route::get('/export', [RekapInventarisController::class, 'export'])->name('export');
-        
+
         Route::get('/ajax/lokasi/{kategori}', [RekapInventarisController::class, 'getLokasi']);
         Route::get('/ajax/jenis/{lokasi}', [RekapInventarisController::class, 'getJenis']);
-        
+
         Route::get('/export-pdf', [RekapInventarisController::class, 'exportPdf'])->name('export_pdf');
         Route::get('/detail-data', [RekapInventarisController::class, 'getDetailData'])->name('detail_data');
         Route::post('/store', [RekapInventarisController::class, 'store'])->name('store');
