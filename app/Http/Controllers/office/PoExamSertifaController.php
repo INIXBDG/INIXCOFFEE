@@ -57,7 +57,7 @@ class PoExamSertifaController extends Controller
         PoExamSertifa::create($validatedData);
 
         return redirect()
-            ->route('office.exam.index')
+            ->route('office.certifa.index')
             ->with('success', 'Data PO Exam Sertifa berhasil ditambahkan.');
     }
 
@@ -87,7 +87,7 @@ class PoExamSertifaController extends Controller
         $item->delete();
 
         return redirect()
-            ->route('office.certifa.c')
+            ->route('office.certifa.index')
             ->with('success', 'Data PO Exam Sertifa berhasil dihapus.');
     }
 }
