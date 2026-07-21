@@ -12,9 +12,6 @@ class AutoJobRKMCommands extends Command
 
     public function handle()
     {
-        if (! today()->isMonday()) {
-            return;
-        }
 
         $senin  = today()->startOfWeek()->format('Y-m-d');  // 2025-12-08
         $minggu = today()->endOfWeek()->format('Y-m-d');    // 2025-12-14

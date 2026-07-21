@@ -243,7 +243,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:update-status')->dailyAt('23:00')->description('app:update-status');
         $schedule->command('uptime:check')->everySixHours()->description('uptime:check');
         $schedule->command('assign:shift2')->dailyAt('17:30')->description('assign:shift2');
-        $schedule->command('RKM:auto-job')->mondays()->at('10:47')->description('RKM:auto-job');
+        $schedule->command('RKM:auto-job')->sundays()->at('00:47')->description('RKM:auto-job');
         $schedule->command('app:update-cuti')->yearlyOn(2, 1, '00:01')->description('app:update-cuti');
         $schedule->command('peluang:check')->dailyAt('12:00')->description('peluang:check');
         $schedule->command('app:tagihan-perusahaan-command')->daily()->description('app:tagihan-perusahaan-command');
