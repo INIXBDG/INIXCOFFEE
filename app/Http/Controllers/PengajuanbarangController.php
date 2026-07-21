@@ -356,6 +356,63 @@ class PengajuanBarangController extends Controller
 
             // Perbaikan logika status "Pencairan Sudah Selesai"
             if ($status === 'Pencairan Sudah Selesai') {
+                // 1. PROSES JURNAL AKUNTANSI 
+                // (Sekarang diproses selalu, terlepas dari invoice ada atau tidak)
+                try {
+                    Log::info('Mulai proses jurnal', ['id_pengajuan' => $id]);
+                    $totalPengeluaran = 0;
+                    foreach ($detail as $item) {
+                        $qtyValue = (int) $item->qty;
+                        $hargaValue = (float) $item->harga;
+                        $subtotal = $qtyValue * $hargaValue;
+                        $totalPengeluaran += $subtotal;
+                    }
+
+                    $nomorKK = $request->no_kk;
+                    $nomorAkun = $request->no_akun;
+                    $jurnalExist = JurnalAkuntansi::where('nomor_kk', $nomorKK)->first();
+
+                    if ($jurnalExist) {
+                        $currentIds = is_array($jurnalExist->id_pengajuan_barang)
+                            ? $jurnalExist->id_pengajuan_barang
+                            : [];
+
+                        if (!in_array($id, $currentIds)) {
+                            $currentIds[] = (int)$id;
+
+                            $jurnalExist->update([
+                                'id_pengajuan_barang' => $currentIds,
+                                'kredit' => $jurnalExist->kredit + $totalPengeluaran,
+                                'keterangan' => 'Pengeluaran untuk pengajuan barang'
+                            ]);
+
+                            Log::info('Jurnal diupdate (ditambah ke KK yang sama)', ['jurnal_id' => $jurnalExist->id]);
+                        }
+                    } else {
+                        $jurnal = JurnalAkuntansi::create([
+                            'nomor_kk' => $nomorKK,
+                            'no_akun' => $nomorAkun,
+                            'id_pengajuan_barang' => [(int)$id], // Simpan sebagai array
+                            'tanggal_transaksi' => now(),
+                            'keterangan' => 'Pengeluaran untuk Pengajuan Barang ID: ' . $id . ' (' . $data->tipe . ')',
+                            'kredit' => $totalPengeluaran,
+                            'debit' => 0,
+                        ]);
+
+                        Log::info('Jurnal baru berhasil dibuat', ['jurnal_id' => $jurnal->id]);
+                    }
+                } catch (\Exception $ex) {
+                    Log::error('Gagal memproses jurnal', [
+                        'message' => $ex->getMessage()
+                    ]);
+                }
+
+
+                // 2. LOGIKA PENGECEKAN INVOICE & NOTIFIKASI
+                $updatePayload = [];
+                $updatePayload['no_kk'] = $request->no_kk;
+                $updatePayload['tanggal_pencairan'] = $request->filled('tanggal_pencairan') ? $request->tanggal_pencairan : now();
+
                 if ($data->invoice != null) {
                     // Jika invoice sudah ada, ubah status tracking menjadi "selesai"
                     $status = 'selesai';
@@ -365,69 +422,11 @@ class PengajuanBarangController extends Controller
                         'tanggal' => now(),
                     ]);
 
-                    $updateData = [
-                        'id_tracking' => $e2->id,
-                    ];
-
-                    if ($request->filled('tanggal_pencairan')) {
-                        $updateData['tanggal_pencairan'] = $request->tanggal_pencairan;
-                    }
-
-                    $data->update($updateData);
+                    $updatePayload['id_tracking'] = $e2->id;
 
                     if ($perbaikanKendaraan) {
                         $perbaikanKendaraan->update([
                             'status' => $status
-                        ]);
-                    }
-
-                    try {
-                        Log::info('Mulai proses jurnal', ['id_pengajuan' => $id]);
-                        $totalPengeluaran = 0;
-                        foreach ($detail as $item) {
-                            $qtyValue = (int) $item->qty;
-                            $hargaValue = (float) $item->harga;
-                            $subtotal = $qtyValue * $hargaValue;
-                            $totalPengeluaran += $subtotal;
-                        }
-
-                        $nomorKK = $request->no_kk;
-                        $nomorAkun = $request->no_akun;
-                        $jurnalExist = JurnalAkuntansi::where('nomor_kk', $nomorKK)->first();
-
-                        if ($jurnalExist) {
-                            $currentIds = is_array($jurnalExist->id_pengajuan_barang)
-                                ? $jurnalExist->id_pengajuan_barang
-                                : [];
-
-                            if (!in_array($id, $currentIds)) {
-                                $currentIds[] = (int)$id;
-
-                                $jurnalExist->update([
-                                    'id_pengajuan_barang' => $currentIds,
-                                    'kredit' => $jurnalExist->kredit + $totalPengeluaran,
-                                    'keterangan' => 'Pengeluaran untuk pengajuan barang'
-                                ]);
-
-                                Log::info('Jurnal diupdate (ditambah ke KK yang sama)', ['jurnal_id' => $jurnalExist->id]);
-                            }
-                        } else {
-
-                            $jurnal = JurnalAkuntansi::create([
-                                'nomor_kk' => $nomorKK,
-                                'no_akun' => $nomorAkun,
-                                'id_pengajuan_barang' => [(int)$id], // Simpan sebagai array
-                                'tanggal_transaksi' => now(),
-                                'keterangan' => 'Pengeluaran untuk Pengajuan Barang ID: ' . $id . ' (' . $data->tipe . ')',
-                                'kredit' => $totalPengeluaran,
-                                'debit' => 0,
-                            ]);
-
-                            Log::info('Jurnal baru berhasil dibuat', ['jurnal_id' => $jurnal->id]);
-                        }
-                    } catch (\Exception $ex) {
-                        Log::error('Gagal memproses jurnal', [
-                            'message' => $ex->getMessage()
                         ]);
                     }
 
@@ -439,20 +438,22 @@ class PengajuanBarangController extends Controller
                         'status' => $status,
                     ];
                 } else {
-                    // Jika invoice belum ada, kirim notifikasi agar upload invoice
+                    // Jika invoice belum ada, gunakan id tracking yang dibuat di atas (Pencairan Sudah Selesai)
+                    $updatePayload['id_tracking'] = $e->id;
+
                     $to = $data->karyawan->nama_lengkap;
                     $path = '/pengajuanbarang';
                     $type = 'Segera Upload Bukti Pembelian/Invoice';
                     $notifData = [
                         'tanggal' => now(),
-                        'status' => $status,
+                        'status' => $status, // Status masih 'Pencairan Sudah Selesai'
                     ];
                 }
-                $updatePayload = ['id_tracking' => $e->id];
-                $updatePayload['no_kk'] = $request->no_kk;
-                $updatePayload['tanggal_pencairan'] = $request->tanggal_pencairan ?? now();
+
+                // Update Pengajuan Barang cukup 1 kali eksekusi
                 $data->update($updatePayload);
 
+                // 3. UPDATE DATA PEMBELIAN HR (Jika ada)
                 $pembelianHr = PembelianHr::where('id_pengajuan', $data->id)->first();
                 if (!is_null($pembelianHr)) {
                     $pembelianHr->update([
