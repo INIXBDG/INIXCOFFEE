@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\RKMExport;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\CarbonImmutable;
@@ -13,18 +14,21 @@ use Illuminate\Support\Carbon;
 use App\Models\Perusahaan;
 use App\Http\Resources\PostResource;
 use App\Models\AbsensiPDF;
-use App\Models\Nilaifeedback;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\RKMExport;
-use App\Exports\RKMExcelAdmsales;
+use App\Models\karyawan;
+use App\Models\Perusahaan;
 use App\Models\RekomendasiLanjutan;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Illuminate\Support\Facades\Storage;
+use App\Models\RKM;
+use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RKMController extends Controller
 {
-    public function index() {}
+    public function index()
+    {
+    }
 
     public function showMonth($year, $month)
     {
@@ -54,14 +58,16 @@ class RKMController extends Controller
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
                         $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
-                    })->where(function ($query) {
-                        $query->whereHas('exam.approvalexam', function ($q) {
-                            $q->where('technical_support', 1);
-                        })
-                        ->orWhereDoesntHave('exam.approvalexam');
-                    })->select(
-                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
+                    })
+                    ->orWhereDoesntHave('exam.approvalexam')
+                    // ->where(function ($query) {
+                    //     $query->whereHas('exam.approvalexam', function ($q) {
+                    //         $q->where('technical_support', 1);
+                    //     })
+                    // })
+                    ->select(
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
                         DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
@@ -75,7 +81,6 @@ class RKMController extends Controller
                         DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
                         DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
                         'r_k_m_s.tanggal_awal',
-                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
                     )
                     ->groupBy(
                         'r_k_m_s.materi_key',
@@ -88,7 +93,6 @@ class RKMController extends Controller
                     ->orderBy('r_k_m_s.tanggal_awal', 'asc')
                     ->get();
 
-// 1. Inisialisasi array untuk mengumpulkan semua ID yang diperlukan
                 $allSalesIds = [];
                 $allInstrukturIds = [];
                 $allPerusahaanIds = [];
@@ -176,6 +180,7 @@ class RKMController extends Controller
         }
 
         $json = $monthRanges;
+
         return new PostResource(true, 'List Detail Bulan RKM', $json);
     }
 
@@ -185,9 +190,9 @@ class RKMController extends Controller
         $tahun = $request->input('tahun');
         $bulan = $request->input('bulan');
 
-        $filename = "RKM_Bulan_{$bulan}_Tahun_{$tahun}_" . date('Ymd_His') . ".xlsx";
+        $filename = "RKM_Bulan_{$bulan}_Tahun_{$tahun}_".date('Ymd_His').'.xlsx';
 
-        $path = 'exports/' . $filename;
+        $path = 'exports/'.$filename;
 
         Excel::store(new RKMExport($data, $bulan), $path, 'local');
 
@@ -266,14 +271,14 @@ class RKMController extends Controller
                     if ($row->instruktur_all == null) {
                         $sales_ids = explode(', ', $row->sales_all);
                         $perusahaan_ids = explode(', ', $row->perusahaan_all);
-                        $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                        $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
                         $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     } else {
                         $sales_ids = explode(', ', $row->sales_all);
                         $perusahaan_ids = explode(', ', $row->perusahaan_all);
                         $instruktur_ids = explode(', ', $row->instruktur_all);
-                        $row->instruktur = Karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
-                        $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                        $row->instruktur = karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
+                        $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
                         $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     }
                     $absensiExists = AbsensiPDF::where('id_rkm', $row->id)->exists();
@@ -282,7 +287,7 @@ class RKMController extends Controller
 
                 // return $rows;
 
-                $weekRanges[] = ['start' => $start, 'end' =>  $end, 'data' => $rows];
+                $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $rows];
             }
 
             $monthRanges[] = ['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges];
@@ -291,10 +296,9 @@ class RKMController extends Controller
         }
 
         $json = $monthRanges;
+
         return new PostResource(true, 'List Detail Bulan RKM', $json);
     }
-
-
 
     public function getRKMRegist()
     {
@@ -304,11 +308,11 @@ class RKMController extends Controller
             ->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
             ->whereYear('r_k_m_s.tanggal_awal', $year)
             // ->whereBetween('r_k_m_s.tanggal_akhir', [$startDate, $endDate])
-            ->where('materis.nama_materi', 'LIKE', '%' . request('q') . '%')
+            ->where('materis.nama_materi', 'LIKE', '%'.request('q').'%')
             ->select('r_k_m_s.*', 'perusahaans.nama_perusahaan')
             ->paginate(10);
-        return response()->json($rows);
 
+        return response()->json($rows);
 
         // $perusahaans = Perusahaan::where('nama_perusahaan', 'LIKE', '%'.request('q').'%')->paginate(10);
     }
@@ -347,11 +351,11 @@ class RKMController extends Controller
         $rkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
             ->where('id', $idRkm)
             ->first();
-		//dd($rkm);
+        // dd($rkm);
         $materi_key = $rkm->materi_key;
         $start = $rkm->tanggal_awal;
         $end = $rkm->tanggal_akhir;
-		$instruktur_key = $rkm->instruktur_key;
+        $instruktur_key = $rkm->instruktur_key;
         $rows = RKM::with([
             'materi',
             'instruktur',
@@ -360,7 +364,7 @@ class RKMController extends Controller
             'nilaifeedback',
             'peluang',
             'exam',
-            'exam.approvalexam'
+            'exam.approvalexam',
         ])
         ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
         ->whereDate('r_k_m_s.tanggal_awal', $start)
@@ -389,7 +393,7 @@ class RKMController extends Controller
 
         foreach ($rows as $row) {
             // Buat kunci unik berdasarkan materi_key, tanggal_awal, dan tanggal_akhir
-            $key = $row->materi_key . '|' . $row->tanggal_awal . '|' . $row->tanggal_akhir;
+            $key = $row->materi_key.'|'.$row->tanggal_awal.'|'.$row->tanggal_akhir;
             if (!isset($mergedData[$key])) {
                 // Jika kunci belum ada, tambahkan data baru
                 $mergedData[$key] = $row->toArray();

@@ -779,7 +779,7 @@
 
             function updateStats(data) {
                 document.getElementById('totalTarget').textContent = (data.total_target || 0) + ' Target';
-                document.getElementById('rataProgress').textContent = Math.round(data.rata_rata_progress || 0) + '%';
+                document.getElementById('rataProgress').textContent = (data.rata_rata_progress || 0).toFixed(1) + '%';
                 document.getElementById('kpiAktif').textContent = data.kpi_aktif || 0;
                 document.getElementById('kpiSelesai').textContent = data.kpi_selesai || 0;
             }
@@ -796,8 +796,10 @@
                 let html = '<div class="emp-grid">';
 
                 employees.forEach(emp => {
-                    const progress = Number(Math.round(emp.rata_rata_progress ?? 0));
-                    const info = classifyEmployee(progress, month);
+                    const progressNumber = parseFloat(emp.rata_rata_progress ?? 0);
+                    const progressDisplay = progressNumber.toFixed(1);
+                    
+                    const info = classifyEmployee(progressNumber, month);
                     const initial = getInitials(emp.nama);
 
                     html += `
@@ -807,7 +809,7 @@
                                 <div class="emp-name">${emp.nama}</div>
                                 <div class="emp-jabatan">${emp.jabatan}</div>
                                 <div class="emp-progress-wrapper">
-                                    <div class="emp-progress-val ${info.val}">${progress}%</div>
+                                    <div class="emp-progress-val ${info.val}">${progressDisplay}%</div>
                                     <div class="emp-badge">${info.badge}</div>
                                 </div>
                             </div>
@@ -850,7 +852,7 @@
                             <div class="lp-name">${emp.nama}</div>
                             <div class="lp-jabatan">${emp.jabatan}</div>
                         </div>
-                        <div class="lp-val">${Math.round(emp.rata_rata_progress || 0)}%</div>
+                        <div class="lp-val">${(emp.rata_rata_progress || 0).toFixed(1)}%</div>
                     </div>`).join('');
             }
 
@@ -865,7 +867,7 @@
                 }
 
                 const names = (empStats || []).map(i => i.nama);
-                const progress = (empStats || []).map(i => Math.round(i.rata_rata_progress || 0));
+                const progress = (empStats || []).map(i => (i.rata_rata_progress || 0).toFixed(1));
                 const targets = (empStats || []).map(i => i.total_target || 0);
 
                 const barColors = progress.map(p => p >= 75 ? 'rgba(16,185,129,.65)' : p >= 50 ?
