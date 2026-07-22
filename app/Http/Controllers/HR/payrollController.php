@@ -602,7 +602,7 @@ class payrollController extends Controller
             }
             $divisi[$d]['count']++;
             $divisi[$d]['total_allowance'] += $emp['total_tunjangan'];
-            $divisi[$d]['total_salary'] += $emp['gaji_bersih'];
+            $divisi[$d]['total_salary'] += $emp['gaji_bersih'] + $emp['total_tunjangan'];
         }
 
         $top = collect($divisi)->sortByDesc('total_allowance')->take(8);
