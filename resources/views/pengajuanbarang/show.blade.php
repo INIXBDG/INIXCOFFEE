@@ -92,9 +92,9 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-body">
-                        <a href="javascript:void(0);" onclick="window.history.back();" class="btn click-primary my-2">
-                            <img src="/icon/arrow-left.svg" class="img-responsive" width="20px"> Back
-                        </a>
+                        <a href="{{ route('pengajuanbarang.index') }}" class="btn click-primary my-2">
+                        <img src="/icon/arrow-left.svg" class="img-responsive" width="20px"> Back
+                    </a>
                         <h5 class="card-title">Detail Pengajuan Barang</h5>
                         <div class="row">
                             <div class="col-md-5">
