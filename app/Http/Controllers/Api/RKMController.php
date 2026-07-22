@@ -14,14 +14,8 @@ use Illuminate\Support\Carbon;
 use App\Models\Perusahaan;
 use App\Http\Resources\PostResource;
 use App\Models\AbsensiPDF;
-use App\Models\karyawan;
-use App\Models\Perusahaan;
 use App\Models\RekomendasiLanjutan;
-use App\Models\RKM;
-use Carbon\CarbonImmutable;
-use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class RKMController extends Controller
