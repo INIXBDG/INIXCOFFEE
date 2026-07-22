@@ -4,6 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Exports\RKMExport;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
+use App\Models\RKM;
+use App\Models\karyawan;
+use App\Models\User;
+use Illuminate\Support\Carbon;
+use App\Models\Perusahaan;
 use App\Http\Resources\PostResource;
 use App\Models\AbsensiPDF;
 use App\Models\karyawan;
@@ -43,6 +51,8 @@ class RKMController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
                 $startOfWeek = $startOfWeek->addWeek();
+
+                // Eksekusi Query Utama RKM
                 $rows = RKM::with(['materi', 'peluang'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
@@ -63,8 +73,8 @@ class RKMController extends Controller
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
-                        DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'), // Gabungkan semua exam
-                        DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'), // Gabungkan semua makanan
+                        DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
@@ -83,28 +93,82 @@ class RKMController extends Controller
                     ->orderBy('r_k_m_s.tanggal_awal', 'asc')
                     ->get();
 
-                // return $rows;
+                $allSalesIds = [];
+                $allInstrukturIds = [];
+                $allPerusahaanIds = [];
+                $allRkmIds = [];
 
                 foreach ($rows as $row) {
-                    if ($row->instruktur_all == null) {
-                        $sales_ids = explode(', ', $row->sales_all);
-                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
-                        $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
-                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
-                    } else {
-                        $sales_ids = explode(', ', $row->sales_all);
-                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
-                        $instruktur_ids = explode(', ', $row->instruktur_all);
-                        $row->instruktur = karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
-                        $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
-                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
+                    if (!empty($row->sales_all)) {
+                        $allSalesIds = array_merge($allSalesIds, explode(', ', $row->sales_all));
                     }
-                    $rkmIds = collect(explode(',', $row->id_all))
-                        ->map(fn ($id) => trim($id))
-                        ->filter();
+                    if (!empty($row->instruktur_all)) {
+                        $allInstrukturIds = array_merge($allInstrukturIds, explode(', ', $row->instruktur_all));
+                    }
+                    if (!empty($row->perusahaan_all)) {
+                        $allPerusahaanIds = array_merge($allPerusahaanIds, explode(', ', $row->perusahaan_all));
+                    }
+                    if (!empty($row->id_all)) {
+                        $allRkmIds = array_merge($allRkmIds, array_map('trim', explode(',', $row->id_all)));
+                    }
+                }
 
-                    $row->rekomendasi_group = RekomendasiLanjutan::whereIn('id_rkm', $rkmIds)
-                        ->get();
+                // Hapus duplikasi ID untuk optimasi query
+                $uniqueSalesIds = array_unique(array_filter($allSalesIds));
+                $uniqueInstrukturIds = array_unique(array_filter($allInstrukturIds));
+                $uniquePerusahaanIds = array_unique(array_filter($allPerusahaanIds));
+                $uniqueRkmIds = array_unique(array_filter($allRkmIds));
+                $uniqueKaryawanIds = array_unique(array_merge($uniqueSalesIds, $uniqueInstrukturIds));
+
+                // 2. Eksekusi query relasi secara kolektif (Bulk Fetch)
+                $karyawanMap = karyawan::whereIn('kode_karyawan', $uniqueKaryawanIds)->get()->keyBy('kode_karyawan');
+
+                // Ambil data User berdasarkan relasi karyawan_id
+                $karyawanPrimaryIds = $karyawanMap->pluck('id')->toArray();
+                $userMap = User::whereIn('karyawan_id', $karyawanPrimaryIds)->get()->keyBy('karyawan_id');
+
+                $perusahaanMap = Perusahaan::whereIn('id', $uniquePerusahaanIds)->get()->keyBy('id');
+                $rekomendasiMap = RekomendasiLanjutan::whereIn('id_rkm', $uniqueRkmIds)->get()->groupBy('id_rkm');
+
+                // 3. Pemetaan data kembali ke masing-masing baris (Mapping)
+                foreach ($rows as $row) {
+                    // Pemetaan Sales dan injeksi atribut User
+                    $salesIdsArray = array_filter(explode(', ', $row->sales_all ?? ''));
+                    $row->sales = collect($salesIdsArray)->map(function ($kode) use ($karyawanMap, $userMap) {
+                        $karyawan = $karyawanMap->get($kode);
+                        if ($karyawan) {
+                            $user = $userMap->get($karyawan->id);
+                            // Menambahkan atribut id_sales dan id_instruktur dari tabel User
+                            $karyawan->user_id_sales = $user ? $user->id_sales : null;
+                            $karyawan->user_id_instruktur = $user ? $user->id_instruktur : null;
+                        }
+                        return $karyawan;
+                    })->filter()->values();
+
+                    // Pemetaan Instruktur dan injeksi atribut User
+                    $instrukturIdsArray = array_filter(explode(', ', $row->instruktur_all ?? ''));
+                    $row->instruktur = collect($instrukturIdsArray)->map(function ($kode) use ($karyawanMap, $userMap) {
+                        $karyawan = $karyawanMap->get($kode);
+                        if ($karyawan) {
+                            $user = $userMap->get($karyawan->id);
+                            // Menambahkan atribut id_sales dan id_instruktur dari tabel User
+                            $karyawan->user_id_sales = $user ? $user->id_sales : null;
+                            $karyawan->user_id_instruktur = $user ? $user->id_instruktur : null;
+                        }
+                        return $karyawan;
+                    })->filter()->values();
+
+                    // Pemetaan Perusahaan
+                    $perusahaanIdsArray = array_filter(explode(', ', $row->perusahaan_all ?? ''));
+                    $row->perusahaan = collect($perusahaanIdsArray)->map(function ($id) use ($perusahaanMap) {
+                        return $perusahaanMap->get($id);
+                    })->filter()->values();
+
+                    // Pemetaan Rekomendasi Lanjutan
+                    $rkmIdsArray = array_filter(array_map('trim', explode(',', $row->id_all ?? '')));
+                    $row->rekomendasi_group = collect($rkmIdsArray)->flatMap(function ($id) use ($rekomendasiMap) {
+                        return $rekomendasiMap->get($id) ?? [];
+                    })->filter()->values();
                 }
 
                 $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $rows];
