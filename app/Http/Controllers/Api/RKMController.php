@@ -49,7 +49,7 @@ class RKMController extends Controller
                     ->whereDoesntHave('peluang', function ($query) {
                         $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
                     })
-                    ->orWhereDoesntHave('exam.approvalexam')
+                    // ->orWhereDoesntHave('exam.approvalexam')
                     // ->where(function ($query) {
                     //     $query->whereHas('exam.approvalexam', function ($q) {
                     //         $q->where('technical_support', 1);
