@@ -34,7 +34,7 @@
 
                     <div class="modal-body">
                         <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
-                        <form method="post" class="mt-5" id="formEditTagihan" enctype="multipart/form-data">
+                        <form method="post" class="mt-5" id="formEditTagihan" enctype="multipart/form-data" action="javascript:void(0);">
                             @csrf
 
                             <div class="mb-3 row">
@@ -247,6 +247,12 @@
                                                                 <input type="text" name="barang[keterangan][]" value="{{ $tagihan->keterangan ?? null }}">
                                                             </form>
                                                         </li>
+
+                                                        <li>
+                                                            <button class="dropdown-item text-primary btn-edit-tagihan" data-id="{{ $tagihan->id }}">
+                                                                Edit
+                                                            </button>
+                                                        </li>
                                                         
                                                         <li>
                                                             <a class="dropdown-item"
@@ -373,45 +379,83 @@
         });
         // end pengajuan tagihan perusahaan ke pengajuan barang
 
-        // form edit tagihan
+        // form submit handler
+        $(document).on('submit', '#formEditTagihan', function(e) {
+            e.preventDefault();
+            
+            let action = $(this).attr('action');
+            if (action === 'javascript:void(0);' || !action || action === '') {
+                alert('Silakan klik tombol Edit/checkbox dulu!');
+                return false;
+            }
+
+            let form = $(this);
+            $.ajax({
+                url: action,
+                type: 'POST',
+                data: form.serialize(),
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    $('#modalEditTagihan').modal('hide');
+                    alert('Tagihan berhasil diperbarui!');
+                    location.reload();
+                },
+                error: function(xhr) {
+                    alert('Error: ' + (xhr.responseJSON?.message || xhr.statusText));
+                    console.log('Error:', xhr.responseText);
+                }
+            });
+        });
+
+        // function untuk load data tagihan
+        function loadTagihanData(id) {
+            $.ajax({
+                url: '/office/data-tagihan/' + id,
+                type: 'GET',
+                success: function(res) {
+                    // Set action form DULU sebelum modal show
+                    $('#formEditTagihan').attr('action', '/office/update-tagihan/' + id);
+                    
+                    // set value input
+                    $('#modalEditTagihan select[name="status"]').val(res.data.status);
+                    $('#modalEditTagihan select[name="tracking"]').val(res.data.tracking);
+                    $('#modalEditTagihan input[name="tanggal_selesai"]').val(res.data.tanggal_selesai);
+                    $('#modalEditTagihan textarea[name="keterangan"]').val(res.data.keterangan);
+
+                    if (res.data.status === 'selesai' || res.data.status === 'telat') {
+                        $('#modalEditTagihan select[name="status"]').attr('disabled', 'disabled');
+                    } else {
+                        $('#modalEditTagihan select[name="status"]').removeAttr('disabled');
+                    }
+
+                    console.log('Data loaded, action set to:', '/office/update-tagihan/' + id);
+                },
+                error: function(xhr) {
+                     alert('Data kosong atau tidak dapat diedit.');
+                    console.log('AJAX Error:', xhr.responseText);
+                }
+            });
+        }
+
+        // form edit tagihan dari checkbox
         $(document).on('click', '#edit-tagihan', function() {
             let id = $(this).data('id');
 
             // jika yang diklik checkbox → buka modal manual
             if ($(this).is(':checkbox')) {
                 this.checked = false;
+                loadTagihanData(id);
                 $('#modalEditTagihan').modal('show');
             }
+        });
 
-            $.ajax({
-                url: '/office/data-tagihan/' + id,
-                type: 'GET',
-                success: function(res) {
-                    let nominal = formatRupiah(parseInt(res.data.nominal))
-                    // set action form
-                    $('#formEditTagihan').attr('action', '/office/update-tagihan/' + id);
-
-                    // set value input
-                    $('#modalEditTagihan select[name="status"]').val(res.data.status);
-                    $('#modalEditTagihan select[name="tracking"]').val(res.data.tracking);
-                    $('#modalEditTagihan input[name="tanggal_selesai"]').val(res.data
-                        .tanggal_selesai);
-                    $('#modalEditTagihan textarea[name="keterangan"]').val(res.data
-                        .keterangan);
-
-                    if (res.data.status === 'selesai' || res.data.status === 'telat') {
-                        $('#modalEditTagihan select[name="status"]').attr('disabled',
-                            'disabled');
-                    } else if (res.data.status === 'pending' || res.data.status ===
-                        'proses') {
-                        $('#modalEditTagihan select[name="status"]').attr('disabled',
-                            false);
-                    }
-
-                    // format rupiah jika ada function
-                    $('.format-rupiah').trigger('keyup');
-                }
-            });
+        // form edit tagihan dari button dropdown
+        $(document).on('click', '.btn-edit-tagihan', function() {
+            let id = $(this).data('id');
+            loadTagihanData(id);
+            $('#modalEditTagihan').modal('show');
         });
     });
 </script>
