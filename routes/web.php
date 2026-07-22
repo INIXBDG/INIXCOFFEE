@@ -123,6 +123,8 @@ use App\Http\Controllers\VisitProjectController;
 use App\Http\Controllers\CVInstrukturController;
 use App\Http\Controllers\HR\RekapPenjualanController;
 use App\Http\Controllers\HR\RekapInventarisController;
+use App\Http\Controllers\FeatureDocumentationController;
+use App\Http\Controllers\CodeDocumentationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1748,3 +1750,28 @@ Route::get('/cv-instruktur', [CVInstrukturController::class, 'index'])->name('cv
 Route::get('/cv-instruktur/data', [CVInstrukturController::class, 'data'])->name('cv-instruktur.data');
 Route::get('/cv-instruktur/{id}', [CVInstrukturController::class, 'show'])->name('cv-instruktur.show');
 Route::get('/cv-instruktur/{id}/pdf', [CVInstrukturController::class, 'downloadPdf'])->name('cv-instruktur.pdf');
+
+// Feature Documentation
+Route::get('/system/documentation/features', [FeatureDocumentationController::class, 'index'])
+    ->name('documentation.features.index');
+Route::post('/system/documentation/features', [FeatureDocumentationController::class, 'store'])
+    ->name('documentation.features.store');
+Route::get('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'show'])
+    ->name('documentation.features.show');
+Route::put('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'update'])
+    ->name('documentation.features.update');
+Route::delete('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'destroy'])
+    ->name('documentation.features.destroy');
+Route::get('/system/documentation/features/{id}/manual', [FeatureDocumentationController::class, 'downloadManual'])->name('documentation.features.manual');
+
+// Code Documentation
+Route::get('/system/documentation/features/{featureId}/codes', [CodeDocumentationController::class, 'index'])
+    ->name('documentation.codes.index');
+Route::post('/system/documentation/features/{featureId}/codes', [CodeDocumentationController::class, 'store'])
+    ->name('documentation.codes.store');
+Route::get('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'show'])
+    ->name('documentation.codes.show');
+Route::put('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'update'])
+    ->name('documentation.codes.update');
+Route::delete('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'destroy'])
+    ->name('documentation.codes.destroy');

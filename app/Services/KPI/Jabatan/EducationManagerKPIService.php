@@ -7,6 +7,7 @@ use App\Models\HariLibur;
 use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\RKM;
+use App\Models\User;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -700,7 +701,40 @@ public function calculatePeningkatanKnowledgeSharingDetail($itemDetail, $personI
         ];
     }
 
-    public function calculatePembuatanArtikel($item, $personId) {
+    private function getFilteredArticles()
+    {
+        $apiUrl = 'https://inixindobdg.co.id/api/articles';
+        $response = Http::get($apiUrl);
+
+        $articles = collect();
+
+        if ($response->successful()) {
+            $apiData = $response->json()['data'] ?? [];
+
+            foreach ($apiData as $item) {
+                $user = User::with('karyawan')
+                    ->whereHas('karyawan', function ($query) use ($item) {
+                        $query->where('nama_lengkap', $item['pembuat'])
+                            ->where('divisi', 'Education');
+                    })
+                    ->first();
+
+                if ($user && !is_null($user->id_instruktur)) {
+                    $item['nama_lengkap_pembuat'] = $user->karyawan->nama_lengkap ?? null;
+                    $articles->push($item);
+                }
+            }
+        }
+
+        return [
+            'status'  => 'success',
+            'message' => 'Data artikel berhasil diproses',
+            'data'    => $articles
+        ];
+    }
+
+    public function calculatePembuatanArtikel($item, $personId)
+    {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
@@ -713,15 +747,14 @@ public function calculatePeningkatanKnowledgeSharingDetail($itemDetail, $personI
             return 0;
         }
 
-        $startDate = carbon::create($tahun, '01', '01');
-        $endDate = carbon::create($tahun, '12', '31');
-        $response = Http::get('http://202.138.248.36:8003/api/filtered-articles')->json();
+        $startDate = Carbon::create($tahun, 1, 1);
+        $endDate   = Carbon::create($tahun, 12, 31);
 
+        $response = $this->getFilteredArticles();
         $apiArtikel = collect($response['data'] ?? []);
 
-        $getData = $apiArtikel->filter(function ($item) use ($startDate, $endDate) {
-            $tanggal = Carbon::parse($item['tanggal']);
-
+        $getData = $apiArtikel->filter(function ($article) use ($startDate, $endDate) {
+            $tanggal = Carbon::parse($article['tanggal']);
             return $tanggal->between($startDate, $endDate);
         });
 
@@ -736,28 +769,50 @@ public function calculatePeningkatanKnowledgeSharingDetail($itemDetail, $personI
         return round($progress, 2);
     }
 
-    public function calculatePembuatanArtikelDetail($itemDetail) {
+    public function calculatePembuatanArtikelDetail($itemDetail)
+    {
         $detail = $itemDetail->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$itemDetail->id}");
-            return 0;
+            return [
+                'progress' => 0,
+                'gap' => -24,
+                'pie_chart' => [
+                    'above' => 0,
+                    'below' => 24,
+                ],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
         }
 
         $tahun = (int) $detail->detail_jangka;
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$itemDetail->id}");
-            return 0;
+            return [
+                'progress' => 0,
+                'gap' => -24,
+                'pie_chart' => [
+                    'above' => 0,
+                    'below' => 24,
+                ],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => [],
+            ];
         }
 
-        $startDate = carbon::create($tahun, '01', '01');
-        $endDate = carbon::create($tahun, '12', '31');
-        $response = Http::get('http://202.138.248.36:8003/api/filtered-articles')->json();
+        $startDate = Carbon::create($tahun, 1, 1);
+        $endDate   = Carbon::create($tahun, 12, 31);
 
+        $response = $this->getFilteredArticles();
         $apiArtikel = collect($response['data'] ?? []);
 
-        $getData = $apiArtikel->filter(function ($item) use ($startDate, $endDate) {
-            $tanggal = Carbon::parse($item['tanggal']);
-
+        $getData = $apiArtikel->filter(function ($article) use ($startDate, $endDate) {
+            $tanggal = Carbon::parse($article['tanggal']);
             return $tanggal->between($startDate, $endDate);
         });
 
@@ -786,19 +841,14 @@ public function calculatePeningkatanKnowledgeSharingDetail($itemDetail, $personI
         $monthlyProgress = [];
         $dailyProgressPerMonth = [];
 
-        foreach ($getData as $item) {
-            $tanggal = Carbon::parse($item['tanggal']);
+        foreach ($getData as $article) {
+            $tanggal = Carbon::parse($article['tanggal']);
 
             $monthKey = $tanggal->format('Y-m');
-            $dayKey = $tanggal->format('Y-m-d');
+            $dayKey   = $tanggal->format('Y-m-d');
 
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = 0;
-            }
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey][$dayKey])) {
-                $dailyBreakdownPerMonth[$monthKey][$dayKey] = 0;
-            }
+            $monthlyData[$monthKey] ??= 0;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] ??= 0;
 
             $monthlyData[$monthKey]++;
             $dailyBreakdownPerMonth[$monthKey][$dayKey]++;

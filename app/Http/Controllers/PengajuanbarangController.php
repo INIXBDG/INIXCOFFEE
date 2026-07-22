@@ -110,36 +110,50 @@ class PengajuanBarangController extends Controller
     public function getPengajuanBarang($month, $year)
     {
         $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrfail($user);
+        $karyawan = Karyawan::findOrFail($user);
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
-        // dd($year, $month);
+
+        $query = PengajuanBarang::with('karyawan', 'tracking', 'detail');
+
         if ($jabatan == 'Finance & Accounting') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->whereMonth('created_at', $month)->whereYear('created_at', $year)->get();
-        } elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
-                ->whereHas('karyawan', function ($query) use ($divisi) {
-                    $query->where('divisi', $divisi);
-                })->whereMonth('created_at', $month)->whereYear('created_at', $year)
-                ->latest()
-                ->get();
-        } elseif ($jabatan == 'GM' || $jabatan == 'Koordinator Office') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->latest()->get();
-        } else {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
-                ->whereHas('karyawan', function ($query) use ($user) {
-                    $query->where('id', $user);
-                })->whereMonth('created_at', $month)->whereYear('created_at', $year)
-                ->latest()
-                ->get();
+            $PengajuanBarang = $query->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year);
+        } 
+        elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
+            $PengajuanBarang = $query->whereHas('karyawan', function ($q) use ($divisi) {
+                $q->where('divisi', $divisi);
+            })->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year);
+        } 
+        elseif ($jabatan == 'GM' || $jabatan == 'Koordinator Office') {
+            $PengajuanBarang = $query; // Semua data
+        } 
+        else {
+            $PengajuanBarang = $query->whereHas('karyawan', function ($q) use ($user) {
+                $q->where('id', $user);
+            })->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year);
         }
+
+        $PengajuanBarang = $PengajuanBarang->latest('created_at')->get();
+
+        $PengajuanBarang->each(function ($item) {
+            $item->waktu_lalu = $item->created_at
+                ->locale('id')                    
+                ->diffForHumans(now(), [
+                    'syntax' => true,
+                    'parts'  => 1,                
+                ]);
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'List PengajuanBarang',
             'data' => $PengajuanBarang,
         ]);
     }
-
+    
     /**
      * Menampilkan form untuk membuat Pengajuan Barang baru.
      */
