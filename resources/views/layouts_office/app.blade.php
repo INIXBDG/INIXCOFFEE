@@ -211,17 +211,17 @@
         }
 
         @keyframes animateLoaders {
-            0% {
-                transform: scale(0.8);
-            }
-
-            50% {
-                transform: scale(1.2);
-            }
-
+            0%,
             100% {
                 transform: scale(0.8);
             }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+        
+        .swal2-container {
+            z-index: 999999 !important;
         }
     </style>
 </head>
@@ -356,6 +356,72 @@
     </script>
 
     @yield('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @if($errors->any())
+    @php
+        $swalType = 'error';
+        $swalTitle = 'Terjadi Kesalahan!';
+        $errorItems = implode('', array_map(fn($e) => '<li>'.$e.'</li>', $errors->all()));
+        $swalHtml  = '<ul style="text-align:left;margin:0;padding-left:20px;">'.$errorItems.'</ul>';
+    @endphp
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                Swal.fire({
+                    icon: @json($swalType),
+                    title: @json($swalTitle),
+                    html: @json($swalHtml),
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    allowOutsideClick: false
+                });
+            }, 300);
+        });
+    </script>
+    @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function getCookie(name) {
+                let matches = document.cookie.match(new RegExp(
+                    "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+                ));
+                return matches ? decodeURIComponent(matches[1].replace(/\+/g, ' ')) : undefined;
+            }
+
+            let successAlert = getCookie('swal_success');
+            let errorAlert = getCookie('swal_error');
+
+            if (successAlert) {
+                document.cookie = "swal_success=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                setTimeout(function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: successAlert,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                    });
+                }, 300);
+            } else if (errorAlert) {
+                document.cookie = "swal_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                setTimeout(function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: errorAlert,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                    });
+                }, 300);
+            }
+        });
+    </script>
 </body>
 
 </html>

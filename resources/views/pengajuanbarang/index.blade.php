@@ -366,7 +366,7 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.3.1/css/rowGroup.dataTables.min.css">
 <script src="https://cdn.datatables.net/rowgroup/1.3.1/js/dataTables.rowGroup.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
@@ -1389,19 +1389,55 @@ $('#approveForm').on('submit', function(e) {
                 $('#approveModal').modal('hide');
                 $('#approveForm')[0].reset();
 
+                // Cek apakah response berupa JSON (dari manager) atau HTML (redirect Finance)
+                if (typeof res === 'object' && res !== null && res.success !== undefined) {
+                    if (res.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: res.message || 'Data berhasil diperbarui.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: res.message || 'Terjadi kesalahan.'
+                        });
+                    }
+                } else {
+                    // Response HTML (redirect dari Finance) — anggap sukses
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Data berhasil diperbarui!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+
+                // Reload tabel
                 if ($.fn.DataTable.isDataTable('#barangTable')) {
                     $('#barangTable').DataTable().ajax.reload(null, false);
                 }
-                tableFinance();
-                tableKaryawan();
-
                 if ('{{ auth()->user()->jabatan }}' == 'Finance & Accounting') {
                     tableFinance();
+                } else {
+                    tableKaryawan();
                 }
             },
             error: function(err) {
                 $('#loadingModal').modal('hide');
-                alert('Gagal menyimpan data, silakan coba lagi.');
+                let msg = 'Gagal menyimpan data, silakan coba lagi.';
+                if (err.responseJSON && err.responseJSON.message) {
+                    msg = err.responseJSON.message;
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: msg
+                });
             }
         });
     });

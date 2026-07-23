@@ -292,26 +292,37 @@ class PengajuanBarangController extends Controller
         $type = 'Mengajukan Permintaan Barang';
         $path = '/pengajuanbarang';
 
-        if ($request->pembelianHr) {
-            $rencana = PembelianHr::findOrFail($request->id_rencana);
-            $rencana->update([
-                'id_pengajuan' => $PengajuanBarang->id
-            ]);
+        try {
+            if ($request->pembelianHr && $request->id_rencana) {
+                $rencana = PembelianHr::find($request->id_rencana);
+                if ($rencana) {
+                    $rencana->update([
+                        'id_pengajuan' => $PengajuanBarang->id
+                    ]);
 
-            $auth = auth()->user()->karyawan;
-            TrackingPembelianHr::create([
-                'id_pembelian' => $rencana->id,
-                'tracking' => $auth->nama_lengkap . ' telah membuat pengajuan barang',
-                'id_karyawan' => $auth->id
-            ]);
+                    $auth = auth()->user()->karyawan;
+                    TrackingPembelianHr::create([
+                        'id_pembelian' => $rencana->id,
+                        'tracking' => $auth->nama_lengkap . ' telah membuat pengajuan barang',
+                        'id_karyawan' => $auth->id
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Gagal memproses PembelianHr: ' . $e->getMessage());
         }
 
-        foreach ($users as $user) {
-            $receiverId = $user->id;
-            NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type, $receiverId));
+        try {
+            foreach ($users as $user) {
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type, $receiverId));
+            }
+        } catch (\Exception $e) {
+            Log::error('Gagal kirim notifikasi pengajuan barang: ' . $e->getMessage());
         }
 
-        return back()->with('success', 'Pengajuan Barang berhasil dibuat.');
+        return redirect()->route('pengajuanbarang.index')
+            ->with('success', 'Pengajuan Barang berhasil dibuat.');
     }
 
     /**
@@ -527,9 +538,12 @@ class PengajuanBarangController extends Controller
                 NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
             }
 
-            return redirect()
-                ->route('pengajuanbarang.index')
-                ->with(['success' => 'Data berhasil diperbarui!']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil diperbarui!',
+                'status' => $status,
+                'id_pengajuan' => $id
+            ], 200);
         } elseif ($request->approval == '2') {
             $status = 'Pengajuan ditolak dikarenakan ' . $request->alasan;
             $e = tracking_pengajuan_barang::create([

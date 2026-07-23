@@ -904,10 +904,15 @@
         #subscribe-floating button:hover {
             background: #0b5ed7;
         }
+
+        .swal2-container {
+            z-index: 999999 !important;
+        }
     </style>
 </head>
 
 <body>
+    {{--
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert">
             {{ session('success') }}
@@ -928,6 +933,9 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+    --}}
+
+
     <div id="app">
         <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel"
             aria-hidden="true">
@@ -4086,8 +4094,38 @@
         });
         let uptimeCharts = {};
     </script>
+    @if(session('success') || session('error') || $errors->any())
+    @php
+        $swalType  = ''; $swalTitle = ''; $swalText = ''; $swalHtml = '';
+        if (session('success')) {
+            $swalType = 'success'; $swalTitle = 'Berhasil!'; $swalText = session('success');
+        } elseif (session('error')) {
+            $swalType = 'error'; $swalTitle = 'Gagal!'; $swalText = session('error');
+        } elseif ($errors->any()) {
+            $swalType = 'error'; $swalTitle = 'Terjadi Kesalahan!';
+            $errorItems = implode('', array_map(fn($e) => '<li>'.$e.'</li>', $errors->all()));
+            $swalHtml = '<ul style="text-align:left;margin:0;padding-left:20px;">'.$errorItems.'</ul>';
+        }
+    @endphp
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                Swal.fire({
+                    icon:  @json($swalType),
+                    title: @json($swalTitle),
+                    @if($swalHtml)
+                    html:  @json($swalHtml),
+                    @else
+                    text:  @json($swalText),
+                    @endif
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: false
+                });
+            }, 300);
+        });
+    </script>
+    @endif
 </body>
-
-</html>
 
 </html>
