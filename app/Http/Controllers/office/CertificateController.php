@@ -17,6 +17,15 @@ use Illuminate\Support\Facades\Storage;
 
 class CertificateController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View Inixcert', ['only' => ['index', 'getData']]);
+        $this->middleware('permission:Store Inixcert', ['only' => ['create', 'store']]);
+        $this->middleware('permission:Delete Inixcert', ['only' => ['delete']]);
+    }
+
     public function index()
     {
         $materis = Materi::select('id', 'nama_materi', 'kode_materi')

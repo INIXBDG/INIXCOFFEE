@@ -11,6 +11,16 @@ use Illuminate\Http\Request;
 
 class TagihanPerusahaanController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View Tagihan Perusahaan', ['only' => ['index', 'detailTagihanPerusahaan', 'dataTagihan']]);
+        $this->middleware('permission:Store Tagihan Perusahaan', ['only' => ['storeTagihanPerusahaan']]);
+        $this->middleware('permission:Update Tagihan Perusahaan', ['only' => ['updateTagihanPerusahaan']]);
+        $this->middleware('permission:Delete Tagihan Perusahaan', ['only' => ['hapusTagihanPerusahaan']]);
+    }
+
     public function index()
     {
         $trackingTagihanPerusahaans = trackingTagihanPerusahaan::orderBy('tanggal_perkiraan_mulai', 'desc')->paginate(10);

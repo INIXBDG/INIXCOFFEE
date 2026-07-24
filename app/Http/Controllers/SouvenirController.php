@@ -23,6 +23,7 @@ class SouvenirController extends Controller
         $this->middleware('permission:Edit Souvenir', ['only' => ['update', 'edit', 'editstok']]);
         $this->middleware('permission:Souvenir RKM', ['only' => ['createSouvenirInhouse', 'storeSouvenirInhouse', 'updateSouvenirInhouse']]);
     }
+    
     public function index()
     {
         return view('souvenir.index');

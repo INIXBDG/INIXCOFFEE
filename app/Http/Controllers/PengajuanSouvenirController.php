@@ -18,9 +18,16 @@ use Illuminate\Support\Facades\Storage;
 
 class PengajuanSouvenirController extends Controller
 {
-    /**
-     * Menampilkan daftar Pengajuan Souvenir.
-     */
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View PengajuanSouvenir', ['only' => 'index', 'getPengajuanSouvenir', 'show']);
+        $this->middleware('permission:Store PengajuanSouvenir', ['only' => 'create', 'store']);
+        $this->middleware('permission:Update PengajuanSouvenir', ['only' => 'edit', 'update', 'updateItems', 'updateInvoice']);
+        $this->middleware('permission:Delete PengajuanSouvenir', ['only' => 'destroy']);
+    }
+
     public function index()
     {
         $user = auth()->user();

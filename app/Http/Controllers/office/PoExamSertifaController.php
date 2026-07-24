@@ -14,6 +14,10 @@ class PoExamSertifaController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permission:View PoSertifa', ['only' => ['index', 'getData']]);
+        $this->middleware('permission:Store PoSertifa', ['only' => ['store']]);
+        $this->middleware('permission:Update PoSertifa', ['only' => ['update']]);
+        $this->middleware('permission:Delete PoSertifa', ['only' => ['destroy']]);
     }
 
     public function index()

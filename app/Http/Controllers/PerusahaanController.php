@@ -32,6 +32,11 @@ class PerusahaanController extends Controller
         $this->middleware('permission:Create Perusahaan', ['only' => ['create','store']]);
         $this->middleware('permission:Edit Perusahaan', ['only' => ['update','edit']]);
         $this->middleware('permission:Delete Perusahaan', ['only' => ['destroy']]);
+        
+        $this->middleware('permission:View SOP Perusahaan', ['only' => ['indexSop', 'detailSop']]);
+        $this->middleware('permission:Store SOP Perusahaan', ['only' => ['storeSop']]);
+        $this->middleware('permission:Update SOP Perusahaan', ['only' => ['updateSop']]);
+        $this->middleware('permission:Delete SOP Perusahaan', ['only' => ['deleteSop']]);
     }
     public function index(): View
     {

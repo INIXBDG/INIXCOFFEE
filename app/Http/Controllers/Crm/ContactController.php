@@ -13,12 +13,23 @@ use App\Models\RKM;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Auth\Events\Validated;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request;    
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class ContactController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View CRM History Status', ['only' => ['allHistoryStatus', 'allHistoryStatusData']]);
+        $this->middleware('permission:View Contact CRM', ['only' => ['index', 'getPerusahaan', 'detail']]);
+        $this->middleware('permission:Store Contact CRM', ['only' => ['store']]);
+        $this->middleware('permission:Update Contact CRM', ['only' => ['update']]);
+        $this->middleware('permission:Delete Contact CRM', ['only' => ['delete']]);
+    }
+
     public function index()
     {
         $lokasi = lokasi::all();

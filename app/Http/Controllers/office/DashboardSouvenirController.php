@@ -17,6 +17,13 @@ use App\Models\PenukaranSouvenir;
 
 class DashboardSouvenirController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission::View DashboardSouvenir', ['only' => ['index']]);
+    }
+
     public function index()
     {
         // 1. Data Paling Banyak Dipilih Peserta (Top 5)

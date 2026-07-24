@@ -31,6 +31,19 @@ use Illuminate\Support\Facades\Notification;
 
 class PeluangController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View Peluang', ['only' => ['index', 'indexJson']]);
+        $this->middleware('permission:Store Peluang', ['only' => ['store']]);
+        $this->middleware('permission:Update Peluang', ['only' => ['update']]);
+        $this->middleware('permission:Delete Peluang', ['only' => ['delete']]);
+        $this->middleware('permission:UpdateTahap Peluang', ['only' => ['updateTahap']]);
+        $this->middleware('permission:Restore Peluang', ['only' => ['restore']]);
+        $this->middleware('permission:PA Peluang', ['only' => ['storePaymentAdvance']]);
+    }
+
     public function index()
     {
         $user = Auth::user();

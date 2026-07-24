@@ -24,6 +24,13 @@ use PhpOffice\PhpWord\TemplateProcessor;
 
 class RegisFormController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:Upload Peluang Form Registrasi', ['only' => ['upload']]);
+    }
+
     public function index($id)
     {
         $lead = Peluang::with('perusahaan', 'aktivitas', 'rkm', 'materiRelation')

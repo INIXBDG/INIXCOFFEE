@@ -14,6 +14,16 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class KondisiToolsController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View KondisiTools', ['only' => ['index', 'getTools', 'getPemeriksaan']]);
+        $this->middleware('permission:Store KondisiTools', ['only' => ['store']]);
+        $this->middleware('permission:Update KondisiTools', ['only' => ['update']]);
+        $this->middleware('permission:Delete KondisiTools', ['only' => ['delete']]);
+        }
+
     public function index()
     {
         $tools = ObTools::with([
