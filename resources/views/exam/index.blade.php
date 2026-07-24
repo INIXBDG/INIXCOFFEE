@@ -160,6 +160,7 @@
                                     <th scope="col">Nama Perusahaan</th>
                                     <th scope="col">Pax</th>
                                     <th scope="col">Status</th>
+                                    <th scope="col">Status Approval</th>
                                     <th scope="col">Sales</th>
                                     <th scope="col">instruktur</th>
                                     <th scope="col">Aksi</th>
@@ -428,6 +429,29 @@
                             }
                         },
                         {
+                            "data": null,
+                            "render": function (data) {
+                                if (data.approvalexam) {
+                                    var app = data.approvalexam;
+
+                                    if (app.technical_support == 1) {
+                                        return '<span class="badge bg-success">Selesai</span>';
+                                    }
+
+                                    if (app.office_manager == 1) {
+                                        return '<span class="badge bg-info text-dark">Office Manager</span>';
+                                    }
+
+                                    if (app.spv_sales == 1) {
+                                        return '<span class="badge bg-info text-dark">SPV Sales</span>';
+                                    }
+
+                                    return '<span class="badge bg-warning text-dark">Belum Approval</span>';
+                                }
+                                return '<span class="text-muted">-</span>';
+                            }
+                        },
+                        {
                             "data": null, "visible": true,
                             "render": function (data) { return data.rkm?.sales_key ?? '-'; }
                         },
@@ -510,8 +534,8 @@
                     ],
                     "order": [[0, 'asc']],
                     "initComplete": function () {
-                        this.api().columns(7).search(idInstruktur).draw();
-                        this.api().columns(6).search(idSales).draw();
+                        this.api().columns(8).search(idInstruktur).draw();
+                        this.api().columns(7).search(idSales).draw();
                     }
                 });
 
