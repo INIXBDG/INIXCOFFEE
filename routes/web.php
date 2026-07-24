@@ -125,6 +125,7 @@ use App\Http\Controllers\HR\RekapPenjualanController;
 use App\Http\Controllers\HR\RekapInventarisController;
 use App\Http\Controllers\FeatureDocumentationController;
 use App\Http\Controllers\CodeDocumentationController;
+use App\Http\Controllers\DocumentationImportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1763,8 +1764,20 @@ Route::put('/system/documentation/features/{id}', [FeatureDocumentationControlle
     ->name('documentation.features.update');
 Route::delete('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'destroy'])
     ->name('documentation.features.destroy');
-Route::get('/system/documentation/features/{id}/manual', [FeatureDocumentationController::class, 'downloadManual'])->name('documentation.features.manual');
+Route::get('/system/documentation/features/{id}/manual', [FeatureDocumentationController::class, 'downloadManual'])
+    ->name('documentation.features.manual');
+Route::get('features/options/list', [FeatureDocumentationController::class, 'options'])
+    ->name('documentation.features.options');
 
+Route::get('system/documentation/import/template', [DocumentationImportController::class, 'downloadTemplate'])
+    ->name('documentation.import.template');
+Route::post('system/documentation/import', [DocumentationImportController::class, 'import'])
+    ->name('documentation.import');
+Route::get('system/documentation/export/all', [DocumentationImportController::class, 'exportAll'])
+    ->name('documentation.export.all');
+Route::get('system/documentation/export/feature/{id}', [DocumentationImportController::class, 'exportFeature'])
+    ->name('documentation.export.feature');
+    
 // Code Documentation
 Route::get('/system/documentation/features/{featureId}/codes', [CodeDocumentationController::class, 'index'])
     ->name('documentation.codes.index');

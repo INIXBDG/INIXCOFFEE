@@ -494,10 +494,9 @@ public function calculatePeningkatanKnowledgeSharingDetail($itemDetail, $personI
             return 0;
         }
 
-        // PENYAMAAN FILTER KARYAWAN (Harus 100% sama dengan Detail)
         $instruktursQuery = karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')
-            ->where('jabatan', 'Instruktur')
+            ->where('jabatan', ['Instruktur', 'Education Manager'])
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNotNull('nip');
 
@@ -553,6 +552,8 @@ public function calculatePeningkatanKnowledgeSharingDetail($itemDetail, $personI
 
         $totalKemungkinan = $totalHariKerja * $instrukturs->count();
 
+        dd($totalAktif);
+
         if ($totalKemungkinan == 0) {
             return 0;
         }
@@ -583,11 +584,10 @@ public function calculatePeningkatanKnowledgeSharingDetail($itemDetail, $personI
             return $emptyResponse;
         }
 
-        // PERBAIKAN: Sinkronisasi filter query karyawan dengan Primer
         $instruktursQuery = karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')
-            ->where('jabatan', 'Instruktur')
-            ->where('kode_karyawan', 'NOT LIKE', 'OL%') // Pastikan konsisten dengan rule OL jika perlu
+            ->where('jabatan', ['Instruktur', 'Education Manager'])
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNotNull('nip');
 
         if ($personId !== null) {

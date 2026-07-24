@@ -11,9 +11,18 @@ class CodeDocumentation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'feature_documentation_id', 'title', 'description',
-        'flow_program', 'code_blocks', 'relations',
-        'change_logs', 'future_development'
+        'feature_documentation_id',
+        'title',
+        'description',
+        'flow_program',
+        'code_blocks',
+        'relations',
+        'change_logs',
+        'future_development',
+        'update_by',
+        'log_update',
+        'log_time_update',
+        'log_changes',
     ];
 
     protected $casts = [
@@ -21,11 +30,19 @@ class CodeDocumentation extends Model
         'code_blocks' => 'array',
         'relations' => 'array',
         'change_logs' => 'array',
-        'future_development' => 'array'
+        'future_development' => 'array',
+        'log_update' => 'array',
+        'log_time_update' => 'array',
+        'log_changes' => 'array',
     ];
 
     public function featureDocumentation(): BelongsTo
     {
         return $this->belongsTo(FeatureDocumentation::class);
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'update_by');
     }
 }

@@ -4,10 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Models\CodeDocumentation;
 use App\Models\FeatureDocumentation;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CodeDocumentationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    protected array $trackedFields = [
+        'title',
+        'description',
+        'flow_program',
+        'code_blocks',
+        'relations',
+        'change_logs',
+        'future_development',
+    ];
+
     public function index($featureId)
     {
         $feature = FeatureDocumentation::findOrFail($featureId);
@@ -29,6 +46,8 @@ class CodeDocumentationController extends Controller
             'future_development' => 'nullable|array',
         ]);
 
+        $userId = Auth::id();
+
         $data = [
             'feature_documentation_id' => $featureId,
             'title' => $validated['title'],
@@ -47,17 +66,47 @@ class CodeDocumentationController extends Controller
         $data['change_logs'] = $validated['change_logs'] ?? [];
         $data['future_development'] = $validated['future_development'] ?? [];
 
-        CodeDocumentation::create($data);
+        $data['update_by'] = $userId;
+        $data['log_update'] = [$userId];
+        $data['log_time_update'] = [now()->toDateTimeString()];
+        $data['log_changes'] = [[
+            'action' => 'created',
+            'fields' => array_keys(array_intersect_key($data, array_flip($this->trackedFields))),
+        ]];
+
+        $codeDoc = CodeDocumentation::create($data);
 
         return response()->json([
             'success' => true,
             'message' => 'Code documentation created successfully',
+            'data' => $codeDoc,
         ]);
     }
 
     public function show($id)
     {
         $codeDoc = CodeDocumentation::with('featureDocumentation')->findOrFail($id);
+
+        $logUpdate = $codeDoc->log_update ?? [];
+        $logTimeUpdate = $codeDoc->log_time_update ?? [];
+        $logChanges = $codeDoc->log_changes ?? [];
+
+        $userIds = collect($logUpdate)->filter()->unique()->values();
+        $users = User::whereIn('id', $userIds)->pluck('username', 'id');
+
+        $history = [];
+        foreach ($logUpdate as $index => $userId) {
+            $history[] = [
+                'action' => $logChanges[$index]['action'] ?? 'updated',
+                'fields' => $logChanges[$index]['fields'] ?? [],
+                'updated_by' => $userId,
+                'updated_by_name' => $users[$userId] ?? 'Pengguna Tidak Diketahui',
+                'updated_at' => $logTimeUpdate[$index] ?? null,
+            ];
+        }
+
+        $codeDoc->change_history = $history;
+
         return response()->json($codeDoc);
     }
 
@@ -93,11 +142,32 @@ class CodeDocumentationController extends Controller
         $data['change_logs'] = $validated['change_logs'] ?? $codeDoc->change_logs;
         $data['future_development'] = $validated['future_development'] ?? $codeDoc->future_development;
 
+        $changedFields = $this->getChangedFields($codeDoc, $data);
+
+        $userId = Auth::id();
+
+        $logUpdate = $codeDoc->log_update ?? [];
+        $logTimeUpdate = $codeDoc->log_time_update ?? [];
+        $logChanges = $codeDoc->log_changes ?? [];
+
+        array_unshift($logUpdate, $userId);
+        array_unshift($logTimeUpdate, now()->toDateTimeString());
+        array_unshift($logChanges, [
+            'action' => 'updated',
+            'fields' => $changedFields,
+        ]);
+
+        $data['update_by'] = $userId;
+        $data['log_update'] = $logUpdate;
+        $data['log_time_update'] = $logTimeUpdate;
+        $data['log_changes'] = $logChanges;
+
         $codeDoc->update($data);
 
         return response()->json([
             'success' => true,
             'message' => 'Code documentation updated successfully',
+            'data' => $codeDoc->fresh(),
         ]);
     }
 
@@ -110,5 +180,28 @@ class CodeDocumentationController extends Controller
             'success' => true,
             'message' => 'Code documentation deleted successfully',
         ]);
+    }
+
+    protected function getChangedFields(CodeDocumentation $codeDoc, array $newData): array
+    {
+        $changed = [];
+
+        foreach ($this->trackedFields as $field) {
+            if (!array_key_exists($field, $newData)) {
+                continue;
+            }
+
+            $oldValue = $codeDoc->{$field};
+            $newValue = $newData[$field];
+
+            $oldNormalized = is_array($oldValue) ? json_encode($oldValue) : $oldValue;
+            $newNormalized = is_array($newValue) ? json_encode($newValue) : $newValue;
+
+            if ($oldNormalized !== $newNormalized) {
+                $changed[] = $field;
+            }
+        }
+
+        return $changed;
     }
 }
