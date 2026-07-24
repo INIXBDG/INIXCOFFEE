@@ -59,7 +59,7 @@ class RKMController extends Controller
                     ->whereDoesntHave('peluang', function ($query) {
                         $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
                     })
-                    ->orWhereDoesntHave('exam.approvalexam')
+                    // ->orWhereDoesntHave('exam.approvalexam')
                     // ->where(function ($query) {
                     //     $query->whereHas('exam.approvalexam', function ($q) {
                     //         $q->where('technical_support', 1);
@@ -81,6 +81,7 @@ class RKMController extends Controller
                         DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
                         DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
                         'r_k_m_s.tanggal_awal',
+                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
                     )
                     ->groupBy(
                         'r_k_m_s.materi_key',
@@ -99,14 +100,27 @@ class RKMController extends Controller
                 $allRkmIds = [];
 
                 foreach ($rows as $row) {
-                    if (!empty($row->sales_all)) {
-                        $allSalesIds = array_merge($allSalesIds, explode(', ', $row->sales_all));
-                    }
-                    if (!empty($row->instruktur_all)) {
-                        $allInstrukturIds = array_merge($allInstrukturIds, explode(', ', $row->instruktur_all));
-                    }
-                    if (!empty($row->perusahaan_all)) {
-                        $allPerusahaanIds = array_merge($allPerusahaanIds, explode(', ', $row->perusahaan_all));
+                    if ($row->instruktur_all == null) {
+                        $sales_ids = explode(', ', $row->sales_all);
+                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
+                        $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
+                    } else {
+                        $sales_ids = explode(', ', $row->sales_all);
+                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
+                        $instruktur_ids = explode(', ', $row->instruktur_all);
+                        $row->instruktur = karyawan::with('user')
+                            ->whereHas('user', function ($query) use ($instruktur_ids) {
+                                $query->whereIn('users.id_instruktur', $instruktur_ids);
+                            })
+                            ->get();
+
+                        $row->sales = karyawan::with('user')
+                            ->whereHas('user', function ($query) use ($sales_ids) {
+                                $query->whereIn('users.id_sales', $sales_ids);
+                            })
+                            ->get();
+                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     }
                     if (!empty($row->id_all)) {
                         $allRkmIds = array_merge($allRkmIds, array_map('trim', explode(',', $row->id_all)));
@@ -277,8 +291,17 @@ class RKMController extends Controller
                         $sales_ids = explode(', ', $row->sales_all);
                         $perusahaan_ids = explode(', ', $row->perusahaan_all);
                         $instruktur_ids = explode(', ', $row->instruktur_all);
-                        $row->instruktur = karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
-                        $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                        $row->instruktur = karyawan::with('user')
+                            ->whereHas('user', function ($query) use ($instruktur_ids) {
+                                $query->whereIn('users.id_instruktur', $instruktur_ids);
+                            })
+                            ->get();
+
+                        $row->sales = karyawan::with('user')
+                            ->whereHas('user', function ($query) use ($sales_ids) {
+                                $query->whereIn('users.id_sales', $sales_ids);
+                            })
+                            ->get();
                         $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     }
                     $absensiExists = AbsensiPDF::where('id_rkm', $row->id)->exists();
