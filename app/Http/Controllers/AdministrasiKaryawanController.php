@@ -13,6 +13,15 @@ use Illuminate\Support\Facades\DB;
 class AdministrasiKaryawanController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View Administrasi Karyawan', ['only' => ['index']]);
+        $this->middleware('permission:Store Administrasi Karyawan', ['only' => ['store']]);
+        $this->middleware('permission:Update Administrasi Karyawan', ['only' => ['update']]);
+        $this->middleware('permission:Delete Administrasi Karyawan', ['only' => ['destroy']]);
+    }
+
     public function index()
     {
         $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')->paginate(10);

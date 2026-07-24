@@ -10,6 +10,13 @@ use Illuminate\Support\Facades\DB;
 
 class PerpindahanDbController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View CRM Perpindahan DB', ['only' => ['index']]);
+    }
+
     private function isSpvSales(): bool
     {
         $user = Auth::user();

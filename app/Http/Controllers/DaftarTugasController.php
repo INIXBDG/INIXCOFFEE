@@ -18,6 +18,17 @@ use Illuminate\Support\Facades\Log;
 
 class DaftarTugasController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View DaftarTugas OB', ['only' => ['index', 'getKategori', 'get', 'getAvailableCategories']]);
+        $this->middleware('permission:Store DaftarTugas OB', ['only' => ['store']]);
+        $this->middleware('permission:Aktifkan DaftarTugas OB', ['only' => ['aktifkanTugas']]);
+        $this->middleware('permission:Update DaftarTugas OB Kategori', ['only' => ['updateKategori']]);
+        $this->middleware('permission:Delete DaftarTugas OB Kategori', ['only' => ['deleteKategori']]);
+    }
+
     public function index()
     {
         $dataKategori = KategoriDaftarTugas::with('karyawan')->get();

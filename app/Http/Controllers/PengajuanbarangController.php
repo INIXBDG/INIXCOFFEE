@@ -110,36 +110,50 @@ class PengajuanBarangController extends Controller
     public function getPengajuanBarang($month, $year)
     {
         $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrfail($user);
+        $karyawan = Karyawan::findOrFail($user);
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
-        // dd($year, $month);
+
+        $query = PengajuanBarang::with('karyawan', 'tracking', 'detail');
+
         if ($jabatan == 'Finance & Accounting') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->whereMonth('created_at', $month)->whereYear('created_at', $year)->get();
-        } elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
-                ->whereHas('karyawan', function ($query) use ($divisi) {
-                    $query->where('divisi', $divisi);
-                })->whereMonth('created_at', $month)->whereYear('created_at', $year)
-                ->latest()
-                ->get();
-        } elseif ($jabatan == 'GM' || $jabatan == 'Koordinator Office') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->latest()->get();
-        } else {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
-                ->whereHas('karyawan', function ($query) use ($user) {
-                    $query->where('id', $user);
-                })->whereMonth('created_at', $month)->whereYear('created_at', $year)
-                ->latest()
-                ->get();
+            $PengajuanBarang = $query->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year);
+        } 
+        elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
+            $PengajuanBarang = $query->whereHas('karyawan', function ($q) use ($divisi) {
+                $q->where('divisi', $divisi);
+            })->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year);
+        } 
+        elseif ($jabatan == 'GM' || $jabatan == 'Koordinator Office') {
+            $PengajuanBarang = $query; // Semua data
+        } 
+        else {
+            $PengajuanBarang = $query->whereHas('karyawan', function ($q) use ($user) {
+                $q->where('id', $user);
+            })->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year);
         }
+
+        $PengajuanBarang = $PengajuanBarang->latest('created_at')->get();
+
+        $PengajuanBarang->each(function ($item) {
+            $item->waktu_lalu = $item->created_at
+                ->locale('id')                    
+                ->diffForHumans(now(), [
+                    'syntax' => true,
+                    'parts'  => 1,                
+                ]);
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'List PengajuanBarang',
             'data' => $PengajuanBarang,
         ]);
     }
-
+    
     /**
      * Menampilkan form untuk membuat Pengajuan Barang baru.
      */
@@ -278,26 +292,37 @@ class PengajuanBarangController extends Controller
         $type = 'Mengajukan Permintaan Barang';
         $path = '/pengajuanbarang';
 
-        if ($request->pembelianHr) {
-            $rencana = PembelianHr::findOrFail($request->id_rencana);
-            $rencana->update([
-                'id_pengajuan' => $PengajuanBarang->id
-            ]);
+        try {
+            if ($request->pembelianHr && $request->id_rencana) {
+                $rencana = PembelianHr::find($request->id_rencana);
+                if ($rencana) {
+                    $rencana->update([
+                        'id_pengajuan' => $PengajuanBarang->id
+                    ]);
 
-            $auth = auth()->user()->karyawan;
-            TrackingPembelianHr::create([
-                'id_pembelian' => $rencana->id,
-                'tracking' => $auth->nama_lengkap . ' telah membuat pengajuan barang',
-                'id_karyawan' => $auth->id
-            ]);
+                    $auth = auth()->user()->karyawan;
+                    TrackingPembelianHr::create([
+                        'id_pembelian' => $rencana->id,
+                        'tracking' => $auth->nama_lengkap . ' telah membuat pengajuan barang',
+                        'id_karyawan' => $auth->id
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Gagal memproses PembelianHr: ' . $e->getMessage());
         }
 
-        foreach ($users as $user) {
-            $receiverId = $user->id;
-            NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type, $receiverId));
+        try {
+            foreach ($users as $user) {
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type, $receiverId));
+            }
+        } catch (\Exception $e) {
+            Log::error('Gagal kirim notifikasi pengajuan barang: ' . $e->getMessage());
         }
 
-        return back()->with('success', 'Pengajuan Barang berhasil dibuat.');
+        return redirect()->route('pengajuanbarang.index')
+            ->with('success', 'Pengajuan Barang berhasil dibuat.');
     }
 
     /**
@@ -513,9 +538,12 @@ class PengajuanBarangController extends Controller
                 NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
             }
 
-            return redirect()
-                ->route('pengajuanbarang.index')
-                ->with(['success' => 'Data berhasil diperbarui!']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil diperbarui!',
+                'status' => $status,
+                'id_pengajuan' => $id
+            ], 200);
         } elseif ($request->approval == '2') {
             $status = 'Pengajuan ditolak dikarenakan ' . $request->alasan;
             $e = tracking_pengajuan_barang::create([

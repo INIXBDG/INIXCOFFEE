@@ -25,6 +25,21 @@ use Illuminate\Support\Facades\Auth;
 
 class KendaraanController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View KondisiKendaraan', ['only' => ['indexKondisi', 'detailKondisi']]);
+        $this->middleware('permission:Store KondisiKendaraan', ['only' => ['storeKondisi']]);
+        $this->middleware('permission:Update KondisiKendaraan', ['only' => ['updateKondisi']]);
+        $this->middleware('permission:Delete KondisiKendaraan', ['only' => ['deleteKondisi']]);
+        
+        $this->middleware('permission:View PerbaikanKendaraan', ['only' => ['indexPerbaikan', 'detailPerbaikan']]);
+        $this->middleware('permission:Store PerbaikanKendaraan', ['only' => ['storePerbaikan']]);
+        $this->middleware('permission:Update PerbaikanKendaraan', ['only' => ['updatePerbaikan', 'SelesaiPerbaikan']]);
+        $this->middleware('permission:Delete PerbaikanKendaraan', ['only' => ['deletePerbaikan']]);
+    }
+
     public function indexKondisi()
     {
         $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');

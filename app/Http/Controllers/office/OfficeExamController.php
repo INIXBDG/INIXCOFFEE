@@ -17,6 +17,13 @@ use App\Models\eksam as ModelsEksam;
 
 class OfficeExamController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View RekapExam', ['only' => ['indexRekap', 'rekapJson']]);
+    }
+
     public function indexOffice()
     {
         return view('office.exam.index');

@@ -123,6 +123,9 @@ use App\Http\Controllers\VisitProjectController;
 use App\Http\Controllers\CVInstrukturController;
 use App\Http\Controllers\HR\RekapPenjualanController;
 use App\Http\Controllers\HR\RekapInventarisController;
+use App\Http\Controllers\FeatureDocumentationController;
+use App\Http\Controllers\CodeDocumentationController;
+use App\Http\Controllers\DocumentationImportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -297,6 +300,7 @@ Route::get('getRegistrasiall', [App\Http\Controllers\RegistrasiController::class
 Route::get('getPesertaall', [App\Http\Controllers\PesertaController::class, 'getPesertaall'])->name('getPesertaall');
 Route::get('getExam', [App\Http\Controllers\examController::class, 'getExam'])->name('getExam');
 Route::get('getExamKondisi', [App\Http\Controllers\examController::class, 'getExamKondisi'])->name('getExamKondisi');
+Route::get('/get-po-exam-sertifa', [examController::class, 'getPoExamSertifa'])->name('getPoExamSertifa');
 Route::post('/exam/{id}/upload-invoice', [examController::class, 'uploadInvoice'])->name('exam.uploadInvoice');
 Route::post('/exam/{id}/update-kurs', [examController::class, 'updateKurs'])->name('exam.updateKurs');
 Route::get('/exam/get-kurs/{id}', [examController::class, 'getKurs'])->name('exam.getKurs');
@@ -1688,10 +1692,10 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/', [RekapInventarisController::class, 'index'])->name('index');
         Route::get('/load-data', [RekapInventarisController::class, 'getRekapData'])->name('load_data');
         Route::get('/export', [RekapInventarisController::class, 'export'])->name('export');
-        
+
         Route::get('/ajax/lokasi/{kategori}', [RekapInventarisController::class, 'getLokasi']);
         Route::get('/ajax/jenis/{lokasi}', [RekapInventarisController::class, 'getJenis']);
-        
+
         Route::get('/export-pdf', [RekapInventarisController::class, 'exportPdf'])->name('export_pdf');
         Route::get('/detail-data', [RekapInventarisController::class, 'getDetailData'])->name('detail_data');
         Route::post('/store', [RekapInventarisController::class, 'store'])->name('store');
@@ -1748,3 +1752,40 @@ Route::get('/cv-instruktur', [CVInstrukturController::class, 'index'])->name('cv
 Route::get('/cv-instruktur/data', [CVInstrukturController::class, 'data'])->name('cv-instruktur.data');
 Route::get('/cv-instruktur/{id}', [CVInstrukturController::class, 'show'])->name('cv-instruktur.show');
 Route::get('/cv-instruktur/{id}/pdf', [CVInstrukturController::class, 'downloadPdf'])->name('cv-instruktur.pdf');
+
+// Feature Documentation
+Route::get('/system/documentation/features', [FeatureDocumentationController::class, 'index'])
+    ->name('documentation.features.index');
+Route::post('/system/documentation/features', [FeatureDocumentationController::class, 'store'])
+    ->name('documentation.features.store');
+Route::get('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'show'])
+    ->name('documentation.features.show');
+Route::put('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'update'])
+    ->name('documentation.features.update');
+Route::delete('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'destroy'])
+    ->name('documentation.features.destroy');
+Route::get('/system/documentation/features/{id}/manual', [FeatureDocumentationController::class, 'downloadManual'])
+    ->name('documentation.features.manual');
+Route::get('features/options/list', [FeatureDocumentationController::class, 'options'])
+    ->name('documentation.features.options');
+
+Route::get('system/documentation/import/template', [DocumentationImportController::class, 'downloadTemplate'])
+    ->name('documentation.import.template');
+Route::post('system/documentation/import', [DocumentationImportController::class, 'import'])
+    ->name('documentation.import');
+Route::get('system/documentation/export/all', [DocumentationImportController::class, 'exportAll'])
+    ->name('documentation.export.all');
+Route::get('system/documentation/export/feature/{id}', [DocumentationImportController::class, 'exportFeature'])
+    ->name('documentation.export.feature');
+    
+// Code Documentation
+Route::get('/system/documentation/features/{featureId}/codes', [CodeDocumentationController::class, 'index'])
+    ->name('documentation.codes.index');
+Route::post('/system/documentation/features/{featureId}/codes', [CodeDocumentationController::class, 'store'])
+    ->name('documentation.codes.store');
+Route::get('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'show'])
+    ->name('documentation.codes.show');
+Route::put('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'update'])
+    ->name('documentation.codes.update');
+Route::delete('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'destroy'])
+    ->name('documentation.codes.destroy');

@@ -340,9 +340,11 @@ class OverviewDashboardService
         $karyawan = karyawan::find($karyawanId);
         if (!$karyawan) return ['error' => 'Data karyawan tidak ditemukan', 'code' => 404];
 
+        $personId = $karyawanId;
+
         $allTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan', 'detailTargetKPI.dataTarget'])
             ->whereYear('created_at', $tahunFilter)
-            ->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $karyawanId))
+            ->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $personId))
             ->get();
 
         $processedTargets = collect();
@@ -350,12 +352,12 @@ class OverviewDashboardService
 
         foreach ($allTargets as $target) {
             foreach ($target->detailTargetKPI as $detail) {
-                if ($detail->detailPersonKPI->where('id_karyawan', $karyawanId)->isEmpty()) continue;
+                if ($detail->detailPersonKPI->where('id_karyawan', $personId)->isEmpty()) continue;
 
                 $nilaiTarget = $detail->dataTarget?->nilai_target ?? $detail->nilai_target;
                 $tipeTarget  = $detail->tipe_target;
 
-                $progress = $this->resolveProgress($target, $karyawanId);
+                $progress = $this->resolveProgress($target, $personId);
                 if ($progress === null) continue;
 
                 $percent = $nilaiTarget > 0 ? round(($progress / $nilaiTarget) * 100, 2) : 0;
@@ -416,13 +418,17 @@ class OverviewDashboardService
             ->whereNotNull('nip')->whereNot('divisi', 'Direksi')->get();
 
         $karyawanIds = $karyawanDiDivisi->pluck('id')->toArray();
+        $personIds = $karyawanIds;
 
         $allTargets = DetailTargetKPI::with(['targetKPI', 'dataTarget', 'detailPersonKPI.karyawan'])
             ->whereYear('created_at', $tahunFilter)
-            ->whereHas('detailPersonKPI.karyawan', fn($q) => $q->whereIn('id', $karyawanIds))
+            ->whereHas('detailPersonKPI.karyawan', fn($q) => $q->whereIn('id', $personIds))
             ->get();
 
-        $daftarTargetKPI = []; $employeeProgressMap = []; $employeeTargetStatusMap = []; $employeeTargetsMap = [];
+        $daftarTargetKPI = []; 
+        $employeeProgressMap = []; 
+        $employeeTargetStatusMap = []; 
+        $employeeTargetsMap = [];
         $processedTargets = [];
         $distribusi = ['Sangat Baik' => 0, 'Baik' => 0, 'Cukup' => 0, 'Kurang' => 0, 'Sangat Kurang' => 0];
 
@@ -432,7 +438,7 @@ class OverviewDashboardService
 
             $nilaiTarget = $detail->dataTarget?->nilai_target ?? $detail->nilai_target;
             $tipeTarget = $detail->tipe_target;
-            $assignedPersons = $detail->detailPersonKPI->whereIn('id_karyawan', $karyawanIds)->groupBy('id_karyawan');
+            $assignedPersons = $detail->detailPersonKPI->whereIn('id_karyawan', $personIds)->groupBy('id_karyawan');
             if ($assignedPersons->isEmpty()) continue;
 
             $targetProgressPercentages = collect();
@@ -449,13 +455,13 @@ class OverviewDashboardService
                 $rawProgress = $this->resolveProgress($target, $personId);
                 if ($rawProgress === null) continue;
 
-                $percent = $nilaiTarget > 0 ? round(($rawProgress / $nilaiTarget) * 100, 2) : 0;
-                $percent = max(0, min(100, $percent));
+                $percent = $nilaiTarget > 0 ? round(($rawProgress / $nilaiTarget) * 100, 2) : 0.00;
+                $percent = max(0.00, min(100.00, $percent));
 
                 $progressDisplay = match (true) {
-                    $tipeTarget === 'rupiah' => 'Rp ' . number_format($rawProgress, 0, ',', '.'),
-                    $tipeTarget === 'persen' => round($rawProgress, 2) . '%',
-                    default => number_format($rawProgress, 0, ',', '.'),
+                    $tipeTarget === 'rupiah' => 'Rp ' . number_format($rawProgress, 2, ',', '.'),
+                    $tipeTarget === 'persen' => number_format($rawProgress, 2, ',', '.') . '%',
+                    default => number_format($rawProgress, 2, ',', '.'),
                 };
 
                 if ($tahunFilter < $currentYear) $statusTarget = $percent >= 100 ? 'Selesai' : 'Gagal';
@@ -463,21 +469,32 @@ class OverviewDashboardService
                 else $statusTarget = 'Belum Mulai';
 
                 $employeeTargetStatusMap[$personId][$statusTarget]++;
-                $statusBadge = match ($statusTarget) { 'Selesai' => 'bg-success', 'Gagal' => 'bg-dark', 'Sedang Berjalan' => 'bg-primary', default => 'bg-secondary' };
+                $statusBadge = match ($statusTarget) { 
+                    'Selesai' => 'bg-success', 
+                    'Gagal' => 'bg-dark', 
+                    'Sedang Berjalan' => 'bg-primary', 
+                    default => 'bg-secondary' 
+                };
 
                 if (!isset($employeeTargetsMap[$personId])) $employeeTargetsMap[$personId] = [];
                 $employeeProgressMap[$personId][] = $percent;
+                
                 $employeeTargetsMap[$personId][] = [
-                    'judul' => $target->judul, 'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                    'tipe_target' => $tipeTarget, 'target' => $nilaiTarget, 'progress' => round($rawProgress),
-                    'progress_display' => $progressDisplay, 'progress_percent' => $percent, 'status' => $statusTarget,
+                    'judul' => $target->judul, 
+                    'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
+                    'tipe_target' => $tipeTarget, 
+                    'target' => $nilaiTarget, 
+                    'progress' => round($rawProgress, 2),
+                    'progress_display' => $progressDisplay, 
+                    'progress_percent' => $percent, 
+                    'status' => $statusTarget,
                     'status_badge' => $statusBadge,
                 ];
 
                 $targetProgressPercentages->push($percent);
             }
 
-            $avgTarget = $targetProgressPercentages->isNotEmpty() ? round($targetProgressPercentages->avg(), 2) : 0;
+            $avgTarget = $targetProgressPercentages->isNotEmpty() ? round($targetProgressPercentages->avg(), 2) : 0.00;
 
             if ($tahunFilter < $currentYear) $status = $avgTarget >= 100 ? 'Selesai' : 'Gagal';
             elseif ($tahunFilter == $currentYear) $status = 'Sedang Berjalan';
@@ -492,28 +509,41 @@ class OverviewDashboardService
             }
 
             $daftarTargetKPI[] = [
-                'judul' => $target->judul, 'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                'target' => $nilaiTarget, 'progress' => $avgTarget, 'status' => $status,
+                'judul' => $target->judul, 
+                'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
+                'target' => $nilaiTarget, 
+                'progress' => $avgTarget, 
+                'status' => $status,
             ];
         }
 
         $avgPerEmployee = [];
         foreach ($employeeProgressMap as $personId => $progressList) {
-            if (!empty($progressList)) $avgPerEmployee[$personId] = round(array_sum($progressList) / count($progressList), 2);
+            if (!empty($progressList)) {
+                $avgPerEmployee[$personId] = round(array_sum($progressList) / count($progressList), 2);
+            }
         }
-        $rataRataProgress = !empty($avgPerEmployee) ? round(array_sum($avgPerEmployee) / count($avgPerEmployee), 2) : 0;
+        
+        $rataRataProgress = !empty($avgPerEmployee) ? round(array_sum($avgPerEmployee) / count($avgPerEmployee), 2) : 0.00;
 
         $karyawanDepartemen = $karyawanDiDivisi->map(function ($karyawan) use ($employeeProgressMap, $employeeTargetStatusMap, $employeeTargetsMap) {
-            $progressList = collect($employeeTargetsMap[$karyawan->id] ?? [])->pluck('progress_percent');
-            $statusData = $employeeTargetStatusMap[$karyawan->id] ?? ['Sedang Berjalan' => 0, 'Selesai' => 0, 'Gagal' => 0, 'Belum Mulai' => 0];
-            $rataRataProgress = $progressList->isNotEmpty() ? round($progressList->sum() / $progressList->count(), 2) : 0;
+            $personId = $karyawan->id;
+            $progressList = collect($employeeTargetsMap[$personId] ?? [])->pluck('progress_percent');
+            $statusData = $employeeTargetStatusMap[$personId] ?? ['Sedang Berjalan' => 0, 'Selesai' => 0, 'Gagal' => 0, 'Belum Mulai' => 0];
+            
+            $rataRataProgressKaryawan = $progressList->isNotEmpty() ? round($progressList->sum() / $progressList->count(), 2) : 0.00;
 
             return [
-                'id_karyawan' => $karyawan->id, 'nama' => $karyawan->nama_lengkap, 'jabatan' => $karyawan->jabatan,
-                'total_target_sedang_berjalan' => $statusData['Sedang Berjalan'], 'total_target_selesai' => $statusData['Selesai'],
-                'total_target_gagal' => $statusData['Gagal'], 'total_target_belum_mulai' => $statusData['Belum Mulai'],
-                'jumlah_target' => count($progressList), 'rata_rata_progress' => $rataRataProgress,
-                'daftar_target_pribadi' => $employeeTargetsMap[$karyawan->id] ?? [],
+                'id_karyawan' => $karyawan->id, 
+                'nama' => $karyawan->nama_lengkap, 
+                'jabatan' => $karyawan->jabatan,
+                'total_target_sedang_berjalan' => $statusData['Sedang Berjalan'], 
+                'total_target_selesai' => $statusData['Selesai'],
+                'total_target_gagal' => $statusData['Gagal'], 
+                'total_target_belum_mulai' => $statusData['Belum Mulai'],
+                'jumlah_target' => count($progressList), 
+                'rata_rata_progress' => $rataRataProgressKaryawan,
+                'daftar_target_pribadi' => $employeeTargetsMap[$personId] ?? [],
             ];
         })->values();
 
@@ -524,7 +554,7 @@ class OverviewDashboardService
             'kpi_selesai' => collect($daftarTargetKPI)->where('status', 'Selesai')->count(),
             'kpi_gagal' => collect($daftarTargetKPI)->where('status', 'Gagal')->count(),
             'karyawan_departemen' => $karyawanDepartemen,
-            'statistik_karyawan' => $this->getEmployeeStatistics($karyawanIds, $employeeProgressMap, $employeeTargetStatusMap, $employeeTargetsMap),
+            'statistik_karyawan' => $this->getEmployeeStatistics($personIds, $employeeProgressMap, $employeeTargetStatusMap, $employeeTargetsMap),
             'distribusi_nilai' => $distribusi,
             'daftar_target_kpi' => collect($daftarTargetKPI)->unique('judul')->values()
         ];
@@ -535,13 +565,19 @@ class OverviewDashboardService
         return karyawan::whereIn('id', $karyawanIds)->get()->map(function ($karyawan) use ($employeeProgressMap, $employeeTargetStatusMap, $employeeTargetsMap) {
             $progressList = $employeeProgressMap[$karyawan->id] ?? [];
             $statusData = $employeeTargetStatusMap[$karyawan->id] ?? ['Sedang Berjalan' => 0, 'Selesai' => 0, 'Gagal' => 0, 'Belum Mulai' => 0];
-            $rataRataProgress = !empty($progressList) ? round(array_sum($progressList) / count($progressList), 2) : 0;
+            
+            $rataRataProgress = !empty($progressList) ? round(array_sum($progressList) / count($progressList), 2) : 0.00;
 
             return [
-                'nama' => explode(' ', $karyawan->nama_lengkap)[0], 'jabatan' => $karyawan->jabatan, 'total_target' => count($progressList),
-                'target_sedang_berjalan' => $statusData['Sedang Berjalan'], 'target_selesai' => $statusData['Selesai'],
-                'target_gagal' => $statusData['Gagal'], 'target_belum_mulai' => $statusData['Belum Mulai'],
-                'rata_rata_progress' => $rataRataProgress, 'daftar_target_pribadi' => $employeeTargetsMap[$karyawan->id] ?? [],
+                'nama' => explode(' ', $karyawan->nama_lengkap)[0], 
+                'jabatan' => $karyawan->jabatan, 
+                'total_target' => count($progressList),
+                'target_sedang_berjalan' => $statusData['Sedang Berjalan'], 
+                'target_selesai' => $statusData['Selesai'],
+                'target_gagal' => $statusData['Gagal'], 
+                'target_belum_mulai' => $statusData['Belum Mulai'],
+                'rata_rata_progress' => $rataRataProgress, 
+                'daftar_target_pribadi' => $employeeTargetsMap[$karyawan->id] ?? [],
             ];
         })->values();
     }

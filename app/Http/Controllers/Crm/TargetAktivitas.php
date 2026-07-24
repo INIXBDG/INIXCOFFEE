@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Auth;
 class TargetAktivitas extends Controller
 {
 
+    public function __construct(){
+        $this->middleware('auth');
+        $this->middleware('permission:View Target Aktivitas Sales', ['only' => ['index']]);
+        $this->middleware('permission:Store Target Aktivitas Sales', ['only' => ['store']]);
+        $this->middleware('permission:Update Target Aktivitas Sales', ['only' => ['update']]);
+        $this->middleware('permission:Delete Target Aktivitas Sales', ['only' => ['delete']]);
+    }
+
     public function index()
     {
         if (!in_array(Auth::user()->jabatan, ['GM', 'SPV Sales', 'Adm Sales'])) {

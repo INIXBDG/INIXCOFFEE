@@ -39,6 +39,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\SessionTimeout::class,
             \App\Http\Middleware\LogActivity::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\AlertCookieMiddleware::class,
         ],
 
         'api' => [

@@ -14,6 +14,10 @@ class PoExamSertifaController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permission:View PoSertifa', ['only' => ['index', 'getData']]);
+        $this->middleware('permission:Store PoSertifa', ['only' => ['store']]);
+        $this->middleware('permission:Update PoSertifa', ['only' => ['update']]);
+        $this->middleware('permission:Delete PoSertifa', ['only' => ['destroy']]);
     }
 
     public function index()
@@ -57,7 +61,7 @@ class PoExamSertifaController extends Controller
         PoExamSertifa::create($validatedData);
 
         return redirect()
-            ->route('office.exam.index')
+            ->route('office.certifa.index')
             ->with('success', 'Data PO Exam Sertifa berhasil ditambahkan.');
     }
 
@@ -87,7 +91,7 @@ class PoExamSertifaController extends Controller
         $item->delete();
 
         return redirect()
-            ->route('office.certifa.c')
+            ->route('office.certifa.index')
             ->with('success', 'Data PO Exam Sertifa berhasil dihapus.');
     }
 }

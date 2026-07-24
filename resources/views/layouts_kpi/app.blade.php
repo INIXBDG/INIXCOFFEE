@@ -554,6 +554,10 @@
             background-color: #696cff;
             box-shadow: 0 0 0 3px rgba(105, 108, 255, 0.16);
         }
+        
+        .swal2-container {
+            z-index: 999999 !important;
+        }
     </style>
 </head>
 
@@ -674,9 +678,7 @@
     <!-- GitHub button -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"
-        integrity="sha512-AA1Bzp5Q0K1KanKKmvN/4d3IRKVlv9PYgwFPvm32nPO6QS8yH1HO7LbgB1pgiOxPtfeg5zEn2ba64MUcqJx6CA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- User Profile Ajax -->
     <script>
@@ -945,6 +947,71 @@
                 window.addEventListener('load', runAllFixes);
             }
         })();
+    </script>
+    @if($errors->any())
+    @php
+        $swalType = 'error';
+        $swalTitle = 'Terjadi Kesalahan!';
+        $errorItems = implode('', array_map(fn($e) => '<li>'.$e.'</li>', $errors->all()));
+        $swalHtml  = '<ul style="text-align:left;margin:0;padding-left:20px;">'.$errorItems.'</ul>';
+    @endphp
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                Swal.fire({
+                    icon: @json($swalType),
+                    title: @json($swalTitle),
+                    html: @json($swalHtml),
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    allowOutsideClick: false
+                });
+            }, 300);
+        });
+    </script>
+    @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function getCookie(name) {
+                let matches = document.cookie.match(new RegExp(
+                    "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+                ));
+                return matches ? decodeURIComponent(matches[1].replace(/\+/g, ' ')) : undefined;
+            }
+
+            let successAlert = getCookie('swal_success');
+            let errorAlert = getCookie('swal_error');
+
+            if (successAlert) {
+                document.cookie = "swal_success=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                setTimeout(function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: successAlert,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                    });
+                }, 300);
+            } else if (errorAlert) {
+                document.cookie = "swal_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                setTimeout(function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: errorAlert,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                    });
+                }, 300);
+            }
+        });
     </script>
 </body>
 
