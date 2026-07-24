@@ -2,18 +2,18 @@
 
 namespace App\Console;
 
-use App\Models\User;
-use App\Models\Outstanding;
-use App\Models\RKM;
 use App\Models\ActivityInstruktur;
 use App\Models\activityLog;
+use App\Models\Outstanding;
+use App\Models\RKM;
+use App\Models\User;
 use App\Notifications\OutstandingNotification;
+use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class Kernel extends ConsoleKernel
 {
@@ -36,8 +36,8 @@ class Kernel extends ConsoleKernel
                     Notification::send($financeUsers, new OutstandingNotification($outstanding, $path));
                 }
             } catch (\Exception $e) {
-                Log::error('Failed to send notifications: ' . $e->getMessage());
-                throw $e; 
+                Log::error('Failed to send notifications: '.$e->getMessage());
+                throw $e;
             }
         })->weeklyOn(1, '08:00')->description('Kirim Notifikasi Outstanding Mingguan');
 
@@ -59,7 +59,7 @@ class Kernel extends ConsoleKernel
                     }
                 }
             } catch (\Throwable $e) {
-                Log::error('Update Status Read failed: ' . $e->getMessage());
+                Log::error('Update Status Read failed: '.$e->getMessage());
                 throw $e;
             }
         })->dailyAt('23:00')->description('Update Status Read Notifikasi Outstanding');
@@ -68,7 +68,7 @@ class Kernel extends ConsoleKernel
         $schedule->call(function () {
             try {
                 $now = now();
-                $users = User::with(['surveyKepuasan' => fn($q) => $q->latest('created_at')])->get();
+                $users = User::with(['surveyKepuasan' => fn ($q) => $q->latest('created_at')])->get();
                 $notifications = [];
 
                 foreach ($users as $user) {
@@ -92,7 +92,7 @@ class Kernel extends ConsoleKernel
                                 'data' => [
                                     'id_user' => $user->id,
                                     'terakhir_survey' => $lastSurvey ? $lastSurvey->created_at->format('d/m/Y') : 'Belum Pernah',
-                                ]
+                                ],
                             ]),
                             'created_at' => $now,
                             'updated_at' => $now,
@@ -102,35 +102,35 @@ class Kernel extends ConsoleKernel
 
                 if (!empty($notifications)) {
                     DB::table('notifications')->insert($notifications);
-                    Log::info('Survey reminder executed successfully. Total: ' . count($notifications));
+                    Log::info('Survey reminder executed successfully. Total: '.count($notifications));
                 } else {
                     Log::info('Survey reminder executed, no pending notifications.');
                 }
             } catch (\Throwable $e) {
-                Log::error('Survey reminder failed: ' . $e->getMessage());
+                Log::error('Survey reminder failed: '.$e->getMessage());
                 throw $e;
             }
         })->dailyAt('14:04')->description('Kirim Reminder Survey Kepuasan ITSM');
 
         // 4. Pembersihan Otomatis Activity Log
-        $schedule->call(function () {
-            try {
-                $deleted = activityLog::query()
-                    ->whereIn('status', [
-                        'visit',
-                        'login',
-                        'logout',
-                        'Absen Masuk',
-                        'Absen Keluar'
-                    ])
-                    ->delete();
+        // $schedule->call(function () {
+        //     try {
+        //         $deleted = activityLog::query()
+        //             ->whereIn('status', [
+        //                 'visit',
+        //                 'login',
+        //                 'logout',
+        //                 'Absen Masuk',
+        //                 'Absen Keluar'
+        //             ])
+        //             ->delete();
 
-                Log::info("Berhasil menghapus {$deleted} activity log dari status visit/login/logout/absen.");
-            } catch (\Throwable $e) {
-                Log::error("Schedule gagal: " . $e->getMessage());
-                throw $e;
-            }
-        })->weeklyOn(2, '08:00')->description('Pembersihan Otomatis Activity Log');
+        //         Log::info("Berhasil menghapus {$deleted} activity log dari status visit/login/logout/absen.");
+        //     } catch (\Throwable $e) {
+        //         Log::error("Schedule gagal: " . $e->getMessage());
+        //         throw $e;
+        //     }
+        // })->weeklyOn(2, '08:00')->description('Pembersihan Otomatis Activity Log');
 
         // 5. Kirim Notifikasi Outstanding H-1
         $schedule->call(function () {
@@ -143,7 +143,7 @@ class Kernel extends ConsoleKernel
                         'notifiable_id',
                         'data',
                         'created_at',
-                        'updated_at'
+                        'updated_at',
                     ],
                     DB::table('outstandings')
                         ->join('r_k_m_s', 'r_k_m_s.id', '=', 'outstandings.id_rkm')
@@ -212,16 +212,16 @@ class Kernel extends ConsoleKernel
                         $user = User::find($item->user_id);
                         if ($user) {
                             $user->notify(new OutstandingNotification($userData, '/outstanding'));
-                            $notificationsSent++;
+                            ++$notificationsSent;
                         }
                     } catch (\Exception $e) {
-                        Log::error("Gagal mengirim notifikasi ke user ID {$item->user_id}: " . $e->getMessage());
-                        continue; 
+                        Log::error("Gagal mengirim notifikasi ke user ID {$item->user_id}: ".$e->getMessage());
+                        continue;
                     }
                 }
                 Log::info("Job selesai. Total notifikasi yang dikirim: {$notificationsSent}");
             } catch (\Throwable $e) {
-                Log::error("Error di job outstanding: " . $e->getMessage());
+                Log::error('Error di job outstanding: '.$e->getMessage());
                 throw $e;
             }
         })->dailyAt('08:00')->description('Kirim Notifikasi Outstanding H-1');
@@ -234,7 +234,7 @@ class Kernel extends ConsoleKernel
                     ->where('is_locked', 0)
                     ->update(['is_locked' => 1]);
             } catch (\Throwable $e) {
-                Log::error("Error Kunci Aktivitas: " . $e->getMessage());
+                Log::error('Error Kunci Aktivitas: '.$e->getMessage());
                 throw $e;
             }
         })->dailyAt('01:00')->description('Kunci Otomatis Aktivitas Instruktur');
@@ -251,11 +251,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:generate-libur-nasional')->daily()->description('app:generate-libur-nasional');
         $schedule->command('perusahaan:evaluasi-status')->daily()->description('perusahaan:evaluasi-status');
         $schedule->command('app:notification-pembelian-hr')->daily()->description('app:notification-pembelian-hr');
+        $schedule->command('log:clean-activity')->tuesdays()->at('03:00')->description('Pembersihan Otomatis Activity Log');
     }
 
     protected function commands(): void
     {
-        $this->load(__DIR__ . '/Commands');
+        $this->load(__DIR__.'/Commands');
         require base_path('routes/console.php');
     }
 }
