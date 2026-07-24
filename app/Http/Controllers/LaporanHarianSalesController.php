@@ -11,9 +11,15 @@ use Illuminate\Http\Request;
 
 class LaporanHarianSalesController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
+    public function __construct(){
+        $this->middleware('auth');
+        $this->middleware('permission:View MOM', ['only' => ['index']]);
+        $this->middleware('permission:Store MOM', ['only' => ['create', 'store']]);
+        $this->middleware('permission:Update MOM', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:Delete MOM', ['only' => ['delete']]);
+    }
+
     public function index()
     {
         $laporans = LaporanHarianSales::with('catatanSales', 'catatanClient')->orderBy('created_at', 'desc')->paginate(10);

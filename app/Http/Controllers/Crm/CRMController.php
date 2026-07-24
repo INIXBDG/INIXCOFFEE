@@ -28,6 +28,13 @@ use Illuminate\Support\Facades\DB;
 
 class CRMController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:Dashboard CRM', ['only' => ['index']]);
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();

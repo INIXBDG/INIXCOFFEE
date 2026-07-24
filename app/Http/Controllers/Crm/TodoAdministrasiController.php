@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Storage;
 
 class TodoAdministrasiController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View Todo Administrasi', ['only' => ['index']]);
+        $this->middleware('permission:Store Todo Administrasi', ['only' => ['store']]);
+        $this->middleware('permission:Update Todo Administrasi', ['only' => ['update']]);
+        $this->middleware('permission:Delete Todo Administrasi', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
         $query = TodoAdministrasi::query();

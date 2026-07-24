@@ -29,6 +29,15 @@ class pickupDriverController extends Controller
     private const BOT_TOKEN = '8619211414:AAHnpchtKmY_FEKrOnj1VQTUsYKqp3Smuhw';
     private const CHAT_ID = '-1003758833562';
 
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permisson:View PickupDriver', ['only' => ['index', 'get']]);
+        $this->middleware('permisson:Store PickupDriver', ['only' => ['create', 'store']]);
+        $this->middleware('permisson:Update PickupDriver', ['only' => ['updateStatus', 'updateKepulangan', 'updateKoordinasi']]);
+        $this->middleware('permisson:Delete PickupDriver', ['only' => ['delete']]);
+    }
+
     public function index()
     {
         $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');

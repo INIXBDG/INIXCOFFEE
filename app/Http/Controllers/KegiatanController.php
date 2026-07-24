@@ -34,6 +34,10 @@ class KegiatanController extends Controller
     {
         $this->middleware('auth');
         $this->PengajuanBarangController = $PengajuanBarangController;
+        $this->middleware('permission:View RAB Kegiatan', ['only' => ['index', 'show']]);
+        $this->middleware('permission:Store RAB Kegiatan', ['only' => ['storeKegiatan', 'storeDetail', 'storePeserta']]);
+        $this->middleware('permission:Update RAB Kegiatan', ['only' => ['updateKegiatan', 'updateDetail']]);
+        $this->middleware('permission:Delete RAB Kegiatan', ['only' => ['deleteKegiatan', 'deleteRincian']]);
     }
 
     public function index()

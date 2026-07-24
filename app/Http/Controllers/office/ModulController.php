@@ -24,6 +24,15 @@ use Maatwebsite\Excel\Facades\Excel;
 class ModulController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View PO Modul', ['only' => ['indexNomor', 'indexModul']]);
+        $this->middleware('permission:Store PO Modul', ['only' => ['storeModul', 'storeNomor', 'storePeserta']]);
+        $this->middleware('permission:Update PO Modul', ['only' => ['updateModul', 'updateNomor', 'updatePeserta']]);
+        $this->middleware('permission:Delete PO Modul', ['only' => ['deleteModul', 'deleteNomor', 'deletePeserta']]);
+    }
+
     public function indexNomor()
     {
         $nomor = NomorModul::all();

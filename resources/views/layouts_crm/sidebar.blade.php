@@ -61,21 +61,8 @@
 
     <ul class="menu-inner py-1">
 
-        @php
-            $user = Auth::user();
-            $allowedUser = [
-                'Adm Sales',
-                'HRD',
-                'Finance & Accounting',
-                'GM',
-                'Sales',
-                'Direktur Utama',
-                'Direktur',
-                'SPV Sales',
-            ];
-        @endphp
 
-        @if (in_array($user->jabatan, ['Programmer', 'Koordinator ITSM']))
+        @if (in_array(Auth::user()->jabatan, ['Programmer', 'Koordinator ITSM']))
             <!-- Khusus Programmer: hanya Import & Excel -->
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Import &amp; Excel</span>
@@ -95,7 +82,8 @@
                     <div class="text-truncate">Import Contact</div>
                 </a>
             </li>
-        @else
+        @endif
+        
             <!-- Untuk user lain: menu default -->
             <!-- Dashboards -->
             <li class="menu-item {{ request()->routeIs('CRM.index') ? 'active open' : '' }}">
@@ -120,34 +108,27 @@
                 </a>
             </li>
 
-            @if(Auth::check() && in_array(Auth::user()->jabatan, ['Adm Sales', 'SPV Sales']))
+            @can('View CRM Laporan Penjualan 1')
                 <li class="menu-item {{ request()->routeIs('crm.laporanPenjualan') ? 'active open' : '' }}">
                     <a href="{{ route('crm.laporanPenjualan') }}" class="menu-link">
                         <i class='menu-icon tf-icons bx bx-bar-chart-square'></i>
                         <div class="text-truncate" data-i18n="crmLaporanPenjualan">Laporan Penjualan</div>
                     </a>
                 </li>
+            @endcan
+
+            @can('View CRM Laporan Penjualan 2')
                 <li class="menu-item {{ request()->routeIs('laporan.for.gm') ? 'active open' : '' }}">
                     <a href="{{ route('laporan.for.gm') }}" class="menu-link">
                         <i class='menu-icon tf-icons bx bx-line-chart'></i>
-                        <div class="text-truncate" data-i18n="crmLaporanPenjualanGm">Target Penjualan</div>
+                        @if (in_array(Auth::user()->jabatan, ['Adm Sales', 'SPV Sales']))
+                            <div class="text-truncate" data-i18n="crmLaporanPenjualanGm">Target Penjualan</div>
+                        @else
+                            <div class="text-truncate" data-i18n="crmLaporanPenjualanGm">Laporan Penjualan</div>
+                        @endif
                     </a>
                 </li>
-            @elseif(Auth::check() && Auth::user()->jabatan == 'GM')
-                <li class="menu-item {{ request()->routeIs('laporan.for.gm') ? 'active open' : '' }}">
-                    <a href="{{ route('laporan.for.gm') }}" class="menu-link">
-                        <i class='menu-icon tf-icons bx bx-bar-chart-square'></i>
-                        <div class="text-truncate" data-i18n="crmLaporanPenjualan">Laporan Penjualan</div>
-                    </a>
-                </li>
-            @else
-                <li class="menu-item {{ request()->routeIs('crm.laporanPenjualan') ? 'active open' : '' }}">
-                    <a href="{{ route('crm.laporanPenjualan') }}" class="menu-link">
-                        <i class='menu-icon tf-icons bx bx-bar-chart-square'></i>
-                        <div class="text-truncate" data-i18n="crmLaporanPenjualan">Laporan Penjualan</div>
-                    </a>
-                </li>
-            @endif
+            @endcan
 
             <li class="menu-item {{ request()->routeIs('crm.ketentuan') ? 'active open' : '' }}">
                 <a href="{{ route('crm.ketentuan') }}" class="menu-link">
@@ -156,86 +137,94 @@
                 </a>
             </li>
 
-            @if (in_array($user->jabatan, ['GM', 'SPV Sales', 'Adm Sales']))
+            @can('View CRM History Status')
                 <li class="menu-item {{ request()->routeIs('crm.contact.all_history_status') ? 'active open' : '' }}">
                     <a href="{{ route('crm.contact.all_history_status') }}" class="menu-link">
                         <i class='menu-icon tf-icons bx bx-bullseye'></i>
                         <div class="text-truncate" data-i18n="indexTarget">Status Perusahaan</div>
                     </a>
                 </li>
-            @endif
+            @endcan
 
-            @if (in_array($user->jabatan, ['GM', 'SPV Sales', 'Adm Sales']))
+            @can('View Target Aktivitas Sales')
                 <li class="menu-item {{ request()->routeIs('index.target') ? 'active open' : '' }}">
                     <a href="{{ route('index.target') }}" class="menu-link">
                         <i class='menu-icon tf-icons bx bx-bullseye'></i>
                         <div class="text-truncate" data-i18n="indexTarget">Target Activity</div>
                     </a>
                 </li>
-            @endif
+            @endcan
 
             {{-- Laporan MoM --}}
-            @if (in_array($user->jabatan, ['GM', 'SPV Sales', 'Adm Sales', 'HRD']))
+            @can('View MOM')
                 <li class="menu-item {{ request()->routeIs('laporan.harian') ? 'active open' : '' }}">
                     <a href="{{ route('laporan.harian') }}" class="menu-link">
                         <i class='menu-icon tf-icons bx bx-task'></i>
                         <div class="text-truncate" data-i18n="crmLaporanHarian">Laporan MoM</div>
                     </a>
                 </li>
-            @endif
+            @endcan
 
-            @if (in_array($user->jabatan, ['Adm Sales']))
+            @can('View CRM Todo Administrasi')
                 <li class="menu-item {{ request()->routeIs('todo-administrasi.index') ? 'active open' : '' }}">
                     <a href="{{ route('todo-administrasi.index') }}" class="menu-link">
                         <i class='menu-icon tf-icons bx bx-task'></i>
                         <div class="text-truncate" data-i18n="crmLaporanHarian">Todo List</div>
                     </a>
                 </li>
-            @endif
+            @endcan
 
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Untuk &amp; Anda</span>
             </li>
 
             <!-- Contact -->
-            <li class="menu-item {{ request()->routeIs('index.contact') ? 'active open' : '' }}">
-                <a href="{{ route('index.contact') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-phone"></i>
-                    <div class="text-truncate" data-i18n="contact">Database Client</div>
-                </a>
-            </li>
+            @can('View Contact CRM')
+                <li class="menu-item {{ request()->routeIs('index.contact') ? 'active open' : '' }}">
+                    <a href="{{ route('index.contact') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-phone"></i>
+                        <div class="text-truncate" data-i18n="contact">Database Client</div>
+                    </a>
+                </li>
+            @endcan
 
             <!-- Peluang -->
-            <li class="menu-item {{ request()->routeIs('index.peluang') ? 'active open' : '' }}">
-                <a href="{{ route('index.peluang') }}" class="menu-link">
-                    <i class='menu-icon tf-icons bx bx-star'></i>
-                    <div class="text-truncate" data-i18n="peluang">Prospect</div>
-                </a>
-            </li>
+            @can('View Peluang')
+                <li class="menu-item {{ request()->routeIs('index.peluang') ? 'active open' : '' }}">
+                    <a href="{{ route('index.peluang') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-star'></i>
+                        <div class="text-truncate" data-i18n="peluang">Prospect</div>
+                    </a>
+                </li>
+            @endcan
 
             <!-- Aktivitas -->
-            <li class="menu-item {{ request()->routeIs('index.aktivitas') ? 'active open' : '' }}">
-                <a href="{{ route('index.aktivitas') }}" class="menu-link">
-                    <i class='menu-icon tf-icons bx bx-task'></i>
-                    <div class="text-truncate" data-i18n="aktivitas">Activity Sales</div>
-                </a>
-            </li>
+            @can('View Aktivitas Sales')
+                <li class="menu-item {{ request()->routeIs('index.aktivitas') ? 'active open' : '' }}">
+                    <a href="{{ route('index.aktivitas') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-task'></i>
+                        <div class="text-truncate" data-i18n="aktivitas">Activity Sales</div>
+                    </a>
+                </li>
+            @endcan
 
-            @if (Auth()->user()->jabatan === 'Adm Sales')
+            @can('View CRM Checklist RKM')
                 <li class="menu-item {{ request()->routeIs('crm.checklist-rkm.index') ? 'active open' : '' }}">
                     <a href="{{ route('crm.checklist-rkm.index') }}" class="menu-link">
                         <i class='menu-icon tf-icons bx bx-task'></i>
                         <div class="text-truncate" data-i18n="aktivitas">Checklist RKM</div>
                     </a>
                 </li>
-            @endif
+            @endcan
 
-            <li class="menu-item {{ request()->routeIs('index.pic') ? 'active open' : '' }}">
-                <a href="{{ route('index.pic') }}" class="menu-link">
-                    <i class='menu-icon tf-icons bx bx-user-circle'></i>
-                    <div class="text-truncate" data-i18n="aktivitas">Contact Client</div>
-                </a>
-            </li>
+            @can('View PIC CRM')
+                <li class="menu-item {{ request()->routeIs('index.pic') ? 'active open' : '' }}">
+                    <a href="{{ route('index.pic') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-user-circle'></i>
+                        <div class="text-truncate" data-i18n="aktivitas">Contact Client</div>
+                    </a>
+                </li>
+            @endcan
 
             @can('View DBKlien')
                 <li class="menu-item {{ request()->routeIs('dbklien.index') ? 'active open' : '' }}">
@@ -246,23 +235,23 @@
                 </li>
             @endcan
 
-            @if ($user->jabatan == 'Sales')
+            @can('View CRM Dashboard Pribadi')
                 <li class="menu-item {{ request()->routeIs('CRM.myDasboard') ? 'active open' : '' }}">
                     <a href="{{ route('CRM.myDasboard') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-home"></i>
                         <div class="text-truncate" data-i18n="Dashboards">My Dashboard</div>
                     </a>
                 </li>
-            @endif
+            @endcan
 
-            @if ($user->jabatan == 'SPV Sales')
+            @can('View CRM Perpindahan DB')
                 <li class="menu-item {{ request()->routeIs('crm.perpindahan-db.*') ? 'active open' : '' }}">
                     <a href="{{ route('perpindahan-db.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-file-blank"></i>
                         <div class="text-truncate" data-i18n="Dashboards">Perpindahan Database</div>
                     </a>
                 </li>
-            @endif
+            @endcan
 
             <li class="menu-item {{ request()->routeIs('crm.index.penawaran') ? 'active open' : '' }}">
                 <a href="{{ route('crm.index.penawaran') }}" class="menu-link" target="blank_">
@@ -270,7 +259,6 @@
                     <div class="text-truncate">Generate Penawaran</div>
                 </a>
             </li>
-        @endif
 
         <li class="menu-item {{ request()->routeIs('CRM.index.koordinasi') ? 'active open' : '' }}">
             <a href="{{ route('CRM.index.koordinasi') }}" class="menu-link">

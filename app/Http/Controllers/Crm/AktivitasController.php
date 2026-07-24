@@ -17,6 +17,15 @@ use Illuminate\Support\Facades\Log;
 class AktivitasController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View Aktivitas Sales', ['only' => ['index', 'indexJson']]);
+        $this->middleware('permission:Store Aktivitas Sales', ['only' => ['storeNew']]);
+        $this->middleware('permission:Update Aktivitas Sales', ['only' => ['update']]);
+        $this->middleware('permission:Delete Aktivitas Sales', ['only' => ['delete']]);
+    }
+
     public function index()
     {
         $user = Auth::user();

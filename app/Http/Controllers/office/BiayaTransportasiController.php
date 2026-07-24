@@ -24,6 +24,15 @@ class BiayaTransportasiController extends Controller
 {
     const OUTSIDE_OPS_ID = '999999999';
 
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View BiayaTransportasi', ['only' => 'index', 'get']);
+        $this->middleware('permission:Store BiayaTransportasi', ['only' => 'create', 'uploadInvoice']);
+        $this->middleware('permission:Update BiayaTransportasi', ['only' => 'update']);
+        $this->middleware('permission:Delete BiayaTransportasi', ['only' => 'destroy']);
+    }
+
     public function index()
     {
         $dataPickup = pickupDriver::with(['karyawan', 'detailPickupDriver', 'biayaTransportasi'])

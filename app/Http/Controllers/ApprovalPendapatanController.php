@@ -21,6 +21,8 @@ class ApprovalPendapatanController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permission:View ApprovalPendapatan', ['only' => ['index', 'get']]);
+        $this->middleware('permission:Update ApprovalPendapatan', ['only' => ['update']]);
     }
 
     public function index()
