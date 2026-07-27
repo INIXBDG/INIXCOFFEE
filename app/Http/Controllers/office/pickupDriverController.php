@@ -32,10 +32,10 @@ class pickupDriverController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permisson:View PickupDriver', ['only' => ['index', 'get']]);
-        $this->middleware('permisson:Store PickupDriver', ['only' => ['create', 'store']]);
-        $this->middleware('permisson:Update PickupDriver', ['only' => ['updateStatus', 'updateKepulangan', 'updateKoordinasi']]);
-        $this->middleware('permisson:Delete PickupDriver', ['only' => ['delete']]);
+        $this->middleware('permission:View PickupDriver', ['only' => ['index', 'get']]);
+        $this->middleware('permission:Store PickupDriver', ['only' => ['create', 'store']]);
+        $this->middleware('permission:Update PickupDriver', ['only' => ['updateStatus', 'updateKepulangan', 'updateKoordinasi']]);
+        $this->middleware('permission:Delete PickupDriver', ['only' => ['delete']]);
     }
 
     public function index()
