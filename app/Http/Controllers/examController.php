@@ -1030,7 +1030,15 @@ class examController extends Controller
     {
         // 1. Ambil data exam spesifik
         $exam = listexam::findOrFail($id);
+        $cekTicket = Tickets::where('nama_karyawan', Auth::user()->karyawan->nama_lengkap ?? 'Sistem')
+            ->where('kategori', 'Exam')
+            ->where('detail_kendala', 'Permintaan update harga terbaru dari ' . $exam->nama_exam)
+            ->where('created_at', '>=', now()->subSeconds(10))
+            ->exists();
 
+        if ($cekTicket) {
+      return redirect()->back()->with('error', 'Ticket update harga sudah dibuat.');
+    }
         // 2. Buat instansi tiket baru
         $ticket = Tickets::create([
             'nama_karyawan' => Auth::user()->karyawan->nama_lengkap ?? 'Sistem',
