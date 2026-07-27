@@ -25,12 +25,9 @@
                                 <label for="filter_sales" class="form-label fw-semibold">Filter Sales</label>
                                 <select id="filter_sales" class="form-select">
                                     <option value="">Semua Sales</option>
-                                    <option value="HW">Hera</option>
-                                    <option value="VN">Savana</option>
-                                    <option value="RR">Rara</option>
-                                    <option value="NA">Nabila</option>
-                                    <option value="AN">Alfasyiani</option>
-                                    <option value="RN">Reni</option>
+                                    @foreach ($sales as $item)
+                                        <option value="{{$item->kode_karyawan}}">{{$item->nama_lengkap}}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>

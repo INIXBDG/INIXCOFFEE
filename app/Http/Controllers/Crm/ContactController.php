@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\Contact;
+use App\Models\karyawan;
 use App\Models\lokasi;
 use App\Models\Materi;
 use App\Models\Peluang;
@@ -33,7 +34,8 @@ class ContactController extends Controller
     public function index()
     {
         $lokasi = lokasi::all();
-        return view('crm.contact.index', compact('lokasi'));
+        $sales = karyawan::where('jabatan', 'sales')->where('status_aktif', '1')->get();
+        return view('crm.contact.index', compact('lokasi', 'sales'));
     }
 
     public function getPerusahaan(Request $request)
