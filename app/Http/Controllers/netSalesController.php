@@ -643,15 +643,16 @@ class netSalesController extends Controller
             'analisisrkm',
             'perhitunganNetSales.approvedNetSales',
             'analisisrkm.analisisrkmmingguan',
-            'perusahaan'
+            'perusahaan',
+            'sales'
         )->where('id', $id)->first();
 
-        // dd($rkm);
-
-        // return response()->json($rkm);
+        $spv = karyawan::where('jabatan', 'SPV Sales')->where('status_aktif', '1')->select('ttd')->first();
+        $gm = karyawan::where('jabatan', 'GM')->where('status_aktif', '1')->select('ttd')->first();
+        $dirut = karyawan::where('jabatan', 'Direktur Utama')->where('status_aktif', '1')->first();
 
         $pdf = Pdf::loadView('netSales.pdfSendiri', compact(
-            'rkm',
+            'rkm', 'gm', 'spv', 'dirut'
         ));
 
         $pdf->setPaper('a4', 'portrait');
