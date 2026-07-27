@@ -115,12 +115,18 @@ class DatabaseKPIController extends Controller
         $monthEnd = $now->copy()->endOfMonth();
 
         // Pengambilan data dari server cctv
-        $response = Http::get('http://192.168.95.173:8000/uptime.php', [
-            'password' => env('UPTIME_PASSWORD')
-        ]);
+        try {
+            $response = Http::timeout(10)->get('http://192.168.95.173:8000/uptime.php', [
+                'password' => env('UPTIME_PASSWORD')
+            ]);
 
-        if ($response->failed() || $response->body() === 'FILE_NOT_FOUND') {
-            return response()->json(['error' => 'Tidak bisa mengambil file dari Server CCTV'], 404);
+            if ($response->failed() || $response->body() === 'FILE_NOT_FOUND') {
+                return response()->json(['error' => 'Tidak bisa mengambil file dari Server CCTV'], 404);
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return response()->json(['error' => 'Koneksi ke Server CCTV timeout atau terputus'], 503);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Terjadi kesalahan saat menghubungi Server CCTV'], 500);
         }
 
         $content = $response->body();
