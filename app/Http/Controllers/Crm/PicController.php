@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use Illuminate\Http\Request;
 use App\Models\Contact;
+use App\Models\karyawan;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
 use Carbon\Carbon;
@@ -41,9 +42,10 @@ class PicController extends Controller
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
+        $sales = karyawan::where('jabatan', 'Sales')->where('status_aktif', '1')->get();
 
         // dd($perusahaans);
-        return view('crm.pic.index', compact('perusahaans'));
+        return view('crm.pic.index', compact('perusahaans', 'sales'));
     }
 
     public function indexJson(Request $request)

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\Perusahaan;
 use App\Models\Contact;
+use App\Models\karyawan;
 use App\Models\Peserta;
 use App\Models\User;
 use App\Models\TargetActivity;
@@ -42,9 +43,10 @@ class AktivitasController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
+        $sales_option = karyawan::where('jabatan', 'sales')->where('status_aktif', '1')->get();
         $contact = Contact::with('perusahaan')->get();
 
-        return view('crm.aktivitas.index', compact('data', 'perusahaan', 'contact'));
+        return view('crm.aktivitas.index', compact('data', 'perusahaan', 'contact', 'sales_option'));
     }
 
     public function getContactsAndPeserta($id)
