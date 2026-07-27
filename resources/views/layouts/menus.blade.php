@@ -1942,7 +1942,7 @@
                                                             </div>
                                                         </div>
                                                     @endcan
-                                                    @if(trim(auth()->user()->jabatan) == 'Technical Support')
+                                                    @can('List Exam Sales')
                                                         <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
