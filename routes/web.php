@@ -1246,6 +1246,9 @@ Route::prefix('office')
 
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
 
+            Route::post('/office/daftar-tugas/kategori/reorder', [DaftarTugasController::class, 'reorderKategori'])->name('reorderKategori');
+            Route::post('/office/daftar-tugas/reorder', [DaftarTugasController::class, 'reorderTugas'])->name('reorderTugas');
+
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
         });
 

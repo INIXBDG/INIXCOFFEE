@@ -9,125 +9,32 @@ use App\Models\HariLibur;
 use App\Models\Nilaifeedback;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class DriverKPIService
 {
     use KPIDefaultResponseTrait;
 
-    public function calculatePerbaikanKendaraan($item, $personId)
+    private function getHolidays($tahun)
     {
-        $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !$detail->detail_jangka) {
-            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
-            return 0;
-        }
-
-        $tahun = (int) $detail->detail_jangka;
-
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
-            return 0;
-        }
-
-        $nilaiTarget = (float) $detail->nilai_target;
-
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-        $totalQuery = perbaikanKendaraan::whereBetween('created_at', [$start, $end]);
-        $selesaiQuery = perbaikanKendaraan::whereBetween('created_at', [$start, $end])
-            ->where('status', 'Selesai');
-
-        if ($personId !== null) {
-            $totalQuery->where('id_user', $personId);
-            $selesaiQuery->where('id_user', $personId);
-        }
-
-        $totalData = $totalQuery->count();
-        $dataDiperbaiki = $selesaiQuery->count();
-
-        if ($totalData <= 0) {
-            return 0;
-        }
-
-        $presentase = ($dataDiperbaiki / $totalData) * 100;
-
-        return round($presentase, 1);
+        return HariLibur::where('year', $tahun)->pluck('tanggal')->map(fn($d) => Carbon::parse($d)->toDateString())->toArray();
     }
 
-    public function calculatePerbaikanKendaraanDetail($itemDetail, $personId = null)
+    private function formatChartData($progress, $nilaiTarget, $above, $below, $rawDailyData)
     {
-        $detail = $itemDetail->detailTargetKPI->first();
-
-        if (is_null($detail) || is_null($detail->nilai_target) || is_null($detail->detail_jangka)) {
-            return $this->getDefaultDetailResponse();
-        }
-
-        $nilaiTarget = (float) $detail->nilai_target;
-        $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return $this->getDefaultDetailResponse();
-        }
-
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-        if ($personId !== null) {
-            $allRepairs = perbaikanKendaraan::whereBetween('created_at', [$start, $end])
-                ->where('id_user', $personId)
-                ->get();
-        } else {
-            $allRepairs = perbaikanKendaraan::whereBetween('created_at', [$start, $end])->get();
-        }
-
-        $totalData = $allRepairs->count();
-
-        if ($totalData == 0) {
-            return $this->getDefaultDetailResponse();
-        }
-
-        $dataDiperbaiki = $allRepairs->where('status', 'Selesai')->count();
-        $dataBelumDiperbaiki = $totalData - $dataDiperbaiki;
-
-        if ($totalData <= 0) {
-            return $this->getDefaultDetailResponse();
-        }
-
-        $presentase = ($dataDiperbaiki / $totalData) * 100;
-        $progress = round($presentase, 1);
-
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        $above = $dataDiperbaiki;
-        $below = $dataBelumDiperbaiki;
-
-        $dailyValues = [];
-
-        foreach ($allRepairs as $repair) {
-            $tanggal = Carbon::parse($repair->created_at);
-            $dateKey = $tanggal->format('Y-m-d');
-
-            $nilaiItem = $repair->status === 'Selesai' ? 100 : 0;
-
-            if (!isset($dailyValues[$dateKey])) {
-                $dailyValues[$dateKey] = [];
-            }
-            $dailyValues[$dateKey][] = $nilaiItem;
-        }
-
         $dailyAverages = [];
-        foreach ($dailyValues as $dateStr => $values) {
-            $dailyAverages[$dateStr] = round(array_sum($values) / count($values), 1);
+        foreach ($rawDailyData as $dateStr => $values) {
+            if (count($values) > 0) {
+                $dailyAverages[$dateStr] = round(array_sum($values) / count($values), 1);
+            }
         }
 
         $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
         $monthlyProgress = [];
+        $dailyBreakdownPerMonth = [];
         $dailyProgressPerMonth = [];
 
         foreach ($dailyAverages as $dateStr => $avg) {
@@ -153,10 +60,14 @@ class DriverKPIService
         $monthlyAverages = [];
         $monthlyProgressAverages = [];
         foreach ($monthlyData as $month => $dailyVals) {
-            $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
+            if (count($dailyVals) > 0) {
+                $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
+            }
         }
         foreach ($monthlyProgress as $month => $dailyVals) {
-            $monthlyProgressAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
+            if (count($dailyVals) > 0) {
+                $monthlyProgressAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
+            }
         }
 
         ksort($monthlyAverages);
@@ -173,6 +84,85 @@ class DriverKPIService
             'monthly_progress' => $monthlyProgressAverages,
             'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
+    }
+
+    public function calculatePerbaikanKendaraan($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+
+        $query = perbaikanKendaraan::whereBetween('created_at', [$start, $end]);
+
+        if ($personId !== null) {
+            $query->where('id_user', $personId);
+        }
+
+        $totalData = (clone $query)->count();
+        if ($totalData === 0) {
+            return 0;
+        }
+
+        $dataDiperbaiki = (clone $query)->where('status', 'Selesai')->count();
+
+        return round(($dataDiperbaiki / $totalData) * 100, 1);
+    }
+
+    public function calculatePerbaikanKendaraanDetail($itemDetail, $personId = null)
+    {
+        $detail = $itemDetail->detailTargetKPI->first();
+
+        if (is_null($detail) || is_null($detail->nilai_target) || is_null($detail->detail_jangka)) {
+            return $this->getDefaultDetailResponse();
+        }
+
+        $nilaiTarget = (float) $detail->nilai_target;
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return $this->getDefaultDetailResponse();
+        }
+
+        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+
+        $query = perbaikanKendaraan::whereBetween('created_at', [$start, $end])->select('created_at', 'status');
+
+        if ($personId !== null) {
+            $query->where('id_user', $personId);
+        }
+
+        $allRepairs = $query->get();
+        $totalData = $allRepairs->count();
+
+        if ($totalData === 0) {
+            return $this->getDefaultDetailResponse();
+        }
+
+        $dataDiperbaiki = $allRepairs->where('status', 'Selesai')->count();
+        $progress = round(($dataDiperbaiki / $totalData) * 100, 1);
+
+        $rawDailyData = [];
+        foreach ($allRepairs as $repair) {
+            $dateKey = Carbon::parse($repair->created_at)->format('Y-m-d');
+            $nilaiItem = $repair->status === 'Selesai' ? 100 : 0;
+            $rawDailyData[$dateKey][] = $nilaiItem;
+        }
+
+        return $this->formatChartData($progress, $nilaiTarget, $dataDiperbaiki, $totalData - $dataDiperbaiki, $rawDailyData);
     }
 
     public function calculateKontrolPengeluaranTransportasi($item, $personId)
@@ -192,33 +182,27 @@ class DriverKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $query = pickupDriver::whereBetween('created_at', [$start, $end])
-            ->whereNotNull('budget');
+        $query = pickupDriver::whereBetween('created_at', [$start, $end])->whereNotNull('budget');
 
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
         }
 
-        $DataPickup = $query->with(['biayaTransportasi'])->get();
-
+        $DataPickup = (clone $query)->withSum('biayaTransportasi', 'harga')->get();
         $totalData = $DataPickup->count();
+
         if ($totalData === 0) {
             return 0;
         }
 
-        $countAman = 0;
+        $countAman = $DataPickup
+            ->filter(function ($data) {
+                $totalBiaya = $data->biaya_transportasi_sum_harga ?? 0;
+                return $totalBiaya <= $data->budget;
+            })
+            ->count();
 
-        foreach ($DataPickup as $data) {
-            $totalBiaya = $data->biayaTransportasi->sum('harga') ?? 0;
-
-            if ($totalBiaya <= $data->budget) {
-                $countAman++;
-            }
-        }
-
-        $presentase = ($countAman / $totalData) * 100;
-
-        return round($presentase, 1);
+        return round(($countAman / $totalData) * 100, 1);
     }
 
     public function calculateKontrolPengeluaranTransportasiDetail($itemDetail, $personId = null)
@@ -240,14 +224,15 @@ class DriverKPIService
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
         $query = pickupDriver::whereBetween('created_at', [$start, $end])
-            ->whereNotNull('budget');
+            ->whereNotNull('budget')
+            ->select('id', 'created_at', 'budget')
+            ->withSum('biayaTransportasi', 'harga');
 
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
         }
 
-        $DataPickup = $query->with(['biayaTransportasi'])->get();
-
+        $DataPickup = $query->get();
         $totalData = $DataPickup->count();
 
         if ($totalData === 0) {
@@ -255,87 +240,22 @@ class DriverKPIService
         }
 
         $countAman = 0;
-        $dailyValues = [];
+        $rawDailyData = [];
 
         foreach ($DataPickup as $data) {
-            $totalBiaya = $data->biayaTransportasi->sum('harga') ?? 0;
-
+            $totalBiaya = $data->biaya_transportasi_sum_harga ?? 0;
             $isAman = $totalBiaya <= $data->budget ? 1 : 0;
             if ($isAman) {
                 $countAman++;
             }
 
-            $tanggal = Carbon::parse($data->created_at);
-            $dateKey = $tanggal->format('Y-m-d');
-
-            if (!isset($dailyValues[$dateKey])) {
-                $dailyValues[$dateKey] = [];
-            }
-            $dailyValues[$dateKey][] = $isAman * 100;
+            $dateKey = Carbon::parse($data->created_at)->format('Y-m-d');
+            $rawDailyData[$dateKey][] = $isAman * 100;
         }
 
-        $presentase = ($countAman / $totalData) * 100;
-        $progress = round($presentase, 1);
+        $progress = round(($countAman / $totalData) * 100, 1);
 
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
-        $above = $countAman;
-        $below = $totalData - $countAman;
-
-        $dailyAverages = [];
-        foreach ($dailyValues as $dateStr => $values) {
-            $dailyAverages[$dateStr] = round(array_sum($values) / count($values), 1);
-        }
-
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
-
-        foreach ($dailyAverages as $dateStr => $avg) {
-            $date = Carbon::parse($dateStr);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $date->format('Y-m-d');
-
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-                $monthlyProgress[$monthKey] = [];
-            }
-            $monthlyData[$monthKey][] = $avg;
-            $monthlyProgress[$monthKey][] = $avg;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-                $dailyProgressPerMonth[$monthKey] = [];
-            }
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
-            $dailyProgressPerMonth[$monthKey][$dayKey] = $avg;
-        }
-
-        $monthlyAverages = [];
-        $monthlyProgressAverages = [];
-        foreach ($monthlyData as $month => $dailyVals) {
-            $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-        foreach ($monthlyProgress as $month => $dailyVals) {
-            $monthlyProgressAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-
-        ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAverages);
-        ksort($dailyProgressPerMonth);
-
-        return [
-            'progress' => $progress,
-            'gap' => $gap,
-            'pie_chart' => ['above' => $above, 'below' => $below],
-            'monthly_data' => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAverages,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
-        ];
+        return $this->formatChartData($progress, $nilaiTarget, $countAman, $totalData - $countAman, $rawDailyData);
     }
 
     public function calculateReportKondisiKendaraan($item, $personId)
@@ -352,16 +272,7 @@ class DriverKPIService
             return 0;
         }
 
-        $response = Http::get("https://libur.deno.dev/api", ['year' => $tahun]);
-
-        if ($response->successful()) {
-            foreach ($response->json() as $libur) {
-                HariLibur::updateOrCreate(
-                    ['tanggal' => $libur['date']],
-                    ['nama' => $libur['name'], 'year' => $tahun]
-                );
-            }
-        }
+        $hariLibur = $this->getHolidays($tahun);
 
         $startPeriode = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $endPeriode = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -371,39 +282,32 @@ class DriverKPIService
             $hariIni = $endPeriode;
         }
 
-        $hariLibur = HariLibur::where('year', $tahun)
-            ->pluck('tanggal')
-            ->map(function ($d) {
-                return Carbon::parse($d)->toDateString();
-            })
-            ->toArray();
+        $query = KondisiKendaraan::whereBetween('tanggal_pemeriksaan', [$startPeriode, $hariIni])->whereNotNull('tanggal_pemeriksaan');
 
         if ($personId !== null) {
-            $firstReport = KondisiKendaraan::whereBetween('tanggal_pemeriksaan', [$startPeriode, $hariIni])
-                ->where('user_id', $personId)
-                ->whereNotNull('tanggal_pemeriksaan')
-                ->get()
-                ->filter(function ($item) use ($hariLibur) {
-                    return !in_array(Carbon::parse($item->tanggal_pemeriksaan)->toDateString(), $hariLibur);
-                })
-                ->sortBy('tanggal_pemeriksaan')
-                ->first();
-        } else {
-            $firstReport = KondisiKendaraan::whereBetween('tanggal_pemeriksaan', [$startPeriode, $hariIni])
-                ->whereNotNull('tanggal_pemeriksaan')
-                ->get()
-                ->filter(function ($item) use ($hariLibur) {
-                    return !in_array(Carbon::parse($item->tanggal_pemeriksaan)->toDateString(), $hariLibur);
-                })
-                ->sortBy('tanggal_pemeriksaan')
-                ->first();
+            $query->where('user_id', $personId);
         }
 
-        if (!$firstReport) {
+        $reports = (clone $query)->pluck('tanggal_pemeriksaan');
+
+        if ($reports->isEmpty()) {
             return 0;
         }
 
-        $startMinggu = Carbon::parse($firstReport->tanggal_pemeriksaan)->startOfWeek(Carbon::MONDAY);
+        $validDates = $reports
+            ->filter(function ($d) use ($hariLibur) {
+                return !in_array(Carbon::parse($d)->toDateString(), $hariLibur);
+            })
+            ->map(function ($d) {
+                return Carbon::parse($d);
+            });
+
+        if ($validDates->isEmpty()) {
+            return 0;
+        }
+
+        $firstReportDate = $validDates->sortBy('timestamp')->first();
+        $startMinggu = $firstReportDate->copy()->startOfWeek(Carbon::MONDAY);
 
         $today = Carbon::now();
         $dayOfWeek = $today->dayOfWeek;
@@ -423,42 +327,24 @@ class DriverKPIService
             $totalMinggu = 1;
         }
 
-        $jumlahReportTepat = 0;
-
+        $weeksInRange = [];
         for ($i = 0; $i < $totalMinggu; $i++) {
             $weekStart = $startMinggu->copy()->addWeeks($i)->startOfWeek(Carbon::MONDAY);
-            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+            $weeksInRange[] = $weekStart->format('o-W');
+        }
 
-            if ($weekEnd > $checkUntil) {
-                $weekEnd = $checkUntil;
-            }
+        $weeklyReports = $validDates->groupBy(function ($date) {
+            return $date->format('o-W');
+        });
 
-            if ($personId !== null) {
-                $hasReport = KondisiKendaraan::whereBetween('tanggal_pemeriksaan', [$weekStart, $weekEnd])
-                    ->where('user_id', $personId)
-                    ->whereNotNull('tanggal_pemeriksaan')
-                    ->get()
-                    ->filter(function ($item) use ($hariLibur) {
-                        return !in_array(Carbon::parse($item->tanggal_pemeriksaan)->toDateString(), $hariLibur);
-                    })
-                    ->isNotEmpty();
-            } else {
-                $hasReport = KondisiKendaraan::whereBetween('tanggal_pemeriksaan', [$weekStart, $weekEnd])
-                    ->whereNotNull('tanggal_pemeriksaan')
-                    ->get()
-                    ->filter(function ($item) use ($hariLibur) {
-                        return !in_array(Carbon::parse($item->tanggal_pemeriksaan)->toDateString(), $hariLibur);
-                    })
-                    ->isNotEmpty();
-            }
-
-            if ($hasReport) {
+        $jumlahReportTepat = 0;
+        foreach ($weeksInRange as $weekStr) {
+            if ($weeklyReports->has($weekStr)) {
                 $jumlahReportTepat++;
             }
         }
 
-        $presentase = ($jumlahReportTepat / $totalMinggu) * 100;
-        return round($presentase, 1);
+        return round(($jumlahReportTepat / $totalMinggu) * 100, 1);
     }
 
     public function calculateReportKondisiKendaraanDetail($itemDetail, $personId = null)
@@ -476,16 +362,7 @@ class DriverKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $response = Http::get("https://libur.deno.dev/api", ['year' => $tahun]);
-
-        if ($response->successful()) {
-            foreach ($response->json() as $libur) {
-                HariLibur::updateOrCreate(
-                    ['tanggal' => $libur['date']],
-                    ['nama' => $libur['name'], 'year' => $tahun]
-                );
-            }
-        }
+        $hariLibur = $this->getHolidays($tahun);
 
         $startPeriode = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $endPeriode = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -495,39 +372,32 @@ class DriverKPIService
             $hariIni = $endPeriode;
         }
 
-        $hariLibur = HariLibur::where('year', $tahun)
-            ->pluck('tanggal')
-            ->map(function ($d) {
-                return Carbon::parse($d)->toDateString();
-            })
-            ->toArray();
+        $query = KondisiKendaraan::whereBetween('tanggal_pemeriksaan', [$startPeriode, $hariIni])->whereNotNull('tanggal_pemeriksaan');
 
         if ($personId !== null) {
-            $firstReport = KondisiKendaraan::whereBetween('tanggal_pemeriksaan', [$startPeriode, $hariIni])
-                ->where('user_id', $personId)
-                ->whereNotNull('tanggal_pemeriksaan')
-                ->get()
-                ->filter(function ($item) use ($hariLibur) {
-                    return !in_array(Carbon::parse($item->tanggal_pemeriksaan)->toDateString(), $hariLibur);
-                })
-                ->sortBy('tanggal_pemeriksaan')
-                ->first();
-        } else {
-            $firstReport = KondisiKendaraan::whereBetween('tanggal_pemeriksaan', [$startPeriode, $hariIni])
-                ->whereNotNull('tanggal_pemeriksaan')
-                ->get()
-                ->filter(function ($item) use ($hariLibur) {
-                    return !in_array(Carbon::parse($item->tanggal_pemeriksaan)->toDateString(), $hariLibur);
-                })
-                ->sortBy('tanggal_pemeriksaan')
-                ->first();
+            $query->where('user_id', $personId);
         }
 
-        if (!$firstReport) {
+        $reports = (clone $query)->pluck('tanggal_pemeriksaan');
+
+        if ($reports->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        $startMinggu = Carbon::parse($firstReport->tanggal_pemeriksaan)->startOfWeek(Carbon::MONDAY);
+        $validDates = $reports
+            ->filter(function ($d) use ($hariLibur) {
+                return !in_array(Carbon::parse($d)->toDateString(), $hariLibur);
+            })
+            ->map(function ($d) {
+                return Carbon::parse($d);
+            });
+
+        if ($validDates->isEmpty()) {
+            return $this->getDefaultDetailResponse();
+        }
+
+        $firstReportDate = $validDates->sortBy('timestamp')->first();
+        $startMinggu = $firstReportDate->copy()->startOfWeek(Carbon::MONDAY);
 
         $today = Carbon::now();
         $dayOfWeek = $today->dayOfWeek;
@@ -547,127 +417,46 @@ class DriverKPIService
             $totalMinggu = 1;
         }
 
-        $jumlahReportTepat = 0;
-        $jumlahReportTidakTepat = 0;
-        $weeklyData = [];
-
+        $weeksInRange = [];
         for ($i = 0; $i < $totalMinggu; $i++) {
             $weekStart = $startMinggu->copy()->addWeeks($i)->startOfWeek(Carbon::MONDAY);
-            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+            $weeksInRange[] = $weekStart->format('o-W');
+        }
 
-            if ($weekEnd > $checkUntil) {
-                $weekEnd = $checkUntil;
-            }
+        $weeklyReports = $validDates->groupBy(function ($date) {
+            return $date->format('o-W');
+        });
 
-            if ($personId !== null) {
-                $hasReport = KondisiKendaraan::whereBetween('tanggal_pemeriksaan', [$weekStart, $weekEnd])
-                    ->where('user_id', $personId)
-                    ->whereNotNull('tanggal_pemeriksaan')
-                    ->get()
-                    ->filter(function ($item) use ($hariLibur) {
-                        return !in_array(Carbon::parse($item->tanggal_pemeriksaan)->toDateString(), $hariLibur);
-                    })
-                    ->isNotEmpty();
-            } else {
-                $hasReport = KondisiKendaraan::whereBetween('tanggal_pemeriksaan', [$weekStart, $weekEnd])
-                    ->whereNotNull('tanggal_pemeriksaan')
-                    ->get()
-                    ->filter(function ($item) use ($hariLibur) {
-                        return !in_array(Carbon::parse($item->tanggal_pemeriksaan)->toDateString(), $hariLibur);
-                    })
-                    ->isNotEmpty();
-            }
+        $jumlahReportTepat = 0;
+        $jumlahReportTidakTepat = 0;
 
-            if ($hasReport) {
+        foreach ($weeksInRange as $weekStr) {
+            if ($weeklyReports->has($weekStr)) {
                 $jumlahReportTepat++;
-                $weekValue = 100;
             } else {
                 $jumlahReportTidakTepat++;
-                $weekValue = 0;
-            }
-
-            $weeklyData[] = [
-                'start' => $weekStart->copy(),
-                'end' => $weekEnd->copy(),
-                'value' => $weekValue,
-            ];
-        }
-
-        $presentase = ($jumlahReportTepat / $totalMinggu) * 100;
-        $progress = round($presentase, 1);
-
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
-        $above = $jumlahReportTepat;
-        $below = $jumlahReportTidakTepat;
-
-        $dailyValues = [];
-        foreach ($weeklyData as $week) {
-            $currentDate = $week['start']->copy();
-            while ($currentDate <= $week['end']) {
-                $dateKey = $currentDate->format('Y-m-d');
-                if (!isset($dailyValues[$dateKey])) {
-                    $dailyValues[$dateKey] = [];
-                }
-                $dailyValues[$dateKey][] = $week['value'];
-                $currentDate->addDay();
             }
         }
 
-        $dailyAverages = [];
-        foreach ($dailyValues as $dateStr => $values) {
-            $dailyAverages[$dateStr] = round(array_sum($values) / count($values), 1);
-        }
+        $progress = round(($jumlahReportTepat / $totalMinggu) * 100, 1);
 
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
+        // Logika Daily Breakdown yang Sebenarnya (Bukan artifisial salinan mingguan)
+        $reportDays = $validDates->map(fn($d) => $d->format('Y-m-d'))->unique()->toArray();
+        $rawDailyData = [];
 
-        foreach ($dailyAverages as $dateStr => $avg) {
-            $date = Carbon::parse($dateStr);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $date->format('Y-m-d');
+        $currentDate = $startMinggu->copy();
+        while ($currentDate <= $checkUntil) {
+            $dateKey = $currentDate->format('Y-m-d');
+            $isHoliday = in_array($dateKey, $hariLibur);
 
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-                $monthlyProgress[$monthKey] = [];
+            if (!$isHoliday) {
+                $hasReport = in_array($dateKey, $reportDays);
+                $rawDailyData[$dateKey][] = $hasReport ? 100 : 0;
             }
-            $monthlyData[$monthKey][] = $avg;
-            $monthlyProgress[$monthKey][] = $avg;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-                $dailyProgressPerMonth[$monthKey] = [];
-            }
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
-            $dailyProgressPerMonth[$monthKey][$dayKey] = $avg;
+            $currentDate->addDay();
         }
 
-        $monthlyAverages = [];
-        $monthlyProgressAverages = [];
-        foreach ($monthlyData as $month => $dailyVals) {
-            $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-        foreach ($monthlyProgress as $month => $dailyVals) {
-            $monthlyProgressAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-
-        ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAverages);
-        ksort($dailyProgressPerMonth);
-
-        return [
-            'progress' => $progress,
-            'gap' => $gap,
-            'pie_chart' => ['above' => $above, 'below' => $below],
-            'monthly_data' => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAverages,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
-        ];
+        return $this->formatChartData($progress, $nilaiTarget, $jumlahReportTepat, $jumlahReportTidakTepat, $rawDailyData);
     }
 
     public function calculateFeedbackKenyamananBerkendara($item, $personId = null)
@@ -685,16 +474,11 @@ class DriverKPIService
         }
 
         $start = Carbon::create($tahun, 1, 1)->startOfDay();
-        $end = ($tahun == now()->year) ? now()->endOfDay() : Carbon::create($tahun, 12, 31)->endOfDay();
+        $end = $tahun == now()->year ? now()->endOfDay() : Carbon::create($tahun, 12, 31)->endOfDay();
 
         $query = Nilaifeedback::whereBetween('created_at', [$start, $end])
             ->whereNotNull('P8')
             ->where('P8', '<>', '');
-
-        // PERBAIKAN: Aktifkan jika butuh filter khusus driver / person tertentu
-        // if ($personId) {
-        //     $query->where('driver_id', $personId); // Sesuaikan dengan foreign key Anda
-        // }
 
         $feedbacks = $query->get();
 
@@ -702,7 +486,9 @@ class DriverKPIService
         $respondenPuas = 0;
 
         foreach ($feedbacks as $fb) {
-            if (!is_numeric($fb->P8)) continue;
+            if (!is_numeric($fb->P8)) {
+                continue;
+            }
 
             $skor = min(4, max(1, (float) $fb->P8));
             $totalResponden++;
@@ -712,10 +498,11 @@ class DriverKPIService
             }
         }
 
-        if ($totalResponden == 0) return 0;
+        if ($totalResponden == 0) {
+            return 0;
+        }
 
         $progress = ($respondenPuas / $totalResponden) * 100;
-
         return round($progress, 1);
     }
 
@@ -735,105 +522,45 @@ class DriverKPIService
         }
 
         $start = Carbon::create($tahun, 1, 1)->startOfDay();
-        $end = ($tahun == now()->year) ? now()->endOfDay() : Carbon::create($tahun, 12, 31)->endOfDay();
+        $end = $tahun == now()->year ? now()->endOfDay() : Carbon::create($tahun, 12, 31)->endOfDay();
 
         $query = Nilaifeedback::whereBetween('created_at', [$start, $end])
             ->whereNotNull('P8')
             ->where('P8', '<>', '');
 
-            
-        // if ($personId) {
-        //     $query->where('driver_id', $personId);
-        // }
-
         $feedbacks = $query->get();
-            // dd($feedbacks);
 
-
-        if ($feedbacks->isEmpty()) return $this->getDefaultDetailResponse();
+        if ($feedbacks->isEmpty()) {
+            return $this->getDefaultDetailResponse();
+        }
 
         $totalResponden = 0;
         $respondenPuas = 0;
-        
-        $monthlyDataRaw = [];
-        $dailyDataRaw = [];
+        $rawDailyData = [];
 
         foreach ($feedbacks as $fb) {
-            if (!is_numeric($fb->P8)) continue;
+            if (!is_numeric($fb->P8)) {
+                continue;
+            }
 
             $score = min(4, max(1, (float) $fb->P8));
             $isPuas = $score >= 3.5 ? 1 : 0;
 
             $totalResponden++;
-            if ($isPuas) $respondenPuas++;
-
-            $date = Carbon::parse($fb->created_at);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $date->format('Y-m-d');
-
-            // Kumpulkan Data Bulanan
-            if (!isset($monthlyDataRaw[$monthKey])) {
-                $monthlyDataRaw[$monthKey] = ['total' => 0, 'puas' => 0, 'scores' => []];
+            if ($isPuas) {
+                $respondenPuas++;
             }
-            $monthlyDataRaw[$monthKey]['total']++;
-            $monthlyDataRaw[$monthKey]['puas'] += $isPuas;
-            $monthlyDataRaw[$monthKey]['scores'][] = $score;
 
-            // PERBAIKAN BUG: Kumpulkan Data Harian (Menghindari Data Tertimpa)
-            if (!isset($dailyDataRaw[$monthKey][$dayKey])) {
-                $dailyDataRaw[$monthKey][$dayKey] = ['total' => 0, 'puas' => 0, 'scores' => []];
-            }
-            $dailyDataRaw[$monthKey][$dayKey]['total']++;
-            $dailyDataRaw[$monthKey][$dayKey]['puas'] += $isPuas;
-            $dailyDataRaw[$monthKey][$dayKey]['scores'][] = $score;
+            $dateKey = Carbon::parse($fb->created_at)->format('Y-m-d');
+            $rawDailyData[$dateKey][] = $isPuas * 100;
         }
 
-        if ($totalResponden == 0) return $this->getDefaultDetailResponse();
+        if ($totalResponden == 0) {
+            return $this->getDefaultDetailResponse();
+        }
 
         $progress = round(($respondenPuas / $totalResponden) * 100, 1);
-        
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        $monthlyAverages = [];
-        $monthlyProgressAverages = [];
-        $dailyBreakdownPerMonth = [];
-        $dailyProgressPerMonth = [];
-
-        // Kalkulasi Rata-rata Bulanan
-        foreach ($monthlyDataRaw as $month => $data) {
-            $monthlyAverages[$month] = round(array_sum($data['scores']) / count($data['scores']), 1);
-            $monthlyProgressAverages[$month] = round(($data['puas'] / $data['total']) * 100, 1);
-        }
-
-        // Kalkulasi Rata-rata Harian
-        foreach ($dailyDataRaw as $month => $days) {
-            foreach ($days as $day => $data) {
-                // Rata-rata skor hari itu
-                $dailyBreakdownPerMonth[$month][$day] = round(array_sum($data['scores']) / count($data['scores']), 1);
-                // Persentase yang puas di hari itu
-                $dailyProgressPerMonth[$month][$day] = round(($data['puas'] / $data['total']) * 100, 1);
-            }
-            ksort($dailyBreakdownPerMonth[$month]);
-            ksort($dailyProgressPerMonth[$month]);
-        }
-
-        ksort($monthlyAverages);
-        ksort($monthlyProgressAverages);
-        ksort($dailyBreakdownPerMonth);
-        ksort($dailyProgressPerMonth);
-
-        return [
-            'progress' => $progress,
-            'gap' => $gap,
-            'pie_chart' => [
-                'above' => $respondenPuas,
-                'below' => $totalResponden - $respondenPuas,
-            ],
-            'monthly_data' => $monthlyAverages, // Rata-rata skor per bulan (skala 1-4)
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth, // Rata-rata skor per hari (skala 1-4)
-            'monthly_progress' => $monthlyProgressAverages, // Persentase yang puas per bulan (0-100%)
-            'daily_progress_per_month' => $dailyProgressPerMonth, // Persentase yang puas per hari (0-100%)
-        ];
+        return $this->formatChartData($progress, $nilaiTarget, $respondenPuas, $totalResponden - $respondenPuas, $rawDailyData);
     }
 }

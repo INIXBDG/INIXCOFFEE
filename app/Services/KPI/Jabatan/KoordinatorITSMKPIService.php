@@ -3,8 +3,8 @@
 namespace App\Services\KPI\Jabatan;
 
 use App\Models\SurveyKepuasan;
-use App\Models\activityLog;
-use App\Models\detailPersonKPI;
+use App\Models\ActivityLog;
+use App\Models\DetailPersonKPI;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +12,72 @@ use Illuminate\Support\Facades\Log;
 class KoordinatorITSMKPIService
 {
     use KPIDefaultResponseTrait;
+
+    private function formatChartData($progress, $nilaiTarget, $above, $below, $rawDailyData)
+    {
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        $dailyAverages = [];
+        foreach ($rawDailyData as $dateStr => $values) {
+            if (count($values) > 0) {
+                $dailyAverages[$dateStr] = round(array_sum($values) / count($values), 1);
+            }
+        }
+
+        $monthlyData = [];
+        $monthlyProgress = [];
+        $dailyBreakdownPerMonth = [];
+        $dailyProgressPerMonth = [];
+
+        foreach ($dailyAverages as $dateStr => $avg) {
+            $date = Carbon::parse($dateStr);
+            $monthKey = $date->format('Y-m');
+            $dayKey = $date->format('Y-m-d');
+
+            if (!isset($monthlyData[$monthKey])) {
+                $monthlyData[$monthKey] = [];
+                $monthlyProgress[$monthKey] = [];
+            }
+            $monthlyData[$monthKey][] = $avg;
+            $monthlyProgress[$monthKey][] = $avg;
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+                $dailyBreakdownPerMonth[$monthKey] = [];
+                $dailyProgressPerMonth[$monthKey] = [];
+            }
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
+            $dailyProgressPerMonth[$monthKey][$dayKey] = $avg;
+        }
+
+        $monthlyAverages = [];
+        $monthlyProgressAverages = [];
+        foreach ($monthlyData as $month => $dailyVals) {
+            if (count($dailyVals) > 0) {
+                $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
+            }
+        }
+        foreach ($monthlyProgress as $month => $dailyVals) {
+            if (count($dailyVals) > 0) {
+                $monthlyProgressAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
+            }
+        }
+
+        ksort($monthlyAverages);
+        ksort($dailyBreakdownPerMonth);
+        ksort($monthlyProgressAverages);
+        ksort($dailyProgressPerMonth);
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => ['above' => $above, 'below' => $below],
+            'monthly_data' => $monthlyAverages,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+            'monthly_progress' => $monthlyProgressAverages,
+            'daily_progress_per_month' => $dailyProgressPerMonth,
+        ];
+    }
 
     public function calculateMeningkatkanKepuasanDanLoyalitasPeserta($item, $personId)
     {
@@ -30,55 +96,45 @@ class KoordinatorITSMKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $allScores = [];
+        $query = SurveyKepuasan::whereBetween('created_at', [$start, $end])
+            ->select('q1', 'q2', 'q4');
 
-        $dataSurvey = SurveyKepuasan::whereBetween('created_at', [$start, $end])->get();
+        $dataSurvey = $query->get();
 
-        foreach ($dataSurvey as $survey) {
-            $nilaiQ1 = match ($survey->q1) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ4 = match ($survey->q4) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ2 = match ($survey->q2) {
-                'Ya' => 20,
-                'Tidak' => 10,
-                default => 0,
-            };
-
-            $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
-
-            $skor = 1 + ($totalBaris * 3) / 100;
-
-            $allScores[] = $skor;
-        }
-
-        if (empty($allScores)) {
+        if ($dataSurvey->isEmpty()) {
             return 0;
         }
 
-        $totalResponden = count($allScores);
+        $totalResponden = 0;
         $respondenPuas = 0;
 
-        foreach ($allScores as $skor) {
+        foreach ($dataSurvey as $survey) {
+            $nilaiQ1 = match ((int) $survey->q1) {
+                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+            };
+
+            $nilaiQ4 = match ((int) $survey->q4) {
+                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+            };
+
+            $nilaiQ2 = match ((string) $survey->q2) {
+                'Ya' => 20, 'Tidak' => 10, default => 0,
+            };
+
+            $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
+            $skor = 1 + ($totalBaris * 3) / 100;
+
+            $totalResponden++;
             if ($skor >= 3.0) {
                 $respondenPuas++;
             }
         }
 
-        $progress = ($respondenPuas / $totalResponden) * 100;
+        if ($totalResponden === 0) {
+            return 0;
+        }
 
+        $progress = ($respondenPuas / $totalResponden) * 100;
         return round($progress, 1);
     }
 
@@ -100,111 +156,48 @@ class KoordinatorITSMKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $allScores = [];
-        $scoreDatePairs = [];
+        $query = SurveyKepuasan::whereBetween('created_at', [$start, $end])
+            ->selectRaw('DATE(created_at) as date, q1, q2, q4');
+            
+        $dataSurvey = $query->get();
 
-        $dataSurvey = SurveyKepuasan::whereBetween('created_at', [$start, $end])->get();
+        if ($dataSurvey->isEmpty()) {
+            return $this->getDefaultDetailResponse();
+        }
+
+        $totalResponden = 0;
+        $respondenPuas = 0;
+        $rawDailyData = [];
 
         foreach ($dataSurvey as $survey) {
-            $nilaiQ1 = match ($survey->q1) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
+            $nilaiQ1 = match ((int) $survey->q1) {
+                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
             };
 
-            $nilaiQ4 = match ($survey->q4) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
+            $nilaiQ4 = match ((int) $survey->q4) {
+                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
             };
 
-            $nilaiQ2 = match ($survey->q2) {
-                'Ya' => 20,
-                'Tidak' => 10,
-                default => 0,
+            $nilaiQ2 = match ((string) $survey->q2) {
+                'Ya' => 20, 'Tidak' => 10, default => 0,
             };
 
             $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
             $skor = 1 + ($totalBaris * 3) / 100;
 
-            $allScores[] = $skor;
-
-            $scoreDatePairs[] = [
-                'score' => $skor,
-                'date' => $survey->created_at->format('Y-m-d'),
-            ];
-        }
-
-        if (empty($allScores)) {
-            return $this->getDefaultDetailResponse();
-        }
-
-        $totalResponden = count($allScores);
-        $respondenPuas = 0;
-
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.0) {
+            $totalResponden++;
+            $isPuas = $skor >= 3.0 ? 1 : 0;
+            
+            if ($isPuas) {
                 $respondenPuas++;
             }
+
+            $rawDailyData[$survey->date][] = $isPuas * 100;
         }
 
-        $progress = ($respondenPuas / $totalResponden) * 100;
-        $progress = round($progress, 1);
+        $progress = $totalResponden > 0 ? round(($respondenPuas / $totalResponden) * 100, 1) : 0;
 
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
-
-        foreach ($scoreDatePairs as $pair) {
-            $date = Carbon::parse($pair['date']);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $pair['date'];
-            $score = $pair['score'];
-            $isPuas = $score >= 3.0 ? 100 : 0;
-
-            $monthlyData[$monthKey][] = $score;
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
-
-            $monthlyProgress[$monthKey][] = $isPuas;
-            $dailyProgressPerMonth[$monthKey][$dayKey] = $isPuas;
-        }
-
-        $monthlyAverages = [];
-        $monthlyProgressAvg = [];
-
-        foreach ($monthlyData as $month => $dailyVals) {
-            $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-
-        foreach ($monthlyProgress as $month => $vals) {
-            $monthlyProgressAvg[$month] = round(array_sum($vals) / count($vals), 1);
-        }
-
-        ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAvg);
-        ksort($dailyProgressPerMonth);
-
-        return [
-            'progress' => $progress,
-            'gap' => $gap,
-            'pie_chart' => [
-                'above' => $respondenPuas,
-                'below' => $totalResponden - $respondenPuas,
-            ],
-            'monthly_data' => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAvg,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
-        ];
+        return $this->formatChartData($progress, $nilaiTarget, $respondenPuas, $totalResponden - $respondenPuas, $rawDailyData);
     }
 
     public function calculateAvailabilitySistemInternalKritis($item, $personId)
@@ -224,19 +217,16 @@ class KoordinatorITSMKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $logs = activityLog::whereBetween('status', ['100', '599'])
+        $stats = ActivityLog::whereBetween('status', ['100', '599'])
             ->whereBetween('checked_at', [$start, $end])
-            ->get();
+            ->selectRaw('COUNT(*) as total, SUM(CASE WHEN is_up = 1 THEN 1 ELSE 0 END) as up_count')
+            ->first();
 
-        if ($logs->isEmpty()) {
+        if (!$stats || $stats->total == 0) {
             return 0;
         }
 
-        $totalChecks = $logs->count();
-        $upChecks = $logs->where('is_up', 1)->count();
-
-        $availability = ($upChecks / $totalChecks) * 100;
-
+        $availability = ($stats->up_count / $stats->total) * 100;
         return round($availability, 1);
     }
 
@@ -251,15 +241,16 @@ class KoordinatorITSMKPIService
         $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
 
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
+        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
             return $this->getDefaultDetailResponse();
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $logs = activityLog::whereBetween('status', ['100', '599'])
+        $logs = ActivityLog::whereBetween('status', ['100', '599'])
             ->whereBetween('checked_at', [$start, $end])
+            ->selectRaw('DATE(checked_at) as date, is_up')
             ->get();
 
         if ($logs->isEmpty()) {
@@ -267,73 +258,20 @@ class KoordinatorITSMKPIService
         }
 
         $totalChecks = $logs->count();
-        $upChecks = $logs->where('is_up', 1)->count();
+        $upChecks = $logs->sum('is_up');
+        
+        if ($totalChecks === 0) {
+            return $this->getDefaultDetailResponse();
+        }
 
-        $progress = ($upChecks / $totalChecks) * 100;
-        $progress = round($progress, 1);
+        $progress = round(($upChecks / $totalChecks) * 100, 1);
 
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
-
+        $rawDailyData = [];
         foreach ($logs as $log) {
-            $date = Carbon::parse($log->checked_at);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $date->format('Y-m-d');
-
-            $value = $log->is_up ? 100 : 0;
-
-            $monthlyData[$monthKey][] = $value;
-            $dailyBreakdownPerMonth[$monthKey][$dayKey][] = $value;
-
-            $monthlyProgress[$monthKey][] = $value;
-            $dailyProgressPerMonth[$monthKey][$dayKey][] = $value;
+            $rawDailyData[$log->date][] = $log->is_up ? 100 : 0;
         }
 
-        $monthlyAverages = [];
-        $monthlyProgressAvg = [];
-
-        foreach ($monthlyData as $month => $values) {
-            $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
-        }
-
-        foreach ($monthlyProgress as $month => $values) {
-            $monthlyProgressAvg[$month] = round(array_sum($values) / count($values), 1);
-        }
-
-        foreach ($dailyBreakdownPerMonth as $month => $days) {
-            foreach ($days as $day => $values) {
-                $dailyBreakdownPerMonth[$month][$day] = round(array_sum($values) / count($values), 1);
-            }
-        }
-
-        foreach ($dailyProgressPerMonth as $month => $days) {
-            foreach ($days as $day => $values) {
-                $dailyProgressPerMonth[$month][$day] = round(array_sum($values) / count($values), 1);
-            }
-        }
-
-        ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAvg);
-        ksort($dailyProgressPerMonth);
-
-        return [
-            'progress' => $progress,
-            'gap' => $gap,
-            'pie_chart' => [
-                'above' => $upChecks,
-                'below' => $totalChecks - $upChecks,
-            ],
-            'monthly_data' => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAvg,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
-        ];
+        return $this->formatChartData($progress, $nilaiTarget, $upChecks, $totalChecks - $upChecks, $rawDailyData);
     }
 
     public function calculatePersentaseGapKompetensi($item, $personId = null)
@@ -352,7 +290,8 @@ class KoordinatorITSMKPIService
 
         $detailIds = $item->detailTargetKPI->pluck('id');
 
-        $query = detailPersonKPI::whereIn('detailTargetKey', $detailIds);
+        $query = DetailPersonKPI::whereIn('detailTargetKey', $detailIds)
+            ->select('presentase_kemampuan', 'presentase_standar');
 
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
@@ -368,14 +307,12 @@ class KoordinatorITSMKPIService
         $totalStandar = 0;
 
         foreach ($detailPersons as $detailPerson) {
-            $kemampuan = (float) $detailPerson->presentase_kemampuan;
             $standar = (float) $detailPerson->presentase_standar;
-
             if ($standar <= 0) {
                 continue;
             }
 
-            $totalKemampuan += $kemampuan;
+            $totalKemampuan += (float) $detailPerson->presentase_kemampuan;
             $totalStandar += $standar;
         }
 
@@ -384,7 +321,6 @@ class KoordinatorITSMKPIService
         }
 
         $progress = ($totalKemampuan / $totalStandar) * 100;
-
         return round(min($progress, 100), 1);
     }
 
@@ -406,7 +342,8 @@ class KoordinatorITSMKPIService
 
         $detailIds = $details->pluck('id');
 
-        $query = detailPersonKPI::whereIn('detailTargetKey', $detailIds);
+        $query = DetailPersonKPI::whereIn('detailTargetKey', $detailIds)
+            ->select('presentase_kemampuan', 'presentase_standar');
 
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
@@ -420,7 +357,8 @@ class KoordinatorITSMKPIService
 
         $totalKemampuan = 0;
         $totalStandar = 0;
-        $validPersons = [];
+        $above = 0;
+        $below = 0;
 
         foreach ($detailPersons as $dp) {
             $kemampuan = (float) $dp->presentase_kemampuan;
@@ -433,25 +371,6 @@ class KoordinatorITSMKPIService
             $totalKemampuan += $kemampuan;
             $totalStandar += $standar;
 
-            $validPersons[] = $dp;
-        }
-
-        if ($totalStandar <= 0) {
-            $progress = 0;
-            $gap = 0;
-        } else {
-            $progress = ($totalKemampuan / $totalStandar) * 100;
-            $progress = round(min($progress, 100), 1);
-            $gap = round(100 - $progress, 1);
-        }
-
-        $above = 0;
-        $below = 0;
-
-        foreach ($validPersons as $dp) {
-            $kemampuan = (float) $dp->presentase_kemampuan;
-            $standar = (float) $dp->presentase_standar;
-
             if ($kemampuan >= $standar) {
                 $above++;
             } else {
@@ -459,17 +378,14 @@ class KoordinatorITSMKPIService
             }
         }
 
-        return [
-            'progress' => $progress,
-            'gap' => $gap,
-            'pie_chart' => [
-                'above' => $above,
-                'below' => $below,
-            ],
-            'monthly_data' => [],
-            'daily_breakdown_per_month' => [],
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
-        ];
+        if ($totalStandar <= 0) {
+            $progress = 0;
+            $gap = 0;
+        } else {
+            $progress = round(min(($totalKemampuan / $totalStandar) * 100, 100), 1);
+            $gap = round($progress - $nilaiTarget, 1);
+        }
+
+        return $this->formatChartData($progress, $nilaiTarget, $above, $below, []);
     }
 }

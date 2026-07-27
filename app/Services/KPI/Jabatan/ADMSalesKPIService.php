@@ -15,181 +15,183 @@ class ADMSalesKPIService
 {
     use KPIDefaultResponseTrait;
 
-    public function calculateLaporanMOM($item, $personId)
+    private function calculateAndFormatGap(float $progress, float $target): string
+    {
+        $gapRaw = $progress - $target;
+        
+        if (abs($gapRaw) < 0.05) {
+            return '0';
+        }
+
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+        return $gap === '' ? '0' : $gap;
+    }
+
+    private function getDefaultDetailResponse(): array
+    {
+        return [
+            'progress' => 0.0,
+            'gap' => '0',
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
+            'monthly_progress' => [],
+            'daily_progress_per_month' => [],
+        ];
+    }
+
+    public function calculateLaporanMOM($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
-        if (!$detail || !$detail->detail_jangka) {
-            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
-            return 0;
+
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return 0.0;
         }
 
         $tahun = (int) $detail->detail_jangka;
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
-            return 0;
-        }
+        if ($tahun < 2000 || $tahun > now()->year + 5) return 0.0;
 
-        $nilaiTarget = (float) $detail->nilai_target;
+        $momCount = LaporanHarianSales::whereYear('created_at', $tahun)
+            ->when($personId, fn($q) => $q->where('person_id', $personId))->count();
+            
+        $paCount = checklistRKM::whereYear('created_at', $tahun)->where('PA', '1')
+            ->when($personId, fn($q) => $q->where('person_id', $personId))->count();
+            
+        $suratCount = checklistRKM::whereYear('created_at', $tahun)->where('surat_kontrak', '1')
+            ->when($personId, fn($q) => $q->where('person_id', $personId))->count();
 
-        $momCount = LaporanHarianSales::whereYear('created_at', $tahun)->count();
+        $eregistStats = RKM::selectRaw("COUNT(*) as total, SUM(CASE WHEN registrasi_form IS NOT NULL THEN 1 ELSE 0 END) as above")
+            ->whereYear('tanggal_awal', $tahun)
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->first();
 
-        $PACount = checklistRKM::whereYear('created_at', $tahun)->where('PA', '1')->count();
-        $SuratKontrakCount = checklistRKM::whereYear('created_at', $tahun)->where('surat_kontrak', '1')->count();
+        $totalERegist = $eregistStats->total ?? 0;
+        $aboveERegist = $eregistStats->above ?? 0;
 
-        $rkmBase = RKM::whereYear('tanggal_awal', $tahun);
+        $scoreMom = ($momCount > 0) ? 25.0 : 0.0;
+        $scorePa = ($paCount > 0) ? 25.0 : 0.0;
+        $scoreSurat = ($suratCount > 0) ? 25.0 : 0.0;
+        $scoreERegist = ($totalERegist > 0) ? ($aboveERegist / $totalERegist) * 25.0 : 0.0;
 
-        $totalDataERegist = (clone $rkmBase)->count();
-
-        $totalDataAboveERegist = (clone $rkmBase)
-            ->whereNotNull('registrasi_form')
-            ->count();
-
-        $persenCalculationMom = $momCount == 0 ? 100 : 25;
-        $persenCalculationERegist = $totalDataERegist == 0 ? 0 : 25;
-
-        $progressMoM = $momCount > 0 ? ($momCount / $momCount) * $persenCalculationERegist : 0;
-        $progressPA = $PACount > 0 ? ($PACount / $PACount) * $persenCalculationERegist : 0;
-        $progressSuratKontrak = $SuratKontrakCount > 0 ? ($SuratKontrakCount / $SuratKontrakCount) * $persenCalculationERegist : 0;
-
-        if ($progressMoM == 0) {
-            $progressMoM = 0;
-        }
-
-        $progressERegist = $totalDataERegist > 0
-            ? ($totalDataAboveERegist / $totalDataERegist) * $persenCalculationMom
-            : 0;
-
-        if ($progressERegist == 0) {
-            $progressERegist = 0;
-        }
-
-        $progress = $progressMoM + $progressERegist + $progressPA + $progressSuratKontrak;
-
-        if ($progress == 0) {
-            return 0;
-        }
-
-        return round($progress, 1);
+        return round($scoreMom + $scorePa + $scoreSurat + $scoreERegist, 1);
     }
 
     public function calculateLaporanMOMDetail($itemDetail, $personId = null)
     {
-        $details = $itemDetail->detailTargetKPI;
+        $detail = $itemDetail->detailTargetKPI->first();
 
-        $firstDetail = $details->first();
-
-        $tahun = (int) optional($firstDetail)->detail_jangka;
-        $nilaiTarget = (float) optional($firstDetail)->nilai_target;
-
-        if ($details->isEmpty() || $nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             return $this->getDefaultDetailResponse();
         }
 
-        $momCount = LaporanHarianSales::whereYear('created_at', $tahun)->count();
-        $PACount = checklistRKM::whereYear('created_at', $tahun)->where('PA', '1')->count();
-        $SuratKontrakCount = checklistRKM::whereYear('created_at', $tahun)->where('surat_kontrak', '1')->count();
+        $tahun = (int) $detail->detail_jangka;
+        $nilaiTarget = (float) $detail->nilai_target;
 
-        $rkmBase = RKM::whereYear('tanggal_awal', $tahun);
-
-        $totalDataERegist = (clone $rkmBase)->count();
-
-        $totalDataAboveERegist = (clone $rkmBase)
-            ->whereNotNull('registrasi_form')
-            ->count();
-
-        $persenCalculationMom = $momCount == 0 ? 100 : 25;
-        $persenCalculationERegist = $totalDataERegist == 0 ? 0 : 25;
-
-        $progressMoM = $momCount > 0
-            ? ($momCount / $momCount) * $persenCalculationERegist
-            : 0;
-
-        $progressSuratKontrak = $SuratKontrakCount > 0
-            ? ($SuratKontrakCount / $SuratKontrakCount) * $persenCalculationERegist
-            : 0;
-
-        $progressPA = $PACount > 0
-            ? ($PACount / $PACount) * $persenCalculationERegist
-            : 0;
-
-        $progressERegist = $totalDataERegist > 0
-            ? ($totalDataAboveERegist / $totalDataERegist) * $persenCalculationMom
-            : 0;
-
-        $progress = $progressMoM + $progressERegist + $progressPA + $progressSuratKontrak;
-
-        $laporans = LaporanHarianSales::whereYear('created_at', $tahun)
-            ->select(DB::raw('DATE(created_at) as tanggal, COUNT(*) as total'))
-            ->groupBy('tanggal')
-            ->get();
-
-        $dailyBreakdownPerMonth = [];
-        $monthlyDataTemp = [];
-
-        foreach ($laporans as $row) {
-            $date = Carbon::parse($row->tanggal);
-            $dateKey = $date->format('Y-m-d');
-            $monthKey = $date->format('Y-m');
-
-            $total = (float) $row->total;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-            }
-            $dailyBreakdownPerMonth[$monthKey][$dateKey] = $total;
-
-            if (!isset($monthlyDataTemp[$monthKey])) {
-                $monthlyDataTemp[$monthKey] = [];
-            }
-            $monthlyDataTemp[$monthKey][] = $total;
+        if ($tahun < 2000 || $tahun > now()->year + 5 || $nilaiTarget <= 0) {
+            return $this->getDefaultDetailResponse();
         }
 
-        $monthlyData = [];
-        foreach ($monthlyDataTemp as $month => $totals) {
-            $count = count($totals);
+        $monthlyMom = LaporanHarianSales::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count")
+            ->whereYear('created_at', $tahun)
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->groupBy('month')->pluck('count', 'month');
+            
+        $monthlyPa = checklistRKM::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count")
+            ->whereYear('created_at', $tahun)->where('PA', '1')
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->groupBy('month')->pluck('count', 'month');
+            
+        $monthlySurat = checklistRKM::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count")
+            ->whereYear('created_at', $tahun)->where('surat_kontrak', '1')
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->groupBy('month')->pluck('count', 'month');
 
-            $monthlyData[$month] = $count > 0
-                ? round(array_sum($totals) / $count, 1)
-                : 0;
+        $monthlyTotalERegist = RKM::selectRaw("DATE_FORMAT(tanggal_awal, '%Y-%m') as month, COUNT(*) as count")
+            ->whereYear('tanggal_awal', $tahun)
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->groupBy('month')->pluck('count', 'month');
+            
+        $monthlyAboveERegist = RKM::selectRaw("DATE_FORMAT(tanggal_awal, '%Y-%m') as month, COUNT(*) as count")
+            ->whereYear('tanggal_awal', $tahun)->whereNotNull('registrasi_form')
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->groupBy('month')->pluck('count', 'month');
+
+        $momCount = array_sum($monthlyMom->toArray());
+        $paCount = array_sum($monthlyPa->toArray());
+        $suratCount = array_sum($monthlySurat->toArray());
+        $totalERegist = array_sum($monthlyTotalERegist->toArray());
+        $aboveERegist = array_sum($monthlyAboveERegist->toArray());
+
+        $useBinaryScoring = true; 
+
+        $scoreMom = $useBinaryScoring ? ($momCount > 0 ? 25.0 : 0.0) : min(25.0, ($momCount / max(1, $momCount)) * 25.0);
+        $scorePa = $useBinaryScoring ? ($paCount > 0 ? 25.0 : 0.0) : 25.0;
+        $scoreSurat = $useBinaryScoring ? ($suratCount > 0 ? 25.0 : 0.0) : 25.0;
+        $scoreERegist = ($totalERegist > 0) ? ($aboveERegist / $totalERegist) * 25.0 : 0.0;
+
+        $progress = round($scoreMom + $scorePa + $scoreSurat + $scoreERegist, 1);
+        $gap = $this->calculateAndFormatGap($progress, $nilaiTarget);
+
+        $allMonths = collect($monthlyMom->keys())
+            ->merge($monthlyPa->keys())
+            ->merge($monthlySurat->keys())
+            ->merge($monthlyTotalERegist->keys())
+            ->unique()->sort()->values();
+        
+        $monthlyData = [];
+        $monthlyProgress = [];
+        $dailyBreakdownPerMonth = [];
+        $dailyProgressPerMonth = [];
+
+        $dailyLaporan = LaporanHarianSales::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, DATE_FORMAT(created_at, '%Y-%m-%d') as day, COUNT(*) as count")
+            ->whereYear('created_at', $tahun)
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->groupBy('month', 'day')->get();
+
+        foreach ($dailyLaporan as $row) {
+            $dailyBreakdownPerMonth[$row->month][$row->day] = (int) $row->count;
+            $dailyProgressPerMonth[$row->month][$row->day] = $nilaiTarget > 0 ? round(((int) $row->count / $nilaiTarget) * 100, 1) : 0.0;
+        }
+
+        $aboveTargetMonths = 0;
+        $belowTargetMonths = 0;
+
+        foreach ($allMonths as $month) {
+            $mMom = $monthlyMom[$month] ?? 0;
+            $mPa = $monthlyPa[$month] ?? 0;
+            $mSurat = $monthlySurat[$month] ?? 0;
+            $mTotalE = $monthlyTotalERegist[$month] ?? 0;
+            $mAboveE = $monthlyAboveERegist[$month] ?? 0;
+
+            $mScoreMom = $useBinaryScoring ? ($mMom > 0 ? 25.0 : 0.0) : 0.0;
+            $mScorePa = $useBinaryScoring ? ($mPa > 0 ? 25.0 : 0.0) : 0.0;
+            $mScoreSurat = $useBinaryScoring ? ($mSurat > 0 ? 25.0 : 0.0) : 0.0;
+            $mScoreE = ($mTotalE > 0) ? ($mAboveE / $mTotalE) * 25.0 : 0.0;
+
+            $monthProgress = round($mScoreMom + $mScorePa + $mScoreSurat + $mScoreE, 1);
+            
+            $monthlyData[$month] = $monthProgress;
+            $monthlyProgress[$month] = $monthProgress;
+
+            if ($monthProgress >= $nilaiTarget) {
+                $aboveTargetMonths++;
+            } else {
+                $belowTargetMonths++;
+            }
         }
 
         ksort($monthlyData);
+        ksort($monthlyProgress);
         ksort($dailyBreakdownPerMonth);
-
-        $monthlyProgress = [];
-        foreach ($monthlyData as $month => $value) {
-            $monthlyProgress[$month] = $nilaiTarget > 0
-                ? round(($value / $nilaiTarget) * 100, 1)
-                : 0;
-        }
-
-        $dailyProgressPerMonth = [];
-        foreach ($dailyBreakdownPerMonth as $month => $days) {
-            foreach ($days as $date => $value) {
-                $dailyProgressPerMonth[$month][$date] = $nilaiTarget > 0
-                    ? round(($value / $nilaiTarget) * 100, 1)
-                    : 0;
-            }
-        }
-
-        $pieChart = [
-            'above' => $totalDataAboveERegist,
-            'below' => max(0, $totalDataERegist - $totalDataAboveERegist),
-        ];
-
-        $gap = 0;
-
-        if ($progress > $nilaiTarget) {
-            $gap = 0;
-        } else {
-            $gapRaw = $progress - $nilaiTarget;
-            $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-        }
+        ksort($dailyProgressPerMonth);
 
         return [
-            'progress' => round($progress, 1),
+            'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => $pieChart,
+            'pie_chart' => [
+                'above' => $aboveTargetMonths,
+                'below' => $belowTargetMonths,
+            ],
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgress,
@@ -197,150 +199,92 @@ class ADMSalesKPIService
         ];
     }
 
-    public function calculateAkurasiKelengkapanDataPenjualan($item, $personId)
+    public function calculateAkurasiKelengkapanDataPenjualan($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
-        if (!$detail || !$detail->detail_jangka) {
-            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
-            return 0;
-        }
 
-        $tahun = (int) $detail->detail_jangka;
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
-            return 0;
-        }
-
-        $startDate = Carbon::create($tahun, 1, 1)->startOfDay();
-
-        $endDate = ($tahun == now()->year)
-            ? now()->endOfDay()
-            : Carbon::create($tahun, 12, 31)->endOfDay();
-
-        $rkms = RKM::with(['perhitunganNetSales', 'outstanding', 'peluang'])
-                    ->whereBetween('tanggal_awal', [$startDate, $endDate])
-                    ->where('status', '0')
-                    ->whereNull('deleted_at')
-                    ->whereHas('peluang', function ($query) {
-                        $query->where('tentatif', 0);
-                    })
-                    ->orderBy('status', 'asc')
-                    ->orderBy('tanggal_awal', 'asc')
-                    ->get();
-
-        $totalRkmDenganPerhitungan = 0;
-        $totalRkmAkurat = 0;
-
-        foreach ($rkms as $rkm) {
-            $listPerhitungan = $rkm->perhitunganNetSales;
-
-            if ($listPerhitungan->isEmpty()) {
-                continue;
-            }
-
-            $totalRkmDenganPerhitungan++;
-
-            $listOutstanding = $rkm->outstanding;
-
-            if (blank($listOutstanding)) {
-                continue;
-            }
-
-            $sumKomponen = 0;
-
-            $itemsPerhitungan = $listPerhitungan instanceof \Illuminate\Database\Eloquent\Collection
-                ? $listPerhitungan
-                : [$listPerhitungan];
-
-            foreach ($itemsPerhitungan as $p) {
-                $sumKomponen +=
-                    (int)($p->transportasi ?? 0) +
-                    (int)($p->akomodasi_peserta ?? 0) +
-                    (int)($p->akomodasi_tim ?? 0) +
-                    (int)($p->fresh_money ?? 0) +
-                    (int)($p->entertaint ?? 0) +
-                    (int)($p->souvenir ?? 0) +
-                    (int)($p->cashback ?? 0) +
-                    (int)($p->sewa_laptop ?? 0);
-            }
-
-            $sumOutstanding = 0;
-            $itemsOutstanding = $listOutstanding instanceof \Illuminate\Database\Eloquent\Collection
-                ? $listOutstanding
-                : [$listOutstanding];
-
-            foreach ($itemsOutstanding as $o) {
-                $sumOutstanding += (int)($o->net_sales ?? 0);
-            }
-
-            if ($sumKomponen === $sumOutstanding) {
-                $totalRkmAkurat++;
-            }
-        }
-
-        if ($totalRkmDenganPerhitungan == 0) {
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             return 0.0;
         }
 
-        $persentase = ($totalRkmAkurat / $totalRkmDenganPerhitungan) * 100;
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) return 0.0;
 
-        return round($persentase, 1);
+        $startDate = Carbon::create($tahun, 1, 1)->startOfDay();
+        $endDate = ($tahun == now()->year) ? now()->endOfDay() : Carbon::create($tahun, 12, 31)->endOfDay();
+
+        $sumKomponenSQL = "COALESCE(transportasi,0) + COALESCE(akomodasi_peserta,0) + COALESCE(akomodasi_tim,0) + COALESCE(fresh_money,0) + COALESCE(entertaint,0) + COALESCE(souvenir,0) + COALESCE(cashback,0) + COALESCE(sewa_laptop,0)";
+
+        $totalWithPerhitungan = RKM::whereBetween('tanggal_awal', [$startDate, $endDate])
+            ->where('status', '0')
+            ->whereNull('deleted_at')
+            ->whereHas('peluang', fn($q) => $q->where('tentatif', 0))
+            ->whereHas('perhitunganNetSales')
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->count();
+
+        if ($totalWithPerhitungan === 0) return 0.0;
+
+        $totalAkurat = RKM::whereBetween('rkms.tanggal_awal', [$startDate, $endDate])
+            ->where('rkms.status', '0')
+            ->whereNull('rkms.deleted_at')
+            ->whereHas('peluang', fn($q) => $q->where('tentatif', 0))
+            ->whereHas('perhitunganNetSales')
+            ->whereHas('outstanding')
+            ->when($personId, fn($q) => $q->where('rkms.person_id', $personId))
+            ->whereRaw("
+                (SELECT SUM({$sumKomponenSQL}) FROM perhitungan_net_sales WHERE rkm_id = rkms.id) > 0
+                AND
+                (SELECT SUM({$sumKomponenSQL}) FROM perhitungan_net_sales WHERE rkm_id = rkms.id) = 
+                (SELECT COALESCE(SUM(net_sales), 0) FROM outstandings WHERE rkm_id = rkms.id)
+            ")
+            ->count();
+
+        return round(($totalAkurat / $totalWithPerhitungan) * 100, 1);
     }
 
     public function calculateAkurasiKelengkapanDataPenjualanDetail($itemDetail, $personId = null)
     {
-        $details = $itemDetail->detailTargetKPI;
-        $detail = $details->first();
+        $detail = $itemDetail->detailTargetKPI->first();
 
-        $nilaiTarget = (float) optional($detail)->nilai_target;
-        $tahun = (int) (optional($detail)->detail_jangka ?? now()->year);
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return $this->getDefaultDetailResponse();
+        }
 
-        if ($details->isEmpty() || $tahun < 2000 || $tahun > now()->year + 5) {
+        $tahun = (int) $detail->detail_jangka;
+        $nilaiTarget = (float) $detail->nilai_target;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
             return $this->getDefaultDetailResponse();
         }
 
         $startDate = Carbon::create($tahun, 1, 1)->startOfDay();
-
-        $endDate = ($tahun == now()->year)
-            ? now()->endOfDay()
-            : Carbon::create($tahun, 12, 31)->endOfDay();
-
-        $rkms = RKM::with([
-                'perhitunganNetSales',
-                'outstanding',
-                'peluang'
-            ])
-            ->whereBetween('tanggal_awal', [$startDate, $endDate])
-            ->where('status', '0')
-            ->whereNull('deleted_at')
-            ->whereHas('peluang', function ($query) {
-                $query->where('tentatif', 0);
-            })
-            ->orderBy('status')
-            ->orderBy('tanggal_awal')
-            ->get();
+        $endDate = ($tahun == now()->year) ? now()->endOfDay() : Carbon::create($tahun, 12, 31)->endOfDay();
 
         $totalRkmDenganPerhitungan = 0;
         $totalRkmAkurat = 0;
 
         $monthlyTotal = [];
         $monthlyAccurate = [];
-
         $dailyTotal = [];
         $dailyAccurate = [];
-
         $dailyBreakdownPerMonth = [];
 
+        $rkms = RKM::with(['perhitunganNetSales', 'outstanding'])
+            ->whereBetween('tanggal_awal', [$startDate, $endDate])
+            ->where('status', '0')
+            ->whereNull('deleted_at')
+            ->whereHas('peluang', fn($q) => $q->where('tentatif', 0))
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->orderBy('tanggal_awal')
+            ->cursor();
+
         foreach ($rkms as $rkm) {
-
-            $listPerhitungan = $rkm->perhitunganNetSales;
-
-            if ($listPerhitungan->isEmpty()) {
+            if ($rkm->perhitunganNetSales->isEmpty()) {
                 continue;
             }
 
             $totalRkmDenganPerhitungan++;
-
             $date = Carbon::parse($rkm->tanggal_awal);
             $monthKey = $date->format('Y-m');
             $dateKey = $date->format('Y-m-d');
@@ -348,73 +292,49 @@ class ADMSalesKPIService
             $monthlyTotal[$monthKey] = ($monthlyTotal[$monthKey] ?? 0) + 1;
             $dailyTotal[$monthKey][$dateKey] = ($dailyTotal[$monthKey][$dateKey] ?? 0) + 1;
 
-            $listOutstanding = $rkm->outstanding;
-
-            if (blank($listOutstanding)) {
-                continue;
+            if ($rkm->outstanding instanceof \Illuminate\Database\Eloquent\Collection) {
+                if ($rkm->outstanding->isEmpty()) continue;
+                $sumOutstanding = $rkm->outstanding->sum('net_sales');
+            } else {
+                if (!$rkm->outstanding) continue;
+                $sumOutstanding = (int)($rkm->outstanding->net_sales ?? 0);
             }
 
-            $sumKomponen = 0;
+            $sumKomponen = $rkm->perhitunganNetSales->sum(fn($p) => 
+                (int)($p->transportasi ?? 0) + (int)($p->akomodasi_peserta ?? 0) +
+                (int)($p->akomodasi_tim ?? 0) + (int)($p->fresh_money ?? 0) +
+                (int)($p->entertaint ?? 0) + (int)($p->souvenir ?? 0) +
+                (int)($p->cashback ?? 0) + (int)($p->sewa_laptop ?? 0)
+            );
 
-            foreach ($listPerhitungan as $p) {
-                $sumKomponen +=
-                    (int) ($p->transportasi ?? 0) +
-                    (int) ($p->akomodasi_peserta ?? 0) +
-                    (int) ($p->akomodasi_tim ?? 0) +
-                    (int) ($p->fresh_money ?? 0) +
-                    (int) ($p->entertaint ?? 0) +
-                    (int) ($p->souvenir ?? 0) +
-                    (int) ($p->cashback ?? 0) +
-                    (int) ($p->sewa_laptop ?? 0);
-            }
-
-            $sumOutstanding = 0;
-
-            foreach ($listOutstanding as $o) {
-                $sumOutstanding += (int) ($o->net_sales ?? 0);
-            }
-
-            if ($sumKomponen === $sumOutstanding) {
-
+            if ($sumKomponen > 0 && $sumKomponen === $sumOutstanding) {
                 $totalRkmAkurat++;
-
                 $monthlyAccurate[$monthKey] = ($monthlyAccurate[$monthKey] ?? 0) + 1;
                 $dailyAccurate[$monthKey][$dateKey] = ($dailyAccurate[$monthKey][$dateKey] ?? 0) + 1;
                 $dailyBreakdownPerMonth[$monthKey][$dateKey] = ($dailyBreakdownPerMonth[$monthKey][$dateKey] ?? 0) + 1;
             }
         }
 
-        $progress = $totalRkmDenganPerhitungan > 0
-            ? round(($totalRkmAkurat / $totalRkmDenganPerhitungan) * 100, 1)
-            : 0;
+        $progress = $totalRkmDenganPerhitungan > 0 ? round(($totalRkmAkurat / $totalRkmDenganPerhitungan) * 100, 1) : 0.0;
+        $gap = $this->calculateAndFormatGap($progress, $nilaiTarget);
 
         $monthlyProgress = [];
-
         foreach ($monthlyTotal as $month => $total) {
             $accurate = $monthlyAccurate[$month] ?? 0;
-            $monthlyProgress[$month] = $total > 0
-                ? round(($accurate / $total) * 100, 1)
-                : 0;
+            $monthlyProgress[$month] = $total > 0 ? round(($accurate / $total) * 100, 1) : 0.0;
         }
 
         $dailyProgressPerMonth = [];
-
         foreach ($dailyTotal as $month => $days) {
             foreach ($days as $date => $total) {
                 $accurate = $dailyAccurate[$month][$date] ?? 0;
-                $dailyProgressPerMonth[$month][$date] = $total > 0
-                    ? round(($accurate / $total) * 100, 1)
-                    : 0;
+                $dailyProgressPerMonth[$month][$date] = $total > 0 ? round(($accurate / $total) * 100, 1) : 0.0;
             }
         }
 
-        ksort($monthlyAccurate);
         ksort($monthlyProgress);
         ksort($dailyBreakdownPerMonth);
         ksort($dailyProgressPerMonth);
-
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         return [
             'progress' => $progress,
@@ -430,125 +350,121 @@ class ADMSalesKPIService
         ];
     }
 
-    public function calculateTodoAdministrasi($item, $personId)
+    public function calculateTodoAdministrasi($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
 
-        if (!$detail) {
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             return 0.0;
         }
 
         $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) return 0.0;
 
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return 0.0;
-        }
+        $stats = TodoAdministrasi::selectRaw("
+            COUNT(*) as total, 
+            SUM(CASE WHEN status = 'selesai' AND solusi IS NOT NULL THEN 1 ELSE 0 END) as done
+        ")
+            ->whereYear('created_at', $tahun)
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->first();
 
-        $momCount = TodoAdministrasi::whereYear('created_at', $tahun)->count();
+        $totalData = $stats->total ?? 0;
+        $totalDone = $stats->done ?? 0;
 
-        if ($momCount == 0) {
-            return 0;
-        }
+        if ($totalData === 0) return 0.0;
 
-        $momDone = TodoAdministrasi::whereYear('created_at', $tahun)
-            ->where('status', 'selesai')
-            ->whereNotNull('solusi')
-            ->count();
-
-        $progress = ($momDone / $momCount) * 100;
-
-        return round($progress, 1);
+        return round(($totalDone / $totalData) * 100, 1);
     }
 
     public function calculateTodoAdministrasiDetail($itemDetail, $personId = null)
     {
-        $details = $itemDetail->detailTargetKPI;
+        $detail = $itemDetail->detailTargetKPI->first();
 
-        $tahun = (int) optional($details->first())->detail_jangka;
-        $nilaiTarget = (float) optional($details->first())->nilai_target;
-
-        if ($details->isEmpty() || $tahun < 2000 || $tahun > now()->year + 5) {
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             return $this->getDefaultDetailResponse();
         }
 
-        $todos = TodoAdministrasi::whereYear('created_at', $tahun)->get();
+        $tahun = (int) $detail->detail_jangka;
+        $nilaiTarget = (float) $detail->nilai_target;
 
-        if ($todos->isEmpty()) {
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
             return $this->getDefaultDetailResponse();
         }
 
-        $totalData = $todos->count();
+        $monthlyStats = TodoAdministrasi::selectRaw(
+            "DATE_FORMAT(created_at, '%Y-%m') as month, 
+             COUNT(*) as total, 
+             SUM(CASE WHEN status = 'selesai' AND solusi IS NOT NULL THEN 1 ELSE 0 END) as done"
+        )
+            ->whereYear('created_at', $tahun)
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->groupBy('month')
+            ->get();
 
-        $totalDone = $todos->where('status', 'selesai')
-            ->whereNotNull('solusi')
-            ->count();
+        if ($monthlyStats->isEmpty()) {
+            return $this->getDefaultDetailResponse();
+        }
 
+        $totalData = $monthlyStats->sum('total');
+        $totalDone = $monthlyStats->sum('done');
         $totalNotDone = $totalData - $totalDone;
 
-        $progress = $totalData > 0 ? ($totalDone / $totalData) * 100 : 0;
-        $progress = round($progress, 1);
+        $progress = $totalData > 0 ? round(($totalDone / $totalData) * 100, 1) : 0.0;
+        $gap = $this->calculateAndFormatGap($progress, $nilaiTarget);
 
-        $dailyBreakdownPerMonth = [];
-        $monthlyDataTemp = [];
-
-        foreach ($todos as $todo) {
-            $date = \Carbon\Carbon::parse($todo->created_at);
-            $dateKey = $date->format('Y-m-d');
-            $monthKey = $date->format('Y-m');
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-            }
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey][$dateKey])) {
-                $dailyBreakdownPerMonth[$monthKey][$dateKey] = 0;
-            }
-
-            $dailyBreakdownPerMonth[$monthKey][$dateKey]++;
-
-            if (!isset($monthlyDataTemp[$monthKey])) {
-                $monthlyDataTemp[$monthKey] = [];
-            }
-
-            $monthlyDataTemp[$monthKey][] = $dailyBreakdownPerMonth[$monthKey][$dateKey];
-        }
+        $dailyStatsAll = TodoAdministrasi::selectRaw(
+            "DATE_FORMAT(created_at, '%Y-%m') as month, 
+             DATE_FORMAT(created_at, '%Y-%m-%d') as day, 
+             COUNT(*) as total, 
+             SUM(CASE WHEN status = 'selesai' AND solusi IS NOT NULL THEN 1 ELSE 0 END) as done"
+        )
+            ->whereYear('created_at', $tahun)
+            ->when($personId, fn($q) => $q->where('person_id', $personId))
+            ->groupBy('month', 'day')
+            ->get();
 
         $monthlyData = [];
-        foreach ($monthlyDataTemp as $month => $values) {
-            $monthlyData[$month] = round(array_sum($values) / count($values), 1);
-        }
-
-        ksort($monthlyData);
-        ksort($dailyBreakdownPerMonth);
-
         $monthlyProgress = [];
-        foreach ($monthlyData as $month => $value) {
-            $monthlyProgress[$month] = $nilaiTarget > 0
-                ? round(($value / $nilaiTarget) * 100, 1)
-                : 0;
-        }
-
+        $dailyBreakdownPerMonth = [];
         $dailyProgressPerMonth = [];
-        foreach ($dailyBreakdownPerMonth as $month => $days) {
-            foreach ($days as $date => $value) {
-                $dailyProgressPerMonth[$month][$date] = $nilaiTarget > 0
-                    ? round(($value / $nilaiTarget) * 100, 1)
-                    : 0;
-            }
+
+        foreach ($monthlyStats as $stat) {
+            $month = $stat->month;
+            $monthlyData[$month] = (int) $stat->done;
+            $monthlyProgress[$month] = $stat->total > 0 ? round(($stat->done / $stat->total) * 100, 1) : 0.0;
+            
+            $dailyBreakdownPerMonth[$month] = [];
+            $dailyProgressPerMonth[$month] = [];
         }
 
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+        foreach ($dailyStatsAll as $dStat) {
+            $month = $dStat->month;
+            $day = $dStat->day;
+            
+            $dailyBreakdownPerMonth[$month][$day] = (int) $dStat->done;
+            $dailyProgressPerMonth[$month][$day] = $dStat->total > 0 
+                ? round(($dStat->done / $dStat->total) * 100, 1) 
+                : 0.0;
+        }
 
-        $pieChart = [
-            'above' => $totalDone,
-            'below' => $totalNotDone,
-        ];
+        foreach ($dailyBreakdownPerMonth as $month => $days) {
+            ksort($dailyBreakdownPerMonth[$month]);
+            ksort($dailyProgressPerMonth[$month]);
+        }
+        
+        ksort($monthlyData);
+        ksort($monthlyProgress);
+        ksort($dailyBreakdownPerMonth);
+        ksort($dailyProgressPerMonth);
 
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => $pieChart,
+            'pie_chart' => [
+                'above' => $totalDone,
+                'below' => max(0, $totalNotDone),
+            ],
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgress,

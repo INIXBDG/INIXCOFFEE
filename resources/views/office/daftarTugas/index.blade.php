@@ -1,6 +1,9 @@
 @extends('layouts_office.app')
 @section('office_contents')
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
     <style>
         ::-webkit-scrollbar {
             width: 6px;
@@ -124,6 +127,27 @@
             font-weight: 600;
             margin-bottom: 8px;
             color: #495057;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: #adb5bd;
+            font-size: 18px;
+            touch-action: none;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .sortable-ghost {
+            opacity: .4;
+            background: #e7f1ff;
+        }
+
+        .sortable-drag {
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
         }
     </style>
     <div class="container-fluid py-4">
@@ -298,12 +322,13 @@
                     <table class="table table-hover mb-0 align-middle">
                         <thead class="text-dark fw-semibold small bg-light">
                             <tr>
+                                <th class="border-0 text-center" style="width:3%"></th>
                                 <th class="ps-4 border-0" style="width:5%">Checklist</th>
-                                <th class="border-0" style="width:30%">Tugas</th>
-                                <th class="border-0" style="width:15%">Tipe</th>
-                                <th class="border-0" style="width:15%">Shift</th>
-                                <th class="border-0" style="width:15%">Karyawan</th>
-                                <th class="border-0" style="width:15%">Deadline</th>
+                                <th class="border-0" style="width:27%">Tugas</th>
+                                <th class="border-0" style="width:13%">Tipe</th>
+                                <th class="border-0" style="width:13%">Shift</th>
+                                <th class="border-0" style="width:13%">Karyawan</th>
+                                <th class="border-0" style="width:13%">Deadline</th>
                                 <th class="border-0 text-center" style="width:20%">Bukti</th>
                                 <th class="border-0 text-center" style="width:15%">Aksi</th>
                                 <th width="50">
@@ -351,9 +376,6 @@
             </div>
         </div>
 
-        @if (Auth()->user()->jabatan === 'Office Boy')
-                        
-        @endif
         <div class="card border-0 shadow-sm rounded-4 mt-4 glass-force">
             <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-semibold">
@@ -368,7 +390,6 @@
                     Tugas yang sudah aktif tidak akan muncul di sini.
                 </div>
 
-                <!-- Filter mini -->
                 <div class="d-flex flex-wrap gap-2 mb-3">
                     <select id="filterAvailableTipe" class="form-select form-select-sm" style="width:auto">
                         <option value="all">Semua Tipe</option>
@@ -384,13 +405,11 @@
                     </button>
                 </div>
 
-                <!-- Loading state -->
                 <div id="availableLoading" class="text-center py-4 d-none">
                     <div class="spinner-border text-primary" role="status"></div>
                     <p class="text-muted small mt-2 mb-0">Memuat kategori...</p>
                 </div>
 
-                <!-- List kategori -->
                 <div id="availableList" style="max-height:400px; overflow-y:auto;">
                     <div class="text-center text-muted py-4">
                         <i class="bx bx-folder-open" style="font-size:2rem"></i>
@@ -398,7 +417,6 @@
                     </div>
                 </div>
 
-                <!-- Bulk action -->
                 <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" id="availableActions"
                     style="display:none">
                     <div class="form-check">
@@ -414,7 +432,7 @@
     </div>
 
     <div class="modal fade" id="createModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <form id="formCreateKategori" action="{{ route('office.DaftarTugas.store') }}" method="POST">@csrf
                     <div class="modal-header">
@@ -480,9 +498,34 @@
                             <button type="button" class="btn btn-secondary btn-sm" id="cancelBulkUpdate">Batal</button>
                         </div>
 
-                        <div style="max-height:300px;overflow-y:auto;border:1px solid #eee;border-radius:8px">
-                            <table class="table table-sm table-bordered mb-0" id="tabelKategori">
-                                <thead class="table-light">
+                        <!-- Filter Section -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <input type="text" id="kategoriSearch" class="form-control form-control-sm" 
+                                    placeholder=" Cari kategori tugas...">
+                            </div>
+                            <div class="col-md-3">
+                                <select id="filterTipeKategori" class="form-select form-select-sm">
+                                    <option value="">Semua Tipe</option>
+                                    <option value="Harian">Harian</option>
+                                    <option value="Mingguan">Mingguan</option>
+                                    <option value="Bulanan">Bulanan</option>
+                                    <option value="Quartal">Quartal</option>
+                                    <option value="Semester">Semester</option>
+                                    <option value="Tahunan">Tahunan</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" class="btn btn-sm btn-outline-primary w-100" id="btnRefreshKategori">
+                                    <i class="bx bx-refresh"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- DataTable -->
+                        <div class="table-responsive" style="max-height:400px;">
+                            <table class="table table-sm table-bordered table-hover mb-0" id="tabelKategoriDT" style="width:100%">
+                                <thead class="table-light sticky-top">
                                     <tr>
                                         <th width="30"><input type="checkbox" id="checkAllKategori"></th>
                                         <th>Tugas</th>
@@ -628,36 +671,40 @@
                             <label class="form-label fw-semibold small text-muted">Tugas</label>
                             <input type="text" id="uploadTugasNama" class="form-control-plaintext fw-bold" readonly>
                         </div>
-                        
-                        <!-- Foto Before -->
+
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Foto Before <small class="text-muted">(Wajib untuk mulai)</small></label>
-                            <input type="file" class="form-control" name="bukti_before" id="inputBuktiBefore" 
+                            <label class="form-label fw-semibold">Foto Before <small class="text-muted">(Wajib untuk
+                                    mulai)</small></label>
+                            <input type="file" class="form-control" name="bukti_before" id="inputBuktiBefore"
                                 accept="image/*" capture="environment">
                             <div class="form-text">Klik untuk buka kamera • JPG/PNG • Max 5MB</div>
                             <div id="previewBeforeContainer" class="d-none text-center mt-2 position-relative">
-                                <img id="imagePreviewBefore" src="" class="img-fluid rounded shadow-sm" style="max-height:200px">
-                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle" 
+                                <img id="imagePreviewBefore" src="" class="img-fluid rounded shadow-sm"
+                                    style="max-height:200px">
+                                <button type="button"
+                                    class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle"
                                     onclick="clearPreview('before')" style="width:28px;height:28px;padding:0">✕</button>
                             </div>
                         </div>
-                        
-                        <!-- Foto After -->
+
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Foto After <small class="text-muted">(auto selesai)</small></label>
-                            <input type="file" class="form-control" name="bukti_after" id="inputBuktiAfter" 
+                            <label class="form-label fw-semibold">Foto After <small class="text-muted">(auto
+                                    selesai)</small></label>
+                            <input type="file" class="form-control" name="bukti_after" id="inputBuktiAfter"
                                 accept="image/*" capture="environment">
                             <div class="form-text">Upload Foto Before terlebih dahulu sebelum mengambil foto selesai</div>
                             <div id="previewAfterContainer" class="d-none text-center mt-2 position-relative">
-                                <img id="imagePreviewAfter" src="" class="img-fluid rounded shadow-sm" style="max-height:200px">
-                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle" 
+                                <img id="imagePreviewAfter" src="" class="img-fluid rounded shadow-sm"
+                                    style="max-height:200px">
+                                <button type="button"
+                                    class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle"
                                     onclick="clearPreview('after')" style="width:28px;height:28px;padding:0">✕</button>
                             </div>
                         </div>
-                        
+
                         <div class="alert alert-info small mb-0">
                             <i class="bx bx-info-circle me-1"></i>
-                            <strong>Tips:</strong> Foto akan langsung diambil dari kamera dan diupload. 
+                            <strong>Tips:</strong> Foto akan langsung diambil dari kamera dan diupload.
                             Jika After diupload, tugas otomatis ditandai <strong>Selesai</strong>.
                         </div>
                     </div>
@@ -780,6 +827,11 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
     <script>
         $(document).ready(function() {
             const today = new Date().toISOString().split('T')[0];
@@ -825,7 +877,7 @@
                 const data = parseBukti(bukti);
                 const hasBefore = !!data.before;
                 const hasAfter = !!data.after;
-                
+
                 if (hasBefore && hasAfter) {
                     return {
                         class: 'both',
@@ -876,7 +928,7 @@
                         tb.empty();
                         if (!r.data || !r.data.length) {
                             tb.append(
-                                `<tr><td colspan="9" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas Aktif</h5><p class="text-muted small mb-3">Pilih tugas dari kategori yang tersedia untuk mulai mengerjakan</p></div></td></tr>`
+                                `<tr><td colspan="10" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas Aktif</h5><p class="text-muted small mb-3">Pilih tugas dari kategori yang tersedia untuk mulai mengerjakan</p></div></td></tr>`
                             );
                             return;
                         }
@@ -897,7 +949,7 @@
                             const checkboxDisabled = !buktiStatus.canCheck ? 'disabled' : '';
                             const checkboxTitle = !buktiStatus.canCheck ?
                                 'title="Upload foto Before dan After terlebih dahulu"' : '';
-                            const buktiBtn = buktiStatus.canView ? 
+                            const buktiBtn = buktiStatus.canView ?
                                 `<button class="btn btn-sm btn-outline-primary btn-viewBukti" 
                                     data-bukti='${JSON.stringify(buktiData)}' 
                                     data-judul="${kat.replace(/"/g,'&quot;')}">
@@ -910,8 +962,10 @@
                                     <i class="bx bx-upload"></i> ${buktiStatus.hasBefore || buktiStatus.hasAfter ? 'Lengkapi' : 'Upload'}
                                 </button>`;
 
-                                tb.append(
-                                `<tr class="${buktiStatus.rowClass} ${done?'bg-light':''}" data-id="${it.id}"><td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk} ${checkboxDisabled} ${checkboxTitle}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done}"><span class="badge bg-info text-dark">${turunan}</span></td><td class="task-text ${done} small fw-semibold">${karyawan}</td>
+                            tb.append(
+                                `<tr class="${buktiStatus.rowClass} ${done?'bg-light':''}" data-id="${it.id}">
+                                <td class="text-center"><i class="bx bx-menu drag-handle"></i></td>
+                                <td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk} ${checkboxDisabled} ${checkboxTitle}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done}"><span class="badge bg-info text-dark">${turunan}</span></td><td class="task-text ${done} small fw-semibold">${karyawan}</td>
                                 <td class="task-text ${done} small">${dl}</td><td class="text-center">${buktiBadge}</td><td class="text-center"><div class="btn-group">${buktiBtn}<button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button></div></td><td><input class="form-check-input bulkCheck me-2" type="checkbox" value="${it.id}"></td></tr>
                                 `
                             );
@@ -932,7 +986,7 @@
             }
 
             $(document).on('change', '.bulkCheck', updateBulkDeleteButton);
-            $(document).on('change', '#checkAll', function () {
+            $(document).on('change', '#checkAll', function() {
                 $('.bulkCheck').prop('checked', this.checked);
                 updateBulkDeleteButton();
             })
@@ -1079,27 +1133,128 @@
                 });
             });
 
+            let kategoriDataTable;
+
+            function initKategoriDataTable() {
+                kategoriDataTable = $('#tabelKategoriDT').DataTable({
+                    responsive: true,
+                    pageLength: 10,
+                    lengthMenu: [10, 25, 50, 100],
+                    language: {
+                        search: "",
+                        searchPlaceholder: " Cari kategori...",
+                        paginate: {
+                            first: '«',
+                            last: '»',
+                            next: '›',
+                            previous: '‹'
+                        },
+                        info: "Menampilkan _START_ - _END_ dari _TOTAL_ kategori",
+                        infoEmpty: "Tidak ada data",
+                        infoFiltered: "(difilter dari _MAX_ total)",
+                        zeroRecords: "Tidak ada kategori yang ditemukan"
+                    },
+                    order: [[1, 'asc']],
+                    columnDefs: [
+                        { orderable: false, targets: [0, 5] },
+                        { responsivePriority: 1, targets: 0 }
+                    ],
+                    drawCallback: function() {
+                        bindKategoriCheckboxEvents();
+                    }
+                });
+                
+                // Custom search
+                $('#kategoriSearch').on('keyup', function() {
+                    kategoriDataTable.search(this.value).draw();
+                });
+                
+                // Filter by tipe
+                $('#filterTipeKategori').on('change', function() {
+                    const tipe = this.value;
+                    if (tipe === '') {
+                        kategoriDataTable.column(2).search('').draw();
+                    } else {
+                        kategoriDataTable.column(2).search(tipe, false, false).draw();
+                    }
+                });
+            }
+
             function refreshKategoriTable() {
+                // Destroy existing DataTable if exists
+                if ($.fn.DataTable.isDataTable('#tabelKategoriDT')) {
+                    $('#tabelKategoriDT').DataTable().destroy();
+                }
+                
                 $.ajax({
                     url: "{{ route('office.DaftarTugas.getKategori') }}",
                     type: 'GET',
                     success: function(d) {
-                        const tb = $('#tabelKategori tbody');
+                        const tb = $('#tabelKategoriDT tbody');
                         tb.empty();
                         if (!d.length) {
                             tb.append(
                                 '<tr><td colspan="6" class="text-center py-3 text-muted">Belum ada kategori.</td></tr>'
                             );
-                            return;
+                        } else {
+                            d.forEach(function(it) {
+                                tb.append(
+                                    `<tr data-id="${it.id}"><td><input type="checkbox" class="chk-bulk-kategori" value="${it.id}" data-tipe="${it.Tipe}"></td><td>${it.judul_kategori}</td><td><span class="badge bg-info text-dark">${it.Tipe}</span></td><td><span class="badge bg-secondary">${it.tipe_turunan || '-'}</span></td><td>${it.karyawan?.nama_lengkap||'-'}</td><td><div class="btn-group btn-group-sm w-100"><button class="btn btn-outline-primary btn-edit-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}" data-tipe="${it.Tipe}" data-turunan="${it.tipe_turunan}" data-user="${it.karyawan?.nama_lengkap||'N/A'}"><i class="bx bx-edit"></i></button><button class="btn btn-outline-danger btn-delete-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}"><i class="bx bx-trash"></i></button></div></td></tr>`
+                                );
+                            });
                         }
-                        d.forEach(function(it) {
-                            tb.append(
-                                `<tr data-id="${it.id}"><td><input type="checkbox" class="chk-bulk-kategori" value="${it.id}" data-tipe="${it.Tipe}"></td><td>${it.judul_kategori}</td><td><span class="badge bg-info text-dark">${it.Tipe}</span></td><td><span class="badge bg-secondary">${it.tipe_turunan || '-'}</span></td><td>${it.karyawan?.nama_lengkap||'-'}</td><td><div class="btn-group btn-group-sm w-100"><button class="btn btn-outline-primary btn-edit-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}" data-tipe="${it.Tipe}" data-turunan="${it.tipe_turunan}" data-user="${it.karyawan?.nama_lengkap||'N/A'}"><i class="bx bx-edit"></i></button><button class="btn btn-outline-danger btn-delete-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}"><i class="bx bx-trash"></i></button></div></td></tr>`
-                            );
-                        });
+                        
+                        // Reinitialize DataTable
+                        initKategoriDataTable();
                     }
                 });
             }
+
+            function bindKategoriCheckboxEvents() {
+                $(document).off('change', '.chk-bulk-kategori');
+                $(document).on('change', '.chk-bulk-kategori', function() {
+                    toggleBulkAction();
+                });
+            }
+
+            // Refresh button
+            $('#btnRefreshKategori').on('click', function() {
+                $('#kategoriSearch').val('');
+                $('#filterTipeKategori').val('');
+                refreshKategoriTable();
+            });
+
+            const tugasSortable = new Sortable(document.getElementById('tbody'), {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                onEnd: function() {
+                    const ids = $('#tbody tr[data-id]').map(function() {
+                        return $(this).data('id');
+                    }).get();
+
+                    if (!ids.length) return;
+
+                    $.ajax({
+                        url: "{{ route('office.DaftarTugas.reorderTugas') }}",
+                        type: 'POST',
+                        data: {
+                            _token: $('meta[name="csrf-token"]').attr('content'),
+                            ids: ids
+                        },
+                        success: function(r) {
+                            showNotification('Berhasil', r.message ||
+                                'Urutan tugas disimpan', 'success');
+                        },
+                        error: function(xhr) {
+                            showNotification('Gagal', xhr.responseJSON?.message ||
+                                'Urutan gagal disimpan, memuat ulang...', 'danger');
+                            loadData();
+                        }
+                    });
+                }
+            });
 
             loadData();
             updateTitle();
@@ -1339,49 +1494,52 @@
             $(document).on('click', '.btn-uploadBukti', function() {
                 const taskId = $(this).data('id');
                 const judul = $(this).data('judul');
-                const existingBukti = $(this).data('bukti') || { before: null, after: null };
-                
-                // Reset form
+                const existingBukti = $(this).data('bukti') || {
+                    before: null,
+                    after: null
+                };
+
                 $('#uploadTugasId').val(taskId);
                 $('#uploadTugasNama').val(judul);
                 $('#inputBuktiBefore').val('').prop('disabled', false);
                 $('#inputBuktiAfter').val('').prop('disabled', false);
                 $('#previewBeforeContainer, #previewAfterContainer').addClass('d-none');
                 $('#imagePreviewBefore, #imagePreviewAfter').attr('src', '');
-                
-                // === HANDLE EXISTING BEFORE ===
+
                 if (existingBukti.before) {
                     $('#imagePreviewBefore').attr('src', `/storage/${existingBukti.before}`);
                     $('#previewBeforeContainer').removeClass('d-none');
                     $('#inputBuktiBefore').prop('disabled', true);
                     $('#inputBuktiBefore').closest('.mb-3').find('.form-text')
-                        .html('✅ Foto Before sudah terupload <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="removeExistingBukti(\'before\')">Ganti</button>');
+                        .html(
+                            '✅ Foto Before sudah terupload <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="removeExistingBukti(\'before\')">Ganti</button>'
+                            );
                 } else {
                     $('#inputBuktiBefore').prop('disabled', false);
                     $('#inputBuktiBefore').closest('.mb-3').find('.form-text')
                         .text('Klik untuk buka kamera • JPG/PNG • Max 5MB');
                 }
-                
-                // === HANDLE EXISTING AFTER ===
+
                 if (existingBukti.after) {
                     $('#imagePreviewAfter').attr('src', `/storage/${existingBukti.after}`);
                     $('#previewAfterContainer').removeClass('d-none');
                     $('#inputBuktiAfter').prop('disabled', true);
                     $('#inputBuktiAfter').closest('.mb-3').find('.form-text')
-                        .html('✅ Foto After sudah terupload <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="removeExistingBukti(\'after\')">Ganti</button>');
+                        .html(
+                            '✅ Foto After sudah terupload <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="removeExistingBukti(\'after\')">Ganti</button>'
+                            );
                 } else {
-                    // Enable After only if Before exists (either new or existing)
-                    const canEnableAfter = existingBukti.before || ($('#inputBuktiBefore')[0].files?.length > 0);
+                    const canEnableAfter = existingBukti.before || ($('#inputBuktiBefore')[0].files
+                        ?.length > 0);
                     $('#inputBuktiAfter').prop('disabled', !canEnableAfter);
                     $('#inputBuktiAfter').closest('.mb-3').find('.form-text')
-                        .text(canEnableAfter ? 'Klik untuk buka kamera • JPG/PNG • Max 5MB' : 'Upload Foto Before terlebih dahulu untuk mengaktifkan');
+                        .text(canEnableAfter ? 'Klik untuk buka kamera • JPG/PNG • Max 5MB' :
+                            'Upload Foto Before terlebih dahulu untuk mengaktifkan');
                 }
-                
-                // Show modal
+
                 new bootstrap.Modal(document.getElementById('modalUploadBukti')).show();
             });
 
-            // Global function to remove existing proof
             window.removeExistingBukti = function(type) {
                 if (type === 'before') {
                     $('#inputBuktiBefore').prop('disabled', false).val('');
@@ -1389,7 +1547,6 @@
                     $('#imagePreviewBefore').attr('src', '');
                     $('#inputBuktiBefore').closest('.mb-3').find('.form-text')
                         .text('Klik untuk buka kamera • JPG/PNG • Max 5MB');
-                    // Enable after input if before is now empty but after exists
                     if ($('#inputBuktiAfter')[0].disabled && !$('#imagePreviewAfter').attr('src')) {
                         $('#inputBuktiAfter').prop('disabled', true);
                     }
@@ -1459,63 +1616,64 @@
 
             $('#formUploadBukti').on('submit', async function(e) {
                 e.preventDefault();
-                
+
                 const beforeInput = $('#inputBuktiBefore')[0];
                 const afterInput = $('#inputBuktiAfter')[0];
                 const rawBeforeFile = beforeInput?.files[0];
                 const rawAfterFile = afterInput?.files[0];
-                
+
                 const hasExistingBefore = $('#imagePreviewBefore').attr('src')?.includes('/storage/');
                 const hasExistingAfter = $('#imagePreviewAfter').attr('src')?.includes('/storage/');
-                
+
                 if (!rawBeforeFile && !rawAfterFile) {
                     if (!hasExistingBefore || !hasExistingAfter) {
                         const missing = !hasExistingBefore ? 'Before' : 'After';
-                        showNotification('Peringatan', `Foto ${missing} wajib diupload untuk melengkapi bukti!`, 'warning');
+                        showNotification('Peringatan',
+                            `Foto ${missing} wajib diupload untuk melengkapi bukti!`, 'warning');
                         return;
                     }
                 }
-                
+
                 const btn = $('#btnSubmitUpload');
                 const sp = $('#uploadSpinner');
                 const txt = $('#btnUploadText');
-                
+
                 btn.prop('disabled', true);
                 sp.removeClass('d-none');
                 txt.text('Memproses...');
-                
+
                 try {
                     let processedBefore = null;
                     let processedAfter = null;
-                    
+
                     if (rawBeforeFile) {
                         txt.text('Mengompres Foto Before...');
                         processedBefore = await compressImage(rawBeforeFile, 1280, 0.85);
-                        console.log(`🗜️ Before: ${(rawBeforeFile.size/1024).toFixed(1)}KB → ${(processedBefore.size/1024).toFixed(1)}KB`);
                     }
-                    
+
                     if (rawAfterFile) {
                         if (!processedBefore && !hasExistingBefore) {
-                            throw new Error('Foto Before wajib diupload terlebih dahulu sebelum mengupload Foto After');
+                            throw new Error(
+                                'Foto Before wajib diupload terlebih dahulu sebelum mengupload Foto After'
+                                );
                         }
                         txt.text('Mengompres Foto After...');
                         processedAfter = await compressImage(rawAfterFile, 1280, 0.85);
-                        console.log(`🗜️ After: ${(rawAfterFile.size/1024).toFixed(1)}KB → ${(processedAfter.size/1024).toFixed(1)}KB`);
                     }
-                    
+
                     const fd = new FormData();
                     fd.append('_token', $('meta[name="csrf-token"]').attr('content'));
                     fd.append('tugas_id', $('#uploadTugasId').val());
-                    
+
                     if (processedBefore) {
                         fd.append('bukti_before', processedBefore);
                     }
                     if (processedAfter) {
                         fd.append('bukti_after', processedAfter);
                     }
-                    
+
                     txt.text('Mengupload ke Server...');
-                    
+
                     const response = await $.ajax({
                         url: "{{ route('office.DaftarTugas.uploadBukti') }}",
                         method: 'POST',
@@ -1526,24 +1684,24 @@
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
                     });
-                    
+
                     $('#modalUploadBukti').modal('hide');
-                    loadData(); // Refresh table
-                    
+                    loadData();
+
                     let msg = 'Bukti berhasil diupdate.';
                     if (response.status == 1) {
                         msg += 'Tugas otomatis ditandai <strong>Selesai</strong>.';
                     }
-                    if ((rawBeforeFile && processedBefore?.size < rawBeforeFile.size) || 
+                    if ((rawBeforeFile && processedBefore?.size < rawBeforeFile.size) ||
                         (rawAfterFile && processedAfter?.size < rawAfterFile.size)) {
                         msg += 'Gambar telah dikompresi.';
                     }
-                    
+
                     showNotification('Berhasil!', msg, 'success');
-                    
+
                 } catch (error) {
-                    console.error('Upload error:', error);
-                    const msg = error.responseJSON?.message || error.message || 'Gagal mengupdate bukti';
+                    const msg = error.responseJSON?.message || error.message ||
+                    'Gagal mengupdate bukti';
                     showNotification('Gagal', msg, 'danger');
                 } finally {
                     btn.prop('disabled', false);
@@ -1562,54 +1720,52 @@
                     const img = new Image();
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    
+
                     const objectURL = URL.createObjectURL(file);
-                    
+
                     img.onload = function() {
                         try {
                             let width = img.width;
                             let height = img.height;
-                            
+
                             if (width > maxWidth) {
                                 height = Math.round((maxWidth / width) * height);
                                 width = maxWidth;
                             }
-                            
+
                             canvas.width = width;
                             canvas.height = height;
                             ctx.drawImage(img, 0, 0, width, height);
-                            
+
                             canvas.toBlob((blob) => {
                                 URL.revokeObjectURL(objectURL);
-                                
+
                                 if (!blob) {
                                     reject(new Error('Gagal mengkompresi gambar'));
                                     return;
                                 }
-                                
+
                                 const compressedFile = new File(
-                                    [blob], 
-                                    file.name.replace(/\.[^/.]+$/, '.jpg'), 
-                                    { 
-                                        type: 'image/jpeg', 
-                                        lastModified: Date.now() 
+                                    [blob],
+                                    file.name.replace(/\.[^/.]+$/, '.jpg'), {
+                                        type: 'image/jpeg',
+                                        lastModified: Date.now()
                                     }
                                 );
                                 resolve(compressedFile);
-                                
+
                             }, 'image/jpeg', quality);
-                            
+
                         } catch (error) {
                             URL.revokeObjectURL(objectURL);
                         }
                     };
-                    
+
                     img.onerror = function(e) {
                         URL.revokeObjectURL(objectURL);
-                        console.error('Image load error:', e);
                         reject(new Error('Gagal memuat gambar untuk kompresi'));
                     };
-                    
+
                     img.src = objectURL;
                 });
             }
@@ -1699,9 +1855,9 @@
                 });
             });
 
-            $('#btnBulkDelete').on('click', function () {
+            $('#btnBulkDelete').on('click', function() {
                 const ids = $('.bulkCheck:checked')
-                    .map(function () {
+                    .map(function() {
                         return $(this).val();
                     })
                     .get();
@@ -1713,7 +1869,6 @@
                 }
 
                 const btn = $(this);
-                const row = btn.closest('tr');
 
                 $.ajax({
                     url: "{{ route('office.DaftarTugas.bulkDelete') }}",
@@ -1722,8 +1877,7 @@
                         ids: ids,
                         _token: "{{ csrf_token() }}"
                     },
-                    success: function (r) {
-
+                    success: function(r) {
                         ids.forEach(id => {
                             $(`tr[data-id="${id}"]`).remove();
                         });
@@ -1731,17 +1885,14 @@
                         $('#checkAll').prop('checked', false);
                         updateBulkDeleteButton();
 
-                        row.fadeOut(300, function() {
-                            $(this).remove();
-                            if (!$('#tbody tr').length) loadData();
-                        });
+                        if (!$('#tbody tr').length) loadData();
+
                         showNotification('Berhasil', r.message || 'Tugas berhasil dihapus',
                             'success');
                     },
                     error: function(x) {
                         showNotification('Gagal', x.responseJSON?.message ||
                             'Gagal menghapus tugas.', 'danger');
-                        btn.prop('disabled', false).html(orig);
                     }
                 });
             });
@@ -1912,7 +2063,6 @@
                 loadChartData();
             });
 
-            // === LOAD AVAILABLE CATEGORIES ===
             function loadAvailableCategories() {
                 $('#availableLoading').removeClass('d-none');
                 $('#availableList').html('');
@@ -1934,7 +2084,6 @@
                             return;
                         }
 
-                        // Filter by tipe
                         const filterTipe = $('#filterAvailableTipe').val();
                         const filtered = filterTipe === 'all' ? r.available : r.available.filter(k => k
                             .Tipe === filterTipe);
@@ -1995,14 +2144,12 @@
                 });
             }
 
-            // === UPDATE SELECTED COUNT ===
             function updateSelectedCount() {
                 const count = $('.chk-available:checked').length;
                 $('#selectedCount').text(count);
                 $('#btnActivateSelected').prop('disabled', count === 0);
             }
 
-            // === ACTIVATE SELECTED ===
             function activateSelectedTasks() {
                 const ids = [];
                 $('.chk-available:checked').each(function() {
@@ -2028,8 +2175,8 @@
                     },
                     success: function(r) {
                         showNotification('Berhasil!', r.message, 'success');
-                        loadData(); // Refresh main table
-                        loadAvailableCategories(); // Refresh available list
+                        loadData();
+                        loadAvailableCategories();
                     },
                     error: function(xhr) {
                         showNotification('Gagal', xhr.responseJSON?.message ||
@@ -2041,36 +2188,27 @@
                 });
             }
 
-            // === EVENT LISTENERS ===
-
-            // Refresh available categories
             $('#btnRefreshAvailable').on('click', function() {
                 loadAvailableCategories();
             });
 
-            // Filter available by tipe
             $('#filterAvailableTipe').on('change', function() {
-                // Re-render dari data yang sudah ada atau reload
                 loadAvailableCategories();
             });
 
-            // Check all available
             $('#checkAllAvailable').on('change', function() {
                 $('.chk-available').prop('checked', $(this).prop('checked'));
                 updateSelectedCount();
             });
 
-            // Single checkbox change
             $(document).on('change', '.chk-available', function() {
                 updateSelectedCount();
             });
 
-            // Activate button
             $('#btnActivateSelected').on('click', function() {
                 activateSelectedTasks();
             });
 
-            // Load on page init
             loadAvailableCategories();
         });
     </script>

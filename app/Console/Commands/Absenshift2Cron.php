@@ -18,20 +18,20 @@ class Absenshift2Cron extends Command
      *
      * @var string
      */
-    protected $description = 'Otomatis jika absen pulang kosong maka akan terisi pulang jam 17:00:00';
+    protected $description = 'Otomatis jika absen pulang kosong maka akan terisi pulang jam 16:00:00';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        // Cari semua absensi yang jam masuk-nya antara 05:00:00 dan 12:00:00 dan jam keluar-nya masih null
+        // Cari semua absensi yang jam masuk-nya antara 04:00:00 dan 12:00:00 dan jam keluar-nya masih null
         $transactions = AbsensiKaryawan::whereNull('jam_keluar')
             ->whereTime('jam_masuk', '>=', '13:00:00')
             ->whereTime('jam_masuk', '<=', '19:00:00')
             ->get();
 
-        $defaultPulangTime = '05:00:00'; // Jam default untuk pulang
+        $defaultPulangTime = '04:00:00'; // Jam default untuk pulang
         
         foreach ($transactions as $transaction) {
             // Set jam_keluar menjadi default pulang time

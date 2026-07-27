@@ -242,7 +242,7 @@ class Kernel extends ConsoleKernel
         // Artisan Command Tasks
         $schedule->command('app:update-status')->dailyAt('23:00')->description('app:update-status');
         $schedule->command('uptime:check')->everySixHours()->description('uptime:check');
-        $schedule->command('assign:shift2')->dailyAt('17:30')->description('assign:shift2');
+        $schedule->command('assign:shift2')->dailyAt('16:00')->description('assign:shift2');
         $schedule->command('RKM:auto-job')->sundays()->at('00:47')->description('RKM:auto-job');
         $schedule->command('app:update-cuti')->yearlyOn(2, 1, '00:01')->description('app:update-cuti');
         $schedule->command('peluang:check')->dailyAt('12:00')->description('peluang:check');
@@ -252,6 +252,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('perusahaan:evaluasi-status')->daily()->description('perusahaan:evaluasi-status');
         $schedule->command('app:notification-pembelian-hr')->daily()->description('app:notification-pembelian-hr');
         $schedule->command('log:clean-activity')->tuesdays()->at('03:00')->description('Pembersihan Otomatis Activity Log');
+        $schedule->command('app:up-jurnal-akuntansi')->dailyAt('08.00');
     }
 
     protected function commands(): void

@@ -26,7 +26,7 @@ class LoginController extends Controller
         return 'username';
     }
 
-    protected function authenticated(Request $request, $user)
+        protected function authenticated(Request $request, $user)
     {
         $karyawan = $user->karyawan ?? Karyawan::where('user_id', $user->id)->first();
 
@@ -43,38 +43,25 @@ class LoginController extends Controller
         $today = $now->toDateString();
         $todayDate = $now->day;
 
-        $shift1TakenByOther = KontrolTugas::whereDate('Deadline_Date', $today)
-            ->where('id_karyawan', '!=', $karyawanId)
-            ->whereHas('kategoriDaftarTugas', function ($q) {
-                $q->where('Tipe', 'Harian')->where('tipe_turunan', 'Shift 1');
-            })
-            ->exists();
-
-        $userAlreadyHasShift2 = KontrolTugas::where('id_karyawan', $karyawanId)
+        $shiftSudahAda = KontrolTugas::where('id_karyawan', $karyawanId)
             ->whereDate('Deadline_Date', $today)
             ->whereHas('kategoriDaftarTugas', function ($q) {
-                $q->where('Tipe', 'Harian')->where('tipe_turunan', 'Shift 2');
+                $q->where('Tipe', 'Harian')->whereIn('tipe_turunan', ['Shift 1', 'Shift 2']);
             })
-            ->exists();
+            ->with('kategoriDaftarTugas')
+            ->first();
 
-        $targetShift = null;
-        $pagiMulai = Carbon::today()->setTime(4, 0, 0);
-        $pagiSelesai = Carbon::today()->setTime(8, 0, 0);
-        $soreMulai = Carbon::today()->setTime(15, 0, 0);
-        $soreSelesai = Carbon::today()->setTime(19, 0, 0);
-
-        if (!$now->between($pagiMulai, $pagiSelesai) && !$now->between($soreMulai, $soreSelesai)) {
-            $targetShift = null;
-        } elseif ($userAlreadyHasShift2) {
-            $targetShift = 'Shift 2';
-        } elseif ($shift1TakenByOther) {
-            $targetShift = 'Shift 2';
+        if ($shiftSudahAda) {
+            $targetShift = $shiftSudahAda->kategoriDaftarTugas->tipe_turunan;
         } else {
-            if ($now->between($pagiMulai, $pagiSelesai)) {
-                $targetShift = 'Shift 1';
-            } else {
-                $targetShift = 'Shift 2';
-            }
+            $shift1SudahDiambilOrangLain = KontrolTugas::whereDate('Deadline_Date', $today)
+                ->where('id_karyawan', '!=', $karyawanId)
+                ->whereHas('kategoriDaftarTugas', function ($q) {
+                    $q->where('Tipe', 'Harian')->where('tipe_turunan', 'Shift 1');
+                })
+                ->exists();
+
+            $targetShift = $shift1SudahDiambilOrangLain ? 'Shift 2' : 'Shift 1';
         }
 
         $isEndOfWeek = $now->isSaturday() || $now->isSunday();
@@ -109,7 +96,7 @@ class LoginController extends Controller
                     $deadline = $now->copy()->setDay($targetDate)->toDateString();
                 }
             } elseif ($kat->Tipe === 'Mingguan') {
-                $hariMap = ['Saturday' => 'Sabtu', 'Sabtu' => 'Sabtu', 'Minggu' => 'Minggu', 'Sunday' => 'Minggu'];
+                $hariMap = ['Saturday' => 'Sabtu', 'Sunday' => 'Minggu'];
                 $hariIni = $now->dayName;
                 $shiftHariIni = $hariMap[$hariIni] ?? null;
 
@@ -120,14 +107,20 @@ class LoginController extends Controller
             }
 
             if ($shouldActivate) {
-                $exists = KontrolTugas::where('id_karyawan', $karyawanId)->where('id_DaftarTugas', $kat->id)->whereDate('Deadline_Date', $deadline)->exists();
+                $exists = KontrolTugas::where('id_karyawan', $karyawanId)
+                    ->where('id_DaftarTugas', $kat->id)
+                    ->whereDate('Deadline_Date', $deadline)
+                    ->exists();
 
                 if (!$exists) {
+                    $nextUrutan = (KontrolTugas::max('urutan') ?? 0) + 1;
+
                     KontrolTugas::create([
                         'id_karyawan' => $karyawanId,
                         'id_DaftarTugas' => $kat->id,
                         'status' => 0,
                         'Deadline_Date' => $deadline,
+                        'urutan' => $nextUrutan,
                     ]);
                 }
             }
@@ -140,11 +133,8 @@ class LoginController extends Controller
 
         return match ($tipe) {
             'Harian' => $now->toDateString(),
-
             'Mingguan' => $this->hitungDeadlineMingguan($tipe_turunan),
-
             'Bulanan' => $this->hitungDeadlineBulanan($tipe_turunan),
-
             'Quartal' => $now->addMonths(3)->endOfMonth()->toDateString(),
             'Semester' => $now->addMonths(6)->endOfMonth()->toDateString(),
             'Tahunan' => $now->endOfYear()->toDateString(),

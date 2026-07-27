@@ -38,42 +38,29 @@ class SalesKPIService
 
         $nilaiTarget = (float) $detail->nilai_target;
 
-        $totalSales = RKM::where('status', '0')
+        $query = RKM::where('status', '0')
             ->whereYear('tanggal_awal', $tahun);
 
         if ($personId !== null) {
-            $personId = detailPersonKPI::where('detailTargetKey', $detail->id)->first()?->id_karyawan;
-
-            $kodeKaryawan = karyawan::where('id', $personId)->value('kode_karyawan');
-            if (!$kodeKaryawan) {
+            $karyawan = karyawan::find($personId);
+            if ($karyawan && $karyawan->kode_karyawan) {
+                $query->where('sales_key', $karyawan->kode_karyawan);
+            } else {
                 return 0;
             }
-
-            $totalSales = $totalSales->where('sales_key', $kodeKaryawan)
-                ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
-                ->value('total_sales');
-        } else {
-            $totalSales = $totalSales
-                ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
-                ->value('total_sales');
         }
 
+        // PERBAIKAN: Agregasi langsung di level database (O(1) memory)
+        $totalSales = (float) ($query->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))->value('total_sales') ?? 0);
+
         $dataTarget = targetKPI::with('detailTargetKPI')
-            ->whereHas(
-                'dataTarget',
-                fn($q) => $q->where('asistant_route', 'pemasukan kotor')
-            )
+            ->whereHas('dataTarget', fn($q) => $q->where('asistant_route', 'pemasukan kotor'))
             ->first();
 
         $targetGM = ModelsTarget::where('quartal', 'All')->first() ?? null;
+        $target = $dataTarget->detailTargetKPI->first()->nilai_target ?? $targetGM->target ?? 0;
 
-        $target = $dataTarget->detailTargetKPI->first()->nilai_target
-            ?? $targetGM->target
-            ?? 0;
-
-        $progressRupiah = (float) ($totalSales ?? 0);
-
-        $progress = $target > 0 ? ($progressRupiah / $target) * 100 : 0;
+        $progress = $target > 0 ? ($totalSales / $target) * 100 : 0;
 
         return round($progress, 1);
     }
@@ -99,22 +86,19 @@ class SalesKPIService
             ]);
         }
 
-        $kodeKaryawan = null;
-        $karyawanData = null;
-
-        if ($personId !== null) {
-            $karyawanData = karyawan::find($personId);
-            $kodeKaryawan = $karyawanData ? $karyawanData->kode_karyawan : null;
-        }
-
         $query = RKM::where('status', '0')
             ->whereYear('tanggal_awal', $tahun);
 
-        if ($kodeKaryawan) {
-            $query->where('sales_key', $kodeKaryawan);
+        $kodeKaryawan = null;
+        if ($personId !== null) {
+            $karyawanData = karyawan::find($personId);
+            $kodeKaryawan = $karyawanData ? $karyawanData->kode_karyawan : null;
+            if ($kodeKaryawan) {
+                $query->where('sales_key', $kodeKaryawan);
+            }
         }
 
-        $sales = $query->select(DB::raw('tanggal_awal, SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total'))
+        $sales = $query->select('tanggal_awal', DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total'))
             ->groupBy('tanggal_awal')
             ->get();
 
@@ -134,7 +118,8 @@ class SalesKPIService
             if (!isset($dailyBreakdownPerMonth[$monthKey])) {
                 $dailyBreakdownPerMonth[$monthKey] = [];
             }
-            $dailyBreakdownPerMonth[$monthKey][$dateKey] = (float) number_format($total, 1, '.', '');
+            // PERBAIKAN: Simpan sebagai float murni, hindari number_format untuk operasi matematika
+            $dailyBreakdownPerMonth[$monthKey][$dateKey] = $total;
 
             if (!isset($monthlyDataTemp[$monthKey])) {
                 $monthlyDataTemp[$monthKey] = 0;
@@ -150,7 +135,7 @@ class SalesKPIService
 
         $monthlyData = [];
         foreach ($monthlyDataTemp as $month => $total) {
-            $monthlyData[$month] = (float) number_format($total, 1, '.', '');
+            $monthlyData[$month] = round($total, 1);
         }
 
         ksort($monthlyData);
@@ -158,10 +143,8 @@ class SalesKPIService
 
         $triwulanData = [];
         for ($i = 1; $i <= 4; $i++) {
-            $triwulanData['Triwulan_' . $i] = (float) number_format($triwulanDataTemp[$i], 1, '.', '');
+            $triwulanData['Triwulan_' . $i] = round($triwulanDataTemp[$i], 1);
         }
-
-        $progressRupiah = (float) number_format($totalSales, 1, '.', '');
 
         $dataTarget = targetKPI::with(['detailTargetKPI', 'dataTarget'])
             ->whereHas('dataTarget', function ($q) {
@@ -172,7 +155,7 @@ class SalesKPIService
         $targetGM = ModelsTarget::where('quartal', 'All')->first() ?? null;
         $targetGlobal = (float) ($dataTarget->detailTargetKPI->first()->nilai_target ?? $targetGM->target ?? 0);
 
-        $progressGlobal = $targetGlobal > 0 ? ($progressRupiah / $targetGlobal) * 100 : 0;
+        $progressGlobal = $targetGlobal > 0 ? ($totalSales / $targetGlobal) * 100 : 0;
         $gap = $progressGlobal - $nilaiTarget;
 
         $above = $totalSales >= $targetGlobal ? 1 : 0;
@@ -182,9 +165,7 @@ class SalesKPIService
         $dailyProgressPerMonth = [];
 
         foreach ($monthlyData as $month => $value) {
-            $monthlyProgress[$month] = $targetGlobal > 0
-                ? (float) number_format(($value / $targetGlobal) * 100, 1, '.', '')
-                : 0;
+            $monthlyProgress[$month] = $targetGlobal > 0 ? round(($value / $targetGlobal) * 100, 1) : 0;
         }
 
         foreach ($dailyBreakdownPerMonth as $month => $days) {
@@ -192,106 +173,89 @@ class SalesKPIService
                 if (!isset($dailyProgressPerMonth[$month])) {
                     $dailyProgressPerMonth[$month] = [];
                 }
-                $dailyProgressPerMonth[$month][$day] = $targetGlobal > 0
-                    ? (float) number_format(($value / $targetGlobal) * 100, 1, '.', '')
-                    : 0;
+                $dailyProgressPerMonth[$month][$day] = $targetGlobal > 0 ? round(($value / $targetGlobal) * 100, 1) : 0;
             }
         }
 
         $salesPerformance = null;
 
         if ($personId === null) {
-            $allSalesData = [];
-
             $allKaryawan = karyawan::where(function ($q) {
                 $q->where('status_aktif', '1')
-                    ->whereNot('jabatan', 'Outsource')
-                    ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-                    ->whereNot('jabatan', 'Pilih Jabatan')
-                    ->whereNotNull('nip')
-                    ->whereNot('divisi', 'Direksi')
-                    ->orWhereNull('status_aktif');
-            })
-                ->where(function ($q) {
-                    $q->where('jabatan', 'Sales')
-                        ->orWhere('jabatan', 'Sales Executive')
-                        ->orWhere('jabatan', 'Account Manager')
-                        ->orWhereNull('jabatan')
-                        ->where('status_aktif', '1');
-                })
-                ->get();
+                  ->whereNot('jabatan', 'Outsource')
+                  ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+                  ->whereNot('jabatan', 'Pilih Jabatan')
+                  ->whereNotNull('nip')
+                  ->whereNot('divisi', 'Direksi');
+            })->where(function ($q) {
+                $q->whereIn('jabatan', ['Sales', 'Sales Executive', 'Account Manager'])
+                  ->orWhereNull('jabatan');
+            })->get(['id', 'kode_karyawan', 'nama_lengkap', 'nama']);
 
+            // PERBAIKAN: Eliminasi N+1 Query dengan agregasi database tunggal
+            $revenues = RKM::where('status', '0')
+                ->whereYear('tanggal_awal', $tahun)
+                ->select('sales_key', DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total'))
+                ->groupBy('sales_key')
+                ->get()
+                ->pluck('total', 'sales_key');
+
+            $karyawanIds = $allKaryawan->pluck('id');
+            $detailPersons = detailPersonKPI::where('id_target', $itemDetail->id)
+                ->whereIn('id_karyawan', $karyawanIds)
+                ->get()
+                ->keyBy('id_karyawan');
+
+            $allSalesData = [];
             foreach ($allKaryawan as $karyawanItem) {
                 $salesKey = $karyawanItem->kode_karyawan;
+                if (!$salesKey) continue;
 
-                if (!$salesKey) {
-                    continue;
-                }
-
-                $salesRevenue = RKM::where('status', '0')
-                    ->whereYear('tanggal_awal', $tahun)
-                    ->where('sales_key', $salesKey)
-                    ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total'))
-                    ->value('total');
-
-                $salesRevenue = (float) ($salesRevenue ?? 0);
-
-                $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)
-                    ->where('id_karyawan', $karyawanItem->id)
-                    ->first();
-
+                $salesRevenue = (float) ($revenues[$salesKey] ?? 0);
+                $detailPerson = $detailPersons[$karyawanItem->id] ?? null;
                 $presentaseKemampuan = (float) ($detailPerson->presentase_kemampuan ?? 0);
-                $idDetailPerson = $detailPerson->id ?? null;
-
                 $percentage = $presentaseKemampuan > 0 ? ($salesRevenue / $presentaseKemampuan) * 100 : 0;
 
                 $allSalesData[] = [
                     'kode_karyawan' => (string) $salesKey,
                     'nama' => (string) ($karyawanItem->nama_lengkap ?? $karyawanItem->nama ?? $salesKey),
-                    'revenue' => (float) number_format($salesRevenue, 1, '.', ''),
-                    'id_detailPerson' => $idDetailPerson,
-                    'presentase_kemampuan' => (float) number_format($presentaseKemampuan, 1, '.', ''),
-                    'percentage' => (float) number_format($percentage, 1, '.', ''),
+                    'revenue' => round($salesRevenue, 1),
+                    'id_detailPerson' => $detailPerson ? $detailPerson->id : null,
+                    'presentase_kemampuan' => round($presentaseKemampuan, 1),
+                    'percentage' => round($percentage, 1),
                     'status' => $salesRevenue >= $presentaseKemampuan ? 'achieved' : 'pending'
                 ];
             }
 
-            $salesPerformance = [
-                'type' => 'all',
-                'data' => $allSalesData
-            ];
+            $salesPerformance = ['type' => 'all', 'data' => $allSalesData];
         } else {
+            $karyawanData = karyawan::find($personId);
             $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)
                 ->where('id_karyawan', $personId)
                 ->first();
 
             $presentaseKemampuan = (float) ($detailPerson->presentase_kemampuan ?? 0);
-            $idDetailPerson = $detailPerson->id ?? null;
-
             $percentage = $presentaseKemampuan > 0 ? ($totalSales / $presentaseKemampuan) * 100 : 0;
-
             $karyawanName = $karyawanData ? ($karyawanData->nama_lengkap ?? $karyawanData->nama ?? '') : '';
 
             $salesPerformance = [
                 'type' => 'individual',
                 'data' => [
-                    'kode_karyawan' => (string) $kodeKaryawan,
+                    'kode_karyawan' => (string) ($karyawanData->kode_karyawan ?? ''),
                     'nama' => (string) $karyawanName,
-                    'revenue' => (float) number_format($totalSales, 1, '.', ''),
-                    'id_detailPerson' => $idDetailPerson,
-                    'presentase_kemampuan' => (float) number_format($presentaseKemampuan, 1, '.', ''),
-                    'percentage' => (float) number_format($percentage, 1, '.', ''),
+                    'revenue' => round($totalSales, 1),
+                    'id_detailPerson' => $detailPerson ? $detailPerson->id : null,
+                    'presentase_kemampuan' => round($presentaseKemampuan, 1),
+                    'percentage' => round($percentage, 1),
                     'status' => $totalSales >= $presentaseKemampuan ? 'achieved' : 'pending'
                 ]
             ];
         }
 
         return [
-            'progress' => (float) number_format($progressGlobal, 1, '.', ''),
-            'gap' => (float) number_format($gap, 1, '.', ''),
-            'dataManual' => [
-                'manual_document' => $detail->manual_document ?? null,
-            ],
+            'progress' => round($progressGlobal, 1),
+            'gap' => round($gap, 1),
+            'dataManual' => ['manual_document' => $detail->manual_document ?? null],
             'pie_chart' => ['above' => $above, 'below' => $below],
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
@@ -315,34 +279,31 @@ class SalesKPIService
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
+        
+        // PERBAIKAN: Samakan rentang tanggal dengan fungsi Detail (akhir tahun target)
         $start = Carbon::create($tahun, 1, 1)->startOfDay();
-        $end = Carbon::create($tahun, Carbon::now()->month, Carbon::now()->daysInMonth)->endOfDay();
+        $end = Carbon::create($tahun, 12, 31)->endOfDay();
 
         $nilaiTarget = (float) $detail->nilai_target;
 
-        if ($personId !== null) {
-            $karyawan = Karyawan::find($personId);
+        // PERBAIKAN: Tambahkan select spesifik untuk menghindari Memory Exhaustion
+        $query = ApprovalPendapatanSales::whereBetween('tanggal_mulai', [$start, $end])
+            ->select('id', 'tanggal_mulai', 'total_pa', 'oleh_oleh', 'entertainment', 'total_cashback', 'total_uang_saku', 'total_akomodasi', 'biaya_transport', 'harga_net', 'pax');
 
-            if ($karyawan) {
-                $data = ApprovalPendapatanSales::with(['pendapatan', 'rkm'])
-                    ->whereHas('rkm', function ($query) use ($karyawan) {
-                        $query->where('sales_key', $karyawan->kode_karyawan);
-                    })
-                    ->whereBetween('tanggal_mulai', [$start, $end])
-                    ->get();
+        if ($personId !== null) {
+            $karyawan = karyawan::find($personId);
+            if ($karyawan && $karyawan->kode_karyawan) {
+                $query->whereHas('rkm', function ($q) use ($karyawan) {
+                    $q->where('sales_key', $karyawan->kode_karyawan);
+                });
             } else {
-                $data = collect();
-                Log::warning("Karyawan tidak ditemukan untuk personId: {$personId}");
+                return 0;
             }
-        } else {
-            $data = ApprovalPendapatanSales::with('pendapatan')
-                ->whereBetween('tanggal_mulai', [$start, $end])
-                ->get();
         }
 
-        Log::info("calculateCustomerAcquisitionCost - Kueri Selesai", [
-            'jumlah_data_ditemukan' => $data->count(),
-        ]);
+        $data = $query->with(['pendapatan' => function($q) {
+            $q->select('id', 'pax', 'harga_net');
+        }])->get();
 
         if ($data->isEmpty()) return 0;
 
@@ -350,48 +311,27 @@ class SalesKPIService
         $dataAkuisisiTidakTerdata = 0;
         $achieve = 0;
 
-        foreach ($data as $index => $row) {
+        foreach ($data as $row) {
             $hargaNet = ($row->pendapatan?->pax ?? 0) * ($row->pendapatan?->harga_net ?? 0);
-
-            $biayaPenjualan = ($row->total_pa + $row->oleh_oleh + $row->entertainment +
-                                    $row->total_cashback + $row->total_uang_saku +
-                                    $row->total_akomodasi + $row->biaya_transport);
-
-            $selisihBiayaUtama = ($row->harga_net * $row->pax) - $hargaNet;
-
-            if ($biayaPenjualan > $selisihBiayaUtama) {
-                $selisihBiaya = $biayaPenjualan - $selisihBiayaUtama;
-            } else {
-                $selisihBiaya = 0;
-            }
+            $biayaPenjualan = (float) ($row->total_pa + $row->oleh_oleh + $row->entertainment + $row->total_cashback + $row->total_uang_saku + $row->total_akomodasi + $row->biaya_transport);
+            $selisihBiayaUtama = (float) (($row->harga_net * $row->pax) - $hargaNet);
+            $selisihBiaya = ($biayaPenjualan > $selisihBiayaUtama) ? ($biayaPenjualan - $selisihBiayaUtama) : 0;
 
             if ($selisihBiaya <= 0) {
                 $dataAkuisisiTidakTerdata++;
-                continue;
             } else {
                 $totalDataAkuisisi++;
-
                 if ($hargaNet > 0) {
                     $persentase = ($selisihBiaya / $hargaNet) * 100;
-
-                    $isAchieved = $persentase <= 10;
-
-                    if ($isAchieved) {
+                    if ($persentase <= 10) {
                         $achieve++;
                     }
-                } else {
-                    Log::warning("calculateCustomerAcquisitionCost - Harga Net = 0 (Pembagian Dihindari)", [
-                        'row_id' => $row->id ?? 'unknown',
-                    ]);
                 }
             }
         }
 
-        if ($data->count() > 0) {
-            $progress = round(($achieve + $dataAkuisisiTidakTerdata) / $data->count() * 100, 2);
-        } else {
-            $progress = 0;
-        }
+        $totalCount = $data->count();
+        $progress = $totalCount > 0 ? round((($achieve + $dataAkuisisiTidakTerdata) / $totalCount) * 100, 2) : 0;
 
         return round($progress, 2);
     }
@@ -400,7 +340,6 @@ class SalesKPIService
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
-        // 1. Validasi Input
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             return $this->getDefaultDetailResponse();
         }
@@ -415,31 +354,29 @@ class SalesKPIService
         $start = Carbon::create($tahun, 1, 1)->startOfDay();
         $end = Carbon::create($tahun, 12, 31)->endOfDay();
 
-        // 2. Kueri Antarmuka Database dengan Filter Personalia
-        if ($personId !== null) {
-            $karyawan = Karyawan::find($personId);
+        // PERBAIKAN: Tambahkan select spesifik untuk menghindari Memory Exhaustion
+        $query = ApprovalPendapatanSales::whereBetween('tanggal_mulai', [$start, $end])
+            ->select('id', 'tanggal_mulai', 'total_pa', 'oleh_oleh', 'entertainment', 'total_cashback', 'total_uang_saku', 'total_akomodasi', 'biaya_transport', 'harga_net', 'pax');
 
-            if ($karyawan) {
-                $data = ApprovalPendapatanSales::with(['pendapatan', 'rkm'])
-                    ->whereHas('rkm', function ($query) use ($karyawan) {
-                        $query->where('sales_key', $karyawan->kode_karyawan);
-                    })
-                    ->whereBetween('tanggal_mulai', [$start, $end])
-                    ->get();
+        if ($personId !== null) {
+            $karyawan = karyawan::find($personId);
+            if ($karyawan && $karyawan->kode_karyawan) {
+                $query->whereHas('rkm', function ($q) use ($karyawan) {
+                    $q->where('sales_key', $karyawan->kode_karyawan);
+                });
             } else {
-                $data = collect();
+                return $this->getDefaultDetailResponse();
             }
-        } else {
-            $data = ApprovalPendapatanSales::with('pendapatan')
-                ->whereBetween('tanggal_mulai', [$start, $end])
-                ->get();
         }
+
+        $data = $query->with(['pendapatan' => function($q) {
+            $q->select('id', 'pax', 'harga_net');
+        }])->get();
 
         if ($data->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        // 3. Inisialisasi Variabel Kalkulasi Matriks
         $totalDataAkuisisi = 0;
         $dataAkuisisiTidakTerdata = 0;
         $achieve = 0;
@@ -449,31 +386,24 @@ class SalesKPIService
         $totalDataPerDay = [];
         $achievedDataPerDay = [];
 
-        // 4. Proses Iterasi dan Evaluasi Data
         foreach ($data as $row) {
             $date = Carbon::parse($row->tanggal_mulai);
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
 
-            // Perekaman jumlah data keseluruhan
             $totalDataPerMonth[$monthKey] = ($totalDataPerMonth[$monthKey] ?? 0) + 1;
             $totalDataPerDay[$monthKey][$dateKey] = ($totalDataPerDay[$monthKey][$dateKey] ?? 0) + 1;
 
             $achievedDataPerMonth[$monthKey] = $achievedDataPerMonth[$monthKey] ?? 0;
             $achievedDataPerDay[$monthKey][$dateKey] = $achievedDataPerDay[$monthKey][$dateKey] ?? 0;
 
-            // Kalkulasi parameter persentase
             $hargaNet = ($row->pendapatan?->pax ?? 0) * ($row->pendapatan?->harga_net ?? 0);
-            $biayaPenjualan = (float) ($row->total_pa + $row->oleh_oleh + $row->entertainment +
-                                    $row->total_cashback + $row->total_uang_saku +
-                                    $row->total_akomodasi + $row->biaya_transport);
-
+            $biayaPenjualan = (float) ($row->total_pa + $row->oleh_oleh + $row->entertainment + $row->total_cashback + $row->total_uang_saku + $row->total_akomodasi + $row->biaya_transport);
             $selisihBiayaUtama = (float) (($row->harga_net * $row->pax) - $hargaNet);
             $selisihBiaya = ($biayaPenjualan > $selisihBiayaUtama) ? ($biayaPenjualan - $selisihBiayaUtama) : 0;
 
             $isRowAchieved = false;
 
-            // Validasi Capaian (Sesuai Logika Utama)
             if ($selisihBiaya <= 0) {
                 $dataAkuisisiTidakTerdata++;
                 $isRowAchieved = true;
@@ -488,18 +418,15 @@ class SalesKPIService
                 }
             }
 
-            // Perekaman data sukses ke matriks
             if ($isRowAchieved) {
                 $achievedDataPerMonth[$monthKey]++;
                 $achievedDataPerDay[$monthKey][$dateKey]++;
             }
         }
 
-        // 5. Kalkulasi Metrik Kemajuan (Progress) Keseluruhan
         $totalCount = $data->count();
         $progress = $totalCount > 0 ? round((($achieve + $dataAkuisisiTidakTerdata) / $totalCount) * 100, 2) : 0;
 
-        // 6. Penyiapan Struktur Data Grafik API
         $monthlyData = [];
         $monthlyProgress = [];
         $dailyBreakdownPerMonth = [];
@@ -519,7 +446,6 @@ class SalesKPIService
             }
         }
 
-        // 7. Kalkulasi Varians (Gap)
         $gapRaw = ($progress > $nilaiTarget) ? 0 : ($progress - $nilaiTarget);
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
@@ -539,14 +465,24 @@ class SalesKPIService
 
     public function calculatePeningkatanKemampuanKompetensiSales($item, $personId)
     {
-        $nilaiUkur = 90;
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
 
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $nilaiUkur = 90;
         $jabatanSales = ['Sales', 'SPV Sales', 'Adm Sales'];
 
-        // 1. Standarisasi daftar username dari database (lowercase & trim)
         $allowedUsernames = User::whereIn('jabatan', $jabatanSales)
             ->pluck('username')
-            ->filter() // Mengabaikan nilai null
+            ->filter()
             ->map(fn($username) => strtolower(trim($username)))
             ->toArray();
 
@@ -556,37 +492,41 @@ class SalesKPIService
         }
 
         $dataKnowledge = json_decode($response->body(), true);
-
-        if (json_last_error() !== JSON_ERROR_NONE || !isset($dataKnowledge['data'])) {
+        if (json_last_error() !== JSON_ERROR_NONE || !isset($dataKnowledge['data']['data'])) {
             return 0;
         }
 
-        // 2. Standarisasi username dari API Moodle saat dibungkus ke dalam Collection
-        $collection = collect($dataKnowledge['data']['data'] ?? [])->map(function ($row) {
+        $collection = collect($dataKnowledge['data']['data'])->map(function ($row) {
             if (isset($row['username'])) {
                 $row['username'] = strtolower(trim($row['username']));
             }
             return $row;
         });
 
+        // PERBAIKAN: Filter tahun agar sinkron dengan fungsi Detail
+        $collection = $collection->filter(function ($row) use ($tahun) {
+            $dateString = $row['activity_submitted_at'] ?? $row['activity_created_at'] ?? null;
+            if (!$dateString) return false;
+            try {
+                return Carbon::parse($dateString)->year == $tahun;
+            } catch (\Exception $e) {
+                return false;
+            }
+        });
+
         if ($personId !== null) {
             $userLogin = User::find($personId);
-
             if (!$userLogin || empty($userLogin->username)) {
                 return 0;
             }
 
-            // 3. Standarisasi username milik user yang dicek
             $loginUsername = strtolower(trim($userLogin->username));
-
             if (!in_array($loginUsername, $allowedUsernames)) {
                 return 0;
             }
 
-            // Pencarian kini 100% aman karena kedua sisi sudah lowercase & tanpa spasi
             $filteredData = $collection->where('username', $loginUsername);
         } else {
-            // Pencarian global divisi kini 100% aman
             $filteredData = $collection->whereIn('username', $allowedUsernames);
         }
 
@@ -600,7 +540,6 @@ class SalesKPIService
         })->count();
 
         $progress = ($totalMelebihiNilaiUkur / $totalPenilaian) * 100;
-
         return round($progress, 2);
     }
 
@@ -620,8 +559,7 @@ class SalesKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        // 1. Standarisasi daftar username dari database (lowercase & trim)
-        $jabatanSales = ['Sales', 'SPV Sales', 'Adm Sales']; // Diselaraskan
+        $jabatanSales = ['Sales', 'SPV Sales', 'Adm Sales'];
         $allowedUsernames = User::whereIn('jabatan', $jabatanSales)
             ->pluck('username')
             ->filter()
@@ -632,25 +570,18 @@ class SalesKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        // 2. Inisialisasi Pencarian Individu DI LUAR LOOP (Mencegah Query N+1)
         $loginUsername = null;
         if ($personId !== null) {
             $userLogin = User::find($personId);
-
             if (!$userLogin || empty($userLogin->username)) {
                 return $this->getDefaultDetailResponse();
             }
-
-            // Standarisasi username karyawan yang sedang dicek
             $loginUsername = strtolower(trim($userLogin->username));
-
-            // Jika username-nya bukan bagian dari tim sales, kembalikan default
             if (!in_array($loginUsername, $allowedUsernames)) {
                 return $this->getDefaultDetailResponse();
             }
         }
 
-        // 3. Integrasi Data API HTTP Client
         try {
             $response = Http::get('https://coffee.inixindobdg.co.id/api/moodle-grades-sharingknowledge');
             if (!$response->successful()) {
@@ -666,70 +597,68 @@ class SalesKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        // 4. Inisialisasi Struktur Penampung Data
         $totalPenilaian = 0;
         $totalMelebihiNilaiUkur = 0;
 
-        $monthlyDataTemp = [];
-        $dailyBreakdownPerMonth = [];
+        $monthlyTotalPenilaian = [];
+        $monthlyMelebihiNilaiUkur = [];
+        $dailyTotalPenilaian = [];
+        $dailyMelebihiNilaiUkur = [];
 
-        // 5. Pengolahan Data Menggunakan Foreach
         foreach ($moodleData as $data) {
             if (empty($data['username'])) {
                 continue;
             }
 
-            // Standarisasi username dari API
             $usernameData = strtolower(trim($data['username']));
             $dateString = $data['activity_submitted_at'] ?? $data['activity_created_at'] ?? null;
 
-            // Kondisional Filter Username
             $isValidUser = false;
             if ($personId !== null) {
-                // Mode individu: Cukup cek kecocokan 1 vs 1 (yang mana loginUsername sudah terfilter di allowedUsernames sebelumnya)
                 if ($usernameData === $loginUsername) {
                     $isValidUser = true;
                 }
             } else {
-                // Mode global divisi: Cek ke dalam array whitelist
                 if (in_array($usernameData, $allowedUsernames)) {
                     $isValidUser = true;
                 }
             }
 
-            // Jika User Valid dan memiliki tanggal
             if ($isValidUser && $dateString) {
-                $date = Carbon::parse($dateString);
+                try {
+                    $date = Carbon::parse($dateString);
+                    if ($date->year === $tahun) {
+                        $totalPenilaian++;
+                        $score = (float) ($data['score'] ?? 0);
 
-                // Filter berdasarkan jangka tahun target KPI
-                if ($date->year === $tahun) {
-                    $totalPenilaian++;
-                    $score = (float) ($data['score'] ?? 0);
+                        $dateKey = $date->format('Y-m-d');
+                        $monthKey = $date->format('Y-m');
 
-                    $dateKey = $date->format('Y-m-d');
-                    $monthKey = $date->format('Y-m');
-
-                    if ($score > $nilaiUkur) {
-                        $totalMelebihiNilaiUkur++;
-
-                        // Simpan jumlah data absolut yang memenuhi standar
-                        $monthlyDataTemp[$monthKey] = ($monthlyDataTemp[$monthKey] ?? 0) + 1;
-
-                        if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                            $dailyBreakdownPerMonth[$monthKey] = [];
+                        $monthlyTotalPenilaian[$monthKey] = ($monthlyTotalPenilaian[$monthKey] ?? 0) + 1;
+                        if (!isset($dailyTotalPenilaian[$monthKey][$dateKey])) {
+                            $dailyTotalPenilaian[$monthKey][$dateKey] = 0;
                         }
-                        $dailyBreakdownPerMonth[$monthKey][$dateKey] = ($dailyBreakdownPerMonth[$monthKey][$dateKey] ?? 0) + 1;
+                        $dailyTotalPenilaian[$monthKey][$dateKey]++;
+
+                        if ($score > $nilaiUkur) {
+                            $totalMelebihiNilaiUkur++;
+                            $monthlyMelebihiNilaiUkur[$monthKey] = ($monthlyMelebihiNilaiUkur[$monthKey] ?? 0) + 1;
+                            if (!isset($dailyMelebihiNilaiUkur[$monthKey][$dateKey])) {
+                                $dailyMelebihiNilaiUkur[$monthKey][$dateKey] = 0;
+                            }
+                            $dailyMelebihiNilaiUkur[$monthKey][$dateKey]++;
+                        }
                     }
+                } catch (\Exception $e) {
+                    continue;
                 }
             }
         }
 
-        // Jika tidak ada total data penilaian sama sekali
         if ($totalPenilaian === 0) {
             return $this->getDefaultDetailResponse();
         }
 
-        // 6. Kalkulasi Progress Utama & Gap
         $progress = round(($totalMelebihiNilaiUkur / $totalPenilaian) * 100, 2);
 
         $gap = 0;
@@ -738,41 +667,37 @@ class SalesKPIService
             $gap = rtrim(rtrim(sprintf('%.2f', $gapRaw), '0'), '.');
         }
 
-        // 7. Mempertahankan Format Output Sesuai Spesifikasi Grafik Frontend
         $monthlyData = [];
-        foreach ($monthlyDataTemp as $month => $total) {
-            $monthlyData[$month] = round($total, 1);
+        $monthlyProgress = [];
+        $dailyBreakdownPerMonth = [];
+        $dailyProgressPerMonth = [];
+
+        // PERBAIKAN: Perhitungan progres bulanan yang benar (persentase dari total penilaian bulan itu)
+        foreach ($monthlyTotalPenilaian as $month => $total) {
+            $melebihi = $monthlyMelebihiNilaiUkur[$month] ?? 0;
+            $monthlyData[$month] = $melebihi;
+            $monthlyProgress[$month] = $total > 0 ? round(($melebihi / $total) * 100, 2) : 0;
+        }
+
+        foreach ($dailyTotalPenilaian as $month => $days) {
+            foreach ($days as $date => $total) {
+                $melebihi = $dailyMelebihiNilaiUkur[$month][$date] ?? 0;
+                $dailyBreakdownPerMonth[$month][$date] = $melebihi;
+                $dailyProgressPerMonth[$month][$date] = $total > 0 ? round(($melebihi / $total) * 100, 2) : 0;
+            }
+            ksort($dailyBreakdownPerMonth[$month]);
+            ksort($dailyProgressPerMonth[$month]);
         }
 
         ksort($monthlyData);
-        ksort($dailyBreakdownPerMonth);
-
-        $monthlyProgress = [];
-        foreach ($monthlyData as $month => $value) {
-            $monthlyProgress[$month] = $nilaiTarget > 0
-                ? round(($value / $nilaiTarget) * 100, 2)
-                : 0;
-        }
-
-        $dailyProgressPerMonth = [];
-        foreach ($dailyBreakdownPerMonth as $month => $days) {
-            ksort($dailyBreakdownPerMonth[$month]); // Urutkan tanggal harian secara kronologis
-            foreach ($days as $date => $value) {
-                $dailyProgressPerMonth[$month][$date] = $nilaiTarget > 0
-                    ? round(($value / $nilaiTarget) * 100, 2)
-                    : 0;
-            }
-        }
-
-        $countAbove = $totalMelebihiNilaiUkur;
-        $countBelow = $totalPenilaian - $totalMelebihiNilaiUkur;
+        ksort($monthlyProgress);
 
         return array_merge($this->getDefaultDetailResponse(), [
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => [
-                'above' => $countAbove,
-                'below' => $countBelow
+                'above' => $totalMelebihiNilaiUkur,
+                'below' => $totalPenilaian - $totalMelebihiNilaiUkur
             ],
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,

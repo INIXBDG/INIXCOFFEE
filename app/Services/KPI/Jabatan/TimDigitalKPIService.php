@@ -29,9 +29,11 @@ class TimDigitalKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
+        $query = ContentSchedule::whereBetween('upload_date', [$start, $end])
             ->whereNotNull('upload_date')
-            ->get();
+            ->select('upload_date');
+
+        $contentSchedules = $query->get();
 
         if ($contentSchedules->isEmpty()) {
             return 0;
@@ -82,7 +84,7 @@ class TimDigitalKPIService
         $PS = $totalKonten / ($targetMingguan * $jumlahMinggu);
         $PS = min($PS, 1);
 
-        $finalScore = ($CS * 0.6) + ($PS * 0.4);
+        $finalScore = $CS * 0.6 + $PS * 0.4;
 
         return round($finalScore * 100, 1);
     }
@@ -110,9 +112,11 @@ class TimDigitalKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
+        $query = ContentSchedule::whereBetween('upload_date', [$start, $end])
             ->whereNotNull('upload_date')
-            ->get();
+            ->select('upload_date');
+
+        $contentSchedules = $query->get();
 
         if ($contentSchedules->isEmpty()) {
             return array_merge($this->getDefaultDetailResponse(), [
@@ -139,8 +143,7 @@ class TimDigitalKPIService
                 $dailyBreakdownPerWeek[$weekKey] = [];
             }
 
-            $dailyBreakdownPerWeek[$weekKey][$dayKey] =
-                ($dailyBreakdownPerWeek[$weekKey][$dayKey] ?? 0) + 1;
+            $dailyBreakdownPerWeek[$weekKey][$dayKey] = ($dailyBreakdownPerWeek[$weekKey][$dayKey] ?? 0) + 1;
         }
 
         $targetMingguan = 3;
@@ -175,7 +178,7 @@ class TimDigitalKPIService
         $PS = $totalKonten / ($targetMingguan * $jumlahMinggu);
         $PS = min($PS, 1);
 
-        $finalScore = ($CS * 0.6) + ($PS * 0.4);
+        $finalScore = $CS * 0.6 + $PS * 0.4;
 
         $progress = round($finalScore * 100, 1);
         $CSPercent = round($CS * 100, 1);
@@ -192,20 +195,18 @@ class TimDigitalKPIService
         ksort($weeklyCounts);
         ksort($dailyBreakdownPerWeek);
 
-        return [
+        return array_merge($this->getDefaultDetailResponse(), [
             'progress' => $progress,
             'consistency_score' => $CSPercent,
             'productivity_score' => $PSPercent,
             'gap' => $gap,
             'pie_chart' => [
                 'above' => $above,
-                'below' => $below
+                'below' => $below,
             ],
-            'monthly_data' => $weeklyCounts,
-            'daily_breakdown_per_month' => $dailyBreakdownPerWeek,
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
-        ];
+            'weekly_data' => $weeklyCounts,
+            'daily_breakdown_per_week' => $dailyBreakdownPerWeek,
+        ]);
     }
 
     public function calculateEfektifitasDiitalMarketing($item, $personId)
@@ -225,7 +226,9 @@ class TimDigitalKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $dataColaborator = colaborator::whereBetween('created_at', [$start, $end])->get();
+        $query = colaborator::whereBetween('created_at', [$start, $end])->select('created_at');
+
+        $dataColaborator = $query->get();
 
         $quartersWith = [];
 
@@ -237,7 +240,7 @@ class TimDigitalKPIService
 
         $filledQuartersCount = count($quartersWith);
 
-        return (string) round($filledQuartersCount);
+        return round(($filledQuartersCount / 4) * 100, 1);
     }
 
     public function calculateEfektifitasDiitalMarketingDetail($itemDetail, $personId = null)
@@ -252,25 +255,16 @@ class TimDigitalKPIService
         $nilaiTarget = (float) $detail->nilai_target;
         $tahun = (int) $detail->detail_jangka;
 
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 1) {
-            if ($tahun < 2000 || $tahun > now()->year + 1) {
-                $tahun = now()->year;
-            }
+        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return $this->getDefaultDetailResponse();
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $dataColaborator = colaborator::whereBetween('created_at', [$start, $end])->get();
+        $query = colaborator::whereBetween('created_at', [$start, $end])->select('created_at');
 
-        $totalData = $dataColaborator->count();
-
-        if ($totalData === 0) {
-            return array_merge($this->getDefaultDetailResponse(), [
-                'gap' => rtrim(rtrim(sprintf('%.1f', (float)(0 - $nilaiTarget)), '0'), '.'),
-                'pie_chart' => ['above' => 0, 'below' => 4],
-            ]);
-        }
+        $dataColaborator = $query->get();
 
         $totalQuarters = 4;
         $quartersWith = [];
@@ -282,76 +276,27 @@ class TimDigitalKPIService
         }
 
         $filledQuartersCount = count($quartersWith);
-        $konsistensiPersen = (float) $filledQuartersCount;
-        $progress = (float) round($konsistensiPersen);
 
-        $gapRaw = (float) ($progress - $nilaiTarget);
+        $progress = round(($filledQuartersCount / $totalQuarters) * 100, 1);
+
+        $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        $above = (int) $filledQuartersCount;
-        $below = (int) ($totalQuarters - $filledQuartersCount);
+        $above = $filledQuartersCount;
+        $below = $totalQuarters - $filledQuartersCount;
 
-        $dailyValues = [];
+        $quarterlyData = [
+            'Q1' => isset($quartersWith[1]) ? 100 : 0,
+            'Q2' => isset($quartersWith[2]) ? 100 : 0,
+            'Q3' => isset($quartersWith[3]) ? 100 : 0,
+            'Q4' => isset($quartersWith[4]) ? 100 : 0,
+        ];
 
-        foreach ($dataColaborator as $colab) {
-            $tanggal = Carbon::parse($colab->created_at);
-            $dateKey = $tanggal->format('Y-m-d');
-
-            if (!isset($dailyValues[$dateKey])) {
-                $dailyValues[$dateKey] = [];
-            }
-
-            $dailyValues[$dateKey][] = 1;
-        }
-
-        $dailyAverages = [];
-        foreach ($dailyValues as $dateStr => $values) {
-            $dailyAverages[$dateStr] = (float) round(array_sum($values) / count($values), 1);
-        }
-
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
-
-        foreach ($dailyAverages as $dateStr => $avg) {
-            $date = Carbon::parse($dateStr);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $date->format('Y-m-d');
-
-            $monthlyData[$monthKey][] = $avg;
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
-
-            $progressVal = (float) round(min($avg * 100, 100), 1);
-
-            $monthlyProgress[$monthKey][] = $progressVal;
-            $dailyProgressPerMonth[$monthKey][$dayKey] = $progressVal;
-        }
-
-        $monthlyAverages = [];
-        $monthlyProgressAvg = [];
-
-        foreach ($monthlyData as $month => $dailyVals) {
-            $monthlyAverages[$month] = (float) round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-
-        foreach ($monthlyProgress as $month => $vals) {
-            $monthlyProgressAvg[$month] = (float) round(array_sum($vals) / count($vals), 1);
-        }
-
-        ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAvg);
-        ksort($dailyProgressPerMonth);
-
-        return [
+        return array_merge($this->getDefaultDetailResponse(), [
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => ['above' => $above, 'below' => $below],
-            'monthly_data' => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAvg,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
-        ];
+            'quarterly_data' => $quarterlyData,
+        ]);
     }
 }
