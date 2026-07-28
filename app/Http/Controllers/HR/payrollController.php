@@ -32,7 +32,7 @@ class payrollController extends Controller
         return view('HR.payroll.index');
     }
 
-    public function getPayrollDashboard(Request $request)
+public function getPayrollDashboard(Request $request)
     {
         try {
             $bulan = (int) $request->input('month', now()->month);
@@ -41,94 +41,19 @@ class payrollController extends Controller
             $page = max(1, (int) $request->input('page', 1));
             $perPage = 15;
 
-            $baseQuery = Karyawan::query()
-                ->whereNot('jabatan', 'Pilih Jabatan')
-                ->whereNot('jabatan', 'Outsource')
-                ->whereNot('divisi', 'Pilih Divisi')
-                ->where('status_aktif', '1')
-                ->whereNot(function ($query) {
-                    $query->where('kode_karyawan', 'like', '%OL%');
-                });
-
-            if (!empty($search)) {
-                $baseQuery->where(function ($q) use ($search) {
-                    $q->where('nama_lengkap', 'like', "%{$search}%")
-                        ->orWhere('kode_karyawan', 'like', "%{$search}%")
-                        ->orWhere('divisi', 'like', "%{$search}%")
-                        ->orWhere('jabatan', 'like', "%{$search}%");
-                });
-            }
-
-            $eligibleKaryawan = $baseQuery->get();
-            $eligibleIds = $eligibleKaryawan->pluck('id')->toArray();
-            $totalEligible = count($eligibleIds);
-
-            $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')
-                ->whereIn('id_karyawan', $eligibleIds)
-                ->where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->get()
-                ->groupBy('id_karyawan');
-
-            $periodStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
-            $periodEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
-
-            $payrollList = $eligibleKaryawan->map(function ($emp) use ($tunjanganData, $periodStart, $periodEnd) {
-                $items = $tunjanganData->get($emp->id, collect());
-                $gajiPokok = (float) ($emp->gaji_pokok ?? ($emp->gaji + $emp->tunjangan_jabatan ?? 0));
-
-                $totalTunjangan = $items->where('jenistunjangan.tipe', 'Tunjangan')->sum('total');
-                $totalPotongan = abs($items->where('jenistunjangan.tipe', 'Potongan')->sum('total'));
-
-                $tunjanganBersih = $totalTunjangan - $totalPotongan;
-
-                if ($tunjanganBersih < 0) {
-                    $tunjanganBersih = 0;
-                }
-
-                // Gaji bersih individu tetap melibatkan tunjangan (seperti semula)
-                $gajiBersih = $gajiPokok + $tunjanganBersih;
-
-                $awalProbation = $emp->awal_probation ? Carbon::parse($emp->awal_probation) : null;
-                $resignedAt = $emp->resigned_at ? Carbon::parse($emp->resigned_at) : null;
-
-                $status = $this->determineEmployeeStatusForPeriod($awalProbation, $resignedAt, $emp->status_aktif, $periodStart, $periodEnd);
-
-                return [
-                    'id' => $emp->id,
-                    'nama' => $emp->nama_lengkap,
-                    'kode' => $emp->kode_karyawan,
-                    'divisi' => $emp->divisi ?? '-',
-                    'jabatan' => $emp->jabatan ?? '-',
-                    'gaji_pokok' => $gajiPokok,
-                    'total_tunjangan' => $totalTunjangan,
-                    'tunjangan_bersih' => $tunjanganBersih,
-                    'total_potongan' => $totalPotongan,
-                    'gaji_bersih' => $gajiBersih,
-                    'status' => $status,
-                    'details' => $items
-                        ->map(
-                            fn($i) => [
-                                'nama' => optional($i->jenistunjangan)->nama_tunjangan,
-                                'tipe' => optional($i->jenistunjangan)->tipe,
-                                'keterangan' => $i->keterangan,
-                                'nilai' => (float) $i->total,
-                            ]
-                        )
-                        ->values(),
-                ];
-            });
+            $payrollData = $this->getPayrollData($bulan, $tahun, $search);
+            $payrollList = $payrollData['payrollList'];
+            $totalEligible = count($payrollData['eligibleIds']);
 
             $totalRecords = $payrollList->count();
             $paginated = $payrollList->forPage($page, $perPage);
-            $lastPage = ceil($totalRecords / $perPage);
+            $lastPage = (int) ceil($totalRecords / $perPage);
 
             $salaryRanges = $this->calculateSalaryRanges($payrollList);
             $allowanceByDivisi = $this->calculateAllowanceByDivisi($payrollList);
             $monthlyTrend = $this->calculateMonthlyTrend($tahun);
             $topDeductions = $this->calculateTopDeductions($payrollList, $bulan, $tahun);
 
-            // MENGHITUNG TOTAL PAYROLL (Tanpa Tunjangan: Gaji Pokok - Potongan)
             $totalPayroll = $payrollList->sum(function ($emp) {
                 $hasil = $emp['gaji_pokok'] - $emp['total_potongan'];
                 return $hasil > 0 ? $hasil : 0;
@@ -140,15 +65,10 @@ class payrollController extends Controller
                 'belum_dihitung' => $payrollList->where('status', 'Belum Dihitung')->count(),
                 'total_gaji_pokok' => $payrollList->sum('gaji_pokok'),
                 'total_tunjangan' => $payrollList
-                    ->filter(function ($emp) {
-                        return $emp['tunjangan_bersih'] > 0;
-                    })
+                    ->filter(fn($emp) => $emp['tunjangan_bersih'] > 0)
                     ->sum('tunjangan_bersih'),
                 'total_potongan' => $payrollList->sum('total_potongan'),
-                
-                // PERUBAHAN: total_gaji_bersih diganti menjadi total_payroll 
                 'total_payroll' => $totalPayroll,
-                
                 'avg_gaji_bersih' => $totalRecords > 0 ? round($payrollList->sum('gaji_bersih') / $totalRecords, 0) : 0,
                 'median_gaji_bersih' => $this->calculateMedian($payrollList->pluck('gaji_bersih')->toArray()),
                 'new_hire_count' => $payrollList->where('status', 'New Hire')->count(),
@@ -178,68 +98,11 @@ class payrollController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Gagal memuat data payroll: ' . $e->getMessage(),
-                ],
-                500,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data payroll: ' . $e->getMessage(),
+            ], 500);
         }
-    }
-
-    private function determineEmployeeStatusForPeriod($awalProbation, $resignedAt, $statusAktif, $periodStart, $periodEnd)
-    {
-        if ($resignedAt && $resignedAt->between($periodStart, $periodEnd)) {
-            return 'Resign';
-        }
-
-        if ($awalProbation && $awalProbation->between($periodStart, $periodEnd)) {
-            return 'New Hire';
-        }
-
-        if ($awalProbation && $awalProbation->lt($periodStart->copy()->subMonth())) {
-            return 'Active';
-        }
-
-        if ($statusAktif == 1) {
-            return 'Active';
-        }
-
-        return 'Active';
-    }
-
-    private function calculateTopDeductions($payrollList, $bulan, $tahun)
-    {
-        $deductions = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')
-            ->whereIn('id_karyawan', array_column($payrollList->toArray(), 'id'))
-            ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->whereHas('jenistunjangan', function ($q) {
-                $q->where('tipe', 'Potongan');
-            })
-            ->get()
-            ->groupBy(function ($item) {
-                return optional($item->jenistunjangan)->nama_tunjangan ?? 'Lainnya';
-            })
-            ->map(function ($items, $nama) {
-                return [
-                    'nama' => $nama,
-                    'total_nilai' => abs($items->sum('total')),
-                    'total_karyawan' => $items->count(),
-                    'rata_rata' => round(abs($items->sum('total')) / $items->count(), 0),
-                ];
-            })
-            ->sortByDesc('total_nilai')
-            ->take(8)
-            ->values();
-
-        return [
-            'labels' => $deductions->pluck('nama')->toArray(),
-            'total_values' => $deductions->pluck('total_nilai')->toArray(),
-            'employee_counts' => $deductions->pluck('total_karyawan')->toArray(),
-            'averages' => $deductions->pluck('rata_rata')->toArray(),
-        ];
     }
 
     public function exportPayrollExcel(Request $request)
@@ -251,63 +114,8 @@ class payrollController extends Controller
         ini_set('memory_limit', '512M');
         set_time_limit(300);
 
-
-        $baseQuery = Karyawan::query()
-            ->whereNot('jabatan', 'Pilih Jabatan')
-            ->whereNot('jabatan', 'Outsourcing')
-            ->whereNot('divisi', 'Pilih Divisi')
-            ->where('status_aktif', '1');
-
-        if (!empty($search)) {
-            $baseQuery->where(function ($q) use ($search) {
-                $q->where('nama_lengkap', 'like', "%{$search}%")
-                    ->orWhere('kode_karyawan', 'like', "%{$search}%")
-                    ->orWhere('divisi', 'like', "%{$search}%")
-                    ->orWhere('jabatan', 'like', "%{$search}%");
-            });
-        }
-
-        $eligibleKaryawan = $baseQuery->get();
-        $eligibleIds = $eligibleKaryawan->pluck('id')->toArray();
-
-        $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')->whereIn('id_karyawan', $eligibleIds)->where('bulan', $bulan)->where('tahun', $tahun)->get()->groupBy('id_karyawan');
-
-        $periodStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
-        $periodEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
-
-        $payrollList = $eligibleKaryawan->map(function ($emp) use ($tunjanganData, $periodStart, $periodEnd) {
-            $items = $tunjanganData->get($emp->id, collect());
-            $gajiPokok = (float) ($emp->gaji_pokok ?? ($emp->gaji + $emp->tunjangan_jabatan ?? 0));
-
-            $totalTunjangan = $items->where('jenistunjangan.tipe', 'Tunjangan')->sum('total');
-            $totalPotongan = abs($items->where('jenistunjangan.tipe', 'Potongan')->sum('total'));
-            $tunjanganBersih = $totalTunjangan - $totalPotongan;
-
-            if ($tunjanganBersih < 0) {
-                $tunjanganBersih = 0;
-            }
-
-            $gajiBersih = $gajiPokok + $tunjanganBersih;
-
-            $awalProbation = $emp->awal_probation ? Carbon::parse($emp->awal_probation) : null;
-            $resignedAt = $emp->resigned_at ? Carbon::parse($emp->resigned_at) : null;
-
-            $status = $this->determineEmployeeStatusForPeriod($awalProbation, $resignedAt, $emp->status_aktif, $periodStart, $periodEnd);
-
-            return [
-                'id' => $emp->id,
-                'nama' => $emp->nama_lengkap,
-                'kode' => $emp->kode_karyawan,
-                'divisi' => $emp->divisi ?? '-',
-                'jabatan' => $emp->jabatan ?? '-',
-                'gaji_pokok' => $gajiPokok,
-                'total_tunjangan' => $totalTunjangan,
-                'tunjangan_bersih' => $tunjanganBersih,
-                'total_potongan' => $totalPotongan,
-                'gaji_bersih' => $gajiBersih,
-                'status' => $status,
-            ];
-        });
+        $payrollData = $this->getPayrollData($bulan, $tahun, $search);
+        $payrollList = $payrollData['payrollList'];
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -347,7 +155,7 @@ class payrollController extends Controller
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getRowDimension(1)->setRowHeight(30);
 
-        $bulanNama = date('F', mktime(0, 0, 0, $bulan, 10));
+        $bulanNama = Carbon::createFromDate($tahun, $bulan, 1)->format('F');
         $sheet->mergeCells('A2:K2');
         $sheet->setCellValue('A2', "Periode: {$bulanNama} {$tahun}");
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -412,18 +220,12 @@ class payrollController extends Controller
 
         $sheet->getStyle("A{$totalRow}:K{$totalRow}")->applyFromArray($totalStyle);
         $sheet->getStyle("F{$totalRow}:J{$totalRow}")->applyFromArray($currencyStyle);
-        $sheet
-            ->getStyle("A{$totalRow}:E{$totalRow}")
-            ->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle("A{$totalRow}:E{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
         $summaryRow = $totalRow + 2;
         $sheet->mergeCells("A{$summaryRow}:C{$summaryRow}");
         $sheet->setCellValue("A{$summaryRow}", 'Ringkasan:');
-        $sheet
-            ->getStyle("A{$summaryRow}")
-            ->getFont()
-            ->setBold(true);
+        $sheet->getStyle("A{$summaryRow}")->getFont()->setBold(true);
 
         $summaryRow++;
         $sheet->setCellValue("A{$summaryRow}", 'Total Karyawan:');
@@ -458,64 +260,9 @@ class payrollController extends Controller
         $tahun = (int) $request->input('year', now()->year);
         $search = $request->input('search', '');
 
-
-        $baseQuery = Karyawan::query()
-            ->whereNot('jabatan', 'Pilih Jabatan')
-            ->whereNot('jabatan', 'Outsourcing')
-            ->whereNot('divisi', 'Pilih Divisi')
-            ->where('status_aktif', '1');
-
-        if (!empty($search)) {
-            $baseQuery->where(function ($q) use ($search) {
-                $q->where('nama_lengkap', 'like', "%{$search}%")
-                    ->orWhere('kode_karyawan', 'like', "%{$search}%")
-                    ->orWhere('divisi', 'like', "%{$search}%")
-                    ->orWhere('jabatan', 'like', "%{$search}%");
-            });
-        }
-
-        $eligibleKaryawan = $baseQuery->get();
-        $eligibleIds = $eligibleKaryawan->pluck('id')->toArray();
-        $totalEligible = count($eligibleIds);
-
-        $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')->whereIn('id_karyawan', $eligibleIds)->where('bulan', $bulan)->where('tahun', $tahun)->get()->groupBy('id_karyawan');
-
-        $periodStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
-        $periodEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
-
-        $payrollList = $eligibleKaryawan->map(function ($emp) use ($tunjanganData, $periodStart, $periodEnd) {
-            $items = $tunjanganData->get($emp->id, collect());
-            $gajiPokok = (float) ($emp->gaji_pokok ?? ($emp->gaji + $emp->tunjangan_jabatan ?? 0));
-
-            $totalTunjangan = $items->where('jenistunjangan.tipe', 'Tunjangan')->sum('total');
-            $totalPotongan = abs($items->where('jenistunjangan.tipe', 'Potongan')->sum('total'));
-            $tunjanganBersih = $totalTunjangan - $totalPotongan;
-
-            if ($tunjanganBersih < 0) {
-                $tunjanganBersih = 0;
-            }
-
-            $gajiBersih = $gajiPokok + $tunjanganBersih;
-
-            $awalProbation = $emp->awal_probation ? Carbon::parse($emp->awal_probation) : null;
-            $resignedAt = $emp->resigned_at ? Carbon::parse($emp->resigned_at) : null;
-
-            $status = $this->determineEmployeeStatusForPeriod($awalProbation, $resignedAt, $emp->status_aktif, $periodStart, $periodEnd);
-
-            return [
-                'id' => $emp->id,
-                'nama' => $emp->nama_lengkap,
-                'kode' => $emp->kode_karyawan,
-                'divisi' => $emp->divisi ?? '-',
-                'jabatan' => $emp->jabatan ?? '-',
-                'gaji_pokok' => $gajiPokok,
-                'total_tunjangan' => $totalTunjangan,
-                'tunjangan_bersih' => $tunjanganBersih,
-                'total_potongan' => $totalPotongan,
-                'gaji_bersih' => $gajiBersih,
-                'status' => $status,
-            ];
-        });
+        $payrollData = $this->getPayrollData($bulan, $tahun, $search);
+        $payrollList = $payrollData['payrollList'];
+        $totalEligible = count($payrollData['eligibleIds']);
 
         $summary = [
             'total_karyawan' => $totalEligible,
@@ -523,9 +270,7 @@ class payrollController extends Controller
             'belum_dihitung' => $payrollList->where('status', 'Belum Dihitung')->count(),
             'total_gaji_pokok' => $payrollList->sum('gaji_pokok'),
             'total_tunjangan' => $payrollList
-                ->filter(function ($emp) {
-                    return $emp['tunjangan_bersih'] > 0;
-                })
+                ->filter(fn($emp) => $emp['tunjangan_bersih'] > 0)
                 ->sum('tunjangan_bersih'),
             'total_potongan' => $payrollList->sum('total_potongan'),
             'total_gaji_bersih' => $payrollList->sum('gaji_bersih'),
@@ -547,21 +292,202 @@ class payrollController extends Controller
             'top_deductions' => $topDeductions,
         ];
 
-        $period = [
-            'month' => $bulan,
-            'year' => $tahun,
-            'display' => Carbon::createFromDate($tahun, $bulan, 1)->format('F Y'),
-        ];
+        $periodDisplay = Carbon::createFromDate($tahun, $bulan, 1)->format('F Y');
 
         $pdf = Pdf::loadView('office.HR.exports.payroll_pdf', [
             'data' => $payrollList->values(),
             'summary' => $summary,
             'charts' => $charts,
-            'period' => $period['display'],
+            'period' => $periodDisplay,
             'generated_at' => now()->format('d M Y H:i'),
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download("laporan_payroll_{$bulan}_{$tahun}.pdf");
+    }
+
+    // -----------------------------------------------------------------------
+    // Helper Methods & Business Logic
+    // -----------------------------------------------------------------------
+
+    /**
+     * Memuat dan menghitung data Payroll secara konsisten untuk Dashboard dan Exports
+     */
+    private function getPayrollData($bulan, $tahun, $search = '')
+    {
+        $periodStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
+        $periodEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
+
+        $baseQuery = Karyawan::query()
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotIn('jabatan', ['Outsource', 'Outsourcing'])
+            ->whereNot('divisi', 'Pilih Divisi')
+            ->where(function ($query) {
+                $query->whereNull('kode_karyawan')
+                    ->orWhere('kode_karyawan', 'not like', '%OL%');
+            });
+
+        if (!empty($search)) {
+            $baseQuery->where(function ($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                    ->orWhere('kode_karyawan', 'like', "%{$search}%")
+                    ->orWhere('divisi', 'like', "%{$search}%")
+                    ->orWhere('jabatan', 'like', "%{$search}%");
+            });
+        }
+
+        $allKaryawan = $baseQuery->get();
+
+        // Filter karyawan berdasarkan keaktifan untuk periode terpilih
+        $eligibleKaryawan = $allKaryawan->filter(function ($emp) use ($periodStart, $periodEnd) {
+            return $this->isEmployeeEligibleForPeriod($emp, $periodStart, $periodEnd);
+        })->values();
+
+        $eligibleIds = $eligibleKaryawan->pluck('id')->toArray();
+
+        // Preload LogGaji & TunjanganKaryawan untuk menghindari N+1 problem
+        $allLogGaji = LogGaji::whereIn('id_karyawan', $eligibleIds)
+            ->get()
+            ->groupBy('id_karyawan');
+
+        $tunjanganData = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')
+            ->whereIn('id_karyawan', $eligibleIds)
+            ->where('bulan', $bulan)
+            ->where('tahun', $tahun)
+            ->get()
+            ->groupBy('id_karyawan');
+
+        $payrollList = $eligibleKaryawan->map(function ($emp) use ($allLogGaji, $tunjanganData, $periodStart, $periodEnd, $bulan, $tahun) {
+            $employeeLogs = $allLogGaji->get($emp->id, collect());
+            $gajiPokok = $this->getGajiPokokFromLogs($employeeLogs, $bulan, $tahun);
+
+            $items = $tunjanganData->get($emp->id, collect());
+
+            $totalTunjangan = (float) $items->where('jenistunjangan.tipe', 'Tunjangan')->sum('total');
+            $totalPotongan = abs((float) $items->where('jenistunjangan.tipe', 'Potongan')->sum('total'));
+
+            $tunjanganBersih = $totalTunjangan - $totalPotongan;
+            if ($tunjanganBersih < 0) {
+                $tunjanganBersih = 0;
+            }
+
+            $gajiBersih = $gajiPokok + $tunjanganBersih;
+
+            $status = $this->determineEmployeeStatusForPeriod($emp, $periodStart, $periodEnd);
+
+            return [
+                'id' => $emp->id,
+                'nama' => $emp->nama_lengkap,
+                'kode' => $emp->kode_karyawan,
+                'divisi' => $emp->divisi ?? '-',
+                'jabatan' => $emp->jabatan ?? '-',
+                'gaji_pokok' => $gajiPokok,
+                'total_tunjangan' => $totalTunjangan,
+                'tunjangan_bersih' => $tunjanganBersih,
+                'total_potongan' => $totalPotongan,
+                'gaji_bersih' => $gajiBersih,
+                'status' => $status,
+                'details' => $items->map(fn($i) => [
+                    'nama' => optional($i->jenistunjangan)->nama_tunjangan,
+                    'tipe' => optional($i->jenistunjangan)->tipe,
+                    'keterangan' => $i->keterangan,
+                    'nilai' => (float) $i->total,
+                ])->values(),
+            ];
+        });
+
+        return [
+            'payrollList' => $payrollList,
+            'eligibleIds' => $eligibleIds,
+            'periodStart' => $periodStart,
+            'periodEnd' => $periodEnd,
+        ];
+    }
+
+    /**
+     * Memeriksa eligibility karyawan pada periode bulan/tahun berjalan
+     */
+    private function isEmployeeEligibleForPeriod($emp, $periodStart, $periodEnd)
+    {
+        // 1. Evaluasi Status Resign & Aktif
+        if (!empty($emp->resigned_at)) {
+            $resignedAt = Carbon::parse($emp->resigned_at)->startOfDay();
+            // Jika resign sebelum bulan berjalan dimulai, maka karyawan tidak aktif
+            if ($resignedAt->lt($periodStart)) {
+                return false;
+            }
+        } else {
+            // Jika resigned_at kosong, gunakan status_aktif
+            if ((string) $emp->status_aktif !== '1' && $emp->status_aktif !== true) {
+                return false;
+            }
+        }
+
+        // 2. Evaluasi Tanggal Bergabung (Pengecualian khusus untuk Divisi Direksi)
+        if (trim($emp->divisi) === 'Direksi') {
+            return true;
+        }
+
+        $startDateRaw = $emp->awal_probation ?? $emp->awal_kontrak;
+        if ($startDateRaw) {
+            $startDate = Carbon::parse($startDateRaw)->startOfDay();
+            // Jika tanggal mulai bekerja setelah bulan berjalan selesai, karyawan belum aktif
+            if ($startDate->gt($periodEnd)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Menentukan status karyawan pada periode berjalan (Resign, New Hire, Active)
+     */
+    private function determineEmployeeStatusForPeriod($emp, $periodStart, $periodEnd)
+    {
+        $resignedAt = !empty($emp->resigned_at) ? Carbon::parse($emp->resigned_at) : null;
+        $startDateRaw = $emp->awal_probation ?? $emp->awal_kontrak;
+        $startDate = $startDateRaw ? Carbon::parse($startDateRaw) : null;
+
+        if ($resignedAt && $resignedAt->between($periodStart, $periodEnd)) {
+            return 'Resign';
+        }
+
+        if ($startDate && $startDate->between($periodStart, $periodEnd)) {
+            return 'New Hire';
+        }
+
+        return 'Active';
+    }
+
+    /**
+     * Resolusi Gaji Pokok (+ Tunjangan Jabatan) dari LogGaji berdasarkan aturan periode
+     */
+    private function getGajiPokokFromLogs($employeeLogs, $targetBulan, $targetTahun)
+    {
+        if ($employeeLogs->isEmpty()) {
+            return 0;
+        }
+
+        $targetKey = ($targetTahun * 12) + $targetBulan;
+
+        // Cari log yang berada pada atau sebelum periode target
+        $pastOrCurrentLogs = $employeeLogs->filter(function ($log) use ($targetKey) {
+            return (($log->tahun * 12) + $log->bulan) <= $targetKey;
+        });
+
+        if ($pastOrCurrentLogs->isNotEmpty()) {
+            // Ambil log paling baru yang <= targetKey
+            $selectedLog = $pastOrCurrentLogs->sortByDesc(function ($log) {
+                return ($log->tahun * 12) + $log->bulan;
+            })->first();
+        } else {
+            // Jika tidak ada log sebelumnya (misal filter Jan, tapi log diisi pertama di Feb), ambil log paling awal
+            $selectedLog = $employeeLogs->sortBy(function ($log) {
+                return ($log->tahun * 12) + $log->bulan;
+            })->first();
+        }
+
+        return (float) (($selectedLog->gaji ?? 0) + ($selectedLog->tunjangan_jabatan ?? 0));
     }
 
     private function calculateSalaryRanges($payrollList)
@@ -615,35 +541,90 @@ class payrollController extends Controller
 
     private function calculateMonthlyTrend($tahun)
     {
+        $allKaryawan = Karyawan::query()
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotIn('jabatan', ['Outsource', 'Outsourcing'])
+            ->whereNot('divisi', 'Pilih Divisi')
+            ->where(function ($query) {
+                $query->whereNull('kode_karyawan')
+                    ->orWhere('kode_karyawan', 'not like', '%OL%');
+            })
+            ->get();
+
+        $eligibleIds = $allKaryawan->pluck('id')->toArray();
+        $allLogGaji = LogGaji::whereIn('id_karyawan', $eligibleIds)->get()->groupBy('id_karyawan');
+
         $trend = [];
         for ($m = 1; $m <= 12; $m++) {
             $periodStart = Carbon::createFromDate($tahun, $m, 1)->startOfMonth();
             $periodEnd = Carbon::createFromDate($tahun, $m, 1)->endOfMonth();
 
-            $newHires = Karyawan::whereNotNull('awal_probation')
-                ->whereBetween('awal_probation', [$periodStart, $periodEnd])
-                ->where('status_aktif', '1')
-                ->count();
+            $monthlyEligible = $allKaryawan->filter(function ($emp) use ($periodStart, $periodEnd) {
+                return $this->isEmployeeEligibleForPeriod($emp, $periodStart, $periodEnd);
+            });
 
-            $actives = Karyawan::where('status_aktif', '1')
-                ->where(function ($q) use ($periodStart) {
-                    $q->whereNull('awal_probation')->orWhere('awal_probation', '<', $periodStart->copy()->subMonth());
-                })
-                ->count();
+            $newHires = 0;
+            $actives = 0;
+            $resigns = 0;
+            $totalGaji = 0;
 
-            $resigns = Karyawan::where('status_aktif', '0')
-                ->whereBetween('resigned_at', [$periodStart, $periodEnd])
-                ->count();
+            foreach ($monthlyEligible as $emp) {
+                $status = $this->determineEmployeeStatusForPeriod($emp, $periodStart, $periodEnd);
+                if ($status === 'New Hire') {
+                    $newHires++;
+                } elseif ($status === 'Resign') {
+                    $resigns++;
+                } else {
+                    $actives++;
+                }
+
+                $employeeLogs = $allLogGaji->get($emp->id, collect());
+                $totalGaji += $this->getGajiPokokFromLogs($employeeLogs, $m, $tahun);
+            }
 
             $trend[] = [
                 'month' => Carbon::createFromDate($tahun, $m, 1)->format('M'),
                 'new_hires' => $newHires,
                 'actives' => $actives,
                 'resigns' => $resigns,
-                'total_gaji' => (float) (LogGaji::where('bulan', $m)->where('tahun', $tahun)->selectRaw('SUM(gaji + tunjangan_jabatan) as total')->value('total') ?? 0),
+                'total_gaji' => $totalGaji,
             ];
         }
+
         return $trend;
+    }
+
+    private function calculateTopDeductions($payrollList, $bulan, $tahun)
+    {
+        $deductions = TunjanganKaryawan::with('jenistunjangan:id,nama_tunjangan,tipe')
+            ->whereIn('id_karyawan', array_column($payrollList->toArray(), 'id'))
+            ->where('bulan', $bulan)
+            ->where('tahun', $tahun)
+            ->whereHas('jenistunjangan', function ($q) {
+                $q->where('tipe', 'Potongan');
+            })
+            ->get()
+            ->groupBy(function ($item) {
+                return optional($item->jenistunjangan)->nama_tunjangan ?? 'Lainnya';
+            })
+            ->map(function ($items, $nama) {
+                return [
+                    'nama' => $nama,
+                    'total_nilai' => abs($items->sum('total')),
+                    'total_karyawan' => $items->count(),
+                    'rata_rata' => round(abs($items->sum('total')) / $items->count(), 0),
+                ];
+            })
+            ->sortByDesc('total_nilai')
+            ->take(8)
+            ->values();
+
+        return [
+            'labels' => $deductions->pluck('nama')->toArray(),
+            'total_values' => $deductions->pluck('total_nilai')->toArray(),
+            'employee_counts' => $deductions->pluck('total_karyawan')->toArray(),
+            'averages' => $deductions->pluck('rata_rata')->toArray(),
+        ];
     }
 
     private function calculateMedian($values)
@@ -653,7 +634,7 @@ class payrollController extends Controller
         }
         sort($values);
         $count = count($values);
-        $mid = floor($count / 2);
+        $mid = (int) floor($count / 2);
         return $count % 2 === 0 ? round(($values[$mid - 1] + $values[$mid]) / 2, 0) : round($values[$mid], 0);
     }
 
