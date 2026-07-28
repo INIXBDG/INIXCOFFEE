@@ -194,6 +194,8 @@ class DaftarTugasController extends Controller
         $todayDate = now()->day;
         $now = now();
 
+        $userShiftHariIni = $this->tentukanShiftHariIni($user->id, $today);
+
         $query = KategoriDaftarTugas::with('karyawan')->when($user->jabatan !== 'HRD', function ($q) use ($user) {
             $q->where('Jabatan_Pembuat', $user->jabatan);
         });
@@ -211,11 +213,9 @@ class DaftarTugasController extends Controller
                 $deadline = $today;
 
                 if (!empty($kat->tipe_turunan)) {
-                    $shift1Taken = KontrolTugas::whereDate('Deadline_Date', $today)->where('id_karyawan', '!=', $user->id)->whereHas('kategoriDaftarTugas', fn($q) => $q->where('Tipe', 'Harian')->where('tipe_turunan', 'Shift 1'))->exists();
-
-                    if ($kat->tipe_turunan === 'Shift 1' && $shift1Taken) {
+                    if ($kat->tipe_turunan !== $userShiftHariIni) {
                         $canActivate = false;
-                        $reason = 'Shift 1 sudah diambil karyawan lain';
+                        $reason = "Anda terdaftar sebagai {$userShiftHariIni} hari ini, task ini untuk {$kat->tipe_turunan}";
                     }
                 }
             } elseif ($kat->Tipe === 'Bulanan') {
@@ -268,7 +268,32 @@ class DaftarTugasController extends Controller
             'available' => $available,
             'count' => count($available),
             'today' => $today,
+            'shift_hari_ini' => $userShiftHariIni, // opsional, bisa ditampilkan di UI
         ]);
+    }
+
+    private function tentukanShiftHariIni($karyawanId, $today)
+    {
+        $shiftSudahAda = KontrolTugas::where('id_karyawan', $karyawanId)
+            ->whereDate('Deadline_Date', $today)
+            ->whereHas('kategoriDaftarTugas', function ($q) {
+                $q->where('Tipe', 'Harian')->whereIn('tipe_turunan', ['Shift 1', 'Shift 2']);
+            })
+            ->with('kategoriDaftarTugas')
+            ->first();
+
+        if ($shiftSudahAda) {
+            return $shiftSudahAda->kategoriDaftarTugas->tipe_turunan;
+        }
+
+        $shift1SudahDiambilOrangLain = KontrolTugas::whereDate('Deadline_Date', $today)
+            ->where('id_karyawan', '!=', $karyawanId)
+            ->whereHas('kategoriDaftarTugas', function ($q) {
+                $q->where('Tipe', 'Harian')->where('tipe_turunan', 'Shift 1');
+            })
+            ->exists();
+
+        return $shift1SudahDiambilOrangLain ? 'Shift 2' : 'Shift 1';
     }
 
     private function getBadgeColor($tipe)
@@ -655,10 +680,6 @@ class DaftarTugasController extends Controller
     {
         $request->validate(['id' => 'required|exists:kategori_daftar_tugas,id']);
         $kategori = KategoriDaftarTugas::findOrFail($request->id);
-
-        if (Auth::id() !== $kategori->id_user && Auth::user()->jabatan !== 'HRD') {
-            return response()->json(['message' => 'Tidak berhak menghapus kategori ini'], 403);
-        }
 
         KontrolTugas::where('id_DaftarTugas', $kategori->id)
             ->get()
