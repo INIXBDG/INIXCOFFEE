@@ -9,7 +9,7 @@ class KategoriDaftarTugas extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['Jabatan_Pembuat', 'Tipe', 'judul_kategori', 'id_user', 'tipe_turunan'];
+    protected $fillable = ['Jabatan_Pembuat', 'Tipe', 'judul_kategori', 'id_user', 'tipe_turunan', 'urutan'];
 
     public function karyawan()
     {
