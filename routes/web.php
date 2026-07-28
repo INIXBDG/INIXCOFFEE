@@ -1246,6 +1246,9 @@ Route::prefix('office')
 
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
 
+            Route::post('/office/daftar-tugas/kategori/reorder', [DaftarTugasController::class, 'reorderKategori'])->name('reorderKategori');
+            Route::post('/office/daftar-tugas/reorder', [DaftarTugasController::class, 'reorderTugas'])->name('reorderTugas');
+
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
         });
 
@@ -1490,6 +1493,10 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
             Route::get('/export/trend/pdf', [employeeController::class, 'exportHeadcountTrendPdf'])->name('trend.export.pdf');
             Route::get('/export/breakdown/csv', [employeeController::class, 'exportHeadcountBreakdownCsv'])->name('breakdown.export.csv');
             Route::get('/export/breakdown/pdf', [employeeController::class, 'exportHeadcountBreakdownPdf'])->name('breakdown.export.pdf');
+            Route::get('/resigned', [employeeController::class, 'getResignedEmployees'])->name('resigned');
+            Route::put('/resigned/{id}', [employeeController::class, 'updateResignData'])->name('resigned.update');
+            Route::put('/{id}/move-to-resign', [employeeController::class, 'moveToResign'])->name('moveToResign');
+            Route::put('/{id}/restore', [employeeController::class, 'restoreEmployee'])->name('restore');
         });
     Route::prefix('payroll')
         ->name('payroll.')

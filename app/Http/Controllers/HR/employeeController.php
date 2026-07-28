@@ -95,6 +95,172 @@ class employeeController extends Controller
         }
     }
 
+    public function getResignedEmployees(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'search' => 'nullable|string|max:100',
+                'page' => 'nullable|integer|min:1',
+                'per_page' => 'nullable|integer|min:1|max:100',
+            ]);
+
+            $search = $validated['search'] ?? null;
+            $page = $validated['page'] ?? 1;
+            $perPage = $validated['per_page'] ?? 10;
+
+            $query = karyawan::query()
+                ->whereNot('jabatan', 'Outsource')
+                ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+                ->whereNot('jabatan', 'Pilih Jabatan')
+                ->where('nip', '!=', null)
+                ->whereNot('divisi', 'Direksi')
+                ->where(function ($q) {
+                    $q->where('status_aktif', '0')->orWhereNotNull('resigned_at');
+                });
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama', 'LIKE', "%{$search}%")
+                        ->orWhere('nip', 'LIKE', "%{$search}%")
+                        ->orWhere('jabatan', 'LIKE', "%{$search}%")
+                        ->orWhere('divisi', 'LIKE', "%{$search}%");
+                });
+            }
+
+            $totalResign = (clone $query)->count();
+
+            $employees = $query->orderByDesc('resigned_at')->paginate($perPage, ['*'], 'page', $page);
+
+            $data = $employees->getCollection()->map(function ($emp) {
+                return [
+                    'id' => $emp->id,
+                    'nama_lengkap' => $emp->nama_lengkap ?? $emp->nama,
+                    'nip' => $emp->nip,
+                    'jabatan' => $emp->jabatan,
+                    'divisi' => $emp->divisi,
+                    'resigned_at' => $emp->resigned_at ? \Carbon\Carbon::parse($emp->resigned_at)->format('d M Y') : '-',
+                    'resigned_at_raw' => $emp->resigned_at ? \Carbon\Carbon::parse($emp->resigned_at)->format('Y-m-d') : '',
+                    'alasan_resign' => $emp->alasan_resign ?: '-',
+                ];
+            });
+
+            return response()->json(
+                [
+                    'data' => $data,
+                    'total_resign' => $totalResign,
+                    'pagination' => [
+                        'current_page' => $employees->currentPage(),
+                        'last_page' => $employees->lastPage(),
+                        'total' => $employees->total(),
+                    ],
+                ],
+                200,
+            );
+        } catch (\Exception $e) {
+            Log::error('HR Resigned Employees Error: ' . $e->getMessage());
+            return response()->json(
+                [
+                    'error' => 'Gagal memuat data karyawan resign',
+                    'message' => config('app.debug') ? $e->getMessage() : 'Silakan coba beberapa saat lagi',
+                ],
+                500,
+            );
+        }
+    }
+
+    public function updateResignData(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'resigned_at' => 'required|date',
+                'alasan_resign' => 'nullable|string|max:500',
+            ]);
+
+            $employee = karyawan::findOrFail($id);
+            $employee->resigned_at = $validated['resigned_at'];
+            $employee->alasan_resign = $validated['alasan_resign'] ?? null;
+            $employee->save();
+
+            return response()->json([
+                'message' => 'Data resign berhasil diperbarui',
+                'data' => [
+                    'id' => $employee->id,
+                    'resigned_at' => \Carbon\Carbon::parse($employee->resigned_at)->format('d M Y'),
+                    'alasan_resign' => $employee->alasan_resign ?: '-',
+                ],
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validasi gagal',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Karyawan tidak ditemukan'], 404);
+        } catch (\Exception $e) {
+            Log::error('HR Update Resign Data Error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Gagal memperbarui data',
+                'message' => config('app.debug') ? $e->getMessage() : 'Silakan coba beberapa saat lagi',
+            ], 500);
+        }
+    }
+
+    public function moveToResign(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'resigned_at' => 'required|date',
+                'alasan_resign' => 'nullable|string|max:500',
+            ]);
+
+            $employee = karyawan::findOrFail($id);
+            $employee->status_aktif = '0';
+            $employee->resigned_at = $validated['resigned_at'];
+            $employee->alasan_resign = $validated['alasan_resign'] ?? null;
+            $employee->save();
+
+            return response()->json([
+                'message' => 'Karyawan berhasil dipindahkan ke status resign',
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validasi gagal',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Karyawan tidak ditemukan'], 404);
+        } catch (\Exception $e) {
+            Log::error('HR Move To Resign Error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Gagal memindahkan data',
+                'message' => config('app.debug') ? $e->getMessage() : 'Silakan coba beberapa saat lagi',
+            ], 500);
+        }
+    }
+
+    public function restoreEmployee($id)
+    {
+        try {
+            $employee = karyawan::findOrFail($id);
+            $employee->status_aktif = '1';
+            $employee->resigned_at = null;
+            $employee->alasan_resign = null;
+            $employee->save();
+
+            return response()->json([
+                'message' => 'Karyawan berhasil dipulihkan menjadi aktif',
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Karyawan tidak ditemukan'], 404);
+        } catch (\Exception $e) {
+            Log::error('HR Restore Employee Error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Gagal memulihkan data',
+                'message' => config('app.debug') ? $e->getMessage() : 'Silakan coba beberapa saat lagi',
+            ], 500);
+        }
+    }
+
     public function getHeadcountTrend(Request $request)
     {
         $validated = $request->validate([

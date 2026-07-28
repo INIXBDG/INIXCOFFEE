@@ -12,26 +12,26 @@ use App\Exports\DaftarTugasReportExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\DaftarTugasImport;
-use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class DaftarTugasController extends Controller
 {
-
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:View DaftarTugas OB', ['only' => ['index', 'getKategori', 'get', 'getAvailableCategories']]);
-        $this->middleware('permission:Store DaftarTugas OB', ['only' => ['store']]);
+        $this->middleware('permission:View DaftarTugas OB', ['only' => ['index', 'getKategori', 'get', 'getAvailableCategories', 'chartData', 'exportExcel', 'exportPdf']]);
+        $this->middleware('permission:Store DaftarTugas OB', ['only' => ['store', 'importExcel']]);
         $this->middleware('permission:Aktifkan DaftarTugas OB', ['only' => ['aktifkanTugas']]);
-        $this->middleware('permission:Update DaftarTugas OB Kategori', ['only' => ['updateKategori']]);
+        $this->middleware('permission:Update DaftarTugas OB Kategori', ['only' => ['updateKategori', 'bulkUpdateTipeTurunan']]);
         $this->middleware('permission:Delete DaftarTugas OB Kategori', ['only' => ['deleteKategori']]);
+        $this->middleware('permission:Update DaftarTugas OB Kategori', ['only' => ['updateStatus', 'uploadBukti']]);
+        $this->middleware('permission:Delete DaftarTugas OB Kategori', ['only' => ['delete', 'bulkDelete']]);
+        $this->middleware('permission:Store DaftarTugas OB', ['only' => ['reorderKategori', 'reorderTugas']]);
     }
 
     public function index()
     {
-        $dataKategori = KategoriDaftarTugas::with('karyawan')->get();
+        $dataKategori = KategoriDaftarTugas::with('karyawan')->orderBy('urutan')->get();
         $karyawan = Karyawan::select('id', 'nama_lengkap')->get();
         $officeBoy = Karyawan::where('jabatan', 'Office Boy')->get();
         $auth = Auth::id();
@@ -41,7 +41,7 @@ class DaftarTugasController extends Controller
 
     public function getKategori()
     {
-        $dataKategori = KategoriDaftarTugas::with('karyawan')->get();
+        $dataKategori = KategoriDaftarTugas::with('karyawan')->orderBy('urutan')->get();
         return response()->json($dataKategori);
     }
 
@@ -84,12 +84,15 @@ class DaftarTugasController extends Controller
             }
         }
 
+        $maxUrutan = KategoriDaftarTugas::max('urutan') ?? 0;
+
         $kategori = KategoriDaftarTugas::create([
             'id_user' => $id_user,
             'Tipe' => $validated['Tipe'],
             'tipe_turunan' => $tipe_turunan,
             'judul_kategori' => $validated['tugas'],
             'Jabatan_Pembuat' => 'Office Boy',
+            'urutan' => $maxUrutan + 1,
         ]);
 
         return response()->json(
@@ -100,6 +103,61 @@ class DaftarTugasController extends Controller
             ],
             201,
         );
+    }
+
+    public function reorderKategori(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:kategori_daftar_tugas,id',
+        ]);
+
+        $user = auth()->user();
+        $updated = 0;
+
+        foreach ($request->ids as $index => $id) {
+            $kategori = KategoriDaftarTugas::find($id);
+            if (!$kategori) {
+                continue;
+            }
+            if ($user->jabatan !== 'HRD' && $kategori->id_user !== $user->id) {
+                continue;
+            }
+            $kategori->update(['urutan' => $index + 1]);
+            $updated++;
+        }
+
+        return response()->json(['success' => true, 'message' => "Urutan {$updated} kategori berhasil diperbarui"]);
+    }
+
+    public function reorderTugas(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:kontrol_tugas,id',
+        ]);
+
+        $user = auth()->user();
+        $updated = 0;
+
+        foreach ($request->ids as $index => $id) {
+            $tugas = KontrolTugas::find($id);
+            if (!$tugas) {
+                continue;
+            }
+
+            if ($user->jabatan !== 'HRD' && $tugas->id_karyawan !== $user->id) {
+                continue;
+            }
+
+            $tugas->update(['urutan' => $index + 1]);
+            $updated++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Urutan {$updated} tugas berhasil disimpan",
+        ]);
     }
 
     public function get(Request $request)
@@ -113,20 +171,11 @@ class DaftarTugasController extends Controller
         $query = KontrolTugas::with(['kategoriDaftarTugas', 'karyawan'])
             ->when($user->jabatan !== 'HRD', fn($q) => $q->where('id_karyawan', $user->id))
             ->when($tipe !== 'all', fn($q) => $q->whereHas('kategoriDaftarTugas', fn($q2) => $q2->where('Tipe', $tipe)))
-            ->when($tipe_turunan !== 'all', function ($q) use ($tipe_turunan) {
-                $q->whereHas(
-                    'kategoriDaftarTugas',
-                    fn($q2) => $q2->where('tipe_turunan', $tipe_turunan)->orWhere(function ($q3) use ($tipe_turunan) {
-                        if ($tipe_turunan === 'all') {
-                            $q3->whereNull('tipe_turunan');
-                        }
-                    }),
-                );
-            });
+            ->when($tipe_turunan !== 'all', fn($q) => $q->whereHas('kategoriDaftarTugas', fn($q2) => $q2->where('tipe_turunan', $tipe_turunan)));
 
         $query->whereDate('Deadline_Date', $tanggal);
 
-        $data = $query->latest()->get();
+        $data = $query->orderBy('urutan')->orderBy('id')->get();
 
         return response()->json([
             'data' => $data,
@@ -145,12 +194,11 @@ class DaftarTugasController extends Controller
         $todayDate = now()->day;
         $now = now();
 
-        $query = KategoriDaftarTugas::with('karyawan')
-            ->when($user->jabatan !== 'HRD', function ($q) use ($user) {
-                $q->where('Jabatan_Pembuat', $user->jabatan);
-            });
+        $query = KategoriDaftarTugas::with('karyawan')->when($user->jabatan !== 'HRD', function ($q) use ($user) {
+            $q->where('Jabatan_Pembuat', $user->jabatan);
+        });
 
-        $kategori = $query->get();
+        $kategori = $query->orderBy('urutan')->get();
         $available = [];
 
         foreach ($kategori as $kat) {
@@ -309,6 +357,17 @@ class DaftarTugasController extends Controller
         $request->validate(['kategori_ids' => 'required|array']);
 
         $user = auth()->user();
+
+        if ($user->jabatan !== 'Office Boy') {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Hanya Office Boy yang bisa mengaktifkan tugas untuk dirinya sendiri.',
+                ],
+                403,
+            );
+        }
+
         $kategoriIds = $request->kategori_ids;
         $created = 0;
         $skipped = 0;
@@ -322,29 +381,12 @@ class DaftarTugasController extends Controller
                 continue;
             }
 
-            Log::info('Cek Permission', [
-                'user_jabatan' => $user->jabatan,
-                'user_id' => $user->id,
-                'kategori_id_user' => $kategori->id_user,
-                'kategori_judul' => $kategori->judul_kategori
-            ]);
-
             $deadline = $this->hitungDeadline($kategori->Tipe, $kategori->tipe_turunan);
-
             if ($kategori->Tipe === 'Harian') {
                 $deadline = $today;
             }
 
-            Log::info('Deadline Calculation', [
-                'kategori_id' => $kategori->id,
-                'tipe' => $kategori->Tipe,
-                'deadline' => $deadline
-            ]);
-
-            $exists = KontrolTugas::where('id_karyawan', $user->id)
-                ->where('id_DaftarTugas', $kategori->id)
-                ->whereDate('Deadline_Date', $deadline)
-                ->exists();
+            $exists = KontrolTugas::where('id_karyawan', $user->id)->where('id_DaftarTugas', $kategori->id)->whereDate('Deadline_Date', $deadline)->exists();
 
             if ($exists) {
                 $skipped++;
@@ -352,11 +394,14 @@ class DaftarTugasController extends Controller
                 continue;
             }
 
+            $nextUrutan = (KontrolTugas::max('urutan') ?? 0) + 1;
+
             KontrolTugas::create([
                 'id_karyawan' => $user->id,
                 'id_DaftarTugas' => $kategori->id,
                 'status' => 0,
                 'Deadline_Date' => $deadline,
+                'urutan' => $nextUrutan,
             ]);
             $created++;
         }
@@ -375,7 +420,7 @@ class DaftarTugasController extends Controller
             'created' => $created,
             'skipped' => $skipped,
             'errors' => $errors,
-        ], !empty($errors) ? 200 : 200);
+        ]);
     }
 
     private function hitungDeadline($tipe, $tipe_turunan = null)
@@ -384,11 +429,8 @@ class DaftarTugasController extends Controller
 
         return match ($tipe) {
             'Harian' => $now->toDateString(),
-
             'Mingguan' => $this->hitungDeadlineMingguan($tipe_turunan),
-
             'Bulanan' => $this->hitungDeadlineBulanan($tipe_turunan),
-
             'Quartal' => $now->addMonths(3)->endOfMonth()->toDateString(),
             'Semester' => $now->addMonths(6)->endOfMonth()->toDateString(),
             'Tahunan' => $now->endOfYear()->toDateString(),
@@ -470,10 +512,13 @@ class DaftarTugasController extends Controller
 
         if ($request->hasFile('bukti_after')) {
             if (empty($buktiData['before'])) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'Foto Before wajib diupload terlebih dahulu sebelum mengupload Foto After'
-                ], 422);
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => 'Foto Before wajib diupload terlebih dahulu sebelum mengupload Foto After',
+                    ],
+                    422,
+                );
             }
             if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
                 Storage::disk('public')->delete($buktiData['after']);
@@ -488,10 +533,10 @@ class DaftarTugasController extends Controller
         }
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Bukti berhasil diupdate',
             'status' => $tugas->status,
-            'bukti' => $buktiData
+            'bukti' => $buktiData,
         ]);
     }
 
@@ -516,33 +561,24 @@ class DaftarTugasController extends Controller
         return response()->json(['success' => true, 'message' => 'Tugas berhasil dihapus']);
     }
 
-    public function bulkDelete(Request $request) {
+    public function bulkDelete(Request $request)
+    {
         $ids = $request->ids ?? [];
 
         $tasks = KontrolTugas::whereIn('id', $ids)->get();
 
         foreach ($tasks as $tugas) {
-
-            if (
-                auth()->user()->jabatan !== 'HRD' &&
-                $tugas->id_karyawan !== auth()->id()
-            ) {
+            if (auth()->user()->jabatan !== 'HRD' && $tugas->id_karyawan !== auth()->id()) {
                 continue;
             }
 
             $buktiData = $this->parseBukti($tugas->bukti);
 
-            if (
-                $buktiData['before'] &&
-                Storage::disk('public')->exists($buktiData['before'])
-            ) {
+            if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
                 Storage::disk('public')->delete($buktiData['before']);
             }
 
-            if (
-                $buktiData['after'] &&
-                Storage::disk('public')->exists($buktiData['after'])
-            ) {
+            if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
                 Storage::disk('public')->delete($buktiData['after']);
             }
 
@@ -619,19 +655,24 @@ class DaftarTugasController extends Controller
     {
         $request->validate(['id' => 'required|exists:kategori_daftar_tugas,id']);
         $kategori = KategoriDaftarTugas::findOrFail($request->id);
+
         if (Auth::id() !== $kategori->id_user && Auth::user()->jabatan !== 'HRD') {
             return response()->json(['message' => 'Tidak berhak menghapus kategori ini'], 403);
         }
-        KontrolTugas::where('id_DaftarTugas', $kategori->id)->each(function ($tugas) {
-            $buktiData = $this->parseBukti($tugas->bukti);
-            if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
-                Storage::disk('public')->delete($buktiData['before']);
-            }
-            if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
-                Storage::disk('public')->delete($buktiData['after']);
-            }
-            $tugas->delete();
-        });
+
+        KontrolTugas::where('id_DaftarTugas', $kategori->id)
+            ->get()
+            ->each(function ($tugas) {
+                $buktiData = $this->parseBukti($tugas->bukti);
+                if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
+                    Storage::disk('public')->delete($buktiData['before']);
+                }
+                if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
+                    Storage::disk('public')->delete($buktiData['after']);
+                }
+                $tugas->delete();
+            });
+
         $kategori->delete();
         return response()->json(['success' => true, 'message' => 'Kategori dan tugas terkait berhasil dihapus']);
     }
@@ -815,7 +856,8 @@ class DaftarTugasController extends Controller
         }
         try {
             if (is_string($bukti) && str_starts_with($bukti, '{')) {
-                return json_decode($bukti, true);
+                $decoded = json_decode($bukti, true);
+                return is_array($decoded) ? $decoded + ['before' => null, 'after' => null] : ['before' => $bukti, 'after' => null];
             }
             return ['before' => $bukti, 'after' => null];
         } catch (\Exception $e) {
