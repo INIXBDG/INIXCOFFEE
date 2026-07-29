@@ -1763,6 +1763,23 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa-solid fa-chart-line"
+                                                                    style="font-size: 30px; color: #182f51;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="/sla-management"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">SLA Management</h5>
+                                                                </a>
+                                                                <p class="card-text">Pencapaian SLA ITSM.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             @endif
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
@@ -3361,6 +3378,8 @@
             cekjabatan();
             let activeSubTabId = '#sales-tab-pane';
             let activeNestedTabId = '#pills-perquartal';
+
+
 
             $('#pills-home-tab').click(function() {
                 $('#loadingModal').modal('show');
