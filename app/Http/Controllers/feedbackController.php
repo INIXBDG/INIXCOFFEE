@@ -700,5 +700,73 @@ class feedbackController extends Controller
             'average' => $averageFeedback
         ]);
     }
+
+    public function getTotalFeedbackPertahun(Request $request)
+    {
+        $tahun = $request->input('tahun', date('Y'));
+
+        $feedbacks = Nilaifeedback::with(['rkm.instruktur'])
+            ->whereHas('rkm', function ($query) use ($tahun) {
+                $query->whereYear('tanggal_awal', $tahun);
+            })
+            ->get();
+
+        if ($feedbacks->isEmpty()) {
+            return response()->json([]);
+        }
+
+        $groupedByInstruktur = [];
+
+        foreach ($feedbacks as $fb) {
+            $rkm = $fb->rkm;
+            if (!$rkm) {
+                continue;
+            }
+
+            $instrukturName = 'Unknown Instruktur';
+            if ($rkm->instruktur) {
+                $instrukturName = $rkm->instruktur->nama_lengkap 
+                    ?? $rkm->instruktur->nama_karyawan 
+                    ?? $rkm->instruktur->nama 
+                    ?? $rkm->instruktur_key;
+            } elseif ($rkm->instruktur_key) {
+                $instrukturName = $rkm->instruktur_key;
+            }
+
+            $ratings = array_filter([
+                $fb->I1, $fb->I2, $fb->I3, $fb->I4,
+                $fb->I5, $fb->I6, $fb->I7, $fb->I8
+            ], function ($val) {
+                return !is_null($val) && is_numeric($val);
+            });
+
+            if (empty($ratings)) {
+                continue;
+            }
+
+            $avgScore = array_sum($ratings) / count($ratings);
+
+            if (!isset($groupedByInstruktur[$instrukturName])) {
+                $groupedByInstruktur[$instrukturName] = [
+                    'total_score' => 0,
+                    'count' => 0
+                ];
+            }
+
+            $groupedByInstruktur[$instrukturName]['total_score'] += $avgScore;
+            $groupedByInstruktur[$instrukturName]['count'] += 1;
+        }
+
+        $result = [];
+        foreach ($groupedByInstruktur as $nama => $stat) {
+            $result[] = [
+                'nama_instruktur' => $nama,
+                'nilai_rata_rata' => round($stat['total_score'] / $stat['count'], 2)
+            ];
+        }
+
+        return response()->json($result);
+    }
 }
+
 

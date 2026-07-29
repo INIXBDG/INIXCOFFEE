@@ -98,6 +98,7 @@ use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TelegramController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\WebhookController;
+use App\Http\Controllers\KnowledgeManagementController;
 use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\Webinar\ChecklistController;
 use App\Http\Controllers\Webinar\TimelineItemController;
@@ -1798,3 +1799,9 @@ Route::put('/system/documentation/codes/{id}', [CodeDocumentationController::cla
     ->name('documentation.codes.update');
 Route::delete('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'destroy'])
     ->name('documentation.codes.destroy');
+
+// Knowledge Management Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/knowledge-management/{id}/download', [KnowledgeManagementController::class, 'downloadFile'])->name('knowledge-management.download');
+    Route::resource('knowledge-management', KnowledgeManagementController::class);
+});
