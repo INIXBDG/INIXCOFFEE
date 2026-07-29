@@ -1816,6 +1816,25 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            @if (Auth::user()->hasAnyRole(['itsm', 'ITSM', 'Koordinator ITSM', 'Programmer', 'Technical Support']) || (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT Service Management'))
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa-solid fa-book-open-reader"
+                                                                    style="font-size: 30px;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="{{ route('knowledge-management.index') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Knowledge Management</h5>
+                                                                </a>
+                                                                <p class="card-text">Kelola SOP, FAQ, Tutorial, dan Panduan Instalasi ITSM.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
 
                                         </div>
                                     </div>
