@@ -1250,8 +1250,14 @@ Route::prefix('office')
 
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
 
-            Route::post('/office/daftar-tugas/kategori/reorder', [DaftarTugasController::class, 'reorderKategori'])->name('reorderKategori');
-            Route::post('/office/daftar-tugas/reorder', [DaftarTugasController::class, 'reorderTugas'])->name('reorderTugas');
+            Route::post('/kategori/reorder', [DaftarTugasController::class, 'reorderKategori'])->name('reorderKategori');
+            Route::post('/reorder', [DaftarTugasController::class, 'reorderTugas'])->name('reorderTugas');
+
+            Route::get('/perbaikan-data', [DaftarTugasController::class, 'perbaikanData'])->name('perbaikanData');
+            Route::get('/perbaikan-data/list', [DaftarTugasController::class, 'getForPerbaikan'])->name('getForPerbaikan');
+            Route::post('/perbaikan-data/update', [DaftarTugasController::class, 'updatePerbaikan'])->name('updatePerbaikan');
+            Route::post('/perbaikan-data/bulk-update', [DaftarTugasController::class, 'bulkUpdatePerbaikan'])->name('bulkUpdatePerbaikan');
+            Route::post('/perbaikan/bulk-save', [DaftarTugasController::class, 'bulkSavePerbaikan'])->name('bulkSavePerbaikan');
 
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
         });

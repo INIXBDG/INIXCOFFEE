@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AbsensiKaryawan;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use App\Models\Karyawan;
@@ -40,7 +41,7 @@ class LoginController extends Controller
     private function autoActivateTasks($karyawanId)
     {
         $now = Carbon::now();
-        $today = $now->toDateString();
+        $today = $now->format('Y-m-d');
         $todayDate = $now->day;
 
         $shiftSudahAda = KontrolTugas::where('id_karyawan', $karyawanId)
@@ -54,14 +55,7 @@ class LoginController extends Controller
         if ($shiftSudahAda) {
             $targetShift = $shiftSudahAda->kategoriDaftarTugas->tipe_turunan;
         } else {
-            $shift1SudahDiambilOrangLain = KontrolTugas::whereDate('Deadline_Date', $today)
-                ->where('id_karyawan', '!=', $karyawanId)
-                ->whereHas('kategoriDaftarTugas', function ($q) {
-                    $q->where('Tipe', 'Harian')->where('tipe_turunan', 'Shift 1');
-                })
-                ->exists();
-
-            $targetShift = $shift1SudahDiambilOrangLain ? 'Shift 2' : 'Shift 1';
+            $targetShift = $this->tentukanShiftHariIni($karyawanId, $today);
         }
 
         $isEndOfWeek = $now->isSaturday() || $now->isSunday();
@@ -85,6 +79,7 @@ class LoginController extends Controller
             $deadline = null;
 
             if ($kat->Tipe === 'Harian') {
+                // Filter berdasarkan shift
                 if (empty($kat->tipe_turunan) || $kat->tipe_turunan === $targetShift) {
                     $shouldActivate = true;
                     $deadline = $today;
@@ -93,7 +88,7 @@ class LoginController extends Controller
                 $targetDate = $kat->tipe_turunan ? (int) $kat->tipe_turunan : 1;
                 if ($todayDate == $targetDate) {
                     $shouldActivate = true;
-                    $deadline = $now->copy()->setDay($targetDate)->toDateString();
+                    $deadline = $now->copy()->setDay($targetDate)->format('Y-m-d');
                 }
             } elseif ($kat->Tipe === 'Mingguan') {
                 $hariMap = ['Saturday' => 'Sabtu', 'Sunday' => 'Minggu'];
@@ -127,45 +122,78 @@ class LoginController extends Controller
         }
     }
 
+    private function tentukanShiftHariIni($karyawanId, $today)
+    {
+        $absensiHariIni = AbsensiKaryawan::where('id_karyawan', $karyawanId)
+            ->where('tanggal', $today)
+            ->first();
+
+        if ($absensiHariIni && !empty($absensiHariIni->shift)) {
+            return $absensiHariIni->shift == 1 ? 'Shift 1' : 'Shift 2';
+        }
+
+        $tugasAktif = KontrolTugas::where('id_karyawan', $karyawanId)
+            ->whereDate('Deadline_Date', $today)
+            ->whereHas('kategoriDaftarTugas', function ($q) {
+                $q->where('Tipe', 'Harian')->whereIn('tipe_turunan', ['Shift 1', 'Shift 2']);
+            })
+            ->with('kategoriDaftarTugas')
+            ->first();
+
+        if ($tugasAktif) {
+            return $tugasAktif->kategoriDaftarTugas->tipe_turunan;
+        }
+
+        $absensiKemarin = AbsensiKaryawan::where('id_karyawan', $karyawanId)
+            ->where('tanggal', Carbon::yesterday('Asia/Jakarta')->toDateString())
+            ->first();
+
+        if ($absensiKemarin && !empty($absensiKemarin->shift)) {
+            return $absensiKemarin->shift == 1 ? 'Shift 1' : 'Shift 2';
+        }
+
+        return 'Shift 1';
+    }
+
     private function hitungDeadline($tipe, $tipe_turunan = null)
     {
-        $now = now();
+        $now = Carbon::now();
 
         return match ($tipe) {
-            'Harian' => $now->toDateString(),
+            'Harian' => $now->format('Y-m-d'),
             'Mingguan' => $this->hitungDeadlineMingguan($tipe_turunan),
             'Bulanan' => $this->hitungDeadlineBulanan($tipe_turunan),
-            'Quartal' => $now->addMonths(3)->endOfMonth()->toDateString(),
-            'Semester' => $now->addMonths(6)->endOfMonth()->toDateString(),
-            'Tahunan' => $now->endOfYear()->toDateString(),
-            default => $now->toDateString(),
+            'Quartal' => $now->copy()->addMonths(3)->endOfMonth()->format('Y-m-d'),
+            'Semester' => $now->copy()->addMonths(6)->endOfMonth()->format('Y-m-d'),
+            'Tahunan' => $now->copy()->endOfYear()->format('Y-m-d'),
+            default => $now->format('Y-m-d'),
         };
     }
 
     private function hitungDeadlineMingguan($shift = null)
     {
-        $now = now();
+        $now = Carbon::now();
 
         if ($shift === 'Sabtu') {
-            return $now->copy()->next(Carbon::SATURDAY)->toDateString();
+            return $now->copy()->next(Carbon::SATURDAY)->format('Y-m-d');
         }
 
         if ($shift === 'Minggu') {
-            return $now->copy()->next(Carbon::SUNDAY)->toDateString();
+            return $now->copy()->next(Carbon::SUNDAY)->format('Y-m-d');
         }
 
-        return $now->copy()->endOfWeek()->toDateString();
+        return $now->copy()->endOfWeek()->format('Y-m-d');
     }
 
     private function hitungDeadlineBulanan($tanggal = null)
     {
-        $now = now();
+        $now = Carbon::now();
         $targetDate = $tanggal ? (int) $tanggal : 1;
 
         if ($now->day > $targetDate) {
-            return $now->copy()->addMonth()->setDay($targetDate)->toDateString();
+            return $now->copy()->addMonth()->setDay($targetDate)->format('Y-m-d');
         }
 
-        return $now->copy()->setDay($targetDate)->toDateString();
+        return $now->copy()->setDay($targetDate)->format('Y-m-d');
     }
 }
