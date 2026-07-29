@@ -54,15 +54,22 @@ class BiayaTransportasiController extends Controller
             'biaya.*.harga' => 'required|numeric|min:500',
             'biaya.*.bukti' => 'required',
             'biaya.*.keterangan' => 'nullable|string|max:255',
+            'buat_pengajuan' => 'nullable|boolean',
         ]);
 
-        DB::transaction(function () use ($validated, $request) {
-            $pengajuan = PengajuanBarang::create([
-                'id_karyawan' => Auth::id(),
-                'tipe' => 'Reimbursement',
-                'invoice' => null,
-                'keterangan' => $validated['biaya'][0]['keterangan'] ?? null,
-            ]);
+        $buatPengajuan = $request->boolean('buat_pengajuan');
+
+        DB::transaction(function () use ($validated, $request, $buatPengajuan) {
+            $pengajuan = null;
+
+            if ($buatPengajuan) {
+                $pengajuan = PengajuanBarang::create([
+                    'id_karyawan' => Auth::id(),
+                    'tipe' => 'Reimbursement',
+                    'invoice' => null,
+                    'keterangan' => $validated['biaya'][0]['keterangan'] ?? 'Reimbursement Biaya Transportasi',
+                ]);
+            }
 
             foreach ($validated['biaya'] as $index => $item) {
                 $path = $request->file("biaya.$index.bukti")?->store('biaya_transportasi_driver', 'public');
@@ -70,63 +77,67 @@ class BiayaTransportasiController extends Controller
                 $biaya = BiayaTransportasiDriver::create([
                     'id_karyawan' => Auth::id(),
                     'id_pickup_driver' => $validated['id_pickup_driver'],
-                    'id_pengajuan_barang' => $pengajuan->id,
+                    'id_pengajuan_barang' => $pengajuan ? $pengajuan->id : null, 
                     'tipe' => $item['tipe'],
                     'harga' => $item['harga'],
                     'bukti' => $path,
                     'keterangan' => $item['keterangan'] ?? null,
                 ]);
 
-                detailPengajuanBarang::create([
-                    'id_pengajuan_barang' => $pengajuan->id,
-                    'nama_barang' => $item['tipe'],
-                    'qty' => 1,
-                    'harga' => $item['harga'],
-                    'keterangan' => $item['keterangan'] ?? "Mengajukan reimbursement biaya {$item['tipe']}",
-                ]);
+                if ($pengajuan) {
+                    detailPengajuanBarang::create([
+                        'id_pengajuan_barang' => $pengajuan->id,
+                        'nama_barang' => $item['tipe'],
+                        'qty' => 1,
+                        'harga' => $item['harga'],
+                        'keterangan' => $item['keterangan'] ?? "Mengajukan reimbursement biaya {$item['tipe']}",
+                    ]);
+                }
             }
 
-            $karyawan = karyawan::findOrFail(Auth::id());
+            if ($pengajuan) {
+                $karyawan = karyawan::findOrFail(Auth::id());
 
-            $trackingText = match ($karyawan->divisi) {
-                'Education' => 'Diajukan dan Sedang Ditinjau oleh Education Manager',
-                'Office' => 'Diajukan dan Sedang Ditinjau oleh Finance',
-                'Sales & Marketing' => 'Diajukan dan Sedang Ditinjau oleh SPV Sales',
-                default => 'Diajukan dan Sedang Ditinjau oleh General Manager',
-            };
+                $trackingText = match ($karyawan->divisi) {
+                    'Education' => 'Diajukan dan Sedang Ditinjau oleh Education Manager',
+                    'Office' => 'Diajukan dan Sedang Ditinjau oleh Finance',
+                    'Sales & Marketing' => 'Diajukan dan Sedang Ditinjau oleh SPV Sales',
+                    default => 'Diajukan dan Sedang Ditinjau oleh General Manager',
+                };
 
-            $tracking = tracking_pengajuan_barang::create([
-                'id_pengajuan_barang' => $pengajuan->id,
-                'tracking' => $trackingText,
-                'tanggal' => now(),
-            ]);
+                $tracking = tracking_pengajuan_barang::create([
+                    'id_pengajuan_barang' => $pengajuan->id,
+                    'tracking' => $trackingText,
+                    'tanggal' => now(),
+                ]);
 
-            $pengajuan->update(['id_tracking' => $tracking->id]);
+                $pengajuan->update(['id_tracking' => $tracking->id]);
 
-            $gm = karyawan::where('jabatan', 'GM')->first();
-            if ($gm) {
-                $users = User::whereHas('karyawan', fn($q) => $q->where('kode_karyawan', $gm->kode_karyawan))->get();
+                $gm = karyawan::where('jabatan', 'GM')->first();
+                if ($gm) {
+                    $users = User::whereHas('karyawan', fn($q) => $q->where('kode_karyawan', $gm->kode_karyawan))->get();
 
-                foreach ($users as $user) {
-                    $user->notify(
-                        new PengajuanbarangNotification(
-                            [
-                                'id_karyawan' => Auth::id(),
-                                'tipe' => 'Biaya Transportasi',
-                                'tanggal_pengajuan' => now(),
-                            ],
-                            '/pengajuanbarang',
-                            'Pengajuan Reimbursement',
-                            $user->id,
-                        ),
-                    );
+                    foreach ($users as $user) {
+                        $user->notify(
+                            new PengajuanbarangNotification(
+                                [
+                                    'id_karyawan' => Auth::id(),
+                                    'tipe' => 'Biaya Transportasi',
+                                    'tanggal_pengajuan' => now(),
+                                ],
+                                '/pengajuanbarang',
+                                'Pengajuan Reimbursement',
+                                $user->id,
+                            ),
+                        );
+                    }
                 }
             }
         });
 
         return response()->json([
             'success' => true,
-            'message' => 'Biaya transportasi berhasil diajukan.',
+            'message' => 'Biaya transportasi berhasil disimpan.',
         ]);
     }
 

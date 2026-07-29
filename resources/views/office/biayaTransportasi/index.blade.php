@@ -116,6 +116,23 @@
                 width: 100%;
             }
         }
+
+        .select2-container--bootstrap-5 .select2-selection {
+            box-shadow: none !important;
+        }
+        
+        .select2-container--bootstrap-5 .select2-selection--single {
+            height: calc(1.5em + 0.75rem + 2px) !important;
+            padding: 0.375rem 0.75rem !important;
+        }
+        
+        .select2-container--bootstrap-5 .select2-selection__rendered {
+            line-height: 1.5 !important;
+        }
+        
+        .select2-container--bootstrap-5 .select2-selection__arrow {
+            height: 100% !important;
+        }
     </style>
 
     <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4">
@@ -278,6 +295,7 @@
             </div>
         </div>
     </div>
+
     <div class="modal fade" id="ModalTambah" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
         aria-labelledby="ModalTambahLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -290,18 +308,39 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Pilih Koordinasi Pickup</label>
-                            <select name="id_pickup_driver" class="form-select" required>
+                            <label class="form-label fw-bold">Pilih Koordinasi Pickup <span class="text-danger">*</span></label>
+                            <select name="id_pickup_driver" class="form-select select2-picker" id="pickupSelect" required>
                                 <option value="">-- Pilih Pickup --</option>
                                 <option value="999999999">Diluar Koordinasi Driver</option>
                                 @foreach ($dataPickup ?? [] as $pickup)
-                                    <option value="{{ $pickup->id }}">
-                                        {{ $pickup->karyawan->nama_lengkap ?? ($pickup->driver_name ?? '-') }} -
-                                        {{ $pickup->detailPickupDriver->first()->lokasi ?? ($pickup->lokasi ?? '-') }}
+                                    @php
+                                        $tanggal = $pickup->created_at ? \Carbon\Carbon::parse($pickup->created_at)->format('d M Y') : '-';
+                                        $jam = $pickup->created_at ? \Carbon\Carbon::parse($pickup->created_at)->format('H:i') : '-';
+                                        $lokasi = $pickup->detailPickupDriver->first()->lokasi ?? ($pickup->lokasi ?? '-');
+                                        $driver = $pickup->karyawan->nama_lengkap ?? ($pickup->driver_name ?? '-');
+                                    @endphp
+                                    <option value="{{ $pickup->id }}" 
+                                            data-tanggal="{{ $tanggal }}" 
+                                            data-jam="{{ $jam }}"
+                                            data-lokasi="{{ $lokasi }}"
+                                            data-driver="{{ $driver }}">
+                                        {{ $driver }} - {{ $lokasi }} ({{ $tanggal }} {{ $jam }})
                                     </option>
                                 @endforeach
                             </select>
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-info-circle"></i> Pilih koordinassi pickup berdasarkan tanggal dan lokasi
+                            </small>
                         </div>
+
+                        <div class="mb-4 form-check p-3 bg-light rounded border">
+                            <input type="checkbox" class="form-check-input" id="buat_pengajuan" name="buat_pengajuan" value="1">
+                            <label class="form-check-label fw-bold" for="buat_pengajuan">Buat Pengajuan Barang (Reimbursement)</label>
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-info-circle"></i> Default tidak dicentang. Jika tidak dicentang, data hanya akan disimpan sebagai riwayat biaya transportasi tanpa membuat alur persetujuan pengajuan reimbursement.
+                            </small>
+                        </div>
+
                         <hr class="my-4">
                         <label class="form-label fw-bold d-block mb-3">Rincian Biaya</label>
                         <div id="biayaItemsContainer">
@@ -345,7 +384,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Ajukan Reimburst</button>
+                        <button type="submit" class="btn btn-primary">Simpan Data</button>
                     </div>
                 </form>
             </div>
@@ -378,6 +417,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/locale/id.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
         const rupiahFormat = new Intl.NumberFormat('id-ID');
@@ -388,6 +428,9 @@
         });
         const dateFormat = d => moment(d).format('DD MMM YYYY');
         const OUTSIDE_OPS_ID = '999999999';
+
+        // Inisialisasi global variable agar tidak undefined saat pertama kali load
+        window.groupedData = window.groupedData || {};
 
         function isOutsideOps(pickupId) {
             return String(pickupId) === OUTSIDE_OPS_ID;
@@ -401,35 +444,20 @@
             let namaDriver = '-';
             let lokasi = '-';
 
-            if (item.karyawan?.nama_lengkap) {
-                namaDriver = item.karyawan.nama_lengkap;
-            } else if (item.driver_name) {
-                namaDriver = item.driver_name;
-            } else if (item.pickupDriver?.karyawan?.nama_lengkap) {
-                namaDriver = item.pickupDriver.karyawan.nama_lengkap;
-            } else if (item.pickup_driver?.karyawan?.nama_lengkap) {
-                namaDriver = item.pickup_driver.karyawan.nama_lengkap;
-            } else if (item.pickupDriver?.nama_driver) {
-                namaDriver = item.pickupDriver.nama_driver;
-            } else if (item.pickup_driver?.nama_driver) {
-                namaDriver = item.pickup_driver.nama_driver;
-            }
+            if (item.karyawan?.nama_lengkap) namaDriver = item.karyawan.nama_lengkap;
+            else if (item.driver_name) namaDriver = item.driver_name;
+            else if (item.pickupDriver?.karyawan?.nama_lengkap) namaDriver = item.pickupDriver.karyawan.nama_lengkap;
+            else if (item.pickup_driver?.karyawan?.nama_lengkap) namaDriver = item.pickup_driver.karyawan.nama_lengkap;
+            else if (item.pickupDriver?.nama_driver) namaDriver = item.pickupDriver.nama_driver;
+            else if (item.pickup_driver?.nama_driver) namaDriver = item.pickup_driver.nama_driver;
 
-            if (item.detailPickupDriver?.[0]?.lokasi) {
-                lokasi = item.detailPickupDriver[0].lokasi;
-            } else if (item.detail_pickup_driver?.[0]?.lokasi) {
-                lokasi = item.detail_pickup_driver[0].lokasi;
-            } else if (item.lokasi) {
-                lokasi = item.lokasi;
-            } else if (item.pickupDriver?.detailPickupDriver?.[0]?.lokasi) {
-                lokasi = item.pickupDriver.detailPickupDriver[0].lokasi;
-            } else if (item.pickupDriver?.detail_pickup_driver?.[0]?.lokasi) {
-                lokasi = item.pickupDriver.detail_pickup_driver[0].lokasi;
-            } else if (item.pickup_driver?.detailPickupDriver?.[0]?.lokasi) {
-                lokasi = item.pickup_driver.detailPickupDriver[0].lokasi;
-            } else if (item.pickup_driver?.detail_pickup_driver?.[0]?.lokasi) {
-                lokasi = item.pickup_driver.detail_pickup_driver[0].lokasi;
-            }
+            if (item.detailPickupDriver?.[0]?.lokasi) lokasi = item.detailPickupDriver[0].lokasi;
+            else if (item.detail_pickup_driver?.[0]?.lokasi) lokasi = item.detail_pickup_driver[0].lokasi;
+            else if (item.lokasi) lokasi = item.lokasi;
+            else if (item.pickupDriver?.detailPickupDriver?.[0]?.lokasi) lokasi = item.pickupDriver.detailPickupDriver[0].lokasi;
+            else if (item.pickupDriver?.detail_pickup_driver?.[0]?.lokasi) lokasi = item.pickupDriver.detail_pickup_driver[0].lokasi;
+            else if (item.pickup_driver?.detailPickupDriver?.[0]?.lokasi) lokasi = item.pickup_driver.detailPickupDriver[0].lokasi;
+            else if (item.pickup_driver?.detail_pickup_driver?.[0]?.lokasi) lokasi = item.pickup_driver.detail_pickup_driver[0].lokasi;
 
             return `${namaDriver} | ${lokasi}`;
         }
@@ -448,7 +476,7 @@
             window.open(url, '_blank');
 
             const modal = bootstrap.Modal.getInstance(document.getElementById('modalExportFilter'));
-            modal.hide();
+            if (modal) modal.hide();
         }
 
         function loadData() {
@@ -480,39 +508,43 @@
                         const showBukti = idx === 0;
                         const isSelesai = (d.pengajuan_barang?.tracking?.tracking || '').toLowerCase().includes('selesai');
 
+                        // PERBAIKAN 1: Akses aman (optional chaining) untuk mencegah error null/undefined
+                        const namaLengkap = d.pickupDriver?.karyawan?.nama_lengkap ?? '-';
+                        const kendaraan = d.pickupDriver?.karyawan?.kendaraan ?? '-';
+
                         const row = `
                         <tr>
                             ${showAction ? `<td rowspan="${rowspan}" class="text-center">${no++}</td><td rowspan="${rowspan}">${koordinasi}</td>` : ''}
-                            <td>${d.pickupDriver.karyawan.nama_lengkap}</td>
-                            <td>${d.pickupDriver.karyawan.kendaraan}</td>
+                            <td>${namaLengkap}</td>
+                            <td>${kendaraan}</td>
                             <td>${d.tipe ?? '-'}</td>
                             <td class="text-end">${currencyFormat.format(Number(d.harga) || 0)}</td>
                             ${showBukti ? `<td rowspan="${rowspan}" class="text-center">
-                                                                    <button class="btn btn-secondary btn-sm lihat-bukti" data-images='${JSON.stringify(images)}'>
-                                                                        <i class="fas fa-image"></i> Lihat
-                                                                    </button>
-                                                                </td>` : ''}
+                                                    <button class="btn btn-secondary btn-sm lihat-bukti" data-images='${JSON.stringify(images)}'>
+                                                        <i class="fas fa-image"></i> Lihat
+                                                    </button>
+                                                </td>` : ''}
                             <td>${d.pengajuan_barang?.tracking?.tracking ?? d.status ?? 'Menunggu'}</td>
                             ${showAction ? `
-                                                                <td rowspan="${rowspan}">${dateFormat(d.created_at)}</td>
-                                                                <td rowspan="${rowspan}" class="text-center" style="font-size: 20px">
-                                                                    <div class="btn-group btn-group-sm" role="group">
-                                                                        <button class="btn btn-info btn-detail" data-pickup="${pickup}">
-                                                                            <i class="fas fa-info-circle"></i> Detail
-                                                                        </button>
-                                                                        <button class="btn btn-primary btn-edit" data-pickup="${pickup}">
-                                                                            <i class="fas fa-edit"></i> Edit
-                                                                        </button>
-                                                                        <button class="btn btn-danger btn-delete" data-pickup="${pickup}">
-                                                                            <i class="fas fa-trash"></i> Hapus
-                                                                        </button>
-                                                                        ${isSelesai ? `
-                                                                        <button class="btn btn-warning btn-upload-invoice" data-id="${d.id_pengajuan_barang}">
-                                                                            <i class="fas fa-file-upload"></i> invoice
-                                                                        </button>
-                                                                        ` : ''}
-                                                                    </div>
-                                                                </td>` : ''}
+                                                <td rowspan="${rowspan}">${dateFormat(d.created_at)}</td>
+                                                <td rowspan="${rowspan}" class="text-center" style="font-size: 20px">
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <button class="btn btn-info btn-detail" data-pickup="${pickup}">
+                                                            <i class="fas fa-info-circle"></i> Detail
+                                                        </button>
+                                                        <button class="btn btn-primary btn-edit" data-pickup="${pickup}">
+                                                            <i class="fas fa-edit"></i> Edit
+                                                        </button>
+                                                        <button class="btn btn-danger btn-delete" data-pickup="${pickup}">
+                                                            <i class="fas fa-trash"></i> Hapus
+                                                        </button>
+                                                        ${isSelesai && d.id_pengajuan_barang ? `
+                                                        <button class="btn btn-warning btn-upload-invoice" data-id="${d.id_pengajuan_barang}">
+                                                            <i class="fas fa-file-upload"></i> invoice
+                                                        </button>
+                                                        ` : ''}
+                                                    </div>
+                                                </td>` : ''}
                         </tr>`;
                         tbody.append(row);
                     });
@@ -522,7 +554,8 @@
                 window.groupedData = grouped;
             }).fail(function(xhr) {
                 console.error('Error loading ', xhr);
-                Swal.fire('Error', 'Gagal memuat  ' + (xhr.responseText || 'Unknown error'), 'error');
+                window.groupedData = {}; // Pastikan tetap object jika gagal
+                Swal.fire('Error', 'Gagal memuat data ' + (xhr.responseText || 'Unknown error'), 'error');
             });
         }
 
@@ -570,44 +603,13 @@
             });
         }
 
-        $(document).on('click', '.btn-upload-invoice', function() {
-            const id = $(this).data('id');
-            $('#invoice_pengajuan_id').val(id);
-            new bootstrap.Modal(document.getElementById('modalInvoice')).show();
-        });
-
-        $('#formInvoice').submit(function(e) {
-            e.preventDefault();
-
-            const id = $('#invoice_pengajuan_id').val();
-            const formData = new FormData(this);
-
-            $.ajax({
-                url: `/office/biaya-transportasi/upload-invoice/${id}`,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function() {
-                    Swal.fire('Sukses', 'Invoice berhasil diupload', 'success');
-                    $('#modalInvoice').modal('hide');
-                    loadData();
-                },
-                error: function(xhr) {
-                    Swal.fire('Gagal', xhr.responseJSON?.message || 'Error', 'error');
-                }
-            });
-        });
-
         function addEditItem() {
             const idx = $('.edit-item-row').length;
-
             const html = `
                 <div class="edit-item-row border rounded p-3 mb-3 position-relative" data-idx="${idx}">
                     <button type="button" class="btn btn-danger btn-sm btn-remove-item">
                         <i class="fas fa-trash"></i> Hapus
                     </button>
-
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Tipe Biaya</label>
@@ -619,24 +621,20 @@
                                 <option value="Budget Lebih">Budget Lebih</option>
                             </select>
                         </div>
-
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Harga</label>
                             <input type="number" class="form-control" name="items[${idx}][harga]" min="500" required>
                         </div>
-
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Keterangan</label>
                             <input type="text" class="form-control" name="items[${idx}][keterangan]">
                         </div>
-
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Bukti</label>
                             <input type="file" class="form-control" name="items[${idx}][bukti]">
                         </div>
                     </div>
                 </div>`;
-
             $('#editItemsContainer').append(html);
         }
 
@@ -662,6 +660,19 @@
 
         $(document).ready(function() {
             loadData();
+
+            // Inisialisasi Select2
+            $('#pickupSelect').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Cari pickup berdasarkan driver, lokasi, atau tanggal...',
+                allowClear: true,
+                dropdownParent: $('#ModalTambah'),
+                language: {
+                    noResults: function() { return "Tidak ada pickup yang ditemukan"; },
+                    searching: function() { return "Mencari..."; }
+                }
+            });
 
             $('#btnAddBiaya').click(addCreateItem);
             $('#btnAddItem').click(addEditItem);
@@ -714,13 +725,13 @@
                         if (modal) modal.hide();
                         $('#formCreate')[0].reset();
                         $('#biayaItemsContainer').empty();
+                        $('#pickupSelect').val(null).trigger('change'); // Reset select2
                         loadData();
                         Swal.fire('Sukses', 'Pengajuan berhasil dikirim', 'success');
                     },
                     error: xhr => {
                         let msg = xhr.responseJSON?.message || 'Terjadi kesalahan server';
-                        if (xhr.responseJSON?.errors) msg = Object.values(xhr.responseJSON
-                            .errors).flat().join('<br>');
+                        if (xhr.responseJSON?.errors) msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
                         Swal.fire('Gagal', msg, 'error');
                     }
                 });
@@ -728,14 +739,13 @@
 
             $('#formEdit').on('submit', function(e) {
                 e.preventDefault();
-
                 const pickupId = $('#edit_pickup').val();
                 const formData = new FormData(this);
 
                 $.ajax({
                     url: `/office/biaya-transportasi/update/${pickupId}`,
                     type: 'POST',
-                    formData,
+                    data: formData,
                     processData: false,
                     contentType: false,
                     headers: {
@@ -745,10 +755,40 @@
                         const modalEl = document.getElementById('ModalEdit');
                         const modal = bootstrap.Modal.getInstance(modalEl);
                         if (modal) modal.hide();
-                        location.reload();
+                        loadData(); // Gunakan loadData() daripada reload agar lebih cepat
+                        Swal.fire('Sukses', 'Data berhasil diperbarui', 'success');
                     },
                     error: function(err) {
                         console.log(err.responseJSON);
+                        Swal.fire('Gagal', err.responseJSON?.message || 'Gagal memperbarui data', 'error');
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-upload-invoice', function() {
+                const id = $(this).data('id');
+                $('#invoice_pengajuan_id').val(id);
+                new bootstrap.Modal(document.getElementById('modalInvoice')).show();
+            });
+
+            $('#formInvoice').submit(function(e) {
+                e.preventDefault();
+                const id = $('#invoice_pengajuan_id').val();
+                const formData = new FormData(this);
+
+                $.ajax({
+                    url: `/office/biaya-transportasi/upload-invoice/${id}`,
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function() {
+                        Swal.fire('Sukses', 'Invoice berhasil diupload', 'success');
+                        $('#modalInvoice').modal('hide');
+                        loadData();
+                    },
+                    error: function(xhr) {
+                        Swal.fire('Gagal', xhr.responseJSON?.message || 'Error', 'error');
                     }
                 });
             });
@@ -757,20 +797,18 @@
                 const images = $(this).data('images') || [];
                 let html = '<div class="row g-3 justify-content-center">';
                 images.forEach(src => {
-                    html +=
-                        `<div class="col-12 col-md-6"><img src="${src}" class="img-fluid rounded shadow-sm" style="max-height:500px; object-fit:contain;"></div>`;
+                    html += `<div class="col-12 col-md-6"><img src="${src}" class="img-fluid rounded shadow-sm" style="max-height:500px; object-fit:contain;"></div>`;
                 });
                 html += '</div>';
                 $('#buktiContent').html(html);
                 new bootstrap.Modal(document.getElementById('modalBukti')).show();
             });
 
+            // PERBAIKAN 2: Pastikan window.groupedData ada dan ambil dengan String(pickup)
             $(document).on('click', '.btn-detail', function() {
-                const pickup = $(this).data('pickup');
-                const items = window.groupedData[pickup] || [];
-                let rows = '',
-                    total = 0,
-                    tracking = 'Menunggu';
+                const pickup = String($(this).data('pickup'));
+                const items = (window.groupedData && window.groupedData[pickup]) ? window.groupedData[pickup] : [];
+                let rows = '', total = 0, tracking = 'Menunggu';
 
                 items.forEach(i => {
                     total += Number(i.harga) || 0;
@@ -785,8 +823,7 @@
                             <td class="text-center">${bukti}</td>
                             <td>${moment(i.created_at).format('DD MMM YYYY HH:mm')}</td>
                         </tr>`;
-                    if (i.pengajuan_barang?.tracking?.tracking) tracking = i.pengajuan_barang
-                        .tracking.tracking;
+                    if (i.pengajuan_barang?.tracking?.tracking) tracking = i.pengajuan_barang.tracking.tracking;
                 });
 
                 $('#detailContent').html(`
@@ -807,8 +844,8 @@
             });
 
             $(document).on('click', '.btn-edit', function() {
-                const pickup = $(this).data('pickup');
-                const items = window.groupedData[pickup] || [];
+                const pickup = String($(this).data('pickup'));
+                const items = (window.groupedData && window.groupedData[pickup]) ? window.groupedData[pickup] : [];
                 const first = items[0] || {};
 
                 $('#edit_pickup').val(pickup);
@@ -819,31 +856,18 @@
                     let namaDriver = '-';
                     let lokasi = '-';
 
-                    if (first.karyawan?.nama_lengkap) {
-                        namaDriver = first.karyawan.nama_lengkap;
-                    } else if (first.driver_name) {
-                        namaDriver = first.driver_name;
-                    } else if (first.pickupDriver?.karyawan?.nama_lengkap) {
-                        namaDriver = first.pickupDriver.karyawan.nama_lengkap;
-                    } else if (first.pickup_driver?.karyawan?.nama_lengkap) {
-                        namaDriver = first.pickup_driver.karyawan.nama_lengkap;
-                    }
+                    if (first.karyawan?.nama_lengkap) namaDriver = first.karyawan.nama_lengkap;
+                    else if (first.driver_name) namaDriver = first.driver_name;
+                    else if (first.pickupDriver?.karyawan?.nama_lengkap) namaDriver = first.pickupDriver.karyawan.nama_lengkap;
+                    else if (first.pickup_driver?.karyawan?.nama_lengkap) namaDriver = first.pickup_driver.karyawan.nama_lengkap;
 
-                    if (first.detailPickupDriver?.[0]?.lokasi) {
-                        lokasi = first.detailPickupDriver[0].lokasi;
-                    } else if (first.detail_pickup_driver?.[0]?.lokasi) {
-                        lokasi = first.detail_pickup_driver[0].lokasi;
-                    } else if (first.lokasi) {
-                        lokasi = first.lokasi;
-                    } else if (first.pickupDriver?.detailPickupDriver?.[0]?.lokasi) {
-                        lokasi = first.pickupDriver.detailPickupDriver[0].lokasi;
-                    } else if (first.pickupDriver?.detail_pickup_driver?.[0]?.lokasi) {
-                        lokasi = first.pickupDriver.detail_pickup_driver[0].lokasi;
-                    } else if (first.pickup_driver?.detailPickupDriver?.[0]?.lokasi) {
-                        lokasi = first.pickup_driver.detailPickupDriver[0].lokasi;
-                    } else if (first.pickup_driver?.detail_pickup_driver?.[0]?.lokasi) {
-                        lokasi = first.pickup_driver.detail_pickup_driver[0].lokasi;
-                    }
+                    if (first.detailPickupDriver?.[0]?.lokasi) lokasi = first.detailPickupDriver[0].lokasi;
+                    else if (first.detail_pickup_driver?.[0]?.lokasi) lokasi = first.detail_pickup_driver[0].lokasi;
+                    else if (first.lokasi) lokasi = first.lokasi;
+                    else if (first.pickupDriver?.detailPickupDriver?.[0]?.lokasi) lokasi = first.pickupDriver.detailPickupDriver[0].lokasi;
+                    else if (first.pickupDriver?.detail_pickup_driver?.[0]?.lokasi) lokasi = first.pickupDriver.detail_pickup_driver[0].lokasi;
+                    else if (first.pickup_driver?.detailPickupDriver?.[0]?.lokasi) lokasi = first.pickup_driver.detailPickupDriver[0].lokasi;
+                    else if (first.pickup_driver?.detail_pickup_driver?.[0]?.lokasi) lokasi = first.pickup_driver.detail_pickup_driver[0].lokasi;
 
                     $('#edit_pickup_label').val(`${namaDriver} | ${lokasi}`);
                 }
@@ -854,11 +878,9 @@
                     const row = `
                         <div class="edit-item-row border rounded p-3 mb-3 position-relative" data-idx="${idx}">
                             <input type="hidden" name="items[${idx}][id]" value="${item.id}">
-
                             <button type="button" class="btn btn-danger btn-sm btn-remove-item">
                                 <i class="fas fa-trash"></i> Hapus
                             </button>
-
                             <div class="row g-3">
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold">Tipe Biaya</label>
@@ -870,24 +892,21 @@
                                         <option value="Budget Lebih" ${item.tipe==='Budget Lebih'?'selected':''}>Budget Lebih</option>
                                     </select>
                                 </div>
-
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold">Harga</label>
                                     <input type="number" class="form-control" name="items[${idx}][harga]" value="${item.harga}" min="500" required>
                                 </div>
-
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold">Keterangan</label>
                                     <input type="text" class="form-control" name="items[${idx}][keterangan]" value="${item.keterangan ?? ''}">
                                 </div>
-
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold">Bukti</label>
                                     <input type="file" class="form-control" name="items[${idx}][bukti]">
+                                    ${item.bukti ? `<small class="text-muted d-block mt-1">File saat ini: <a href="{{ asset('storage') }}/${item.bukti}" target="_blank">Lihat</a></small>` : ''}
                                 </div>
                             </div>
                         </div>`;
-
                     $('#editItemsContainer').append(row);
                 });
 
@@ -895,10 +914,9 @@
             });
 
             $(document).on('click', '.btn-delete', function() {
-                const pickup = $(this).data('pickup');
-                const items = window.groupedData[pickup] || [];
-                let list = items.map(i =>
-                    `<li>${i.tipe}: ${currencyFormat.format(Number(i.harga) || 0)}</li>`).join('');
+                const pickup = String($(this).data('pickup'));
+                const items = (window.groupedData && window.groupedData[pickup]) ? window.groupedData[pickup] : [];
+                let list = items.map(i => `<li>${i.tipe}: ${currencyFormat.format(Number(i.harga) || 0)}</li>`).join('');
 
                 Swal.fire({
                     title: 'Hapus semua biaya ini?',
@@ -920,8 +938,7 @@
                             loadData();
                             Swal.fire('Sukses', 'Data berhasil dihapus', 'success');
                         },
-                        error: xhr => Swal.fire('Gagal', xhr.responseJSON?.message ||
-                            'Gagal menghapus data', 'error')
+                        error: xhr => Swal.fire('Gagal', xhr.responseJSON?.message || 'Gagal menghapus data', 'error')
                     });
                 });
             });
@@ -933,7 +950,7 @@
 
             $('#ModalTambah, #ModalEdit').on('shown.bs.modal', function() {
                 $(this).find('.modal-body').css('max-height', '70vh').css('overflow-y', 'auto');
-                $(this).find('select[name="id_pickup_driver"], select[name^="items["]').first().focus();
+                $(this).find('#pickupSelect').first().focus();
             });
         });
     </script>
