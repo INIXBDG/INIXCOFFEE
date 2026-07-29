@@ -1112,6 +1112,7 @@ Route::prefix('dashboard-sla/{team}')->group(function () {
     Route::get('/user', [DashboardSLAController::class, 'dashboardUser']);
     Route::get('/kritis', [DashboardSLAController::class, 'dashboardKritis']);
 });
+Route::get('/dashboard-sla/event/overall', [DashboardSLAController::class, 'overallEventSla']);
 Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, 'dashboardEventSla']);
 Route::get('/dashboard-sla/digital', [DashboardSLAController::class, 'dashboardDigital']);
 Route::get('/dashboard/uptime/monitoring', [KPIDatabaseKPIController::class, 'UptimePresentase'])->name('dashboard.uptimeMonitoring');
@@ -1800,6 +1801,7 @@ Route::put('/system/documentation/codes/{id}', [CodeDocumentationController::cla
 Route::delete('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'destroy'])
     ->name('documentation.codes.destroy');
 
+Route::get('/sla-management', [DashboardSLAController::class, 'index'])->name('sla.management')->middleware('auth');
 // Knowledge Management Routes
 Route::middleware(['auth'])->group(function () {
     Route::get('/knowledge-management/{id}/download', [KnowledgeManagementController::class, 'downloadFile'])->name('knowledge-management.download');
