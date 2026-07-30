@@ -244,10 +244,6 @@ class KaryawanController extends Controller
 
     public function gajiIndex()
     {
-        if (Auth::user()->jabatan !== "HRD") {
-            abort(403, 'Anda tidak memiliki izin untuk mengakses halaman ini.');
-        }
-
         $karyawan = User::with('karyawan', 'karyawan.LogGaji')
             ->where('status_akun', '1')
             ->where('jabatan', '!=', 'Outsource')
