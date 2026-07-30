@@ -77,7 +77,7 @@ use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\office\ModulController;
 use App\Http\Controllers\office\OfficeController;
-use App\Http\Controllers\Office\pickupDriverController;
+use App\Http\Controllers\Api\pickupDriverController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\office\KondisiToolsController;

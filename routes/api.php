@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\MoodleApiController;
-use App\Http\Controllers\Office\pickupDriverController;
+use App\Http\Controllers\Api\pickupDriverController;
 
 /*
 |--------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\office;
+namespace App\Http\Controllers\Api;
 
 use App\Models\DetailPickupDriver;
 use App\Models\karyawan;
@@ -31,7 +31,6 @@ class pickupDriverController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth');
         $this->middleware('permission:View PickupDriver', ['only' => ['index', 'get']]);
         $this->middleware('permission:Store PickupDriver', ['only' => ['create', 'store']]);
         $this->middleware('permission:Update PickupDriver', ['only' => ['updateStatus', 'updateKepulangan', 'updateKoordinasi']]);
