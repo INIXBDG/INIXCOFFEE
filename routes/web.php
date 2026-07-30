@@ -1168,6 +1168,8 @@ Route::prefix('office')
                 Route::get('/export-excel', [BiayaTransportasiController::class, 'exportExcel'])->name('exportExcel');
                 Route::get('/export-pdf', [BiayaTransportasiController::class, 'exportPdf'])->name('exportPdf');
                 Route::post('upload-invoice/{id}', [BiayaTransportasiController::class, 'uploadInvoice']);
+                Route::get('search-pickup', [BiayaTransportasiController::class, 'searchPickup'])->name('searchPickup');
+                Route::get('search-spj', [BiayaTransportasiController::class, 'searchSpj'])->name('searchSpj');
             });
 
         Route::prefix('feedback')
