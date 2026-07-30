@@ -22,6 +22,7 @@ class KaryawanController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware("permission:Managament Gaji", ['only' => ['gajiIndex', 'updateGaji']]);
     }
     public function gantiFoto($id)
     {
