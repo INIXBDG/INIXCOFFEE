@@ -29,7 +29,12 @@ class BiayaTransportasiExport implements FromCollection, WithHeadings, WithMappi
 
     public function collection()
     {
-        $query = BiayaTransportasiDriver::with(['pickupDriver.karyawan', 'pickupDriver.detailPickupDriver', 'PengajuanBarang.tracking']);
+        $query = BiayaTransportasiDriver::with([
+            'pickupDriver.karyawan', 
+            'pickupDriver.detailPickupDriver', 
+            'PengajuanBarang.tracking',
+            'SPJ.karyawan'
+        ]);
 
         if ($this->startDate) {
             $query->whereDate('created_at', '>=', $this->startDate);
@@ -51,23 +56,45 @@ class BiayaTransportasiExport implements FromCollection, WithHeadings, WithMappi
 
     public function headings(): array
     {
-        return [['LAPORAN BIAYA TRANSPORTASI DRIVER'], ['Periode: ' . ($this->startDate ? Carbon::parse($this->startDate)->format('d M Y') : 'Awal') . ' s/d ' . ($this->endDate ? Carbon::parse($this->endDate)->format('d M Y') : 'Sekarang')], ['Diexport pada: ' . Carbon::now()->format('d M Y H:i:s')], [], ['No', 'Bulan','Minggu','Tanggal', 'Driver', 'Koordinasi', 'Tipe Biaya', 'Harga', 'Keterangan', 'Status']];
+        return [
+            ['LAPORAN BIAYA TRANSPORTASI DRIVER'], 
+            ['Periode: ' . ($this->startDate ? Carbon::parse($this->startDate)->format('d M Y') : 'Awal') . ' s/d ' . ($this->endDate ? Carbon::parse($this->endDate)->format('d M Y') : 'Sekarang')], 
+            ['Diexport pada: ' . Carbon::now()->format('d M Y H:i:s')], 
+            [], 
+            ['No', 'Bulan', 'Minggu', 'Tanggal', 'Driver', 'Koordinasi / Tujuan', 'Tipe Biaya', 'Harga', 'Keterangan', 'Status']
+        ];
     }
 
     public function map($biaya): array
     {
         $status = $biaya->PengajuanBarang?->tracking?->tracking ?? 'Menunggu';
+        $driverName = '-';
         $koordinasi = '-';
 
-        if ($biaya->id_pickup_driver == 999999999) {
+        // PERBAIKAN: Logika untuk menangani Pickup vs SPJ
+        if (!empty($biaya->id_pengajuan_spj) && $biaya->SPJ) {
+            $driverName = $biaya->SPJ->karyawan?->nama_lengkap ?? '-';
+            $koordinasi = "SPJ: " . ($biaya->SPJ->tujuan ?? '-');
+        } elseif ($biaya->id_pickup_driver == 999999999) {
             $koordinasi = 'Diluar Koordinasi Driver';
         } elseif ($biaya->pickupDriver) {
-            $driver = $biaya->pickupDriver->karyawan?->nama_lengkap ?? '-';
+            $driverName = $biaya->pickupDriver->karyawan?->nama_lengkap ?? '-';
             $lokasi = $biaya->pickupDriver->detailPickupDriver->first()->lokasi ?? '-';
-            $koordinasi = "{$driver} | {$lokasi}";
+            $koordinasi = "{$driverName} | {$lokasi}";
         }
 
-        return ['', Carbon::parse($biaya->created_at)->format('M'), ceil(Carbon::parse($biaya->created_at)->day / 7), Carbon::parse($biaya->created_at)->format('d M Y'), $biaya->pickupDriver?->karyawan?->nama_lengkap ?? '-', $koordinasi, $biaya->tipe, 'Rp ' . number_format($biaya->harga, 0, ',', '.'), $biaya->keterangan ?? '-', $status];
+        return [
+            '', 
+            Carbon::parse($biaya->created_at)->format('M'), 
+            Carbon::parse($biaya->created_at)->weekOfMonth,
+            Carbon::parse($biaya->created_at)->format('d M Y'), 
+            $driverName, 
+            $koordinasi, 
+            $biaya->tipe, 
+            'Rp ' . number_format($biaya->harga, 0, ',', '.'), 
+            $biaya->keterangan ?? '-', 
+            $status
+        ];
     }
 
     public function styles(Worksheet $sheet)

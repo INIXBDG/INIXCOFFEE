@@ -19,6 +19,7 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BiayaTransportasiExport;
+use App\Models\SuratPerjalanan;
 
 class BiayaTransportasiController extends Controller
 {
@@ -35,20 +36,115 @@ class BiayaTransportasiController extends Controller
 
     public function index()
     {
-        $dataPickup = pickupDriver::with(['karyawan', 'detailPickupDriver', 'biayaTransportasi'])
-            ->where(function ($q) {
-                $q->whereDoesntHave('biayaTransportasi');
-            })
+        $drivers = karyawan::where('jabatan', 'Driver')
+            ->where('status_aktif', '1')
+            ->whereNotNull('nip')
+            ->get(['id', 'nama_lengkap']);
+
+        $dataPickup = pickupDriver::with(['karyawan', 'detailPickupDriver'])
+            ->whereDoesntHave('biayaTransportasi')
             ->latest()
+            ->limit(50)
             ->get();
 
-        return view('office.biayaTransportasi.index', compact('dataPickup'));
+        $dataSPJ = collect();
+
+        return view('office.biayaTransportasi.index', compact('dataPickup', 'dataSPJ', 'drivers'));
+    }
+
+    public function searchPickup(Request $request)
+    {
+        $query = pickupDriver::with(['karyawan', 'detailPickupDriver'])
+            ->whereDoesntHave('biayaTransportasi');
+
+        if ($request->filled('driver_id')) {
+            $query->where('id_karyawan', $request->driver_id);
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereHas('detailPickupDriver', function ($q) use ($request) {
+                $q->whereDate('tanggal_keberangkatan', '>=', $request->start_date);
+            });
+        }
+        if ($request->filled('end_date')) {
+            $query->whereHas('detailPickupDriver', function ($q) use ($request) {
+                $q->whereDate('tanggal_keberangkatan', '<=', $request->end_date);
+            });
+        }
+
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('karyawan', fn($subQ) => $subQ->where('nama_lengkap', 'like', "%{$search}%"))
+                ->orWhereHas('detailPickupDriver', fn($subQ) => $subQ->where('lokasi', 'like', "%{$search}%"))
+                ->orWhere('driver_name', 'like', "%{$search}%");
+            });
+        }
+
+        $pickups = $query->latest('created_at')->limit(100)->get()->map(function($pickup) {
+            $firstDetail = $pickup->detailPickupDriver->first();
+            
+            $tanggal = $firstDetail && $firstDetail->tanggal_keberangkatan 
+                ? \Carbon\Carbon::parse($firstDetail->tanggal_keberangkatan)->format('d M Y') 
+                : '-';
+                
+            $jam = $pickup->created_at 
+                ? \Carbon\Carbon::parse($pickup->created_at)->format('H:i') 
+                : '-';
+                
+            $lokasi = $firstDetail->lokasi ?? ($pickup->lokasi ?? '-');
+            
+            $driver = $pickup->karyawan->nama_lengkap ?? ($pickup->driver_name ?? 'Driver Tidak Diketahui');
+            
+            return [
+                'id' => $pickup->id,
+                'text' => "{$driver} - {$lokasi} ({$tanggal} {$jam})"
+            ];
+        });
+
+        return response()->json(['results' => $pickups]);
+    }
+
+    public function searchSpj(Request $request)
+    {
+        $query = SuratPerjalanan::with('karyawan')
+            ->whereHas('karyawan', fn($q) => $q->where('jabatan', 'Driver')->where('status_aktif', '1'));
+
+        if ($request->filled('driver_id')) {
+            $query->where('id_karyawan', $request->driver_id);
+        }
+        if ($request->filled('start_date')) {
+            $query->whereDate('tanggal_berangkat', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('tanggal_pulang', '<=', $request->end_date);
+        }
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where('alasan', 'like', "%{$search}%")
+                  ->orWhere('tujuan', 'like', "%{$search}%");
+        }
+
+        $spjs = $query->latest()->limit(100)->get()->map(function($spj) {
+            $berangkat = \Carbon\Carbon::parse($spj->tanggal_berangkat)->format('d M Y');
+            $pulang = \Carbon\Carbon::parse($spj->tanggal_pulang)->format('d M Y');
+            $label = \Illuminate\Support\Str::limit($spj->alasan, 30) . ' - ' . $spj->tujuan . " ({$berangkat} - {$pulang})";
+            
+            return [
+                'id' => $spj->id,
+                'text' => $label
+            ];
+        });
+
+        return response()->json(['results' => $spjs]);
     }
 
     public function create(Request $request)
     {
         $validated = $request->validate([
-            'id_pickup_driver' => 'required',
+            'sumber_data' => 'required|in:driver,spj',
+            'id_pickup_driver' => 'required_if:sumber_data,driver|nullable',
+            'id_spj' => 'required_if:sumber_data,spj|nullable',
             'biaya' => 'required|array|min:1',
             'biaya.*.tipe' => 'required|in:BBM,TOL,Parkir,Lainnya,Budget Lebih',
             'biaya.*.harga' => 'required|numeric|min:500',
@@ -58,8 +154,9 @@ class BiayaTransportasiController extends Controller
         ]);
 
         $buatPengajuan = $request->boolean('buat_pengajuan');
+        $sumberData = $request->sumber_data;
 
-        DB::transaction(function () use ($validated, $request, $buatPengajuan) {
+        DB::transaction(function () use ($validated, $request, $buatPengajuan, $sumberData) {
             $pengajuan = null;
 
             if ($buatPengajuan) {
@@ -76,7 +173,8 @@ class BiayaTransportasiController extends Controller
 
                 $biaya = BiayaTransportasiDriver::create([
                     'id_karyawan' => Auth::id(),
-                    'id_pickup_driver' => $validated['id_pickup_driver'],
+                    'id_pickup_driver' => $sumberData === 'driver' ? $validated['id_pickup_driver'] : null,
+                    'id_pengajuan_spj' => $sumberData === 'spj' ? $validated['id_spj'] : null, 
                     'id_pengajuan_barang' => $pengajuan ? $pengajuan->id : null, 
                     'tipe' => $item['tipe'],
                     'harga' => $item['harga'],
@@ -143,18 +241,26 @@ class BiayaTransportasiController extends Controller
 
     public function get()
     {
-        $data = BiayaTransportasiDriver::with(['pengajuanBarang.tracking', 'karyawan', 'pickupDriver.karyawan', 'pickupDriver.detailPickupDriver', 'pickupDriver'])
-            ->orderBy('id_pickup_driver')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $data = BiayaTransportasiDriver::with([
+            'pengajuanBarang.tracking', 
+            'karyawan', 
+            'pickupDriver.karyawan', 
+            'pickupDriver.detailPickupDriver', 
+            'pickupDriver',
+            'SPJ.karyawan'
+        ])
+        ->orderBy('created_at', 'desc')
+        ->get();
 
         $transformed = $data->map(function ($item) {
             $isOutsideOps = (string) $item->id_pickup_driver === self::OUTSIDE_OPS_ID;
+            $isSpj = !empty($item->id_pengajuan_spj);
 
             return [
                 'id' => $item->id,
                 'id_karyawan' => $item->id_karyawan,
                 'id_pickup_driver' => $item->id_pickup_driver,
+                'id_pengajuan_spj' => $item->id_pengajuan_spj,
                 'id_pengajuan_barang' => $item->id_pengajuan_barang,
                 'tipe' => $item->tipe,
                 'harga' => $item->harga,
@@ -162,38 +268,38 @@ class BiayaTransportasiController extends Controller
                 'keterangan' => $item->keterangan,
                 'created_at' => $item->created_at,
                 'updated_at' => $item->updated_at,
-                'pickupDriver' => $isOutsideOps
-                    ? null
-                    : ($item->pickupDriver
-                        ? [
-                            'id' => $item->pickupDriver->id,
-                            'karyawan' => $item->pickupDriver->karyawan
-                                ? [
-                                    'nama_lengkap' => $item->pickupDriver->karyawan->nama_lengkap,
-                                    'kendaraan' => $item->pickupDriver->kendaraan,
-                                ]
-                                : null,
-                            'detail_pickup_driver' => $item->pickupDriver->detailPickupDriver ? $item->pickupDriver->detailPickupDriver->map(fn($d) => ['lokasi' => $d->lokasi]) : [],
-                        ]
-                        : null),
-                'pengajuan_barang' => $item->pengajuanBarang
-                    ? [
-                        'id' => $item->pengajuanBarang->id,
-                        'tracking' => $item->pengajuanBarang->tracking
-                            ? [
-                                'tracking' => $item->pengajuanBarang->tracking->tracking,
-                            ]
-                            : null,
-                        'tipe' => $item->pengajuanBarang->tipe ?? null,
-                    ]
-                    : null,
+                
+                'pickupDriver' => (!$isOutsideOps && !$isSpj) ? [
+                    'id' => $item->pickupDriver->id ?? null,
+                    'karyawan' => $item->pickupDriver->karyawan ? [
+                        'nama_lengkap' => $item->pickupDriver->karyawan->nama_lengkap,
+                        'kendaraan' => $item->pickupDriver->karyawan->kendaraan ?? '-',
+                    ] : null,
+                    'detail_pickup_driver' => $item->pickupDriver->detailPickupDriver ? $item->pickupDriver->detailPickupDriver->map(fn($d) => ['lokasi' => $d->lokasi]) : [],
+                ] : null,
+
+                'spj' => $isSpj ? [
+                    'id' => $item->SPJ->id,
+                    'tujuan' => $item->SPJ->tujuan,
+                    'alasan' => $item->SPJ->alasan,
+                    'karyawan' => $item->SPJ->karyawan ? [
+                        'nama_lengkap' => $item->SPJ->karyawan->nama_lengkap,
+                        'kendaraan' => $item->SPJ->karyawan->kendaraan ?? 'N/A',
+                    ] : null,
+                ] : null,
+
+                'pengajuan_barang' => $item->pengajuanBarang ? [
+                    'id' => $item->pengajuanBarang->id,
+                    'tracking' => $item->pengajuanBarang->tracking ? ['tracking' => $item->pengajuanBarang->tracking->tracking] : null,
+                    'tipe' => $item->pengajuanBarang->tipe ?? null,
+                ] : null,
             ];
         });
 
         return response()->json(['data' => $transformed]);
     }
 
-    public function update(Request $request, $id_pickup_driver)
+    public function update(Request $request, $source_id)
     {
         $validated = $request->validate([
             'items' => 'required|array|min:1',
@@ -203,11 +309,16 @@ class BiayaTransportasiController extends Controller
             'items.*.bukti' => 'nullable',
         ]);
 
-        $existingItems = BiayaTransportasiDriver::where('id_pickup_driver', $id_pickup_driver)->where('id_karyawan', Auth::id())->get();
+        $existingItems = BiayaTransportasiDriver::where(function($q) use ($source_id) {
+                $q->where('id_pickup_driver', $source_id)
+                ->orWhere('id_pengajuan_spj', $source_id);
+            })
+            ->where('id_karyawan', Auth::id())
+            ->get();
 
         abort_if($existingItems->isEmpty(), 403, 'Data tidak ditemukan atau tidak memiliki akses.');
 
-        DB::transaction(function () use ($existingItems, $validated, $request, $id_pickup_driver) {
+        DB::transaction(function () use ($existingItems, $validated, $request, $source_id) {
             $itemIdsToKeep = [];
 
             foreach ($validated['items'] as $index => $itemData) {
@@ -215,7 +326,6 @@ class BiayaTransportasiController extends Controller
 
                 if ($itemId) {
                     $biaya = $existingItems->firstWhere('id', $itemId);
-
                     if ($biaya) {
                         $updateData = [
                             'tipe' => $itemData['tipe'],
@@ -224,9 +334,7 @@ class BiayaTransportasiController extends Controller
                         ];
 
                         if ($request->hasFile("items.$index.bukti")) {
-                            if ($biaya->bukti) {
-                                Storage::disk('public')->delete($biaya->bukti);
-                            }
+                            if ($biaya->bukti) Storage::disk('public')->delete($biaya->bukti);
                             $updateData['bukti'] = $request->file("items.$index.bukti")->store('biaya_transportasi_driver', 'public');
                         }
 
@@ -235,20 +343,20 @@ class BiayaTransportasiController extends Controller
 
                         if ($biaya->pengajuanBarang) {
                             $detail = $biaya->pengajuanBarang->detail()->where('nama_barang', $biaya->getOriginal('tipe'))->first();
-
                             if ($detail) {
                                 $detail->update([
                                     'nama_barang' => $itemData['tipe'],
                                     'harga' => $itemData['harga'],
                                     'keterangan' => $itemData['keterangan'] ?? "Mengajukan reimbursement biaya {$itemData['tipe']}",
                                 ]);
-                            }
+                }
                         }
                     }
                 } else {
                     $newBiayaData = [
                         'id_karyawan' => Auth::id(),
-                        'id_pickup_driver' => $id_pickup_driver,
+                        'id_pickup_driver' => $existingItems->first()->id_pickup_driver,
+                        'id_pengajuan_spj' => $existingItems->first()->id_pengajuan_spj,
                         'tipe' => $itemData['tipe'],
                         'harga' => $itemData['harga'],
                         'keterangan' => $itemData['keterangan'] ?? null,
@@ -262,7 +370,6 @@ class BiayaTransportasiController extends Controller
                     $itemIdsToKeep[] = $biaya->id;
 
                     $pengajuan = $existingItems->first()?->pengajuanBarang;
-
                     if ($pengajuan) {
                         detailPengajuanBarang::create([
                             'id_pengajuan_barang' => $pengajuan->id,
@@ -276,51 +383,39 @@ class BiayaTransportasiController extends Controller
             }
 
             $itemsToDelete = $existingItems->whereNotIn('id', $itemIdsToKeep);
-
             foreach ($itemsToDelete as $item) {
-                if ($item->bukti) {
-                    Storage::disk('public')->delete($item->bukti);
-                }
+                if ($item->bukti) Storage::disk('public')->delete($item->bukti);
                 $item->delete();
-
                 if ($item->pengajuanBarang) {
                     $detail = $item->pengajuanBarang->detail()->where('nama_barang', $item->tipe)->first();
-                    if ($detail) {
-                        $detail->delete();
-                    }
+                    if ($detail) $detail->delete();
                 }
             }
         });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data berhasil diperbarui.',
-        ]);
+        return response()->json(['success' => true, 'message' => 'Data berhasil diperbarui.']);
     }
 
-    public function destroy($id_pickup_driver)
+    public function destroy($source_id)
     {
-        $items = BiayaTransportasiDriver::where('id_pickup_driver', $id_pickup_driver)->with('pengajuanBarang')->get();
+        $items = BiayaTransportasiDriver::where(function($q) use ($source_id) {
+                $q->where('id_pickup_driver', $source_id)
+                ->orWhere('id_pengajuan_spj', $source_id);
+            })
+            ->with('pengajuanBarang')
+            ->get();
 
         DB::transaction(function () use ($items) {
             $pengajuanIds = [];
-
             foreach ($items as $item) {
-                if ($item->bukti) {
-                    Storage::disk('public')->delete($item->bukti);
-                }
+                if ($item->bukti) Storage::disk('public')->delete($item->bukti);
                 $item->delete();
-
-                if ($item->pengajuanBarang) {
-                    $pengajuanIds[] = $item->pengajuanBarang->id;
-                }
+                if ($item->pengajuanBarang) $pengajuanIds[] = $item->pengajuanBarang->id;
             }
 
             $pengajuanIds = array_unique($pengajuanIds);
-
             foreach ($pengajuanIds as $pengajuanId) {
                 $count = BiayaTransportasiDriver::where('id_pengajuan_barang', $pengajuanId)->count();
-
                 if ($count === 0) {
                     $pengajuan = PengajuanBarang::find($pengajuanId);
                     if ($pengajuan) {
@@ -332,10 +427,7 @@ class BiayaTransportasiController extends Controller
             }
         });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data berhasil dihapus.',
-        ]);
+        return response()->json(['success' => true, 'message' => 'Data berhasil dihapus.']);
     }
 
     public function exportExcel(Request $request)
@@ -361,7 +453,12 @@ class BiayaTransportasiController extends Controller
             'status' => 'nullable|string',
         ]);
 
-        $query = BiayaTransportasiDriver::with(['pickupDriver.karyawan', 'pickupDriver.detailPickupDriver', 'PengajuanBarang.tracking']);
+        $query = BiayaTransportasiDriver::with([
+            'pickupDriver.karyawan', 
+            'pickupDriver.detailPickupDriver', 
+            'PengajuanBarang.tracking',
+            'SPJ.karyawan'
+        ]);
 
         if ($request->start_date) {
             $query->whereDate('created_at', '>=', $request->start_date);
