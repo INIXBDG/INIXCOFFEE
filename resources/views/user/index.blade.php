@@ -22,6 +22,9 @@
             <div class="card m-4">
                 <div class="card-body table-responsive">
                     <h3 class="card-title text-center my-1">{{ __('Data Karyawan') }}</h3>
+                    <a href="{{ route('user.excel') }}" class="btn btn-success" style="margin-bottom: 5px; width:123px" title="Nama lengkap &amp; email saja">
+                        Export Excel
+                    </a>
                     <table class="table table-striped" id="usertable">
                         <thead>
                           <tr>

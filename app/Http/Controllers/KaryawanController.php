@@ -47,7 +47,7 @@ class KaryawanController extends Controller
 
         $jabatan = Jabatan::all();
         return view('user.edit', compact('users', 'jabatan'));
-    }
+    }   
 
     public function updateData(Request $request, $id)
     {
