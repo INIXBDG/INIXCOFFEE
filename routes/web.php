@@ -127,6 +127,7 @@ use App\Http\Controllers\HR\RekapInventarisController;
 use App\Http\Controllers\FeatureDocumentationController;
 use App\Http\Controllers\CodeDocumentationController;
 use App\Http\Controllers\DocumentationImportController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -161,6 +162,7 @@ Auth::routes(['register' => false, 'password.request' => false, 'password.email'
 Route::middleware('auth')->group(function () {
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('/user', [App\Http\Controllers\UserController::class, 'index'])->name('user.index');
+    Route::get('/user/excel', [UserController::class, 'ExportExcel'])->name('user.excel');
 
     Route::get('/karyawan/{hashid}/edit', [App\Http\Controllers\KaryawanController::class, 'edit'])->name('karyawan.edit'); //fixing route
     Route::put('/karyawan/{hashid}', [App\Http\Controllers\KaryawanController::class, 'updateData'])->name('karyawan.update'); //fixing route
