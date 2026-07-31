@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
-use App\Models\Contact;
 use App\Models\karyawan;
 use App\Models\lokasi;
 use App\Models\Materi;
@@ -14,7 +13,7 @@ use App\Models\RKM;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Auth\Events\Validated;
-use Illuminate\Http\Request;    
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -77,18 +76,25 @@ class ContactController extends Controller
 
         if ($request->has('order')) {
             $columns = [
-                'id',
-                'nama_perusahaan',
-                'lokasi',
-                'status',
-                'sales_key',
-                'kelas_terakhir',
-                'aktivitas_terakhir_date',
+                0 => 'id',
+                1 => 'nama_perusahaan',
+                2 => 'lokasi',
+                3 => 'status',
+                4 => 'sales_key',
+                5 => 'kelas_terakhir',
+                6 => 'aktivitas_terakhir_date',
             ];
+
             $order = $request->order[0];
-            $colIndex = $order['column'] ?? 0;
-            $dir = $order['dir'] ?? 'asc';
-            if (isset($columns[$colIndex])) {
+            $colIndex = (int) ($order['column'] ?? 0);
+
+            if ($colIndex === 0) {
+                $dir = 'desc';
+            } else {
+                $dir = $order['dir'] ?? 'desc';
+            }
+
+            if (array_key_exists($colIndex, $columns)) {
                 $query->orderBy($columns[$colIndex], $dir);
             }
         } else {
@@ -260,7 +266,7 @@ class ContactController extends Controller
 
     public function delete($id)
     {
-        $contact = Contact::where('id', $id)->first();
+        $contact = Perusahaan::where('id', $id)->first();
         $contact->delete();
 
         return back()->with([
