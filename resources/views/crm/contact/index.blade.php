@@ -306,6 +306,7 @@
             let table = $('#perusahaanTable').DataTable({
                 processing: true,
                 serverSide: true,
+                order: [[0, 'desc']],
                 ajax: {
                     url: "{{ route('contact.data') }}",
                     type: "GET",
