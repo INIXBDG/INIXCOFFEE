@@ -113,7 +113,7 @@ class UserController extends Controller
         if (empty($decoded)) abort(404);
 
         $userId = $decoded[0];
-        $users = User::with('karyawan.educations')->findOrFail($userId);
+        $users = User::with(['karyawan.educations', 'karyawan'])->findOrFail($userId);
         $karyawan = karyawan::findOrFail($userId);
 
         // Batasi akses: hanya user itu sendiri atau admin
@@ -156,6 +156,7 @@ class UserController extends Controller
             'dataVisit',
             'dataAbsen',
             'users',
+            'karyawan',
             'sertifikasis'
         ]));
     }
