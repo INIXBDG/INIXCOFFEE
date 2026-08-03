@@ -383,9 +383,16 @@ class TargetKPIController extends Controller
                 $personId = !empty($idUser) ? (int) $idUser : null;
                 $progress = $this->resolveProgress($item, $personId);
 
+                $totalPeserta = $item->detailTargetKPI->flatMap(function ($detailItem) {
+                    return $detailItem->detailPersonKPI->pluck('id_karyawan');
+                })->unique()->count();
+
                 return [
-                    'id' => $item->id, 'pembuat' => $item->karyawan->nama_lengkap ?? null, 'id_pembuat' => $item->id_pembuat,
-                    'judul' => $item->judul, 'deskripsi' => $item->deskripsi,
+                    'id' => $item->id, 
+                    'pembuat' => $item->karyawan->nama_lengkap ?? null, 
+                    'id_pembuat' => $item->id_pembuat,
+                    'judul' => $item->judul, 
+                    'deskripsi' => $item->deskripsi,
                     'jabatan' => $item->detailTargetKPI->pluck('jabatan')->unique()->values(),
                     'divisi' => $item->detailTargetKPI->pluck('divisi')->unique()->values(),
                     'asistant_route' => $detail->dataTarget?->asistant_route,
@@ -394,9 +401,11 @@ class TargetKPIController extends Controller
                     'tipe_target' => $detail->dataTarget?->tipe_target,
                     'nilai_target' => $detail->dataTarget?->nilai_target,
                     'manual_value' => $detail->manual_value,
-                    'status' => $item->status, 'created_at' => $item->created_at,
+                    'status' => $item->status, 
+                    'created_at' => $item->created_at,
                     'tenggat_waktu' => $this->formatTenggatWaktuExport($detail->dataTarget?->jangka_target ?? '', $detail->detail_jangka ?? ''),
                     'progress' => $progress,
+                    'total_peserta' => $totalPeserta, 
                 ];
             })->filter()->values(),
             'jabatan_list' => $dataJabatan,

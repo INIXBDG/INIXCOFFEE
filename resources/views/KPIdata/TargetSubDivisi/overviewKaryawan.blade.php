@@ -450,11 +450,6 @@
             'inisiatif efisiensi keuangan',
             'rasio biaya operasional terhadap revenue',
             'mengurangi manual work dan error',
-            'pengeluaran biaya karyawan'
-        ];
-
-        const allowedDoubleManualRoutes = [
-            'pengeluaran biaya karyawan'
         ];
 
         function formatNumber(value) {
@@ -860,7 +855,7 @@
 
                 const allowedAssistantRouteButtonsManual = [
                     'dorong inovasi pelayanan', 'inisiatif efisiensi keuangan',
-                    'rasio biaya operasional terhadap revenue', 'mengurangi manual work dan error', 'pengeluaran biaya karyawan'
+                    'rasio biaya operasional terhadap revenue', 'mengurangi manual work dan error'
                 ];
 
                 let buttonIsiForm = '';
