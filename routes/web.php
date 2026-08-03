@@ -77,7 +77,7 @@ use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\office\ModulController;
 use App\Http\Controllers\office\OfficeController;
-use App\Http\Controllers\Api\pickupDriverController;
+use App\Http\Controllers\office\pickupDriverController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\office\KondisiToolsController;
@@ -1170,6 +1170,11 @@ Route::prefix('office')
                 Route::post('upload-invoice/{id}', [BiayaTransportasiController::class, 'uploadInvoice']);
                 Route::get('search-pickup', [BiayaTransportasiController::class, 'searchPickup'])->name('searchPickup');
                 Route::get('search-spj', [BiayaTransportasiController::class, 'searchSpj'])->name('searchSpj');
+                Route::get('/budget-summary', [BiayaTransportasiController::class, 'budgetWeeklySummary'])->name('budgetSummary');
+                Route::get('/budget-summary-all', [BiayaTransportasiController::class, 'budgetAllSummary'])->name('budgetSummaryAll');
+                Route::post('/budget-operasional', [BiayaTransportasiController::class, 'storeBudgetOperasional'])->name('storeBudgetOperasional');
+                Route::post('/update-tipe/{id}', [BiayaTransportasiController::class, 'updateTipeBiaya'])->name('updateTipe');
+                Route::get('/export-budget-summary', [BiayaTransportasiController::class, 'exportBudgetSummary'])->name('exportBudgetSummary');
             });
 
         Route::prefix('feedback')

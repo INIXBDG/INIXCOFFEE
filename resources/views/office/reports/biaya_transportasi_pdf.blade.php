@@ -84,6 +84,8 @@
                 <th style="width: 20%;">Koordinasi / Tujuan</th>
                 <th style="width: 10%;">Tipe</th>
                 <th style="width: 12%;" class="text-right">Harga</th>
+                <th style="width: 10%;">Operasional Kantor</th>
+                <th style="width: 10%;">Sisa Budget Minggu</th>
                 <th>Keterangan</th>
                 <th style="width: 10%;">Status</th>
             </tr>
@@ -105,6 +107,10 @@
                         $koordinasi = "{$driverName} | {$lokasi}";
                     }
                 @endphp
+                @php
+                    $isOperasional = isset($budgetMap[$item->id]);
+                    $sisaBudget = $budgetMap[$item->id]['sisa_budget'] ?? null;
+                @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>{{ \Carbon\Carbon::parse($item->created_at)->format('M') }}</td>
@@ -114,6 +120,8 @@
                     <td>{{ $koordinasi }}</td>
                     <td>{{ $item->tipe }}</td>
                     <td class="text-right">Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                    <td>{{ $isOperasional ? 'Ya' : 'Tidak' }}</td>
+                    <td class="text-right">{{ $isOperasional ? 'Rp ' . number_format($sisaBudget, 0, ',', '.') : '-' }}</td>
                     <td>{{ $item->keterangan ?? '-' }}</td>
                     <td>{{ $item->pengajuan_barang?->tracking?->tracking ?? 'Menunggu' }}</td>
                 </tr>

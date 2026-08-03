@@ -4,25 +4,26 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
     <style>
-        html, body {
+        html,
+        body {
             height: auto !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
         }
-        
+
         .card.shadow-sm.border-0.glass-force {
             max-height: none !important;
             overflow: visible !important;
         }
 
-        .dataTables_wrapper .dataTables_length, 
-        .dataTables_wrapper .dataTables_filter, 
-        .dataTables_wrapper .dataTables_info, 
-        .dataTables_wrapper .dataTables_processing, 
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_processing,
         .dataTables_wrapper .dataTables_paginate {
             color: #495057 !important;
         }
-        
+
         .table>:not(caption)>*>* {
             border-bottom-width: 1px !important;
         }
@@ -181,6 +182,15 @@
             <i class="fas fa-file-export me-1"></i> Export
         </button>
 
+        @can('HRD BiayaTransportasi Update')
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalBudgetOperasional">
+                <i class="fas fa-building me-1"></i> Budget Operasional Kantor
+            </button>
+            <button class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#modalDetailBudgetHRD">
+                <i class="fas fa-list-check me-1"></i> Detail Penggunaan Budget
+            </button>
+        @endcan
+
         {{-- Modal Filter Export --}}
         <div class="modal fade" id="modalExportFilter" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
@@ -208,6 +218,7 @@
                                     <option value="Parkir">Parkir</option>
                                     <option value="Lainnya">Lainnya</option>
                                     <option value="Budget Lebih">Budget Lebih</option>
+                                    <option value="Operasional Kantor">Operasional Kantor</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -220,6 +231,8 @@
                                     <option value="Ditolak">Ditolak</option>
                                 </select>
                             </div>
+
+                            <option value="Operasional Kantor">Operasional Kantor</option>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -238,12 +251,14 @@
 
     <div class="container-fluid px-0 px-md-3">
         <div class="card shadow-sm border-0 glass-force">
-            <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 py-3">
+            <div
+                class="card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 py-3">
                 <h5 class="mb-0 fw-semibold">Biaya Transportasi Driver</h5>
             </div>
             <div class="card-body p-0 p-md-3">
                 <div class="table-responsive">
-                    <table id="dataTableBiaya" class="table table-bordered table-hover align-middle mb-0" style="width:100%">
+                    <table id="dataTableBiaya" class="table table-bordered table-hover align-middle mb-0"
+                        style="width:100%">
                         <thead class="table-light">
                             <tr>
                                 <th class="text-center">No</th>
@@ -259,7 +274,7 @@
                             </tr>
                         </thead>
                         <tbody></tbody>
-                   </table>
+                    </table>
                 </div>
             </div>
         </div>
@@ -406,16 +421,18 @@
                                     <div class="col-md-4">
                                         <select id="filter_driver_pickup" class="form-select form-select-sm">
                                             <option value="">Semua Driver</option>
-                                            @foreach($drivers ?? [] as $drv)
+                                            @foreach ($drivers ?? [] as $drv)
                                                 <option value="{{ $drv->id }}">{{ $drv->nama_lengkap }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-md-4">
-                                        <input type="date" id="filter_start_pickup" class="form-control form-control-sm" placeholder="Tanggal Mulai">
+                                        <input type="date" id="filter_start_pickup"
+                                            class="form-control form-control-sm" placeholder="Tanggal Mulai">
                                     </div>
                                     <div class="col-md-4">
-                                        <input type="date" id="filter_end_pickup" class="form-control form-control-sm" placeholder="Tanggal Akhir">
+                                        <input type="date" id="filter_end_pickup" class="form-control form-control-sm"
+                                            placeholder="Tanggal Akhir">
                                     </div>
                                 </div>
                             </div>
@@ -424,12 +441,14 @@
                                 <label class="form-label fw-bold">
                                     Pilih Koordinasi Pickup <span class="text-danger">*</span>
                                 </label>
-                                <select name="id_pickup_driver" class="form-select select2-ajax-picker" id="pickupSelect" data-url="{{ route('office.biayaTransportasi.searchPickup') }}">
+                                <select name="id_pickup_driver" class="form-select select2-ajax-picker" id="pickupSelect"
+                                    data-url="{{ route('office.biayaTransportasi.searchPickup') }}">
                                     <option value="">-- Pilih Pickup --</option>
                                     <option value="999999999">Diluar Koordinasi Driver</option>
                                 </select>
                                 <small class="text-muted">
-                                    <i class="fas fa-info-circle"></i> Gunakan filter di atas atau ketik nama/lokasi untuk mencari.
+                                    <i class="fas fa-info-circle"></i> Gunakan filter di atas atau ketik nama/lokasi untuk
+                                    mencari.
                                 </small>
                             </div>
                         </div>
@@ -441,16 +460,18 @@
                                     <div class="col-md-4">
                                         <select id="filter_driver_spj" class="form-select form-select-sm">
                                             <option value="">Semua Driver</option>
-                                            @foreach($drivers ?? [] as $drv)
+                                            @foreach ($drivers ?? [] as $drv)
                                                 <option value="{{ $drv->id }}">{{ $drv->nama_lengkap }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-md-4">
-                                        <input type="date" id="filter_start_spj" class="form-control form-control-sm" placeholder="Tanggal Mulai">
+                                        <input type="date" id="filter_start_spj" class="form-control form-control-sm"
+                                            placeholder="Tanggal Mulai">
                                     </div>
                                     <div class="col-md-4">
-                                        <input type="date" id="filter_end_spj" class="form-control form-control-sm" placeholder="Tanggal Akhir">
+                                        <input type="date" id="filter_end_spj" class="form-control form-control-sm"
+                                            placeholder="Tanggal Akhir">
                                     </div>
                                 </div>
                             </div>
@@ -459,11 +480,13 @@
                                 <label class="form-label fw-bold">
                                     Pilih SPJ <span class="text-danger">*</span>
                                 </label>
-                                <select name="id_spj" class="form-select select2-ajax-picker" id="spjSelect" data-url="{{ route('office.biayaTransportasi.searchSpj') }}">
+                                <select name="id_spj" class="form-select select2-ajax-picker" id="spjSelect"
+                                    data-url="{{ route('office.biayaTransportasi.searchSpj') }}">
                                     <option value="">-- Pilih SPJ --</option>
                                 </select>
                                 <small class="text-muted">
-                                    <i class="fas fa-info-circle"></i> Gunakan filter di atas atau ketik alasan/tujuan untuk mencari.
+                                    <i class="fas fa-info-circle"></i> Gunakan filter di atas atau ketik alasan/tujuan
+                                    untuk mencari.
                                 </small>
                             </div>
                         </div>
@@ -550,6 +573,203 @@
         </div>
     </div>
 
+    @can('HRD BiayaTransportasi Update')
+        <div class="modal fade" id="modalBudgetOperasional" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <form id="formBudgetOperasional">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title">Budget Operasional Kantor Mingguan</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-triangle-exclamation me-1"></i>
+                                Pastikan Anda sudah memeriksa kembali data biaya minggu ini sebelum menambahkan data budget
+                                operasional kantor.
+                                <div class="form-check mt-2">
+                                    <input type="checkbox" class="form-check-input" id="konfirmasiCek" name="konfirmasi"
+                                        value="1" required>
+                                    <label class="form-check-label fw-bold" for="konfirmasiCek">Saya sudah memeriksa data
+                                        minggu ini</label>
+                                </div>
+                            </div>
+
+                            <fieldset id="budgetFormFields" disabled>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Sumber Data yang Dihitung</label>
+                                    <div class="d-flex gap-3 flex-wrap">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input src-filter" value="driver" checked
+                                                id="srcDriver">
+                                            <label class="form-check-label" for="srcDriver">Koordinasi Driver</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input src-filter" value="spj" checked
+                                                id="srcSpj">
+                                            <label class="form-check-label" for="srcSpj">SPJ</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input src-filter" value="outside"
+                                                checked id="srcOutside">
+                                            <label class="form-check-label" for="srcOutside">Diluar Koordinasi</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Pilih Minggu <span class="text-danger">*</span></label>
+                                    <input type="week" id="budgetWeekPicker" name="week_input" class="form-control"
+                                        required>
+                                </div>
+
+                                <div id="weeklySummaryBox" class="mb-3 p-3 bg-light rounded border" style="display:none;">
+                                    <h6 class="fw-bold mb-2">Ringkasan Penggunaan Minggu Ini</h6>
+                                    <div class="row text-center g-2 mb-2">
+                                        <div class="col-3"><small class="text-muted d-block">Budget Awal</small><span
+                                                id="sumBudgetAwal">-</span></div>
+                                        <div class="col-3"><small class="text-muted d-block">Tambahan</small><span
+                                                id="sumTambahan">-</span></div>
+                                        <div class="col-3"><small class="text-muted d-block">Terpakai</small><span
+                                                id="sumTerpakai">-</span></div>
+                                        <div class="col-3"><small class="text-muted d-block">Sisa</small><span
+                                                id="sumSisa" class="fw-bold">-</span></div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Tanggal</th>
+                                                    <th>Sumber</th>
+                                                    <th>Tipe</th>
+                                                    <th class="text-end">Harga</th>
+                                                    <th class="text-end">Sisa Setelah</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="weeklySummaryRows"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Jenis Entry <span class="text-danger">*</span></label>
+                                    <div class="form-check">
+                                        <input type="radio" class="form-check-input" name="jenis" id="jenisPengeluaran"
+                                            value="pengeluaran" checked>
+                                        <label class="form-check-label" for="jenisPengeluaran">Biaya Operasional Kantor
+                                            (mengurangi budget)</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="radio" class="form-check-input" name="jenis" id="jenisTambahan"
+                                            value="tambahan_budget"
+                                            {{ auth()->user()->can('HRD BiayaTransportasi Custom Budget') ? '' : 'disabled' }}>
+                                        <label class="form-check-label" for="jenisTambahan">
+                                            Tambah Alokasi Budget (Budget Lebih)
+                                            @cannot('HRD BiayaTransportasi Custom Budget')
+                                                <small class="text-muted">(butuh izin khusus)</small>
+                                            @endcannot
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Harga <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">Rp</span>
+                                            <input type="text" id="budgetHargaVisual" class="form-control"
+                                                placeholder="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Bukti</label>
+                                        <input type="file" name="bukti" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <label class="form-label">Keterangan</label>
+                                    <input type="text" name="keterangan" class="form-control"
+                                        placeholder="Keterangan (opsional)">
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-warning" id="btnSubmitBudget" disabled>Simpan Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalDetailBudgetHRD" tabindex="-1">
+            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Detail Penggunaan Budget Operasional Kantor</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="card bg-light mb-3 border-0">
+                            <div class="card-body">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold">Tahun</label>
+                                        <select id="filterBudgetYear" class="form-select form-select-sm"></select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold">Bulan</label>
+                                        <select id="filterBudgetMonth" class="form-select form-select-sm">
+                                            <option value="1">Januari</option><option value="2">Februari</option>
+                                            <option value="3">Maret</option><option value="4">April</option>
+                                            <option value="5">Mei</option><option value="6">Juni</option>
+                                            <option value="7">Juli</option><option value="8">Agustus</option>
+                                            <option value="9">September</option><option value="10">Oktober</option>
+                                            <option value="11">November</option><option value="12">Desember</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold">Minggu</label>
+                                        <select id="filterBudgetWeek" class="form-select form-select-sm">
+                                            <option value="">Semua Minggu</option>
+                                            <option value="1">Minggu 1</option>
+                                            <option value="2">Minggu 2</option>
+                                            <option value="3">Minggu 3</option>
+                                            <option value="4">Minggu 4</option>
+                                            <option value="5">Minggu 5</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="button" class="btn btn-primary btn-sm w-100" id="btnApplyBudgetFilter">
+                                            <i class="fas fa-filter me-1"></i> Terapkan
+                                        </button>
+                                    </div each>
+                                </div>
+                                <div class="row g-2 mt-2">
+                                    <div class="col-12 text-end">
+                                        <button type="button" class="btn btn-success btn-sm" onclick="exportBudgetSummary('excel')">
+                                            <i class="fas fa-file-excel me-1"></i> Export Excel
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="exportBudgetSummary('pdf')">
+                                            <i class="fas fa-file-pdf me-1"></i> Export PDF
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="detailBudgetAllContent">
+                            <p class="text-muted text-center"><i class="fas fa-spinner fa-spin"></i> Memuat data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endcan
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
@@ -603,21 +823,23 @@
                     url: "{{ route('office.biayaTransportasi.get') }}",
                     dataSrc: 'data'
                 },
-                columns: [
-                    { 
-                        data: null, 
-                        render: (data, type, row, meta) => meta.row + 1 + meta.settings._iDisplayStart 
+                columns: [{
+                        data: null,
+                        render: (data, type, row, meta) => meta.row + 1 + meta.settings._iDisplayStart
                     },
                     {
                         data: null,
                         render: (data, type, row) => {
-                            if (row.id_pickup_driver == OUTSIDE_OPS_ID) return '<span class="badge bg-secondary">Diluar Koordinasi</span>';
-                            if (row.spj) return `<span class="badge bg-success">SPJ: ${row.spj.tujuan}</span>`;
-                            const lokasi = row.pickupDriver?.detail_pickup_driver?.[0]?.lokasi || row.pickupDriver?.detailPickupDriver?.[0]?.lokasi || '-';
+                            if (row.id_pickup_driver == OUTSIDE_OPS_ID)
+                            return '<span class="badge bg-secondary">Diluar Koordinasi</span>';
+                            if (row.spj)
+                            return `<span class="badge bg-success">SPJ: ${row.spj.tujuan}</span>`;
+                            const lokasi = row.pickupDriver?.detail_pickup_driver?.[0]?.lokasi || row
+                                .pickupDriver?.detailPickupDriver?.[0]?.lokasi || '-';
                             return `Pickup: ${lokasi}`;
                         }
                     },
-                    { 
+                    {
                         data: null,
                         render: (data, type, row) => {
                             if (row.spj) return row.spj.karyawan?.kendaraan ?? 'N/A';
@@ -628,18 +850,28 @@
                         data: null,
                         render: (data, type, row) => {
                             if (row.spj) return row.spj.karyawan?.nama_lengkap ?? '-';
-                            return row.pickupDriver?.karyawan?.nama_lengkap ?? row.pickupDriver?.nama_driver ?? '-';
+                            return row.pickupDriver?.karyawan?.nama_lengkap ?? row.pickupDriver
+                                ?.nama_driver ?? '-';
                         }
                     },
-                    { data: 'tipe' },
-                    { 
+                    {
+                        data: null,
+                        render: (data, type, row) => {
+                            let badge = row.is_operasional_kantor ?
+                                ' <span class="badge bg-warning text-dark">Ops. Kantor</span>' :
+                                '';
+                            return row.tipe + badge;
+                        }
+                    },
+                    {
                         data: 'harga',
                         render: (data) => currencyFormat.format(Number(data) || 0)
                     },
                     {
                         data: 'bukti',
                         render: (data, type, row) => {
-                            if (data) return `<button class="btn btn-sm btn-secondary lihat-bukti" data-src="{{ asset('storage') }}/${data}"><i class="fas fa-image"></i> Lihat</button>`;
+                            if (data)
+                            return `<button class="btn btn-sm btn-secondary lihat-bukti" data-src="{{ asset('storage') }}/${data}"><i class="fas fa-image"></i> Lihat</button>`;
                             return '<span class="text-muted">-</span>';
                         }
                     },
@@ -647,11 +879,12 @@
                         data: 'pengajuan_barang.tracking.tracking',
                         render: (data) => {
                             if (!data) return '<span class="badge bg-warning text-dark">Menunggu</span>';
-                            if (data.toLowerCase().includes('selesai')) return '<span class="badge bg-success">Selesai</span>';
+                            if (data.toLowerCase().includes('selesai'))
+                            return '<span class="badge bg-success">Selesai</span>';
                             return `<span class="badge bg-info text-dark">${data}</span>`;
                         }
                     },
-                    { 
+                    {
                         data: 'created_at',
                         render: (data) => dateFormat(data)
                     },
@@ -660,8 +893,9 @@
                         orderable: false,
                         render: (data, type, row) => {
                             const sourceId = row.id_pickup_driver || row.id_pengajuan_spj;
-                            const isSelesai = (row.pengajuan_barang?.tracking?.tracking || '').toLowerCase().includes('selesai');
-                            
+                            const isSelesai = (row.pengajuan_barang?.tracking?.tracking || '').toLowerCase()
+                                .includes('selesai');
+
                             const buttons = [
                                 `<button class="btn btn-sm btn-info btn-detail" data-source="${sourceId}" title="Detail"><i class="fas fa-info-circle"></i></button>`,
                                 `<button class="btn btn-sm btn-primary btn-edit" data-source="${sourceId}" title="Edit"><i class="fas fa-edit"></i></button>`,
@@ -669,7 +903,9 @@
                             ];
 
                             if (isSelesai && row.id_pengajuan_barang) {
-                                buttons.push(`<button class="btn btn-sm btn-warning btn-upload-invoice" data-id="${row.id_pengajuan_barang}" title="Upload Invoice"><i class="fas fa-file-upload"></i></button>`);
+                                buttons.push(
+                                    `<button class="btn btn-sm btn-warning btn-upload-invoice" data-id="${row.id_pengajuan_barang}" title="Upload Invoice"><i class="fas fa-file-upload"></i></button>`
+                                    );
                             }
 
                             return `<div class="btn-group" role="group">${buttons.join('')}</div>`;
@@ -688,7 +924,9 @@
                     },
                     emptyTable: "Tidak ada data biaya transportasi"
                 },
-                order: [[8, 'desc']],
+                order: [
+                    [8, 'desc']
+                ],
                 responsive: true
             });
         }
@@ -697,7 +935,7 @@
             if (isOutsideOps(item.id_pickup_driver)) {
                 return 'Diluar Koordinasi Driver';
             }
-            
+
             if (item.spj) {
                 const namaDriver = item.spj.karyawan?.nama_lengkap ?? 'Driver';
                 return `SPJ: ${item.spj.tujuan} (${namaDriver})`;
@@ -708,11 +946,12 @@
             if (item.karyawan?.nama_lengkap) namaDriver = item.karyawan.nama_lengkap;
             else if (item.driver_name) namaDriver = item.driver_name;
             else if (item.pickupDriver?.karyawan?.nama_lengkap) namaDriver = item.pickupDriver.karyawan.nama_lengkap;
-            
+
             if (item.detailPickupDriver?.[0]?.lokasi) lokasi = item.detailPickupDriver[0].lokasi;
             else if (item.detail_pickup_driver?.[0]?.lokasi) lokasi = item.detail_pickup_driver[0].lokasi;
             else if (item.lokasi) lokasi = item.lokasi;
-            else if (item.pickupDriver?.detailPickupDriver?.[0]?.lokasi) lokasi = item.pickupDriver.detailPickupDriver[0].lokasi;
+            else if (item.pickupDriver?.detailPickupDriver?.[0]?.lokasi) lokasi = item.pickupDriver.detailPickupDriver[0]
+                .lokasi;
 
             return `${namaDriver} | ${lokasi}`;
         }
@@ -847,21 +1086,21 @@
                 placeholder: 'Klik untuk memuat data berdasarkan filter...',
                 allowClear: true,
                 dropdownParent: $('#ModalTambah'),
-                
+
                 ajax: {
                     url: url,
                     dataType: 'json',
                     delay: 300,
-                    data: function (params) {
+                    data: function(params) {
                         return {
-                            q: params.term || '', 
+                            q: params.term || '',
                             driver_id: $(filterDriverId).val(),
                             start_date: $(filterStartId).val(),
                             end_date: $(filterEndId).val(),
                             page: params.page || 1
                         };
                     },
-                    processResults: function (data, params) {
+                    processResults: function(data, params) {
                         return {
                             results: data.results
                         };
@@ -869,14 +1108,18 @@
                     cache: false
                 },
                 language: {
-                    noResults: function() { return "Tidak ada data yang ditemukan"; },
-                    searching: function() { return "Mencari..."; }
+                    noResults: function() {
+                        return "Tidak ada data yang ditemukan";
+                    },
+                    searching: function() {
+                        return "Mencari...";
+                    }
                 }
             });
 
             $(filterDriverId + ', ' + filterStartId + ', ' + filterEndId).on('change', function() {
                 $el.val(null).trigger('change');
-                
+
                 setTimeout(function() {
                     $el.select2('open');
                 }, 100);
@@ -941,7 +1184,7 @@
                         $('#formCreate')[0].reset();
                         $('#biayaItemsContainer').empty();
                         $('#pickupSelect').val(null).trigger('change'); // Reset select2
-                        if (biayaTable) biayaTable.ajax.reload(null, false); 
+                        if (biayaTable) biayaTable.ajax.reload(null, false);
                         Swal.fire('Sukses', 'Pengajuan berhasil dikirim', 'success');
                     },
                     error: xhr => {
@@ -1012,7 +1255,9 @@
 
             $(document).on('click', '.lihat-bukti', function() {
                 const src = $(this).data('src');
-                $('#buktiContent').html(`<div class="text-center"><img src="${src}" class="img-fluid rounded shadow-sm" style="max-height:600px;"></div>`);
+                $('#buktiContent').html(
+                    `<div class="text-center"><img src="${src}" class="img-fluid rounded shadow-sm" style="max-height:600px;"></div>`
+                    );
                 new bootstrap.Modal(document.getElementById('modalBukti')).show();
             });
 
@@ -1020,12 +1265,17 @@
                 const sourceId = $(this).data('source');
                 // Ambil semua data dari table untuk difilter berdasarkan sourceId
                 const allData = biayaTable.rows().data().toArray();
-                const items = allData.filter(item => (item.id_pickup_driver || item.id_pengajuan_spj) == sourceId);
-                
-                let rows = '', total = 0, tracking = 'Menunggu';
+                const items = allData.filter(item => (item.id_pickup_driver || item.id_pengajuan_spj) ==
+                    sourceId);
+
+                let rows = '',
+                    total = 0,
+                    tracking = 'Menunggu';
                 items.forEach(i => {
                     total += Number(i.harga) || 0;
-                    const bukti = i.bukti ? `<a href="{{ asset('storage') }}/${i.bukti}" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> Lihat</a>` : '-';
+                    const bukti = i.bukti ?
+                        `<a href="{{ asset('storage') }}/${i.bukti}" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> Lihat</a>` :
+                        '-';
                     rows += `<tr>
                         <td>${i.pengajuan_barang?.tipe ?? '-'}</td>
                         <td>${i.tipe}</td>
@@ -1034,7 +1284,8 @@
                         <td class="text-center">${bukti}</td>
                         <td>${moment(i.created_at).format('DD MMM YYYY HH:mm')}</td>
                     </tr>`;
-                    if (i.pengajuan_barang?.tracking?.tracking) tracking = i.pengajuan_barang.tracking.tracking;
+                    if (i.pengajuan_barang?.tracking?.tracking) tracking = i.pengajuan_barang
+                        .tracking.tracking;
                 });
 
                 $('#detailContent').html(`
@@ -1054,7 +1305,8 @@
             $(document).on('click', '.btn-edit', function() {
                 const sourceId = $(this).data('source');
                 const allData = biayaTable.rows().data().toArray();
-                const items = allData.filter(item => (item.id_pickup_driver || item.id_pengajuan_spj) == sourceId);
+                const items = allData.filter(item => (item.id_pickup_driver || item.id_pengajuan_spj) ==
+                    sourceId);
                 const first = items[0] || {};
 
                 $('#edit_pickup').val(sourceId); // Kirim sourceId (bisa pickup atau spj) ke form
@@ -1062,10 +1314,12 @@
                 if (first.id_pickup_driver == OUTSIDE_OPS_ID) {
                     $('#edit_pickup_label').val('Diluar Koordinasi Driver');
                 } else if (first.spj) {
-                    $('#edit_pickup_label').val(`SPJ: ${first.spj.tujuan} (${first.spj.karyawan?.nama_lengkap ?? 'Driver'})`);
+                    $('#edit_pickup_label').val(
+                        `SPJ: ${first.spj.tujuan} (${first.spj.karyawan?.nama_lengkap ?? 'Driver'})`);
                 } else {
                     const nama = first.pickupDriver?.karyawan?.nama_lengkap || '-';
-                    const lokasi = first.pickupDriver?.detail_pickup_driver?.[0]?.lokasi || first.pickupDriver?.detailPickupDriver?.[0]?.lokasi || '-';
+                    const lokasi = first.pickupDriver?.detail_pickup_driver?.[0]?.lokasi || first
+                        .pickupDriver?.detailPickupDriver?.[0]?.lokasi || '-';
                     $('#edit_pickup_label').val(`${nama} | ${lokasi}`);
                 }
 
@@ -1109,9 +1363,11 @@
             $(document).on('click', '.btn-delete', function() {
                 const sourceId = $(this).data('source');
                 const allData = biayaTable.rows().data().toArray();
-                const items = allData.filter(item => (item.id_pickup_driver || item.id_pengajuan_spj) == sourceId);
-                
-                let list = items.map(i => `<li>${i.tipe}: ${currencyFormat.format(Number(i.harga) || 0)}</li>`).join('');
+                const items = allData.filter(item => (item.id_pickup_driver || item.id_pengajuan_spj) ==
+                    sourceId);
+
+                let list = items.map(i =>
+                    `<li>${i.tipe}: ${currencyFormat.format(Number(i.harga) || 0)}</li>`).join('');
 
                 Swal.fire({
                     title: 'Hapus semua biaya ini?',
@@ -1126,12 +1382,16 @@
                     $.ajax({
                         url: `/office/biaya-transportasi/delete/${sourceId}`,
                         type: 'DELETE',
-                        data: { _token: '{{ csrf_token() }}' },
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
                         success: () => {
-                            biayaTable.ajax.reload(null, false); // Reload DataTables tanpa reset halaman
+                            biayaTable.ajax.reload(null,
+                            false); // Reload DataTables tanpa reset halaman
                             Swal.fire('Sukses', 'Data berhasil dihapus', 'success');
                         },
-                        error: xhr => Swal.fire('Gagal', xhr.responseJSON?.message || 'Gagal menghapus data', 'error')
+                        error: xhr => Swal.fire('Gagal', xhr.responseJSON?.message ||
+                            'Gagal menghapus data', 'error')
                     });
                 });
             });
@@ -1144,6 +1404,304 @@
             $('#ModalTambah, #ModalEdit').on('shown.bs.modal', function() {
                 $(this).find('.modal-body').css('max-height', '70vh').css('overflow-y', 'auto');
                 $(this).find('#pickupSelect').first().focus();
+            });
+
+            function getSelectedSources() {
+                return $('.src-filter:checked').map((i, el) => $(el).val()).get();
+            }
+
+            function toRupiahNum(str) {
+                return parseInt((str || '0').toString().replace(/[^0-9]/g, '')) || 0;
+            }
+
+            function weekInputToMonday(weekVal) {
+                // weekVal format: "2026-W05"
+                if (!weekVal) return null;
+                const [yearStr, weekStr] = weekVal.split('-W');
+                return moment().year(parseInt(yearStr)).isoWeek(parseInt(weekStr)).startOf('isoWeek').format('YYYY-MM-DD');
+            }
+
+            function renderWeeklySummary(data) {
+                $('#sumBudgetAwal').text(currencyFormat.format(data.budget_awal));
+                $('#sumTambahan').text(currencyFormat.format(data.total_tambahan));
+                $('#sumTerpakai').text(currencyFormat.format(data.total_terpakai));
+                $('#sumSisa').text(currencyFormat.format(data.sisa_budget)).toggleClass('text-danger', data.sisa_budget < 0);
+
+                let rows = (data.items || []).map(it => {
+                    const sumberLower = (it.sumber || '').toLowerCase();
+                    const isSpjOrOutside = sumberLower.includes('spj') || sumberLower.includes('diluar') || sumberLower === 'outside';
+                    
+                    let tipeCell = `<td>${it.tipe || '-'}</td>`;
+                    
+                    if (isSpjOrOutside && it.id) {
+                        tipeCell = `
+                            <td>
+                                <select class="form-select form-select-sm tipe-biaya-select" data-id="${it.id}" data-week-start="${data.week_start || ''}">
+                                    <option value="BBM" ${it.tipe === 'BBM' ? 'selected' : ''}>BBM</option>
+                                    <option value="TOL" ${it.tipe === 'TOL' ? 'selected' : ''}>TOL</option>
+                                    <option value="Parkir" ${it.tipe === 'Parkir' ? 'selected' : ''}>Parkir</option>
+                                    <option value="Lainnya" ${it.tipe === 'Lainnya' ? 'selected' : ''}>Lainnya</option>
+                                    <option value="Operasional Kantor" ${it.tipe === 'Operasional Kantor' ? 'selected' : ''}>Operasional Kantor</option>
+                                </select>
+                            </td>
+                        `;
+                    }
+
+                    return `
+                        <tr>
+                            <td>${it.tanggal || '-'}</td>
+                            <td>${it.sumber || '-'}</td>
+                            ${tipeCell}
+                            <td class="text-end">${currencyFormat.format(it.harga || 0)}</td>
+                            <td class="text-end">${currencyFormat.format(it.sisa_setelah || 0)}</td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="5" class="text-center text-muted">Belum ada data minggu ini</td></tr>';
+
+                $('#weeklySummaryRows').html(rows);
+                $('#weeklySummaryBox').show();
+            }
+
+            $(document).on('change', '.tipe-biaya-select', function() {
+                const id = $(this).data('id');
+                const newTipe = $(this).val();
+                const $select = $(this);
+
+                $select.prop('disabled', true);
+
+                $.ajax({
+                    url: "{{ route('office.biayaTransportasi.updateTipe', ['id' => '__ID__']) }}".replace('__ID__', id),
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        tipe: newTipe
+                    },
+                    success: function(res) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sukses',
+                            text: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        loadWeeklySummary();
+                    },
+                    error: function(xhr) {
+                        Swal.fire('Gagal', xhr.responseJSON?.message || 'Gagal memperbarui tipe biaya', 'error');
+                        loadWeeklySummary(); 
+                    },
+                    complete: function() {
+                        $select.prop('disabled', false);
+                    }
+                });
+            });
+
+            function loadWeeklySummary() {
+                const weekVal = $('#budgetWeekPicker').val();
+                const weekStart = weekInputToMonday(weekVal);
+                if (!weekStart) return;
+
+                $.get("{{ route('office.biayaTransportasi.budgetSummary') }}", {
+                    week_start: weekStart,
+                    sources: getSelectedSources(),
+                }).done(renderWeeklySummary).fail(() => {
+                    Swal.fire('Gagal', 'Gagal memuat ringkasan minggu ini', 'error');
+                });
+            }
+
+            $('#konfirmasiCek').on('change', function() {
+                $('#budgetFormFields').prop('disabled', !this.checked);
+                $('#btnSubmitBudget').prop('disabled', !this.checked || !$('#budgetWeekPicker').val());
+            });
+
+            $('#budgetWeekPicker, .src-filter').on('change', function() {
+                if ($('#budgetWeekPicker').val()) {
+                    loadWeeklySummary();
+                    $('#btnSubmitBudget').prop('disabled', !$('#konfirmasiCek').is(':checked'));
+                }
+            });
+
+            $('#budgetHargaVisual').on('input', function() {
+                let val = this.value.replace(/[^0-9]/g, '');
+                $(this).data('clean-value', val);
+                this.value = val ? rupiahFormat.format(val) : '';
+            });
+
+            $('#formBudgetOperasional').on('submit', function(e) {
+                e.preventDefault();
+                const weekStart = weekInputToMonday($('#budgetWeekPicker').val());
+                const formData = new FormData(this);
+                formData.append('week_start', weekStart);
+                formData.append('harga', $('#budgetHargaVisual').data('clean-value') || '0');
+
+                $.ajax({
+                    url: "{{ route('office.biayaTransportasi.storeBudgetOperasional') }}",
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: () => {
+                        Swal.fire('Sukses', 'Data budget operasional kantor tersimpan', 'success');
+                        $('#modalBudgetOperasional').modal('hide');
+                        $('#formBudgetOperasional')[0].reset();
+                        $('#budgetFormFields').prop('disabled', true);
+                        $('#btnSubmitBudget').prop('disabled', true);
+                        $('#weeklySummaryBox').hide();
+                        if (biayaTable) biayaTable.ajax.reload(null, false);
+                    },
+                    error: xhr => {
+                        let msg = xhr.responseJSON?.message || 'Terjadi kesalahan';
+                        if (xhr.responseJSON?.errors) msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                        Swal.fire('Gagal', msg, 'error');
+                    }
+                });
+            });
+
+            function initBudgetFilters() {
+                const currentYear = moment().year();
+                const currentMonth = moment().month() + 1;
+                const weekOfMonth = Math.ceil(moment().date() / 7);
+
+                const yearSelect = $('#filterBudgetYear');
+                yearSelect.empty();
+                for (let y = currentYear - 2; y <= currentYear + 1; y++) {
+                    yearSelect.append(`<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`);
+                }
+
+                $('#filterBudgetMonth').val(currentMonth);
+                $('#filterBudgetWeek').val(weekOfMonth <= 5 ? weekOfMonth : '');
+            }
+
+            function loadBudgetDetail() {
+                $('#detailBudgetAllContent').html('<p class="text-muted text-center"><i class="fas fa-spinner fa-spin"></i> Memuat data...</p>');
+                
+                const year = $('#filterBudgetYear').val();
+                const month = $('#filterBudgetMonth').val();
+                const week = $('#filterBudgetWeek').val();
+
+                $.get("{{ route('office.biayaTransportasi.budgetSummaryAll') }}", {
+                    year: year,
+                    month: month,
+                    week: week
+                }).done(res => {
+                    if (!res.weeks || !res.weeks.length) {
+                        $('#detailBudgetAllContent').html('<div class="alert alert-info text-center">Tidak ada data budget operasional untuk periode yang dipilih.</div>');
+                        return;
+                    }
+                    
+                    let html = res.weeks.map(w => `
+                        <div class="card mb-3 border-0 shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                                <strong>Minggu: ${w.week_start} s/d ${w.week_end}</strong>
+                                <span class="badge ${w.sisa_budget < 0 ? 'bg-danger' : 'bg-success'} fs-6">
+                                    Sisa: ${currencyFormat.format(w.sisa_budget)}
+                                </span>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="row text-center g-2 mb-3 small">
+                                    <div class="col-3 p-2 bg-white rounded border">Budget Awal<br><b class="text-primary">${currencyFormat.format(w.budget_awal)}</b></div>
+                                    <div class="col-3 p-2 bg-white rounded border">Tambahan<br><b class="text-success">${currencyFormat.format(w.total_tambahan)}</b></div>
+                                    <div class="col-3 p-2 bg-white rounded border">Terpakai<br><b class="text-danger">${currencyFormat.format(w.total_terpakai)}</b></div>
+                                    <div class="col-3 p-2 bg-white rounded border">Sisa<br><b>${currencyFormat.format(w.sisa_budget)}</b></div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0 align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Tanggal</th>
+                                                <th>Sumber</th>
+                                                <th>Tipe</th>
+                                                <th class="text-end">Harga</th>
+                                                <th class="text-end">Sisa Setelah</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${(w.items || []).map(it => {
+                                                const sumberLower = (it.sumber || '').toLowerCase();
+                                                const isSpjOrOutside = sumberLower.includes('spj') || sumberLower.includes('diluar') || sumberLower === 'outside';
+                                                
+                                                let tipeCell = `<td>${it.tipe || '-'}</td>`;
+                                                if (isSpjOrOutside && it.id) {
+                                                    tipeCell = `
+                                                        <td>
+                                                            <select class="form-select form-select-sm tipe-biaya-select" data-id="${it.id}" data-week-start="${w.week_start}">
+                                                                <option value="BBM" ${it.tipe === 'BBM' ? 'selected' : ''}>BBM</option>
+                                                                <option value="TOL" ${it.tipe === 'TOL' ? 'selected' : ''}>TOL</option>
+                                                                <option value="Parkir" ${it.tipe === 'Parkir' ? 'selected' : ''}>Parkir</option>
+                                                                <option value="Lainnya" ${it.tipe === 'Lainnya' ? 'selected' : ''}>Lainnya</option>
+                                                                <option value="Operasional Kantor" ${it.tipe === 'Operasional Kantor' ? 'selected' : ''}>Operasional Kantor</option>
+                                                            </select>
+                                                        </td>
+                                                    `;
+                                                }
+                                                return `<tr>
+                                                    <td>${it.tanggal || '-'}</td>
+                                                    <td>${it.sumber || '-'}</td>
+                                                    ${tipeCell}
+                                                    <td class="text-end">${currencyFormat.format(it.harga || 0)}</td>
+                                                    <td class="text-end">${currencyFormat.format(it.sisa_setelah || 0)}</td>
+                                                </tr>`;
+                                            }).join('') || '<tr><td colspan="5" class="text-center text-muted">Belum ada detail transaksi minggu ini</td></tr>'}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    $('#detailBudgetAllContent').html(html);
+                }).fail(() => {
+                    $('#detailBudgetAllContent').html('<div class="alert alert-danger text-center">Gagal memuat data.</div>');
+                });
+            }
+
+            window.exportBudgetSummary = function(format) {
+                const year = $('#filterBudgetYear').val();
+                const month = $('#filterBudgetMonth').val();
+                const week = $('#filterBudgetWeek').val();
+                
+                let url = "{{ route('office.biayaTransportasi.exportBudgetSummary') }}";
+                url += `?format=${format}&year=${year}&month=${month}`;
+                if (week) url += `&week=${week}`;
+                
+                window.open(url, '_blank');
+            };
+
+            $('#modalDetailBudgetHRD').on('show.bs.modal', function() {
+                initBudgetFilters();
+                loadBudgetDetail();
+            });
+
+            $('#btnApplyBudgetFilter').on('click', function() {
+                loadBudgetDetail();
+            });
+
+            $(document).on('change', '.tipe-biaya-select', function() {
+                const id = $(this).data('id');
+                const newTipe = $(this).val();
+                const $select = $(this);
+
+                $select.prop('disabled', true);
+
+                $.ajax({
+                    url: "{{ route('office.biayaTransportasi.updateTipe', ['id' => '__ID__']) }}".replace('__ID__', id),
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        tipe: newTipe
+                    },
+                    success: function(res) {
+                        Swal.fire({ icon: 'success', title: 'Sukses', text: res.message, timer: 1500, showConfirmButton: false });
+                        loadBudgetDetail(); // Reload agar perhitungan budget diperbarui
+                    },
+                    error: function(xhr) {
+                        Swal.fire('Gagal', xhr.responseJSON?.message || 'Gagal memperbarui tipe biaya', 'error');
+                        loadBudgetDetail(); // Kembalikan ke state sebelumnya
+                    },
+                    complete: function() {
+                        $select.prop('disabled', false);
+                    }
+                });
             });
         });
     </script>

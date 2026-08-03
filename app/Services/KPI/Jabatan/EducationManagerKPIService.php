@@ -19,40 +19,40 @@ class EducationManagerKPIService
     use KPIDefaultResponseTrait;
 
     public function calculatePengembanganKurikulumPelatihan($item, $personId)
-        {
-            $detail = $item->detailTargetKPI->first();
-            if (!$detail || !$detail->detail_jangka) {
-                Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
-                return 0;
-            }
+    {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
 
-            $tahun = (int) $detail->detail_jangka;
-            if ($tahun < 2000 || $tahun > now()->year + 5) {
-                Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
-                return 0;
-            }
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
 
-            $nilaiTarget = (float) $detail->nilai_target;
+        $nilaiTarget = (float) $detail->nilai_target;
 
-            $dataMateri = Materi::whereYear('created_at', $tahun)->get();
+        $dataMateri = Materi::whereYear('created_at', $tahun)->get();
 
-            $totalBulanDalamTahun = 12;
+        $totalBulanDalamTahun = 12;
 
-            $bulanYangAdaMateri = $dataMateri
-                ->pluck('created_at')
-                ->map(function ($date) {
-                    return Carbon::parse($date)->month;
-                })
-                ->unique()
-                ->count();
+        $bulanYangAdaMateri = $dataMateri
+            ->pluck('created_at')
+            ->map(function ($date) {
+                return Carbon::parse($date)->month;
+            })
+            ->unique()
+            ->count();
 
-            if ($totalBulanDalamTahun == 0) {
-                return 0;
-            }
+        if ($totalBulanDalamTahun == 0) {
+            return 0;
+        }
 
-            $progress = $bulanYangAdaMateri;
+        $progress = $bulanYangAdaMateri;
 
-            return round($progress);
+        return round($progress);
     }
 
     public function calculatePengembanganKurikulumPelatihanDetail($itemDetail)
@@ -551,8 +551,6 @@ public function calculatePeningkatanKnowledgeSharingDetail($itemDetail, $personI
         }
 
         $totalKemungkinan = $totalHariKerja * $instrukturs->count();
-
-        dd($totalAktif);
 
         if ($totalKemungkinan == 0) {
             return 0;
