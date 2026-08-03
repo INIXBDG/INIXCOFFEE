@@ -128,6 +128,8 @@ use App\Http\Controllers\FeatureDocumentationController;
 use App\Http\Controllers\CodeDocumentationController;
 use App\Http\Controllers\DocumentationImportController;
 use App\Http\Controllers\UserController;
+use Gemini\Laravel\Facades\Gemini;
+use Illuminate\Support\Facades\Http;
 
 /*
 |--------------------------------------------------------------------------
@@ -1800,7 +1802,7 @@ Route::get('system/documentation/export/all', [DocumentationImportController::cl
     ->name('documentation.export.all');
 Route::get('system/documentation/export/feature/{id}', [DocumentationImportController::class, 'exportFeature'])
     ->name('documentation.export.feature');
-    
+
 // Code Documentation
 Route::get('/system/documentation/features/{featureId}/codes', [CodeDocumentationController::class, 'index'])
     ->name('documentation.codes.index');

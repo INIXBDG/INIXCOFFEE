@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\MoodleApiController;
 use App\Http\Controllers\Office\pickupDriverController;
+use App\Http\Controllers\GeminiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +26,11 @@ use App\Http\Controllers\Office\pickupDriverController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+
+// Route::get('/test-gemini', [GeminiController::class, 'testGemini']);
+Route::get('/test-gemini', [GeminiController::class, 'testGemini']);
+
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/webpush/subscribe', [WebPushController::class, 'subscribe'])->name('webpush.subscribe');
