@@ -147,6 +147,14 @@
             background: #fff;
             box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
         }
+
+        .modal-content > form {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+            width: 100%;
+        }
     </style>
     <div class="container-fluid py-4">
         @if (session('success'))
@@ -560,9 +568,9 @@
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-hover mb-0 align-middle">
-                                    <thead class="bg-light small">
+                                    <thead class="bg-light small sticky-top">
                                         <tr>
-                                            <th><input type="checkbox" id="pfCheckAll"></th>
+                                            <th style="width:30px"><input type="checkbox" id="pfCheckAll"></th>
                                             <th>Tugas</th>
                                             <th>Tipe / Shift Saat Ini</th>
                                             <th>OB Saat Ini</th>
@@ -570,11 +578,27 @@
                                             <th>OB Baru</th>
                                             <th>Tipe Baru</th>
                                             <th>Shift/Turunan Baru</th>
-                                            <th>Aksi</th>
+                                            <th style="width:60px">Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="pfTbody"></tbody>
+                                    <tbody id="pfTbody">
+                                        <tr id="pfEmptyRow">
+                                            <td colspan="9" class="text-center py-4 text-muted">
+                                                <i class="bx bx-filter-alt" style="font-size:2rem"></i>
+                                                <p class="mt-2 mb-0">Silakan isi filter lalu klik tombol 🔍 untuk memuat data</p>
+                                            </td>
+                                        </tr>
+                                    </tr>
                                 </table>
+                            </div>
+                            
+                            <div class="p-3 border-top bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="small text-muted">
+                                    <span id="pfLoadInfo">Belum ada data dimuat</span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary d-none" id="btnPfLoadMore">
+                                    <i class="bx bx-download me-1"></i> Muat Lebih Banyak
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1506,7 +1530,7 @@
 
             function closeCreateModalIfOpen() {
                 const createModalEl = document.getElementById('createModal');
-                const bsModal = bootstrap.Modal.getInstance(createModalEl);
+                const bsModal = bootstrap.Modal.getOrCreateInstance(createModalEl);
                 if (bsModal && bsModal._isShown) {
                     wasCreateModalOpen = true;
                     bsModal.hide();
@@ -1524,7 +1548,7 @@
                 if (!wasCreateModalOpen) return;
                 const tryReopen = () => {
                     if (!isAnyOtherModalOpen()) {
-                        const createModal = new bootstrap.Modal(document.getElementById('createModal'));
+                        const createModal = getModal('createModal');
                         createModal.show();
                         wasCreateModalOpen = false;
                     } else {
@@ -1552,7 +1576,7 @@
                 } else {
                     container.addClass('d-none');
                 }
-                const modal = new bootstrap.Modal(document.getElementById('modalEditKategori'));
+                const modal = getModal('modalEditKategori');
                 modal.show();
             });
 
@@ -1631,7 +1655,7 @@
                 const judul = $(this).data('judul');
                 $('#delete_id').val(id);
                 $('#delete_judul').text(judul);
-                const modal = new bootstrap.Modal(document.getElementById('modalDeleteKategori'));
+                const modal = getModal('modalDeleteKategori');
                 modal.show();
             });
 
@@ -1715,7 +1739,7 @@
                         'Upload Foto Before terlebih dahulu untuk mengaktifkan');
                 }
 
-                new bootstrap.Modal(document.getElementById('modalUploadBukti')).show();
+                getModal('modalUploadBukti').show();
             });
 
             window.removeExistingBukti = function(type) {
@@ -1863,7 +1887,7 @@
                         },
                     });
 
-                    $('#modalUploadBukti').modal('hide');
+                    hideModal('modalUploadBukti');
                     loadData();
 
                     let msg = 'Bukti berhasil diupdate.';
@@ -2074,12 +2098,30 @@
                 });
             });
 
+            function getModal(id) {
+                return bootstrap.Modal.getOrCreateInstance(document.getElementById(id));
+            }
+            function hideModal(id) {
+                getModal(id).hide();
+            }
+
+            document.addEventListener('hidden.bs.modal', function () {
+                setTimeout(function () {
+                    if (!document.querySelector('.modal.show')) {
+                        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style.removeProperty('overflow');
+                        document.body.style.removeProperty('padding-right');
+                    }
+                }, 300);
+            });
+
             $(document).on('click', '.btn-viewBukti', function() {
                 const bukti = $(this).data('bukti');
                 const judul = $(this).data('judul');
                 $('#previewModalTitle').text(judul);
                 const body = $('#previewModalBody');
-                const modal = new bootstrap.Modal(document.getElementById('modalPreviewBukti'));
+                const modal = getModal('modalPreviewBukti');
                 modal.show();
                 try {
                     const data = typeof bukti === 'string' ? JSON.parse(bukti) : bukti;
@@ -2380,37 +2422,64 @@
 
             let pfLoadedOnce = false;
 
-            function loadPerbaikanList() {
+            let pfCurrentPage = 1;
+            let pfHasMore = false;
+            let pfTotalData = 0;
+            let pfLoadedCount = 0;
+
+            function loadPerbaikanList(append = false) {
+                if (!append) {
+                    pfCurrentPage = 1;
+                    $('#pfTbody').html('<tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>');
+                }
+                
+                $('#btnPfLoadMore').addClass('d-none').prop('disabled', true);
+
                 $.ajax({
                     url: "{{ route('office.DaftarTugas.getForPerbaikan') }}",
                     data: {
                         start_date: $('#pfStart').val(),
-                        end_date: $('#pfEnd').val(),
-                        tipe: $('#pfTipe').val(),
-                        kategori: $('#pfKategori').val(),
-                        karyawan: $('#pfKaryawan').val(),
+                        end_date:   $('#pfEnd').val(),
+                        tipe:       $('#pfTipe').val(),
+                        kategori:   $('#pfKategori').val(),
+                        karyawan:   $('#pfKaryawan').val(),
+                        page:       pfCurrentPage,
+                        per_page:   50,
                     },
                     success: function(r) {
                         const tb = $('#pfTbody');
-                        tb.empty();
-                        if (!r.data || !r.data.length) {
-                            tb.append('<tr><td colspan="9" class="text-center py-4 text-muted">Tidak ada data</td></tr>');
+                        $('#pfEmptyRow').remove();
+                        
+                        // Jika butuh filter
+                        if (r.requires_filter) {
+                            if (!append) {
+                                tb.html(`
+                                    <tr><td colspan="9" class="text-center py-4 text-warning">
+                                        <i class="bx bx-info-circle" style="font-size:2rem"></i>
+                                        <p class="mt-2 mb-0">${r.message}</p>
+                                    </td></tr>
+                                `);
+                            }
+                            $('#pfLoadInfo').text('⚠️ ' + r.message);
                             return;
                         }
-                        
-                        let tipeOptions = `<option value="">-- Tidak diubah --</option>
-                            <option value="Harian">Harian</option>
-                            <option value="Mingguan">Mingguan</option>
-                            <option value="Bulanan">Bulanan</option>
-                            <option value="Quartal">Quartal</option>
-                            <option value="Semester">Semester</option>
-                            <option value="Tahunan">Tahunan</option>`;
 
+                        if (!r.data || !r.data.length) {
+                            if (!append) {
+                                tb.html('<tr><td colspan="9" class="text-center py-4 text-muted">Tidak ada data</td></tr>');
+                                $('#pfLoadInfo').text('Total: 0 data');
+                            }
+                            return;
+                        }
+
+                        // Siapkan option dropdown
+                        let tipeOptions = `<option value="">-- Tidak diubah --</option>
+                            <option value="Harian">Harian</option><option value="Mingguan">Mingguan</option>
+                            <option value="Bulanan">Bulanan</option><option value="Quartal">Quartal</option>
+                            <option value="Semester">Semester</option><option value="Tahunan">Tahunan</option>`;
                         let turunanOptions = `<option value="">-- Tanpa Shift/Turunan --</option>
-                            <option value="Shift 1">Shift 1</option>
-                            <option value="Shift 2">Shift 2</option>
-                            <option value="Sabtu">Sabtu</option>
-                            <option value="Minggu">Minggu</option>`;
+                            <option value="Shift 1">Shift 1</option><option value="Shift 2">Shift 2</option>
+                            <option value="Sabtu">Sabtu</option><option value="Minggu">Minggu</option>`;
 
                         r.data.forEach(it => {
                             const kat = it.kategori_daftar_tugas?.judul_kategori || '-';
@@ -2422,39 +2491,73 @@
                             const currentTipe = it.kategori_daftar_tugas?.Tipe || '';
                             const currentTurunan = it.kategori_daftar_tugas?.tipe_turunan || '';
                             
-                            tb.append(`
-                            <tr data-id="${it.id}">
-                                <td><input type="checkbox" class="pfRowCheck" value="${it.id}"></td>
-                                <td>${kat}</td>
-                                <td><span class="badge bg-info text-dark">${tipe}</span> <span class="badge bg-secondary">${turunan}</span></td>
-                                <td>${ob}</td>
-                                <td><input type="date" class="form-control form-control-sm pfNewDate" value="${deadline}"></td>
-                                <td><select class="form-select form-select-sm pfNewKaryawan" data-current="${currentObId}">${officeBoyOptionsPf}</select></td>
-                                <td><select class="form-select form-select-sm pfNewTipe" data-current="${currentTipe}">${tipeOptions}</select></td>
-                                <td><select class="form-select form-select-sm pfNewTipeTurunan" data-current="${currentTurunan}">${turunanOptions}</select></td>
-                                <td><button class="btn btn-sm btn-primary pfBtnSaveRow"><i class="bx bx-save"></i></button></td>
-                            </tr>`);
-                        });
-                        
-                        tb.find('.pfNewKaryawan').each(function() {
-                            const current = $(this).data('current');
-                            if (current) $(this).val(current);
-                        });
-                        tb.find('.pfNewTipe').each(function() {
-                            const current = $(this).data('current');
-                            if (current) $(this).val(current);
-                        });
-                        tb.find('.pfNewTipeTurunan').each(function() {
-                            const current = $(this).data('current');
-                            if (current && current !== '-') {
-                                $(this).val(current);
+                            const row = $(`
+                                <tr data-id="${it.id}">
+                                    <td><input type="checkbox" class="pfRowCheck" value="${it.id}"></td>
+                                    <td>${kat}</td>
+                                    <td><span class="badge bg-info text-dark">${tipe}</span> <span class="badge bg-secondary">${turunan}</span></td>
+                                    <td>${ob}</td>
+                                    <td><input type="date" class="form-control form-control-sm pfNewDate" value="${deadline}"></td>
+                                    <td><select class="form-select form-select-sm pfNewKaryawan" data-current="${currentObId}">${officeBoyOptionsPf}</select></td>
+                                    <td><select class="form-select form-select-sm pfNewTipe" data-current="${currentTipe}">${tipeOptions}</select></td>
+                                    <td><select class="form-select form-select-sm pfNewTipeTurunan" data-current="${currentTurunan}">${turunanOptions}</select></td>
+                                    <td><button class="btn btn-sm btn-primary pfBtnSaveRow"><i class="bx bx-save"></i></button></td>
+                                </tr>
+                            `);
+                            
+                            // Set nilai current untuk dropdown
+                            row.find('.pfNewKaryawan').each(function() {
+                                const c = $(this).data('current'); if (c) $(this).val(c);
+                            });
+                            row.find('.pfNewTipe').each(function() {
+                                const c = $(this).data('current'); if (c) $(this).val(c);
+                            });
+                            row.find('.pfNewTipeTurunan').each(function() {
+                                const c = $(this).data('current'); 
+                                if (c && c !== '-') $(this).val(c); else $(this).val('');
+                            });
+
+                            if (append) {
+                                tb.append(row);
                             } else {
-                                $(this).val('');
+                                tb.empty().append(row);
                             }
                         });
+
+                        // Update info pagination
+                        pfTotalData = r.pagination.total;
+                        pfLoadedCount = r.pagination.current_page * r.pagination.per_page;
+                        if (pfLoadedCount > pfTotalData) pfLoadedCount = pfTotalData;
+                        pfHasMore = r.pagination.has_more;
+                        
+                        $('#pfLoadInfo').html(`
+                            Menampilkan <strong>${pfLoadedCount}</strong> dari <strong>${pfTotalData}</strong> data 
+                            (Halaman ${r.pagination.current_page}/${r.pagination.last_page})
+                        `);
+
+                        if (pfHasMore) {
+                            $('#btnPfLoadMore').removeClass('d-none').prop('disabled', false);
+                        } else {
+                            $('#btnPfLoadMore').addClass('d-none');
+                        }
+                    },
+                    error: function(xhr) {
+                        showNotification('Gagal', xhr.responseJSON?.message || 'Gagal memuat data', 'danger');
+                        if (!append) {
+                            $('#pfTbody').html('<tr><td colspan="9" class="text-center py-4 text-danger">Gagal memuat data</td></tr>');
+                        }
                     }
                 });
             }
+
+            // Event handler
+            $('#btnPfFilter').on('click', function() { loadPerbaikanList(false); });
+
+            $('#btnPfLoadMore').on('click', function() {
+                pfCurrentPage++;
+                $(this).html('<span class="spinner-border spinner-border-sm me-1"></span> Memuat...').prop('disabled', true);
+                loadPerbaikanList(true);
+            });
 
             $('#tab-perbaikan-btn').on('shown.bs.tab', function() {
                 if (!pfLoadedOnce) {

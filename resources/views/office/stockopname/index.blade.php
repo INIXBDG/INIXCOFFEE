@@ -105,6 +105,49 @@
             z-index: 10000;
             min-width: 300px;
         }
+
+        .editable {
+            -webkit-user-select: text;
+            user-select: text;
+            -webkit-tap-highlight-color: rgba(13, 110, 253, 0.1);
+            outline: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+            font-size: 16px !important;
+            min-height: 24px;
+            line-height: 1.4;
+        }
+
+        .editable:focus {
+            background: #e7f1ff !important;
+            box-shadow: 0 0 0 2px #0d6efd;
+            outline: none;
+        }
+
+        .editable.saving {
+            background: #fff3cd !important;
+            box-shadow: 0 0 0 2px #ffc107;
+        }
+
+        .editable.saved {
+            background: #d1e7dd !important;
+            box-shadow: 0 0 0 2px #198754;
+        }
+
+        .editable[data-field="stock_masuk"] {
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .editable {
+                min-width: 100px !important;
+                max-width: 200px;
+                white-space: normal !important;
+                word-break: break-word;
+            }
+        }
     </style>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -492,11 +535,6 @@
             </div>
         </div>
     </div>
-
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-spinner"></div>
-    </div>
-
     <div id="toastNotification" class="toast-notification"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
@@ -633,22 +671,35 @@
             }
 
             function bindEditableEvents() {
-                $('.editable').off('focus').on('focus', function() {
-                    oldValue = $(this).text().trim();
-                });
+                let oldValue = '';
+                let currentCell = null;
+                let isComposing = false;
 
-                $('.editable').off('blur').on('blur', function() {
-                    let cell = $(this);
-                    let newValue = cell.text().trim();
-                    let id = cell.data('id');
-                    let field = cell.data('field');
+                function stripHtml(el) {
+                    const text = el.innerText || el.textContent || '';
+                    return text.replace(/\u00A0/g, ' ').trim();
+                }
 
-                    if (oldValue === newValue) return;
+                function saveCell(cell, forceSave = false) {
+                    if (!cell || !cell.length) return;
+                    
+                    const newValue = stripHtml(cell[0]);
+                    const id = cell.data('id');
+                    const field = cell.data('field');
 
-                    if (field === 'stock_masuk' && parseInt(newValue) < 0) {
-                        showToast('Stock masuk tidak boleh negatif', 'error');
-                        cell.text(oldValue);
+                    if (!forceSave && oldValue === newValue) {
+                        cell.removeClass('saving saved');
                         return;
+                    }
+
+                    if (field === 'stock_masuk') {
+                        const numVal = parseInt(newValue.replace(/\./g, ''));
+                        if (isNaN(numVal) || numVal < 0) {
+                            showToast('Stock masuk harus angka positif', 'error');
+                            cell.text(oldValue);
+                            cell.removeClass('saving');
+                            return;
+                        }
                     }
 
                     cell.addClass('saving');
@@ -663,10 +714,8 @@
                             value: newValue
                         },
                         success: function(response) {
-                            cell.removeClass('saving');
-                            cell.addClass('saved');
-                            setTimeout(() => cell.removeClass('saved'), 1000);
-
+                            cell.removeClass('saving').addClass('saved');
+                            setTimeout(() => cell.removeClass('saved'), 1200);
                             if (field === 'stock_masuk') {
                                 reloadTableStock();
                                 reloadLogTable();
@@ -678,12 +727,65 @@
                             cell.removeClass('saving');
                         }
                     });
+                }
+
+                function setInputMode(cell) {
+                    const field = cell.data('field');
+                    if (['stock_masuk', 'stock_awal'].includes(field)) {
+                        cell.attr({
+                            'inputmode': 'numeric',
+                            'pattern': '[0-9]*',
+                            'enterkeyhint': 'done'
+                        });
+                    } else {
+                        cell.attr({
+                            'inputmode': 'text',
+                            'enterkeyhint': 'done'
+                        });
+                    }
+                }
+
+                $('.editable').off('focus').on('focus', function() {
+                    currentCell = $(this);
+                    oldValue = stripHtml(this);
+                    setInputMode(currentCell);
+
+                    setTimeout(() => {
+                        this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
                 });
 
-                $('.editable').off('keypress').on('keypress', function(e) {
-                    if (e.which === 13) {
+                $('.editable').off('blur').on('blur', function() {
+                    const cell = $(this);
+                    setTimeout(() => {
+                        if (!isComposing) saveCell(cell);
+                        if (currentCell && currentCell[0] === cell[0]) currentCell = null;
+                    }, 100);
+                });
+
+                $('.editable').off('keydown').on('keydown', function(e) {
+                    if (e.key === 'Enter' || e.keyCode === 13) {
                         e.preventDefault();
                         $(this).blur();
+                    }
+                });
+
+                $('.editable').off('compositionstart compositionend')
+                    .on('compositionstart', () => isComposing = true)
+                    .on('compositionend', function() {
+                        isComposing = false;
+                        $(this).blur();
+                    });
+
+                $('.editable').off('paste').on('paste', function(e) {
+                    e.preventDefault();
+                    const text = (e.originalEvent.clipboardData || window.clipboardData).getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                });
+
+                $(document).off('touchstart.editable').on('touchstart.editable', function(e) {
+                    if (currentCell && !$(e.target).closest('.editable').length) {
+                        currentCell.blur();
                     }
                 });
             }
