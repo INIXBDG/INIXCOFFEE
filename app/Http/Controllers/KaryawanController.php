@@ -15,6 +15,7 @@ use Vinkla\Hashids\Facades\Hashids;
 use Carbon\Carbon;
 use App\Models\EducationalBackground;
 use App\Models\LogGaji;
+use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Month;
 
 class KaryawanController extends Controller
@@ -293,13 +294,101 @@ class KaryawanController extends Controller
         return redirect()->route('gaji.index')->with('success', 'Gaji berhasil diperbarui.');
     }
 
-    public function slip()
+    public function slip(Request $request)
     {
-        $HRD = User::with('karyawan')->find('55');
+        $bulan = (int) $request->query('bulan', date('n'));
+        $tahun = (int) $request->query('tahun', date('Y'));
+
+        $HRD = User::with('karyawan')->where('jabatan', 'HRD')->where('status_akun', '1')->first();
         $user = User::with('karyawan')->find(Auth::id());
+
         $tunjangan = TunjanganKaryawan::where('id_karyawan', Auth::id())
+            ->where('bulan', $bulan)
+            ->where('tahun', $tahun)
             ->with('karyawan', 'jenistunjangan')
             ->get();
-        return view('tunjangan.slip', compact('user', 'tunjangan', 'HRD'));
+
+        $tunjanganItems = $tunjangan->where('keterangan', 'Tunjangan')->values();
+        $potonganItems  = $tunjangan->where('keterangan', 'Potongan')->values();
+
+        $namaBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        $gajiPokok = (float) $user->karyawan->gaji;
+
+        $totalPendapatan = $gajiPokok + $tunjanganItems->sum('total');
+        $totalPotongan   = $potonganItems->sum(fn($i) => abs($i->total));
+        $totalBersih     = $totalPendapatan - $totalPotongan;
+
+        // Susun baris tabel gabungan (pendapatan | potongan) sekali di sini,
+        $rows = [];
+        $maxRows = max($tunjanganItems->count() + 2, $potonganItems->count() + 1);
+        for ($i = 0; $i < $maxRows; $i++) {
+            $row = ['p_no' => '', 'p_nama' => '', 'p_jumlah' => '', 'pot_no' => '', 'pot_nama' => '', 'pot_jumlah' => ''];
+
+            if ($i === 0) {
+                $row['p_no'] = 1;
+                $row['p_nama'] = 'Gaji Pokok';
+                $row['p_jumlah'] = $this->formatRupiah($gajiPokok);
+            } elseif ($i - 1 < $tunjanganItems->count()) {
+                $item = $tunjanganItems[$i - 1];
+                $row['p_no'] = $i + 1;
+                $row['p_nama'] = $item->jenistunjangan->nama_tunjangan;
+                $row['p_jumlah'] = $this->formatRupiah($item->total);
+            } elseif ($i === $maxRows - 1) {
+                $row['p_nama'] = 'Total Pendapatan';
+                $row['p_jumlah'] = $this->formatRupiah($totalPendapatan);
+            }
+
+            if ($i < $potonganItems->count()) {
+                $item = $potonganItems[$i];
+                $row['pot_no'] = $i + 1;
+                $row['pot_nama'] = $item->jenistunjangan->nama_tunjangan;
+                $row['pot_jumlah'] = $this->formatRupiah(abs($item->total));
+            } elseif ($i === $maxRows - 1) {
+                $row['pot_nama'] = 'Total Potongan';
+                $row['pot_jumlah'] = $this->formatRupiah($totalPotongan);
+            }
+
+            $rows[] = $row;
+        }
+
+        $data = [
+            'user' => $user,
+            'HRD' => $HRD,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'namaBulanText' => $namaBulan[$bulan] ?? '-',
+            'rows' => $rows,
+            'totalBersih' => $totalBersih,
+            'totalBersihFormatted' => $this->formatRupiah($totalBersih),
+            'logoBase64' => $this->imgToBase64(public_path('assets/img/inix.png')),
+            'signUserBase64' => $this->imgToBase64(storage_path('app/public/ttd/' . $user->karyawan->ttd)),
+            'signHrdBase64' => $this->imgToBase64(storage_path('app/public/ttd/' . $HRD->karyawan->ttd)),
+        ];
+
+        $pdf = Pdf::loadView('tunjangan.slip_pdf', $data)->setPaper('a4', 'portrait');
+
+        $fileName = 'Slip_Gaji_' . str_replace(' ', '_', $user->karyawan->nama_lengkap)
+            . '_' . $namaBulan[$bulan] . '_' . $tahun . '.pdf';
+
+        return $pdf->download($fileName);
+    }
+
+    private function formatRupiah($angka)
+    {
+        return 'Rp ' . number_format((float) $angka, 0, ',', '.');
+    }
+
+    private function imgToBase64($path)
+    {
+        if ($path && file_exists($path)) {
+            $type = pathinfo($path, PATHINFO_EXTENSION);
+            return 'data:image/' . $type . ';base64,' . base64_encode(file_get_contents($path));
+        }
+        return null;
     }
 }
