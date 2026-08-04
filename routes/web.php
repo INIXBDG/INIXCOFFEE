@@ -1121,6 +1121,12 @@ Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, '
 Route::get('/dashboard-sla/digital', [DashboardSLAController::class, 'dashboardDigital']);
 Route::get('/dashboard/uptime/monitoring', [KPIDatabaseKPIController::class, 'UptimePresentase'])->name('dashboard.uptimeMonitoring');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/shift/pending',  [DaftarTugasController::class, 'getPendingShift'])->name('shift.pending');
+    Route::post('/shift/approve', [DaftarTugasController::class, 'approveShift'])->name('shift.approve');
+    Route::post('/shift/reject',  [DaftarTugasController::class, 'rejectShift'])->name('shift.reject');
+});
+
 Route::prefix('office')
     ->name('office.')
     ->middleware(['auth'])
@@ -1194,6 +1200,7 @@ Route::prefix('office')
             Route::put('/update/nomor/{id}', [ModulController::class, 'updateNomor'])->name('modul.update.nomor');
             Route::delete('/delete/nomor/{id}', [ModulController::class, 'deleteNomor'])->name('modul.delete.nomor');
             Route::put('/update/nomor/status/{id}', [ModulController::class, 'uploaded'])->name('modul.update.status.nomor');
+            Route::put('/update/subscode/{id}', [ModulController::class, 'updateSubscode'])->name('modul.update.subscode');
 
             Route::get('/detail/{id}', [ModulController::class, 'indexModul'])->name('modul.detail');
             Route::post('/store', [ModulController::class, 'storeModul'])->name('modul.store');

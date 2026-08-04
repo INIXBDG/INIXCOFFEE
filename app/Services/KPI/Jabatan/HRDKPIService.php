@@ -204,21 +204,18 @@ class HRDKPIService
         $endOfYear = Carbon::create($tahun, 12, 31)->endOfDay();
 
         $gajiQuery = LogGaji::whereBetween('created_at', [$startOfYear, $endOfYear]);
-        if ($personId) $gajiQuery->where('id_karyawan', $personId);
         $gaji = (float) $gajiQuery->sum(DB::raw('COALESCE(gaji, 0) + COALESCE(tunjangan_jabatan, 0)'));
         $scoreGaji = $gaji > 0 ? 25 : 0;
 
         $bpjsIds = JenisTunjangan::whereIn('nama_tunjangan', ['BPJS Tenaga Kerja', 'BPJS Kesehatan'])->pluck('id');
         
         $bpjsQuery = TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])->whereIn('jenis_tunjangan', $bpjsIds);
-        if ($personId) $bpjsQuery->where('id_karyawan', $personId);
         $bpjs = (float) $bpjsQuery->sum('total');
 
         $bpjsBudget = (float) TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])->whereIn('jenis_tunjangan', $bpjsIds)->sum('total');
         $scoreBpjs = ($bpjs > 0 && $bpjsBudget > 0 && $bpjs <= $bpjsBudget) ? ($bpjs / $bpjsBudget) * 25 : 0;
 
         $rekrutmenQuery = Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment');
-        if ($personId) $rekrutmenQuery->where('id_karyawan', $personId);
         $rekrutmen = (float) $rekrutmenQuery->sum('realisasi');
 
         $rekrutmenBudget = (float) Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment')->sum('realisasi');
@@ -227,7 +224,6 @@ class HRDKPIService
         $kegiatanBudget = 0;
         $kegiatanRealisasi = 0;
         $kegiatansQuery = Kegiatan::with('pengajuan_barang.detail')->whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'kegiatan');
-        if ($personId) $kegiatansQuery->where('id_karyawan', $personId);
 
         foreach ($kegiatansQuery->get() as $kegiatan) {
             $kegiatanRealisasi += (float) $kegiatan->realisasi;
@@ -270,21 +266,18 @@ class HRDKPIService
         $endOfYear = Carbon::create($tahun, 12, 31)->endOfDay();
 
         $gajiQuery = LogGaji::whereBetween('created_at', [$startOfYear, $endOfYear]);
-        if ($personId) $gajiQuery->where('id_karyawan', $personId);
         $gaji = (float) $gajiQuery->sum(DB::raw('COALESCE(gaji, 0) + COALESCE(tunjangan_jabatan, 0)'));
         $scoreGaji = $gaji > 0 ? 25 : 0;
 
         $bpjsIds = JenisTunjangan::whereIn('nama_tunjangan', ['BPJS Tenaga Kerja', 'BPJS Kesehatan'])->pluck('id');
         
         $bpjsQuery = TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])->whereIn('jenis_tunjangan', $bpjsIds);
-        if ($personId) $bpjsQuery->where('id_karyawan', $personId);
         $bpjs = (float) $bpjsQuery->sum('total');
 
         $bpjsBudget = (float) TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])->whereIn('jenis_tunjangan', $bpjsIds)->sum('total');
         $scoreBpjs = ($bpjs > 0 && $bpjsBudget > 0 && $bpjs <= $bpjsBudget) ? ($bpjs / $bpjsBudget) * 25 : 0;
 
         $rekrutmenQuery = Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment');
-        if ($personId) $rekrutmenQuery->where('id_karyawan', $personId);
         $rekrutmen = (float) $rekrutmenQuery->sum('realisasi');
 
         $rekrutmenBudget = (float) Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment')->sum('realisasi');
@@ -293,7 +286,6 @@ class HRDKPIService
         $kegiatanBudget = 0;
         $kegiatanRealisasi = 0;
         $kegiatansQuery = Kegiatan::with('pengajuan_barang.detail')->whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'kegiatan');
-        if ($personId) $kegiatansQuery->where('id_karyawan', $personId);
 
         foreach ($kegiatansQuery->get() as $kegiatan) {
             $kegiatanRealisasi += (float) $kegiatan->realisasi;

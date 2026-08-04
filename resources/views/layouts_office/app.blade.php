@@ -290,6 +290,7 @@
 
     <!-- Iconify -->
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    
 
     <!-- Mobile menu toggle logic -->
     <script>
@@ -378,6 +379,66 @@
                 });
             }, 300);
         });
+    </script>
+    @endif
+
+    @if (auth()->check() && optional(auth()->user()->karyawan)->jabatan === 'Office Boy')
+    <script>
+        let swalOpen = false;
+
+        function checkPendingShift() {
+            if (swalOpen) return;
+
+            fetch("{{ route('shift.pending') }}", { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.pending) return;
+
+                    swalOpen = true;
+                    Swal.fire({
+                        title: 'Konfirmasi Shift ' + data.shift,
+                        text: data.message,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Saya Setuju',
+                        cancelButtonText: 'Tolak',
+                        allowOutsideClick: false,
+                    }).then(result => {
+                        const url = result.isConfirmed
+                            ? "{{ route('shift.approve') }}"
+                            : "{{ route('shift.reject') }}";
+
+                        fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            },
+                            body: JSON.stringify({
+                                notification_id: data.notification_id,
+                                shift: data.shift,
+                                date: data.date,
+                            }),
+                        })
+                        .then(r => r.json())
+                        .then(res => {
+                            swalOpen = false;
+                            if (res.success) {
+                                Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 2000, showConfirmButton: false })
+                                    .then(() => location.reload());
+                            } else {
+                                Swal.fire('Gagal', res.message || 'Terjadi kesalahan', 'error');
+                            }
+                        })
+                        .catch(() => { swalOpen = false; });
+                    });
+                })
+                .catch(err => console.error(err));
+        }
+
+        document.addEventListener('DOMContentLoaded', checkPendingShift);
+        setInterval(checkPendingShift, 60000);
     </script>
     @endif
 

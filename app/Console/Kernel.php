@@ -253,6 +253,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:notification-pembelian-hr')->daily()->description('app:notification-pembelian-hr');
         $schedule->command('log:clean-activity')->tuesdays()->at('03:00')->description('Pembersihan Otomatis Activity Log');
         $schedule->command('app:up-jurnal-akuntansi')->dailyAt('08.00');
+        $schedule->command('tasks:fallback-shift2')->dailyAt('16:00')->timezone('Asia/Jakarta');
     }
 
     protected function commands(): void

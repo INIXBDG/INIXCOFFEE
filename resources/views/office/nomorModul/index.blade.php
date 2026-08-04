@@ -1,6 +1,7 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <div class="container-fluid py-4">
         {{-- Flash Messages --}}
         @if (session('success'))
@@ -26,9 +27,9 @@
         </div>
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden glass-force">
-            <div class="card-body p-0">
+            <div class="card-body p-3">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0 align-middle">
+                    <table id="nomorModulTable" class="table table-hover mb-0 align-middle" style="width:100%">
                         <thead class="bg-light text-dark fw-semibold text-uppercase small">
                             <tr>
                                 <th class="ps-4">No</th>
@@ -36,7 +37,8 @@
                                 <th>Type</th>
                                 <th>Status</th>
                                 <th>Uploaded</th>
-                                <th class="text-center pe-4" style="width: 22%">Aksi</th>
+                                <th>Subscode</th>
+                                <th class="text-center pe-4 no-sort" style="width: 18%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="text-muted">
@@ -45,8 +47,7 @@
                                     <td class="ps-4 fw-medium">{{ $loop->iteration }}</td>
                                     <td class="fw-semibold">{{ $item->no_modul }}</td>
                                     <td>
-                                        <span
-                                            class="badge {{ $item->type == 'Authorize' ? 'bg-warning text-dark' : 'bg-primary' }}">
+                                        <span class="badge {{ $item->type == 'Authorize' ? 'bg-warning text-dark' : 'bg-primary' }}">
                                             {{ $item->type }}
                                         </span>
                                     </td>
@@ -60,51 +61,99 @@
                                             {{ $item->uploaded ? \Carbon\Carbon::parse($item->uploaded)->format('d M Y') : '-' }}
                                         </span>
                                     </td>
+                                    <td>
+                                    @if ( $item->type === "Authorize" )
+                                        @if ($item->tanggal_subscode_masuk)
+                                            <div class="d-flex flex-column gap-1">
+                                                <span class="badge bg-success w-fit-content">
+                                                    <i class="bi bi-check-circle-fill me-1"></i> Uploaded
+                                                </span>
+                                                <small class="text-muted" style="font-size: 0.75rem;">
+                                                    {{ \Carbon\Carbon::parse($item->tanggal_subscode_masuk)->format('d M Y, H:i') }}
+                                                </small>
+                                                @if ($item->status_subscode == 1)
+                                                    <span class="badge bg-info text-dark w-fit-content" style="font-size: 0.7rem;">Ada</span>
+                                                @elseif ($item->status_subscode == 0)
+                                                    <span class="badge bg-danger w-fit-content" style="font-size: 0.7rem;">Tidak Ada</span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-dash-circle me-1"></i> Belum
+                                            </span>
+                                        @endif
+                                    @else
+                                        
+                                    @endif
+                                    </td>
                                     <td class="text-center">
-                                        <div class="btn-group" role="group">
-                                            <a href="{{ route('office.modul.detail', $item->id) }}"
-                                                class="btn btn-outline-info btn-sm">Detail</a>
-
-                                            <button type="button" class="btn btn-outline-warning btn-sm editBtn"
-                                                data-id="{{ $item->id }}" data-no="{{ $item->no_modul }}"
-                                                data-type="{{ $item->type }}" data-bs-toggle="modal"
-                                                data-bs-target="#editModal">
-                                                Edit
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-primary dropdown-toggle px-3" type="button"
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-three-dots-vertical"></i> Aksi
                                             </button>
-
-                                            <button type="button" class="btn btn-outline-secondary btn-sm pdfBtn"
-                                                data-id="{{ $item->id }}" data-note="{{ $item->note_modul }}"
-                                                data-bs-toggle="modal" data-bs-target="#noteModal">
-                                                PDF
-                                            </button>
-
-                                            @if ($item->status !== 'Uploaded')
-                                                <button type="button" class="btn btn-outline-success btn-sm uploadedBtn"
-                                                    data-id="{{ $item->id }}"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#uploadedModal">
-                                                    Uploaded
-                                                </button>
-                                            @endif
-
-                                            <form action="{{ route('office.modul.delete.nomor', $item->id) }}"
-                                                method="POST" class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-outline-danger btn-sm"
-                                                    onclick="return confirm('Yakin ingin menghapus data ini?')">
-                                                    Hapus
-                                                </button>
-                                            </form>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                                <li>
+                                                    <a href="{{ route('office.modul.detail', $item->id) }}" class="dropdown-item">
+                                                        <i class="bi bi-eye text-info me-2"></i> Detail
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item editBtn"
+                                                        data-id="{{ $item->id }}" data-no="{{ $item->no_modul }}"
+                                                        data-type="{{ $item->type }}"
+                                                        data-bs-toggle="modal" data-bs-target="#editModal">
+                                                        <i class="bi bi-pencil-square text-warning me-2"></i> Edit
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item pdfBtn"
+                                                        data-id="{{ $item->id }}" data-note="{{ $item->note_modul }}"
+                                                        data-bs-toggle="modal" data-bs-target="#noteModal">
+                                                        <i class="bi bi-file-earmark-pdf text-secondary me-2"></i> PDF
+                                                    </button>
+                                                </li>
+                                                @if ( $item->type === "Authorize" )
+                                                    <li>
+                                                        <button type="button" class="dropdown-item subscode"
+                                                            data-id="{{ $item->id }}"
+                                                            data-no="{{ $item->no_modul }}"
+                                                            data-status="{{ $item->status_subscode ?? '' }}"
+                                                            data-tanggal="{{ $item->tanggal_subscode ?? '' }}"
+                                                            data-catatan="{{ $item->catatan_subscode ?? '' }}"
+                                                            data-bs-toggle="modal" data-bs-target="#subscodeModal">
+                                                            <i class="bi bi-tag text-info me-2"></i> Subscode
+                                                        </button>
+                                                    </li>
+                                                @endif
+                                                @if ($item->status !== 'Uploaded')
+                                                    <li>
+                                                        <button type="button" class="dropdown-item uploadedBtn"
+                                                            data-id="{{ $item->id }}"
+                                                            data-bs-toggle="modal" data-bs-target="#uploadedModal">
+                                                            <i class="bi bi-cloud-upload text-success me-2"></i> Uploaded
+                                                        </button>
+                                                    </li>
+                                                @endif
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form action="{{ route('office.modul.delete.nomor', $item->id) }}"
+                                                        method="POST" id="delete-form-{{ $item->id }}" class="d-inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="button"
+                                                            class="dropdown-item text-danger"
+                                                            onclick="if(confirm('Yakin ingin menghapus data ini?')) { this.closest('form').submit(); }">
+                                                            <i class="bi bi-trash me-2"></i> Hapus
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
-                                        Belum ada data nomor modul.
-                                    </td>
-                                </tr>
+                                {{-- PENTING: Biarkan KOSONG di sini. Jangan isi <tr> atau <td> apapun agar tidak bentrok dengan DataTables. --}}
                             @endforelse
                         </tbody>
                     </table>
@@ -181,6 +230,57 @@
         </div>
     </div>
 
+    <div class="modal fade" id="subscodeModal" tabindex="-1" aria-labelledby="subscodeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <form id="subscodeForm" method="POST" class="modal-content shadow-lg border-0 rounded-4">
+                @csrf
+                @method('PUT')
+                <div class="modal-header border-0 pb-0">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="subscodeModalLabel">Isi Data Subscode</h5>
+                        <small class="text-muted" id="subscode_no_modul_display"></small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-2">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold d-block">Status</label>
+                        <div class="btn-group w-100" role="group" aria-label="Status">
+                            <input type="radio" class="btn-check" name="status" id="status_subscode_aktif"
+                                value="1" autocomplete="off" checked>
+                            <label class="btn btn-outline-success" for="status_subscode_aktif">
+                                <i class="bi bi-check-circle me-1"></i> Sudah
+                            </label>
+
+                            <input type="radio" class="btn-check" name="status" id="status_subscode_nonaktif"
+                                value="0" autocomplete="off">
+                            <label class="btn btn-outline-danger" for="status_subscode_nonaktif">
+                                <i class="bi bi-x-circle me-1"></i> Belum
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tanggal Diterima</label>
+                        <input type="datetime-local" name="tanggal_subscode_masuk" id="tanggal_subscode"
+                            class="form-control form-control-lg">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Catatan</label>
+                        <textarea name="catatan" id="catatan_subscode"
+                            class="form-control" rows="5"
+                            placeholder="Tuliskan catatan subscode..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary px-4">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="modal fade" id="noteModal" tabindex="-1" aria-labelledby="noteModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form id="noteForm" action="" method="POST" class="modal-content shadow-lg border-0 rounded-4">
@@ -244,27 +344,97 @@
         </div>
     </div>
 
+    {{-- DataTables CSS (Bootstrap 5 styling) --}}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
     {{-- Scripts --}}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
     <script>
         $(document).ready(function() {
+
+            const table = $('#nomorModulTable').DataTable({
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Semua"]],
+                pageLength: 10,
+
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json',
+                    lengthMenu: "Tampilkan _MENU_ data",
+                    zeroRecords: "Data tidak ditemukan",
+                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                    infoEmpty: "Tidak ada data tersedia",
+                    infoFiltered: "(difilter dari _MAX_ total data)",
+                    search: "Cari:",
+                    paginate: {
+                        first: "First",
+                        last: "End",
+                        next: ">",
+                        previous: "<"
+                    }
+                },
+
+                columnDefs: [
+                    { orderable: true, targets: [0, 1, 2, 3, 4, 5] },
+                    { orderable: false, targets: 6 } 
+                ],
+
+                order: [[0, 'asc']],
+
+                responsive: true,
+                autoWidth: false
+            });
+
+            table.on('order.dt search.dt draw.dt', function () {
+                table.column(0, { search: 'applied', order: 'applied' }).nodes().each(function (cell, i) {
+                    cell.innerHTML = i + 1;
+                });
+            });
 
             // Edit Modal
             $('.editBtn').on('click', function() {
                 const id = $(this).data('id');
                 const no = $(this).data('no');
                 const type = $(this).data('type');
-                const delay = $(this).data('delay');
-                const keterangan = $(this).data('keterangan');
 
                 $('#edit_no_modul').val(no);
                 $('#edit_type').val(type);
                 $('#editForm').attr('action', `/office/modul/update/nomor/${id}`);
             });
 
+            //subscode modal
+            $('.subscode').on('click', function() {
+                const id       = $(this).data('id');
+                const noModul  = $(this).data('no');
+                const status   = $(this).data('status');
+                const tanggal  = $(this).data('tanggal');
+                const catatan  = $(this).data('catatan');
+
+                $('#subscode_no_modul_display').text('No Modul: ' + noModul);
+
+                if (status == '1') {
+                    $('#status_subscode_aktif').prop('checked', true);
+                } else {
+                    $('#status_subscode_nonaktif').prop('checked', true);
+                }
+
+                if (tanggal) {
+                    let dt = tanggal.toString().replace(' ', 'T').substring(0, 16);
+                    $('#tanggal_subscode').val(dt);
+                } else {
+                    $('#tanggal_subscode').val('');
+                }
+
+                $('#catatan_subscode').val(catatan || '');
+
+                const route = '{{ route('office.modul.update.subscode', ':id') }}';
+                $('#subscodeForm').attr('action', route.replace(':id', id));
+            });
+
             $('.pdfBtn').on('click', function() {
                 const id = $(this).data('id');
-                const noteContent = $(this).data('note'); 
+                const noteContent = $(this).data('note');
 
                 $('#note').val(noteContent);
 
