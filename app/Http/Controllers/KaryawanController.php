@@ -294,10 +294,19 @@ class KaryawanController extends Controller
         return redirect()->route('gaji.index')->with('success', 'Gaji berhasil diperbarui.');
     }
 
+
     public function slip(Request $request)
     {
-        $bulan = (int) $request->query('bulan', date('n'));
-        $tahun = (int) $request->query('tahun', date('Y'));
+        $monthParam = (int) $request->query('bulan', date('n'));
+        $yearParam  = (int) $request->query('tahun', date('Y'));
+
+        if ($monthParam == 1) {
+            $bulan = 12;
+            $tahun = $yearParam - 1;
+        } else {
+            $bulan = $monthParam - 1;
+            $tahun = $yearParam;
+        }
 
         $HRD = User::with('karyawan')->where('jabatan', 'HRD')->where('status_akun', '1')->first();
         $user = User::with('karyawan')->find(Auth::id());
@@ -317,39 +326,73 @@ class KaryawanController extends Controller
             9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
 
-        $gajiPokok = (float) $user->karyawan->gaji;
+        $isPeriodeBerjalan = ($bulan === (int) date('n')) && ($tahun === (int) date('Y'));
 
-        $totalPendapatan = $gajiPokok + $tunjanganItems->sum('total');
+        if ($isPeriodeBerjalan) {
+            $gajiPokok        = (float) $user->karyawan->gaji;
+            $tunjanganJabatan = (float) ($user->karyawan->tunjangan_jabatan ?? 0);
+        } else {
+            $logGaji = LogGaji::where('id_karyawan', Auth::id())
+                ->where('bulan', $bulan)
+                ->where('tahun', $tahun)
+                ->orderByDesc('created_at')
+                ->first();
+
+            $gajiPokok        = $logGaji ? (float) $logGaji->gaji : 0;
+            $tunjanganJabatan = $logGaji ? (float) $logGaji->tunjangan_jabatan : 0;
+        }
+
+        $tunjanganJabatanFormatted = $tunjanganJabatan > 0
+            ? $this->formatRupiah($tunjanganJabatan)
+            : '-';
+
+        $totalPendapatan = $gajiPokok + $tunjanganJabatan + $tunjanganItems->sum('total');
         $totalPotongan   = $potonganItems->sum(fn($i) => abs($i->total));
         $totalBersih     = $totalPendapatan - $totalPotongan;
 
-        // Susun baris tabel gabungan (pendapatan | potongan) sekali di sini,
         $rows = [];
-        $maxRows = max($tunjanganItems->count() + 2, $potonganItems->count() + 1);
+        $pendapatanRows = [];
+        $pendapatanRows[] = ['nama' => 'Gaji Pokok', 'jumlah' => $this->formatRupiah($gajiPokok)];
+
+        if ($tunjanganJabatan > 0) {
+            $pendapatanRows[] = ['nama' => 'Tunjangan Jabatan', 'jumlah' => $this->formatRupiah($tunjanganJabatan)];
+        }
+
+        foreach ($tunjanganItems as $item) {
+            $pendapatanRows[] = [
+                'nama'   => $item->jenistunjangan->nama_tunjangan,
+                'jumlah' => $this->formatRupiah($item->total),
+            ];
+        }
+
+        $potonganRows = [];
+        foreach ($potonganItems as $item) {
+            $potonganRows[] = [
+                'nama'   => $item->jenistunjangan->nama_tunjangan,
+                'jumlah' => $this->formatRupiah(abs($item->total)),
+            ];
+        }
+
+        $maxRows = max(count($pendapatanRows) + 1, count($potonganRows) + 1);
+
         for ($i = 0; $i < $maxRows; $i++) {
             $row = ['p_no' => '', 'p_nama' => '', 'p_jumlah' => '', 'pot_no' => '', 'pot_nama' => '', 'pot_jumlah' => ''];
 
-            if ($i === 0) {
-                $row['p_no'] = 1;
-                $row['p_nama'] = 'Gaji Pokok';
-                $row['p_jumlah'] = $this->formatRupiah($gajiPokok);
-            } elseif ($i - 1 < $tunjanganItems->count()) {
-                $item = $tunjanganItems[$i - 1];
-                $row['p_no'] = $i + 1;
-                $row['p_nama'] = $item->jenistunjangan->nama_tunjangan;
-                $row['p_jumlah'] = $this->formatRupiah($item->total);
+            if ($i < count($pendapatanRows)) {
+                $row['p_no']     = $i + 1;
+                $row['p_nama']   = $pendapatanRows[$i]['nama'];
+                $row['p_jumlah'] = $pendapatanRows[$i]['jumlah'];
             } elseif ($i === $maxRows - 1) {
-                $row['p_nama'] = 'Total Pendapatan';
+                $row['p_nama']   = 'Total Pendapatan';
                 $row['p_jumlah'] = $this->formatRupiah($totalPendapatan);
             }
 
-            if ($i < $potonganItems->count()) {
-                $item = $potonganItems[$i];
-                $row['pot_no'] = $i + 1;
-                $row['pot_nama'] = $item->jenistunjangan->nama_tunjangan;
-                $row['pot_jumlah'] = $this->formatRupiah(abs($item->total));
+            if ($i < count($potonganRows)) {
+                $row['pot_no']     = $i + 1;
+                $row['pot_nama']   = $potonganRows[$i]['nama'];
+                $row['pot_jumlah'] = $potonganRows[$i]['jumlah'];
             } elseif ($i === $maxRows - 1) {
-                $row['pot_nama'] = 'Total Potongan';
+                $row['pot_nama']   = 'Total Potongan';
                 $row['pot_jumlah'] = $this->formatRupiah($totalPotongan);
             }
 
@@ -362,6 +405,7 @@ class KaryawanController extends Controller
             'bulan' => $bulan,
             'tahun' => $tahun,
             'namaBulanText' => $namaBulan[$bulan] ?? '-',
+            'tunjanganJabatanFormatted' => $tunjanganJabatanFormatted,
             'rows' => $rows,
             'totalBersih' => $totalBersih,
             'totalBersihFormatted' => $this->formatRupiah($totalBersih),
