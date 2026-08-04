@@ -15,6 +15,7 @@ use Carbon\CarbonPeriod;
 use App\Models\trackingLaporanInsiden;
 use App\Models\karyawan;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 class DashboardSLAController extends Controller
 {
@@ -641,20 +642,39 @@ class DashboardSLAController extends Controller
             $endOfWeek = $date->copy()->endOfWeek();
 
             // Batasi agar tidak melebihi range filter (jika filter parsial)
-            if ($startOfWeek < $dateRange['startDate'])
+            if ($startOfWeek < $dateRange['startDate']) {
                 $startOfWeek = $dateRange['startDate'];
-            if ($endOfWeek > $dateRange['endDate'])
+            }
+            if ($endOfWeek > $dateRange['endDate']) {
                 $endOfWeek = $dateRange['endDate'];
+            }
 
             // Skip jika start > end (edge case akhir periode)
-            if ($startOfWeek > $endOfWeek)
+            if ($startOfWeek > $endOfWeek) {
                 continue;
+            }
 
             $contentStats['total_weeks']++;
 
-            // 2. Hitung Upload pada Minggu Tersebut
-            $uploadCount = ContentSchedule::whereBetween('upload_date', [$startOfWeek, $endOfWeek], 'and', false)
-                ->count();
+            // 2. Hitung Upload pada Minggu Tersebut (Dengan format string Y-m-d untuk presisi DATE)
+            $startDateString = $startOfWeek->format('Y-m-d');
+            $endDateString = $endOfWeek->format('Y-m-d');
+
+            $query = ContentSchedule::whereBetween('upload_date', [$startDateString, $endDateString]);
+
+            // Pencatatan (Logging) diagnostik kueri SQL dan parameter
+            Log::info('--- Diagnostik Kueri Jadwal Konten ---', [
+                'periode_rentang' => "{$startDateString} s/d {$endDateString}",
+                'kueri_sql' => $query->toSql(),
+                'parameter_binding' => $query->getBindings()
+            ]);
+
+            $uploadCount = $query->count();
+
+            // Pencatatan hasil eksekusi perhitungan
+            Log::info('--- Hasil Kueri ---', [
+                'jumlah_ditemukan' => $uploadCount
+            ]);
 
             $contentStats['total_content'] += $uploadCount;
 
