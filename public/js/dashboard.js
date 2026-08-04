@@ -2886,19 +2886,19 @@ function renderPermintaanSeringDiajukanChart(labels, values) {
     });
 }
 
-// =========================================================
-// 📦 MODULE: SLA DIGITAL KREATIF (STANDALONE)
-
 const formatPercent = (val) => `${parseFloat(val).toFixed(1)}%`;
 const formatHours = (val) => `${parseFloat(val).toFixed(1)} Jam`;
 const formatValue = (val) => parseFloat(val).toFixed(0);
 const getSlaClass = (val) => (val >= 90 ? 'text-success' : (val >= 80 ? 'text-warning' : 'text-danger'));
 
-async function loadSlaDigital() {
+/**
+ * Memuat data SLA Digital berdasarkan filter bulan yang dipilih.
+ * @param {string|null} selectedMonth - Nilai bulan (1-12) atau 'all'.
+ */
+async function loadSlaDigital(selectedMonth = null) {
     console.log('🚀 [SLA Digital] Memuat data dari endpoint dashboardDigital()');
 
     const $container = $('#sla-digital-container');
-    // Gunakan endpoint khusus digital yang sudah ada di controller
     const baseUrl = $container.data('url') || '/dashboard-digital';
 
     console.log('📡 [SLA Digital] Request URL:', baseUrl);
@@ -2910,14 +2910,28 @@ async function loadSlaDigital() {
     $('#digital-weekly-table-body').html('<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
 
     try {
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        let startDate, endDate;
+        // Ambil referensi tahun aktif, gunakan tahun berjalan sebagai nilai awal
+        const currentYear = $('#tahun').val() ? parseInt($('#tahun').val()) : new Date().getFullYear();
+
+        // Logika resolusi tanggal berdasarkan parameter bulan
+        if (selectedMonth && selectedMonth !== 'all') {
+            const monthIndex = parseInt(selectedMonth) - 1;
+            startDate = new Date(currentYear, monthIndex, 1).toISOString().split('T')[0];
+            endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
+        } else if (selectedMonth === 'all') {
+            startDate = new Date(currentYear, 0, 1).toISOString().split('T')[0];
+            endDate = new Date(currentYear, 11, 31).toISOString().split('T')[0];
+        } else {
+            const now = new Date();
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        }
 
         const response = await $.ajax({
             url: baseUrl,
             method: 'GET',
-            data: { start_date: startOfMonth, end_date: endOfMonth },
+            data: { start_date: startDate, end_date: endDate },
             dataType: 'json',
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             timeout: 15000
@@ -2952,7 +2966,7 @@ async function loadSlaDigital() {
             .attr('class', `fs-2 fw-bold ${getSlaClass(respComp)}`);
         $('#digital-ticket-avg').text(`${avgTime.toFixed(1)} Jam`);
 
-        // 3. Update SLA Konten - kiri (INI YANG BARU!)
+        // 3. Update SLA Konten - kiri
         const contentComp = parseFloat(kpi.content_sla_compliance) || 0;
         const totalContent = parseInt(kpi.total_content_uploaded) || 0;
         const weeksMet = parseInt(kpi.weeks_met) || 0;
@@ -2994,7 +3008,6 @@ function renderDigitalWeeklyTable(data) {
     }
 
     const rows = data.map(row => {
-        // Mapping field dari controller: week_range → period, count → uploads
         const period = row.week_range || row.period || '-';
         const uploads = row.count ?? row.uploads ?? 0;
         const target = row.target ?? 3;
@@ -3037,6 +3050,13 @@ $(document).ready(function () {
     $('#filterMonth').on('change', function () { fetchRerataDurasiData(this.value); });
     $('#filterMonthKetepatan').on('change', function () { fetchRerataKetepatanResponseData(this.value); });
 
+    // Event Listener Filter Bulan untuk SLA Digital
+    $('#filterBulanDigital').on('change', function () {
+        if (typeof loadSlaDigital === 'function') {
+            loadSlaDigital($(this).val());
+        }
+    });
+
     // Event Listeners PILLS (Tab Lama)
     $('#pills-jumlah-ticketing-tab').on('shown.bs.tab', function () { fetchJumlahTicketingData($('#filterBulan').val() || 'all'); });
     $('#pills-jumlah-pic-tab').on('shown.bs.tab', function () { fetchJumlahPICData($('#filterMonthPIC').val() || 'all'); });
@@ -3045,12 +3065,18 @@ $(document).ready(function () {
     $('#pills-jumlah-permintaan-tab').on('shown.bs.tab', function () { fetchJumlahPermintaanPerBulanData(); });
     $('#pills-permintaan-sering-diajukan-tab').on('shown.bs.tab', function () { fetchPermintaanSeringDiajukanData(); });
 
-
     $('#tahun').on('change', function () {
         let year = $(this).val();
         if (year) {
             initializeYearlySales();
             // initializeProjectTarget();
+
+            // Perbarui data SLA Digital jika tab tersebut sedang aktif
+            if ($('#pills-sla-digital-tab').hasClass('active')) {
+                if (typeof loadSlaDigital === 'function') {
+                    loadSlaDigital($('#filterBulanDigital').val());
+                }
+            }
         }
     });
 
@@ -3235,7 +3261,6 @@ $(document).ready(function () {
                 tableBody.html('<tr><td colspan="6" class="text-center p-4">Tidak ada data checklist ditemukan.</td></tr>');
             } else {
                 $.each(details, function (stage, items) {
-                    // HEADER GROUP (colspan=6)
                     tableBody.append(`
                         <tr class="table-secondary">
                             <td colspan="6" class="fw-bold text-uppercase px-3 py-2">
@@ -3244,12 +3269,9 @@ $(document).ready(function () {
                         </tr>
                     `);
 
-                    // ITEM ROWS
                     items.forEach(item => {
                         let badge = '';
                         let rowClass = '';
-
-                        // Logika Badge
                         switch (item.status) {
                             case 'On Time': badge = '<span class="badge bg-success">On Time</span>'; break;
                             case 'Late': badge = '<span class="badge bg-warning text-dark">Terlambat</span>'; break;
@@ -3271,7 +3293,6 @@ $(document).ready(function () {
         }
     }
 
-    // Listener Dropdown Event SLA
     $('#eventSlaFilter').on('change', function () {
         loadSlaEvent($(this).val());
     });
@@ -3286,19 +3307,17 @@ $(document).ready(function () {
 
         console.log(`Tab ${activePillId} ditampilkan.`);
 
-        // --- Logika Tab SLA ---
         if (activePill.hasClass('sla-tab-trigger')) {
-
-            // A. Logika Tab Digital Kreatif (BARU)
             if (activePillId === 'pills-sla-digital-tab') {
                 if (!isLoaded) {
-                    loadSlaDigital();
+                    if (typeof loadSlaDigital === 'function') {
+                        loadSlaDigital($('#filterBulanDigital').val());
+                    }
                     activePill.data('loaded', true);
                 }
                 return;
             }
 
-            // B. Logika Tab Event Webinar
             if (activePillId === 'pills-sla-event-tab') {
                 if (!isLoaded) {
                     const selectedEvent = $('#eventSlaFilter').val();
@@ -3310,7 +3329,6 @@ $(document).ready(function () {
                 return;
             }
 
-            // C. Logika Tab Tim IT (Programmer & TS)
             const team = activePill.data('team');
             if (!isLoaded && team) {
                 if (team === 'programmer') {
@@ -3321,7 +3339,6 @@ $(document).ready(function () {
                 activePill.data('loaded', true);
             }
 
-            // --- Logika Tab Lama (Legacy) ---
         } else {
             if (!isLoaded) {
                 switch (activePillId) {
@@ -3336,38 +3353,27 @@ $(document).ready(function () {
             }
         }
     });
-    // Trigger Awal
+
+    // =======================================================================
+    // 9. TRIGGER AWAL (AUTO-LOAD)
+    // =======================================================================
+
     setTimeout(() => {
         const activePill = $('#itsm-pills-tab .nav-link.active');
-        if (activePill.length) activePill.trigger('shown.bs.tab');
-        else $('#itsm-pills-tab button:first').trigger('shown.bs.tab');
+        if (activePill.length) {
+            activePill.trigger('shown.bs.tab');
+        } else {
+            $('#itsm-pills-tab button:first').trigger('shown.bs.tab');
+        }
     }, 50);
 
-});
-
-// =========================================================
-// 🔗 EVENT BINDING: TAB SLA DIGITAL (ROBUST)
-// =========================================================
-$(document).ready(function () {
-
-    // Binding event untuk tab SLA Digital
-    $('#pills-sla-digital-tab').on('shown.bs.tab', function () {
-        console.log('📌 [EVENT] Tab SLA Digital aktif!');
-        const $tab = $(this);
-        const isLoaded = $tab.data('loaded');
-
-        if (!isLoaded) {
-            console.log('🔄 Memanggil loadSlaDigital()...');
-            loadSlaDigital();
-            $tab.data('loaded', true);
-        }
-    });
-
-    // Auto-load jika tab sudah aktif saat halaman pertama kali dibuka
     setTimeout(function () {
         if ($('#pills-sla-digital-tab').hasClass('active') || $('#pills-sla-digital').hasClass('show active')) {
             console.log('🚀 Auto-load SLA Digital karena tab aktif');
-            loadSlaDigital();
+            if (typeof loadSlaDigital === 'function') {
+                loadSlaDigital($('#filterBulanDigital').val());
+            }
         }
     }, 600);
+
 });

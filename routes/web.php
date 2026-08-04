@@ -914,7 +914,7 @@ Route::get('/ticketing-data', [DashboardItsmController::class, 'getJumlahPermint
 Route::get('/jumlah-pic', [DashboardItsmController::class, 'getJumlahPIC']);
 Route::get('/rerata-durasi-data', [DashboardItsmController::class, 'getRerataDurasi']);
 Route::get('/rerata-ketepatan-response-data', [DashboardItsmController::class, 'getRerataKetepatanResponse']);
-Route::get('/dashboard-digital', [DashboardSLAController::class, 'dashboardDigital'])->name('dashboard.digital')->middleware('auth');
+// Route::get('/dashboard-digital', [DashboardSLAController::class, 'dashboardDigital'])->name('dashboard.digital')->middleware('auth');
 Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'getJumlahPermintaanPerBulan']);
 Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
 Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
@@ -1805,7 +1805,7 @@ Route::get('system/documentation/export/all', [DocumentationImportController::cl
     ->name('documentation.export.all');
 Route::get('system/documentation/export/feature/{id}', [DocumentationImportController::class, 'exportFeature'])
     ->name('documentation.export.feature');
-    
+
 // Code Documentation
 Route::get('/system/documentation/features/{featureId}/codes', [CodeDocumentationController::class, 'index'])
     ->name('documentation.codes.index');

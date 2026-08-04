@@ -10,6 +10,7 @@ $(document).ready(function () {
 
     function updateFilterDisplay(filters, elementId) {
         try {
+            if (!filters || !filters.start || !filters.end) return;
             const startDate = new Date(filters.start);
             const year = startDate.getFullYear();
             const month = startDate.getMonth();
@@ -21,27 +22,33 @@ $(document).ready(function () {
         } catch (e) { console.error("Gagal update filter display", e); }
     }
 
+    // Resolusi Parameter URL berdasarkan status Filter Global
+    function buildQueryString() {
+        const year = $('#globalTahunFilter').val() || new Date().getFullYear();
+        const month = $('#globalBulanFilter').val() || 'all';
+        return `?tahun=${year}&bulan=${month}`;
+    }
+
     // =======================================================================
     // 2. SLA PROGRAMMER
     // =======================================================================
-    const slaProgTimUrl = "/dashboard-sla/programmer/tim";
-    const slaProgUserUrl = "/dashboard-sla/programmer/user";
-    const slaProgKritisUrl = "/dashboard-sla/programmer/kritis";
+    const slaProgTimBaseUrl = "/dashboard-sla/programmer/tim";
+    const slaProgUserBaseUrl = "/dashboard-sla/programmer/user";
+    const slaProgKritisBaseUrl = "/dashboard-sla/programmer/kritis";
     let slaProgrammerChart;
 
     async function loadSlaTim() {
         try {
-            const response = await fetch(slaProgTimUrl); 
+            const query = buildQueryString();
+            const response = await fetch(slaProgTimBaseUrl + query);
             const kpi = await response.json();
             updateFilterDisplay(kpi.filters, 'sla_current_period');
 
             const resComp = kpi.sla_resolution_compliance || 0;
-
             const resEl = document.getElementById('tim-sla-resolution');
             resEl.textContent = formatPercent(resComp);
             resEl.className = `fs-2 fw-bold ${getSlaClass(resComp)}`;
 
-            // Update Top Overview Card
             const topProgEl = document.getElementById('top-prog-sla');
             if (topProgEl) {
                 topProgEl.textContent = formatPercent(resComp);
@@ -56,26 +63,21 @@ $(document).ready(function () {
             document.getElementById('tim-total-tickets').textContent = formatValue(kpi.total_tickets);
 
             const chartCtx = document.getElementById('slaTimPriorityChart').getContext('2d');
-            const pData = kpi.tickets_by_priority;
+            const pData = kpi.tickets_by_priority || { High: 0, Medium: 0, Low: 0, Other: 0 };
             if (slaProgrammerChart) slaProgrammerChart.destroy();
             if (kpi.total_tickets > 0) {
                 $('#programmer-chart-row').show();
-                slaProgrammerChart = new Chart(chartCtx, { 
-                    type: 'bar', 
-                    data: { 
-                        labels: ['High', 'Medium', 'Low', 'Other'], 
-                        datasets: [{ 
-                            label: 'Jumlah Tiket', 
-                            data: [pData.High, pData.Medium, pData.Low, pData.Other], 
-                            backgroundColor: ['#dc3545', '#ffc107', '#198754', '#6c757d'] 
-                        }] 
-                    }, 
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false, 
-                        scales: { y: { beginAtZero: true } }, 
-                        plugins: { legend: { display: false } } 
-                    } 
+                slaProgrammerChart = new Chart(chartCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['High', 'Medium', 'Low', 'Other'],
+                        datasets: [{
+                            label: 'Jumlah Tiket',
+                            data: [pData.High, pData.Medium, pData.Low, pData.Other],
+                            backgroundColor: ['#dc3545', '#ffc107', '#198754', '#6c757d']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
                 });
             } else { $('#programmer-chart-row').hide(); }
         } catch (error) { console.error('Gagal SLA Prog Tim:', error); }
@@ -83,39 +85,40 @@ $(document).ready(function () {
 
     async function loadSlaUser() {
         try {
-            const response = await fetch(slaProgUserUrl); 
+            const query = buildQueryString();
+            const response = await fetch(slaProgUserBaseUrl + query);
             const data = await response.json();
-            const tableBody = document.getElementById('sla-user-table-body'); 
+            const tableBody = document.getElementById('sla-user-table-body');
             tableBody.innerHTML = '';
-            if (data.kpi.length === 0) { 
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; 
-                return; 
+            if (!data.kpi || data.kpi.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; return;
             }
             data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
-                tableBody.innerHTML += `<tr><td><strong>${item.nama_programmer}</strong></td><td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td><td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td><td>${formatHours(item.avg_resolution_time)}</td><td><strong>${formatValue(item.total_tickets)}</strong></td><td><span class="badge bg-danger">H:${item.tickets_by_priority.High}</span> <span class="badge bg-warning">M:${item.tickets_by_priority.Medium}</span> <span class="badge bg-success">L:${item.tickets_by_priority.Low}</span></td></tr>`;
+                const priority = item.tickets_by_priority || { High: 0, Medium: 0, Low: 0 };
+                tableBody.innerHTML += `<tr><td><strong>${item.nama_programmer}</strong></td><td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td><td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td><td>${formatHours(item.avg_resolution_time)}</td><td><strong>${formatValue(item.total_tickets)}</strong></td><td><span class="badge bg-danger">H:${priority.High}</span> <span class="badge bg-warning">M:${priority.Medium}</span> <span class="badge bg-success">L:${priority.Low}</span></td></tr>`;
             });
         } catch (error) { console.error('Gagal SLA Prog User:', error); }
     }
 
     async function loadSlaKritis() {
         try {
-            const response = await fetch(slaProgKritisUrl); 
+            const query = buildQueryString();
+            const response = await fetch(slaProgKritisBaseUrl + query);
             const data = await response.json();
-            const kpi = data.kpi;
-            document.getElementById('kritis-sla-resolution').textContent = formatPercent(kpi.sla_resolution_compliance);
-            document.getElementById('kritis-sla-response').textContent = formatPercent(kpi.sla_response_compliance);
-            document.getElementById('kritis-avg-resolution').textContent = formatHours(kpi.avg_resolution_time);
-            document.getElementById('kritis-total-insiden').textContent = formatValue(kpi.total_insiden);
+            const kpi = data.kpi || {};
+            document.getElementById('kritis-sla-resolution').textContent = formatPercent(kpi.sla_resolution_compliance || 0);
+            document.getElementById('kritis-sla-response').textContent = formatPercent(kpi.sla_response_compliance || 0);
+            document.getElementById('kritis-avg-resolution').textContent = formatHours(kpi.avg_resolution_time || 0);
+            document.getElementById('kritis-total-insiden').textContent = formatValue(kpi.total_insiden || 0);
 
-            const tableBody = document.getElementById('sla-kritis-table-body'); 
+            const tableBody = document.getElementById('sla-kritis-table-body');
             tableBody.innerHTML = '';
-            if (data.details.length === 0) { 
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada insiden kritis.</td></tr>'; 
-                return; 
+            if (!data.details || data.details.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada insiden kritis.</td></tr>'; return;
             }
             data.details.forEach(item => {
                 const badge = item.sla_resolution_met ? '<span class="badge bg-success">Met</span>' : '<span class="badge bg-danger">Breached</span>';
-                tableBody.innerHTML += `<tr><td>${item.id}</td><td>${item.laporan.substring(0, 50)}...</td><td>${badge}</td><td>${formatHours(item.actual_resolution_hours)}</td><td>${item.actual_response_hours ? formatHours(item.actual_response_hours) : '-'}</td><td>${item.responder}</td></tr>`;
+                tableBody.innerHTML += `<tr><td>${item.id}</td><td>${item.laporan ? item.laporan.substring(0, 50) : '-'}...</td><td>${badge}</td><td>${formatHours(item.actual_resolution_hours)}</td><td>${item.actual_response_hours ? formatHours(item.actual_response_hours) : '-'}</td><td>${item.responder}</td></tr>`;
             });
         } catch (error) { console.error('Gagal SLA Prog Kritis:', error); }
     }
@@ -123,23 +126,22 @@ $(document).ready(function () {
     // =======================================================================
     // 3. SLA TECHNICAL SUPPORT
     // =======================================================================
-    const slaTsTimUrl = "/dashboard-sla/tech-support/tim";
-    const slaTsUserUrl = "/dashboard-sla/tech-support/user";
-    const slaTsKritisUrl = "/dashboard-sla/tech-support/kritis";
+    const slaTsTimBaseUrl = "/dashboard-sla/tech-support/tim";
+    const slaTsUserBaseUrl = "/dashboard-sla/tech-support/user";
+    const slaTsKritisBaseUrl = "/dashboard-sla/tech-support/kritis";
     let slaTsTimChart;
 
     async function loadSlaTsTim() {
         try {
-            const response = await fetch(slaTsTimUrl); 
+            const query = buildQueryString();
+            const response = await fetch(slaTsTimBaseUrl + query);
             const kpi = await response.json();
             updateFilterDisplay(kpi.filters, 'ts_sla_current_period');
 
             const resComp = kpi.sla_resolution_compliance || 0;
-
             document.getElementById('ts-tim-sla-resolution').textContent = formatPercent(resComp);
             document.getElementById('ts-tim-sla-resolution').className = `fs-2 fw-bold ${getSlaClass(resComp)}`;
 
-            // Update Top Overview Card
             const topTsEl = document.getElementById('top-ts-sla');
             if (topTsEl) {
                 topTsEl.textContent = formatPercent(resComp);
@@ -153,26 +155,21 @@ $(document).ready(function () {
             document.getElementById('ts-tim-total-tickets').textContent = formatValue(kpi.total_tickets);
 
             const chartCtx = document.getElementById('tsSlaTimPriorityChart').getContext('2d');
-            const pData = kpi.tickets_by_priority;
+            const pData = kpi.tickets_by_priority || { High: 0, Medium: 0, Low: 0, Other: 0 };
             if (slaTsTimChart) slaTsTimChart.destroy();
             if (kpi.total_tickets > 0) {
                 $('#ts-chart-row').show();
-                slaTsTimChart = new Chart(chartCtx, { 
-                    type: 'bar', 
-                    data: { 
-                        labels: ['High', 'Medium', 'Low', 'Other'], 
-                        datasets: [{ 
-                            label: 'Jumlah Tiket', 
-                            data: [pData.High, pData.Medium, pData.Low, pData.Other], 
-                            backgroundColor: ['#dc3545', '#ffc107', '#198754', '#6c757d'] 
-                        }] 
-                    }, 
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false, 
-                        scales: { y: { beginAtZero: true } }, 
-                        plugins: { legend: { display: false } } 
-                    } 
+                slaTsTimChart = new Chart(chartCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['High', 'Medium', 'Low', 'Other'],
+                        datasets: [{
+                            label: 'Jumlah Tiket',
+                            data: [pData.High, pData.Medium, pData.Low, pData.Other],
+                            backgroundColor: ['#dc3545', '#ffc107', '#198754', '#6c757d']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
                 });
             } else { $('#ts-chart-row').hide(); }
         } catch (error) { console.error('Gagal SLA TS Tim:', error); }
@@ -180,39 +177,40 @@ $(document).ready(function () {
 
     async function loadSlaTsUser() {
         try {
-            const response = await fetch(slaTsUserUrl); 
+            const query = buildQueryString();
+            const response = await fetch(slaTsUserBaseUrl + query);
             const data = await response.json();
-            const tableBody = document.getElementById('ts-sla-user-table-body'); 
+            const tableBody = document.getElementById('ts-sla-user-table-body');
             tableBody.innerHTML = '';
-            if (data.kpi.length === 0) { 
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; 
-                return; 
+            if (!data.kpi || data.kpi.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; return;
             }
             data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
-                tableBody.innerHTML += `<tr><td><strong>${item.nama_programmer}</strong></td><td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td><td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td><td>${formatHours(item.avg_resolution_time)}</td><td><strong>${formatValue(item.total_tickets)}</strong></td><td><span class="badge bg-danger">H:${item.tickets_by_priority.High}</span> <span class="badge bg-warning">M:${item.tickets_by_priority.Medium}</span></td></tr>`;
+                const priority = item.tickets_by_priority || { High: 0, Medium: 0 };
+                tableBody.innerHTML += `<tr><td><strong>${item.nama_programmer}</strong></td><td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td><td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td><td>${formatHours(item.avg_resolution_time)}</td><td><strong>${formatValue(item.total_tickets)}</strong></td><td><span class="badge bg-danger">H:${priority.High}</span> <span class="badge bg-warning">M:${priority.Medium}</span></td></tr>`;
             });
         } catch (error) { console.error('Gagal SLA TS User:', error); }
     }
 
     async function loadSlaTsKritis() {
         try {
-            const response = await fetch(slaTsKritisUrl); 
+            const query = buildQueryString();
+            const response = await fetch(slaTsKritisBaseUrl + query);
             const data = await response.json();
-            const kpi = data.kpi;
-            document.getElementById('ts-kritis-sla-resolution').textContent = formatPercent(kpi.sla_resolution_compliance);
-            document.getElementById('ts-kritis-sla-response').textContent = formatPercent(kpi.sla_response_compliance);
-            document.getElementById('ts-kritis-avg-resolution').textContent = formatHours(kpi.avg_resolution_time);
-            document.getElementById('ts-kritis-total-insiden').textContent = formatValue(kpi.total_insiden);
+            const kpi = data.kpi || {};
+            document.getElementById('ts-kritis-sla-resolution').textContent = formatPercent(kpi.sla_resolution_compliance || 0);
+            document.getElementById('ts-kritis-sla-response').textContent = formatPercent(kpi.sla_response_compliance || 0);
+            document.getElementById('ts-kritis-avg-resolution').textContent = formatHours(kpi.avg_resolution_time || 0);
+            document.getElementById('ts-kritis-total-insiden').textContent = formatValue(kpi.total_insiden || 0);
 
-            const tableBody = document.getElementById('ts-sla-kritis-table-body'); 
+            const tableBody = document.getElementById('ts-sla-kritis-table-body');
             tableBody.innerHTML = '';
-            if (data.details.length === 0) { 
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada insiden kritis.</td></tr>'; 
-                return; 
+            if (!data.details || data.details.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada insiden kritis.</td></tr>'; return;
             }
             data.details.forEach(item => {
                 const badge = item.sla_resolution_met ? '<span class="badge bg-success">Met</span>' : '<span class="badge bg-danger">Breached</span>';
-                tableBody.innerHTML += `<tr><td>${item.id}</td><td>${item.laporan.substring(0, 50)}...</td><td>${badge}</td><td>${formatHours(item.actual_resolution_hours)}</td><td>${item.actual_response_hours ? formatHours(item.actual_response_hours) : '-'}</td><td>${item.responder}</td></tr>`;
+                tableBody.innerHTML += `<tr><td>${item.id}</td><td>${item.laporan ? item.laporan.substring(0, 50) : '-'}...</td><td>${badge}</td><td>${formatHours(item.actual_resolution_hours)}</td><td>${item.actual_response_hours ? formatHours(item.actual_response_hours) : '-'}</td><td>${item.responder}</td></tr>`;
             });
         } catch (error) { console.error('Gagal SLA TS Kritis:', error); }
     }
@@ -228,54 +226,53 @@ $(document).ready(function () {
         $('#event-sla-table-body').html('<tr><td colspan="6" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
 
         try {
-            const response = await fetch('/dashboard-sla/event/overall');
+            const query = buildQueryString();
+            const response = await fetch('/dashboard-sla/event/overall' + query);
             if (!response.ok) throw new Error('Network error');
 
             const data = await response.json();
-            const kpi = data.kpi;
-            const events = data.events;
+            const kpi = data.kpi || {};
+            const events = data.events || [];
 
             const getKpiClass = (val) => val >= 100 ? 'text-success' : 'text-primary';
-            const getSlaClass = (val) => val >= 90 ? 'text-success' : (val >= 80 ? 'text-warning' : 'text-danger');
 
-            $('#event-title').text(kpi.event_title);
-            $('#event-date').text(`Tahun Evaluasi: ${kpi.event_date}`);
-            $('#event-kpi-completion').text(formatPercent(kpi.completion_rate)).attr('class', `fs-2 fw-bold ${getKpiClass(kpi.completion_rate)}`);
-            
+            $('#event-title').text(kpi.event_title || 'Data Keseluruhan');
+            $('#event-date').text(`Tahun Evaluasi: ${kpi.event_date || '-'}`);
+            $('#event-kpi-completion').text(formatPercent(kpi.completion_rate || 0)).attr('class', `fs-2 fw-bold ${getKpiClass(kpi.completion_rate || 0)}`);
+
             const eventSlaComp = kpi.sla_compliance || 0;
             $('#event-kpi-compliance').text(formatPercent(eventSlaComp)).attr('class', `fs-2 fw-bold ${getSlaClass(eventSlaComp)}`);
-            
-            // Update Top Overview Card
+
             const topEventEl = document.getElementById('top-event-sla');
             if (topEventEl) {
                 topEventEl.textContent = formatPercent(eventSlaComp);
                 topEventEl.className = `fs-2 fw-bold ${getSlaClass(eventSlaComp)}`;
             }
 
-            $('#event-kpi-late').text(kpi.total_late);
-            $('#event-kpi-overdue').text(kpi.total_overdue);
+            $('#event-kpi-late').text(kpi.total_late || 0);
+            $('#event-kpi-overdue').text(kpi.total_overdue || 0);
 
             const tableBody = $('#event-sla-table-body');
             tableBody.empty();
 
-            if (!events || events.length === 0) {
-                tableBody.html('<tr><td colspan="6" class="text-center p-4">Tidak ada data event webinar ditemukan.</td></tr>');
+            if (events.length === 0) {
+                tableBody.html('<tr><td colspan="6" class="text-center p-4">Tidak ada data event webinar ditemukan pada periode ini.</td></tr>');
             } else {
                 events.forEach(event => {
                     tableBody.append(`
                         <tr>
                             <td>
-                                <strong>Bulan ${event.month_name}</strong><br>
-                                <small class="text-secondary">${event.theme}</small>
+                                <strong>Bulan ${event.month_name || '-'}</strong><br>
+                                <small class="text-secondary">${event.theme || '-'}</small>
                             </td>
                             <td>
-                                <strong>${event.event_title}</strong><br>
-                                <small class="text-muted font-monospace">${event.planned_date}</small>
+                                <strong>${event.event_title || '-'}</strong><br>
+                                <small class="text-muted font-monospace">${event.planned_date || '-'}</small>
                             </td>
-                            <td class="text-center fw-bold text-primary">${formatPercent(event.completion_rate)}</td>
-                            <td class="text-center fw-bold ${getSlaClass(event.sla_compliance)}">${formatPercent(event.sla_compliance)}</td>
-                            <td class="text-center text-warning fw-bold">${event.total_late}</td>
-                            <td class="text-center text-danger fw-bold">${event.total_overdue}</td>
+                            <td class="text-center fw-bold text-primary">${formatPercent(event.completion_rate || 0)}</td>
+                            <td class="text-center fw-bold ${getSlaClass(event.sla_compliance || 0)}">${formatPercent(event.sla_compliance || 0)}</td>
+                            <td class="text-center text-warning fw-bold">${event.total_late || 0}</td>
+                            <td class="text-center text-danger fw-bold">${event.total_overdue || 0}</td>
                         </tr>
                     `);
                 });
@@ -294,7 +291,7 @@ $(document).ready(function () {
         console.log('🚀 [SLA Digital] Memuat data');
 
         const $container = $('#sla-digital-container');
-        const baseUrl = $container.data('url') || '/dashboard-digital';
+        const baseUrl = $container.data('url') || '/dashboard-sla/digital';
 
         $('#digital_sla_period').text('Memuat periode data...');
         $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg').text('...');
@@ -302,14 +299,23 @@ $(document).ready(function () {
         $('#digital-weekly-table-body').html('<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
 
         try {
-            const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            let startDate, endDate;
+            const currentYear = $('#globalTahunFilter').val() ? parseInt($('#globalTahunFilter').val()) : new Date().getFullYear();
+            const selectedMonth = $('#globalBulanFilter').val();
+
+            if (selectedMonth && selectedMonth !== 'all') {
+                const monthIndex = parseInt(selectedMonth) - 1;
+                startDate = new Date(currentYear, monthIndex, 1).toISOString().split('T')[0];
+                endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
+            } else {
+                startDate = new Date(currentYear, 0, 1).toISOString().split('T')[0];
+                endDate = new Date(currentYear, 11, 31).toISOString().split('T')[0];
+            }
 
             const response = await $.ajax({
                 url: baseUrl,
                 method: 'GET',
-                data: { start_date: startOfMonth, end_date: endOfMonth },
+                data: { start_date: startDate, end_date: endDate },
                 dataType: 'json',
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 timeout: 15000
@@ -341,8 +347,7 @@ $(document).ready(function () {
             const totalWeeks = parseInt(kpi.total_weeks_evaluated) || 0;
 
             $('#digital-content-sla').text(`${contentComp.toFixed(1)}%`).attr('class', `fs-1 fw-bold ${getSlaClass(contentComp)}`);
-            
-            // Update Top Overview Card
+
             const topDigitalEl = document.getElementById('top-digital-sla');
             if (topDigitalEl) {
                 topDigitalEl.textContent = formatPercent(contentComp);
@@ -392,21 +397,32 @@ $(document).ready(function () {
     }
 
     // =======================================================================
-    // 6. INITIAL LOAD ON DOCUMENT READY
+    // 6. INITIAL LOAD & EVENT BINDING
     // =======================================================================
-    // A. SLA Programmer
-    loadSlaTim();
-    loadSlaUser();
-    loadSlaKritis();
 
-    // B. SLA Technical Support
-    loadSlaTsTim();
-    loadSlaTsUser();
-    loadSlaTsKritis();
+    // Bind Filter Events
+    $('#globalTahunFilter, #globalBulanFilter').on('change', function () {
+        loadAllData();
+    });
 
-    // C. SLA Digital
-    loadSlaDigital();
+    function loadAllData() {
+        // A. SLA Programmer
+        loadSlaTim();
+        loadSlaUser();
+        loadSlaKritis();
 
-    // D. SLA Webinar (Event)
-    loadSlaEvent();
+        // B. SLA Technical Support
+        loadSlaTsTim();
+        loadSlaTsUser();
+        loadSlaTsKritis();
+
+        // C. SLA Digital
+        loadSlaDigital();
+
+        // D. SLA Webinar (Event)
+        loadSlaEvent();
+    }
+
+    // Initial Execute
+    loadAllData();
 });
