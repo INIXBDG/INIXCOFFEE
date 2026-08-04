@@ -171,7 +171,7 @@ class AktivitasController extends Controller
             $totalFiltered = $query->count();
             $total = $query->sum('total');
 
-            $data = $query->orderBy('waktu_aktivitas', 'desc')
+            $data = $query->orderBy('id', 'desc')
                 ->orderBy($orderColumn, $orderDirection)
                 ->offset($start)
                 ->limit($length)
