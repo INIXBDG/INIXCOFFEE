@@ -4,14 +4,14 @@
 @php
     $jabatan = strtolower(optional(auth()->user())->jabatan ?? '');
     $editableJabatans = ['Education Manager', 'GM', 'SPV Sales', 'Office Manager', 'Koordinator Office', 'HRD', 'Koordinator ITSM'];
-    $isEditable = in_array(auth()->user()->jabatan, $editableJabatans);
+    $isEditable = in_array($jabatan, array_map('strtolower', $editableJabatans));
 @endphp
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body" id="card">
-                <a href="/lembur" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
+                <a href="{{ route('lembur.index') }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
                 <h5 class="card-title text-center mb-4">{{ __('Perintah Lembur') }}</h5>
                     <form method="POST" action="{{ route('lembur.updateKaryawan', $data->id) }}" enctype="multipart/form-data">
                         @csrf
