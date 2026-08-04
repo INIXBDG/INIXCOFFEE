@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Exports\TunjanganExport;
 use App\Models\AdministrasiKaryawan;
+use App\Models\LogGaji;
 use Maatwebsite\Excel\Facades\Excel;
 
 class TunjanganController extends Controller
@@ -98,6 +99,7 @@ class TunjanganController extends Controller
         ]);
     }
 
+
     public function getTunjanganSaya($id, $month, $year)
     {
         if ($month == 1) {
@@ -108,21 +110,35 @@ class TunjanganController extends Controller
             $tahun = $year;
         }
 
-        // Hanya ambil tunjangan yang sudah di-approve
         $tunjangan = TunjanganKaryawan::where('id_karyawan', $id)
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
-          //  ->approved() // Gunakan scope approved
             ->with('karyawan', 'jenistunjangan')
             ->get();
 
-        $gaji = Karyawan::findOrFail($id)->gaji;
+        // Cek apakah periode yang di-query adalah periode berjalan (bulan & tahun sekarang)
+        $isPeriodeBerjalan = ($bulan == (int) date('n')) && ($tahun == (int) date('Y'));
+
+        if ($isPeriodeBerjalan) {
+            $karyawan = Karyawan::findOrFail($id);
+            $gaji = $karyawan->gaji;
+            $tunjanganJabatan = $karyawan->tunjangan_jabatan ?? 0;
+        } else {
+            $logGaji = LogGaji::where('id_karyawan', $id)
+                ->where('bulan', $bulan)
+                ->where('tahun', $tahun)
+                ->orderByDesc('created_at')
+                ->first();
+
+            $gaji = $logGaji ? $logGaji->gaji : 0;
+            $tunjanganJabatan = $logGaji ? $logGaji->tunjangan_jabatan : 0;
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'List Tunjangan Saya pada bulan ' . $bulan . '-' . $tahun,
             'data' => $tunjangan,
-            'gaji' => $gaji
+            'gaji' => $gaji,
         ]);
     }
 
