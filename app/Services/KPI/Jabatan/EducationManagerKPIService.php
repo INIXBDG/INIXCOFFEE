@@ -23,14 +23,12 @@ class EducationManagerKPIService
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
-
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
-
             return 0;
         }
 
@@ -561,8 +559,6 @@ class EducationManagerKPIService
         }
 
         $totalKemungkinan = $totalHariKerja * $instrukturs->count();
-
-        // dd($totalAktif);
 
         if ($totalKemungkinan == 0) {
             return 0;

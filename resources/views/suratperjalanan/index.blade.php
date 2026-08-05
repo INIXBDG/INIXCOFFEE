@@ -388,9 +388,10 @@
 
                     // Definisi global untuk aksi upload atau melihat bukti transfer bagi semua pengguna
                     var uploadBuktiActions = "";
-                    if (allApproved && !hasBuktiTransfer) {
-                        uploadBuktiActions += '<button type="button" class="dropdown-item text-primary" onclick="openUploadBuktiModal(' + row.id + ')"><i class="bi bi-upload"></i> Upload Bukti Transfer</button>';
-                    } else if (hasBuktiTransfer) {
+                    if (allApproved) {
+                        const actionText = hasBuktiTransfer ? 'Reupload Bukti Transfer' : 'Upload Bukti Transfer';
+
+                        uploadBuktiActions += '<button type="button" class="dropdown-item text-primary" onclick="openUploadBuktiModal(' + row.id + ')"><i class="bi bi-upload"></i> ' + actionText + ' </button>';
                         uploadBuktiActions += '<a class="dropdown-item text-success" href="{{ url("storage") }}/' + data.bukti_transfer + '" target="_blank"><i class="bi bi-eye"></i> Lihat Bukti Transfer</a>';
                     }
 

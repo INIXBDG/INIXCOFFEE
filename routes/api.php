@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\MoodleApiController;
-use App\Http\Controllers\Office\pickupDriverController;
+use App\Http\Controllers\Api\PickupDriverWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,7 +50,7 @@ Route::get('registrasi/list/{id_peserta}', [App\Http\Controllers\Api\PesertaCont
 Route::get('getRKMSouvenir', [App\Http\Controllers\Api\RKMController::class, 'getRKMSouvenir'])->name('getRKMSouvenir');
 Route::get('getFeedbacks', [App\Http\Controllers\Api\apiController::class, 'getFeedbacks'])->name('getFeedbacks');
 Route::get('getMateri', [App\Http\Controllers\Api\apiController::class, 'getMateri'])->name('getMateri');
-Route::get('getPerusahaanall', [App\Http\Controllers\Api\apiController::class, 'getPerusahaanall'])->name('getPerusahaanall');
+// Route::get('getPerusahaanall', [App\Http\Controllers\Api\apiController::class, 'getPerusahaanall'])->name('getPerusahaanall');
 Route::get('getUserall', [App\Http\Controllers\Api\apiController::class, 'getUserall'])->name('getUserall');
 Route::get('getUserProject', [App\Http\Controllers\Api\apiController::class, 'getUserProject'])->name('getUserProject');
 Route::get('getJabatan', [App\Http\Controllers\Api\apiController::class, 'getJabatan'])->name('getJabatan');
@@ -82,15 +82,12 @@ Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiM
 
 Route::get('/moodle-grades-sharingknowledge', [MoodleApiController::class, 'fetchGradesSharingKnowledge']);
 
-// webhook untuk update pickupDriver
-Route::prefix('pickup-driver')->group(function () {
-    Route::post('action/terima', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
-    // Route::post('action/selesaikan', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])->name('action.selesaikan');
-});
-
 // update koordinasi ob
 Route::post('/koordinasi-ob/updateFromTelegram', [KoordinasiOfficeBoyController::class, 'updateFromTelegram']);
 Route::post('/koordinasi-ob/webhook', [KoordinasiOfficeBoyController::class, 'webhook'])->name('koordinasi-ob.webhook');
 
-Route::post('/new-pickup-driver-notification', [PickupDriverController::class, 'requestHandler']);
-Route::post('/pickup-driver/webhook', [PickupDriverController::class, 'webhook']);
+Route::prefix('pickup-driver')->group(function () {
+    Route::post('webhook', [PickupDriverWebhookController::class, 'handle']);
+    Route::post('action/terima', [PickupDriverWebhookController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
+});
+Route::post('/new-pickup-driver-notification', [PickupDriverWebhookController::class, 'requestHandler']);

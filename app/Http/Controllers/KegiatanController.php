@@ -25,6 +25,7 @@ use App\Notifications\KoordinasiDriverNotifcation;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Mockery\Expectation;
 use App\Models\PembelianHr;
+use Illuminate\Support\Facades\DB;
 
 class KegiatanController extends Controller
 {
@@ -342,105 +343,137 @@ class KegiatanController extends Controller
             'lama_kegiatan' => 'nullable|max:100',
             'pic' => 'nullable|string|max:255',
             'status' => 'nullable|in:Diajukan,Menunggu,Approved,Pencairan,Selesai',
+
+            'id_driver' => 'nullable|exists:karyawan,id',
+            'budget' => 'nullable|numeric',
+            'lokasi' => 'nullable|string|max:255',
         ]);
 
-        $kegiatan = new Kegiatan();
-        $kegiatan->nama_kegiatan = $validated['nama_kegiatan'];
-        $kegiatan->tipe = $validated['tipe'];
-        $kegiatan->waktu_kegiatan = $validated['waktu_kegiatan'];
-        $kegiatan->lama_kegiatan = $validated['lama_kegiatan'];
-        $kegiatan->pic = $validated['pic'] ?? null;
-        $kegiatan->status = $validated['status'] ?? 'Diajukan';
+        DB::beginTransaction();
 
-        $kegiatan->save();
+        try {
+            $kegiatan = new Kegiatan();
+            $kegiatan->nama_kegiatan = $validated['nama_kegiatan'];
+            $kegiatan->tipe = $validated['tipe'];
+            $kegiatan->waktu_kegiatan = $validated['waktu_kegiatan'] ?? null;
+            $kegiatan->lama_kegiatan = $validated['lama_kegiatan'] ?? null;
+            $kegiatan->pic = $validated['pic'] ?? null;
+            $kegiatan->status = $validated['status'] ?? 'Diajukan';
+            $kegiatan->save();
 
-        if ($kegiatan->tipe === 'kegiatan' && $request->id_driver != null) {
-            $pickupDriver = new pickupDriver();
-            $pickupDriver->id_karyawan = $request->id_driver ?? null;
-            $pickupDriver->id_pembuat = Auth()->user()->id ?? null;
-            $pickupDriver->status_apply = 0;
-            $pickupDriver->budget = $request->budget ?? null;
-            $pickupDriver->save();
+            if ($kegiatan->tipe === 'kegiatan' && $request->filled('id_driver')) {
+                $pickupDriver = new pickupDriver();
+                $pickupDriver->id_karyawan = $request->input('id_driver');
+                $pickupDriver->id_pembuat = auth()->id();
+                $pickupDriver->status_apply = 0;
+                $pickupDriver->budget = $request->input('budget');
+                $pickupDriver->save();
 
-            if ($pickupDriver->id_karyawan != null) {
-                $detailPickupDriver = new DetailPickupDriver();
-                $detailPickupDriver->pickup_driver_id = $pickupDriver->id;
-                $detailPickupDriver->tipe = 'Pengantaran';
-                $detailPickupDriver->lokasi = $request->lokasi;
+                if ($pickupDriver->id_karyawan) {
+                    $waktuKegiatan = filled($validated['waktu_kegiatan'] ?? null)
+                        ? Carbon::parse($validated['waktu_kegiatan'])
+                        : now();
 
-                $waktuKegiatan = Carbon::parse($validated['waktu_kegiatan']);
-                $waktuBerangkat = $waktuKegiatan->copy()->subHour();
+                    $waktuBerangkat = $waktuKegiatan->copy()->subHour();
 
-                $detailPickupDriver->tanggal_keberangkatan = $waktuBerangkat->format('Y-m-d');
-                $detailPickupDriver->waktu_keberangkatan = $waktuBerangkat->format('H:i:s');
-                $detailPickupDriver->detail = '-';
-                $detailPickupDriver->save();
+                    $detailPickupDriver = new DetailPickupDriver();
+                    $detailPickupDriver->pickup_driver_id = $pickupDriver->id;
+                    $detailPickupDriver->tipe = 'Pengantaran';
+                    $detailPickupDriver->lokasi = $request->input('lokasi') ?: '-';
+                    $detailPickupDriver->tanggal_keberangkatan = $waktuBerangkat->format('Y-m-d');
+                    $detailPickupDriver->waktu_keberangkatan = $waktuBerangkat->format('H:i:s');
+                    $detailPickupDriver->detail = '-';
+                    $detailPickupDriver->save();
+
+                    $trackingPickupDriver = new TrackingPickupDriver();
+                    $trackingPickupDriver->pickup_driver_id = $pickupDriver->id;
+                    $trackingPickupDriver->status = (auth()->user()->username ?? 'User') . ' telah membuat koordinasi baru';
+                    $trackingPickupDriver->diubah_oleh = auth()->id();
+                    $trackingPickupDriver->save();
+
+                    $creatorJabatan = optional(auth()->user()->karyawan)->jabatan;
+
+                    $driver = karyawan::findOrFail($pickupDriver->id_karyawan);
+
+                    $recipients = [];
+
+                    if ($creatorJabatan == 'HRD') {
+                        $CS = karyawan::where('jabatan', 'Customer Care')->first();
+
+                        if ($CS) {
+                            $recipients[] = $CS->kode_karyawan;
+                        }
+
+                        $recipients[] = $driver->kode_karyawan;
+                    } elseif ($creatorJabatan == 'Customer Care') {
+                        $HRD = karyawan::where('jabatan', 'HRD')->first();
+
+                        if ($HRD) {
+                            $recipients[] = $HRD->kode_karyawan;
+                        }
+
+                        $recipients[] = $driver->kode_karyawan;
+                    }
+
+                    $recipients = array_values(array_unique(array_filter($recipients)));
+
+                    if (!empty($recipients)) {
+                        $users = User::whereHas('karyawan', function ($query) use ($recipients) {
+                            $query->whereIn('kode_karyawan', $recipients);
+                        })->get();
+
+                        $data = [
+                            'id_karyawan' => $pickupDriver->id_karyawan,
+                            'tipe' => $detailPickupDriver->tipe,
+                            'tanggal_pembuatan' => now(),
+                            'id_pengajuan' => $pickupDriver->id,
+                        ];
+
+                        $type = 'Koordinasi Driver';
+                        $path = '/office/pickup-driver/index';
+
+                        foreach ($users as $user) {
+                            Notification::send(
+                                $user,
+                                new KoordinasiDriverNotifcation(
+                                    $data,
+                                    $path,
+                                    $type,
+                                    $user->id
+                                )
+                            );
+                        }
+                    }
+                }
             }
 
-            if ($pickupDriver->id_karyawan != null) {
-                $trackingPickupDriver = new TrackingPickupDriver();
-                $trackingPickupDriver->pickup_driver_id = $pickupDriver->id;
-                $trackingPickupDriver->status = auth()->user()->username . ' telah membuat koordinasi baru';
-                $trackingPickupDriver->diubah_oleh = auth()->user()->id;
-                $trackingPickupDriver->save();
+            $penerima = User::where('jabatan', 'GM')->where('status_akun', '1')->first();
 
-                $creator = auth()->user();
-                $creatorKaryawan = $creator->karyawan;
-                $creatorJabatan = $creatorKaryawan->jabatan;
-
-                $driver = karyawan::findOrFail($request->id_driver);
-
-                $recipients = [];
-
-                if ($creatorJabatan == 'HRD') {
-                    $CS = karyawan::where('jabatan', 'Customer Care')->first();
-                    if ($CS) {
-                        $recipients[] = $CS->kode_karyawan;
-                    }
-                    $recipients[] = $driver->kode_karyawan;
-                } elseif ($creatorJabatan == 'Customer Care') {
-                    $HRD = karyawan::where('jabatan', 'HRD')->first();
-                    if ($HRD) {
-                        $recipients[] = $HRD->kode_karyawan;
-                    }
-                    $recipients[] = $driver->kode_karyawan;
-                }
-
-                $users = User::whereHas('karyawan', function ($query) use ($recipients) {
-                    $query->whereIn('kode_karyawan', $recipients);
-                })->get();
-
+            if ($penerima) {
                 $data = [
-                    'id_karyawan' => $request->id_driver,
-                    'tipe' => $detailPickupDriver->tipe,
-                    'tanggal_pembuatan' => now(),
-                    'id_pengajuan' => $pickupDriver->id,
+                    'nama_kegiatan' => $kegiatan->nama_kegiatan,
+                    'tipe' => $kegiatan->tipe,
+                    'waktu_kegiatan' => $kegiatan->waktu_kegiatan,
+                    'lama_kegiatan' => $kegiatan->lama_kegiatan,
+                    'pic' => $kegiatan->pic,
                 ];
-                $type = 'Koordinasi Driver';
-                $path = '/office/pickup-driver/index';
 
-                foreach ($users as $user) {
-                    $receiverId = $user->id;
-                    NotificationFacade::send($user, new KoordinasiDriverNotifcation($data, $path, $type, $receiverId));
-                }
+                $path = '/office/kegiatan/show/' . $kegiatan->id;
+                $type = 'Kegiatan Terbuat';
+
+                Notification::send($penerima, new KegiatanNotification($data, $path, $type));
             }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Kegiatan berhasil disimpan');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Kegiatan gagal disimpan. Silakan periksa kembali data.');
         }
-
-        $penerima = User::where('jabatan', 'GM')->where('status_akun', '1')->first();
-        $data = [
-            'nama_kegiatan' => $validated['nama_kegiatan'],
-            'tipe' => $validated['tipe'],
-            'waktu_kegiatan' => $validated['waktu_kegiatan'],
-            'lama_kegiatan' => $validated['lama_kegiatan'],
-            'pic' => $validated['pic'],
-        ];
-
-        $path = '/office/kegiatan/show/' . $kegiatan->id;
-        $type = 'Kegiatan Terbuat';
-
-        Notification::send($penerima, new KegiatanNotification($data, $path, $type));
-
-        return redirect()->back()->with('success', 'Kegiatan berhasil disimpan');
     }
 
     public function updateKegiatan(Request $request, $id)

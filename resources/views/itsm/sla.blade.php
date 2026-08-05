@@ -49,7 +49,7 @@
         transform: translateY(-2px);
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08) !important;
     }
-    
+
     /* Reset card override for nested cards to behave as block/column layout stretching 100% */
     .sla-section-card .card {
         display: flex !important;
@@ -61,28 +61,57 @@
         backdrop-filter: none !important;
         border: 1px solid rgba(0, 0, 0, .125) !important;
     }
-    
+
     .table-responsive {
         width: 100% !important;
     }
 </style>
 
 <div class="container-fluid py-4" style="background-image: url('/css/background inix office-02.svg'); background-size: cover; min-height: calc(100vh - 56px); overflow-y: auto;">
-    
-    <!-- Title Page -->
+
+    <!-- Title Page & Global Filters -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm" style="border-radius: 16px; background-color: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px);">
-                <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap">
-                    <div>
+                <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                    <div class="mb-3 mb-md-0">
                         <h2 class="fw-bold mb-1" style="color: #182f51;">
                             <i class="fa-solid fa-gauge-high me-2"></i>SLA Management Dashboard
                         </h2>
                         <p class="text-muted mb-0">Dashboard Monitoring Pencapaian Seluruh SLA Layanan IT (ITSM)</p>
                     </div>
-                    <div class="my-2">
-                        <a href="{{ url('/home') }}" class="btn btn-outline-primary rounded-pill px-4">
-                            <i class="fa-solid fa-arrow-left me-2"></i>Kembali ke Menu
+
+                    <!-- KONTROL FILTER GLOBAL -->
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <div class="input-group" style="width: auto;">
+                            <span class="input-group-text bg-white"><i class="bi bi-calendar-check text-primary"></i></span>
+                            <select id="globalTahunFilter" class="form-select fw-bold">
+                                @php $currentYear = date('Y'); @endphp
+                                @for($y = $currentYear; $y >= ($currentYear - 3); $y--)
+                                    <option value="{{ $y }}">{{ $y }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div class="input-group" style="width: auto;">
+                            <span class="input-group-text bg-white"><i class="bi bi-calendar-month text-primary"></i></span>
+                            <select id="globalBulanFilter" class="form-select fw-bold">
+                                <option value="all">Semua Bulan</option>
+                                <option value="1" {{ date('n') == 1 ? 'selected' : '' }}>Januari</option>
+                                <option value="2" {{ date('n') == 2 ? 'selected' : '' }}>Februari</option>
+                                <option value="3" {{ date('n') == 3 ? 'selected' : '' }}>Maret</option>
+                                <option value="4" {{ date('n') == 4 ? 'selected' : '' }}>April</option>
+                                <option value="5" {{ date('n') == 5 ? 'selected' : '' }}>Mei</option>
+                                <option value="6" {{ date('n') == 6 ? 'selected' : '' }}>Juni</option>
+                                <option value="7" {{ date('n') == 7 ? 'selected' : '' }}>Juli</option>
+                                <option value="8" {{ date('n') == 8 ? 'selected' : '' }}>Agustus</option>
+                                <option value="9" {{ date('n') == 9 ? 'selected' : '' }}>September</option>
+                                <option value="10" {{ date('n') == 10 ? 'selected' : '' }}>Oktober</option>
+                                <option value="11" {{ date('n') == 11 ? 'selected' : '' }}>November</option>
+                                <option value="12" {{ date('n') == 12 ? 'selected' : '' }}>Desember</option>
+                            </select>
+                        </div>
+                        <a href="{{ url('/home') }}" class="btn btn-outline-primary rounded-pill px-4 ms-md-2">
+                            <i class="fa-solid fa-arrow-left me-2"></i>Menu
                         </a>
                     </div>
                 </div>
@@ -125,7 +154,7 @@
     <!-- Details Sections Grid/Stack -->
     <div class="row">
         <div class="col-12">
-            
+
             <!-- SECTION 1: SLA PROGRAMMER -->
             <div class="card sla-section-card shadow-sm">
                 <div class="sla-section-header">
@@ -501,7 +530,7 @@
                     <i class="fa-solid fa-bullhorn me-2"></i>IV. SLA Digital
                 </div>
                 <div class="card-body p-4" id="sla-digital-container"
-                    data-url="{{ \Illuminate\Support\Facades\Route::has('dashboard.digital') ? route('dashboard.digital') : url('/dashboard/digital') }}">
+                    data-url="{{ \Illuminate\Support\Facades\Route::has('dashboard.digital') ? route('dashboard.digital') : url('dashboard-sla/digital') }}">
                     <div class="row mb-3">
                         <div class="col-md-12">
                             <div class="alert alert-info mb-0" role="alert">

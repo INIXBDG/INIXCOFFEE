@@ -13,7 +13,7 @@ class KontrolTugas extends Model
 
     public function KategoriDaftarTugas()
     {
-        return $this->hasOne(KategoriDaftarTugas::class, 'id', 'id_DaftarTugas');
+        return $this->belongsTo(KategoriDaftarTugas::class, 'id_DaftarTugas', 'id');
     }
 
     public function karyawan()

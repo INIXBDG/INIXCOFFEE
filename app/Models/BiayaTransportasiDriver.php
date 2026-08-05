@@ -9,7 +9,7 @@ class BiayaTransportasiDriver extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_karyawan', 'id_pengajuan_barang', 'tipe', 'harga', 'bukti', 'keterangan', 'id_pickup_driver'];
+    protected $fillable = ['id_karyawan', 'id_pengajuan_barang', 'tipe', 'harga', 'bukti', 'keterangan', 'id_pickup_driver', 'id_pengajuan_spj'];
 
     public function PengajuanBarang()
     {
@@ -24,5 +24,10 @@ class BiayaTransportasiDriver extends Model
     public function pickupDriver()
     {
         return $this->belongsTo(pickupDriver::class, 'id_pickup_driver');
+    }
+
+    public function SPJ()
+    {
+        return $this->belongsTo(SuratPerjalanan::class, 'id_pengajuan_spj');
     }
 }

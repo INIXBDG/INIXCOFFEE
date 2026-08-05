@@ -14,9 +14,14 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\DaftarTugasImport;
 use App\Models\AbsensiKaryawan;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use App\Notifications\ShiftConfirmationNotification;
+use App\Traits\ShiftGenerator;
 
 class DaftarTugasController extends Controller
 {
+    use ShiftGenerator;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -55,14 +60,7 @@ class DaftarTugasController extends Controller
             'tugas' => 'required|string|max:255',
             'Tipe' => 'required|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
             'tipe_turunan' => 'nullable',
-            'jabatan_pembuat' => 'required_if',
         ]);
-
-        $id_user = Karyawan::where('jabatan', $validated['jabatan_pembuat'])->first()?->id;
-
-        if (!$id_user) {
-            return response()->json(['success' => false, 'message' => 'Karyawan tidak ditemukan'], 422);
-        }
 
         $tipe_turunan = $validated['tipe_turunan'];
 
@@ -88,7 +86,7 @@ class DaftarTugasController extends Controller
         $maxUrutan = KategoriDaftarTugas::max('urutan') ?? 0;
 
         $kategori = KategoriDaftarTugas::create([
-            'id_user' => $id_user,
+            'id_user' => null,
             'Tipe' => $validated['Tipe'],
             'tipe_turunan' => $tipe_turunan,
             'judul_kategori' => $validated['tugas'],
@@ -96,11 +94,14 @@ class DaftarTugasController extends Controller
             'urutan' => $maxUrutan + 1,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kategori berhasil ditambahkan',
-            'data' => $kategori,
-        ], 201);
+        return response()->json(
+            [
+                'success' => true,
+                'message' => 'Kategori berhasil ditambahkan',
+                'data' => $kategori,
+            ],
+            201,
+        );
     }
 
     public function reorderKategori(Request $request)
@@ -115,7 +116,9 @@ class DaftarTugasController extends Controller
 
         foreach ($request->ids as $index => $id) {
             $kategori = KategoriDaftarTugas::find($id);
-            if (!$kategori) continue;
+            if (!$kategori) {
+                continue;
+            }
             $kategori->update(['urutan' => $index + 1]);
             $updated++;
         }
@@ -135,7 +138,9 @@ class DaftarTugasController extends Controller
 
         foreach ($request->ids as $index => $id) {
             $tugas = KontrolTugas::find($id);
-            if (!$tugas) continue;
+            if (!$tugas) {
+                continue;
+            }
             $tugas->update(['urutan' => $index + 1]);
             $updated++;
         }
@@ -263,9 +268,7 @@ class DaftarTugasController extends Controller
 
     private function tentukanShiftHariIni($karyawanId, $today)
     {
-        $absensiHariIni = AbsensiKaryawan::where('id_karyawan', $karyawanId)
-            ->where('tanggal', $today)
-            ->first();
+        $absensiHariIni = AbsensiKaryawan::where('id_karyawan', $karyawanId)->where('tanggal', $today)->first();
 
         if ($absensiHariIni && !empty($absensiHariIni->shift)) {
             return $absensiHariIni->shift == 1 ? 'Shift 1' : 'Shift 2';
@@ -382,10 +385,13 @@ class DaftarTugasController extends Controller
         $user = auth()->user();
 
         if ($user->jabatan !== 'Office Boy') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Hanya Office Boy yang bisa mengaktifkan tugas untuk dirinya sendiri.',
-            ], 403);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Hanya Office Boy yang bisa mengaktifkan tugas untuk dirinya sendiri.',
+                ],
+                403,
+            );
         }
 
         $kategoriIds = $request->kategori_ids;
@@ -542,10 +548,13 @@ class DaftarTugasController extends Controller
 
         if ($request->hasFile('bukti_after')) {
             if (empty($buktiData['before'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Foto Before wajib diupload terlebih dahulu sebelum mengupload Foto After',
-                ], 422);
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => 'Foto Before wajib diupload terlebih dahulu sebelum mengupload Foto After',
+                    ],
+                    422,
+                );
             }
             if ($buktiData['after'] && Storage::disk('public')->exists($buktiData['after'])) {
                 Storage::disk('public')->delete($buktiData['after']);
@@ -645,6 +654,66 @@ class DaftarTugasController extends Controller
         ]);
 
         return response()->json(['success' => true, 'message' => 'Kategori berhasil diperbarui']);
+    }
+
+    public function getPendingShift()
+    {
+        $karyawan = auth()->user()->karyawan;
+
+        if (!$karyawan) return response()->json(['pending' => false]);
+
+        $notification = $karyawan->unreadNotifications()
+            ->where('type', ShiftConfirmationNotification::class)
+            ->latest('created_at')
+            ->first();
+
+        if (!$notification) return response()->json(['pending' => false]);
+
+        return response()->json([
+            'pending'         => true,
+            'notification_id' => $notification->id,
+            'shift'           => $notification->data['shift'],
+            'date'            => $notification->data['date'],
+            'message'         => $notification->data['message'] ?? 'Apakah Anda setuju mengambil shift ini?',
+        ]);
+    }
+
+    public function approveShift(Request $request)
+    {
+        $request->validate([
+            'notification_id' => 'required|string',
+            'shift' => 'required|in:1,2',
+            'date'  => 'required|date',
+        ]);
+
+        $karyawan  = auth()->user()->karyawan;
+        $shiftName = 'Shift ' . $request->shift;
+
+        $taken = KontrolTugas::whereDate('Deadline_Date', $request->date)
+            ->whereHas('KategoriDaftarTugas', fn($q) => $q->where('tipe_turunan', $shiftName))
+            ->where('id_karyawan', '!=', $karyawan->id)
+            ->exists();
+
+        if ($taken) {
+            $karyawan->notifications()->where('id', $request->notification_id)->delete();
+            return response()->json(['success' => false, 'message' => "Maaf, {$shiftName} sudah diambil rekan lain."], 422);
+        }
+
+        $this->generateTasksForShift($karyawan->id, $shiftName, $request->date);
+
+        $karyawan->notifications()->where('id', $request->notification_id)->delete();
+
+        return response()->json(['success' => true, 'message' => "{$shiftName} berhasil diambil!"]);
+    }
+
+    public function rejectShift(Request $request)
+    {
+        auth()->user()->karyawan
+            ->notifications()
+            ->where('id', $request->notification_id)
+            ->delete();
+
+        return response()->json(['success' => true]);
     }
 
     public function bulkUpdateTipeTurunan(Request $request)
@@ -831,16 +900,22 @@ class DaftarTugasController extends Controller
             foreach ($failures as $failure) {
                 $errors[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
             }
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => array_slice($errors, 0, 10),
-            ], 422);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => array_slice($errors, 0, 10),
+                ],
+                422,
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Import gagal: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Import gagal: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
@@ -863,14 +938,30 @@ class DaftarTugasController extends Controller
     public function perbaikanData()
     {
         $officeBoy = Karyawan::where('jabatan', 'Office Boy')->select('id', 'nama_lengkap')->get();
-        $kategori = KategoriDaftarTugas::select('id', 'judul_kategori', 'Tipe', 'tipe_turunan')
-            ->orderBy('Tipe')->orderBy('judul_kategori')->get();
+        $kategori = KategoriDaftarTugas::select('id', 'judul_kategori', 'Tipe', 'tipe_turunan')->orderBy('Tipe')->orderBy('judul_kategori')->get();
 
         return view('office.daftarTugas.perbaikanData', compact('officeBoy', 'kategori'));
     }
 
     public function getForPerbaikan(Request $request)
     {
+        $hasFilter = $request->filled('start_date') 
+                || $request->filled('end_date')
+                || ($request->filled('tipe') && $request->tipe !== 'all')
+                || ($request->filled('kategori') && $request->kategori !== 'all')
+                || ($request->filled('karyawan') && $request->karyawan !== 'all');
+
+        if (!$hasFilter) {
+            return response()->json([
+                'data' => [],
+                'requires_filter' => true,
+                'message' => 'Silakan isi minimal satu filter (tanggal/tipe/kategori/OB) untuk memuat data.',
+            ]);
+        }
+
+        $perPage = min((int) $request->get('per_page', 50), 200);
+        $page    = max((int) $request->get('page', 1), 1);
+
         $query = KontrolTugas::with(['kategoriDaftarTugas', 'karyawan']);
 
         if ($request->filled('start_date')) {
@@ -886,144 +977,246 @@ class DaftarTugasController extends Controller
             $query->where('id_DaftarTugas', $request->kategori);
         }
         if ($request->filled('karyawan') && $request->karyawan !== 'all') {
-            $request->karyawan === 'null'
-                ? $query->whereNull('id_karyawan')
+            $request->karyawan === 'null' 
+                ? $query->whereNull('id_karyawan') 
                 : $query->where('id_karyawan', $request->karyawan);
         }
 
-        $data = $query->orderBy('Deadline_Date')->orderBy('urutan')->orderBy('id')->get();
+        $data = $query->orderBy('Deadline_Date')
+                    ->orderBy('urutan')
+                    ->orderBy('id', 'desc')
+                    ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json(['data' => $data]);
+        return response()->json([
+            'data' => $data->items(),
+            'pagination' => [
+                'total'        => $data->total(),
+                'per_page'     => $data->perPage(),
+                'current_page' => $data->currentPage(),
+                'last_page'    => $data->lastPage(),
+                'has_more'     => $data->hasMorePages(),
+            ],
+            'requires_filter' => false,
+        ]);
     }
 
-public function updatePerbaikan(Request $request)
-{
-    $validated = $request->validate([
-        'id' => 'required|exists:kontrol_tugas,id',
-        'deadline_date' => 'nullable|date',
-        'id_karyawan' => 'nullable|exists:karyawans,id',
-        'tipe' => 'nullable|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
-        'tipe_turunan' => 'nullable|string|max:255',
-    ]);
+    public function confirmShift(Request $request)
+    {
+        $request->validate([
+            'shift' => 'required|in:1,2',
+            'date' => 'required|date',
+        ]);
 
-    $tugas = KontrolTugas::findOrFail($validated['id']);
-    $kategori = $tugas->kategoriDaftarTugas;
+        $user = auth()->user();
+        $karyawan = $user->karyawan;
+        $shiftName = 'Shift ' . $request->shift;
+        $date = $request->date;
 
-    $updateTugas = [];
-    if ($request->filled('deadline_date')) $updateTugas['Deadline_Date'] = $validated['deadline_date'];
-    if ($request->filled('id_karyawan')) $updateTugas['id_karyawan'] = $validated['id_karyawan'];
+        $shiftTaken = KontrolTugas::whereDate('Deadline_Date', $date)
+            ->whereHas('KategoriDaftarTugas', fn($q) => $q->where('tipe_turunan', $shiftName))
+            ->exists();
 
-    $updateKategori = [];
-    if ($request->filled('tipe')) $updateKategori['Tipe'] = $validated['tipe'];
-    if ($request->has('tipe_turunan')) $updateKategori['tipe_turunan'] = $validated['tipe_turunan'];
+        if ($shiftTaken) {
+            return response()->json(['success' => false, 'message' => "Maaf, {$shiftName} sudah diambil oleh karyawan lain."], 422);
+        }
 
-    if (empty($updateTugas) && empty($updateKategori)) {
-        return response()->json(['success' => false, 'message' => 'Tidak ada perubahan yang dikirim'], 422);
+        $userHasShift = KontrolTugas::where('id_karyawan', $karyawan->id)
+            ->whereDate('Deadline_Date', $date)
+            ->whereHas('KategoriDaftarTugas', fn($q) => $q->where('Tipe', 'Harian'))
+            ->exists();
+
+        if ($userHasShift) {
+            return response()->json(['success' => false, 'message' => "Anda sudah memiliki tugas shift hari ini."], 422);
+        }
+
+        $this->generateTasksForShift($karyawan->id, $shiftName, $date);
+
+        $user->unreadNotifications->where('type', 'App\Notifications\ShiftConfirmationNotification')->markAsRead();
+
+        return response()->json(['success' => true, 'message' => "{$shiftName} berhasil diambil dan tugas telah digenerate."]);
     }
 
-    if (!empty($updateTugas)) $tugas->update($updateTugas);
-    if (!empty($updateKategori)) $kategori->update($updateKategori);
+    public function updatePerbaikan(Request $request)
+    {
+        $validated = $request->validate([
+            'id' => 'required|exists:kontrol_tugas,id',
+            'deadline_date' => 'nullable|date',
+            'id_karyawan' => 'nullable|exists:karyawans,id',
+            'tipe' => 'nullable|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
+            'tipe_turunan' => 'nullable|string|max:255',
+        ]);
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Data berhasil diperbaiki',
-        'data' => $tugas->fresh(['kategoriDaftarTugas', 'karyawan']),
-    ]);
-}
-
-public function bulkUpdatePerbaikan(Request $request)
-{
-    $validated = $request->validate([
-        'ids' => 'required|array|min:1',
-        'ids.*' => 'exists:kontrol_tugas,id',
-        'deadline_date' => 'nullable|date',
-        'id_karyawan' => 'nullable|exists:karyawans,id',
-        'tipe' => 'nullable|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
-        'tipe_turunan' => 'nullable|string|max:255',
-    ]);
-
-    $updateTugas = [];
-    if ($request->filled('deadline_date')) $updateTugas['Deadline_Date'] = $validated['deadline_date'];
-    if ($request->filled('id_karyawan')) $updateTugas['id_karyawan'] = $validated['id_karyawan'];
-
-    $updateKategori = [];
-    if ($request->filled('tipe')) $updateKategori['Tipe'] = $validated['tipe'];
-    if ($request->has('tipe_turunan')) $updateKategori['tipe_turunan'] = $validated['tipe_turunan'];
-
-    if (empty($updateTugas) && empty($updateKategori)) {
-        return response()->json(['success' => false, 'message' => 'Isi minimal satu field untuk diubah'], 422);
-    }
-
-    $countTugas = 0;
-    if (!empty($updateTugas)) {
-        $countTugas = KontrolTugas::whereIn('id', $validated['ids'])->update($updateTugas);
-    }
-
-    $countKategori = 0;
-    if (!empty($updateKategori)) {
-        $kategoriIds = KontrolTugas::whereIn('id', $validated['ids'])->pluck('id_DaftarTugas')->unique();
-        $countKategori = KategoriDaftarTugas::whereIn('id', $kategoriIds)->update($updateKategori);
-    }
-
-    return response()->json([
-        'success' => true,
-        'message' => "{$countTugas} tugas dan {$countKategori} kategori berhasil diperbarui",
-    ]);
-}
-
-public function bulkSavePerbaikan(Request $request)
-{
-    $validated = $request->validate([
-        'items' => 'required|array|min:1',
-        'items.*.id' => 'required|exists:kontrol_tugas,id',
-        'items.*.deadline_date' => 'nullable|date',
-        'items.*.id_karyawan' => 'nullable|exists:karyawans,id',
-        'items.*.tipe' => 'nullable|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
-        'items.*.tipe_turunan' => 'nullable|string|max:255',
-    ]);
-
-    $updated = 0;
-    $skipped = 0;
-    $updatedCategories = [];
-
-    foreach ($validated['items'] as $item) {
-        $tugas = KontrolTugas::find($item['id']);
-        if (!$tugas) continue;
+        $tugas = KontrolTugas::findOrFail($validated['id']);
+        $kategori = $tugas->kategoriDaftarTugas;
 
         $updateTugas = [];
-        if (!empty($item['deadline_date'])) $updateTugas['Deadline_Date'] = $item['deadline_date'];
-        if (isset($item['id_karyawan']) && $item['id_karyawan'] !== '') $updateTugas['id_karyawan'] = $item['id_karyawan'];
+        if ($request->filled('deadline_date')) {
+            $updateTugas['Deadline_Date'] = $validated['deadline_date'];
+        }
+        if ($request->filled('id_karyawan')) {
+            $updateTugas['id_karyawan'] = $validated['id_karyawan'];
+        }
 
         $updateKategori = [];
-        if (!empty($item['tipe'])) $updateKategori['Tipe'] = $item['tipe'];
-        if (isset($item['tipe_turunan'])) $updateKategori['tipe_turunan'] = $item['tipe_turunan'];
+        if ($request->filled('tipe')) {
+            $updateKategori['Tipe'] = $validated['tipe'];
+        }
+        if ($request->has('tipe_turunan')) {
+            $updateKategori['tipe_turunan'] = $validated['tipe_turunan'];
+        }
 
         if (empty($updateTugas) && empty($updateKategori)) {
-            $skipped++;
-            continue;
+            return response()->json(['success' => false, 'message' => 'Tidak ada perubahan yang dikirim'], 422);
         }
 
-        if (!empty($updateTugas)) $tugas->update($updateTugas);
-        
-        if (!empty($updateKategori)) {
-            $kategori = $tugas->kategoriDaftarTugas;
-            // Mencegah update kategori yang sama berulang kali dalam 1 batch
-            if (!in_array($kategori->id, $updatedCategories)) {
-                $kategori->update($updateKategori);
-                $updatedCategories[] = $kategori->id;
-            }
+        if (!empty($updateTugas)) {
+            $tugas->update($updateTugas);
         }
-        $updated++;
+        if (!empty($updateKategori)) {
+            $kategori->update($updateKategori);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data berhasil diperbaiki',
+            'data' => $tugas->fresh(['kategoriDaftarTugas', 'karyawan']),
+        ]);
     }
 
-    $message = "{$updated} tugas berhasil diperbarui";
-    if ($skipped > 0) $message .= ", {$skipped} dilewati (tidak ada perubahan)";
+    public function bulkUpdatePerbaikan(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'exists:kontrol_tugas,id',
+            'deadline_date' => 'nullable|date',
+            'id_karyawan' => 'nullable|exists:karyawans,id',
+            'tipe' => 'nullable|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
+            'tipe_turunan' => 'nullable|string|max:255',
+        ]);
 
-    return response()->json([
-        'success' => true,
-        'message' => $message,
-        'updated' => $updated,
-        'skipped' => $skipped,
-    ]);
-}
+        $updateTugas = [];
+        if ($request->filled('deadline_date')) {
+            $updateTugas['Deadline_Date'] = $validated['deadline_date'];
+        }
+        if ($request->filled('id_karyawan')) {
+            $updateTugas['id_karyawan'] = $validated['id_karyawan'];
+        }
+
+        $updateKategori = [];
+        if ($request->filled('tipe')) {
+            $updateKategori['Tipe'] = $validated['tipe'];
+        }
+        if ($request->has('tipe_turunan')) {
+            $updateKategori['tipe_turunan'] = $validated['tipe_turunan'];
+        }
+
+        if (empty($updateTugas) && empty($updateKategori)) {
+            return response()->json(['success' => false, 'message' => 'Isi minimal satu field untuk diubah'], 422);
+        }
+
+        $countTugas = 0;
+        if (!empty($updateTugas)) {
+            $countTugas = KontrolTugas::whereIn('id', $validated['ids'])->update($updateTugas);
+        }
+
+        $countKategori = 0;
+        if (!empty($updateKategori)) {
+            $kategoriIds = KontrolTugas::whereIn('id', $validated['ids'])->pluck('id_DaftarTugas')->unique();
+            $countKategori = KategoriDaftarTugas::whereIn('id', $kategoriIds)->update($updateKategori);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$countTugas} tugas dan {$countKategori} kategori berhasil diperbarui",
+        ]);
+    }
+
+    public function bulkSavePerbaikan(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|exists:kontrol_tugas,id',
+            'items.*.deadline_date' => 'nullable|date',
+            'items.*.id_karyawan' => 'nullable|exists:karyawans,id',
+            'items.*.tipe' => 'nullable|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
+            'items.*.tipe_turunan' => 'nullable|string|max:255',
+        ]);
+
+        $updated = 0;
+        $skipped = 0;
+        $updatedCategories = [];
+
+        foreach ($validated['items'] as $item) {
+            $tugas = KontrolTugas::find($item['id']);
+            if (!$tugas) {
+                continue;
+            }
+
+            $updateTugas = [];
+            if (!empty($item['deadline_date'])) {
+                $updateTugas['Deadline_Date'] = $item['deadline_date'];
+            }
+            if (isset($item['id_karyawan']) && $item['id_karyawan'] !== '') {
+                $updateTugas['id_karyawan'] = $item['id_karyawan'];
+            }
+
+            $updateKategori = [];
+            if (!empty($item['tipe'])) {
+                $updateKategori['Tipe'] = $item['tipe'];
+            }
+            if (isset($item['tipe_turunan'])) {
+                $updateKategori['tipe_turunan'] = $item['tipe_turunan'];
+            }
+
+            if (empty($updateTugas) && empty($updateKategori)) {
+                $skipped++;
+                continue;
+            }
+
+            if (!empty($updateTugas)) {
+                $tugas->update($updateTugas);
+            }
+
+            if (!empty($updateKategori)) {
+                $kategori = $tugas->kategoriDaftarTugas;
+                // Mencegah update kategori yang sama berulang kali dalam 1 batch
+                if (!in_array($kategori->id, $updatedCategories)) {
+                    $kategori->update($updateKategori);
+                    $updatedCategories[] = $kategori->id;
+                }
+            }
+            $updated++;
+        }
+
+        $message = "{$updated} tugas berhasil diperbarui";
+        if ($skipped > 0) {
+            $message .= ", {$skipped} dilewati (tidak ada perubahan)";
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'updated' => $updated,
+            'skipped' => $skipped,
+        ]);
+    }
+
+    public function checkPendingShift()
+    {
+        $karyawanId = auth()->user()->karyawan->id ?? null;
+        if (!$karyawanId) return response()->json(['pending' => false]);
+
+        $pending = Cache::get("pending_shift_{$karyawanId}");
+
+        if ($pending) {
+            return response()->json([
+                'pending' => true,
+                'shift' => $pending['shift'],
+                'date' => $pending['date'],
+                'message' => $pending['message']
+            ]);
+        }
+
+        return response()->json(['pending' => false]);
+    }
 }

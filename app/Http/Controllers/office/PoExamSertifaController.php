@@ -22,14 +22,18 @@ class PoExamSertifaController extends Controller
 
     public function index()
     {
-        // Mengambil data RKM beserta relasi materi dan perusahaan
         $rkms = RKM::with(['materi', 'perusahaan'])
                 ->where('exam', '1')
                 ->whereBetween('tanggal_awal', [now()->subMonth(), now()->addMonth()])
                 ->orderBy('id')
                 ->get();
 
-        return view('office.exam.po_exam_sertifa', compact('rkms'));
+        $skemas = PoExamSertifa::whereNotNull('skema')
+                    ->where('skema', '!=', '')
+                    ->distinct()
+                    ->pluck('skema');
+
+        return view('office.exam.po_exam_sertifa', compact('rkms', 'skemas'));
     }
 
     public function getData()
@@ -56,6 +60,7 @@ class PoExamSertifaController extends Controller
             'id_perusahaan' => 'nullable|integer',
             'pax' => 'nullable|integer',
             'harga' => 'nullable|numeric',
+            'skema' => 'nullable|string',
         ]);
 
         PoExamSertifa::create($validatedData);
@@ -76,6 +81,7 @@ class PoExamSertifaController extends Controller
             'id_perusahaan' => 'nullable|integer',
             'pax' => 'nullable|integer',
             'harga' => 'nullable|numeric',
+            'skema' => 'nullable|string',
         ]);
 
         $item->update($validatedData);

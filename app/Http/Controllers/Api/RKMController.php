@@ -39,28 +39,23 @@ class RKMController extends Controller
 
             $weekRanges = [];
             $startOfWeek = $startOfMonth->startOfWeek();
+
             while ($startOfWeek->lte($endOfMonth)) {
                 $endOfWeek = $startOfWeek->copy()->endOfWeek();
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
                 $startOfWeek = $startOfWeek->addWeek();
- 
+
                 // Eksekusi Query Utama RKM
                 $rows = RKM::with(['materi', 'peluang'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
+                        $query->where('tentatif', 1);
                     })
-                    // ->orWhereDoesntHave('exam.approvalexam')
-                    // ->where(function ($query) {
-                    //     $query->whereHas('exam.approvalexam', function ($q) {
-                    //         $q->where('technical_support', 1);
-                    //     })
-                    // })
                     ->select(
-                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
-                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
@@ -87,44 +82,29 @@ class RKMController extends Controller
                     ->orderBy('r_k_m_s.tanggal_awal', 'asc')
                     ->get();
 
+                // 1. Ekstraksi ID secara kolektif
                 $allSalesIds = [];
                 $allInstrukturIds = [];
                 $allPerusahaanIds = [];
                 $allRkmIds = [];
 
                 foreach ($rows as $row) {
-                    if ($row->instruktur_all == null) {
-                        $sales_ids = explode(', ', $row->sales_all);
-                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
-                        $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
-                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
-                    } else {
-                        $sales_ids = explode(', ', $row->sales_all);
-                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
-                        $instruktur_ids = explode(', ', $row->instruktur_all);
-                        $row->instruktur = karyawan::with('user')
-                            ->whereHas('user', function ($query) use ($instruktur_ids) {
-                                $query->whereIn('users.id_instruktur', $instruktur_ids);
-                            })
-                            ->get();
+                    $sales_ids = array_filter(explode(', ', $row->sales_all ?? ''));
+                    $perusahaan_ids = array_filter(explode(', ', $row->perusahaan_all ?? ''));
+                    $instruktur_ids = array_filter(explode(', ', $row->instruktur_all ?? ''));
+                    $rkm_ids = array_filter(array_map('trim', explode(',', $row->id_all ?? '')));
 
-                        $row->sales = karyawan::with('user')
-                            ->whereHas('user', function ($query) use ($sales_ids) {
-                                $query->whereIn('users.id_sales', $sales_ids);
-                            })
-                            ->get();
-                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
-                    }
-                    if (!empty($row->id_all)) {
-                        $allRkmIds = array_merge($allRkmIds, array_map('trim', explode(',', $row->id_all)));
-                    }
+                    $allSalesIds = array_merge($allSalesIds, $sales_ids);
+                    $allPerusahaanIds = array_merge($allPerusahaanIds, $perusahaan_ids);
+                    $allInstrukturIds = array_merge($allInstrukturIds, $instruktur_ids);
+                    $allRkmIds = array_merge($allRkmIds, $rkm_ids);
                 }
 
                 // Hapus duplikasi ID untuk optimasi query
-                $uniqueSalesIds = array_unique(array_filter($allSalesIds));
-                $uniqueInstrukturIds = array_unique(array_filter($allInstrukturIds));
-                $uniquePerusahaanIds = array_unique(array_filter($allPerusahaanIds));
-                $uniqueRkmIds = array_unique(array_filter($allRkmIds));
+                $uniqueSalesIds = array_unique($allSalesIds);
+                $uniqueInstrukturIds = array_unique($allInstrukturIds);
+                $uniquePerusahaanIds = array_unique($allPerusahaanIds);
+                $uniqueRkmIds = array_unique($allRkmIds);
                 $uniqueKaryawanIds = array_unique(array_merge($uniqueSalesIds, $uniqueInstrukturIds));
 
                 // 2. Eksekusi query relasi secara kolektif (Bulk Fetch)
@@ -186,9 +166,7 @@ class RKMController extends Controller
             $date = $date->addMonth();
         }
 
-        $json = $monthRanges;
-
-        return new PostResource(true, 'List Detail Bulan RKM', $json);
+        return new PostResource(true, 'List Detail Bulan RKM', $monthRanges);
     }
 
     public function exportExcel(Request $request)

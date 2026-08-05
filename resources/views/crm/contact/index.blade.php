@@ -194,31 +194,25 @@
             </div>
 
             <!-- Modal Create Contact -->
-            <div class="modal fade" id="opportunityModal" tabindex="-1" aria-labelledby="opportunityModalLabel"
-                aria-hidden="true">
+            <div class="modal fade" id="opportunityModal" tabindex="-1" aria-labelledby="opportunityModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="opportunityModalLabel">Tambah Perusahaan</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="perusahaanForm" action="{{ route('store.contact') }}" method="POST"
-                                enctype="multipart/form-data">
+                            <form id="perusahaanForm" action="{{ route('store.contact') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
 
                                 <div class="mb-3">
                                     <label class="form-label" for="nama_perusahaan">Nama Perusahaan</label>
-                                    <input type="text" class="form-control" id="nama_perusahaan"
-                                        name="nama_perusahaan" required>
+                                    <input type="text" class="form-control" id="nama_perusahaan" name="nama_perusahaan" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="kategori_perusahaan">Kategori Perusahaan</label>
-                                    <select class="form-select @error('kategori_perusahaan') is-invalid @enderror"
-                                        name="kategori_perusahaan" id="kategori_perusahaan"
-                                        autocomplete="kategori_perusahaan">
+                                    <select class="form-select @error('kategori_perusahaan') is-invalid @enderror" name="kategori_perusahaan" id="kategori_perusahaan" autocomplete="kategori_perusahaan">
                                         <option value="" selected>Pilih Kategori Perusahaan</option>
                                         <option value="Pemerintahan Daerah">Pemerintahan Daerah</option>
                                         <option value="Kementerian">Kementerian</option>
@@ -252,8 +246,7 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="status">Status</label>
-                                    <select class="form-select @error('status') is-invalid @enderror" id="status"
-                                        name="status" autocomplete="status" required>
+                                    <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" autocomplete="status" required>
                                         <option value="" selected>Pilih Status</option>
                                         <option value="Q1">Q1</option>
                                         <option value="Q2">Q2</option>
@@ -278,26 +271,26 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="cp">Contact Person (CP)</label>
-                                    <input type="text" class="form-control" id="cp" name="cp" required>
+                                    <input type="text" class="form-control" id="cp" name="cp">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="no_telp">No Telepon</label>
-                                    <input type="text" class="form-control" id="no_telp" name="no_telp" required>
+                                    <input type="text" class="form-control" id="no_telp" name="no_telp">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="email">Email</label>
-                                    <input type="email" class="form-control" id="email" name="email" required>
+                                    <input type="email" class="form-control" id="email" name="email">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="foto_npwp">Foto NPWP</label>
-                                    <input class="form-control" type="file" id="foto_npwp" name="foto_npwp"
-                                        accept=".jpeg,.jpg,.png,.pdf">
+                                    <input class="form-control" type="file" id="foto_npwp" name="foto_npwp" accept=".jpeg,.jpg,.png,.pdf">
                                 </div>
 
-                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                <!-- Penambahan ID btn-submit-perusahaan -->
+                                <button type="submit" id="btn-submit-perusahaan" class="btn btn-primary">Simpan</button>
                             </form>
                         </div>
                     </div>
@@ -308,9 +301,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const formElement = document.getElementById('perusahaanForm');
+
             let table = $('#perusahaanTable').DataTable({
                 processing: true,
                 serverSide: true,
+                order: [[0, 'desc']],
                 ajax: {
                     url: "{{ route('contact.data') }}",
                     type: "GET",
@@ -376,6 +372,21 @@
                 let url = "{{ route('contact.export_pdf') }}?sales_key=" + encodeURIComponent(salesFilter) + "&search=" + encodeURIComponent(searchFilter);
                 window.open(url, '_blank');
             };
+
+            if (formElement) {
+                formElement.addEventListener('submit', function(e) {
+
+                    // Pengambilan referensi tombol DOM
+                    const submitButton = document.getElementById('btn-submit-perusahaan');
+
+                    // Eksekusi penguncian validasi ganda dari konstanta global
+                    if (!ButtonValidator.lock(submitButton)) {
+                        // Eksekusi metode pencegahan pemrosesan ganda
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
 
             // 🔹 Trigger reload kalau filter diganti
             $('#filterSales').on('change', function() {

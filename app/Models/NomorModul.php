@@ -17,6 +17,9 @@ class NomorModul extends Model
         'uploaded',
         'delay',
         'keterangan',
+        'status_subscode',
+        'tanggal_subscode_masuk',
+        'catatan'
     ];
 
     public function moduls()

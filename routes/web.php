@@ -77,7 +77,7 @@ use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\office\ModulController;
 use App\Http\Controllers\office\OfficeController;
-use App\Http\Controllers\Office\pickupDriverController;
+use App\Http\Controllers\office\pickupDriverController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\office\KondisiToolsController;
@@ -127,6 +127,7 @@ use App\Http\Controllers\HR\RekapInventarisController;
 use App\Http\Controllers\FeatureDocumentationController;
 use App\Http\Controllers\CodeDocumentationController;
 use App\Http\Controllers\DocumentationImportController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -161,6 +162,7 @@ Auth::routes(['register' => false, 'password.request' => false, 'password.email'
 Route::middleware('auth')->group(function () {
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('/user', [App\Http\Controllers\UserController::class, 'index'])->name('user.index');
+    Route::get('/user/excel', [UserController::class, 'ExportExcel'])->name('user.excel');
 
     Route::get('/karyawan/{hashid}/edit', [App\Http\Controllers\KaryawanController::class, 'edit'])->name('karyawan.edit'); //fixing route
     Route::put('/karyawan/{hashid}', [App\Http\Controllers\KaryawanController::class, 'updateData'])->name('karyawan.update'); //fixing route
@@ -178,6 +180,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/webpush/vapid-key', [WebPushController::class, 'getVapidKey'])->name('webpush.vapid-key');
     Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('webpush.test');
     Route::get('/webpush/status', [WebPushController::class, 'subscriptionStatus']);
+
+    Route::get('getPerusahaanall', [App\Http\Controllers\Api\apiController::class, 'getPerusahaanall'])->name('getPerusahaanall');
 });
 // test
 Route::get('/testdata', [App\Http\Controllers\TestController::class, 'index'])->name('testdata');
@@ -910,7 +914,7 @@ Route::get('/ticketing-data', [DashboardItsmController::class, 'getJumlahPermint
 Route::get('/jumlah-pic', [DashboardItsmController::class, 'getJumlahPIC']);
 Route::get('/rerata-durasi-data', [DashboardItsmController::class, 'getRerataDurasi']);
 Route::get('/rerata-ketepatan-response-data', [DashboardItsmController::class, 'getRerataKetepatanResponse']);
-Route::get('/dashboard-digital', [DashboardSLAController::class, 'dashboardDigital'])->name('dashboard.digital')->middleware('auth');
+// Route::get('/dashboard-digital', [DashboardSLAController::class, 'dashboardDigital'])->name('dashboard.digital')->middleware('auth');
 Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'getJumlahPermintaanPerBulan']);
 Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
 Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
@@ -1117,6 +1121,12 @@ Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, '
 Route::get('/dashboard-sla/digital', [DashboardSLAController::class, 'dashboardDigital']);
 Route::get('/dashboard/uptime/monitoring', [KPIDatabaseKPIController::class, 'UptimePresentase'])->name('dashboard.uptimeMonitoring');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/shift/pending',  [DaftarTugasController::class, 'getPendingShift'])->name('shift.pending');
+    Route::post('/shift/approve', [DaftarTugasController::class, 'approveShift'])->name('shift.approve');
+    Route::post('/shift/reject',  [DaftarTugasController::class, 'rejectShift'])->name('shift.reject');
+});
+
 Route::prefix('office')
     ->name('office.')
     ->middleware(['auth'])
@@ -1168,6 +1178,13 @@ Route::prefix('office')
                 Route::get('/export-excel', [BiayaTransportasiController::class, 'exportExcel'])->name('exportExcel');
                 Route::get('/export-pdf', [BiayaTransportasiController::class, 'exportPdf'])->name('exportPdf');
                 Route::post('upload-invoice/{id}', [BiayaTransportasiController::class, 'uploadInvoice']);
+                Route::get('search-pickup', [BiayaTransportasiController::class, 'searchPickup'])->name('searchPickup');
+                Route::get('search-spj', [BiayaTransportasiController::class, 'searchSpj'])->name('searchSpj');
+                Route::get('/budget-summary', [BiayaTransportasiController::class, 'budgetWeeklySummary'])->name('budgetSummary');
+                Route::get('/budget-summary-all', [BiayaTransportasiController::class, 'budgetAllSummary'])->name('budgetSummaryAll');
+                Route::post('/budget-operasional', [BiayaTransportasiController::class, 'storeBudgetOperasional'])->name('storeBudgetOperasional');
+                Route::post('/update-tipe/{id}', [BiayaTransportasiController::class, 'updateTipeBiaya'])->name('updateTipe');
+                Route::get('/export-budget-summary', [BiayaTransportasiController::class, 'exportBudgetSummary'])->name('exportBudgetSummary');
             });
 
         Route::prefix('feedback')
@@ -1183,6 +1200,7 @@ Route::prefix('office')
             Route::put('/update/nomor/{id}', [ModulController::class, 'updateNomor'])->name('modul.update.nomor');
             Route::delete('/delete/nomor/{id}', [ModulController::class, 'deleteNomor'])->name('modul.delete.nomor');
             Route::put('/update/nomor/status/{id}', [ModulController::class, 'uploaded'])->name('modul.update.status.nomor');
+            Route::put('/update/subscode/{id}', [ModulController::class, 'updateSubscode'])->name('modul.update.subscode');
 
             Route::get('/detail/{id}', [ModulController::class, 'indexModul'])->name('modul.detail');
             Route::post('/store', [ModulController::class, 'storeModul'])->name('modul.store');
@@ -1794,7 +1812,7 @@ Route::get('system/documentation/export/all', [DocumentationImportController::cl
     ->name('documentation.export.all');
 Route::get('system/documentation/export/feature/{id}', [DocumentationImportController::class, 'exportFeature'])
     ->name('documentation.export.feature');
-    
+
 // Code Documentation
 Route::get('/system/documentation/features/{featureId}/codes', [CodeDocumentationController::class, 'index'])
     ->name('documentation.codes.index');

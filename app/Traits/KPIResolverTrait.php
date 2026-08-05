@@ -128,6 +128,15 @@ trait KPIResolverTrait
             default => 0
         };
 
+        $routesPerPeserta = [
+            'sertifikasi kompetensi internal',
+            'pelatihan kompetensi eksternal',
+        ];
+
+        if (in_array($asistantRoute, $routesPerPeserta)) {
+            return $progress; 
+        }
+
         $nilaiTarget = (float) ($detail->dataTarget->nilai_target ?? $detail->nilai_target ?? 0);
         return $nilaiTarget > 0 ? min($progress, $nilaiTarget) : $progress;
     }
