@@ -9,13 +9,12 @@ use App\Models\RKM;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\FeedbackController;
-use Illuminate\Support\Facades\Log;
 
 class rekapInstrukturController extends Controller
 {
     protected $feedbackController;
-    public function __construct(feedbackController $feedbackController)
+
+    public function __construct(FeedbackController $feedbackController)
     {
         $this->feedbackController = $feedbackController; // Menginisialisasi controller
     }
@@ -25,10 +24,11 @@ class rekapInstrukturController extends Controller
         $month = Carbon::now()->format('m');
         $year = Carbon::now()->format('Y');
 
-        $karyawan = Karyawan::where('divisi', 'Education')
+        $karyawan = karyawan::where('divisi', 'Education')
             ->where('status_aktif', '1')
             ->where('kode_karyawan', 'NOT LIKE', '%OL%') // Mengecualikan kode karyawan yang mengandung 'OL'
             ->get();
+
         // return $karyawan;
         return view('rekapinstruktur.index', compact('month', 'year', 'karyawan'));
     }
@@ -41,137 +41,106 @@ class rekapInstrukturController extends Controller
 
         return redirect()->route('rekapmengajarinstruktur.index')->with(['success' => 'Data Berhasil Dihapus!']);
     }
-    
+
     public function getListMengajar($bulan, $tahun)
     {
-        // Mengambil id_rkm yang ada dari database
-        $existingRKMs = rekapMengajarInstruktur::pluck('id_rkm')->toArray();
+        // 1. Masukkan MAX() ke dalam logika CASE
+        $caseMonth = '
+        CASE
+            WHEN MONTH(r_k_m_s.tanggal_awal) <> MONTH(MAX(r_k_m_s.tanggal_akhir))
+                THEN MONTH(MAX(r_k_m_s.tanggal_akhir))
+            ELSE MONTH(r_k_m_s.tanggal_awal)
+        END
+    ';
 
-        // dd($existingRKMs);
+        $caseYear = '
+        CASE
+            WHEN MONTH(r_k_m_s.tanggal_awal) <> MONTH(MAX(r_k_m_s.tanggal_akhir))
+                THEN YEAR(MAX(r_k_m_s.tanggal_akhir))
+            ELSE YEAR(r_k_m_s.tanggal_awal)
+        END
+    ';
 
-        // Menggabungkan array menjadi string, jika ada lebih dari satu id_rkm
-        $existingRKMsString = implode(',', $existingRKMs);
+        // 2. Query Data
+        $data = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
+            ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+            ->whereHas('peluang', function ($query) {
+                $query->where('tentatif', 0);
+            })
+            ->whereDoesntHave('peluang', function ($query) {
+                $query->where('tentatif', 1);
+            })
+            ->select(
+                DB::raw("($caseMonth) as bulan_berlaku"),
+                DB::raw("($caseYear) as tahun_berlaku"),
+                DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
+                'r_k_m_s.materi_key',
+                'r_k_m_s.ruang',
+                'r_k_m_s.metode_kelas',
+                'r_k_m_s.event',
+                DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+                DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+                DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                'r_k_m_s.tanggal_awal',
+                DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
+            )
+            ->groupBy(
+                'r_k_m_s.materi_key',
+                'r_k_m_s.ruang',
+                'r_k_m_s.metode_kelas',
+                'r_k_m_s.event',
+                'r_k_m_s.tanggal_awal'
+                // Jangan masukkan tanggal_akhir ke sini agar data tidak dobel
+            )
+            // 3. Gunakan havingRaw() karena kita memfilter hasil dari MAX()
+            ->havingRaw("($caseMonth) = ?", [$bulan])
+            ->havingRaw("($caseYear) = ?", [$tahun])
+            ->orderBy('status_all', 'asc')
+            ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+            ->get();
 
-        // Memisahkan string menjadi array
-        $id_rkm = explode(',', $existingRKMsString);
-
-        $uniqueRKMs = array_unique($id_rkm);
-        $id_rkm = array_values($uniqueRKMs);
-
-        // Tentukan awal dan akhir bulan target (string)
-        $startOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->startOfDay()->toDateString();
-        $endOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()->endOfDay()->toDateString();
-
-        $data =  RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
-                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                    ->whereBetween('r_k_m_s.tanggal_awal', [$startOfMonth, $endOfMonth])
-                    ->whereHas('peluang', function ($query) {
-                        $query->where('tentatif', 0);
-                    })
-                    ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
-                    })->where(function ($query) {
-                        $query->whereHas('exam.approvalexam', function ($q) {
-                            $q->where('technical_support', 1);
-                        })
-                        ->orWhereDoesntHave('exam.approvalexam');
-                    })->select(
-                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
-                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
-                        DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
-                        'r_k_m_s.materi_key',
-                        'r_k_m_s.ruang',
-                        'r_k_m_s.metode_kelas',
-                        'r_k_m_s.event',
-                        DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'), // Gabungkan semua exam
-                        DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'), // Gabungkan semua makanan
-                        DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
-                        DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
-                        DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-                        'r_k_m_s.tanggal_awal',
-                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
-                    )
-                    ->groupBy(
-                        'r_k_m_s.materi_key',
-                        'r_k_m_s.ruang',
-                        'r_k_m_s.metode_kelas',
-                        'r_k_m_s.event',
-                        'r_k_m_s.tanggal_awal'
-                    )
-                    ->orderBy('status_all', 'asc')
-                    ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-                    ->get();
-
-        // return $data;
-        // Ambil relasi instruktur/sales/perusahaan seperti sebelumnya
+        // 4. Looping relasi
         foreach ($data as $row) {
             $sales_ids = $row->sales_all ? explode(', ', $row->sales_all) : [];
             $perusahaan_ids = $row->perusahaan_all ? explode(', ', $row->perusahaan_all) : [];
 
             if ($row->instruktur_all == null) {
-                $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
                 $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
             } else {
                 $instruktur_ids = explode(', ', $row->instruktur_all);
-                $row->instruktur = Karyawan::whereIn('kode_karyawan', $instruktur_ids)->first();
-                $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                $row->instruktur = karyawan::whereIn('kode_karyawan', $instruktur_ids)->first();
+                $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
                 $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
             }
         }
 
-        // Filter dan bentuk response berdasarkan mayoritas hari di bulan target
+        // 5. Build Final Result
         $result = [];
         foreach ($data as $dataRow) {
             $awal = Carbon::parse($dataRow->tanggal_awal);
             $akhir = Carbon::parse($dataRow->tanggal_akhir);
 
-            // Total durasi RKM (inklusif)
             $totalDays = $akhir->diffInDays($awal) + 1;
+            $id_rkms = explode(',', $dataRow->id_all)[0];
+            $rkm = RKM::with('materi')->findOrFail($id_rkms);
 
-            // Hitung overlap dengan bulan target
-            $monthStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfDay();
-            $monthEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()->endOfDay();
-
-            $overlapStart = $awal->greaterThan($monthStart) ? $awal->copy() : $monthStart->copy();
-            $overlapEnd = $akhir->lessThan($monthEnd) ? $akhir->copy() : $monthEnd->copy();
-
-            $daysInTarget = 0;
-            if ($overlapStart->lte($overlapEnd)) {
-                $daysInTarget = $overlapEnd->diffInDays($overlapStart) + 1;
-            }
-
-            $daysOther = $totalDays - $daysInTarget;
-
-            // Aturan penempatan:
-            // - jika jumlah hari di bulan target > jumlah hari di bulan lain -> masukkan
-            // - jika sama (tie) -> tie-break: masukkan ke bulan tanggal_awal (bisa diubah sesuai preferensi)
-            $isInThisMonth = false;
-            if ($daysInTarget > $daysOther) {
-                $isInThisMonth = true;
-            } elseif ($daysInTarget == $daysOther) {
-                // tie-break: masukkan jika tanggal_awal berada di bulan target
-                if ($awal->month == $bulan && $awal->year == $tahun) {
-                    $isInThisMonth = true;
-                }
-            }
-
-            if ($isInThisMonth) {
-                $id_rkms = explode(',', $dataRow->id_all)[0];
-                $rkm = RKM::with('materi')->findOrFail($id_rkms);
-
-                $result[] = [
-                    'id' => $dataRow->id_all,
-                    'nama_materi' => $rkm->materi->nama_materi,
-                    'instruktur' => $dataRow->instruktur ?? '-',
-                    'tanggal_awal' => $dataRow->tanggal_awal,
-                    'tanggal_akhir' => $dataRow->tanggal_akhir,
-                    'durasi_rkm' => $totalDays,
-                    'durasi_materi' => $dataRow->materi->durasi,
-                    'rkm' => $rkm,
-                ];
-            }
+            $result[] = [
+                'id' => $dataRow->id_all,
+                'nama_materi' => $rkm->materi->nama_materi,
+                'instruktur' => $dataRow->instruktur ?? '-',
+                'tanggal_awal' => $dataRow->tanggal_awal,
+                'tanggal_akhir' => $dataRow->tanggal_akhir,
+                'durasi_rkm' => $totalDays,
+                'durasi_materi' => $dataRow->materi->durasi,
+                'rkm' => $rkm,
+            ];
         }
 
         return response()->json([
@@ -179,7 +148,7 @@ class rekapInstrukturController extends Controller
             'message' => 'List data',
             'data' => collect($result),
         ]);
-    }	
+    }
 
     public function store(Request $request)
     {
@@ -191,45 +160,44 @@ class rekapInstrukturController extends Controller
         $tahun = $date->year;
         $bulan = $date->month;
         $tanggal_awal = $rkm->tanggal_awal;
-		$instruktur_key = $rkm->instruktur_key;
+        $instruktur_key = $rkm->instruktur_key;
         $datarkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
             ->where('materi_key', $materi_key)
-			->where('instruktur_key', $instruktur_key)
+            ->where('instruktur_key', $instruktur_key)
             ->whereBetween('tanggal_awal', [$tanggal_awal, $tanggal_akhir])
             ->get();
-            $totalPax = $datarkm->sum('pax');
-            $instruktur = $request->instruktur;
-            //dd($totalPax);
-			foreach ($instruktur as $inst) {
-            
-                $status = "Belum Dihitung";
-                if ($inst['instruktur'] == null) {
-                    continue;
-                } else {
-                    $data = new rekapMengajarInstruktur();
-                    $data->id_rkm = $datarkm->pluck('id')->implode(',');
-                    $data->pax = $totalPax;
-                    $data->bulan = $bulan;
-                    $data->tahun = $tahun;
-                    $data->id_instruktur = $inst['instruktur']; // Akses dengan []
-                    $data->durasi = $inst['durasi']; // Akses dengan []
-                    $data->feedback = $inst['feedback']; // Akses dengan []
-                    $data->level = $inst['level']; // Akses dengan []
-                    $data->tanggal_awal = $inst['tanggal_awal']; // Akses dengan []
-                    $data->tanggal_akhir = $inst['tanggal_akhir']; // Akses dengan []
-                    $data->keterangan = $inst['keterangan']; // Akses dengan []
-                    $data->status = $status;
-                    $data->save();
-                }
+        $totalPax = $datarkm->sum('pax');
+        $instruktur = $request->instruktur;
+        // dd($totalPax);
+        foreach ($instruktur as $inst) {
+            $status = 'Belum Dihitung';
+            if ($inst['instruktur'] == null) {
+                continue;
+            } else {
+                $data = new rekapMengajarInstruktur();
+                $data->id_rkm = $datarkm->pluck('id')->implode(',');
+                $data->pax = $totalPax;
+                $data->bulan = $bulan;
+                $data->tahun = $tahun;
+                $data->id_instruktur = $inst['instruktur']; // Akses dengan []
+                $data->durasi = $inst['durasi']; // Akses dengan []
+                $data->feedback = $inst['feedback']; // Akses dengan []
+                $data->level = $inst['level']; // Akses dengan []
+                $data->tanggal_awal = $inst['tanggal_awal']; // Akses dengan []
+                $data->tanggal_akhir = $inst['tanggal_akhir']; // Akses dengan []
+                $data->keterangan = $inst['keterangan']; // Akses dengan []
+                $data->status = $status;
+                $data->save();
             }
+        }
+
         return redirect()->route('rekapmengajarinstruktur.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
-
 
     public function cekLevel($id)
     {
         $data = rekapMengajarInstruktur::with('rkm', 'rkm.materi', 'instruktur')
-        ->whereHas('rkm', function($query) use ($id) {
+        ->whereHas('rkm', function ($query) use ($id) {
             $query->where('materi_key', $id);
         })
         ->get();
@@ -237,7 +205,7 @@ class rekapInstrukturController extends Controller
         return view('rekapinstruktur.ceklevel', compact('data'));
     }
 
-    public function getMengajarInstruktur($id, $month, $year) 
+    public function getMengajarInstruktur($id, $month, $year)
     {
         // Mengambil data rekap mengajar instruktur
         if ($id == 'OL') {
@@ -259,7 +227,7 @@ class rekapInstrukturController extends Controller
 
             if (count($rkmIds) > 1) {
                 // Validasi eksistensi relasi nilaifeedback menggunakan metode whereHas
-                $rkmWithFeedback = \App\Models\RKM::whereIn('id', $rkmIds)
+                $rkmWithFeedback = RKM::whereIn('id', $rkmIds)
                     ->whereHas('nilaifeedback')
                     ->first();
 
@@ -269,6 +237,7 @@ class rekapInstrukturController extends Controller
             }
 
             $item->id_rkm = $selectedRkmId;
+
             return $item;
         });
 
@@ -293,12 +262,10 @@ class rekapInstrukturController extends Controller
 
             // Validasi eksistensi data dan konversi relasi menjadi format koleksi
             if ($rkm && $rkm->nilaifeedback && collect($rkm->nilaifeedback)->isNotEmpty()) {
-                
                 // Normalisasi bentuk data ke dalam Collection untuk keamanan fungsi each()
                 $feedbackList = collect($rkm->nilaifeedback);
 
                 $feedbackList->each(function ($feedback) use (&$avgFeedbackRKM, &$jumlahFeedback) {
-                    
                     // Implementasi Null Coalescing Operator dan Type Casting ke Float
                     $nilai = [
                         (float) ($feedback->I1 ?? $feedback->i1 ?? 0),
@@ -308,14 +275,14 @@ class rekapInstrukturController extends Controller
                         (float) ($feedback->I5 ?? $feedback->i5 ?? 0),
                         (float) ($feedback->I6 ?? $feedback->i6 ?? 0),
                         (float) ($feedback->I7 ?? $feedback->i7 ?? 0),
-                        (float) ($feedback->I8 ?? $feedback->i8 ?? 0)
+                        (float) ($feedback->I8 ?? $feedback->i8 ?? 0),
                     ];
 
                     $total = array_sum($nilai);
                     $avg = $total / 8;
 
                     $avgFeedbackRKM += $avg;
-                    $jumlahFeedback++;
+                    ++$jumlahFeedback;
                 });
 
                 if ($jumlahFeedback > 0) {
@@ -325,7 +292,7 @@ class rekapInstrukturController extends Controller
 
             // Tambah ke total semua RKM
             $totalFeedbackPerRKM += $avgFeedbackRKM;
-            $totalRKM++;
+            ++$totalRKM;
 
             return [
                 'id' => $item->id,
@@ -355,8 +322,6 @@ class rekapInstrukturController extends Controller
             'data' => $result,
         ]);
     }
-
-
 
     public function editMengajarInstruktur($id)
     {
@@ -390,14 +355,14 @@ class rekapInstrukturController extends Controller
 
         // Mengelompokkan data berdasarkan kriteria tertentu
         $groupedData = $datas->groupBy(function ($item) {
-            return $item->id_instruktur . '|' . $item->level . '|' . $item->durasi . '|' . $item->tanggal_awal . '|' . $item->tanggal_akhir;
+            return $item->id_instruktur.'|'.$item->level.'|'.$item->durasi.'|'.$item->tanggal_awal.'|'.$item->tanggal_akhir;
         });
 
         // Mengolah data yang telah dikelompokkan
         $result = $groupedData->map(function ($group) use ($rkm) {
             $firstItem = $group->first(); // Ambil item pertama untuk mendapatkan informasi lainnya
             $totalPax = $group->sum(function ($item) {
-                return (int)$item->pax; // Jumlahkan pax
+                return (int) $item->pax; // Jumlahkan pax
             });
 
             return [
@@ -433,28 +398,29 @@ class rekapInstrukturController extends Controller
     public function update($id, Request $request)
     {
         // return $request->all();
-            $data = rekapMengajarInstruktur::with('rkm', 'rkm.materi', 'instruktur')
-                    ->findOrFail($id);
-            $posts = rekapMengajarInstruktur::where('durasi', $data->durasi)
-                    ->where('level', $data->level)
-                    ->where('tanggal_awal', $data->tanggal_awal)
-                    ->where('tanggal_akhir', $data->tanggal_akhir)
-                    ->where('id_instruktur', $request->instruktur)
-                    ->get();
-                    // return $posts;
-            
-                foreach ($posts as $post){
-                    $post->update([
-                        'level'     => $request->level,
-                        'durasi'     => $request->durasi,
-                        'pax'     => $request->pax,
-                        'feedback'     => $request->feedback,
-                        'tanggal_awal'     => $request->tanggal_awal,
-                        'tanggal_akhir'     => $request->tanggal_akhir,
-                        'keterangan'     => $request->keterangan,
-                    ]);
-                }
-      return redirect()->route('rekapmengajarinstruktur.index')->with(['success' => 'Data Berhasil Diupdate!']);
+        $data = rekapMengajarInstruktur::with('rkm', 'rkm.materi', 'instruktur')
+                ->findOrFail($id);
+        $posts = rekapMengajarInstruktur::where('durasi', $data->durasi)
+                ->where('level', $data->level)
+                ->where('tanggal_awal', $data->tanggal_awal)
+                ->where('tanggal_akhir', $data->tanggal_akhir)
+                ->where('id_instruktur', $request->instruktur)
+                ->get();
+        // return $posts;
+
+        foreach ($posts as $post) {
+            $post->update([
+                'level' => $request->level,
+                'durasi' => $request->durasi,
+                'pax' => $request->pax,
+                'feedback' => $request->feedback,
+                'tanggal_awal' => $request->tanggal_awal,
+                'tanggal_akhir' => $request->tanggal_akhir,
+                'keterangan' => $request->keterangan,
+            ]);
+        }
+
+        return redirect()->route('rekapmengajarinstruktur.index')->with(['success' => 'Data Berhasil Diupdate!']);
     }
 
     public function sinkronData()
@@ -468,39 +434,39 @@ class rekapInstrukturController extends Controller
             $totalFeedbackInstruktur2 = 0;
             $totalFeedbackAsisten = 0;
             $count = 0; // Untuk menghitung jumlah RKM yang diproses
-    
+
             foreach ($id_rkm as $rkm_id) {
                 // Mengambil RKM berdasarkan id_rkm
                 $rkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
                     ->where('id', $rkm_id)
                     ->first();
-    
+
                 if ($rkm) { // Pastikan RKM ditemukan
                     $totalPax += $rkm->pax; // Asumsi bahwa $rkm->pax ada
-    
+
                     // Mengambil feedback
                     $response = $this->feedbackController->getNilaiFeedbackInstRKM($rkm->id);
                     $feedback = json_decode($response->getContent());
-    
+
                     // Menambahkan feedback ke total berdasarkan instruktur
                     if ($value->id_instruktur == $rkm->instruktur_key) {
-                        $totalFeedbackInstruktur1 += $feedback->average->instruktur ?? 0; 
+                        $totalFeedbackInstruktur1 += $feedback->average->instruktur ?? 0;
                     } elseif ($value->id_instruktur == $rkm->instruktur_key2) {
                         $totalFeedbackInstruktur2 += $feedback->average->instruktur2 ?? 0;
                     } elseif ($value->id_instruktur == $rkm->asisten_key) {
-                        $totalFeedbackAsisten += $feedback->average->asisten ?? 0; 
+                        $totalFeedbackAsisten += $feedback->average->asisten ?? 0;
                     }
-    
-                    $count++; // Meningkatkan jumlah RKM yang diproses
+
+                    ++$count; // Meningkatkan jumlah RKM yang diproses
                 }
             }
-    
+
             // Menghitung rata-rata feedback jika ada RKM yang diproses
             if ($count > 0) {
                 $averageFeedbackInstruktur1 = $count > 0 ? $totalFeedbackInstruktur1 / $count : 0;
                 $averageFeedbackInstruktur2 = $count > 0 ? $totalFeedbackInstruktur2 / $count : 0;
                 $averageFeedbackAsisten = $count > 0 ? $totalFeedbackAsisten / $count : 0;
-    
+
                 // Memperbarui feedback jika ada perubahan
                 if ($value->id_instruktur == $rkm->instruktur_key && $value->feedback !== $averageFeedbackInstruktur1) {
                     $value->update(['feedback' => $averageFeedbackInstruktur1]);
@@ -510,20 +476,18 @@ class rekapInstrukturController extends Controller
                     $value->update(['feedback' => $averageFeedbackAsisten]);
                 }
             }
-    
+
             // Memperbarui total pax jika ada perubahan
             if ($value->pax !== $totalPax) {
                 $value->update(['pax' => $totalPax]);
             }
         }
-    
+
         return response()->json([
             'success' => true,
             'message' => 'Sudah Di Sinkronisasi, Silahkan Klik ulang Cari Data',
         ]);
     }
-    
-
 
     public function getTunjanganEdu($id, $month, $year)
     {
@@ -537,7 +501,7 @@ class rekapInstrukturController extends Controller
         $tunjanganEducation = $data->map(function ($datas) {
             return [
                 'id_instruktur' => $datas->id_instruktur,
-                'total_tunjangan' => (int)$datas->total_tunjangan // Pastikan ini adalah integer
+                'total_tunjangan' => (int) $datas->total_tunjangan, // Pastikan ini adalah integer
             ];
         });
 
@@ -547,10 +511,7 @@ class rekapInstrukturController extends Controller
         // Mengembalikan data dan total tunjangan
         return [
             'tunjangan' => $tunjanganEducation,
-            'total_tunjangan' => $totalTunjangan
+            'total_tunjangan' => $totalTunjangan,
         ];
     }
-
-
-
 }
