@@ -157,13 +157,45 @@
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function(){
         var userRole = '{{ auth()->user()->jabatan}}';
         var canUpdateLembur = {{ auth()->user()->can('Update Lembur') ? 'true' : 'false' }};
         var canCreateLembur = {{ auth()->user()->can('Create Lembur') ? 'true' : 'false' }};
         var canDeleteLembur = {{ auth()->user()->can('Delete Lembur') ? 'true' : 'false' }};
-        
+
+        var sessionAlert = {
+            type: null,
+            message: null,
+            shown: false
+        };
+
+        @if(session('success'))
+            sessionAlert.type = 'success';
+            sessionAlert.message = {!! json_encode(session('success')) !!};
+        @endif
+
+        @if(session('error'))
+            sessionAlert.type = 'error';
+            sessionAlert.message = {!! json_encode(session('error')) !!};
+        @endif
+
+        function showSessionAlertIfNeeded() {
+            if (sessionAlert.shown || !sessionAlert.type) {
+                return;
+            }
+            sessionAlert.shown = true;
+            Swal.fire({
+                icon: sessionAlert.type,
+                title: sessionAlert.type === 'success' ? 'Berhasil' : 'Gagal',
+                text: sessionAlert.message,
+                confirmButtonText: 'Tutup'
+            });
+        }
+
+        setTimeout(showSessionAlertIfNeeded, 800);
+
         $('#perintahlemburkaryawan').DataTable({
             "ajax": {
                 "url": "{{ route('getSuratPerintahLembur') }}",
