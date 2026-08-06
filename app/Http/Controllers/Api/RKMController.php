@@ -405,14 +405,17 @@ class RKMController extends Controller
         }
 
         // Format hasil akhir
+        $mergedResults = [];
         foreach ($mergedData as $data) {
-            $data['sales_key'] = implode(', ', $data['sales_key']); // Gabungkan sales_key
-            $data['perusahaan_key'] = implode(', ', $data['perusahaan_key']); // Gabungkan perusahaan_key
+            $data['sales_key'] = implode(', ', $data['sales_key']);
+            $data['perusahaan_key'] = implode(', ', $data['perusahaan_key']);
             $data['id_rkm'] = implode(', ', $data['id_rkm']);
             $data['tanggal_awal'] = Carbon::parse($data['tanggal_awal'])->timezone('Asia/Jakarta')->format('Y-m-d');
             $data['tanggal_akhir'] = Carbon::parse($data['tanggal_akhir'])->timezone('Asia/Jakarta')->format('Y-m-d');
-            $result = $data;
+            $mergedResults[] = $data;
         }
+
+        $result = end($mergedResults) ?: null; // or reset() for the first, or just return $mergedResults if you want all groups
 
         // Kembalikan hasil
         // return response()->json($result);
