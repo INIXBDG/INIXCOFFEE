@@ -37,7 +37,7 @@ jobs:
             ${{ runner.os }}-composer-
 
       - name: Install Composer Dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress --no-audit
+        run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Copy .env and Generate Application Key
         run: |
