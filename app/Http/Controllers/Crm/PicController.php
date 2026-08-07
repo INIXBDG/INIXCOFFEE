@@ -23,7 +23,6 @@ class PicController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:View PIC CRM', ['only' => ['index', 'indexJson']]);
         $this->middleware('permission:Store PIC CRM', ['only' => ['store']]);
         $this->middleware('permission:Update PIC CRM', ['only' => ['updatePIC']]);
         $this->middleware('permission:Delete PIC CRM', ['only' => ['deletePIC']]);

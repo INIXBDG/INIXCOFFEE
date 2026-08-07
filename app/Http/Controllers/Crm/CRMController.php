@@ -32,7 +32,6 @@ class CRMController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:Dashboard CRM', ['only' => ['index']]);
     }
 
     public function index(Request $request)
@@ -256,7 +255,7 @@ class CRMController extends Controller
                 })
                 ->toArray();
 
-            $pengguna = User::where('status_akun', '1')->select('id_sales', 'username')->get()->values()->toArray();
+            $pengguna = User::where('status_akun', '1')->whereNotNull('id_sales')->pluck('username', 'id_sales')->toArray();
 
             // Ensure all sales users are included for both win and lost
             $triwulanList = ['TR1', 'TR2', 'TR3', 'TR4'];
@@ -265,14 +264,14 @@ class CRMController extends Controller
 
             foreach ($sales as $id_sales) {
                 $totalWin[$id_sales] = [
-                    'username' => $pengguna[$id_sales]['username'] ?? $id_sales,
+                    'username' => $pengguna[$id_sales] ?? $id_sales,
                     'TR1' => $dataRingkasanWin[$id_sales]['TR1'] ?? 0,
                     'TR2' => $dataRingkasanWin[$id_sales]['TR2'] ?? 0,
                     'TR3' => $dataRingkasanWin[$id_sales]['TR3'] ?? 0,
                     'TR4' => $dataRingkasanWin[$id_sales]['TR4'] ?? 0,
                 ];
                 $totalLost[$id_sales] = [
-                    'username' => $pengguna[$id_sales]['username'] ?? $id_sales,
+                    'username' => $pengguna[$id_sales] ?? $id_sales,
                     'TR1' => $dataRingkasanLost[$id_sales]['TR1'] ?? 0,
                     'TR2' => $dataRingkasanLost[$id_sales]['TR2'] ?? 0,
                     'TR3' => $dataRingkasanLost[$id_sales]['TR3'] ?? 0,
@@ -479,7 +478,13 @@ class CRMController extends Controller
 
     public function chartClosed(Request $request)
     {
-        $id_sales = $request->id_sales;
+        $user = Auth::user();
+        if ($user && $user->jabatan === 'Sales') {
+            $id_sales = $user->id_sales;
+        } else {
+            $id_sales = $request->id_sales ?? $user->id_sales;
+        }
+
         $triwulan = $request->triwulan;
         $tahun = $request->tahun ?? now()->year;
         $status = $request->status ?? 'win';
