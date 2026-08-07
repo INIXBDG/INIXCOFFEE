@@ -104,19 +104,6 @@
 <script>
 $(document).ready(function() {
 
-    // --- INTEGRASI KONSTANTA VALIDASI TOMBOL GLOBAL ---
-    $('#form-ticketing').on('submit', function(e) {
-        const submitButton = document.getElementById('btn-submit');
-
-        // Eksekusi fungsi penguncian dari objek global
-        if (!ButtonValidator.lock(submitButton)) {
-            // Batalkan pengiriman formulir jika tombol sudah terkunci
-            e.preventDefault();
-            return false;
-        }
-    });
-    // --------------------------------------------------
-
     // Simpan divisi default saat halaman dimuat
     const defaultDivisi = "{{ auth()->user()->karyawan->divisi }}";
 

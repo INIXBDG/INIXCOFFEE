@@ -373,22 +373,8 @@
                 window.open(url, '_blank');
             };
 
-            if (formElement) {
-                formElement.addEventListener('submit', function(e) {
 
-                    // Pengambilan referensi tombol DOM
-                    const submitButton = document.getElementById('btn-submit-perusahaan');
-
-                    // Eksekusi penguncian validasi ganda dari konstanta global
-                    if (!ButtonValidator.lock(submitButton)) {
-                        // Eksekusi metode pencegahan pemrosesan ganda
-                        e.preventDefault();
-                        return false;
-                    }
-                });
-            }
-
-            // 🔹 Trigger reload kalau filter diganti
+            //  Trigger reload kalau filter diganti
             $('#filterSales').on('change', function() {
                 table.ajax.reload();
             });
