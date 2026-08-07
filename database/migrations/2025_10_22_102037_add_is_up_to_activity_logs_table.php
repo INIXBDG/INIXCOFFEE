@@ -11,10 +11,40 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('activity_logs', function (Blueprint $table) {
-            $table->boolean('is_up')->nullable();
-            $table->integer('response_time_ms')->nullable();
-            $table->timestamp('checked_at')->nullable();
+        if (!Schema::hasTable('activity_logs')) {
+            return;
+        }
+
+        $columnsToAdd = [];
+
+        if (!Schema::hasColumn('activity_logs', 'is_up')) {
+            $columnsToAdd[] = 'is_up';
+        }
+
+        if (!Schema::hasColumn('activity_logs', 'response_time_ms')) {
+            $columnsToAdd[] = 'response_time_ms';
+        }
+
+        if (!Schema::hasColumn('activity_logs', 'checked_at')) {
+            $columnsToAdd[] = 'checked_at';
+        }
+
+        if (empty($columnsToAdd)) {
+            return;
+        }
+
+        Schema::table('activity_logs', function (Blueprint $table) use ($columnsToAdd) {
+            if (in_array('is_up', $columnsToAdd, true)) {
+                $table->boolean('is_up')->nullable();
+            }
+
+            if (in_array('response_time_ms', $columnsToAdd, true)) {
+                $table->integer('response_time_ms')->nullable();
+            }
+
+            if (in_array('checked_at', $columnsToAdd, true)) {
+                $table->timestamp('checked_at')->nullable();
+            }
         });
     }
 
@@ -23,6 +53,23 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('activity_logs');
+        if (!Schema::hasTable('activity_logs')) {
+            return;
+        }
+
+        $columnsToDrop = array_filter(
+            ['is_up', 'response_time_ms', 'checked_at'],
+            function ($column) {
+                return Schema::hasColumn('activity_logs', $column);
+            }
+        );
+
+        if (empty($columnsToDrop)) {
+            return;
+        }
+
+        Schema::table('activity_logs', function (Blueprint $table) use ($columnsToDrop) {
+            $table->dropColumn(array_values($columnsToDrop));
+        });
     }
 };

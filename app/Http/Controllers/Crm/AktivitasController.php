@@ -36,15 +36,16 @@ class AktivitasController extends Controller
             $idSales = $user->id_sales;
             $data = Aktivitas::where('id_sales', $idSales)->get();
             $perusahaan = Perusahaan::where('sales_key', $idSales)->get();
+            $contact = Contact::where('sales_key', $idSales)->with('perusahaan')->get();
         } elseif (in_array($user->jabatan, $allowedJabatan)) {
             $data = Aktivitas::all();
             $perusahaan = Perusahaan::all();
+            $contact = Contact::with('perusahaan')->get();
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
         $sales_option = karyawan::where('jabatan', 'sales')->where('status_aktif', '1')->get();
-        $contact = Contact::with('perusahaan')->get();
 
         return view('crm.aktivitas.index', compact('data', 'perusahaan', 'contact', 'sales_option'));
     }

@@ -47,6 +47,12 @@ class LaporanPenjualanController extends Controller
         $query = RKM::with(['exam', 'perhitunganNetSales', 'materi', 'perusahaan', 'invoice', 'peluang.regis'])
                     ->orderByDesc('tanggal_awal');
 
+        // Filter Sales role
+        $user = Auth::user();
+        if ($user && $user->jabatan === 'Sales' && !empty($user->id_sales)) {
+            $query->where('sales_key', $user->id_sales);
+        }
+
         // Filter Status
         if ($status === '0') {
             $query->whereNull('deleted_at')
