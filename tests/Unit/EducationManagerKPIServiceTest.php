@@ -5,13 +5,10 @@ namespace Tests\Unit;
 use App\Models\DetailTargetKPI;
 use App\Models\targetKPI;
 use App\Services\KPI\Jabatan\EducationManagerKPIService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class EducationManagerKPIServiceTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected EducationManagerKPIService $service;
 
     protected function setUp(): void
