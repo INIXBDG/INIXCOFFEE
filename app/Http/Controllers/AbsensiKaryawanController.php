@@ -127,7 +127,7 @@ class AbsensiKaryawanController extends Controller
             'foto' => $fotoPath,
             'keterangan' => $validationResult['keterangan'],
             'waktu_keterlambatan' => $validationResult['keterlambatan'],
-            'shift' => $request->shift
+            // 'shift' => $request->shift
         ]);
 
         return response()->json([
