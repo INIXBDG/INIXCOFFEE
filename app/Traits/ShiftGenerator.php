@@ -2,7 +2,6 @@
 
 namespace App\Traits;
 
-use App\Models\AbsensiKaryawan;
 use App\Models\KategoriDaftarTugas;
 use App\Models\KontrolTugas;
 
@@ -34,10 +33,5 @@ trait ShiftGenerator
                 ]);
             }
         }
-
-        AbsensiKaryawan::updateOrCreate(
-            ['id_karyawan' => $karyawanId, 'tanggal' => $date],
-            ['shift' => $shiftName === 'Shift 1' ? 1 : 2]
-        );
     }
 }
