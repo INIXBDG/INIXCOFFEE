@@ -45,7 +45,7 @@ jobs:
           php artisan key:generate
 
       - name: Run Code Style Check (Laravel Pint)
-        run: vendor/bin/pint --test tests/Unit/EducationManagerKPIServiceTest.php
+        run: vendor/bin/pint --test tests/Unit/EducationKPIServiceTest.php
 
       - name: Run Unit & Feature Tests
-        run: vendor/bin/phpunit tests/Unit/EducationManagerKPIServiceTest.php
+        run: vendor/bin/phpunit --filter=EducationKPIServiceTest
