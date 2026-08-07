@@ -32,20 +32,20 @@ class tunjanganEducationController extends Controller
     public function getListRekapInstruktur($bulan, $tahun)
     {
         $caseMonth = '
-        CASE
-            WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
-                THEN MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
-            ELSE MONTH(rekap_mengajar_instrukturs.tanggal_awal)
-        END
-    ';
+            CASE
+                WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
+                    THEN MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
+                ELSE MONTH(rekap_mengajar_instrukturs.tanggal_awal)
+            END
+        ';
 
         $caseYear = '
-        CASE
-            WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
-                THEN YEAR(rekap_mengajar_instrukturs.tanggal_akhir)
-            ELSE YEAR(rekap_mengajar_instrukturs.tanggal_awal)
-        END
-    ';
+            CASE
+                WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
+                    THEN YEAR(rekap_mengajar_instrukturs.tanggal_akhir)
+                ELSE YEAR(rekap_mengajar_instrukturs.tanggal_awal)
+            END
+        ';
 
         // Pakai DB::raw hanya dalam select (atau selectRaw)
         $collection = rekapMengajarInstruktur::with('instruktur')

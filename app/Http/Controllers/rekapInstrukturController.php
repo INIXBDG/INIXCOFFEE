@@ -44,14 +44,28 @@ class rekapInstrukturController extends Controller
 
     public function getListMengajar($bulan, $tahun)
     {
-        // 1. Masukkan MAX() ke dalam logika CASE
+        // =========================================================================
+        // 1. AMBIL DAN EKSTRAK ID RKM DARI REKAP MENGAJAR INSTRUKTUR
+        // =========================================================================
+        $existingRKMs = rekapMengajarInstruktur::pluck('id_rkm')->filter()->toArray();
+
+        // Gabungkan semua string array menjadi satu string dengan pemisah koma
+        $existingRKMsString = implode(',', $existingRKMs);
+
+        // Pecah berdasarkan koma, hilangkan spasi, dan pastikan nilainya unik
+        $excludedRkmIds = array_unique(array_filter(array_map('trim', explode(',', $existingRKMsString))));
+
+        // =========================================================================
+        // 2. LOGIKA CASE BULAN & TAHUN
+        // =========================================================================
         $caseMonth = '
         CASE
+            -- Ubah logika, misal selalu ambil bulan AWAL meskipun beda bulan
             WHEN MONTH(r_k_m_s.tanggal_awal) <> MONTH(MAX(r_k_m_s.tanggal_akhir))
-                THEN MONTH(MAX(r_k_m_s.tanggal_akhir))
+                THEN MONTH(r_k_m_s.tanggal_awal) 
             ELSE MONTH(r_k_m_s.tanggal_awal)
         END
-    ';
+        ';
 
         $caseYear = '
         CASE
@@ -59,11 +73,15 @@ class rekapInstrukturController extends Controller
                 THEN YEAR(MAX(r_k_m_s.tanggal_akhir))
             ELSE YEAR(r_k_m_s.tanggal_awal)
         END
-    ';
+        ';
 
-        // 2. Query Data
+        // =========================================================================
+        // 3. QUERY DATA RKM
+        // =========================================================================
         $data = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
             ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+            // ---> TAMBAHAN: Kecualikan ID RKM yang sudah ada di rekap <---
+            ->whereNotIn('r_k_m_s.id', $excludedRkmIds)
             ->whereHas('peluang', function ($query) {
                 $query->where('tentatif', 0);
             })
@@ -95,8 +113,8 @@ class rekapInstrukturController extends Controller
                 'r_k_m_s.ruang',
                 'r_k_m_s.metode_kelas',
                 'r_k_m_s.event',
-                'r_k_m_s.tanggal_awal'
-                // Jangan masukkan tanggal_akhir ke sini agar data tidak dobel
+                'r_k_m_s.tanggal_awal',
+                'r_k_m_s.tanggal_akhir' // Tambahkan ini jika ingin data yang tgl akhirnya beda dipisah
             )
             // 3. Gunakan havingRaw() karena kita memfilter hasil dari MAX()
             ->havingRaw("($caseMonth) = ?", [$bulan])
@@ -105,7 +123,9 @@ class rekapInstrukturController extends Controller
             ->orderBy('r_k_m_s.tanggal_awal', 'asc')
             ->get();
 
-        // 4. Looping relasi
+        // =========================================================================
+        // 4. LOOPING RELASI
+        // =========================================================================
         foreach ($data as $row) {
             $sales_ids = $row->sales_all ? explode(', ', $row->sales_all) : [];
             $perusahaan_ids = $row->perusahaan_all ? explode(', ', $row->perusahaan_all) : [];
@@ -121,7 +141,9 @@ class rekapInstrukturController extends Controller
             }
         }
 
-        // 5. Build Final Result
+        // =========================================================================
+        // 5. BUILD FINAL RESULT
+        // =========================================================================
         $result = [];
         foreach ($data as $dataRow) {
             $awal = Carbon::parse($dataRow->tanggal_awal);
@@ -196,28 +218,61 @@ class rekapInstrukturController extends Controller
 
     public function cekLevel($id)
     {
-        $data = rekapMengajarInstruktur::with('rkm', 'rkm.materi', 'instruktur')
-        ->whereHas('rkm', function ($query) use ($id) {
-            $query->where('materi_key', $id);
-        })
-        ->get();
+        // 1. Ambil data utama dan relasi yang valid (instruktur)
+        $rawData = rekapMengajarInstruktur::with('instruktur')->get();
+
+        // 2. Petakan data RKM secara manual ke setiap item
+        foreach ($rawData as $item) {
+            // Pecah string "2666,2811" menjadi array [2666, 2811]
+            $rkm_ids = explode(',', $item->id_rkm);
+
+            // Ambil data Rkm beserta relasi materinya berdasarkan array ID
+            // dan simpan dalam properti baru (misal: 'daftar_rkm')
+            $item->daftar_rkm = RKM::with('materi')
+                ->whereIn('id', $rkm_ids)
+                ->get();
+        }
+
+        // 3. Filter data berdasarkan $id pada relasi materi (jika diperlukan)
+        $data = $rawData->filter(function ($item) use ($id) {
+            // Memeriksa apakah ada RKM di dalam item ini yang memiliki materi_key == $id
+            return $item->daftar_rkm->contains('materi_key', $id);
+        });
 
         return view('rekapinstruktur.ceklevel', compact('data'));
     }
 
     public function getMengajarInstruktur($id, $month, $year)
     {
-        // Mengambil data rekap mengajar instruktur
+        // 1. Definisikan CASE untuk tabel rekap_mengajar_instrukturs (tanpa MAX)
+        $caseMonth = '
+            CASE
+                -- Mengambil bulan AWAL meskipun beda bulan (sesuai request)
+                WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
+                    THEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) 
+                ELSE MONTH(rekap_mengajar_instrukturs.tanggal_awal)
+            END
+        ';
+
+        $caseYear = '
+            CASE
+                -- Jika beda bulan, tentukan ingin mengambil tahun dari awal atau akhir
+                WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
+                    THEN YEAR(rekap_mengajar_instrukturs.tanggal_awal)
+                ELSE YEAR(rekap_mengajar_instrukturs.tanggal_awal)
+            END
+        ';
+
+        // 2. Terapkan ke dalam Base Query
+        $query = rekapMengajarInstruktur::with('instruktur')
+            ->whereRaw("($caseMonth) = ?", [$month])
+            ->whereRaw("($caseYear) = ?", [$year]);
+
+        // 3. Eksekusi kondisi berdasarkan ID
         if ($id == 'OL') {
-            $data = rekapMengajarInstruktur::with('instruktur')->where('bulan', $month)
-                ->where('tahun', $year)
-                ->where('id_instruktur', 'LIKE', '%OL%')
-                ->get();
+            $data = $query->where('id_instruktur', 'LIKE', '%OL%')->get();
         } else {
-            $data = rekapMengajarInstruktur::with('instruktur')->where('bulan', $month)
-                ->where('tahun', $year)
-                ->where('id_instruktur', $id)
-                ->get();
+            $data = $query->where('id_instruktur', $id)->get();
         }
 
         // Pemilihan ID RKM dengan prioritas ketersediaan nilai feedback
