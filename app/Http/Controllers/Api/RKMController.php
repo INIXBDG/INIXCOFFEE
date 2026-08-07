@@ -15,6 +15,7 @@ use App\Models\Perusahaan;
 use App\Http\Resources\PostResource;
 use App\Models\AbsensiPDF;
 use App\Models\RekomendasiLanjutan;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class RKMController extends Controller
@@ -368,10 +369,6 @@ class RKMController extends Controller
         ->whereNull('r_k_m_s.deleted_at')
         ->whereDoesntHave('peluang', fn($q) => $q->where('tentatif', 1))
         ->whereHas('peluang', fn($q) => $q->where('tentatif', 0))
-        ->where(function ($query) {
-            $query->whereHas('exam.approvalexam', fn($q) => $q->where('technical_support', 1))
-                ->orWhereDoesntHave('exam.approvalexam');
-        })
         ->where('r_k_m_s.materi_key', $materi_key)
         ->where('r_k_m_s.instruktur_key', $instruktur_key)
         ->orderBy('r_k_m_s.tanggal_awal')

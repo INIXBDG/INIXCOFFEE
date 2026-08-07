@@ -957,65 +957,70 @@
     }
     function modalRekap(id){
         $('#modalRekap').modal('show');
-        // console.log(id);
-            $.ajax({
-                    url: '{{ route("getRKMDetailGroup") }}',
-                    type: "GET",
-                    data: {
-                        id_rkm: id
-                    },
-                    dataType: "json",
-                    success:function(data) {
-                        // console.log(data);
-                        // var data = data.rkm;
-                        var tanggalAwal = moment(data.tanggal_awal);
-                        var tanggalAkhir = moment(data.tanggal_akhir);
-                        var durasiRKM = moment.duration(tanggalAkhir.diff(tanggalAwal));
-                        var durasi_rkm = durasiRKM.asDays() + 1;
-                        var tanggal = moment(data.tanggal_awal).format('D')
-                        var lanbu = moment(data.tanggal_awal).format('M')
-                        var hunta = moment(data.tanggal_awal).format('Y')
-                        if (data.metode_kelas == 'Offline') {
-                            var kelas = "off"
-                        }else if(data.metode_kelas == 'Inhouse Bandung'){
-                            var kelas = "inhb"
-                        }else if(data.metode_kelas == 'Inhouse Luar Bandung'){
-                            var kelas = "inhlb"
-                        }else{
-                            var kelas = "vir"
-                        }
+        $.ajax({
+            url: '{{ route("getRKMDetailGroup") }}',
+            type: "GET",
+            data: { id_rkm: id },
+            dataType: "json",
+            success: function(response) {
+                if (!response.success || !response.data) {
+                    alert(response.message || 'Data tidak ditemukan');
+                    $('#modalRekap').modal('hide');
+                    return;
+                }
 
-                        if(data.asisten_key === "-" || data.asisten_key === null){
-                            $("#asisten").hide();
-                        }else{
-                            $("#asisten").show();
-                            $('#asisten_nama').val(data.asisten.nama_lengkap);
-                            $('#asisten_key').val(data.asisten_key);
-                        }
-                        if(data.instruktur_key2 === "-" || data.instruktur_key2 === null){
-                            $("#instruktur2").hide();
-                        }else{
-                            $("#instruktur2").show();
-                            $('#instrukturke2').val(data.instruktur2.nama_lengkap);
-                            $('#instruktur_key2').val(data.instruktur_key2);
-                        }
+                var data = response.data; // <-- ambil dari response.data
 
-                        $('#id_rkm').val(data.id_rkm);
-                        $('#instruktur_key').val(data.instruktur_key);
-                        $('#instruktur').val(data.instruktur.nama_lengkap);
-                        $('.nama_materi').val(data.materi.nama_materi);
-                        $('.durasi_materi').val(data.materi.durasi);
-                        $('.tanggal_awal').val(data.tanggal_awal);
-                        $('.tanggal_akhir').val(data.tanggal_akhir);
-                        $('.metode_kelas').val(data.metode_kelas);
-                        $('.event').val(data.event);
-                        $('.pax').val(data.pax);
-                        $('.durasi_rkm').val(durasi_rkm);
-                        $('#linkRKM').prop("href", '/rkm/' + data.materi_key + 'ixb' + tanggal + 'ie' + hunta +'ie' + lanbu + 'ixb' + kelas);
-                        $('#linkLevel').prop("href", '/cekLevel/' + data.materi_key);
-                        generatefeedback(data.id_rkm);
-                    }
-            });
+                var tanggalAwal = moment(data.tanggal_awal);
+                var tanggalAkhir = moment(data.tanggal_akhir);
+                var durasiRKM = moment.duration(tanggalAkhir.diff(tanggalAwal));
+                var durasi_rkm = durasiRKM.asDays() + 1;
+                var tanggal = moment(data.tanggal_awal).format('D');
+                var lanbu = moment(data.tanggal_awal).format('M');
+                var hunta = moment(data.tanggal_awal).format('Y');
+
+                var kelas = "vir";
+                if (data.metode_kelas == 'Offline') kelas = "off";
+                else if (data.metode_kelas == 'Inhouse Bandung') kelas = "inhb";
+                else if (data.metode_kelas == 'Inhouse Luar Bandung') kelas = "inhlb";
+
+                if (data.asisten_key === "-" || data.asisten_key === null) {
+                    $("#asisten").hide();
+                } else {
+                    $("#asisten").show();
+                    $('#asisten_nama').val(data.asisten ? data.asisten.nama_lengkap : '-');
+                    $('#asisten_key').val(data.asisten_key);
+                }
+
+                if (data.instruktur_key2 === "-" || data.instruktur_key2 === null) {
+                    $("#instruktur2").hide();
+                } else {
+                    $("#instruktur2").show();
+                    $('#instrukturke2').val(data.instruktur2 ? data.instruktur2.nama_lengkap : '-');
+                    $('#instruktur_key2').val(data.instruktur_key2);
+                }
+
+                $('#id_rkm').val(data.id_rkm);
+                $('#instruktur_key').val(data.instruktur_key ?? '');
+                $('#instruktur').val(data.instruktur ? data.instruktur.nama_lengkap : '-');
+                $('.nama_materi').val(data.materi ? data.materi.nama_materi : '-');
+                $('.durasi_materi').val(data.materi ? data.materi.durasi : '-');
+                $('.tanggal_awal').val(data.tanggal_awal);
+                $('.tanggal_akhir').val(data.tanggal_akhir);
+                $('.metode_kelas').val(data.metode_kelas);
+                $('.event').val(data.event);
+                $('.pax').val(data.pax);
+                $('.durasi_rkm').val(durasi_rkm);
+                $('#linkRKM').prop("href", '/rkm/' + data.materi_key + 'ixb' + tanggal + 'ie' + hunta + 'ie' + lanbu + 'ixb' + kelas);
+                $('#linkLevel').prop("href", '/cekLevel/' + data.materi_key);
+                generatefeedback(data.id_rkm);
+            },
+            error: function(xhr) {
+                console.error("Terjadi kesalahan saat mengambil data:", xhr);
+                alert('Gagal mengambil data rekap');
+                $('#modalRekap').modal('hide');
+            }
+        });
     }
     function editmodalRekap(id) {
         $('#editmodalRekap').modal('show');
