@@ -33,16 +33,30 @@ class tunjanganEducationController extends Controller
     {
         $caseMonth = '
             CASE
-                WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
-                    THEN MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
+                -- Cek apakah lintas bulan
+                WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir) THEN
+                    CASE
+                        -- Apakah jumlah hari di bulan akhir LEBIH BANYAK dari jumlah hari di bulan awal?
+                        -- DAY(tanggal_akhir) = hitung hari di bulan baru (misal tgl 3 berarti 3 hari)
+                        -- DATEDIFF(LAST_DAY(tanggal_awal), tanggal_awal) + 1 = hitung sisa hari di bulan lama
+                        WHEN DAY(rekap_mengajar_instrukturs.tanggal_akhir) > (DATEDIFF(LAST_DAY(rekap_mengajar_instrukturs.tanggal_awal), rekap_mengajar_instrukturs.tanggal_awal) + 1)
+                            THEN MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
+                        ELSE MONTH(rekap_mengajar_instrukturs.tanggal_awal)
+                    END
+                -- Jika bulan awal dan akhir sama, pasti masuk bulan awal
                 ELSE MONTH(rekap_mengajar_instrukturs.tanggal_awal)
             END
         ';
 
         $caseYear = '
             CASE
-                WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir)
-                    THEN YEAR(rekap_mengajar_instrukturs.tanggal_akhir)
+                -- Lakukan logika yang persis sama, namun kembalikan nilai YEAR()
+                WHEN MONTH(rekap_mengajar_instrukturs.tanggal_awal) <> MONTH(rekap_mengajar_instrukturs.tanggal_akhir) THEN
+                    CASE
+                        WHEN DAY(rekap_mengajar_instrukturs.tanggal_akhir) > (DATEDIFF(LAST_DAY(rekap_mengajar_instrukturs.tanggal_awal), rekap_mengajar_instrukturs.tanggal_awal) + 1)
+                            THEN YEAR(rekap_mengajar_instrukturs.tanggal_akhir)
+                        ELSE YEAR(rekap_mengajar_instrukturs.tanggal_awal)
+                    END
                 ELSE YEAR(rekap_mengajar_instrukturs.tanggal_awal)
             END
         ';
