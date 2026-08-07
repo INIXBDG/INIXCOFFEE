@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('daily_activities', function (Blueprint $table) {
-            $table->date('end_date')->nullable()->after('start_date');
-        });
+        if (!Schema::hasColumn('daily_activities', 'end_date')) {
+            Schema::table('daily_activities', function (Blueprint $table) {
+                $table->date('end_date')->nullable()->after('start_date');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('daily_activities', function (Blueprint $table) {
-            //
-        });
+        if (Schema::hasColumn('daily_activities', 'end_date')) {
+            Schema::table('daily_activities', function (Blueprint $table) {
+                $table->dropColumn('end_date');
+            });
+        }
     }
 };

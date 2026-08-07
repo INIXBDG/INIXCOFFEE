@@ -365,12 +365,14 @@ class ModulController extends Controller
         $request->validate([
             'status' => 'required|in:0,1',
             'tanggal_subscode_masuk' => 'nullable|date',
+            'tanggal_tenggat' => 'nullable|date',
             'catatan' => 'nullable|string',
         ]);
 
         $modul = NomorModul::findOrFail($id);
         $modul->status_subscode = $request->status;
         $modul->tanggal_subscode_masuk = $request->tanggal_subscode_masuk;
+        $modul->tanggal_tenggat = $request->tanggal_tenggat;
         $modul->catatan = $request->catatan;
         $modul->save();
 
