@@ -629,38 +629,30 @@
 
     const formData = document.getElementById('form-data');
 
-if (formData !== null) {
-    formData.addEventListener('submit', function(e) {
-        // 1. Pengecekan Validasi HTML5
-        if (!this.checkValidity()) {
-            e.preventDefault();
-            e.stopPropagation();
-            this.classList.add('was-validated');
-            return;
-        }
-
-        this.classList.add('was-validated');
-
-        // 2. Integrasi Konstanta Validasi Tombol Global
-        const submitButton = this.querySelector('button[type="submit"]');
-        if (submitButton) {
-            // Eksekusi fungsi penguncian
-            if (!ButtonValidator.lock(submitButton)) {
-                // Batalkan pengiriman jika tombol terkunci
+    if (formData !== null) {
+        formData.addEventListener('submit', function(e) {
+            // 1. Pengecekan Validasi HTML5
+            if (!this.checkValidity()) {
                 e.preventDefault();
-                return false;
+                e.stopPropagation();
+                this.classList.add('was-validated');
+                return;
             }
-        }
 
-        // 3. Pemrosesan Data (Unformat Rupiah)
-        if (hargaInput !== null) {
-            hargaInput.value = unformatRupiah(hargaInput.value);
-        }
-        if (typeof netsalesInput !== 'undefined' && netsalesInput !== null && netsalesInput.value !== '') {
-            netsalesInput.value = unformatRupiah(netsalesInput.value);
-        }
-    });
-}
+            this.classList.add('was-validated');
+
+            // 2. Pemrosesan Data Pra-pengiriman (Unformat Rupiah)
+            // Catatan: Validasi penguncian tombol tidak lagi ada di sini
+            // karena sudah di-handle secara global.
+
+            if (hargaInput !== null) {
+                hargaInput.value = unformatRupiah(hargaInput.value);
+            }
+            if (typeof netsalesInput !== 'undefined' && netsalesInput !== null && netsalesInput.value !== '') {
+                netsalesInput.value = unformatRupiah(netsalesInput.value);
+            }
+        });
+    }
 
     function bukaModalRestore(id, harga, pax, periodeMulai, periodeSelesai) {
         document.getElementById('restore_id_peluang').value = id;

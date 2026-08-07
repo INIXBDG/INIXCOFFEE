@@ -288,16 +288,8 @@ $(document).ready(function() {
     });
 
     $('#form-pengajuan-exam').on('submit', function(e) {
-        const submitButton = document.getElementById('btn-submit-exam');
-
-        // Eksekusi fungsi penguncian dari objek global
-        if (!ButtonValidator.lock(submitButton)) {
-            // Batalkan pengiriman formulir jika tombol sudah terkunci
-            e.preventDefault();
-            return false;
-        }
-
         // Pemrosesan Data (Hapus Format Rupiah) sebelum pengiriman dieksekusi
+        // Catatan: e.preventDefault() dihapus agar event bubbling diteruskan ke document level listener
         $('#kurs').val(removeRupiahFormat($('#kurs').val()));
         $('#kurs_dollar').val(removeRupiahFormat($('#kurs_dollar').val()));
         $('#harga_rupiah').val(removeRupiahFormat($('#harga_rupiah').val()));
