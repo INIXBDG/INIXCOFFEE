@@ -38,6 +38,7 @@
                                 <th>Status</th>
                                 <th>Uploaded</th>
                                 <th>Subscode</th>
+                                <th>SLA</th>
                                 <th class="text-center pe-4 no-sort" style="width: 18%">Aksi</th>
                             </tr>
                         </thead>
@@ -86,6 +87,36 @@
                                         
                                     @endif
                                     </td>
+                                    <td>
+                                        @if ($item->tanggal_subscode_masuk && $item->tanggal_tenggat)
+                                            @php
+                                                $tanggalDiterima = \Carbon\Carbon::parse($item->tanggal_subscode_masuk);
+                                                $tenggat = \Carbon\Carbon::parse($item->tanggal_tenggat);
+                                            @endphp
+                                            @if ($tanggalDiterima->lte($tenggat))
+                                                <span class="badge bg-success">Berhasil</span>
+                                                <small class="text-muted d-block" style="font-size: .75rem;">100%</small>
+                                            @else
+                                                @php
+                                                    $minutesLate = $tanggalDiterima->diffInMinutes($tenggat);
+                                                    // Hitung hari keterlambatan (setiap bagian hari dianggap 1 hari)
+                                                    $daysLate = (int) ceil($minutesLate / 1440);
+                                                    // Turun 7% per hari terlambat, batasi minimal 0%
+                                                    $percent = max(0, 100 - ($daysLate * 7));
+                                                @endphp
+                                                <span class="badge bg-danger">Gagal</span>
+                                                <small class="text-muted d-block" style="font-size: .75rem;">
+                                                    {{ $percent }}%
+                                                </small>
+                                            @endif
+                                        @elseif ($item->tanggal_subscode_masuk)
+                                            <span class="badge bg-warning text-dark">Tenggat belum diisi</span>
+                                        @elseif ($item->tanggal_tenggat)
+                                            <span class="badge bg-secondary">Belum diterima</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td class="text-center">
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-primary dropdown-toggle px-3" type="button"
@@ -115,12 +146,14 @@
                                                 </li>
                                                 @if ( $item->type === "Authorize" )
                                                     <li>
+                                                        {{-- PERBAIKAN: format data-tanggal dan data-tenggat langsung ke format datetime-local (Y-m-d\TH:i) --}}
                                                         <button type="button" class="dropdown-item subscode"
                                                             data-id="{{ $item->id }}"
                                                             data-no="{{ $item->no_modul }}"
                                                             data-status="{{ $item->status_subscode ?? '' }}"
-                                                            data-tanggal="{{ $item->tanggal_subscode ?? '' }}"
-                                                            data-catatan="{{ $item->catatan_subscode ?? '' }}"
+                                                            data-tanggal="{{ $item->tanggal_subscode_masuk ? \Carbon\Carbon::parse($item->tanggal_subscode_masuk)->format('Y-m-d\TH:i') : '' }}"
+                                                            data-tenggat="{{ $item->tanggal_tenggat ? \Carbon\Carbon::parse($item->tanggal_tenggat)->format('Y-m-d\TH:i') : '' }}"
+                                                            data-catatan="{{ $item->catatan ?? '' }}"
                                                             data-bs-toggle="modal" data-bs-target="#subscodeModal">
                                                             <i class="bi bi-tag text-info me-2"></i> Subscode
                                                         </button>
@@ -267,6 +300,12 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label fw-semibold">Tenggat</label>
+                        <input type="datetime-local" name="tanggal_tenggat" id="tanggal_tenggat"
+                            class="form-control form-control-lg">
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label fw-semibold">Catatan</label>
                         <textarea name="catatan" id="catatan_subscode"
                             class="form-control" rows="5"
@@ -376,8 +415,8 @@
                 },
 
                 columnDefs: [
-                    { orderable: true, targets: [0, 1, 2, 3, 4, 5] },
-                    { orderable: false, targets: 6 } 
+                    { orderable: true, targets: [0, 1, 2, 3, 4, 5, 6] },
+                    { orderable: false, targets: 7 } 
                 ],
 
                 order: [[0, 'asc']],
@@ -403,13 +442,15 @@
                 $('#editForm').attr('action', `/office/modul/update/nomor/${id}`);
             });
 
-            //subscode modal
-            $('.subscode').on('click', function() {
-                const id       = $(this).data('id');
-                const noModul  = $(this).data('no');
-                const status   = $(this).data('status');
-                const tanggal  = $(this).data('tanggal');
-                const catatan  = $(this).data('catatan');
+            // SUBSCODE MODAL - PERBAIKAN: gunakan event delegation + attr() agar data-tanggal/tenggat terbaca fresh
+            $(document).on('click', '.subscode', function () {
+                const id      = $(this).data('id');
+                const noModul = $(this).data('no');
+                const status  = $(this).data('status');
+                // Pakai attr() untuk baca value sebagai string utuh (hindari auto-conversion jQuery .data() pada format datetime)
+                const tanggal = $(this).attr('data-tanggal') || '';
+                const tenggat = $(this).attr('data-tenggat') || '';
+                const catatan = $(this).data('catatan');
 
                 $('#subscode_no_modul_display').text('No Modul: ' + noModul);
 
@@ -419,13 +460,9 @@
                     $('#status_subscode_nonaktif').prop('checked', true);
                 }
 
-                if (tanggal) {
-                    let dt = tanggal.toString().replace(' ', 'T').substring(0, 16);
-                    $('#tanggal_subscode').val(dt);
-                } else {
-                    $('#tanggal_subscode').val('');
-                }
-
+                // Value dari Blade sudah dalam format Y-m-d\TH:i, tinggal pasang langsung
+                $('#tanggal_subscode').val(tanggal);
+                $('#tanggal_tenggat').val(tenggat);
                 $('#catatan_subscode').val(catatan || '');
 
                 const route = '{{ route('office.modul.update.subscode', ':id') }}';
