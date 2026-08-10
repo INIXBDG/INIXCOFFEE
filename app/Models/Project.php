@@ -26,6 +26,11 @@ class Project extends Model
         'tanggal_akhir' => 'date',
     ];
 
+    public function lead()
+    {
+        return $this->belongsTo(LeadProject::class, 'lead_id', 'id');
+    }
+
     public function administration()
     {
         return $this->hasOne(ProjectAdministration::class);
