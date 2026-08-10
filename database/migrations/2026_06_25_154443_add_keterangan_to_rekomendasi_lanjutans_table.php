@@ -8,19 +8,15 @@ return new class extends Migration
 {
     public function up()
     {
-        if (!Schema::hasColumn('rekomendasi_lanjutans', 'keterangan')) {
-            Schema::table('rekomendasi_lanjutans', function (Blueprint $table) {
-                $table->text('keterangan')->nullable()->after('id_materi');
-            });
-        }
+        Schema::table('rekomendasi_lanjutans', function (Blueprint $table) {
+            $table->text('keterangan')->nullable()->after('id_materi');
+        });
     }
 
     public function down()
     {
-        if (Schema::hasColumn('rekomendasi_lanjutans', 'keterangan')) {
-            Schema::table('rekomendasi_lanjutans', function (Blueprint $table) {
-                $table->dropColumn('keterangan');
-            });
-        }
+        Schema::table('rekomendasi_lanjutans', function (Blueprint $table) {
+            $table->dropColumn('keterangan');
+        });
     }
 };
