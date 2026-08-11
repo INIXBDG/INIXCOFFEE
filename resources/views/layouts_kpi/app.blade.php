@@ -554,7 +554,7 @@
             background-color: #696cff;
             box-shadow: 0 0 0 3px rgba(105, 108, 255, 0.16);
         }
-        
+
         .swal2-container {
             z-index: 999999 !important;
         }
@@ -679,6 +679,7 @@
     <script async defer src="https://buttons.github.io/buttons.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('js/global-validator.js') }}"></script>
 
     <!-- User Profile Ajax -->
     <script>

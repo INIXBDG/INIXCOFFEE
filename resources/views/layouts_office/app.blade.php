@@ -219,7 +219,7 @@
                 transform: scale(1.2);
             }
         }
-        
+
         .swal2-container {
             z-index: 999999 !important;
         }
@@ -290,7 +290,11 @@
 
     <!-- Iconify -->
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
-    
+
+
+    <script src="{{ asset('js/global-validator.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <!-- Mobile menu toggle logic -->
     <script>
@@ -357,7 +361,7 @@
     </script>
 
     @yield('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     @if($errors->any())
     @php
         $swalType = 'error';

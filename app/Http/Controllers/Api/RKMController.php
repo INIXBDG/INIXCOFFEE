@@ -15,6 +15,7 @@ use App\Models\Perusahaan;
 use App\Http\Resources\PostResource;
 use App\Models\AbsensiPDF;
 use App\Models\RekomendasiLanjutan;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class RKMController extends Controller
@@ -51,7 +52,7 @@ class RKMController extends Controller
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1);
+                        $query->where('tentatif', 1)->where('tahap', '!=', 'lost');
                     })
                     ->select(
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
@@ -339,43 +340,35 @@ class RKMController extends Controller
         }
     }
 
-    public function getRKMDetailGroup(Request $request)
+     public function getRKMDetailGroup(Request $request)
     {
         $idRkm = $request->id_rkm;
         $rkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
             ->where('id', $idRkm)
             ->first();
-        // dd($rkm);
+
+        if (!$rkm) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RKM tidak ditemukan',
+                'data' => null,
+            ], 404);
+        }
+
         $materi_key = $rkm->materi_key;
         $start = $rkm->tanggal_awal;
-        $end = $rkm->tanggal_akhir;
         $instruktur_key = $rkm->instruktur_key;
+
         $rows = RKM::with([
-            'materi',
-            'instruktur',
-            'instruktur2',
-            'asisten',
-            'nilaifeedback',
-            'peluang',
-            'exam',
-            'exam.approvalexam',
+            'materi', 'instruktur', 'instruktur2', 'asisten',
+            'nilaifeedback', 'peluang', 'exam', 'exam.approvalexam',
         ])
-        ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+        ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')  
         ->whereDate('r_k_m_s.tanggal_awal', $start)
         ->where('r_k_m_s.status', '0')
         ->whereNull('r_k_m_s.deleted_at')
-        ->whereDoesntHave('peluang', function ($query) {
-            $query->where('tentatif', 1);
-        })
-        ->whereHas('peluang', function ($query) {
-            $query->where('tentatif', 0);
-        })
-        ->where(function ($query) {
-            $query->whereHas('exam.approvalexam', function ($q) {
-                $q->where('technical_support', 1);
-            })
-            ->orWhereDoesntHave('exam.approvalexam');
-        })
+        ->whereDoesntHave('peluang', fn($q) => $q->where('tentatif', 1))
+        ->whereHas('peluang', fn($q) => $q->where('tentatif', 0))
         ->where('r_k_m_s.materi_key', $materi_key)
         ->where('r_k_m_s.instruktur_key', $instruktur_key)
         ->orderBy('r_k_m_s.tanggal_awal')
@@ -383,44 +376,61 @@ class RKMController extends Controller
         ->select('r_k_m_s.*')
         ->get();
 
-        $mergedData = [];
+        if ($rows->isEmpty()) {
+            Log::warning('RKM Group Detail: rows kosong', [
+                'id_rkm' => $idRkm,
+                'materi_key' => $materi_key,
+                'instruktur_key' => $instruktur_key,
+                'status' => $rkm->status,
+                'deleted_at' => $rkm->deleted_at,
+                'peluang_tentatif' => $rkm->peluang->tentatif ?? 'NO_PELUANG',
+            ]);
 
+            return response()->json([
+                'success' => false,
+                'message' => 'Data RKM tidak memenuhi kriteria rekap (cek status/peluang/instruktur/tentatif/materi)',
+                'data' => [
+                    'id_rkm' => $idRkm,
+                    'materi_key' => $materi_key,
+                    'instruktur_key' => $instruktur_key,
+                    'status' => $rkm->status,
+                    'deleted_at' => $rkm->deleted_at,
+                    'peluang_tentatif' => $rkm->peluang->tentatif ?? 'NO_PELUANG',
+                ],
+            ], 200); // tetap 200 karena ini bukan error server, cuma data gak ada
+        }
+
+        $mergedData = [];
         foreach ($rows as $row) {
-            // Buat kunci unik berdasarkan materi_key, tanggal_awal, dan tanggal_akhir
             $key = $row->materi_key.'|'.$row->tanggal_awal.'|'.$row->tanggal_akhir;
             if (!isset($mergedData[$key])) {
-                // Jika kunci belum ada, tambahkan data baru
                 $mergedData[$key] = $row->toArray();
-                $mergedData[$key]['sales_key'] = [$row->sales_key]; // Simpan sales_key dalam array
-                $mergedData[$key]['perusahaan_key'] = [$row->perusahaan_key]; // Simpan perusahaan_key dalam array
-                $mergedData[$key]['pax'] = $row->pax; // Ambil pax
+                $mergedData[$key]['sales_key'] = [$row->sales_key];
+                $mergedData[$key]['perusahaan_key'] = [$row->perusahaan_key];
+                $mergedData[$key]['pax'] = $row->pax;
                 $mergedData[$key]['id_rkm'] = [$row->id];
             } else {
-                // Jika kunci sudah ada, gabungkan data
-                $mergedData[$key]['sales_key'][] = $row->sales_key; // Tambahkan sales_key
-                $mergedData[$key]['perusahaan_key'][] = $row->perusahaan_key; // Tambahkan perusahaan_key
-                $mergedData[$key]['pax'] += $row->pax; // Jumlahkan pax
+                $mergedData[$key]['sales_key'][] = $row->sales_key;
+                $mergedData[$key]['perusahaan_key'][] = $row->perusahaan_key;
+                $mergedData[$key]['pax'] += $row->pax;
                 $mergedData[$key]['id_rkm'][] = $row->id;
             }
         }
 
-        // Format hasil akhir
+        $mergedResults = [];
         foreach ($mergedData as $data) {
-            $data['sales_key'] = implode(', ', $data['sales_key']); // Gabungkan sales_key
-            $data['perusahaan_key'] = implode(', ', $data['perusahaan_key']); // Gabungkan perusahaan_key
+            $data['sales_key'] = implode(', ', $data['sales_key']);
+            $data['perusahaan_key'] = implode(', ', $data['perusahaan_key']);
             $data['id_rkm'] = implode(', ', $data['id_rkm']);
             $data['tanggal_awal'] = Carbon::parse($data['tanggal_awal'])->timezone('Asia/Jakarta')->format('Y-m-d');
             $data['tanggal_akhir'] = Carbon::parse($data['tanggal_akhir'])->timezone('Asia/Jakarta')->format('Y-m-d');
-            $result = $data;
+            $mergedResults[] = $data;
         }
 
-        // Kembalikan hasil
-        // return response()->json($result);
-
-        if ($rkm) {
-            return response()->json($result);
-        } else {
-            return response()->json(['rkm' => null]);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'OK',
+            'data' => end($mergedResults),
+        ]);
     }
 }

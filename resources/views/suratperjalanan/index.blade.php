@@ -400,7 +400,7 @@
                         actions += '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
                         actions += uploadBuktiActions;
 
-                        if (data.approval_manager == '0' && (data.karyawan.divisi === 'Office' || [4, 13, 14, 29].includes(Number(data.karyawan.id)))) {
+                      if (data.approval_manager == '0' && (data.karyawan.divisi === 'Office' || ['Office Manager', 'SPV Sales', 'Koordinator ITSM', 'Koordinator Office'].includes(userRole))) {
                             actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')">Approve sbg Manager Divisi</button>';
                         } else if (data.tipe == 'Internasional' && data.approval_manager == '1' && data.approval_hrd == '1' && data.approval_gm == '0') {
                             actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'GM\')">Approve sbg GM & Direksi</button>';

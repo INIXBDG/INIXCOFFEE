@@ -19,6 +19,7 @@ class NomorModul extends Model
         'keterangan',
         'status_subscode',
         'tanggal_subscode_masuk',
+        'tanggal_tenggat',
         'catatan'
     ];
 

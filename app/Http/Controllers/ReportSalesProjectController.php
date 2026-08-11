@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Lead;
+use App\Models\LeadProject; // Integrasi Model Lead
 use App\Models\Project;
-use App\Models\Lead; // Integrasi Model Lead
-use App\Models\LeadProject;
-use Illuminate\Http\Request;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ReportSalesProjectController extends Controller
 {
@@ -17,29 +18,81 @@ class ReportSalesProjectController extends Controller
 
     public function getRecapData(Request $request): JsonResponse
     {
+        $year = $request->input('year', Carbon::now()->year);
+
+        // ==========================================
         // 1. Agregasi Data Keuangan (Project)
-        $projects = Project::with(['client', 'administration.projectManager'])
+        // Berdasarkan tahun_periode LeadProject
+        // ==========================================
+
+        $projects = Project::with([
+            'client',
+            'administration.projectManager',
+            'lead',
+        ])
+            ->whereHas('lead', function ($query) use ($year) {
+                $query->where('tahun_periode', $year);
+            })
             ->whereNotNull('nilai_proyek')
             ->where('phase', '!=', 'gagal')
             ->get();
 
         $totalSales = $projects->sum('nilai_proyek');
-        $completedSales = $projects->where('phase', 'selesai')->sum('nilai_proyek');
-        $potentialSales = $projects->whereIn('phase', ['administrasi', 'teknis'])->sum('nilai_proyek');
 
-        // 2. Agregasi Data Kuantitas (Leads & Prospek)
-        // Leads Awal: Tahapan sebelum dokumen penawaran
-        $leadsAwal = LeadProject::whereIn('status', ['penawaran_awal', 'permintaan_klien', 'meeting_klien'])->count();
-        
-        // Prospek Aktif: Tahapan dokumen berjalan namun belum final
-        $prospekAktif = LeadProject::whereIn('status', ['dokumen_penawaran', 'mengirim_proposal_teknis', 'surat_penawaran'])->count();
-        
-        // Closing: Berhasil (Won) dan Gagal (Lost - membaca data Soft Delete)
-        $closingWon = LeadProject::where('status', 'won')->count();
-        $closingLost = LeadProject::withTrashed()->where('status', 'lost')->count();
+        $completedSales = $projects
+            ->where('phase', 'selesai')
+            ->sum('nilai_proyek');
+
+        $potentialSales = $projects
+            ->whereIn('phase', ['administrasi', 'teknis'])
+            ->sum('nilai_proyek');
+
+        // ==========================================
+        // 2. Leads Awal
+        // ==========================================
+
+        $leadsAwal = LeadProject::where('tahun_periode', $year)
+            ->whereIn('status', [
+                'penawaran_awal',
+                'permintaan_klien',
+                'meeting_klien',
+            ])
+            ->count();
+
+        // ==========================================
+        // 3. Prospek Aktif
+        // ==========================================
+
+        $prospekAktif = LeadProject::where('tahun_periode', $year)
+            ->whereIn('status', [
+                'dokumen_penawaran',
+                'mengirim_proposal_teknis',
+                'surat_penawaran',
+            ])
+            ->count();
+
+        // ==========================================
+        // 4. Closing Won
+        // ==========================================
+
+        $closingWon = LeadProject::where('tahun_periode', $year)
+            ->where('status', 'won')
+            ->count();
+
+        // ==========================================
+        // 5. Closing Lost
+        // ==========================================
+
+        $closingLost = LeadProject::withTrashed()
+            ->where('tahun_periode', $year)
+            ->where('status', 'lost')
+            ->count();
 
         return response()->json([
             'success' => true,
+
+            'year' => $year,
+
             'summary' => [
                 'total_revenue' => $totalSales,
                 'realized_revenue' => $completedSales,
@@ -49,7 +102,8 @@ class ReportSalesProjectController extends Controller
                 'closing_won' => $closingWon,
                 'closing_lost' => $closingLost,
             ],
-            'data' => $projects
+
+            'data' => $projects,
         ], 200);
     }
 }
