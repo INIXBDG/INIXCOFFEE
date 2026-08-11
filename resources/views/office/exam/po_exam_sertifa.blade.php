@@ -11,10 +11,16 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="mb-0">Data Exam Sertifa</h4>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#poExamModal">Tambah Data</button>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">Data Exam Sertifa</h4>
+
+                    <div class="d-flex gap-2">
+                        <a href="/exam" class="btn btn-primary" target="_blank">Exam</a>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#poExamModal">
+                            Tambah Data
+                        </button>
                     </div>
+                </div>
 
                     @if ($errors->any())
                         <div class="alert alert-danger">
@@ -252,6 +258,7 @@
                     render: function (data, type, row) {
                         var updateUrl = "{{ route('office.certifa.update', ':id') }}".replace(':id', data);
                         var destroyUrl = "{{ route('office.certifa.destroy', ':id') }}".replace(':id', data);
+                        var examUrl = "/pengajuanExam";
                         var csrfToken = '{{ csrf_token() }}';
 
                         var btnEdit = `
@@ -276,7 +283,29 @@
                             </form>
                         `;
 
-                        return btnEdit + ' ' + btnDelete;
+                        var btnExam = '';
+
+                        if (row.exam) {
+                            btnExam = `
+                                <button class="btn btn-sm btn-info" disabled>
+                                    Diajukan
+                                </button>
+                            `;
+                        } else {
+                            btnExam = `
+                                <a href="${examUrl}/${row.id_rkm}" class="btn btn-sm btn-info" target="_blank">
+                                    Ajukan
+                                </a>
+                            `;
+                        }
+
+                        return `
+                            <div class="d-flex gap-1">
+                                ${btnEdit}
+                                ${btnDelete}
+                                ${btnExam}
+                            </div>
+                        `;                    
                     }
                 }
             ],

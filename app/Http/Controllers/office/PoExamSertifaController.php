@@ -24,10 +24,10 @@ class PoExamSertifaController extends Controller
     {
         $rkms = RKM::with(['materi', 'perusahaan'])
                 ->where('exam', '1')
-                ->whereBetween('tanggal_awal', [now()->subMonth(), now()->addMonth()])
+                ->where('status', '0')
+                ->whereDoesntHave('exam')
                 ->orderBy('id')
                 ->get();
-
         $skemas = PoExamSertifa::whereNotNull('skema')
                     ->where('skema', '!=', '')
                     ->distinct()
