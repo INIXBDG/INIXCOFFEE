@@ -2,7 +2,7 @@
 
 @section('crm_contents')
     @php
-        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+        $allowedUser = ['HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
     @endphp
 
     <div class="content-wrapper">
@@ -75,6 +75,19 @@
                         <form id="form-data" action="{{ route('store.peluang') }}" method="POST"
                             class="needs-validation" novalidate>
                             @csrf
+
+                            @if(in_array(Auth::user()->jabatan, ['Adm Sales', 'SPV Sales']))
+                            <div class="mb-3">
+                                <label class="form-label" for="id_sales">Sales Penanggung Jawab</label>
+                                <select class="form-select" id="id_sales" name="id_sales" required>
+                                    <option value="" disabled selected>Pilih Sales</option>
+                                    @foreach ($salesList as $sales)
+                                        <option value="{{ $sales->id_sales }}">{{ $sales->username }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="invalid-feedback">Pilih Sales.</div>
+                            </div>
+                            @endif
 
                             <div class="mb-3">
                                 <label class="form-label" for="id_perusahaan">Perusahaan</label>
@@ -406,13 +419,17 @@
             }
         };
 
-        // 3. Inisialisasi Tabel Aktif (Filter data SELAIN 'lost')
+        // 3. Inisialisasi Tabel Aktif (Server-Side Processing)
         let tableAktif = $('#peluangTable').DataTable({
             processing: true,
+            serverSide: true,
+            // stateSave: true,
+            order: [[11, 'desc']], // Instruksi pengurutan menargetkan kolom "Prospek Terbuat" (akan dipetakan ke ID di peladen)
             ajax: {
                 url: '{{ route("index.peluang.json") }}',
-                dataSrc: function(json) {
-                    return json.data.filter(item => item.tahap?.toLowerCase() !== 'lost');
+                type: 'GET',
+                data: function(d) {
+                    d.status_filter = 'aktif';
                 },
                 error: function(xhr, error, thrown) {
                     alert('Gagal memuat data peluang aktif: ' + thrown);
@@ -422,13 +439,17 @@
             columns: tableColumns
         });
 
-        // 4. Inisialisasi Tabel Lost (Filter data HANYA 'lost')
+        // 4. Inisialisasi Tabel Lost (Server-Side Processing)
         let tableLost = $('#peluangLostTable').DataTable({
             processing: true,
+            serverSide: true,
+            // stateSave: true,
+            order: [[11, 'desc']], // Instruksi pengurutan menargetkan kolom "Prospek Terbuat" (akan dipetakan ke ID di peladen)
             ajax: {
                 url: '{{ route("index.peluang.json") }}',
-                dataSrc: function(json) {
-                    return json.data.filter(item => item.tahap?.toLowerCase() === 'lost');
+                type: 'GET',
+                data: function(d) {
+                    d.status_filter = 'lost';
                 },
                 error: function(xhr, error, thrown) {
                     alert('Gagal memuat data peluang lost: ' + thrown);
@@ -438,13 +459,15 @@
             columns: tableColumns
         });
 
-        // 5. Callback penomoran untuk kedua tabel
+        // 5. Callback penomoran untuk kedua tabel (Revisi Server-Side)
         function bindNumbering(tableInstance) {
-            tableInstance.on('order.dt search.dt draw.dt', function() {
+            tableInstance.on('draw.dt', function() {
+                let info = tableInstance.page.info();
                 tableInstance.column(0, { search: 'applied', order: 'applied' }).nodes().each(function(cell, i) {
-                    cell.innerHTML = i + 1;
+                    // Kalkulasi nomor urut berdasarkan offset halaman saat ini
+                    cell.innerHTML = info.start + i + 1;
                 });
-            }).draw();
+            });
         }
 
         bindNumbering(tableAktif);

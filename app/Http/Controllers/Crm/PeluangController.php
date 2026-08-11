@@ -48,97 +48,167 @@ class PeluangController extends Controller
     {
         $user = Auth::user();
         $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
-        $materi = Materi::where('status', '!=', 'Nonaktif')->get();
-        $aktivitas = Aktivitas::where('id_sales', $user->id_sales)->whereNull('id_peluang')->get();
 
-        if ($user->jabatan === 'Sales') {
-            $idSales = $user->id_sales;
-            $data = Peluang::where('id_sales', $idSales)->get();
-            $Perusahaan = Perusahaan::where('sales_key', $idSales)->get();
-        } elseif (in_array($user->jabatan, $allowedJabatan)) {
-            $data = Peluang::all();
-            $Perusahaan = Perusahaan::all();
-        } else {
+        if (!in_array($user->jabatan, $allowedJabatan) && $user->jabatan !== 'Sales') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        return view('crm.peluang.index', compact('data', 'Perusahaan', 'materi', 'aktivitas'));
+        // Hanya memuat data materi dengan spesifikasi kolom yang dibutuhkan oleh dropdown Blade
+        $materi = Materi::where('status', '!=', 'Nonaktif')
+            ->select('id', 'nama_materi')
+            ->get();
+
+        $salesList = [];
+
+        if ($user->jabatan === 'Sales') {
+            // Hanya memuat entitas perusahaan dengan spesifikasi kolom spesifik
+            $Perusahaan = Perusahaan::where('sales_key', $user->id_sales)
+                ->select('id', 'nama_perusahaan', 'cp')
+                ->get();
+        } else {
+            // Hanya memuat entitas perusahaan dengan spesifikasi kolom spesifik
+            $Perusahaan = Perusahaan::select('id', 'nama_perusahaan', 'cp')->get();
+
+            // Memuat data sales untuk otorisasi spesifik di dalam modal
+            if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales'])) {
+                $salesList = User::where('jabatan', 'Sales')
+                    ->where('status_akun', '1')
+                    ->select('id_sales', 'username')
+                    ->get();
+            }
+        }
+
+        // Variabel $data dan $aktivitas dihapus karena data ditarik secara asinkron (AJAX)
+        return view('crm.peluang.index', compact('Perusahaan', 'materi', 'salesList'));
     }
 
-    public function indexJson()
+    public function indexJson(Request $request)
     {
         try {
             $user = Auth::user();
             $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
-            if ($user->jabatan === 'Sales') {
-                $idSales = $user->id_sales;
-                $data = Peluang::where('id_sales', $idSales)
-                    ->with(['materiRelation', 'rkm' => function($query) { $query->withTrashed(); },])
-                    ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
-                    ->orderBy('created_at', 'desc')
-                    ->get()
-                    ->map(function ($item) {
-                        $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
-                        $rkm = RKM::withTrashed()->with('perusahaan')->where('id', $item->id_rkm)->first();
-                        $item->rkm_data = $rkm ? $rkm : null;
-                        $item->rkm_formatted = $rkm
-                            ? [
-                                'materi_key' => $rkm->materi_key,
-                                'metode_kelas' => $rkm->metode_kelas === 'Offline' ? 'off' : ($rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir')),
-                                'tanggal_awal_day' => $rkm->tanggal_awal ? date('d', strtotime($rkm->tanggal_awal)) : null,
-                                'tanggal_awal_month' => $rkm->tanggal_awal ? date('n', strtotime($rkm->tanggal_awal)) : null,
-                                'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
-                            ]
-                            : null;
-
-                        // 🔹 Tambahkan pengecekan histori
-                        $item->has_history = \Illuminate\Support\Facades\DB::table('peluang_histories')->where('id_peluang', $item->id)->exists();
-
-                        return $item;
-                    });
-            } elseif (in_array($user->jabatan, $allowedJabatan)) {
-                $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
-                    ->with(['materiRelation', 'rkm' => function($query) { $query->withTrashed(); },])
-                    ->orderBy('created_at', 'desc')
-                    ->get()
-                    ->map(function ($item) {
-                        $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
-                        $rkm = RKM::withTrashed()->with('perusahaan')->where('id', $item->id_rkm)->first();
-                        $item->rkm_data = $rkm ? $rkm : null;
-                        $item->rkm_formatted = $rkm
-                            ? [
-                                'materi_key' => $rkm->materi_key,
-                                'metode_kelas' => $rkm->metode_kelas === 'Offline' ? 'off' : ($rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir')),
-                                'tanggal_awal_day' => $rkm->tanggal_awal ? date('d', strtotime($rkm->tanggal_awal)) : null,
-                                'tanggal_awal_month' => $rkm->tanggal_awal ? date('n', strtotime($rkm->tanggal_awal)) : null,
-                                'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
-                            ]
-                            : null;
-
-                        // 🔹 Tambahkan pengecekan histori
-                        $item->has_history = \Illuminate\Support\Facades\DB::table('peluang_histories')->where('id_peluang', $item->id)->exists();
-
-                        return $item;
-                    });
-            } else {
-                return response()->json(
-                    [
-                        'error' => 'Unauthorized access.',
-                    ],
-                    403,
-                );
+            if ($user->jabatan !== 'Sales' && !in_array($user->jabatan, $allowedJabatan)) {
+                return response()->json(['error' => 'Unauthorized access.'], 403);
             }
 
+            // 1. Parameter Utama DataTables Server-Side (Menetapkan default indeks 11 jika kosong)
+            $draw = $request->input('draw');
+            $start = $request->input('start', 0);
+            $length = $request->input('length', 10);
+            $searchValue = $request->input('search.value');
+            $orderColumnIndex = $request->input('order.0.column', 11);
+            $orderDir = $request->input('order.0.dir', 'desc');
+            $statusFilter = $request->input('status_filter', 'aktif');
+
+            // 2. Pemetaan Indeks Kolom DataTables ke Nama Kolom Basis Data
+            $columns = [
+                0 => 'id',
+                4 => 'harga',
+                5 => 'netsales',
+                6 => 'pax',
+                7 => 'periode_mulai',
+                9 => 'tahap',
+                10 => 'id_sales',
+                11 => 'id', // Dialihkan dari 'created_at' ke 'id' untuk optimalisasi performa
+            ];
+
+            // Menggunakan 'id' sebagai lapisan cadangan absolut jika indeks tidak ditemukan
+            $orderColumn = $columns[$orderColumnIndex] ?? 'id';
+
+            // 3. Kueri Relasional Dasar
+            $query = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
+                ->with([
+                    'materiRelation',
+                    'rkm' => function($q) {
+                        $q->withTrashed()->with('perusahaan');
+                    }
+                ]);
+
+            // 4. Implementasi Filter Otorisasi
+            if ($user->jabatan === 'Sales') {
+                $query->where('id_sales', $user->id_sales);
+            }
+
+            // 5. Implementasi Filter Status Data (Aktif vs Lost)
+            if ($statusFilter === 'lost') {
+                $query->where('tahap', 'lost');
+            } else {
+                $query->where('tahap', '!=', 'lost');
+            }
+
+            // 6. Eksekusi Perhitungan Total Rekaman (Sebelum Pencarian Global)
+            $recordsTotal = $query->count();
+
+            // 7. Implementasi Logika Pencarian Global (Search)
+            if (!empty($searchValue)) {
+                $query->where(function($q) use ($searchValue) {
+                    $q->where('tahap', 'like', "%{$searchValue}%")
+                      ->orWhere('id_sales', 'like', "%{$searchValue}%")
+                      ->orWhereHas('materiRelation', function($qMateri) use ($searchValue) {
+                          $qMateri->where('nama_materi', 'like', "%{$searchValue}%");
+                      });
+                });
+            }
+
+            // 8. Eksekusi Perhitungan Total Rekaman (Setelah Pencarian Global)
+            $recordsFiltered = $query->count();
+
+            // 9. Implementasi Pengurutan (Order) dan Paginasi (Limit & Offset) menggunakan kolom ID
+            $query->orderBy($orderColumn, $orderDir);
+            if ($length != -1) {
+                $query->offset($start)->limit($length);
+            }
+
+            // 10. Eksekusi Kueri Pengambilan Data dan Pemetaan
+            $data = $query->get()->map(function ($item) {
+                $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
+
+                $rkm = $item->rkm;
+                $item->rkm_data = $rkm ? $rkm : null;
+
+                $item->rkm_formatted = null;
+                if ($rkm) {
+                    $metode = 'vir';
+                    if ($rkm->metode_kelas === 'Offline') {
+                        $metode = 'off';
+                    } elseif ($rkm->metode_kelas === 'Inhouse Bandung') {
+                        $metode = 'inhb';
+                    } elseif ($rkm->metode_kelas === 'Inhouse Luar Bandung') {
+                        $metode = 'inhlb';
+                    }
+
+                    $item->rkm_formatted = [
+                        'materi_key' => $rkm->materi_key,
+                        'metode_kelas' => $metode,
+                        'tanggal_awal_day' => $rkm->tanggal_awal ? date('d', strtotime($rkm->tanggal_awal)) : null,
+                        'tanggal_awal_month' => $rkm->tanggal_awal ? date('n', strtotime($rkm->tanggal_awal)) : null,
+                        'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
+                    ];
+                }
+
+                $item->has_history = DB::table('peluang_histories')
+                    ->where('id_peluang', $item->id)
+                    ->exists();
+
+                return $item;
+            });
+
+            // 11. Pengembalian Struktur JSON Standar DataTables Server-Side
             return response()->json([
+                'draw' => intval($draw),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
                 'data' => $data,
             ]);
+
         } catch (\Exception $e) {
             return response()->json(
                 [
-                    'error' => 'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
+                    'error' => 'Terjadi kesalahan pada server.',
+                    'message' => $e->getMessage()
                 ],
-                500,
+                500
             );
         }
     }
@@ -288,6 +358,9 @@ class PeluangController extends Controller
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+
         $request->merge([
             'harga' => preg_replace('/[^0-9]/', '', $request->harga),
             'netsales' => preg_replace('/[^0-9]/', '', $request->netsales),
@@ -307,6 +380,7 @@ class PeluangController extends Controller
             'id_aktivitas.*' => 'integer|exists:aktivitas,id',
             'tentatif' => 'nullable|boolean',
             'perusahaan_pendaftar' => 'nullable|string|max:255',
+            'id_sales' => 'nullable|string',
         ]);
 
         // Validasi data untuk tabel RKM
@@ -317,6 +391,12 @@ class PeluangController extends Controller
             'authorize' => 'required|in:0,1',
         ]);
 
+        // LOGIKA PENENTUAN SALES PENANGGUNG JAWAB
+        $finalIdSales = $user->id_sales ?? null;
+        if (in_array($user->jabatan, $allowedJabatan) && $request->filled('id_sales')) {
+            $finalIdSales = $request->id_sales;
+        }
+
         // Parse tanggal dengan Carbon
         try {
             $start = Carbon::parse($request->input('periode_mulai'));
@@ -325,18 +405,9 @@ class PeluangController extends Controller
         }
 
         $bulanNamaMap = [
-            1 => 'Januari',
-            2 => 'Februari',
-            3 => 'Maret',
-            4 => 'April',
-            5 => 'Mei',
-            6 => 'Juni',
-            7 => 'Juli',
-            8 => 'Agustus',
-            9 => 'September',
-            10 => 'Oktober',
-            11 => 'November',
-            12 => 'Desember',
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
         $bulanInt = (int) $start->format('n');
 
@@ -363,9 +434,9 @@ class PeluangController extends Controller
 
         $tahun = $start->format('Y');
 
-        // Siapkan data RKM, termasuk yang diambil dari request dan user login, plus bulan, kuartal, tahun
+        // Siapkan data RKM
         $rkmData = array_merge($validatedRKM, [
-            'sales_key' => auth()->user()->id_sales ?? null,
+            'sales_key' => $finalIdSales, // 🔹 Terapkan hasil logika id_sales yang sudah diotorisasi
             'materi_key' => $request->materi,
             'perusahaan_key' => $request->id_contact,
             'harga_jual' => $request->harga,
@@ -381,9 +452,9 @@ class PeluangController extends Controller
 
         $rkm = RKM::create($rkmData);
 
+        // Siapkan data Peluang
         $validated['id_rkm'] = $rkm ? $rkm->id : null;
-
-        $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
+        $validated['id_sales'] = $finalIdSales; // 🔹 Terapkan hasil logika id_sales yang sudah diotorisasi
 
         foreach (['periode_mulai', 'periode_selesai', 'netsales'] as $field) {
             if (empty($validated[$field])) {
@@ -391,7 +462,7 @@ class PeluangController extends Controller
             }
         }
 
-        // Buat record Peluang sekarang dengan id_rkm yang sudah ada
+        // Buat record Peluang
         $peluang = Peluang::create($validated);
 
         // Jika ada aktivitas yang ingin dikaitkan, update id_peluang pada aktivitas tersebut
@@ -702,7 +773,7 @@ class PeluangController extends Controller
                     $peluang->rkm->status = '0';
                     $peluang->rkm->save();
                 }
-                
+
                 $user = User::where('jabatan', 'Admin Holding')->where('status_akun', '1')->get();
                 $data = [
                     'perusahaan' => $peluang->perusahaan->nama_perusahaan ?? 'N/A',
