@@ -1021,7 +1021,11 @@ class InstrukturKPIService
             }
         }
 
-        return $countAchieved;
+        if ($personId !== null) {
+            $countAchieved = min($countAchieved, $nilaiTarget);
+        }
+
+        return (float) $countAchieved;
     }
 
     public function calculateSertifikasiKompetensiInternalDetail($itemDetail, $personId)
@@ -1074,7 +1078,7 @@ class InstrukturKPIService
                 ->where(function ($q) use ($startYear) {
                     $q->where('tanggal_berlaku_sampai', '>=', $startYear)
                         ->orWhereNull('tanggal_berlaku_sampai');
-                    })
+                })
                 ->get();
 
             $validSertifikasi = $validSertifikasis->count();
@@ -1112,6 +1116,10 @@ class InstrukturKPIService
                     }
                 }
             }
+        }
+
+        if ($personId !== null) {
+            $countAchieved = min($countAchieved, $nilaiTarget);
         }
 
         $progress = $countAchieved;
@@ -1221,7 +1229,11 @@ class InstrukturKPIService
             }
         }
 
-        return $countAchieved;
+        if ($personId !== null) {
+            $countAchieved = min($countAchieved, $nilaiTarget);
+        }
+
+        return (float) $countAchieved;
     }
 
     public function calculatePelatihanKompetensiEksternalDetail($itemDetail, $personId)
@@ -1310,8 +1322,11 @@ class InstrukturKPIService
             }
         }
 
+        if ($personId !== null) {
+            $countAchieved = min($countAchieved, $nilaiTarget);
+        }
+
         $progress = $countAchieved;
-        
         $actualTarget = $totalData * $nilaiTarget;
         $gapRaw = $progress - $actualTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
