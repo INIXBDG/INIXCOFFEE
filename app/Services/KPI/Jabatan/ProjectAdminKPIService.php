@@ -349,7 +349,7 @@ class ProjectAdminKPIService
         $gap = $totalLead - $targetTahunan;
 
         return [
-            'progress' => round($totalLead),
+            'progress' => round($totalLead,),
             'gap' => $gap,
             'dataManual' => [
                 'manual_document' => $detail->manual_document ?? null,

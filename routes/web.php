@@ -127,6 +127,7 @@ use App\Http\Controllers\HR\RekapInventarisController;
 use App\Http\Controllers\FeatureDocumentationController;
 use App\Http\Controllers\CodeDocumentationController;
 use App\Http\Controllers\DocumentationImportController;
+use App\Http\Controllers\KelasSettingController;
 use App\Http\Controllers\UserController;
 
 /*
@@ -498,7 +499,7 @@ Route::prefix('kpi-data/')
 
         Route::get('/get-routes-by-jabatan', [TargetKPIController::class, 'getAssistantRoutesByJabatan'])->name('getRoutesByJabatan');
         Route::get('/get-target-by-route', [TargetKPIController::class, 'getDataTargetByRoute'])->name('getTargetByRoute');
-
+        Route::get('/divisi-drilldown', [TargetKPIController::class, 'divisiDrilldown'])->name('divisiDrilldown');
         //Overview KPI
         route::prefix('overview/')
             ->name('overview.')
@@ -1830,4 +1831,18 @@ Route::get('/sla-management', [DashboardSLAController::class, 'index'])->name('s
 Route::middleware(['auth'])->group(function () {
     Route::get('/knowledge-management/{id}/download', [KnowledgeManagementController::class, 'downloadFile'])->name('knowledge-management.download');
     Route::resource('knowledge-management', KnowledgeManagementController::class);
+});
+
+
+Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
+    Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
+    Route::get('/',               [KelasSettingController::class, 'getData'])->name('data');
+    Route::post('/store',              [KelasSettingController::class, 'store'])->name('store');
+    Route::patch('/{id}',         [KelasSettingController::class, 'update'])->name('update');
+    Route::delete('/{id}',        [KelasSettingController::class, 'destroy'])->name('destroy');
+    Route::post('/{id}/restore',  [KelasSettingController::class, 'restore'])->name('restore');
+
+    // Komentar
+    Route::post('/{id}/comment',           [KelasSettingController::class, 'addComment'])->name('comment.add');
+    Route::delete('/{id}/comment/{cmtId}', [KelasSettingController::class, 'removeComment'])->name('comment.remove');
 });

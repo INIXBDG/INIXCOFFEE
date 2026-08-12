@@ -520,7 +520,7 @@
                         @include('partials.notifications')
                     </div>
                     <div class="modal-footer">
-                        @if(auth()->user()->unreadNotifications->count() > 0)
+                        @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
                         <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
                             @csrf
                             @method('PUT')
@@ -550,9 +550,8 @@
                         <a class="nav-link position-relative" style="margin: 7px 3px 0px 3px" href="#"
                             data-bs-toggle="modal" data-bs-target="#notificationModal">
                             <img src="{{ asset('icon/whitebell.svg') }}" class="img-responsive" width="30px">
-                            @if (auth()->user()->unreadNotifications->count() > 0)
-                                <span
-                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                                     {{ auth()->user()->unreadNotifications->count() }}
                                     <span class="visually-hidden">unread notifications</span>
                                 </span>

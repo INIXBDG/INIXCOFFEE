@@ -2,11 +2,13 @@
 
 namespace App\Services\KPI\Jabatan;
 
+use App\Models\BiayaTransportasiDriver;
 use App\Models\perbaikanKendaraan;
 use App\Models\pickupDriver;
 use App\Models\KondisiKendaraan;
 use App\Models\HariLibur;
 use App\Models\Nilaifeedback;
+use App\Services\OperationalBudgetCalculator;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -192,31 +194,35 @@ class DriverKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $query = pickupDriver::whereBetween('created_at', [$start, $end])
-            ->whereNotNull('budget');
+        $query = BiayaTransportasiDriver::whereBetween('created_at', [$start, $end]);
 
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
         }
 
-        $DataPickup = $query->with(['biayaTransportasi'])->get();
+        $items = $query->with(['pickupDriver', 'SPJ'])->get();
 
-        $totalData = $DataPickup->count();
-        if ($totalData === 0) {
-            return 0;
+        if ($items->isEmpty()) {
+            return 100.0;
         }
 
+        $weeklyGroups = $items->groupBy(function ($item) {
+            return Carbon::parse($item->created_at)->startOfWeek()->format('Y-m-d');
+        });
+
+        $totalWeeks = $weeklyGroups->count();
         $countAman = 0;
+        $sources = ['driver', 'spj', 'outside'];
 
-        foreach ($DataPickup as $data) {
-            $totalBiaya = $data->biayaTransportasi->sum('harga') ?? 0;
-
-            if ($totalBiaya <= $data->budget) {
+        foreach ($weeklyGroups as $weekStart => $weekItems) {
+            $summary = OperationalBudgetCalculator::weeklySummary($weekItems, $weekStart, $sources);
+            
+            if (($summary['sisa_budget'] ?? 0) >= 0) {
                 $countAman++;
             }
         }
 
-        $presentase = ($countAman / $totalData) * 100;
+        $presentase = $totalWeeks > 0 ? ($countAman / $totalWeeks) * 100 : 100.0;
 
         return round($presentase, 1);
     }
@@ -239,105 +245,114 @@ class DriverKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $query = pickupDriver::whereBetween('created_at', [$start, $end])
-            ->whereNotNull('budget');
+        $query = BiayaTransportasiDriver::whereBetween('created_at', [$start, $end]);
 
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
         }
 
-        $DataPickup = $query->with(['biayaTransportasi'])->get();
+        $items = $query->with(['pickupDriver', 'SPJ'])->get();
 
-        $totalData = $DataPickup->count();
-
-        if ($totalData === 0) {
-            return $this->getDefaultDetailResponse();
+        if ($items->isEmpty()) {
+            return [
+                'progress' => 100.0,
+                'gap' => '0',
+                'pie_chart' => ['above' => 1, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+                'monthly_progress' => [],
+                'daily_progress_per_month' => []
+            ];
         }
 
+        $weeklyGroups = $items->groupBy(function ($item) {
+            return Carbon::parse($item->created_at)->startOfWeek()->format('Y-m-d');
+        });
+
+        $sources = ['driver', 'spj', 'outside'];
+        $totalWeeks = $weeklyGroups->count();
         $countAman = 0;
-        $dailyValues = [];
+        
+        $weeklyProgress = [];
+        $dailyProgress = [];
 
-        foreach ($DataPickup as $data) {
-            $totalBiaya = $data->biayaTransportasi->sum('harga') ?? 0;
+        foreach ($weeklyGroups as $weekStart => $weekItems) {
+            $summary = OperationalBudgetCalculator::weeklySummary($weekItems, $weekStart, $sources);
+            
+            $sisaBudget = $summary['sisa_budget'] ?? 0;
+            $totalBudget = ($summary['budget_awal'] ?? 0) + ($summary['total_tambahan'] ?? 0);
+            $totalTerpakai = $summary['total_terpakai'] ?? 0;
 
-            $isAman = $totalBiaya <= $data->budget ? 1 : 0;
-            if ($isAman) {
+            if ($totalTerpakai > 0 && $totalBudget > 0) {
+                $weekProgress = min(100.0, ($totalBudget / $totalTerpakai) * 100);
+            } else {
+                $weekProgress = 100.0;
+            }
+
+            if ($sisaBudget >= 0) {
                 $countAman++;
             }
 
-            $tanggal = Carbon::parse($data->created_at);
-            $dateKey = $tanggal->format('Y-m-d');
+            $weeklyProgress[$weekStart] = round($weekProgress, 1);
 
-            if (!isset($dailyValues[$dateKey])) {
-                $dailyValues[$dateKey] = [];
+            $currentDate = Carbon::parse($weekStart);
+            $endDateOfWeek = $currentDate->copy()->endOfWeek();
+            
+            while ($currentDate->lte($endDateOfWeek)) {
+                if ($currentDate->year == $tahun) {
+                    $dateKey = $currentDate->format('Y-m-d');
+                    $dailyProgress[$dateKey] = $weekProgress;
+                }
+                $currentDate->addDay();
             }
-            $dailyValues[$dateKey][] = $isAman * 100;
         }
 
-        $presentase = ($countAman / $totalData) * 100;
+        $presentase = $totalWeeks > 0 ? ($countAman / $totalWeeks) * 100 : 100.0;
         $progress = round($presentase, 1);
 
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        $above = $countAman;
-        $below = $totalData - $countAman;
-
-        $dailyAverages = [];
-        foreach ($dailyValues as $dateStr => $values) {
-            $dailyAverages[$dateStr] = round(array_sum($values) / count($values), 1);
-        }
-
         $monthlyData = [];
         $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
-
-        foreach ($dailyAverages as $dateStr => $avg) {
+        
+        foreach ($dailyProgress as $dateStr => $prog) {
             $date = Carbon::parse($dateStr);
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
             if (!isset($monthlyData[$monthKey])) {
                 $monthlyData[$monthKey] = [];
-                $monthlyProgress[$monthKey] = [];
             }
-            $monthlyData[$monthKey][] = $avg;
-            $monthlyProgress[$monthKey][] = $avg;
-
+            $monthlyData[$monthKey][] = $prog;
+            
             if (!isset($dailyBreakdownPerMonth[$monthKey])) {
                 $dailyBreakdownPerMonth[$monthKey] = [];
-                $dailyProgressPerMonth[$monthKey] = [];
             }
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
-            $dailyProgressPerMonth[$monthKey][$dayKey] = $avg;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $prog;
         }
 
         $monthlyAverages = [];
-        $monthlyProgressAverages = [];
         foreach ($monthlyData as $month => $dailyVals) {
             $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-        foreach ($monthlyProgress as $month => $dailyVals) {
-            $monthlyProgressAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
         }
 
         ksort($monthlyAverages);
         ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAverages);
-        ksort($dailyProgressPerMonth);
 
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => ['above' => $above, 'below' => $below],
+            'pie_chart' => [
+                'above' => $countAman, 
+                'below' => max(0, $totalWeeks - $countAman)
+            ],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAverages,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
+            'monthly_progress' => $monthlyAverages,
+            'daily_progress_per_month' => $dailyBreakdownPerMonth,
         ];
     }
-
     public function calculateReportKondisiKendaraan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
