@@ -928,55 +928,131 @@ function fetchTabInix(year) {
         success: function (response) {
             if (response.success && response.data) {
                 const data = response.data;
-                console.log(data);
-                $('#total_kelas').text(data.total_kelas);
-                $('#jumlah_peserta').text(data.jumlah_peserta);
-                $('#ratarata_kelas_perbulan').text(data.ratarata_kelas_perbulan);
-                $('#jumlah_peserta_perbulan').text(data.jumlah_peserta_perbulan);
-                $('#offline').text(data.offline);
-                $('#virtual').text(data.virtual);
-                $('#materi').text(data.ratarata_feedback.materi);
-                $('#pelayanan').text(data.ratarata_feedback.pelayanan);
-                $('#fasilitas').text(data.ratarata_feedback.fasilitas);
-                $('#instruktur').text(data.ratarata_feedback.instruktur);
-                // Objek berisi URL gambar untuk setiap id elemen gambar
-                const imageUrls = {
-                    "foto_sales": `/storage/posts/${data.sales_terbaik.sales.foto}`,
-                    "foto_instruktur": `/storage/posts/${data.instruktur_terbaik.instruktur.foto}`,
-                    "foto_office": `/storage/posts/${data.office_terbaik.sales_foto}`,
-                    "foto_itsm": `/storage/posts/${data.office_terbaik.itsm_foto}`,
-                };
+                console.log('Inixindo dalam angka data:', data);
 
-                // Menetapkan src pada setiap elemen .dynamic-image berdasarkan id
-                $('.dynamic-image').each(function () {
-                    const imageId = $(this).attr('id'); // Mendapatkan id dari setiap elemen gambar
+                // Metrik Kelas
+                $('#total_kelas').text(data.total_kelas ?? 0);
+                $('#jumlah_peserta').text(data.jumlah_peserta ?? 0);
+                $('#ratarata_kelas_perbulan').text(data.ratarata_kelas_perbulan ?? 0);
+                $('#jumlah_peserta_perbulan').text(data.jumlah_peserta_perbulan ?? 0);
+                $('#offline').text(data.offline ?? 0);
+                $('#virtual').text(data.virtual ?? 0);
 
-                    // Cek apakah id ada di objek imageUrls, lalu set src-nya
-                    if (imageUrls[imageId]) {
-                        $(this).attr('src', imageUrls[imageId]);
+                // Feedback
+                if (data.ratarata_feedback) {
+                    $('#materi').text(data.ratarata_feedback.materi ?? 0);
+                    $('#pelayanan').text(data.ratarata_feedback.pelayanan ?? 0);
+                    $('#fasilitas').text(data.ratarata_feedback.fasilitas ?? 0);
+                    $('#instruktur').text(data.ratarata_feedback.instruktur ?? 0);
+                }
+
+                // Foto Karyawan Terbaik
+                const defaultImage = '/images/download.png';
+                const fotoSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.foto) 
+                    ? `/storage/posts/${data.sales_terbaik.sales.foto}` 
+                    : defaultImage;
+                const fotoInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.foto) 
+                    ? `/storage/posts/${data.instruktur_terbaik.instruktur.foto}` 
+                    : defaultImage;
+                const fotoOffice = (data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.foto)
+                    ? `/storage/posts/${data.office_terbaik.office.foto}`
+                    : ((data.office_terbaik && data.office_terbaik.office_foto) ? `/storage/posts/${data.office_terbaik.office_foto}` : defaultImage);
+                const fotoItsm = (data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.foto)
+                    ? `/storage/posts/${data.itsm_terbaik.itsm.foto}`
+                    : ((data.itsm_terbaik && data.itsm_terbaik.itsm_foto) ? `/storage/posts/${data.itsm_terbaik.itsm_foto}` : defaultImage);
+
+                $('#foto_sales').attr('src', fotoSales);
+                $('#foto_instruktur').attr('src', fotoInstruktur);
+                $('#foto_office').attr('src', fotoOffice);
+                $('#foto_itsm').attr('src', fotoItsm);
+
+                // Nama Karyawan Terbaik
+                const namaSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.nama_lengkap) 
+                    ? data.sales_terbaik.sales.nama_lengkap 
+                    : (data.sales_terbaik && data.sales_terbaik.sales_key ? data.sales_terbaik.sales_key : 'Belum Ada');
+                const namaInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.nama_lengkap) 
+                    ? data.instruktur_terbaik.instruktur.nama_lengkap 
+                    : 'Belum Ada';
+                const namaOffice = (data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.nama_lengkap) 
+                    ? data.office_terbaik.office.nama_lengkap 
+                    : ((data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.office_nama) ? data.office_terbaik.office.office_nama : 'Belum Ada');
+                const namaItsm = (data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.nama_lengkap) 
+                    ? data.itsm_terbaik.itsm.nama_lengkap 
+                    : ((data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.itsm_nama) ? data.itsm_terbaik.itsm.itsm_nama : 'Belum Ada');
+
+                $('#nama_sales').text(namaSales);
+                $('#nama_instruktur').text(namaInstruktur);
+                $('#nama_office').text(namaOffice);
+                $('#nama_itsm').text(namaItsm);
+
+                // Podium Keterlambatan
+                $('#nama_telat_1, #nama_telat_2, #nama_telat_3').text('-');
+                $('#durasi_telat_1, #durasi_telat_2, #durasi_telat_3').text('00:00:00');
+                $('#present-photo-satu, #present-photo-dua, #present-photo-tiga').attr('src', defaultImage);
+
+                if (data.keterlambatan && Array.isArray(data.keterlambatan)) {
+                    // Peringkat 1
+                    if (data.keterlambatan[0]) {
+                        const item1 = data.keterlambatan[0];
+                        if (item1.foto) $('#present-photo-satu').attr('src', '/storage/' + item1.foto);
+                        const nama1 = (item1.karyawan && item1.karyawan.nama_lengkap) ? item1.karyawan.nama_lengkap : 'Karyawan 1';
+                        $('#nama_telat_1').text(nama1);
+                        $('#durasi_telat_1').text(item1.total_keterlambatan || '00:00:00');
                     }
-                });
-                $('#nama_sales').text(data.sales_terbaik.sales.nama_lengkap);
-                $('#nama_instruktur').text(data.instruktur_terbaik.instruktur.nama_lengkap);
-                $('#nama_itsm').text(data.itsm_terbaik.itsm.itsm_nama);
-                $('#nama_office').text(data.office_terbaik.office.office_nama);
+                    // Peringkat 2
+                    if (data.keterlambatan[1]) {
+                        const item2 = data.keterlambatan[1];
+                        if (item2.foto) $('#present-photo-dua').attr('src', '/storage/' + item2.foto);
+                        const nama2 = (item2.karyawan && item2.karyawan.nama_lengkap) ? item2.karyawan.nama_lengkap : 'Karyawan 2';
+                        $('#nama_telat_2').text(nama2);
+                        $('#durasi_telat_2').text(item2.total_keterlambatan || '00:00:00');
+                    }
+                    // Peringkat 3
+                    if (data.keterlambatan[2]) {
+                        const item3 = data.keterlambatan[2];
+                        if (item3.foto) $('#present-photo-tiga').attr('src', '/storage/' + item3.foto);
+                        const nama3 = (item3.karyawan && item3.karyawan.nama_lengkap) ? item3.karyawan.nama_lengkap : 'Karyawan 3';
+                        $('#nama_telat_3').text(nama3);
+                        $('#durasi_telat_3').text(item3.total_keterlambatan || '00:00:00');
+                    }
+                }
 
-                if (data.keterlambatan.length >= 3) {
-                    // Mengisi src untuk foto peringkat kedua
-                    $('.second-position #present-photo-dua').attr('src', '/storage/' + data.keterlambatan[1].foto);
+                // Peringkat Kelas Paling Banyak Diambil
+                const tbody = $('#top_kelas_tbody');
+                tbody.empty();
 
-                    // Mengisi src untuk foto peringkat pertama
-                    $('.first-position #present-photo-satu').attr('src', '/storage/' + data.keterlambatan[0].foto);
+                if (data.top_kelas && Array.isArray(data.top_kelas) && data.top_kelas.length > 0) {
+                    data.top_kelas.forEach((item) => {
+                        let rankBadgeClass = 'rank-pill-other';
+                        if (item.rank === 1) rankBadgeClass = 'rank-pill-1';
+                        else if (item.rank === 2) rankBadgeClass = 'rank-pill-2';
+                        else if (item.rank === 3) rankBadgeClass = 'rank-pill-3';
 
-                    // Mengisi src untuk foto peringkat ketiga
-                    $('.third-position #present-photo-tiga').attr('src', '/storage/' + data.keterlambatan[2].foto);
+                        const kodeHtml = item.kode_materi && item.kode_materi !== '-' 
+                            ? `<span class="class-code-tag">${item.kode_materi}</span>` 
+                            : '';
+
+                        const row = `
+                            <tr>
+                                <td class="text-center"><span class="rank-pill ${rankBadgeClass}">${item.rank}</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold text-dark">${item.nama_materi}</span>
+                                        ${kodeHtml}
+                                    </div>
+                                </td>
+                                <td class="text-center"><span class="badge bg-light text-muted border">${item.kategori || '-'}</span></td>
+                                <td class="text-center"><span class="class-total-badge">${item.total} Kali</span></td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
                 } else {
-                    console.warn('Data keterlambatan kurang dari 3');
+                    tbody.html('<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada data kelas untuk tahun ini.</td></tr>');
                 }
 
             } else {
                 console.warn("Data pada tahun ini tidak tersedia");
-                alert("Data pada tahun ini tidak tersedia");
             }
         },
         error: function (xhr, status, error) {
