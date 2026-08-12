@@ -32,7 +32,7 @@ class payrollController extends Controller
         return view('HR.payroll.index');
     }
 
-public function getPayrollDashboard(Request $request)
+    public function getPayrollDashboard(Request $request)
     {
         try {
             $bulan = (int) $request->input('month', now()->month);
@@ -54,23 +54,21 @@ public function getPayrollDashboard(Request $request)
             $monthlyTrend = $this->calculateMonthlyTrend($tahun);
             $topDeductions = $this->calculateTopDeductions($payrollList, $bulan, $tahun);
 
-            $totalPayroll = $payrollList->sum(function ($emp) {
-                $hasil = $emp['gaji_pokok'] - $emp['total_potongan'];
-                return $hasil > 0 ? $hasil : 0;
-            });
+            // Total Basic Salary = gaji murni + tunjangan jabatan (TIDAK termasuk tunjangan lain)
+            $totalBasicSalary = $payrollList->sum('basic_salary');
 
             $summary = [
                 'total_karyawan' => $totalEligible,
                 'sudah_dihitung' => $payrollList->where('status', 'Sudah Dihitung')->count(),
                 'belum_dihitung' => $payrollList->where('status', 'Belum Dihitung')->count(),
                 'total_gaji_pokok' => $payrollList->sum('gaji_pokok'),
-                'total_tunjangan' => $payrollList
-                    ->filter(fn($emp) => $emp['tunjangan_bersih'] > 0)
-                    ->sum('tunjangan_bersih'),
+                'total_tunjangan' => $payrollList->sum('total_tunjangan'),
                 'total_potongan' => $payrollList->sum('total_potongan'),
-                'total_payroll' => $totalPayroll,
-                'avg_gaji_bersih' => $totalRecords > 0 ? round($payrollList->sum('gaji_bersih') / $totalRecords, 0) : 0,
-                'median_gaji_bersih' => $this->calculateMedian($payrollList->pluck('gaji_bersih')->toArray()),
+                // === Total potongan per kategori ===
+                'total_potongan_bpjs_tk'  => $payrollList->sum('potongan_bpjs_tk'),
+                'total_potongan_bpjs_kes' => $payrollList->sum('potongan_bpjs_kes'),
+                'total_potongan_pph21'    => $payrollList->sum('potongan_pph21'),
+                'total_basic_salary' => $totalBasicSalary,
                 'new_hire_count' => $payrollList->where('status', 'New Hire')->count(),
                 'active_count' => $payrollList->where('status', 'Active')->count(),
             ];
@@ -269,13 +267,14 @@ public function getPayrollDashboard(Request $request)
             'sudah_dihitung' => $payrollList->where('status', 'Sudah Dihitung')->count(),
             'belum_dihitung' => $payrollList->where('status', 'Belum Dihitung')->count(),
             'total_gaji_pokok' => $payrollList->sum('gaji_pokok'),
-            'total_tunjangan' => $payrollList
-                ->filter(fn($emp) => $emp['tunjangan_bersih'] > 0)
-                ->sum('tunjangan_bersih'),
+            'total_tunjangan' => $payrollList->sum('total_tunjangan'),
             'total_potongan' => $payrollList->sum('total_potongan'),
+            // === Total potongan per kategori ===
+            'total_potongan_bpjs_tk'  => $payrollList->sum('potongan_bpjs_tk'),
+            'total_potongan_bpjs_kes' => $payrollList->sum('potongan_bpjs_kes'),
+            'total_potongan_pph21'    => $payrollList->sum('potongan_pph21'),
+            'total_basic_salary' => $payrollList->sum('basic_salary'),
             'total_gaji_bersih' => $payrollList->sum('gaji_bersih'),
-            'avg_gaji_bersih' => $payrollList->count() > 0 ? round($payrollList->sum('gaji_bersih') / $payrollList->count(), 0) : 0,
-            'median_gaji_bersih' => $this->calculateMedian($payrollList->pluck('gaji_bersih')->toArray()),
             'new_hire_count' => $payrollList->where('status', 'New Hire')->count(),
             'active_count' => $payrollList->where('status', 'Active')->count(),
         ];
@@ -358,19 +357,45 @@ public function getPayrollDashboard(Request $request)
 
         $payrollList = $eligibleKaryawan->map(function ($emp) use ($allLogGaji, $tunjanganData, $periodStart, $periodEnd, $bulan, $tahun) {
             $employeeLogs = $allLogGaji->get($emp->id, collect());
-            $gajiPokok = $this->getGajiPokokFromLogs($employeeLogs, $bulan, $tahun);
+            $components = $this->getSalaryComponentsFromLogs($employeeLogs, $bulan, $tahun);
+
+            $gajiPokok        = $components['gaji'];              // gaji murni
+            $tunjanganJabatan = $components['tunjangan_jabatan']; // tunjangan jabatan
 
             $items = $tunjanganData->get($emp->id, collect());
 
-            $totalTunjangan = (float) $items->where('jenistunjangan.tipe', 'Tunjangan')->sum('total');
+            $totalTunjanganLain = (float) $items->where('jenistunjangan.tipe', 'Tunjangan')->sum('total');
             $totalPotongan = abs((float) $items->where('jenistunjangan.tipe', 'Potongan')->sum('total'));
 
-            $tunjanganBersih = $totalTunjangan - $totalPotongan;
-            if ($tunjanganBersih < 0) {
-                $tunjanganBersih = 0;
+            // === Rincikan potongan per kategori (per karyawan) ===
+            $potonganBpjsTk  = 0.0;
+            $potonganBpjsKes = 0.0;
+            $potonganPph21   = 0.0;
+
+            foreach ($items->where('jenistunjangan.tipe', 'Potongan') as $item) {
+                $kategori = $this->categorizePotongan(optional($item->jenistunjangan)->nama_tunjangan);
+                $nilai    = abs((float) $item->total);
+
+                if ($kategori === 'bpjs_tk') {
+                    $potonganBpjsTk += $nilai;
+                } elseif ($kategori === 'bpjs_kes') {
+                    $potonganBpjsKes += $nilai;
+                } elseif ($kategori === 'pph21') {
+                    $potonganPph21 += $nilai;
+                }
             }
 
-            $gajiBersih = $gajiPokok + $tunjanganBersih;
+            // Kolom Tunjangan = tunjangan jabatan + tunjangan lainnya
+            $totalTunjangan = $tunjanganJabatan + $totalTunjanganLain;
+
+            // Tunjangan bersih (net, tanpa clamp)
+            $tunjanganBersih = $totalTunjangan - $totalPotongan;
+
+            // Gaji Bersih = gaji murni + semua tunjangan - semua potongan
+            $gajiBersih = $gajiPokok + $totalTunjangan - $totalPotongan;
+
+            // Basic Salary = gaji murni + tunjangan jabatan (untuk card Total Basic Salary)
+            $basicSalary = $gajiPokok + $tunjanganJabatan;
 
             $status = $this->determineEmployeeStatusForPeriod($emp, $periodStart, $periodEnd);
 
@@ -381,9 +406,14 @@ public function getPayrollDashboard(Request $request)
                 'divisi' => $emp->divisi ?? '-',
                 'jabatan' => $emp->jabatan ?? '-',
                 'gaji_pokok' => $gajiPokok,
+                'tunjangan_jabatan' => $tunjanganJabatan,
+                'basic_salary' => $basicSalary,
                 'total_tunjangan' => $totalTunjangan,
                 'tunjangan_bersih' => $tunjanganBersih,
                 'total_potongan' => $totalPotongan,
+                'potongan_bpjs_tk'  => $potonganBpjsTk,
+                'potongan_bpjs_kes' => $potonganBpjsKes,
+                'potongan_pph21'    => $potonganPph21,
                 'gaji_bersih' => $gajiBersih,
                 'status' => $status,
                 'details' => $items->map(fn($i) => [
@@ -404,6 +434,83 @@ public function getPayrollDashboard(Request $request)
     }
 
     /**
+     * Resolusi komponen gaji TERPISAH (gaji murni & tunjangan jabatan) dari LogGaji
+     */
+    private function getSalaryComponentsFromLogs($employeeLogs, $targetBulan, $targetTahun)
+    {
+        if ($employeeLogs->isEmpty()) {
+            return ['gaji' => 0.0, 'tunjangan_jabatan' => 0.0];
+        }
+
+        $targetKey = ($targetTahun * 12) + $targetBulan;
+
+        $pastOrCurrentLogs = $employeeLogs->filter(function ($log) use ($targetKey) {
+            return (($log->tahun * 12) + $log->bulan) <= $targetKey;
+        });
+
+        if ($pastOrCurrentLogs->isNotEmpty()) {
+            $selectedLog = $pastOrCurrentLogs->sortByDesc(function ($log) {
+                return ($log->tahun * 12) + $log->bulan;
+            })->first();
+        } else {
+            $selectedLog = $employeeLogs->sortBy(function ($log) {
+                return ($log->tahun * 12) + $log->bulan;
+            })->first();
+        }
+
+        return [
+            'gaji'              => (float) ($selectedLog->gaji ?? 0),
+            'tunjangan_jabatan' => (float) ($selectedLog->tunjangan_jabatan ?? 0),
+        ];
+    }
+
+    /**
+     * Basic Salary (gaji + tunjangan jabatan) — dipakai chart trend & halaman perhitungan
+     */
+    private function getGajiPokokFromLogs($employeeLogs, $targetBulan, $targetTahun)
+    {
+        $c = $this->getSalaryComponentsFromLogs($employeeLogs, $targetBulan, $targetTahun);
+        return $c['gaji'] + $c['tunjangan_jabatan'];
+    }
+
+    /**
+     * Mengelompokkan item potongan berdasarkan nama jenis tunjangan.
+     * (BPJS Tenaga Kerja / BPJS Kesehatan / PPh 21 / Lainnya)
+     */
+    private function categorizePotongan(?string $nama): string
+    {
+        $n = strtolower(trim($nama ?? ''));
+
+        if ($n === '') {
+            return 'lainnya';
+        }
+
+        // BPJS Kesehatan
+        if (str_contains($n, 'kesehatan') || str_contains($n, 'bpjs kes') || str_contains($n, 'bpjskes')) {
+            return 'bpjs_kes';
+        }
+
+        // BPJS Tenaga Kerja
+        if (
+            str_contains($n, 'tenaga kerja') ||
+            str_contains($n, 'bpjs tk') ||
+            str_contains($n, 'bpjstk') ||
+            str_contains($n, 'jht') ||
+            str_contains($n, 'jkk') ||
+            str_contains($n, 'jkm')
+        ) {
+            return 'bpjs_tk';
+        }
+
+        // PPh 21
+        if (str_contains($n, 'pph') || str_contains($n, 'pajak')) {
+            return 'pph21';
+        }
+
+        return 'lainnya';
+    }
+
+    /**
      * Memeriksa eligibility karyawan pada periode bulan/tahun berjalan
      */
     private function isEmployeeEligibleForPeriod($emp, $periodStart, $periodEnd)
@@ -411,12 +518,10 @@ public function getPayrollDashboard(Request $request)
         // 1. Evaluasi Status Resign & Aktif
         if (!empty($emp->resigned_at)) {
             $resignedAt = Carbon::parse($emp->resigned_at)->startOfDay();
-            // Jika resign sebelum bulan berjalan dimulai, maka karyawan tidak aktif
             if ($resignedAt->lt($periodStart)) {
                 return false;
             }
         } else {
-            // Jika resigned_at kosong, gunakan status_aktif
             if ((string) $emp->status_aktif !== '1' && $emp->status_aktif !== true) {
                 return false;
             }
@@ -430,7 +535,6 @@ public function getPayrollDashboard(Request $request)
         $startDateRaw = $emp->awal_probation ?? $emp->awal_kontrak;
         if ($startDateRaw) {
             $startDate = Carbon::parse($startDateRaw)->startOfDay();
-            // Jika tanggal mulai bekerja setelah bulan berjalan selesai, karyawan belum aktif
             if ($startDate->gt($periodEnd)) {
                 return false;
             }
@@ -457,37 +561,6 @@ public function getPayrollDashboard(Request $request)
         }
 
         return 'Active';
-    }
-
-    /**
-     * Resolusi Gaji Pokok (+ Tunjangan Jabatan) dari LogGaji berdasarkan aturan periode
-     */
-    private function getGajiPokokFromLogs($employeeLogs, $targetBulan, $targetTahun)
-    {
-        if ($employeeLogs->isEmpty()) {
-            return 0;
-        }
-
-        $targetKey = ($targetTahun * 12) + $targetBulan;
-
-        // Cari log yang berada pada atau sebelum periode target
-        $pastOrCurrentLogs = $employeeLogs->filter(function ($log) use ($targetKey) {
-            return (($log->tahun * 12) + $log->bulan) <= $targetKey;
-        });
-
-        if ($pastOrCurrentLogs->isNotEmpty()) {
-            // Ambil log paling baru yang <= targetKey
-            $selectedLog = $pastOrCurrentLogs->sortByDesc(function ($log) {
-                return ($log->tahun * 12) + $log->bulan;
-            })->first();
-        } else {
-            // Jika tidak ada log sebelumnya (misal filter Jan, tapi log diisi pertama di Feb), ambil log paling awal
-            $selectedLog = $employeeLogs->sortBy(function ($log) {
-                return ($log->tahun * 12) + $log->bulan;
-            })->first();
-        }
-
-        return (float) (($selectedLog->gaji ?? 0) + ($selectedLog->tunjangan_jabatan ?? 0));
     }
 
     private function calculateSalaryRanges($payrollList)
@@ -528,7 +601,7 @@ public function getPayrollDashboard(Request $request)
             }
             $divisi[$d]['count']++;
             $divisi[$d]['total_allowance'] += $emp['total_tunjangan'];
-            $divisi[$d]['total_salary'] += $emp['gaji_bersih'] + $emp['total_tunjangan'];
+            $divisi[$d]['total_salary'] += $emp['gaji_bersih'] + $emp['total_potongan'];
         }
 
         $top = collect($divisi)->sortByDesc('total_allowance')->take(8);
@@ -627,17 +700,6 @@ public function getPayrollDashboard(Request $request)
         ];
     }
 
-    private function calculateMedian($values)
-    {
-        if (empty($values)) {
-            return 0;
-        }
-        sort($values);
-        $count = count($values);
-        $mid = (int) floor($count / 2);
-        return $count % 2 === 0 ? round(($values[$mid - 1] + $values[$mid]) / 2, 0) : round($values[$mid], 0);
-    }
-
     public function indexPerhitungan(Request $request)
     {
         $karyawans = Karyawan::with('divisi')
@@ -660,7 +722,13 @@ public function getPayrollDashboard(Request $request)
         $totalKaryawan = $karyawans->count();
         $sudahPayroll = $payrollBulanIni->count();
         $belumPayroll = $totalKaryawan - $sudahPayroll;
-        $totalGaji = $karyawans->sum('gaji') + $karyawans->sum('tunjangan_jabatan');
+
+        $allLogGaji = LogGaji::whereIn('id_karyawan', $karyawans->pluck('id'))->get()->groupBy('id_karyawan');
+        $totalGaji = 0;
+        foreach ($karyawans as $emp) {
+            $employeeLogs = $allLogGaji->get($emp->id, collect());
+            $totalGaji += $this->getGajiPokokFromLogs($employeeLogs, $bulanSekarang, $tahunSekarang);
+        }
 
         return view('HR.payroll.indexPerhitungan', compact('karyawans', 'payrollsCollection', 'totalKaryawan', 'sudahPayroll', 'belumPayroll', 'totalGaji', 'bulanSekarang', 'tahunSekarang'));
     }
@@ -676,9 +744,12 @@ public function getPayrollDashboard(Request $request)
         $karyawan = karyawan::with('divisi')->findOrFail($request->karyawan_id);
 
         $pph21Data = Pph21Karyawan::where('karyawan_id', $request->karyawan_id)->first();
-        $gajiDasar = (int) ($karyawan->gaji_pokok ?? ($karyawan->gaji + $karyawan->tunjangan_jabatan ?? 0));
+
+        $employeeLogs = LogGaji::where('id_karyawan', $request->karyawan_id)->get();
+        $gajiDasar = (int) $this->getGajiPokokFromLogs($employeeLogs, $request->bulan, $request->tahun);
+
         $pph21Bulanan = 0;
-        
+
         if ($pph21Data && $pph21Data->ptkp) {
             $pph21Bulanan = $this->hitungPph21Bulanan($gajiDasar, $pph21Data->ptkp);
         }
@@ -1005,6 +1076,10 @@ public function getPayrollDashboard(Request $request)
         $tunjanganKaryawanAll = $tunjanganKaryawanQuery->get();
         $tunjanganByKaryawan = $tunjanganKaryawanAll->groupBy('id_karyawan');
 
+        $allLogGaji = LogGaji::whereIn('id_karyawan', $karyawans->pluck('id'))->get()->groupBy('id_karyawan');
+        $targetBulan = $bulan ?: date('n');
+        $targetTahun = $tahun ?: date('Y');
+
         $rows = [];
         foreach ($karyawans as $emp) {
             if ($divisi && ($emp->divisi->nama_divisi ?? '-') !== $divisi) {
@@ -1054,6 +1129,9 @@ public function getPayrollDashboard(Request $request)
                 }
             }
 
+            $employeeLogs = $allLogGaji->get($emp->id, collect());
+            $gajiPokok = $payroll ? (int) $payroll->gaji_pokok : (int) $this->getGajiPokokFromLogs($employeeLogs, $targetBulan, $targetTahun);
+
             $rows[] = [
                 'karyawan_id' => $emp->id,
                 'nip' => $emp->nip ?? '-',
@@ -1061,7 +1139,7 @@ public function getPayrollDashboard(Request $request)
                 'jabatan' => $emp->jabatan ?? '-',
                 'divisi' => $emp->divisi->nama_divisi ?? '-',
                 'status_aktif' => $emp->status_aktif == '1' ? 'Aktif' : 'Nonaktif',
-                'gaji_pokok' => (int) ($emp->gaji + $emp->tunjangan_jabatan ?? 0),
+                'gaji_pokok' => $gajiPokok,
                 'tunjangan_preview' => $tunjanganData,
                 'payroll' => $payroll
                     ? [
@@ -1408,11 +1486,9 @@ public function getPayrollDashboard(Request $request)
 
         if ($percentage > 40) {
             $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFFF0000');
-
             $style->getFont()->getColor()->setARGB(Color::COLOR_WHITE);
         } else {
             $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF00B050');
-
             $style->getFont()->getColor()->setARGB(Color::COLOR_WHITE);
         }
 
@@ -1582,7 +1658,7 @@ public function getPayrollDashboard(Request $request)
             [
                 'ptkp'           => $request->ptkp,
                 'status_menikah' => (int) $request->status_menikah,
-                'anak'           => $anak, // akan di-cast ke JSON di model
+                'anak'           => $anak,
             ]
         );
 
