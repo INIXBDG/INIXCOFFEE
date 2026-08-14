@@ -50,6 +50,7 @@ class RKMController extends Controller
                 // Eksekusi Query Utama RKM
                 $rows = RKM::with(['materi', 'peluang'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                    ->whereMonth('r_k_m_s.tanggal_awal', $date->month)
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
                         $query->where('tentatif', 1);
@@ -208,6 +209,7 @@ class RKMController extends Controller
                 $startOfWeek = $startOfWeek->addWeek();
                 $rows = RKM::with(['materi', 'peluang', 'exam', 'exam.approvalexam'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                    ->whereMonth('r_k_m_s.tanggal_awal', $date->month)
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->where('r_k_m_s.status', '0')
                     ->whereDoesntHave('peluang', function ($query) {

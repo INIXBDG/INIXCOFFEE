@@ -1715,6 +1715,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/get-data',  [payrollController::class, 'getPayrollDataPerhitungan'])->name('get-data');
         Route::get('/stats',     [payrollController::class, 'getStatsPerhitungan'])->name('stats');
         Route::post('/',         [payrollController::class, 'storePerhitungan'])->name('store');
+        Route::get('/logs-all',  [payrollController::class, 'getAllLogsPerhitungan'])->name('logs.all');
         Route::get('/{id}',      [payrollController::class, 'showPerhitungan'])->name('show');
         Route::put('/{id}',      [payrollController::class, 'updatePerhitungan'])->name('update');
         Route::delete('/{id}',   [payrollController::class, 'destroyPerhitungan'])->name('destroy');
