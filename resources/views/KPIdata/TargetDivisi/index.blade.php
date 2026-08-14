@@ -2083,24 +2083,47 @@
                         let badgeClass = 'bg-secondary';
                         let progressNumeric = parseFloat(item.progress) || 0;
                         let progressValueDisplay = progressNumeric;
+
                         const progress = parseFloat(item.progress) || 0;
 
                         if (item.tipe_target === 'rupiah') {
-                            progressNumeric = actualTarget > 0 ? Math.min((progress / actualTarget) * 100, 100) : 0;
-                            progressValueDisplay = new Intl.NumberFormat('id-ID', { 
-                                style: 'currency', currency: 'IDR', minimumFractionDigits: 0 
+                            progressNumeric = actualTarget > 0
+                                ? Math.min(Math.round((progress / actualTarget) * 100), 100)
+                                : 0;
+
+                            progressValueDisplay = new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
                             }).format(progress);
+
                         } else if (item.tipe_target === 'angka') {
-                            progressNumeric = actualTarget > 0 ? Math.min((progress / actualTarget) * 100, 100) : 0;
-                            progressValueDisplay = isPerPesertaRoute 
-                                ? `${progress} / ${actualTarget}`
-                                : progressNumeric + '%';
+                            const percentProgress = actualTarget > 0
+                                ? Math.min(((progress / actualTarget) * 100).toFixed(1), 100)
+                                : 0;
+
+                            progressNumeric = percentProgress;
+
+                            const progressRounded = new Intl.NumberFormat('id-ID', {
+                                maximumFractionDigits: 0
+                            }).format(progress);
+
+                            const targetRounded = new Intl.NumberFormat('id-ID', {
+                                maximumFractionDigits: 0
+                            }).format(actualTarget);
+
+                            progressValueDisplay = isPerPesertaRoute
+                                ? `${progressRounded} / ${targetRounded}`
+                                : progressRounded;
+
+                            progressValueDisplay = `${percentProgress}%`;
                         } else {
-                            progressValueDisplay = progressNumeric + '%';
+                            progressValueDisplay = Math.round(progressNumeric) + '%';
                         }
 
-                        const lengthProgress = actualTarget > 0 
-                            ? Math.min((progress / actualTarget) * 100, 100) 
+                        const lengthProgress = actualTarget > 0
+                            ? Math.min(Math.round((progress / actualTarget) * 100), 100)
                             : 0;
 
                         let isTargetReached = false;

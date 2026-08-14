@@ -53,7 +53,7 @@ class RKMController extends Controller
                     ->whereMonth('r_k_m_s.tanggal_awal', $date->month)
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1);
+                        $query->where('tentatif', 1)->where('tahap', '!=', 'lost');
                     })
                     ->select(
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
