@@ -1851,6 +1851,7 @@ Route::get('/sla-management', [DashboardSLAController::class, 'index'])->name('s
 Route::middleware(['auth'])->group(function () {
     Route::get('/knowledge-management/{id}/download', [KnowledgeManagementController::class, 'downloadFile'])->name('knowledge-management.download');
     Route::resource('knowledge-management', KnowledgeManagementController::class);
+
 });
 
 

@@ -105,9 +105,10 @@ class RekapPenjualanController extends Controller
             ->get();
 
         $grouped = $rkms
-            ->groupBy('materi_id')
-            ->map(function ($items, $materiId) {
+            ->groupBy('materi_key')
+            ->map(function ($items, $materiKey) {
                 $materiName = $items->first()->materi->nama_materi ?? 'Materi Tidak Diketahui';
+                
                 $totalKelas = $items->count();
                 $totalPax = $items->sum('pax');
                 $totalHargaJual = $items->sum(fn($r) => floatval($r->harga_jual) * intval($r->pax));
@@ -115,7 +116,7 @@ class RekapPenjualanController extends Controller
                 $totalLengkap = $items->filter(fn($r) => $r->analisisrkm !== null)->count();
 
                 return [
-                    'materi_id' => $materiId,
+                    'materi_id' => $materiKey,
                     'nama_materi' => $materiName,
                     'total_kelas' => $totalKelas,
                     'total_pax' => $totalPax,
@@ -138,7 +139,7 @@ class RekapPenjualanController extends Controller
     {
         Carbon::setLocale('id');
 
-        $startOfMonth = CarbonImmutable::create($year, $month, 1);
+        $startOfMonth = CarbonImmutable::create($year, $month, 1, 0, 0, 0);
         $endOfMonth = $startOfMonth->endOfMonth();
 
         $rkms = RKM::with(['materi', 'analisisrkm'])
@@ -154,11 +155,6 @@ class RekapPenjualanController extends Controller
         while ($startOfWeek->lte($endOfMonth)) {
             $endOfWeek = $startOfWeek->copy()->endOfWeek(Carbon::SUNDAY);
 
-            if ($startOfWeek->month != $month) {
-                $startOfWeek = $startOfWeek->addWeek();
-                $weekNumber++;
-                continue;
-            }
 
             $weekData = $rkms->filter(function ($item) use ($startOfWeek, $endOfWeek) {
                 $tgl = Carbon::parse($item->tanggal_awal);
@@ -222,20 +218,24 @@ class RekapPenjualanController extends Controller
             $monthData = $rkms->filter(fn($r) => Carbon::parse($r->tanggal_awal)->month == $m);
 
             $totalNett = 0;
-            $totalFixCost = 0;
-            $fixCostFound = false;
+            $weekFixCosts = [];
 
             foreach ($monthData as $rkm) {
-                if ($rkm->analisisrkm && $rkm->analisisrkm->analisisrkmmingguan) {
-                    foreach ($rkm->analisisrkm->analisisrkmmingguan as $mingguan) {
-                        $totalNett += floatval($mingguan->nett_penjualan ?? 0);
-                        if (!$fixCostFound && $mingguan->fixcost !== null) {
-                            $totalFixCost += floatval($mingguan->fixcost);
-                            $fixCostFound = true;
+                if ($rkm->analisisrkm) {
+                    $totalNett += floatval($rkm->analisisrkm->nett_penjualan ?? 0);
+                    
+                    if ($rkm->analisisrkm->analisisrkmmingguan) {
+                        foreach ($rkm->analisisrkm->analisisrkmmingguan as $mingguan) {
+                            $weekNum = $mingguan->minggu;
+                            if (!isset($weekFixCosts[$weekNum]) && $mingguan->fixcost !== null) {
+                                $weekFixCosts[$weekNum] = floatval($mingguan->fixcost);
+                            }
                         }
                     }
                 }
             }
+            
+            $totalFixCost = array_sum($weekFixCosts);
 
             $profit = $totalNett - $totalFixCost;
             $totalProfit += $profit;

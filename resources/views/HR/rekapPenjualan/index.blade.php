@@ -407,6 +407,50 @@
                 font-size: 1.3rem;
             }
         }
+
+        /* ========== PERBAIKAN UI TABEL REKAP MATERI ========== */
+        #tableRekapMateri_wrapper .dataTables-header-custom,
+        #tableRekapMateri_wrapper .dataTables-footer-custom {
+            --bs-gutter-x: 0;
+            margin-left: 0;
+            margin-right: 0;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+        #tableRekapMateri_wrapper .dataTables-header-custom { padding-top: 18px; padding-bottom: 6px; }
+        #tableRekapMateri_wrapper .dataTables-footer-custom { padding-top: 12px; padding-bottom: 18px; }
+
+        #tableRekapMateri { min-width: 960px; }
+
+        #tableRekapMateri thead th {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        #tableRekapMateri thead th.th-no     { width: 48px; text-align: center; }
+        #tableRekapMateri thead th.th-center { text-align: center; }
+        #tableRekapMateri thead th.th-end    { text-align: right; }
+        #tableRekapMateri thead th.th-materi { width: 34%; min-width: 260px; }
+        #tableRekapMateri thead th.th-kontribusi { width: 210px; }
+
+        #tableRekapMateri tbody td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        #tableRekapMateri tbody td.cell-no {
+            width: 48px;
+            text-align: center;
+            color: #8a94a0;
+            font-weight: 600;
+        }
+        #tableRekapMateri tbody td.cell-materi {
+            white-space: normal;
+            min-width: 260px;
+            line-height: 1.45;
+        }
+        #tableRekapMateri tbody td.cell-currency { font-variant-numeric: tabular-nums; }
+        #tableRekapMateri tbody td.cell-kontribusi { width: 210px; min-width: 200px; }
+
+        #tableRekapMateri tbody tr:nth-child(even) { background-color: #fbfcfd; }
     </style>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
@@ -733,46 +777,86 @@
                     res.data.forEach((d, i) => {
                         const kontribusi = totalNettAll > 0 ? (d.total_nett / totalNettAll * 100) : 0;
                         rows += `
-                    <tr>
-                        <td>${i + 1}</td>
-                        <td><strong>${d.nama_materi}</strong></td>
-                        <td class="text-center"><span class="badge-soft badge-soft-primary">${d.total_kelas}</span></td>
-                        <td class="text-center">${formatNumber(d.total_pax)}</td>
-                        <td class="text-center">${d.rata_rata_pax}</td>
-                        <td class="text-end">${formatRupiah(d.total_harga_jual)}</td>
-                        <td class="text-end"><strong>${formatRupiah(d.total_nett)}</strong></td>
-                        <td style="min-width: 180px;">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="progress-thin flex-grow-1">
-                                    <div class="progress-thin-bar" style="width: ${kontribusi}%; background: #0d6efd;"></div>
-                                </div>
-                                <small class="fw-bold text-nowrap">${kontribusi.toFixed(1)}%</small>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                            <tr>
+                                <td class="cell-no">${i + 1}</td>
+                                <td class="cell-materi"><strong>${d.nama_materi}</strong></td>
+                                <td class="text-center"><span class="badge-soft badge-soft-primary">${d.total_kelas}</span></td>
+                                <td class="text-center">${formatNumber(d.total_pax)}</td>
+                                <td class="text-center">${d.rata_rata_pax}</td>
+                                <td class="text-end cell-currency">${formatRupiah(d.total_harga_jual)}</td>
+                                <td class="text-end cell-currency"><strong>${formatRupiah(d.total_nett)}</strong></td>
+                                <td class="cell-kontribusi">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress-thin flex-grow-1">
+                                            <div class="progress-thin-bar" style="width: ${kontribusi}%; background: #0d6efd;"></div>
+                                        </div>
+                                        <small class="fw-bold text-nowrap">${kontribusi.toFixed(1)}%</small>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
                     });
 
                     const html = `
-                <div class="card-custom p-0 overflow-auto">
-                    <table class="table-rekap">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Nama Materi</th>
-                                <th class="text-center">Jumlah Kelas</th>
-                                <th class="text-center">Total Pax</th>
-                                <th class="text-center">Avg Pax/Kelas</th>
-                                <th class="text-end">Total Harga Jual</th>
-                                <th class="text-end">Total Nett</th>
-                                <th>Kontribusi</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows || '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data</td></tr>'}</tbody>
-                    </table>
-                </div>
-            `;
+                        <div class="card-custom p-0 overflow-auto">
+                            <table class="table-rekap" id="tableRekapMateri">
+                                <thead>
+                                    <tr>
+                                        <th class="th-no">#</th>
+                                        <th class="th-materi">Nama Materi</th>
+                                        <th class="th-center">Jumlah Kelas</th>
+                                        <th class="th-center">Total Pax</th>
+                                        <th class="th-center">Avg Pax/Kelas</th>
+                                        <th class="th-end">Total Harga Jual</th>
+                                        <th class="th-end">Total Nett</th>
+                                        <th class="th-kontribusi">Kontribusi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows || '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data</td></tr>'}</tbody>
+                            </table>
+                        </div>
+                    `;
                     $('#materiContent').html(html);
+
+                    $('#tableRekapMateri').DataTable({
+                        pageLength: 15,
+                        language: {
+                            search: "",
+                            searchPlaceholder: "Cari Materi...",
+                            lengthMenu: "Tampilkan _MENU_ data",
+                            info: "Menampilkan _START_–_END_ dari _TOTAL_ data",
+                            infoEmpty: "Menampilkan 0–0 dari 0 data",
+                            zeroRecords: "Tidak ditemukan data yang sesuai",
+                            paginate: {
+                                next: "›",
+                                previous: "‹"
+                            }
+                        },
+                        dom: "<'row mb-3 align-items-center dataTables-header-custom'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6 d-flex justify-content-md-end'f>>" +
+                             "<'row'<'col-sm-12'tr>>" +
+                             "<'row mt-3 align-items-center dataTables-footer-custom'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7 d-flex justify-content-md-end'p>>",
+                    });
+
+                    // Styling DataTable
+                    if (!$('#custom-dt-style').length) {
+                        $('head').append(`
+                            <style id="custom-dt-style">
+                                .dataTables-header-custom .dataTables_length label { font-size: 0.85rem; color: #6c757d; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+                                .dataTables-header-custom .dataTables_length select { border-radius: 6px; border: 1px solid #dee2e6; padding: 4px 30px 4px 12px; font-size: 0.85rem; outline: none; }
+                                .dataTables-header-custom .dataTables_filter label { margin: 0; width: 100%; max-width: 250px; }
+                                .dataTables-header-custom .dataTables_filter input { width: 100%; border-radius: 20px; border: 1px solid #dee2e6; padding: 6px 16px; font-size: 0.85rem; outline: none; transition: border-color 0.2s; background: #fff url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23adb5bd" viewBox="0 0 16 16"%3E%3Cpath d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/%3E%3C/svg%3E') no-repeat right 12px center; background-size: 14px; padding-right: 32px; }
+                                .dataTables-header-custom .dataTables_filter input:focus { border-color: #0d6efd; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1); }
+                                .dataTables-footer-custom .dataTables_info { font-size: 0.85rem; color: #adb5bd; padding-top: 0; }
+                                .dataTables-footer-custom .pagination { margin: 0; gap: 4px; }
+                                .dataTables-footer-custom .page-item .page-link { border-radius: 6px !important; border: 1px solid #eef0f3; color: #495057; font-size: 0.85rem; padding: 6px 12px; margin: 0; }
+                                .dataTables-footer-custom .page-item.active .page-link { background-color: #0d6efd; border-color: #0d6efd; color: #fff; box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2); }
+                                .dataTables-footer-custom .page-item.disabled .page-link { color: #dee2e6; background-color: #fff; border-color: #eef0f3; }
+                                .table-rekap { border-bottom: none !important; margin-bottom: 0 !important; }
+                                table.dataTable.no-footer { border-bottom: 1px solid #eef0f3 !important; }
+                                table.dataTable thead th, table.dataTable thead td { border-bottom: 2px solid #eef0f3 !important; }
+                            </style>
+                        `);
+                    }
                 }
             });
         }

@@ -130,36 +130,10 @@
         @keyframes slideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: none; } }
         .spinner-overlay { position: fixed; inset: 0; background: rgba(255, 255, 255, .6); display: flex; align-items: center; justify-content: center; z-index: 9998; }
 
-        .change-log-box {
-            background: var(--warning-light);
-            border: 1px solid #fcd34d;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1.25rem;
-        }
-        .change-log-box h6 {
-            font-size: .85rem;
-            font-weight: 700;
-            color: var(--warning);
-            margin-bottom: .75rem;
-        }
-        .change-log-item {
-            background: #fff;
-            border: 1px solid var(--gray-200);
-            border-radius: 6px;
-            padding: .5rem .75rem;
-            margin-bottom: .5rem;
-            font-size: .8rem;
-        }
+        .change-log-item { background: #fff; border: 1px solid var(--gray-200); border-radius: 6px; padding: .5rem .75rem; margin-bottom: .5rem; font-size: .8rem; }
         .change-log-item:last-child { margin-bottom: 0; }
-        .change-old {
-            color: var(--danger);
-            text-decoration: line-through;
-        }
-        .change-new {
-            color: var(--success);
-            font-weight: 700;
-        }
+        .change-old { color: var(--danger); text-decoration: line-through; }
+        .change-new { color: var(--success); font-weight: 700; }
     </style>
 
     <div id="toast-container"></div>
@@ -179,8 +153,7 @@
         <div class="card card-shell mb-4">
             <div class="card-body py-3">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                    <span class="fw-bold text-primary" style="font-size:.875rem;"><i
-                            class="fa-solid fa-filter me-1"></i>Filter</span>
+                    <span class="fw-bold text-primary" style="font-size:.875rem;"><i class="fa-solid fa-filter me-1"></i>Filter</span>
                     <div class="d-flex gap-2 flex-wrap" id="filterGroup">
                         <select id="fBulan" class="form-select form-select-sm" style="width:120px" onchange="applyFilter()">
                             <option value="">Semua Bulan</option>
@@ -209,12 +182,9 @@
                             <option value="approved">Approved</option>
                             <option value="paid">Paid</option>
                         </select>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter()"><i
-                                class="fa-solid fa-rotate me-1"></i>Reset</button>
-                        <button class="btn btn-outline-success" onclick="exportExcel()"><i
-                                class="fa-solid fa-file-excel me-2"></i>Export Excel</button>
-                        <button class="btn btn-outline-danger" onclick="exportPdf()"><i
-                                class="fa-solid fa-file-pdf me-2"></i>Export PDF</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter()"><i class="fa-solid fa-rotate me-1"></i>Reset</button>
+                        <button class="btn btn-outline-success" onclick="exportExcel()"><i class="fa-solid fa-file-excel me-2"></i>Export Excel</button>
+                        <button class="btn btn-outline-danger" onclick="exportPdf()"><i class="fa-solid fa-file-pdf me-2"></i>Export PDF</button>
                     </div>
                 </div>
             </div>
@@ -306,7 +276,7 @@
                     <div class="col-lg-6">
                         <div class="card card-shell">
                             <div class="card-header" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:10px 10px 0 0;padding:1rem 1.5rem">
-                                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-building me-2"></i>Ditanggung Perusahaan</h6>
+                                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-building me-2"></i>BPJS PERUSAHAAN</h6>
                             </div>
                             <div class="card-body p-4">
                                 @foreach ([['JHT – Jaminan Hari Tua', '3.70%', 'Salary BPJSTK', 'Salary BPJSTK × 3.7%'], ['JKM – Jaminan Kematian', '0.30%', 'Salary BPJSTK', 'Salary BPJSTK × 0.3%'], ['JKK – Jaminan Kecelakaan Kerja', '0.24%', 'Salary BPJSTK', 'Salary BPJSTK × 0.24%'], ['JP – Jaminan Pensiun', '2.00%', 'Salary BPJSTK', 'Salary BPJSTK × 2%'], ['BPJS Kesehatan', '4.00%', 'UMK Bandung', 'UMK Bandung × 4%']] as [$label, $pct, $base, $formula])
@@ -712,24 +682,30 @@
                                         </div>
                                         <div class="col-md-4">
                                             <div class="detail-section">
-                                                <h6><i class="fa-solid fa-building" style="color:var(--success)"></i>BPJS Perusahaan</h6>
-                                                <div class="detail-item"><span>BPJS Ketenagakerjaan</span><span id="rv4BPJSTKper">Rp 0</span></div>
-                                                <div class="detail-item"><span>BPJS Kesehatan</span><span id="rv4BPJSKesper">Rp 0</span></div>
-                                                <div class="detail-item detail-total"><span>Total</span><span class="text-success" id="rv4TotalBPJSper">Rp 0</span></div>
+                                                <h6><i class="fa-solid fa-heart-pulse" style="color:var(--info)"></i>BPJS Kesehatan</h6>
+                                                <div class="detail-item"><span>BPJS Perusahaan</span><span id="rv4BPJSKesper">Rp 0</span></div>
+                                                <div class="detail-item"><span>Potongan Karyawan</span><span id="rv4BPJSKeskar">Rp 0</span></div>
+                                                <div class="detail-item detail-total"><span>Total</span><span class="text-info" id="rv4TotalKes">Rp 0</span></div>
                                             </div>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="detail-section">
-                                                <h6><i class="fa-solid fa-user-shield" style="color:var(--info)"></i>Potongan Karyawan</h6>
-                                                <div class="detail-item"><span>BPJS Ketenagakerjaan</span><span id="rv4BPJSTKkar">Rp 0</span></div>
-                                                <div class="detail-item"><span>BPJS Kesehatan</span><span id="rv4BPJSKeskar">Rp 0</span></div>
-                                                <div class="detail-item"><span>Potongan Lainnya</span><span id="rv4PotLain">Rp 0</span></div>
-                                                <div class="detail-item detail-total"><span>Total Potongan</span><span class="text-danger" id="rv4TotalPot">Rp 0</span></div>
+                                                <h6><i class="fa-solid fa-helmet-safety" style="color:var(--success)"></i>BPJS Ketenagakerjaan</h6>
+                                                <div class="detail-item"><span>BPJS Perusahaan</span><span id="rv4BPJSTKper">Rp 0</span></div>
+                                                <div class="detail-item"><span>Potongan Karyawan</span><span id="rv4BPJSTKkar">Rp 0</span></div>
+                                                <div class="detail-item detail-total"><span>Total</span><span class="text-success" id="rv4TotalTK">Rp 0</span></div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="row mt-3">
-                                        <div class="col-md-6 offset-md-6">
+                                    <div class="row g-4 mt-2">
+                                        <div class="col-md-6">
+                                            <div class="detail-section">
+                                                <h6><i class="fa-solid fa-minus-circle" style="color:var(--danger)"></i>Potongan Lainnya</h6>
+                                                <div class="detail-item"><span>PPh 21 + Kasbon + Denda + Lainnya</span><span id="rv4PotLain">Rp 0</span></div>
+                                                <div class="detail-item detail-total"><span>Total Potongan Karyawan</span><span class="text-danger" id="rv4TotalPot">Rp 0</span></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
                                             <div class="p-3 rounded text-center" style="background:linear-gradient(135deg,rgba(79,70,229,.08),rgba(79,70,229,.04));border:2px solid rgba(79,70,229,.2)">
                                                 <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.5px">THP Bersih</div>
                                                 <div class="fw-bold" style="font-size:1.6rem;color:var(--pri)" id="rv4THPBersih">Rp 0</div>
@@ -752,7 +728,7 @@
     </div>
 
     <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content" style="border-radius:12px;border:none">
                 <div class="modal-header modal-header-custom border-0 d-flex justify-content-between align-items-center">
                     <h5 class="modal-title fw-bold mb-0"><i class="fa-solid fa-file-invoice me-2"></i>Detail Payroll</h5>
@@ -781,9 +757,7 @@
                     <h5 class="modal-title fw-bold"><i class="fa-solid fa-history me-2"></i>Log Perubahan</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body p-0" id="logModalBody" style="background: #f8f9fa;">
-                    <!-- Logs will be loaded here -->
-                </div>
+                <div class="modal-body p-0" id="logModalBody" style="background: #f8f9fa;"></div>
                 <div class="modal-footer border-0">
                     <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
                 </div>
@@ -933,46 +907,6 @@
             return detail.map(t => `<div class="detail-item"><span>${t.nama}</span><span>Rp ${fmtNum(t.total)}</span></div>`).join('');
         }
 
-        function renderChangeLogs(changeLogs) {
-            if (!changeLogs || !changeLogs.length) return '<div class="p-4 text-center text-muted">Belum ada riwayat perubahan.</div>';
-            
-            let html = '<div class="accordion accordion-flush" id="accLogDetail">';
-            changeLogs.forEach((group, i) => {
-                const detailsHtml = group.details.map(log => `
-                    <div class="change-log-item pb-2 mb-2 border-bottom">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <strong>${log.field_name}</strong><br>
-                                <span class="change-old">Rp ${fmtNum(parseInt(log.old_value) || 0)}</span>
-                                <i class="fa-solid fa-arrow-right mx-1 text-muted"></i>
-                                <span class="change-new">Rp ${fmtNum(parseInt(log.new_value) || 0)}</span>
-                            </div>
-                        </div>
-                        <small class="text-muted d-block mt-1">${log.description || ''}</small>
-                    </div>
-                `).join('');
-
-                html += `
-                <div class="accordion-item border mb-2" style="border-radius:8px;overflow:hidden;">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#clGroup${i}" style="background:#f8f9fa;">
-                            <div class="d-flex flex-column w-100">
-                                <span class="fw-bold text-dark">Perubahan bulan ${group.bulan} ${group.tahun}</span>
-                                <small class="text-muted"><i class="fa-regular fa-clock me-1"></i>${group.waktu} &bull; Oleh: ${group.changed_by}</small>
-                            </div>
-                        </button>
-                    </h2>
-                    <div id="clGroup${i}" class="accordion-collapse collapse" data-bs-parent="#accLogDetail">
-                        <div class="accordion-body p-3">
-                            ${detailsHtml}
-                        </div>
-                    </div>
-                </div>`;
-            });
-            html += '</div>';
-            return html;
-        }
-
         function renderDetailHtml(data) {
             const p = data.payroll;
             if (!p) return `<div class="p-4 text-center text-muted">Belum ada payroll untuk karyawan ini.</div>`;
@@ -1106,45 +1040,6 @@
                 .fail(function(xhr) { toast(xhr.responseJSON?.message || 'Gagal hapus', 'error'); });
         }
 
-        function showGlobalLogModal() {
-            $('#globalLogModalBody').html('<div class="text-center py-5"><i class="fa-solid fa-spinner fa-spin fa-2x text-primary"></i></div>');
-            new bootstrap.Modal('#globalLogModal').show();
-
-            $.get(BASE + '/logs-all').done(function(res) {
-                if (!res.success) {
-                    $('#globalLogModalBody').html('<div class="p-4 text-center text-danger">Gagal memuat histori log.</div>');
-                    return;
-                }
-                const data = res.data || [];
-                if (data.length === 0) {
-                    $('#globalLogModalBody').html('<div class="p-4 text-center text-muted">Belum ada riwayat perubahan.</div>');
-                    return;
-                }
-                
-                let html = '<div class="accordion accordion-flush" id="accordionLogs">';
-                data.forEach((emp, i) => {
-                    html += `
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLog${i}">
-                                <i class="fa-solid fa-user me-2 text-primary"></i>${emp.karyawan_nama}
-                                <span class="badge bg-secondary ms-auto me-2">${emp.logs.length} histori</span>
-                            </button>
-                        </h2>
-                        <div id="collapseLog${i}" class="accordion-collapse collapse" data-bs-parent="#accordionLogs">
-                            <div class="accordion-body p-3" style="background:#fff;">
-                                ${renderChangeLogs(emp.logs)}
-                            </div>
-                        </div>
-                    </div>`;
-                });
-                html += '</div>';
-                $('#globalLogModalBody').html(html);
-            }).fail(function() {
-                $('#globalLogModalBody').html('<div class="p-4 text-center text-danger">Terjadi kesalahan pada server.</div>');
-            });
-        }
-
         function editPayrollId(id) {
             bootstrap.Modal.getInstance('#detailModal')?.hide();
             wzEditId = id;
@@ -1153,21 +1048,21 @@
                 const p = res.data;
                 resetWizard();
                 wzEditId = id;
+                $('#wizardTitle').text('Edit Payroll');
                 $('#wKaryawan').val(p.karyawan_id);
                 $('#wBulan').val(p.bulan);
                 $('#wTahun').val(p.tahun);
-                
-                wzEmployee = p.karyawan;
+
+                wzEmployee = { id: p.karyawan_id, nama: p.karyawan?.nama_lengkap, nip: p.karyawan?.nip };
                 $('#wGajiPokok').val(fmtNum(p.gaji_pokok));
                 $('#wSalaryBPJSTK').val(fmtNum(p.salary_bpjstk));
                 $('#wUMK').val(fmtNum(p.umk_bandung));
-                $('#wPPh').val(fmtNum(p.potongan_pph21));
-                
+                $('#wPPh').val(p.potongan_pph21 ? fmtNum(p.potongan_pph21) : '');
+                $('#wKasbon').val(p.potongan_kasbon ? fmtNum(p.potongan_kasbon) : '');
+                $('#wDenda').val(p.potongan_denda ? fmtNum(p.potongan_denda) : '');
+                $('#wPotLain').val(p.potongan_lain ? fmtNum(p.potongan_lain) : '');
+
                 renderTunjanganFields(p.tunjangan_detail || []);
-                $('#wPotonganKasbon').val(p.potongan_kasbon ? fmtNum(p.potongan_kasbon) : '');
-                $('#wPotonganDenda').val(p.potongan_denda ? fmtNum(p.potongan_denda) : '');
-                $('#wPotonganLain').val(p.potongan_lain ? fmtNum(p.potongan_lain) : '');
-                
                 calcPreview();
                 calcBPJS();
                 new bootstrap.Modal('#wizardModal').show();
@@ -1410,9 +1305,10 @@
             $('#rv4THPKotor').text('Rp ' + fmtNum(thpKotor));
             $('#rv4BPJSTKper').text('Rp ' + fmtNum(bpjsTKPer));
             $('#rv4BPJSKesper').text('Rp ' + fmtNum(bpjsKesPer));
-            $('#rv4TotalBPJSper').text('Rp ' + fmtNum(totalBPJSPer));
+            $('#rv4TotalKes').text('Rp ' + fmtNum(bpjsKesPer + bpjsKesKar));
             $('#rv4BPJSTKkar').text('Rp ' + fmtNum(bpjsTKKar));
             $('#rv4BPJSKeskar').text('Rp ' + fmtNum(bpjsKesKar));
+            $('#rv4TotalTK').text('Rp ' + fmtNum(bpjsTKPer + bpjsTKKar));
             $('#rv4PotLain').text('Rp ' + fmtNum(potLain));
             $('#rv4TotalPot').text('Rp ' + fmtNum(totalBPJSKar + potLain));
             $('#rv4THPBersih').text('Rp ' + fmtNum(thpBersih));
