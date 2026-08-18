@@ -218,8 +218,12 @@ $(document).ready(function() {
     $('#tanggal_pengajuan').val(today);
     var paxInput = $('#pax');
     var totalInput = $('#total');
+    const isSertifa = @json((bool) $sertifa);
 
     $('#mata_uang, #harga, #kurs, #biaya_admin, #kurs_dollar').on('input change', function() {
+        if (!isSertifa) {
+            return;
+        }
         toggleCurrencyFields();
         updateHargaRupiah();
     });
@@ -237,12 +241,16 @@ $(document).ready(function() {
         if (selectedCurrency === 'Rupiah') {
             // Sembunyikan field Kurs, tidak perlu konversi
             $('#kurs_harga_div').hide();
+            $('#kurs_dollar_div').hide();
+            $('#biaya_admin_div').hide();
             $('#kurs').val('1').prop('required', false);
 
             // Ganti simbol "$" menjadi "Rp." pada field Harga
             $('#currency-symbol').text('Rp.');
         } else {
             $('#kurs_harga_div').show();
+            $('#kurs_dollar_div').show();
+            $('#biaya_admin_div').show();
             $('#kurs').prop('required', true);
 
             // Kembalikan simbol ke "$" untuk mata uang asing
@@ -251,7 +259,9 @@ $(document).ready(function() {
     }
 
     // Jalankan sekali saat load (untuk kasus old-input/edit form)
-    toggleCurrencyFields();
+    if(isSertifa) {
+        toggleCurrencyFields();
+    }
 
     // Function to update Harga Rupiah
     function updateHargaRupiah() {
