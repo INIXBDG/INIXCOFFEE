@@ -942,49 +942,9 @@
                     <div class="d-flex gap-2 mt-3">
                         <button class="btn btn-sm btn-outline-primary" onclick="showDetail(${p.id},event)"><i class="fa-solid fa-eye me-1"></i>Detail Lengkap</button>
                         ${['draft','calculated'].includes(p.status)?`<button class="btn btn-sm btn-success" onclick="approvePayrollId(${p.id},event)"><i class="fa-solid fa-check me-1"></i>Approve</button>`:''}
-                        ${p.status!=='paid'?`<button class="btn btn-sm btn-outline-danger" onclick="deletePayrollId(${p.id},event)"><i class="fa-solid fa-trash me-1"></i>Hapus</button>`:''}
+                        <button class="btn btn-sm btn-outline-danger" onclick="deletePayrollId(${p.id},event)"><i class="fa-solid fa-trash me-1"></i>Hapus</button>
                     </div>
                 </div>`;
-        }
-
-        function renderChangeLogs(changeLogs) {
-            if (!changeLogs || !changeLogs.length) return '<div class="p-4 text-center text-muted">Belum ada riwayat perubahan.</div>';
-
-            let html = '<div class="accordion accordion-flush p-3" id="accLogDetail">';
-            changeLogs.forEach((group, i) => {
-                const detailsHtml = group.details.map(log => `
-                    <div class="change-log-item pb-2 mb-2 border-bottom">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <strong>${log.field_name}</strong><br>
-                                <span class="change-old">Rp ${fmtNum(parseInt(log.old_value) || 0)}</span>
-                                <i class="fa-solid fa-arrow-right mx-1 text-muted"></i>
-                                <span class="change-new">Rp ${fmtNum(parseInt(log.new_value) || 0)}</span>
-                            </div>
-                        </div>
-                        <small class="text-muted d-block mt-1">${log.description || ''}</small>
-                    </div>
-                `).join('');
-
-                html += `
-                <div class="accordion-item border mb-2" style="border-radius:8px;overflow:hidden;">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#clGroup${i}" style="background:#f8f9fa;">
-                            <div class="d-flex flex-column w-100">
-                                <span class="fw-bold text-dark">Perubahan bulan ${group.bulan} ${group.tahun}</span>
-                                <small class="text-muted"><i class="fa-regular fa-clock me-1"></i>${group.waktu} &bull; Oleh: ${group.changed_by}</small>
-                            </div>
-                        </button>
-                    </h2>
-                    <div id="clGroup${i}" class="accordion-collapse collapse" data-bs-parent="#accLogDetail">
-                        <div class="accordion-body p-3">
-                            ${detailsHtml}
-                        </div>
-                    </div>
-                </div>`;
-            });
-            html += '</div>';
-            return html;
         }
 
         function showLogModal() {
@@ -1004,9 +964,12 @@
                 if (!res.success) return;
                 const p = res.data;
                 const tunjDetail = p.tunjangan_detail || [];
-                globalChangeLogs = res.change_logs || [];
+                const changeLogs = res.change_logs || [];
+                globalChangeLogs = changeLogs;
 
                 if (['draft', 'calculated'].includes(p.status)) $('#detailBtnApprove').removeClass('d-none');
+                
+                // Selalu memunculkan tombol Hapus dan Edit
                 $('#detailBtnDelete').removeClass('d-none');
                 $('#detailBtnEdit').removeClass('d-none');
 
@@ -1079,6 +1042,7 @@
 
         function editPayrollId(id) {
             bootstrap.Modal.getInstance('#detailModal')?.hide();
+            wzEditId = id;
             $.get(BASE + '/' + id).done(function(res) {
                 if (!res.success) return toast('Gagal memuat data edit', 'error');
                 const p = res.data;
@@ -1156,7 +1120,7 @@
                         wzEmployee = res.karyawan;
                         wzTunjReadonly = res.has_tunjangan;
                         $('#wGajiPokok').val(fmtNum(wzEmployee.gaji_pokok));
-                        $('#wSalaryBPJSTK').val(fmtNum(wzEmployee.gaji_pokok));
+                        $('#wSalaryBPJSTK').val(fmtNum(wzEmployee.salary_bpjstk));
                         $('#wUMK').val(fmtNum(wzEmployee.umk_bandung || UMK));
 
                         if (res.karyawan.pph21_bulanan > 0) {
