@@ -111,7 +111,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control @error('kurs') is-invalid @enderror" name="kurs" id="kurs" required>
+                                    <input type="text" class="form-control @error('kurs') is-invalid @enderror" name="kurs" id="kurs">
                                 </div>
                                 @error('kurs')
                                     <span class="invalid-feedback" role="alert">
@@ -126,7 +126,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">$</span>
-                                    <input type="text" step="0.01" class="form-control @error('biaya_admin') is-invalid @enderror" name="biaya_admin" id="biaya_admin" required>
+                                    <input type="text" step="0.01" class="form-control @error('biaya_admin') is-invalid @enderror" name="biaya_admin" id="biaya_admin">
                                 </div>
                                 @error('biaya_admin')
                                     <span class="invalid-feedback" role="alert">
@@ -141,7 +141,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control @error('kurs_dollar') is-invalid @enderror" name="kurs_dollar" id="kurs_dollar" required>
+                                    <input type="text" class="form-control @error('kurs_dollar') is-invalid @enderror" name="kurs_dollar" id="kurs_dollar">
                                 </div>
                                 @error('kurs_dollar')
                                     <span class="invalid-feedback" role="alert">
