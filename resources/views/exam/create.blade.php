@@ -218,7 +218,9 @@ $(document).ready(function() {
     $('#tanggal_pengajuan').val(today);
     var paxInput = $('#pax');
     var totalInput = $('#total');
+
     $('#mata_uang, #harga, #kurs, #biaya_admin, #kurs_dollar').on('input change', function() {
+        toggleCurrencyFields();
         updateHargaRupiah();
     });
 
@@ -227,11 +229,34 @@ $(document).ready(function() {
         $(this).val(formatRupiah($(this).val()));
     });
 
+    // Show/hide Kurs field & ubah simbol mata uang pada Harga
+    // tergantung mata uang yang dipilih
+    function toggleCurrencyFields() {
+        const selectedCurrency = $('#mata_uang').val();
+
+        if (selectedCurrency === 'Rupiah') {
+            // Sembunyikan field Kurs, tidak perlu konversi
+            $('#kurs_harga_div').hide();
+            $('#kurs').val('1').prop('required', false);
+
+            // Ganti simbol "$" menjadi "Rp." pada field Harga
+            $('#currency-symbol').text('Rp.');
+        } else {
+            $('#kurs_harga_div').show();
+            $('#kurs').prop('required', true);
+
+            // Kembalikan simbol ke "$" untuk mata uang asing
+            $('#currency-symbol').text('$');
+        }
+    }
+
+    // Jalankan sekali saat load (untuk kasus old-input/edit form)
+    toggleCurrencyFields();
+
     // Function to update Harga Rupiah
     function updateHargaRupiah() {
         const selectedCurrency = $('#mata_uang').val();
         const harga = parseFloat(($('#harga').val())) || 0;
-        const kurs = parseFloat(removeRupiahFormat($('#kurs').val())) || 0;
         const biayaAdmin = parseFloat(removeRupiahFormat($('#biaya_admin').val())) || 0;
         const kursDollar = parseFloat(removeRupiahFormat($('#kurs_dollar').val())) || 0;
         let totalHarga = 0;
@@ -239,16 +264,19 @@ $(document).ready(function() {
         // Calculate totalHarga based on selectedCurrency
         switch (selectedCurrency) {
             case 'Rupiah':
-                totalHarga = (harga * kurs) + (biayaAdmin * kursDollar);
+                // Harga sudah dalam Rupiah, tidak perlu dikali kurs
+                totalHarga = harga + (biayaAdmin * kursDollar);
                 break;
             case 'Dollar':
                 totalHarga = (harga + biayaAdmin) * kursDollar;
                 break;
             case 'Poundsterling':
             case 'Euro':
-            case 'Franc Swiss':
+            case 'Franc Swiss': {
+                const kurs = parseFloat(removeRupiahFormat($('#kurs').val())) || 0;
                 totalHarga = (harga * kurs) + (biayaAdmin * kursDollar);
                 break;
+            }
             default:
                 totalHarga = 0;
                 break;
