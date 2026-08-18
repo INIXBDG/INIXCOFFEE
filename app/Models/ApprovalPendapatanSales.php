@@ -33,6 +33,8 @@ class ApprovalPendapatanSales extends Model
         'perusahaan',
         'tanggal_mulai',
         'tanggal_selesai',
+        'biaya_lain_lain',
+        'exam',
     ];
 
     protected $casts = [
