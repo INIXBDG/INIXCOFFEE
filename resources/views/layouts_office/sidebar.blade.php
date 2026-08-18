@@ -323,7 +323,14 @@
             <li class="menu-item {{ request()->routeIs('approvalPendapatan.index') ? 'active open' : '' }}">
                 <a href="{{ route('approvalPendapatan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-money"></i>
-                    <div class="text-truncate" data-i18n="contact">Approval Pendapatan</div>
+                    <div class="text-truncate" data-i18n="contact">Approval Penjualan</div>
+                </a>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('komisiSales.index') ? 'active open' : '' }}">
+                <a href="{{ route('komisiSales.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-money"></i>
+                    <div class="text-truncate" data-i18n="contact">Komisi Sales</div>
                 </a>
             </li>
         @endcan

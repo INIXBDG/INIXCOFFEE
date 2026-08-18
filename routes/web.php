@@ -129,7 +129,7 @@ use App\Http\Controllers\CodeDocumentationController;
 use App\Http\Controllers\DocumentationImportController;
 use App\Http\Controllers\KelasSettingController;
 use App\Http\Controllers\UserController;
-
+use App\Http\Controllers\KomisiSalesController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -1083,6 +1083,20 @@ Route::prefix('office')->group(function () {
         Route::get('/get/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'get'])->name('get');
         Route::post('update/{id}', [ApprovalPendapatanController::class, 'update'])->name('update');
         Route::get('total-tahunan/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'totalTahunan']);
+        Route::get('/lock-status', [ApprovalPendapatanController::class, 'checkLockStatus']);
+        Route::post('/setup-lock', [ApprovalPendapatanController::class, 'setupLockPassword']);
+        Route::post('/unlock', [ApprovalPendapatanController::class, 'unlock']);
+        Route::post('/change-lock-password', [ApprovalPendapatanController::class, 'changeLockPassword']);
+    });
+
+    Route::prefix('komisi-sales')->name('komisiSales.')->group(function () {
+        Route::get('/index', [KomisiSalesController::class, 'index'])->name('index');
+        Route::get('/get/{tahun}/{quartal}', [KomisiSalesController::class, 'get'])->name('get');
+        Route::post('/export-pdf', [KomisiSalesController::class, 'exportPdf'])->name('export-pdf');
+        Route::get('/lock-status', [KomisiSalesController::class, 'checkLockStatus']);
+        Route::post('/unlock', [KomisiSalesController::class, 'unlock']);
+        Route::post('/setup-lock', [KomisiSalesController::class, 'setupLockPassword']);
+        Route::post('/change-lock-password', [KomisiSalesController::class, 'changeLockPassword']);
     });
 
     route::prefix('exam')->name('office.exam.')->group(function () {
@@ -1511,6 +1525,9 @@ Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() 
 
 Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::get('/', [HRController::class, 'index'])->name('index');
+    Route::get('/data', [HRController::class, 'getDashboardData'])->name('dashboard.data');
+    Route::get('/divisions', [HRController::class, 'getDivisions'])->name('dashboard.divisions');
+    Route::get('/card-details', [HRController::class, 'getCardDetails'])->name('dashboard.card');
     Route::prefix('employee')
         ->name('employee.')
         ->group(function () {
@@ -1543,6 +1560,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/division-stats', [presenceController::class, 'getDivisionDailyStats'])->name('division.stats');
         Route::get('/top-late', [presenceController::class, 'getTopLateEmployees'])->name('top.late');
         Route::get('/calendar', [presenceController::class, 'getAttendanceCalendar'])->name('calendar');
+        Route::get('/daily-details', [presenceController::class, 'getDailyAttendanceDetails'])->name('daily-details');
     });
 
     Route::prefix('executive')->name('executive.')->group(function () {

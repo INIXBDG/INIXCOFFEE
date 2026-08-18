@@ -53,7 +53,6 @@
         </div>
     </div>
 
-    {{-- ========== MODAL UPDATE ========== --}}
     <div class="modal fade" id="updateModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg overflow-hidden" style="border-radius:16px;">
@@ -71,7 +70,6 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                {{-- Step Indicator (2 step saja: tidak ada tracking di fitur sales) --}}
                 <div class="px-4 py-2 border-bottom d-flex align-items-center gap-0" style="background:#f8fafc;">
                     <div class="step-pill active" data-step="1">
                         <span class="step-num">1</span>
@@ -90,7 +88,6 @@
 
                     <div class="modal-body p-0" style="background:#f8fafc;max-height:70vh;overflow-y:auto;">
 
-                        {{-- STEP 1: Informasi Training --}}
                         <div class="step-content p-4" id="step-1">
                             <div class="row g-3">
                                 <div class="col-12">
@@ -168,7 +165,6 @@
                             </div>
                         </div>
 
-                        {{-- STEP 2: Perhitungan --}}
                         <div class="step-content p-4 d-none" id="step-2">
                             <div class="row g-3">
                                 <div class="col-12">
@@ -182,19 +178,19 @@
                                     <label class="form-label fw-semibold small">Harga Net</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-white text-muted small">Rp</span>
-                                        <input type="number" class="form-control input-calc" id="harga" name="harga">
+                                        <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="harga" name="harga">
                                     </div>
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label fw-semibold small">Pax</label>
-                                    <input type="number" class="form-control input-calc" id="pax" name="pax">
+                                    <input type="number" class="form-control input-calc" id="pax" name="pax" min="0">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Total Penjualan Kotor</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-success bg-opacity-10 text-success">Rp</span>
-                                        <input type="number"
-                                            class="form-control bg-success bg-opacity-10 fw-bold text-success"
+                                        <input type="text" inputmode="numeric"
+                                            class="form-control bg-success bg-opacity-10 fw-bold text-success currency-input"
                                             id="total"
                                             name="total">
                                     </div>
@@ -210,42 +206,52 @@
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Diskon / PA</label>
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control input-calc" id="diskon" name="diskon"></div>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="diskon" name="diskon"></div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Total Diskon</label>
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control input-calc" id="total_diskon" name="total_diskon"></div>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="total_diskon" name="total_diskon"></div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Total PA</label>
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control input-calc" id="total_pa" name="total_pa"></div>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="total_pa" name="total_pa"></div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Cashback</label>
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control input-calc" id="total_cashback" name="total_cashback"></div>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="total_cashback" name="total_cashback"></div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Uang Saku</label>
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control input-calc" id="total_uang_saku" name="total_uang_saku"></div>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="total_uang_saku" name="total_uang_saku"></div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Akomodasi</label>
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control input-calc" id="total_akomodasi" name="total_akomodasi"></div>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="total_akomodasi" name="total_akomodasi"></div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Oleh-Oleh Peserta</label>
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control input-calc" id="oleh_oleh" name="oleh_oleh"></div>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="oleh_oleh" name="oleh_oleh"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Biaya Lain-Lain</label>
+                                    <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="biaya_lain_lain" name="biaya_lain_lain"></div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Entertainment</label>
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control input-calc" id="entertainment" name="entertainment"></div>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="entertainment" name="entertainment"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Exam</label>
+                                    <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="exam_value" name="exam"></div>
                                 </div>
 
                                 <div class="col-12 mt-2">
@@ -255,7 +261,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Jenis Transportasi</label>
                                     <select class="form-select" id="transportasi_select">
                                         <option value="">Pilih Transportasi</option>
@@ -268,22 +274,22 @@
                                     </select>
                                     <input type="text" class="form-control mt-2 d-none" id="transportasi_manual" placeholder="Transportasi lainnya">
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Biaya Transport</label>
                                     <div class="input-group"><span class="input-group-text bg-white text-muted small">Rp</span>
-                                    <input type="number" class="form-control input-calc" id="biaya_transport" name="biaya_transport"></div>
+                                    <input type="text" inputmode="numeric" class="form-control input-calc currency-input" id="biaya_transport" name="biaya_transport"></div>
                                 </div>
                             </div>
 
-                            <div class="mt-4 p-3 rounded-3 d-flex align-items-center justify-content-between">
+                            <div class="mt-4 p-3 rounded-3 d-flex align-items-center justify-content-between" style="background:#16a34a;color:#fff;border:1px solid #15803d;">
                                 <div>
                                     <div class="small opacity-75 mb-1">Total Penjualan Sales (Bersih)</div>
-                                    <input type="number"
-                                        class="form-control fw-bold"
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control fw-bold currency-input"
+                                        style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35);"
                                         id="total_penjualan_sales"
                                         name="total_penjualan_sales">
                                 </div>
-                                <i class="bi bi-graph-up-arrow fs-1 opacity-25"></i>
                             </div>
 
                             <div class="d-flex justify-content-between mt-4">
@@ -380,8 +386,59 @@
 
         function parseNumber(value) {
             if (!value || value === 'belum tervalidasi' || value === 'kosong') return 0;
-            return parseFloat(value) || 0;
+            let cleaned = String(value).replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.\-]/g, '');
+            return parseFloat(cleaned) || 0;
         }
+
+        function formatCurrency(value) {
+            let num = parseFloat(value) || 0;
+            if (num <= 0) return '';
+            return Math.round(num).toLocaleString('id-ID');
+        }
+
+        function setCurrencyValue(selector, value) {
+            let num = parseFloat(value) || 0;
+            if (num > 0) {
+                $(selector).val(Math.round(num).toLocaleString('id-ID'));
+            } else {
+                $(selector).val('');
+            }
+        }
+
+        function getCurrencyValue(selector) {
+            let val = $(selector).val();
+            if (!val) return 0;
+            return parseInt(String(val).replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
+        }
+
+        $(document).on('input', '.currency-input', function(e) {
+            let el = this;
+            let raw = el.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+            
+            if (raw === '') {
+                el.value = '';
+                return;
+            }
+            
+            let num = parseInt(raw);
+            let formatted = num.toLocaleString('id-ID');
+            
+            if (el.value !== formatted) {
+                let cursorPos = el.selectionStart;
+                let oldLength = el.value.length;
+                el.value = formatted;
+                let newLength = el.value.length;
+                let newPos = Math.max(0, cursorPos + (newLength - oldLength));
+                el.setSelectionRange(newPos, newPos);
+            }
+        });
+
+        $(document).on('blur', '.currency-input', function() {
+            let num = parseNumber($(this).val());
+            if (num > 0) {
+                $(this).val(Math.round(num).toLocaleString('id-ID'));
+            }
+        });
 
         $('#transportasi_select').on('change', function () {
             if ($(this).val() === 'Lainnya') {
@@ -410,8 +467,8 @@
             let pax   = parseNumber($('#pax').val());
             let total = harga * pax;
 
-            if (!manualTotalKotor) {
-                $('#total').val(total);
+            if (!manualTotalKotor && total > 0) {
+                $('#total').val(formatCurrency(total));
             }
         }
 
@@ -425,12 +482,14 @@
                 parseNumber($('#total_uang_saku').val()) +
                 parseNumber($('#total_akomodasi').val()) +
                 parseNumber($('#biaya_transport').val()) +
-                parseNumber($('#oleh_oleh').val()) + 
-                parseNumber($('#entertainment').val());
+                parseNumber($('#oleh_oleh').val()) +
+                parseNumber($('#biaya_lain_lain').val()) + 
+                parseNumber($('#entertainment').val()) +
+                parseNumber($('#exam_value').val());
 
             let totalPenjualanSales = Math.max(0, total - deductions);
             if (!manualTotalBersih) {
-                $('#total_penjualan_sales').val(totalPenjualanSales);
+                $('#total_penjualan_sales').val(formatCurrency(totalPenjualanSales));
             }
         }
 
@@ -499,7 +558,7 @@
                             let rows = '';
 
                             if (weekData.data.length === 0) {
-                                rows = `<tr><td colspan="20" class="text-center">Tidak Ada Data pada Periode Ini</td></tr>`;
+                                rows = `<tr><td colspan="26" class="text-center">Tidak Ada Data pada Periode Ini</td></tr>`;
                             } else {
                                 weekData.data.forEach((item, i) => {
                                     let totalVal = Number(item.total_penjualan_kotor ?? (item.harga * item.pax) ?? 0);
@@ -526,9 +585,11 @@
                                             <td class="text-end">${formatRupiah(item.total_uang_saku || 0)}</td>
                                             <td class="text-end">${formatRupiah(item.total_akomodasi || 0)}</td>
                                             <td class="text-end">${formatRupiah(item.oleh_oleh || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.biaya_lain_lain || 0)}</td>
                                             <td class="text-end">${formatRupiah(item.entertainment || 0)}</td>
                                             <td>${escapeHtml(item.jenis_transport || '-')}</td>
                                             <td class="text-end">${formatRupiah(item.biaya_transport || 0)}</td>
+                                            <td>${item.exam}</td>
                                             <td class="text-end">${formatRupiah(item.total_penjualan_sales || 0)}</td>
                                             <td>${escapeHtml(item.tanggal_mulai || '-')}</td>
                                             <td>${escapeHtml(item.tanggal_selesai || '-')}</td>
@@ -550,9 +611,11 @@
                                             <td class="text-end">${formatRupiah(footerBulanan.total_uang_saku || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_akomodasi || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.oleh_oleh || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.biaya_lain_lain || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.entertainment || 0)}</td>
                                             <td class="text-end">-</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.biaya_transport || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.total_exam || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_penjualan_sales || 0)}</td>
                                             <td colspan="2"></td>
                                         </tr>
@@ -565,9 +628,11 @@
                                             <td class="text-end">${formatRupiah(footerTahunan.total_uang_saku || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_akomodasi || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.oleh_oleh || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.biaya_lain_lain || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.entertainment || 0)}</td>
                                             <td class="text-end">-</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.biaya_transport || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.total_exam || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_penjualan_sales || 0)}</td>
                                             <td colspan="2"></td>
                                         </tr>
@@ -581,7 +646,7 @@
                                         <h3 class="card-title my-1 fs-6 fw-bold">Validasi Penjualan Sales</h3>
                                         <p class="card-title my-1 text-muted small">Periode : ${moment(startOfWeek).format('DD MMMM YYYY')} - ${moment(endOfWeek).format('DD MMMM YYYY')}</p>
                                         <div class="sync-scroll-wrapper table-scroll-sync">
-                                            <table class="table table-striped table-hover mb-0" style="min-width:1900px;">
+                                            <table class="table table-striped table-hover mb-0" style="min-width:2100px;">
                                                 <thead>
                                                     <tr>
                                                         <th>No</th>
@@ -602,9 +667,11 @@
                                                         <th>Uang Saku</th>
                                                         <th>Akomodasi</th>
                                                         <th>Oleh-Oleh peserta</th>
+                                                        <th>Biaya Lain-Lain</th>
                                                         <th>Entertainment</th>
                                                         <th>Jenis Transport</th>
                                                         <th>Biaya Transport</th>
+                                                        <th>Exam</th>
                                                         <th>Total Penjualan Sales (Bersih)</th>
                                                         <th>Tanggal Mulai</th>
                                                         <th>Tanggal Selesai</th>
@@ -665,17 +732,22 @@
             $('#nama_sales').val(item.nama_sales ?? '');
             $('#instruktur').val(item.instruktur ?? '');
 
-            $('#harga').val(item.harga ?? '');
+            setCurrencyValue('#harga', item.harga);
+            setCurrencyValue('#total', item.total_penjualan_kotor);
+            setCurrencyValue('#diskon', item.diskon);
+            setCurrencyValue('#total_diskon', item.total_diskon);
+            setCurrencyValue('#total_pa', item.total_pa);
+            setCurrencyValue('#total_cashback', item.total_cashback);
+            setCurrencyValue('#total_uang_saku', item.total_uang_saku);
+            setCurrencyValue('#total_akomodasi', item.total_akomodasi);
+            setCurrencyValue('#oleh_oleh', item.oleh_oleh);
+            setCurrencyValue('#biaya_lain_lain', item.biaya_lain_lain);
+            setCurrencyValue('#entertainment', item.entertainment);
+            setCurrencyValue('#biaya_transport', item.biaya_transport);
+            setCurrencyValue('#exam_value', item.exam_value);
+            setCurrencyValue('#total_penjualan_sales', item.total_penjualan_sales);
+
             $('#pax').val(item.pax ?? '');
-            $('#diskon').val(item.diskon ?? '');
-            $('#total_diskon').val(item.total_diskon ?? '');
-            $('#total_pa').val(item.total_pa ?? '');
-            $('#total_cashback').val(item.total_cashback ?? '');
-            $('#total_uang_saku').val(item.total_uang_saku ?? '');
-            $('#total_akomodasi').val(item.total_akomodasi ?? '');
-            $('#oleh_oleh').val(item.oleh_oleh ?? '');
-            $('#entertainment').val(item.entertainment ?? '');
-            $('#biaya_transport').val(item.biaya_transport ?? '');
 
             if (['Pesawat','Kereta','Bus','Mobil','Travel','Lainnya'].includes(item.jenis_transport)) {
                 $('#transportasi_select').val(item.jenis_transport);
@@ -711,19 +783,21 @@
                     _token: "{{ csrf_token() }}",
                     no_faktur: $('#no_faktur').val(),
                     no_invoice: $('#no_invoice').val(),
-                    harga: $('#harga').val(),
-                    pax: $('#pax').val(),
-                    diskon: $('#diskon').val(),
-                    total_diskon: $('#total_diskon').val(),
-                    total_pa: $('#total_pa').val(),
-                    total_cashback: $('#total_cashback').val(),
-                    total_uang_saku: $('#total_uang_saku').val(),
-                    total_akomodasi: $('#total_akomodasi').val(),
+                    harga: getCurrencyValue('#harga'),
+                    pax: $('#pax').val() || 0,
+                    diskon: getCurrencyValue('#diskon'),
+                    total_diskon: getCurrencyValue('#total_diskon'),
+                    total_pa: getCurrencyValue('#total_pa'),
+                    total_cashback: getCurrencyValue('#total_cashback'),
+                    total_uang_saku: getCurrencyValue('#total_uang_saku'),
+                    total_akomodasi: getCurrencyValue('#total_akomodasi'),
                     jenis_transport: jenisTransport,
-                    biaya_transport: $('#biaya_transport').val(),
-                    oleh_oleh: $('#oleh_oleh').val(),
-                    entertainment: $('#entertainment').val(),
-                    total_penjualan_sales: $('#total_penjualan_sales').val(),
+                    biaya_transport: getCurrencyValue('#biaya_transport'),
+                    oleh_oleh: getCurrencyValue('#oleh_oleh'),
+                    biaya_lain_lain: getCurrencyValue('#biaya_lain_lain'),
+                    entertainment: getCurrencyValue('#entertainment'),
+                    exam: getCurrencyValue('#exam_value'),
+                    total_penjualan_sales: getCurrencyValue('#total_penjualan_sales'),
                     materi: $('#materi').val(),
                     perusahaan: $('#perusahaan').val(),
                     tanggal_mulai: $('#tanggal_mulai').val(),
@@ -735,6 +809,12 @@
                 success: function (response) {
                     if (response.success) {
                         $('#updateModal').modal('hide');
+                        setTimeout(function() {
+                            $('.modal-backdrop').remove();
+                            $('body').removeClass('modal-open');
+                            $('body').css('overflow', '');
+                            $('body').css('padding-right', '');
+                        }, 300);
                         loadTable();
                         showAlert('success', 'Data berhasil diupdate!');
                     } else {

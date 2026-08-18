@@ -42,7 +42,6 @@
         }
         .page-sub { color: var(--gray-400); font-size: .875rem; }
 
-        /* ===== STAT CARDS ===== */
         .stat-card {
             border: none; border-radius: var(--radius); box-shadow: var(--shadow);
             transition: transform .25s, box-shadow .25s; background: #fff;
@@ -68,7 +67,6 @@
         .stat-trend.up { color: var(--success); }
         .stat-trend.down { color: var(--danger); }
 
-        /* ===== TABS ===== */
         .nav-tabs-custom { border-bottom: 2px solid var(--gray-200); }
         .nav-tabs-custom .nav-link {
             border: none; color: var(--gray-400); font-weight: 600;
@@ -80,14 +78,12 @@
             color: var(--pri); border-bottom: 3px solid var(--pri); background: transparent;
         }
 
-        /* ===== CARDS ===== */
         .card-shell {
             border: none; border-radius: var(--radius);
             box-shadow: var(--shadow); background: #fff;
         }
         .card-shell .card-body { padding: 1.5rem; }
 
-        /* ===== BUTTONS ===== */
         .btn-pri {
             background: var(--pri); border: none; color: #fff; font-weight: 600;
             padding: .5rem 1.25rem; border-radius: 8px; transition: all .25s;
@@ -122,7 +118,6 @@
             background: #b91c1c; transform: translateY(-1px); color: #fff;
         }
 
-        /* ===== CHARTS ===== */
         .chart-wrap { position: relative; height: 280px; }
         .chart-title {
             font-size: .875rem; font-weight: 700; color: var(--gray-700);
@@ -130,7 +125,6 @@
         }
         .chart-title i { color: var(--pri); }
 
-        /* ===== CALENDAR ===== */
         .calendar-grid {
             display: grid; grid-template-columns: repeat(7, 1fr);
             gap: .4rem;
@@ -186,7 +180,6 @@
             border-radius: 3px; margin-right: 4px; vertical-align: middle;
         }
 
-        /* ===== OPPORTUNITY CARDS ===== */
         .opp-card {
             border-radius: 10px; padding: 1.1rem 1.25rem;
             margin-bottom: .75rem; border: 1px solid var(--gray-200);
@@ -219,7 +212,6 @@
         }
         .opp-meta span { display: inline-flex; align-items: center; gap: .25rem; }
 
-        /* ===== PREDICTION CARDS ===== */
         .pred-card {
             background: linear-gradient(135deg, var(--pri-light) 0%, #fff 100%);
             border: 1px solid var(--gray-200); border-radius: var(--radius);
@@ -241,7 +233,6 @@
             font-size: .78rem; color: var(--gray-400); font-weight: 500;
         }
 
-        /* ===== MILESTONE ===== */
         .milestone-item {
             background: var(--gray-50); border: 1px solid var(--gray-200);
             border-radius: 8px; padding: 1rem 1.25rem;
@@ -264,7 +255,6 @@
             margin-top: .4rem; line-height: 1.5;
         }
 
-        /* ===== FORM ===== */
         .form-control, .form-select {
             border: 1px solid var(--gray-200); border-radius: 8px;
             padding: .5rem .85rem; font-size: .875rem; color: var(--gray-700);
@@ -280,7 +270,6 @@
             text-transform: uppercase; letter-spacing: .3px;
         }
 
-        /* ===== EMPTY STATE ===== */
         .empty-state {
             text-align: center; padding: 2.5rem 1rem; color: var(--gray-400);
         }
@@ -291,7 +280,6 @@
         .empty-state p { font-size: .88rem; margin: 0; font-weight: 500; }
         .empty-state small { font-size: .78rem; }
 
-        /* ===== RISK BADGE ===== */
         .risk-badge {
             padding: .3rem .7rem; border-radius: 20px;
             font-size: .68rem; font-weight: 700; text-transform: uppercase;
@@ -300,6 +288,79 @@
         .risk-high { background: var(--danger-light); color: var(--danger); }
         .risk-medium { background: var(--warning-light); color: var(--warning); }
         .risk-low { background: var(--success-light); color: var(--success); }
+
+        .employee-card {
+            display: flex;
+            align-items: center;
+            padding: .75rem;
+            border-radius: 8px;
+            margin-bottom: .5rem;
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            transition: all .2s;
+        }
+        .employee-card:hover {
+            background: var(--gray-50);
+            border-color: var(--pri);
+            box-shadow: var(--shadow-sm);
+        }
+        .employee-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: .75rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .employee-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .employee-avatar i {
+            font-size: 1.2rem;
+            color: var(--gray-400);
+        }
+        .employee-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .employee-name {
+            font-weight: 600;
+            color: var(--gray-900);
+            font-size: .875rem;
+            margin-bottom: .15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .employee-position {
+            font-size: .72rem;
+            color: var(--gray-400);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .employee-meta {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .employee-time {
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+        .employee-badge {
+            font-size: .65rem;
+            padding: .2rem .5rem;
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -328,7 +389,6 @@
             </div>
         </div>
 
-        {{-- ===== FILTER BAR ===== --}}
         <div class="card card-shell mb-4">
             <div class="card-body py-3">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -342,47 +402,51 @@
             </div>
         </div>
 
-        {{-- ===== METRIC CARDS ===== --}}
         <div class="row g-3 mb-4">
             <div class="col-xl-4 col-md-6">
                 <div class="card stat-card h-100">
                     <div class="card-body d-flex align-items-center justify-content-between">
                         <div>
+                            <p class="stat-label">Total Telat (Bulan Ini)</p>
+                            <h3 class="stat-value" id="metricTotalLate" style="color:var(--danger)">-</h3>
+                            <div class="stat-trend down" style="color:var(--gray-400)">Akumulasi keterlambatan</div>
+                        </div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="fa-solid fa-clock"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4 col-md-6">
+                <div class="card stat-card h-100">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="stat-label">Cuti / Sakit / Izin</p>
+                            <h3 class="stat-value" id="metricTotalLeave" style="color:var(--info)">-</h3>
+                            <div class="stat-trend up">
+                                <a href="#" id="btnViewLeaveDetails" style="color:var(--pri);text-decoration:none;font-weight:600;font-size:.75rem">
+                                    <i class="fa-solid fa-eye me-1"></i>Lihat Siapa Saja
+                                </a>
+                            </div>
+                        </div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i class="fa-solid fa-umbrella-beach"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4 col-md-6">
+                <div class="card stat-card h-100">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
                             <p class="stat-label">Attendance Rate</p>
-                            <h3 class="stat-value" id="metricAttendanceRate">-</h3>
-                            <div class="stat-trend up" id="trendAttendance"><i class="fa-solid fa-arrow-up"></i> -</div>
+                            <h3 class="stat-value" id="metricAttendanceRate" style="color:var(--success)">-</h3>
+                            <div class="stat-trend up" id="trendAttendance"><i class="fa-solid fa-arrow-up"></i> Persentase kehadiran</div>
                         </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)"><i class="fa-solid fa-user-check"></i></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-4 col-md-6">
-                <div class="card stat-card h-100">
-                    <div class="card-body d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="stat-label">Punctuality Rate</p>
-                            <h3 class="stat-value" id="metricPunctuality" style="color:var(--success)">-</h3>
-                            <div class="stat-trend up" id="trendPunctuality"><i class="fa-solid fa-arrow-up"></i> -</div>
-                        </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)"><i class="fa-solid fa-clock"></i></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-4 col-md-6">
-                <div class="card stat-card h-100">
-                    <div class="card-body d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="stat-label">Avg Late (menit)</p>
-                            <h3 class="stat-value" id="metricAvgLate" style="color:var(--warning)">-</h3>
-                            <div class="stat-trend down" id="trendLate"><i class="fa-solid fa-arrow-down"></i> -</div>
-                        </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)"><i class="fa-solid fa-user-check"></i></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- ===== TABS ===== --}}
         <ul class="nav nav-tabs nav-tabs-custom mb-4" id="mainTabs">
             <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabAnalytics"><i class="fa-solid fa-chart-line me-2"></i>Analytics</button></li>
             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCalendar"><i class="fa-solid fa-calendar-days me-2"></i>Kalender Kehadiran</button></li>
@@ -390,7 +454,6 @@
         </ul>
 
         <div class="tab-content">
-            {{-- ===== TAB: ANALYTICS ===== --}}
             <div class="tab-pane fade show active" id="tabAnalytics">
                 <div class="row g-4">
                     <div class="col-lg-6">
@@ -439,7 +502,6 @@
                 </div>
             </div>
 
-            {{-- ===== TAB: CALENDAR ===== --}}
             <div class="tab-pane fade" id="tabCalendar">
                 <div class="row g-4">
                     <div class="col-lg-8">
@@ -468,7 +530,7 @@
                     <div class="col-lg-4">
                         <div class="card card-shell h-100">
                             <div class="card-body">
-                                <div class="chart-title"><i class="fa-solid fa-circle-info" style="color:var(--info)"></i>Legenda & Informasi</div>
+                                <div class="chart-title"><i class="fa-solid fa-circle-info" style="color:var(--info)"></i>Informasi</div>
                                 <div class="p-3 rounded mb-3" style="background:var(--success-light);border:1px solid #4ade80">
                                     <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--success)"><i class="fa-solid fa-check me-1"></i>Hadir Tepat Waktu</div>
                                     <small style="color:var(--gray-600)">Karyawan hadir sebelum atau tepat pada jam masuk yang ditentukan.</small>
@@ -482,8 +544,8 @@
                                     <small style="color:var(--gray-600)">Hari libur nasional, cuti tahunan, atau izin resmi lainnya.</small>
                                 </div>
                                 <div class="p-3 rounded" style="background:var(--gray-50);border:1px solid var(--gray-200)">
-                                    <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--gray-700)"><i class="fa-solid fa-calendar-xmark me-1"></i>Weekend</div>
-                                    <small style="color:var(--gray-600)">Hari Sabtu dan Minggu (non-working day).</small>
+                                    <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--gray-700)"><i class="fa-solid fa-calendar-xmark me-1"></i>Working Day's</div>
+                                    <small style="color:var(--gray-600)">Hari kerja (working day).</small>
                                 </div>
                             </div>
                         </div>
@@ -491,7 +553,6 @@
                 </div>
             </div>
 
-            {{-- ===== TAB: PREDICTION ===== --}}
             <div class="tab-pane fade" id="tabPrediction">
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
@@ -527,13 +588,178 @@
         </div>
     </div>
 
+    <div class="modal fade" id="leaveDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius:var(--radius);border:none;box-shadow:var(--shadow-lg)">
+                <div class="modal-header" style="border-bottom:2px solid var(--gray-200);padding:1.25rem 1.5rem;background:var(--info-light)">
+                    <h5 class="modal-title fw-bold mb-0" style="color:var(--gray-900)">
+                        <i class="fa-solid fa-list-ul me-2" style="color:var(--info)"></i>Daftar Karyawan Cuti / Sakit / Izin
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding:1.5rem">
+                    <ul class="nav nav-pills mb-3" id="leaveTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="tab-cuti-btn" data-bs-toggle="pill" data-bs-target="#tab-cuti" type="button" style="font-size:.85rem;font-weight:600;color:var(--gray-600)">Cuti</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-sakit-btn" data-bs-toggle="pill" data-bs-target="#tab-sakit" type="button" style="font-size:.85rem;font-weight:600;color:var(--gray-600)">Sakit</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-izin-btn" data-bs-toggle="pill" data-bs-target="#tab-izin" type="button" style="font-size:.85rem;font-weight:600;color:var(--gray-600)">Izin 3 Jam</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="leaveTabsContent">
+                        <div class="tab-pane fade show active" id="tab-cuti" role="tabpanel"><div id="listCuti"></div></div>
+                        <div class="tab-pane fade" id="tab-sakit" role="tabpanel"><div id="listSakit"></div></div>
+                        <div class="tab-pane fade" id="tab-izin" role="tabpanel"><div id="listIzin"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="dailyDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius:var(--radius);border:none;box-shadow:var(--shadow-lg)">
+                <div class="modal-header" style="border-bottom:2px solid var(--gray-200);padding:1.25rem 1.5rem;background:linear-gradient(135deg,var(--pri-light) 0%,#fff 100%)">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-1" id="modalDateLabel" style="color:var(--gray-900)">-</h5>
+                        <p class="mb-0" style="font-size:.85rem;color:var(--gray-600)" id="modalDayName">-</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body" style="padding:1.5rem">
+                    <div id="modalLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3" style="color:var(--gray-400)">Memuat data kehadiran...</p>
+                    </div>
+
+                    <div id="modalContent" style="display:none">
+                        <div id="holidayAlert" class="alert mb-4" style="display:none;border-radius:8px">
+                            <div class="d-flex align-items-center">
+                                <i class="fa-solid fa-circle-info me-2" style="font-size:1.2rem"></i>
+                                <div>
+                                    <strong id="holidayAlertTitle">-</strong>
+                                    <p class="mb-0 mt-1" style="font-size:.85rem" id="holidayAlertDesc">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card" style="border:none;border-radius:10px;background:var(--success-light);padding:1rem;text-align:center">
+                                    <div style="font-size:.75rem;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:.5px">Hadir</div>
+                                    <div style="font-size:2rem;font-weight:700;color:var(--gray-900);margin:.3rem 0" id="statPresent">0</div>
+                                    <div style="font-size:.72rem;color:var(--gray-600)" id="statPresentPercent">0%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card" style="border:none;border-radius:10px;background:var(--warning-light);padding:1rem;text-align:center">
+                                    <div style="font-size:.75rem;font-weight:700;color:var(--warning);text-transform:uppercase;letter-spacing:.5px">Terlambat</div>
+                                    <div style="font-size:2rem;font-weight:700;color:var(--gray-900);margin:.3rem 0" id="statLate">0</div>
+                                    <div style="font-size:.72rem;color:var(--gray-600)" id="statLatePercent">0%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card" style="border:none;border-radius:10px;background:var(--info-light);padding:1rem;text-align:center">
+                                    <div style="font-size:.75rem;font-weight:700;color:var(--info);text-transform:uppercase;letter-spacing:.5px">Cuti/Sakit</div>
+                                    <div style="font-size:2rem;font-weight:700;color:var(--gray-900);margin:.3rem 0" id="statLeave">0</div>
+                                    <div style="font-size:.72rem;color:var(--gray-600)" id="statLeavePercent">0%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="card" style="border:none;border-radius:10px;background:var(--danger-light);padding:1rem;text-align:center">
+                                    <div style="font-size:.75rem;font-weight:700;color:var(--danger);text-transform:uppercase;letter-spacing:.5px">Tidak Hadir</div>
+                                    <div style="font-size:2rem;font-weight:700;color:var(--gray-900);margin:.3rem 0" id="statAbsent">0</div>
+                                    <div style="font-size:.72rem;color:var(--gray-600)" id="statAbsentPercent">0%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4" style="border:none;border-radius:10px;box-shadow:var(--shadow)">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3" style="color:var(--gray-700)">
+                                    <i class="fa-solid fa-chart-pie me-2" style="color:var(--pri)"></i>Distribusi Kehadiran
+                                </h6>
+                                <div style="position:relative;height:250px">
+                                    <canvas id="dailyStatusChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card" style="border:none;border-radius:10px;box-shadow:var(--shadow)">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold mb-3" style="color:var(--success)">
+                                            <i class="fa-solid fa-check-circle me-2"></i>Hadir Tepat Waktu (<span id="presentCount">0</span>)
+                                        </h6>
+                                        <div id="presentList" style="max-height:300px;overflow-y:auto"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card" style="border:none;border-radius:10px;box-shadow:var(--shadow)">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold mb-3" style="color:var(--warning)">
+                                            <i class="fa-solid fa-clock me-2"></i>Terlambat (<span id="lateCount">0</span>)
+                                        </h6>
+                                        <div id="lateList" style="max-height:300px;overflow-y:auto"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card" style="border:none;border-radius:10px;box-shadow:var(--shadow)">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold mb-3" style="color:var(--info)">
+                                            <i class="fa-solid fa-umbrella-beach me-2"></i>Cuti (<span id="leaveCount">0</span>)
+                                        </h6>
+                                        <div id="leaveList" style="max-height:300px;overflow-y:auto"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card" style="border:none;border-radius:10px;box-shadow:var(--shadow)">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold mb-3" style="color:var(--danger)">
+                                            <i class="fa-solid fa-briefcase-medical me-2"></i>Sakit (<span id="sickCount">0</span>)
+                                        </h6>
+                                        <div id="sickList" style="max-height:300px;overflow-y:auto"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="card" style="border:none;border-radius:10px;box-shadow:var(--shadow)">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold mb-3" style="color:var(--danger)">
+                                            <i class="fa-solid fa-user-xmark me-2"></i>Tidak Hadir (<span id="absentCount">0</span>)
+                                        </h6>
+                                        <div id="absentList" style="max-height:200px;overflow-y:auto"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         const formatPercent = v => `${v}%`;
         const formatMinutes = v => `${v} menit`;
-        let trendChart, deptChart, heatmapChart, riskChart;
+        let trendChart, deptChart, heatmapChart, riskChart, dailyStatusChart;
         let currentCalMonth = null, currentCalYear = null;
 
         $(document).ready(function() {
@@ -547,6 +773,12 @@
             $('#btnExportPdf').click(() => exportReport('pdf'));
             $('#filterBulan, #filterTahun').change(() => loadCalendar($('#filterBulan').val(), $('#filterTahun').val()));
             $('#calendarEmployee').change(() => loadCalendar(currentCalMonth, currentCalYear));
+            
+            $('#btnViewLeaveDetails').on('click', function(e) {
+                e.preventDefault();
+                const modal = new bootstrap.Modal(document.getElementById('leaveDetailsModal'));
+                modal.show();
+            });
         });
 
         function initFilters() {
@@ -563,7 +795,7 @@
             return {
                 month: $('#filterBulan').val(),
                 year: $('#filterTahun').val(),
-                divisi: $('#filterDivisi').val(),
+                divisi: $('#filterDivisi') ? $('#filterDivisi').val() : 'all',
                 jabatan: 'all'
             };
         }
@@ -579,14 +811,48 @@
         }
 
         function renderSummary(s) {
+            $('#metricTotalLate').text(s.total_late_minutes + ' menit');
+            $('#metricTotalLeave').text(s.total_cuti_sakit_izin + ' orang');
             $('#metricAttendanceRate').text(formatPercent(s.attendance_rate));
-            $('#metricPunctuality').text(formatPercent(s.punctuality_rate));
-            $('#metricAvgLate').text(formatMinutes(s.avg_late_minutes));
+            
+            renderLeaveList('listCuti', s.detail_cuti, 'Cuti');
+            renderLeaveList('listSakit', s.detail_sakit, 'Sakit');
+            renderLeaveList('listIzin', s.detail_izin, 'Izin 3 Jam');
+        }
 
-            // Simulasi trend (bisa diganti data real dari backend)
-            $('#trendAttendance').html(`<i class="fa-solid fa-arrow-up"></i> +${(Math.random()*2+0.5).toFixed(1)}% dari bulan lalu`);
-            $('#trendPunctuality').html(`<i class="fa-solid fa-arrow-up"></i> +${(Math.random()*1.5+0.3).toFixed(1)}% dari bulan lalu`);
-            $('#trendLate').html(`<i class="fa-solid fa-arrow-down"></i> -${(Math.random()*3+1).toFixed(1)} menit dari bulan lalu`);
+        function renderLeaveList(containerId, data, tipe) {
+            const container = $('#' + containerId).empty();
+            if (!data || data.length === 0) {
+                container.html('<div class="text-center py-4" style="color:var(--gray-400)"><i class="fa-solid fa-inbox" style="font-size:2rem;opacity:.3"></i><p class="mt-2 mb-0">Tidak ada data ' + tipe + ' bulan ini.</p></div>');
+                return;
+            }
+
+            data.forEach(emp => {
+                const avatar = emp.foto 
+                    ? '<img src="/storage/' + emp.foto + '" alt="' + emp.nama + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+                    : '<i class="fa-solid fa-user" style="color:var(--gray-400)"></i>';
+                    
+                let metaInfo = '';
+                if (tipe === 'Izin 3 Jam') {
+                    metaInfo = '<div style="font-size:.75rem;color:var(--gray-400)">' + (emp.tanggal_pengajuan || '-') + '</div>';
+                } else {
+                    metaInfo = '<div style="font-size:.75rem;color:var(--gray-400)">' + emp.tanggal_awal + ' s/d ' + emp.tanggal_akhir + '</div>';
+                }
+
+                container.append(
+                    '<div class="employee-card">' +
+                        '<div class="employee-avatar">' + avatar + '</div>' +
+                        '<div class="employee-info">' +
+                            '<div class="employee-name">' + emp.nama + '</div>' +
+                            '<div class="employee-position">' + (emp.divisi || '-') + ' • ' + (emp.alasan ? emp.alasan.substring(0, 30) + (emp.alasan.length > 30 ? '...' : '') : '-') + '</div>' +
+                        '</div>' +
+                        '<div class="employee-meta">' +
+                            metaInfo +
+                            '<span class="employee-badge mt-1" style="background:var(--gray-100);color:var(--gray-600)">' + emp.tipe + '</span>' +
+                        '</div>' +
+                    '</div>'
+                );
+            });
         }
 
         function renderCharts(c) {
@@ -594,7 +860,6 @@
             const chartFont = { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto", size: 11 };
             const gridColor = 'rgba(0,0,0,0.05)';
 
-            // ===== TREND CHART =====
             trendChart = new Chart(document.getElementById('trendChart'), {
                 type: 'line',
                 data: {
@@ -619,7 +884,6 @@
                 }
             });
 
-            // ===== DEPT CHART =====
             deptChart = new Chart(document.getElementById('deptChart'), {
                 type: 'bar',
                 data: {
@@ -646,30 +910,21 @@
                 }
             });
 
-            // ===== HEATMAP CHART (DIPERBAIKI) =====
-            // Konversi label jam (misal "07_30") menjadi kategori warna
-            const heatmapLabels = c.attendance_heatmap.labels.map(l => {
-                // Ubah "07_30" menjadi "07:30"
-                return l.replace('_', ':');
-            });
+            const heatmapLabels = c.attendance_heatmap.labels.map(l => l.replace('_', ':'));
             
-            // Fungsi untuk menentukan warna bar berdasarkan jam
             const getBarColor = (label) => {
                 const parts = label.split(':');
                 const hour = parseInt(parts[0]);
                 const minute = parseInt(parts[1] || 0);
                 const totalMinutes = hour * 60 + minute;
                 
-                // Batas waktu masuk = 08:00 (480 menit)
-                if (totalMinutes < 465) return 'rgba(5, 150, 105, 0.85)';     // < 07:45 → Hijau (Early)
-                if (totalMinutes < 480) return 'rgba(16, 185, 129, 0.85)';    // 07:45-08:00 → Hijau muda (On-time)
-                if (totalMinutes < 510) return 'rgba(245, 158, 11, 0.85)';    // 08:00-08:30 → Kuning (Sedikit telat)
-                return 'rgba(220, 38, 38, 0.85)';                              // > 08:30 → Merah (Telat)
+                if (totalMinutes < 465) return 'rgba(5, 150, 105, 0.85)';
+                if (totalMinutes < 480) return 'rgba(16, 185, 129, 0.85)';
+                if (totalMinutes < 510) return 'rgba(245, 158, 11, 0.85)';
+                return 'rgba(220, 38, 38, 0.85)';
             };
             
             const barColors = heatmapLabels.map(getBarColor);
-            
-            // Cari index untuk garis batas masuk (08:00)
             const cutoffIndex = heatmapLabels.findIndex(l => l === '08:00');
 
             heatmapChart = new Chart(document.getElementById('heatmapChart'), {
@@ -699,17 +954,12 @@
                             cornerRadius: 8,
                             displayColors: false,
                             callbacks: {
-                                title: function(items) {
-                                    return `Jam ${items[0].label}`;
-                                },
+                                title: function(items) { return `Jam ${items[0].label}`; },
                                 label: function(context) {
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const value = context.parsed.y;
                                     const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                    return [
-                                        `Karyawan: ${value} orang`,
-                                        `Persentase: ${percent}%`
-                                    ];
+                                    return [`Karyawan: ${value} orang`, `Persentase: ${percent}%`];
                                 },
                                 afterLabel: function(context) {
                                     const label = context.label;
@@ -723,51 +973,18 @@
                         }
                     },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: gridColor },
-                            ticks: {
-                                font: chartFont,
-                                color: '#6b7280',
-                                padding: 8
-                            },
-                            title: {
-                                display: true,
-                                text: 'Jumlah Karyawan',
-                                font: { size: 11, weight: '600' },
-                                color: '#6b7280'
-                            }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: {
-                                font: { size: 10, weight: '600' },
-                                color: '#6b7280',
-                                maxRotation: 45,
-                                minRotation: 45,
-                                padding: 5
-                            },
-                            title: {
-                                display: true,
-                                text: 'Jam Kedatangan',
-                                font: { size: 11, weight: '600' },
-                                color: '#6b7280'
-                            }
-                        }
+                        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { font: chartFont, color: '#6b7280', padding: 8 }, title: { display: true, text: 'Jumlah Karyawan', font: { size: 11, weight: '600' }, color: '#6b7280' } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10, weight: '600' }, color: '#6b7280', maxRotation: 45, minRotation: 45, padding: 5 }, title: { display: true, text: 'Jam Kedatangan', font: { size: 11, weight: '600' }, color: '#6b7280' } }
                     }
                 },
                 plugins: [{
-                    // Plugin custom untuk menggambar garis batas masuk (08:00)
                     id: 'cutoffLine',
                     afterDraw: (chart) => {
                         if (cutoffIndex < 0) return;
                         const ctx = chart.ctx;
                         const xAxis = chart.scales.x;
                         const yAxis = chart.scales.y;
-                        
-                        // Posisi x di tengah bar "08:00"
                         const x = xAxis.getPixelForValue(cutoffIndex);
-                        
                         ctx.save();
                         ctx.setLineDash([6, 4]);
                         ctx.strokeStyle = '#dc2626';
@@ -776,8 +993,6 @@
                         ctx.moveTo(x, yAxis.top);
                         ctx.lineTo(x, yAxis.bottom);
                         ctx.stroke();
-                        
-                        // Label "Batas Masuk"
                         ctx.setLineDash([]);
                         ctx.fillStyle = '#dc2626';
                         ctx.font = 'bold 10px -apple-system, sans-serif';
@@ -786,43 +1001,32 @@
                         ctx.restore();
                     }
                 }, {
-                    // Plugin custom untuk legend manual di atas chart
                     id: 'customLegend',
                     afterDraw: (chart) => {
                         const ctx = chart.ctx;
-                        const { left, top, width } = chart.chartArea;
-                        
+                        const { left, top } = chart.chartArea;
                         ctx.save();
                         ctx.font = '600 10px -apple-system, sans-serif';
-                        
                         const legendItems = [
                             { color: 'rgba(5, 150, 105, 0.85)', label: 'Tepat Waktu' },
                             { color: 'rgba(245, 158, 11, 0.85)', label: 'Sedikit Telat' },
                             { color: 'rgba(220, 38, 38, 0.85)', label: 'Telat' }
                         ];
-                        
                         let x = left;
                         const y = top - 20;
-                        
                         legendItems.forEach(item => {
-                            // Kotak warna
                             ctx.fillStyle = item.color;
                             ctx.fillRect(x, y - 8, 12, 12);
-                            
-                            // Label
                             ctx.fillStyle = '#4b5563';
                             ctx.textAlign = 'left';
                             ctx.fillText(item.label, x + 16, y + 2);
-                            
                             x += ctx.measureText(item.label).width + 32;
                         });
-                        
                         ctx.restore();
                     }
                 }]
             });
 
-            // ===== RISK CHART =====
             riskChart = new Chart(document.getElementById('riskChart'), {
                 type: 'doughnut',
                 data: {
@@ -937,11 +1141,177 @@
                 else if (d.is_weekend) statusClass = 'weekend';
                 const classes = ['calendar-day', statusClass];
                 if (isToday) classes.push('today');
-                container.append(`
-                    <div class="${classes.join(' ')}" title="${d.title || ''}">
+                
+                const dayEl = $(`
+                    <div class="${classes.join(' ')}" title="Klik untuk lihat detail" data-date="${d.date}">
                         <span class="day-num">${d.day}</span>
                         <span class="day-name">${d.day_name}</span>
                         ${d.late_minutes > 0 ? `<span class="late-indicator">+${d.late_minutes}m</span>` : ''}
+                    </div>
+                `);
+                
+                dayEl.on('click', function() {
+                    const date = $(this).data('date');
+                    showDailyDetails(date, month, year);
+                });
+                
+                container.append(dayEl);
+            });
+        }
+
+        function showDailyDetails(date, month, year) {
+            const modal = new bootstrap.Modal(document.getElementById('dailyDetailsModal'));
+            modal.show();
+            
+            $('#modalLoading').show();
+            $('#modalContent').hide();
+            
+            $.get("{{ route('HR.absensi.daily-details') }}", { date, month, year }, function(res) {
+                if (!res.success) {
+                    alert(res.message);
+                    modal.hide();
+                    return;
+                }
+                
+                $('#modalDateLabel').text(res.date);
+                $('#modalDayName').text(res.day_name);
+                
+                const alert = $('#holidayAlert');
+                if (res.is_weekend) {
+                    alert.show().removeClass('alert-warning alert-info').addClass('alert-secondary');
+                    $('#holidayAlertTitle').text('Akhir Pekan');
+                    $('#holidayAlertDesc').text('Hari ini adalah hari libur akhir pekan (Sabtu/Minggu)');
+                } else if (res.is_holiday) {
+                    alert.show().removeClass('alert-secondary alert-info').addClass('alert-warning');
+                    $('#holidayAlertTitle').text('Hari Libur Nasional');
+                    $('#holidayAlertDesc').text(res.holiday_names.join(', '));
+                } else {
+                    alert.hide();
+                }
+                
+                const stats = res.statistics;
+                $('#statPresent').text(stats.present);
+                $('#statPresentPercent').text(((stats.present / stats.total) * 100).toFixed(1) + '%');
+                $('#statLate').text(stats.late);
+                $('#statLatePercent').text(((stats.late / stats.total) * 100).toFixed(1) + '%');
+                $('#statLeave').text(stats.on_leave + stats.sick);
+                $('#statLeavePercent').text((((stats.on_leave + stats.sick) / stats.total) * 100).toFixed(1) + '%');
+                $('#statAbsent').text(stats.absent);
+                $('#statAbsentPercent').text(((stats.absent / stats.total) * 100).toFixed(1) + '%');
+                
+                renderDailyStatusChart(stats);
+                
+                renderEmployeeList('present', res.employees.present);
+                renderEmployeeList('late', res.employees.late);
+                renderEmployeeList('leave', res.employees.on_leave);
+                renderEmployeeList('sick', res.employees.sick);
+                renderEmployeeList('absent', res.employees.absent);
+                
+                $('#modalLoading').hide();
+                $('#modalContent').show();
+            }).fail(() => {
+                alert('Gagal memuat detail kehadiran');
+                modal.hide();
+            });
+        }
+
+        function renderDailyStatusChart(stats) {
+            if (dailyStatusChart) dailyStatusChart.destroy();
+            
+            const ctx = document.getElementById('dailyStatusChart').getContext('2d');
+            dailyStatusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hadir', 'Terlambat', 'Cuti', 'Sakit', 'Tidak Hadir'],
+                    datasets: [{
+                        data: [stats.present, stats.late, stats.on_leave, stats.sick, stats.absent],
+                        backgroundColor: ['#059669', '#d97706', '#0284c7', '#dc2626', '#6b7280'],
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: { size: 11, family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto" },
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const value = context.parsed;
+                                    const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${value} karyawan (${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderEmployeeList(type, employees) {
+            const container = $(`#${type}List`).empty();
+            const count = employees.length;
+            $(`#${type}Count`).text(count);
+            
+            if (count === 0) {
+                container.html(`
+                    <div class="text-center py-3" style="color:var(--gray-400)">
+                        <i class="fa-solid fa-inbox" style="font-size:1.5rem;opacity:.3"></i>
+                        <p class="mb-0 mt-2" style="font-size:.82rem">Tidak ada karyawan</p>
+                    </div>
+                `);
+                return;
+            }
+            
+            employees.forEach(emp => {
+                let metaHtml = '';
+                
+                if (type === 'present') {
+                    metaHtml = `
+                        <div class="employee-time">${emp.jam_masuk || '-'}</div>
+                        <span class="employee-badge" style="background:var(--success-light);color:var(--success)">Tepat Waktu</span>
+                    `;
+                } else if (type === 'late') {
+                    metaHtml = `
+                        <div class="employee-time">${emp.jam_masuk || '-'}</div>
+                        <span class="employee-badge" style="background:var(--warning-light);color:var(--warning)">+${emp.late_minutes}m</span>
+                    `;
+                } else if (type === 'leave' || type === 'sick') {
+                    metaHtml = `
+                        <div class="employee-time">${emp.tipe_cuti || '-'}</div>
+                        <span class="employee-badge" style="background:var(--info-light);color:var(--info)">${emp.tipe_cuti}</span>
+                    `;
+                } else if (type === 'absent') {
+                    metaHtml = `
+                        <span class="employee-badge" style="background:var(--danger-light);color:var(--danger)">Alpha</span>
+                    `;
+                }
+                
+                const avatar = emp.foto 
+                    ? `<img src="/storage/${emp.foto}" alt="${emp.nama}">`
+                    : `<i class="fa-solid fa-user"></i>`;
+                
+                container.append(`
+                    <div class="employee-card">
+                        <div class="employee-avatar">${avatar}</div>
+                        <div class="employee-info">
+                            <div class="employee-name">${emp.nama}</div>
+                            <div class="employee-position">${emp.jabatan} • ${emp.divisi}</div>
+                        </div>
+                        <div class="employee-meta">${metaHtml}</div>
                     </div>
                 `);
             });
