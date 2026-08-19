@@ -125,7 +125,8 @@ class pickupDriverController extends Controller
         ]);
 
         $budget = empty($request->budget) || $request->budget == 0 ? null : $request->budget;
-        $tipePerjalananUtama = in_array('Operasional Kantor', $request->tipe) ? 'Operasional Kantor' : $request->tipe[0];
+        // $tipePerjalananUtama = in_array('Operasional Kantor', $request->tipe) ? 'Operasional Kantor' : $request->tipe[0];
+        $tipePerjalananUtama = $request->tipe[0] ?? null;
 
         $send = pickupDriver::create([
             'id_karyawan' => $request->id_driver,
@@ -141,10 +142,10 @@ class pickupDriverController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal membuat koordinasi driver. Silakan coba lagi.'], 500);
         }
 
-        foreach ($request->tipe as $index => $tipe) {
+        foreach ($request->jenis as $index => $jenis) {
             DetailPickupDriver::create([
                 'pickup_driver_id' => $send->id,
-                'tipe' => $tipe,
+                'tipe' => $jenis,
                 'lokasi' => $request->lokasi[$index],
                 'tanggal_keberangkatan' => $request->tanggal[$index],
                 'waktu_keberangkatan' => $request->waktu[$index],

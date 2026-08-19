@@ -319,6 +319,7 @@ Route::get('getRegistrasiexam', [App\Http\Controllers\registexamController::clas
 Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');
 Route::post('/generate/exam/absensi', [registexamController::class, 'generateAbsensi'])->name('absensi.exam');
 Route::get('getSouvenir', [App\Http\Controllers\SouvenirController::class, 'getSouvenir'])->name('getSouvenir');
+Route::get('getSouvenirInactive', [App\Http\Controllers\SouvenirController::class, 'getSouvenirInactive'])->name('getSouvenirInactive');
 Route::get('getSouvenirPeserta', [App\Http\Controllers\SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
 Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
 Route::get('/getTotalFeedbackPertahun', [App\Http\Controllers\feedbackController::class, 'getTotalFeedbackPertahun'])->name('office.feedback.get');
@@ -450,6 +451,8 @@ Route::get('/registexam/cc/{id}', [App\Http\Controllers\registexamController::cl
 Route::put('/registexam/cc/{id}', [App\Http\Controllers\registexamController::class, 'storecc'])->name('exam.storecc');
 Route::put('/souvenir/{id}/updatestok', [App\Http\Controllers\SouvenirController::class, 'updateStok'])->name('souvenir.updateStok');
 Route::get('/souvenir/{id}/editstok', [App\Http\Controllers\SouvenirController::class, 'editStok'])->name('souvenir.editStok');
+Route::post('/souvenir/{id}/inactive', [App\Http\Controllers\SouvenirController::class, 'inactive'])->name('souvenir.inactive');
+Route::post('/souvenir/{id}/active', [App\Http\Controllers\SouvenirController::class, 'active'])->name('souvenir.active');
 Route::get('/suratperjalanan/{id}/editspj', [App\Http\Controllers\SuratPerjalananController::class, 'editspj'])->name('suratperjalanan.editspj');
 Route::get('/tunjangangenerate', [App\Http\Controllers\TunjanganController::class, 'indexGenerate'])->name('tunjangangenerate.index');
 Route::put('/lembur/{id}/updateKaryawan', [App\Http\Controllers\lemburController::class, 'updateKaryawan'])->name('lembur.updateKaryawan');
