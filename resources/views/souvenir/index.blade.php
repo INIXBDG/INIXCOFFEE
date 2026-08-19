@@ -22,7 +22,7 @@
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Souvenir') }}</h3>
+                    <h3 class="card-title text-center my-1">{{ __('Data Souvenir (Active)') }}</h3>
                     <table class="table table-striped" id="souvenirtable">
                         <thead>
                             <tr>
@@ -31,7 +31,32 @@
                                 <th scope="col">Harga</th>
                                 <th scope="col">Range Harga Pelatihan</th>
                                 <th scope="col">Stok</th>
-                                {{-- <th scope="col">Stok</th> --}}
+                                <th scope="col">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="card m-4">
+                <div class="card-body table-responsive">
+                    <h3 class="card-title text-center my-1">{{ __('Data Souvenir (Inactive)') }}</h3>
+                    <table class="table table-striped" id="souvenirtableinactive">
+                        <thead>
+                            <tr>
+                                <th scope="col">No</th>
+                                <th scope="col">Nama Souvenir</th>
+                                <th scope="col">Harga</th>
+                                <th scope="col">Range Harga Pelatihan</th>
+                                <th scope="col">Stok</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
@@ -118,6 +143,7 @@
         var userRole = '{{ auth()->user()->jabatan}}';
         var tableIndex = 1;
         var tableIndex2 = 1;
+
         $('#souvenirtable').DataTable({
             "ajax": {
                 "url": "{{ route('getSouvenir') }}", // URL API untuk mengambil data
@@ -159,7 +185,7 @@
                     }
                 },
                 {"data": "stok"},
-                
+
                 {
                     "data": null,
                     "render": function(data, type, row) {
@@ -175,6 +201,9 @@
                             actions += '<a class="dropdown-item" href="{{ url('/souvenir') }}/' + row.id + '/editstok" data-toggle="tooltip" data-placement="top" title="Update Stok Souvenir"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Update Stok</a>';
                             actions += '@endcan';
                             actions += '<a class="dropdown-item" href="{{ url('/souvenir') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
+                            actions += '@can('Edit Souvenir')';
+                            actions += '<a class="dropdown-item btn-inactive-souvenir" href="javascript:void(0)" data-id="' + row.id + '" data-toggle="tooltip" data-placement="top" title="Nonaktifkan Souvenir">Nonaktifkan</a>';
+                            actions += '@endcan';
                             actions += '</div>';
                             actions += '</div>';
                             return actions;
@@ -182,6 +211,109 @@
                     }
                 }
             ]
+        });
+
+        $('#souvenirtableinactive').DataTable({
+            "ajax": {
+                "url": "{{ route('getSouvenirInactive') }}",
+                "type": "GET",
+                "beforeSend": function () {
+                    $('#loadingModal').modal('show');
+                    $('#loadingModal').on('show.bs.modal', function () {
+                        $('#loadingModal').removeAttr('inert');
+                    });
+                },
+                "complete": function () {
+                    setTimeout(() => {
+                        $('#loadingModal').modal('hide');
+                        $('#loadingModal').on('hidden.bs.modal', function () {
+                            $('#loadingModal').attr('inert', true);
+                        });
+                    }, 1000);
+                }
+            },
+            "columns": [
+                {   "data": null,
+                    "render": function (data){
+                        return tableIndex2++
+                    }
+                },
+                {"data": "nama_souvenir"},
+                {
+                    "data": "harga",
+                    "render": function(data) {
+                        return formatRupiah(data, 'Rp. ');
+                    }
+                },
+                {
+                    "data": null,
+                    "render": function(data) {
+                        var minHarga = formatRupiah(data.min_harga_pelatihan, 'Rp. ');
+                        var maxHarga = formatRupiah(data.max_harga_pelatihan, 'Rp. ');
+                        return minHarga + ' - ' + maxHarga;
+                    }
+                },
+                {"data": "stok"},
+                {
+                    "data": null,
+                    "render": function(data, type, row) {
+                        if (userRole === 'Direktur' || userRole === 'Direktur Utama') {
+                            return "";
+                        } else {
+                            var actions = "";
+                            actions += '<div class="dropdown">';
+                            actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButtonInactive" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                            actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButtonInactive">';
+                            actions += '<a class="dropdown-item btn-active-souvenir" href="javascript:void(0)" data-id="' + row.id + '" data-toggle="tooltip" data-placement="top" title="Aktifkan Souvenir">Aktifkan</a>';
+                            actions += '</div>';
+                            actions += '</div>';
+                            return actions;
+                        }
+                    }
+                }
+            ]
+        });
+
+        $(document).on('click', '.btn-inactive-souvenir', function() {
+            var id = $(this).data('id');
+            if (confirm('Yakin ingin menonaktifkan souvenir ini?')) {
+                $.ajax({
+                    url: "{{ url('/souvenir') }}/" + id + "/inactive",
+                    type: "post",
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+                        $('#souvenirtable').DataTable().ajax.reload(null, false);
+                        $('#souvenirtableinactive').DataTable().ajax.reload(null, false);
+                        window.location.reload();
+                    },
+                    error: function(xhr) {
+                        alert('Gagal menonaktifkan souvenir.');
+                    }
+                });
+            }
+        });
+
+        $(document).on('click', '.btn-active-souvenir', function() {
+            var id = $(this).data('id');
+            if (confirm('Yakin ingin mengaktifkan souvenir ini?')) {
+                $.ajax({
+                    url: "{{ url('/souvenir') }}/" + id + "/active",
+                    type: "post",
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+                        $('#souvenirtable').DataTable().ajax.reload(null, false);
+                        $('#souvenirtableinactive').DataTable().ajax.reload(null, false);
+                        window.location.reload();
+                    },
+                    error: function(xhr) {
+                        alert('Gagal mengaktifkan souvenir.');
+                    }
+                });
+            }
         });
     });
 </script>
