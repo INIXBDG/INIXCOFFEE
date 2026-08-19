@@ -38,12 +38,18 @@ class DaftarTugasController extends Controller
 
     public function index()
     {
-        $dataKategori = KategoriDaftarTugas::with('karyawan')->orderBy('urutan')->get();
+        $user = Auth::user();
+
+        if ($user->jabatan === "HRD") {
+            $dataKategori = KategoriDaftarTugas::with('karyawan')->orderBy('urutan')->get();
+        } else {
+            $dataKategori = KategoriDaftarTugas::with('karyawan')->where('id_user', $user->id)->orWhereNull('id_user')->orderBy('urutan')->get();
+        }
+
         $karyawan = Karyawan::select('id', 'nama_lengkap')->get();
         $officeBoy = Karyawan::where('jabatan', 'Office Boy')->get();
-        $auth = Auth::id();
 
-        return view('office.daftarTugas.index', compact('dataKategori', 'karyawan', 'officeBoy', 'auth'));
+        return view('office.daftarTugas.index', compact('dataKategori', 'karyawan', 'officeBoy'));
     }
 
     public function getKategori()
@@ -60,9 +66,11 @@ class DaftarTugasController extends Controller
             'tugas' => 'required|string|max:255',
             'Tipe' => 'required|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
             'tipe_turunan' => 'nullable',
+            'id_user' => 'nullable',
         ]);
 
         $tipe_turunan = $validated['tipe_turunan'];
+        $id_user = $validated['id_user'] ?? null;
 
         if ($request->filled('tipe_turunan')) {
             $tipe = $request->Tipe;
@@ -86,7 +94,7 @@ class DaftarTugasController extends Controller
         $maxUrutan = KategoriDaftarTugas::max('urutan') ?? 0;
 
         $kategori = KategoriDaftarTugas::create([
-            'id_user' => null,
+            'id_user' => $id_user,
             'Tipe' => $validated['Tipe'],
             'tipe_turunan' => $tipe_turunan,
             'judul_kategori' => $validated['tugas'],
@@ -622,6 +630,7 @@ class DaftarTugasController extends Controller
             'judul_kategori' => 'required|string|max:255',
             'tipe' => 'required|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
             'tipe_turunan' => 'nullable',
+            'id_user' => 'nullable',
         ]);
 
         $kategori = KategoriDaftarTugas::findOrFail($request->id);
@@ -651,6 +660,7 @@ class DaftarTugasController extends Controller
             'judul_kategori' => $request->judul_kategori,
             'Tipe' => $request->tipe,
             'tipe_turunan' => $tipe_turunan,
+            'id_user' => $request->id_user,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Kategori berhasil diperbarui']);
