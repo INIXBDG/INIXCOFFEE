@@ -23,8 +23,10 @@ class KelasSettingController extends Controller
     }
     public function getData(Request $request): JsonResponse
     {
+        $this->autoSyncFromRKM();
+
         $search = $request->query('search', '');
-        
+
         $query = KelasSetting::query();
 
         if ($search) {
@@ -85,15 +87,25 @@ class KelasSettingController extends Controller
         ]);
     }
 
-    public function syncNow(): JsonResponse
+    private function autoSyncFromRKM(): void
     {
-        $synced = $this->syncFromRKM();
+        $lockKey = 'kelas_setting_auto_sync_lock';
 
-        return response()->json([
-            'success' => true,
-            'message' => $synced . ' data RKM berhasil disinkronkan.',
-            'synced' => $synced,
-        ]);
+        if (Cache::has($lockKey)) {
+            return;
+        }
+
+        Cache::put($lockKey, true, now()->addMinutes(5));
+
+        try {
+            $synced = $this->syncFromRKM();
+            if ($synced > 0) {
+                Log::info("Auto-sync RKM: {$synced} kelas baru ditambahkan.");
+            }
+        } catch (\Exception $e) {
+            Log::error('Auto-sync RKM gagal: ' . $e->getMessage());
+            Cache::forget($lockKey);
+        }
     }
 
     public function store(Request $request): JsonResponse
