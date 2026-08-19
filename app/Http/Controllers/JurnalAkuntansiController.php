@@ -10,6 +10,13 @@ use App\Models\PengajuanBarang;
 use App\Models\perhitunganNetSales;
 use App\Models\SuratPerjalanan;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Concerns\ToArray;
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
+
+class JurnalArrayImport implements ToArray, WithCalculatedFormulas
+{
+    public function array(array $array) {}
+}
 
 class JurnalAkuntansiController extends Controller
 {
@@ -425,165 +432,141 @@ class JurnalAkuntansiController extends Controller
         try {
             $file = $request->file('file');
 
-            $data = \Maatwebsite\Excel\Facades\Excel::toArray([], $file);
+            $data  = \Maatwebsite\Excel\Facades\Excel::toArray(new JurnalArrayImport(), $file);
             $sheet = $data[0] ?? [];
 
-            $transactions = [];
-            $currentTransaction = null;
+            $transactions        = [];
+            $currentTransaction  = null;
 
-        foreach ($sheet as $row) {
+            foreach ($sheet as $row) {
 
-            // Pastikan minimal 8 kolom
-            $row = array_pad($row, 8, null);
+                // Pastikan minimal 8 kolom
+                $row = array_pad($row, 8, null);
 
-            /*
-            * =====================================================
-            * BATAS AKHIR DATA
-            * =====================================================
-            *
-            * Kalau sudah masuk bagian tanda tangan:
-            *
-            * Dilaporkan Oleh
-            * Diketahui Oleh
-            * Diperiksa Oleh
-            *
-            * STOP membaca Excel.
-            */
+                /*
+                * =====================================================
+                * BATAS AKHIR DATA
+                * =====================================================
+                */
+                $rowText = implode(' ', array_map(
+                    fn ($value) => trim((string) $value),
+                    $row
+                ));
 
-            $rowText = implode(' ', array_map(
-                fn ($value) => trim((string) $value),
-                $row
-            ));
-
-            if (
-                stripos($rowText, 'Dilaporkan Oleh') !== false ||
-                stripos($rowText, 'Diketahui Oleh') !== false ||
-                stripos($rowText, 'Diperiksa Oleh') !== false
-            ) {
-                break;
-            }
-
-            /*
-            * =====================================================
-            * AMBIL KOLOM
-            * =====================================================
-            */
-
-            $tanggalRaw = $row[0] ?? null;
-            $nomorKK    = trim((string) ($row[1] ?? ''));
-            $keterangan = trim((string) ($row[2] ?? ''));
-            $cat        = trim((string) ($row[3] ?? ''));
-            $debitRaw   = $row[4] ?? null;
-            $kreditRaw  = $row[5] ?? null;
-
-            /*
-            * =====================================================
-            * DETEKSI TRANSAKSI BARU
-            * =====================================================
-            */
-
-            $isNomorKK = preg_match(
-                '/^KK-\d+$/i',
-                $nomorKK
-            );
-
-            $isTanggal = false;
-
-            if (is_numeric($tanggalRaw)) {
-
-                $isTanggal = true;
-
-            } elseif (!empty($tanggalRaw)) {
-
-                try {
-                    \Carbon\Carbon::parse($tanggalRaw);
-                    $isTanggal = true;
-                } catch (\Exception $e) {
-                    $isTanggal = false;
-                }
-            }
-
-            /*
-            * =====================================================
-            * TRANSAKSI BARU
-            * =====================================================
-            */
-
-            if ($isTanggal && $isNomorKK) {
-
-                // Simpan transaksi sebelumnya
-                if ($currentTransaction !== null) {
-                    $transactions[] = $currentTransaction;
+                if (
+                    stripos($rowText, 'Dilaporkan Oleh') !== false ||
+                    stripos($rowText, 'Diketahui Oleh') !== false ||
+                    stripos($rowText, 'Diperiksa Oleh') !== false
+                ) {
+                    break;
                 }
 
-                // Konversi tanggal
+                /*
+                * =====================================================
+                * AMBIL KOLOM
+                * =====================================================
+                */
+                $tanggalRaw = $row[0] ?? null;
+                $nomorKK    = trim((string) ($row[1] ?? ''));
+                $keterangan = trim((string) ($row[2] ?? ''));
+                $cat        = trim((string) ($row[3] ?? ''));
+                $debitRaw   = $row[4] ?? null;
+                $kreditRaw  = $row[5] ?? null;
+
+                /*
+                * =====================================================
+                * DETEKSI TRANSAKSI BARU
+                * =====================================================
+                */
+                $isNomorKK = preg_match('/^KK-\d+$/i', $nomorKK);
+
+                $isTanggal = false;
+
                 if (is_numeric($tanggalRaw)) {
-
-                    $tanggal = \PhpOffice\PhpSpreadsheet\Shared\Date
-                        ::excelToDateTimeObject($tanggalRaw)
-                        ->format('Y-m-d');
-
-                } else {
-
-                    $tanggal = \Carbon\Carbon::parse($tanggalRaw)
-                        ->format('Y-m-d');
+                    $isTanggal = true;
+                } elseif (!empty($tanggalRaw)) {
+                    try {
+                        \Carbon\Carbon::parse($tanggalRaw);
+                        $isTanggal = true;
+                    } catch (\Exception $e) {
+                        $isTanggal = false;
+                    }
                 }
-
-                $currentTransaction = [
-                    'nomor_kk' => $nomorKK,
-
-                    'tanggal_transaksi' => $tanggal,
-
-                    'keterangan' => [],
-
-                    'no_akun' => $cat !== ''
-                        ? $cat
-                        : null,
-
-                    'debit' => $this->parseExcelAmount($debitRaw),
-
-                    'kredit' => $this->parseExcelAmount($kreditRaw),
-                ];
 
                 /*
-                * Keterangan utama
+                * =====================================================
+                * TRANSAKSI BARU
+                * =====================================================
                 */
-                if ($keterangan !== '') {
-                    $currentTransaction['keterangan'][] = $keterangan;
+                if ($isTanggal && $isNomorKK) {
+
+                    // Simpan transaksi sebelumnya
+                    if ($currentTransaction !== null) {
+                        $transactions[] = $currentTransaction;
+                    }
+
+                    // Konversi tanggal
+                    if (is_numeric($tanggalRaw)) {
+                        $tanggal = \PhpOffice\PhpSpreadsheet\Shared\Date
+                            ::excelToDateTimeObject($tanggalRaw)
+                            ->format('Y-m-d');
+                    } else {
+                        $tanggal = \Carbon\Carbon::parse($tanggalRaw)
+                            ->format('Y-m-d');
+                    }
+
+                    $currentTransaction = [
+                        'nomor_kk'          => $nomorKK,
+                        'tanggal_transaksi' => $tanggal,
+                        'keterangan'        => [],
+                        'no_akun'           => $cat !== '' ? $cat : null,
+
+                        // Nilai di baris deteksi ini tetap diambil,
+                        // nanti ditambah lagi kalau ada baris lanjutan.
+                        'debit'  => $this->parseExcelAmount($debitRaw),
+                        'kredit' => $this->parseExcelAmount($kreditRaw),
+                    ];
+
+                    if ($keterangan !== '') {
+                        $currentTransaction['keterangan'][] = $keterangan;
+                    }
+
+                    continue;
                 }
-
-                continue;
-            }
-
-            /*
-            * =====================================================
-            * DETAIL KETERANGAN
-            * =====================================================
-            */
-
-            if (
-                $currentTransaction !== null &&
-                $keterangan !== ''
-            ) {
 
                 /*
-                * Jangan masukkan "Petty Cash"
-                * karena itu bukan detail keterangan.
+                * =====================================================
+                * BARIS LANJUTAN (Detail Keterangan + Debit/Kredit susulan)
+                * =====================================================
                 */
+                if ($currentTransaction !== null) {
 
-                if (strcasecmp(trim($keterangan), 'Petty Cash') !== 0) {
+                    $debitVal  = $this->parseExcelAmount($debitRaw);
+                    $kreditVal = $this->parseExcelAmount($kreditRaw);
 
-                    $currentTransaction['keterangan'][] = $keterangan;
+                    if ($debitVal > 0) {
+                        $currentTransaction['debit'] += $debitVal;
+                    }
+
+                    if ($kreditVal > 0) {
+                        $currentTransaction['kredit'] += $kreditVal;
+                    }
+
+                    if ($keterangan !== '') {
+                        // "Petty Cash" tetap bukan bagian dari teks
+                        // keterangan, tapi angkanya (di atas) tetap diambil.
+                        if (strcasecmp(trim($keterangan), 'Petty Cash') !== 0) {
+                            $currentTransaction['keterangan'][] = $keterangan;
+                        }
+                    }
                 }
             }
-        }
 
             /*
             * =====================================================
             * SIMPAN TRANSAKSI TERAKHIR
             * =====================================================
             */
-
             if ($currentTransaction !== null) {
                 $transactions[] = $currentTransaction;
             }
@@ -593,70 +576,41 @@ class JurnalAkuntansiController extends Controller
             * INSERT DATABASE
             * =====================================================
             */
-
             \DB::transaction(function () use ($transactions) {
 
                 foreach ($transactions as $transaction) {
 
                     $keterangan = $transaction['keterangan'];
 
-                    /*
-                    * Kalau hanya ada satu keterangan,
-                    * simpan sebagai string biasa.
-                    *
-                    * Kalau lebih dari satu,
-                    * simpan sebagai JSON array.
-                    */
-
                     if (count($keterangan) === 1) {
-
                         $keterangan = $keterangan[0];
-
                     } elseif (count($keterangan) > 1) {
-
-                        $keterangan = json_encode(
-                            $keterangan,
-                            JSON_UNESCAPED_UNICODE
-                        );
-
+                        $keterangan = json_encode($keterangan, JSON_UNESCAPED_UNICODE);
                     } else {
-
                         $keterangan = null;
                     }
 
                     JurnalAkuntansi::create([
-                        'nomor_kk' => $transaction['nomor_kk'],
-
+                        'nomor_kk'            => $transaction['nomor_kk'],
                         'id_pengajuan_barang' => null,
-
-                        'tanggal_transaksi' =>
-                            $transaction['tanggal_transaksi'],
-
-                        'keterangan' => $keterangan,
-
-                        'no_akun' => $transaction['no_akun'],
-
-                        'debit' => $transaction['debit'],
-
-                        'kredit' => $transaction['kredit'],
+                        'tanggal_transaksi'   => $transaction['tanggal_transaksi'],
+                        'keterangan'          => $keterangan,
+                        'no_akun'             => $transaction['no_akun'],
+                        'debit'               => $transaction['debit'],
+                        'kredit'              => $transaction['kredit'],
                     ]);
                 }
             });
 
             return response()->json([
                 'success' => true,
-
-                'message' => count($transactions)
-                    . ' data Jurnal Akuntansi berhasil diimpor.',
+                'message' => count($transactions) . ' data Jurnal Akuntansi berhasil diimpor.',
             ]);
 
         } catch (\Exception $e) {
-
             return response()->json([
                 'success' => false,
-
-                'message' =>
-                    'Gagal mengimpor data: ' . $e->getMessage(),
+                'message' => 'Gagal mengimpor data: ' . $e->getMessage(),
             ], 500);
         }
     }
