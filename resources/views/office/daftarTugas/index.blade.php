@@ -619,7 +619,7 @@
                         @if (Auth::user()->jabatan === 'HRD')
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Penanggung Jawab</label>
-                                <select name="jabatan_pembuat" class="form-select">
+                                <select name="id_user" class="form-select">
                                     <option value="" disabled selected>Pilih Karyawan</option>
                                     @foreach ($officeBoy as $data)
                                         <option value="{{ $data->id }}">{{ $data->nama_lengkap }}</option>
@@ -787,7 +787,7 @@
                         @if (Auth::user()->jabatan === 'HRD')
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Penanggung Jawab</label>
-                                <select name="jabatan_pembuat" class="form-select">
+                                <select name="id_user" class="form-select">
                                     <option value="" disabled selected>Pilih Karyawan</option>
                                     @foreach ($officeBoy as $data)
                                         <option value="{{ $data->id }}">{{ $data->nama_lengkap }}</option>
