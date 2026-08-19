@@ -1330,8 +1330,12 @@
                     var va = a[field],
                         vb = b[field];
                     if (field === 'status') {
-                        va = STATUS_ORDER[va] || 99;
-                        vb = STATUS_ORDER[vb] || 99;
+                        var normVa = STATUS_ORDER[String(va || '').trim()] ? String(va || '').trim() : 
+                            Object.keys(STATUS_ORDER).find(function(k) { return k.toLowerCase() === String(va || '').trim().toLowerCase(); });
+                        var normVb = STATUS_ORDER[String(vb || '').trim()] ? String(vb || '').trim() : 
+                            Object.keys(STATUS_ORDER).find(function(k) { return k.toLowerCase() === String(vb || '').trim().toLowerCase(); });
+                        va = STATUS_ORDER[normVa] || 99;
+                        vb = STATUS_ORDER[normVb] || 99;
                         return (va - vb) * dir;
                     }
                     if (field === 'dari' || field === 'sampai') {
@@ -1855,10 +1859,15 @@
                 h.push('<button type="button" class="ks-cmt-trigger' + (cellComments.length ? ' has-comments' : '') + ' ks-cmt-toggle" title="Komentar"><i class="bi bi-chat-left-text"></i>' + (cellComments.length ? '<span class="ks-cmt-count">' + cellComments.length + '</span>' : '') + '</button>');
 
                 if (col.key === 'status') {
-                    var st = STATUS_STYLE[value] || STATUS_STYLE.Biru;
+                    var rawStatus = String(value || '').trim();
+                    var matchedStatus = col.options.find(function(o) {
+                        return o.toLowerCase() === rawStatus.toLowerCase();
+                    }) || 'Biru';
+
+                    var st = STATUS_STYLE[matchedStatus] || STATUS_STYLE.Biru;
                     h.push('<div class="ks-cell-select-wrap"><select class="ks-status-select ks-status-select-input" style="background:' + st.bg + ';color:' + st.fg + ';">');
                     col.options.forEach(function(o) {
-                        h.push('<option value="' + o + '"' + (o === value ? ' selected' : '') + '>' + o + '</option>');
+                        h.push('<option value="' + o + '"' + (o === matchedStatus ? ' selected' : '') + '>' + o + '</option>');
                     });
                     h.push('</select></div>');
                 } else if (isSelect2) {

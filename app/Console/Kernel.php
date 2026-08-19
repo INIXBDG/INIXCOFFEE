@@ -239,6 +239,10 @@ class Kernel extends ConsoleKernel
             }
         })->dailyAt('01:00')->description('Kunci Otomatis Aktivitas Instruktur');
 
+        $schedule->command('kelas:remind-kelengkapan --min-days=5 --max-days=7')
+            ->dailyAt('08:00')
+            ->withoutOverlapping();
+
         // Artisan Command Tasks
         $schedule->command('app:update-status')->dailyAt('23:00')->description('app:update-status');
         $schedule->command('uptime:check')->everySixHours()->description('uptime:check');
