@@ -94,6 +94,57 @@
         </div>
     </div>
 
+        <div class="modal fade" id="setupAccountingModal" tabindex="-1" 
+        data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                <div class="modal-header px-4 py-3" style="background:var(--vlk-primary);color:#fff;border:none;">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-shield-lock me-2"></i>Setup Password Accounting
+                    </h5>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning small mb-3">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        Sistem mendeteksi password fitur sudah ada, tetapi <b>Password Accounting</b> belum diatur.
+                        Anda wajib mengisi password Accounting terlebih dahulu untuk melanjutkan.
+                    </div>
+
+                    <p class="text-muted small mb-3">
+                        Masukkan password login sistem Anda (user Finance & Accounting) untuk konfirmasi identitas,
+                        lalu buat Password Accounting yang akan digunakan ke depannya.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Password Login Sistem</label>
+                        <input type="password" id="accSetupLoginPass" class="form-control" 
+                            placeholder="Password login Anda">
+                        <div id="accSetupLoginError" class="text-danger small mt-1 d-none"></div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Buat Password Accounting Baru</label>
+                        <input type="password" id="accSetupNewPass" class="form-control" 
+                            placeholder="Minimal 4 karakter">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Konfirmasi Password Accounting</label>
+                        <input type="password" id="accSetupConfirmPass" class="form-control" 
+                            placeholder="Ulangi password">
+                        <div id="accSetupNewError" class="text-danger small mt-1 d-none"></div>
+                    </div>
+                </div>
+                <div class="modal-footer px-4 pb-4 border-0">
+                    <button class="btn btn-primary fw-semibold w-100 py-2" onclick="submitAccountingSetup()">
+                        <i class="bi bi-shield-check me-1"></i> Simpan Password Accounting
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="changePassModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -1319,13 +1370,29 @@
                 url: '/office/approval-pendapatan/lock-status',
                 type: 'GET',
                 success: function(res) {
+                    // 1. Belum pernah ada password fitur sama sekali
                     if (!res.has_password) {
                         $('#lockScreenOverlay').addClass('d-none');
                         $('#unlockForm').addClass('d-none');
                         $('#fallbackForm').addClass('d-none');
                         $('#failCounter').addClass('d-none');
                         new bootstrap.Modal(document.getElementById('setupModal')).show();
-                    } else if (res.is_locked) {
+                        return;
+                    }
+
+                    // 2. Password fitur sudah ada, tapi password_accounting masih null
+                    //    → WAJIB setup Accounting dulu
+                    if (res.needs_accounting_setup) {
+                        $('#lockScreenOverlay').addClass('d-none');
+                        $('#unlockForm').addClass('d-none');
+                        $('#fallbackForm').addClass('d-none');
+                        $('#failCounter').addClass('d-none');
+                        new bootstrap.Modal(document.getElementById('setupAccountingModal')).show();
+                        return;
+                    }
+
+                    // 3. Semua sudah lengkap
+                    if (res.is_locked) {
                         $('#lockScreenOverlay').removeClass('d-none');
                         $('#unlockForm').removeClass('d-none');
                         $('#fallbackForm').addClass('d-none');
@@ -1464,6 +1531,58 @@
                     }
                     if (errors.new_password) {
                         $('#setupNewError').text(errors.new_password[0]).removeClass('d-none');
+                    }
+                }
+            });
+        }
+
+        
+        function submitAccountingSetup() {
+            let loginPass   = $('#accSetupLoginPass').val();
+            let newPass     = $('#accSetupNewPass').val();
+            let confirmPass = $('#accSetupConfirmPass').val();
+
+            $('#accSetupLoginError, #accSetupNewError').addClass('d-none');
+
+            if (!loginPass) {
+                $('#accSetupLoginError').text('Password login wajib diisi.').removeClass('d-none');
+                return;
+            }
+            if (!newPass || newPass.length < 4) {
+                $('#accSetupNewError').text('Password Accounting minimal 4 karakter.').removeClass('d-none');
+                return;
+            }
+            if (newPass !== confirmPass) {
+                $('#accSetupNewError').text('Konfirmasi password tidak cocok.').removeClass('d-none');
+                return;
+            }
+
+            $.ajax({
+                url: '/office/approval-pendapatan/setup-accounting-password',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    login_password: loginPass,
+                    accounting_password: newPass,
+                    accounting_password_confirmation: confirmPass
+                },
+                success: function(res) {
+                    bootstrap.Modal.getInstance(document.getElementById('setupAccountingModal')).hide();
+                    Swal.fire('Berhasil!', res.message, 'success').then(() => {
+                        // Reload status lock setelah accounting password terisi
+                        checkAndInitLock();
+                    });
+                },
+                error: function(xhr) {
+                    let errors = xhr.responseJSON?.errors || {};
+                    if (errors.login_password) {
+                        $('#accSetupLoginError').text(errors.login_password[0]).removeClass('d-none');
+                    }
+                    if (errors.accounting_password) {
+                        $('#accSetupNewError').text(errors.accounting_password[0]).removeClass('d-none');
+                    }
+                    if (xhr.responseJSON?.message) {
+                        Swal.fire('Gagal', xhr.responseJSON.message, 'error');
                     }
                 }
             });

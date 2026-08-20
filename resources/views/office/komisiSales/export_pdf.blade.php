@@ -149,7 +149,7 @@
 
     <div class="header">
         <h2>PT. INIXINDO BANDUNG</h2>
-        <p>Komisi Marketing Periode {{ $bulan_range }} {{ $tahun }}</p>
+        <p>Komisi Sales  Periode {{ $bulan_range }} {{ $tahun }}</p>
         <p class="periode-label">
             @if($quartal == 0)
                 Tahunan {{ $tahun }}
