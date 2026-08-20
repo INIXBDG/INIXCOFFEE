@@ -625,7 +625,7 @@
                         <div class="content-card">
                             <div class="card-body">
                                 <h5 class="card-title">
-                                    <i class="fa-solid fa-chart-column"></i> Trendline Tahun Ini
+                                    <i class="fa-solid fa-chart-column"></i> Skor per Tahun
                                 </h5>
                                 <div class="chart-wrapper">
                                     <canvas id="barChart"></canvas>
@@ -637,7 +637,7 @@
                         <div class="content-card">
                             <div class="card-body">
                                 <h5 class="card-title">
-                                    <i class="fa-solid fa-chart-line"></i> Trendline Progress
+                                    <i class="fa-solid fa-chart-line"></i> Trend Skor Tahunan
                                 </h5>
                                 <div class="chart-wrapper">
                                     <canvas id="lineChart"></canvas>
@@ -810,13 +810,7 @@
                         <div class="info-value">${globalEvaluated.nama}</div>
                     </div>
                     <div class="row g-2">
-                        <div class="col-6">
-                            <div class="info-item mb-0">
-                                <div class="info-label"><i class="fa-solid fa-calendar-day me-1"></i> Semester</div>
-                                <div class="info-value text-center">${globalEvaluated.quartal}</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
+                        <div class="col-12">
                             <div class="info-item mb-0">
                                 <div class="info-label"><i class="fa-solid fa-calendar me-1"></i> Tahun</div>
                                 <div class="info-value text-center">${globalEvaluated.tahun}</div>
@@ -827,7 +821,6 @@
                     <form method="post" action="{{ route('penilaian.sendCatatan') }}">
                         @csrf
                         <input type="hidden" name="id_karyawan" value="${globalEvaluated.id_karyawan}">
-                        <input type="hidden" name="quartal" value="${globalEvaluated.quartal}">
                         <input type="hidden" name="tahun" value="${globalEvaluated.tahun}">
                         <input type="hidden" name="kode_form" value="${globalEvaluated.kode_form}">
                         <div class="info-item">
@@ -1036,22 +1029,11 @@
             }
 
             content.append(`
-            <tr class="grand-total-row">
-                <td colspan="5" class="text-end">Total Semua Nilai</td>
-                <td class="text-center fs-5">${pengubahFormat(totalSemuaSkor)}</td>
-            </tr>
-            <tr class="grand-total-row">
-                <td colspan="5" class="text-end">Kriteria</td>
-                <td class="text-center">${keterangan}</td>
-            </tr>
-            <tr class="grand-total-row">
-                <td colspan="5" class="text-end">Grade</td>
-                <td class="text-center fs-4 fw-bold">${grade}</td>
-            </tr>
-        `);
-
-            tampilkanChartTahunIni(globalChart.quartal);
-            tampilkanChartSemuaTahun(globalChart.all);
+                <tr class="grand-total-row">
+                    <td colspan="5" class="text-end">Grade</td>
+                    <td class="text-center fs-4 fw-bold">${grade}</td>
+                </tr>
+            `);
         }
 
         function toggleText(button) {
@@ -1132,8 +1114,7 @@
                 contentType: false,
                 processData: false,
                 success: function(res) {
-                    if (res.chartQuartal) tampilkanChartTahunIni(res.chartQuartal);
-                    if (res.chartAllYears) tampilkanChartSemuaTahun(res.chartAllYears);
+                    if (res.chartTahunan) tampilkanChartSkorTahunan(res.chartTahunan);
                 },
                 error: function(xhr) {
                     console.error(xhr.responseText);
@@ -1156,31 +1137,19 @@
             });
         }
 
-        function tampilkanChartTahunIni(quartalData) {
-            const ctx = document.getElementById("barChart").getContext("2d");
+        function tampilkanChartSkorTahunan(chartTahunan) {
+            const tahunList = Object.keys(chartTahunan).sort();
+            const dataValues = tahunList.map(t => parseFloat(chartTahunan[t]).toFixed(2));
+
+            // Bar chart: skor tiap tahun
+            const ctxBar = document.getElementById("barChart").getContext("2d");
             if (chartTahunIni) chartTahunIni.destroy();
-
-            const labels = [];
-            const dataValues = [];
-
-            Object.entries(quartalData).forEach(([quartal, forms]) => {
-                if (typeof forms === "object") {
-                    Object.entries(forms).forEach(([kodeForm, skor]) => {
-                        labels.push(`${quartal}`);
-                        dataValues.push(parseFloat(skor).toFixed(2));
-                    });
-                } else {
-                    labels.push(quartal);
-                    dataValues.push(parseFloat(forms).toFixed(2));
-                }
-            });
-
-            chartTahunIni = new Chart(ctx, {
+            chartTahunIni = new Chart(ctxBar, {
                 type: "bar",
                 data: {
-                    labels: labels,
+                    labels: tahunList,
                     datasets: [{
-                        label: "Total Skor per Quartal",
+                        label: "Skor per Tahun",
                         data: dataValues,
                         backgroundColor: 'rgba(99, 102, 241, 0.7)',
                         borderColor: '#6366f1',
@@ -1192,108 +1161,56 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                            padding: 12,
-                            cornerRadius: 8
-                        }
+                        legend: { display: false },
+                        tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 12, cornerRadius: 8 }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            grid: {
-                                color: '#f1f5f9'
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return value.toFixed(2);
-                                }
-                            }
+                            grid: { color: '#f1f5f9' },
+                            ticks: { callback: function(value) { return value.toFixed(2); } }
                         },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
+                        x: { grid: { display: false } }
                     }
                 }
             });
-        }
 
-        function tampilkanChartSemuaTahun(allData) {
-            const ctx = document.getElementById("lineChart").getContext("2d");
+            // Line chart: trend skor antar tahun
+            const ctxLine = document.getElementById("lineChart").getContext("2d");
             if (chartAllYears) chartAllYears.destroy();
-
-            const quartals = [...new Set(Object.values(allData).flatMap(yearData => Object.keys(yearData)))];
-            const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
-
-            const datasets = Object.keys(allData).map((year, idx) => {
-                const data = quartals.map(q => {
-                    const forms = allData[year]?.[q];
-                    if (!forms) return null;
-                    if (typeof forms === "object") return Object.values(forms).reduce((a, b) => a +
-                        parseFloat(b), 0);
-                    return parseFloat(forms);
-                });
-                return {
-                    label: `Tahun ${year}`,
-                    data: data,
-                    borderColor: colors[idx % colors.length],
-                    backgroundColor: colors[idx % colors.length] + '20',
-                    borderWidth: 3,
-                    fill: false,
-                    tension: 0.4,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: colors[idx % colors.length],
-                    pointBorderWidth: 2
-                };
-            });
-
-            chartAllYears = new Chart(ctx, {
+            chartAllYears = new Chart(ctxLine, {
                 type: "line",
                 data: {
-                    labels: quartals,
-                    datasets: datasets
+                    labels: tahunList,
+                    datasets: [{
+                        label: "Trend Skor Tahunan",
+                        data: dataValues,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#6366f1',
+                        pointBorderWidth: 2
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 15
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                            padding: 12,
-                            cornerRadius: 8
-                        }
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } },
+                        tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 12, cornerRadius: 8 }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            grid: {
-                                color: '#f1f5f9'
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return value.toFixed(2);
-                                }
-                            }
+                            grid: { color: '#f1f5f9' },
+                            ticks: { callback: function(value) { return value.toFixed(2); } }
                         },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
+                        x: { grid: { display: false } }
                     }
                 }
             });
