@@ -302,8 +302,6 @@
                         '_' .
                         $item['jenis_penilaian'] .
                         '_' .
-                        $item['quartal'] .
-                        '_' .
                         $item['tahun'];
                 })
                 ->values()
