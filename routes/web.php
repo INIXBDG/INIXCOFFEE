@@ -13,7 +13,7 @@ use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\Crm\AktivitasController;
 use App\Http\Controllers\Crm\ApprovalPendapatanSalesController;
 use App\Http\Controllers\Crm\CatatanSalesController;
-use App\Http\Controllers\crm\checklistRKMController;
+use App\Http\Controllers\Crm\checklistRKMController;
 use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CRMController;
 use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
@@ -763,6 +763,7 @@ Route::prefix('crm')->group(function () {
     Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
     Route::post('/peluang/paymentAdvance', [PeluangController::class, 'storePaymentAdvance'])->name('store.payment.advance');
     Route::post('/peluang/restore/{id}', [PeluangController::class, 'restore'])->name('restore.peluang');
+    Route::delete('/crm/peluang/force-delete/{id}', [PeluangController::class, 'forceDelete'])->name('forceDelete.peluang');
 
     // Aktivitas CRM
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('index.aktivitas');

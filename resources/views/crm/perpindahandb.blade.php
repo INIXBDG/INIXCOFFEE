@@ -100,22 +100,21 @@
         </div>
 
     </div>
+@endsection
 
-    <style>
-        .table-primary th {
-            background-color: #e3e9ff !important;
-            color: #000 !important;
-        }
+<style>
+    .table-primary th {
+        background-color: #e3e9ff !important;
+        color: #000 !important;
+    }
 
-        .modal-content {
-            border-radius: 0px;
-            box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
-        }
-    </style>
+    .modal-content {
+        border-radius: 0px;
+        box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
+    }
+</style>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
+@section('scripts')
     <script>
         let table;
         let salesList = [];

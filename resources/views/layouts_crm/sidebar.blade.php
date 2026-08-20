@@ -83,7 +83,7 @@
                 </a>
             </li>
         @endif
-        
+
             <!-- Untuk user lain: menu default -->
             <!-- Dashboards -->
             <li class="menu-item {{ request()->routeIs('CRM.index') ? 'active open' : '' }}">
@@ -165,7 +165,7 @@
                 </li>
             @endcan
 
-            @can('View CRM Todo Administrasi')
+            @can('View Todo Administrasi')
                 <li class="menu-item {{ request()->routeIs('todo-administrasi.index') ? 'active open' : '' }}">
                     <a href="{{ route('todo-administrasi.index') }}" class="menu-link">
                         <i class='menu-icon tf-icons bx bx-task'></i>
