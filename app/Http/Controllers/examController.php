@@ -252,7 +252,7 @@ class examController extends Controller
                 ->where('status', '0')
                 ->whereNull('deleted_at')
                 ->whereHas('peluang', function ($query) {
-                    $query->where('tentatif', 0);
+                    $query->where('tentatif', 0)->where('tahap', '!=', 'lost');
                 })
                 ->whereNotIn('id', $existingRKMs)
                 ->orderBy('status', 'asc')
@@ -384,9 +384,10 @@ class examController extends Controller
     public function create($id)
     {
         $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
+        $sertifa = PoExamSertifa::where('id_rkm', $rkm->id)->first();
         $kode_exam = listexam::all();
 
-        return view('exam.create', compact('rkm', 'kode_exam'));
+        return view('exam.create', compact('rkm', 'sertifa', 'kode_exam'));
     }
 
     private function generateInvoiceNumber(): string

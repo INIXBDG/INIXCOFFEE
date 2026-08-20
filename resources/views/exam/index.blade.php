@@ -112,6 +112,7 @@
                                     <th>Perusahaan</th>
                                     <th>Pax</th>
                                     <th>Harga</th>
+                                    <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -596,6 +597,14 @@
                                     return 'Rp ' + parseInt(data.harga).toLocaleString('id-ID');
                                 }
                                 return 'Rp 0';
+                            }
+                        },
+                        {
+                            "data": null,
+                            "render": function (data) {
+                                var actions = "";
+                                actions += '<a href="/pengajuanExam/' + data.id_rkm + '" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
+                                return actions;                           
                             }
                         }
                     ],

@@ -25,7 +25,6 @@ class PoExamSertifaController extends Controller
         $rkms = RKM::with(['materi', 'perusahaan'])
                 ->where('exam', '1')
                 ->where('status', '0')
-                ->whereDoesntHave('exam')
                 ->orderBy('id')
                 ->get();
         $skemas = PoExamSertifa::whereNotNull('skema')

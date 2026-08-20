@@ -267,7 +267,7 @@
             </a>
         </li>
 
-        @can('Fitur Pendapatan Sales')
+        @can('Fitur CRM Pendapatan Sales')
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Administrasi</span>
             </li>

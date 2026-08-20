@@ -15,6 +15,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Models\ApprovalPendapatanLock;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class ApprovalPendapatanController extends Controller
 {
@@ -33,6 +37,109 @@ class ApprovalPendapatanController extends Controller
         return view('office.approvalPendapatan.index', compact('dataMateri', 'dataPerusahaan'));
     }
 
+    public function checkLockStatus()
+    {
+        $lock = ApprovalPendapatanLock::first();
+        $unlockedBy = session('approval_pendapatan_unlocked_by');
+        $currentUser = auth()->id();
+        
+        $isUnlocked = session('approval_pendapatan_unlocked', false)
+            && $unlockedBy === $currentUser;
+        
+        return response()->json([
+            'has_password' => (bool) $lock,
+            'is_locked' => !$isUnlocked,
+        ]);
+    }
+
+    public function setupLockPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'login_password' => 'required|string',
+            'new_password'   => 'required|string|min:4|confirmed',
+        ]);
+
+        $user = auth()->user();
+
+        if (!in_array($user->jabatan, ['Finance & Accounting'])) {
+            throw ValidationException::withMessages([
+                'login_password' => 'Hanya user dengan jabatan Finance & Accounting yang dapat mengatur akses ini.',
+            ]);
+        }
+
+        if (!Hash::check($validated['login_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'login_password' => 'Password login tidak sesuai.',
+            ]);
+        }
+
+        ApprovalPendapatanLock::updateOrCreate(
+            ['id' => 1],
+            [
+                'password'   => Hash::make($validated['new_password']),
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]
+        );
+
+        session([
+            'approval_pendapatan_unlocked' => true,
+            'approval_pendapatan_unlocked_by' => $user->id,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Password berhasil dibuat.']);
+    }
+
+    public function unlock(Request $request)
+    {
+        $validated = $request->validate([
+            'password' => 'required|string',
+            'type'     => 'required|in:approval,login',
+        ]);
+
+        $user = auth()->user();
+
+        if ($validated['type'] === 'approval') {
+            $lock = ApprovalPendapatanLock::first();
+            if (!$lock || !Hash::check($validated['password'], $lock->password)) {
+                return response()->json(['success' => false, 'message' => 'Password approval salah.'], 401);
+            }
+        } else {
+            if (!Hash::check($validated['password'], $user->password)) {
+                return response()->json(['success' => false, 'message' => 'Password login salah.'], 401);
+            }
+        }
+
+        session([
+            'approval_pendapatan_unlocked' => true,
+            'approval_pendapatan_unlocked_by' => $user->id,
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function changeLockPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password'     => 'required|string|min:4|confirmed',
+        ]);
+
+        $lock = ApprovalPendapatanLock::first();
+
+        if (!$lock || !Hash::check($validated['current_password'], $lock->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => 'Password saat ini tidak sesuai.',
+            ]);
+        }
+
+        $lock->update([
+            'password'   => Hash::make($validated['new_password']),
+            'updated_by' => auth()->id(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Password berhasil diubah.']);
+    }
 
     public function get($tahun, $bulan)
     {
@@ -71,11 +178,9 @@ class ApprovalPendapatanController extends Controller
         while ($startOfWeek->lte($endOfMonth)) {
             $endOfWeek = $startOfWeek->copy()->endOfWeek();
 
-            // Format tanggal untuk query
             $start = $startOfWeek->format('Y-m-d');
             $end = $endOfWeek->format('Y-m-d');
 
-            // Query data untuk minggu ini
             $rows = Invoice::with(['rkm', 'rkm.materi', 'rkm.perusahaan', 'rkm.sales', 'rkm.instruktur', 'rkm.outstanding', 'rkm.eksam', 'rkm.outstanding.tracking_outstanding'])
                 ->whereHas('rkm', function ($query) use ($start, $end, $hariIni) {
                     $query->whereBetween('tanggal_awal', [$start, $end])
@@ -123,10 +228,12 @@ class ApprovalPendapatanController extends Controller
                     'total_uang_saku' => (float) ($valid?->total_uang_saku ?? 0),
                     'total_akomodasi' => (float) ($valid?->total_akomodasi ?? 0),
                     'oleh_oleh' => (float) ($valid?->oleh_oleh ?? 0),
+                    'biaya_lain_lain' => (float) ($valid?->biaya_lain_lain ?? 0),
                     'entertainment' => (float) ($valid?->entertainment ?? 0),
                     'total_penjualan_sales' => (float) ($valid?->total_penjualan_bersih ?? 0),
                     'PPN' => (float) ($valid?->PPN ?? 0),
                     'PPH' => (float) ($valid?->PPH ?? 0),
+                    'pengurangan_pph' => (float) ($valid?->pengurangan_pph ?? 0),
                     'jumlah_pembayaran' => (float) ($valid?->jumlah_pembayaran ?? 0),
                     'tanggal_pembayaran' => $valid?->tanggal_pembayaran ?? null,
                     'biaya_admin' => (float) ($valid?->biaya_admin ?? 0),
@@ -139,8 +246,9 @@ class ApprovalPendapatanController extends Controller
                     'tanggal_selesai' => $valid?->tanggal_selesai ? Carbon::parse($valid->tanggal_selesai)->format('Y-m-d') : Carbon::parse($rkm->tanggal_akhir)->format('Y-m-d'),
                     'perusahaan_id' => $valid?->perusahaan ?? $rkm->perusahaan_key,
                     'exam' => ($valid?->exam ?? $rkm->eksam?->total) ? 'Rp ' . number_format((float) ($valid?->exam ?? $rkm->eksam?->total), 0, ',', '.') : '-',
-
                     'exam_value' => (float) ($valid?->exam ?? $rkm->eksam?->total ?? 0),
+                    'pic' => $rkm->outstanding?->pic ?? null,
+                    'regist' => $rkm->outstanding?->no_regist ?? null,
                     'tracking' => $rkm->outstanding?->tracking_outstanding ? [
                         'invoice' => (bool)$rkm->outstanding->tracking_outstanding->invoice,
                         'faktur_pajak' => (bool)$rkm->outstanding->tracking_outstanding->faktur_pajak,
@@ -163,7 +271,6 @@ class ApprovalPendapatanController extends Controller
                 'week_number' => $weekNumber,
             ];
 
-            // Pindah ke minggu berikutnya
             $startOfWeek = $startOfWeek->addWeek();
             $weekNumber++;
         }
@@ -185,10 +292,12 @@ class ApprovalPendapatanController extends Controller
                 SUM(CAST(total_uang_saku AS UNSIGNED)) as total_uang_saku,
                 SUM(CAST(total_akomodasi AS UNSIGNED)) as total_akomodasi,
                 SUM(CAST(oleh_oleh AS UNSIGNED)) as oleh_oleh,
+                SUM(CAST(biaya_lain_lain AS UNSIGNED)) as biaya_lain_lain,
                 SUM(CAST(entertainment AS UNSIGNED)) as entertainment,
                 SUM(CAST(total_penjualan_bersih AS UNSIGNED)) as total_penjualan_sales,
                 SUM(CAST(PPN AS UNSIGNED)) as total_ppn,
                 SUM(CAST(PPH AS UNSIGNED)) as total_pph,
+                SUM(CAST(pengurangan_pph AS UNSIGNED)) as pengurangan_pph,
                 SUM(CAST(jumlah_pembayaran AS UNSIGNED)) as jumlah_pembayaran,
                 SUM(CAST(biaya_admin AS UNSIGNED)) as biaya_admin,
                 SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport
@@ -212,10 +321,12 @@ class ApprovalPendapatanController extends Controller
                 'total_uang_saku' => 0,
                 'total_akomodasi' => 0,
                 'oleh_oleh' => 0,
+                'biaya_lain_lain' => 0,
                 'entertainment' => 0,
                 'total_penjualan_sales' => 0,
                 'total_ppn' => 0,
                 'total_pph' => 0,
+                'pengurangan_pph' => 0,
                 'jumlah_pembayaran' => 0,
                 'biaya_admin' => 0,
                 'biaya_transport' => 0,
@@ -234,10 +345,12 @@ class ApprovalPendapatanController extends Controller
                 SUM(CAST(total_uang_saku AS UNSIGNED)) as total_uang_saku,
                 SUM(CAST(total_akomodasi AS UNSIGNED)) as total_akomodasi,
                 SUM(CAST(oleh_oleh AS UNSIGNED)) as oleh_oleh,
+                SUM(CAST(biaya_lain_lain AS UNSIGNED)) as biaya_lain_lain,
                 SUM(CAST(entertainment AS UNSIGNED)) as entertainment,
                 SUM(CAST(total_penjualan_bersih AS UNSIGNED)) as total_penjualan_sales,
                 SUM(CAST(PPN AS UNSIGNED)) as total_ppn,
                 SUM(CAST(PPH AS UNSIGNED)) as total_pph,
+                SUM(CAST(pengurangan_pph AS UNSIGNED)) as pengurangan_pph,
                 SUM(CAST(jumlah_pembayaran AS UNSIGNED)) as jumlah_pembayaran,
                 SUM(CAST(biaya_admin AS UNSIGNED)) as biaya_admin,
                 SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport
@@ -260,10 +373,12 @@ class ApprovalPendapatanController extends Controller
                 'total_uang_saku' => 0,
                 'total_akomodasi' => 0,
                 'oleh_oleh' => 0,
+                'biaya_lain_lain' => 0,
                 'entertainment' => 0,
                 'total_penjualan_sales' => 0,
                 'total_ppn' => 0,
                 'total_pph' => 0,
+                'pengurangan_pph' => 0,
                 'jumlah_pembayaran' => 0,
                 'biaya_admin' => 0,
                 'biaya_transport' => 0,
@@ -294,11 +409,13 @@ class ApprovalPendapatanController extends Controller
             'jenis_transport' => 'nullable|string|max:255',
             'biaya_transport' => 'nullable|numeric',
             'oleh_oleh' => 'nullable|numeric',
+            'biaya_lain_lain' => 'nullable|numeric|min:0',
             'entertainment' => 'nullable|numeric',
             'exam' => 'nullable|numeric|min:0',
             'total_penjualan_sales' => 'nullable|numeric|min:0',
             'PPN' => 'nullable|numeric',
             'PPH' => 'nullable|numeric',
+            'pengurangan_pph' => 'nullable|numeric|min:0',
             'materi' => 'nullable',
             'perusahaan' => 'nullable',
             'tanggal_mulai' => 'nullable|date',
@@ -340,11 +457,13 @@ class ApprovalPendapatanController extends Controller
                 'jenis_transport' => $validated['jenis_transport'] ?? null,
                 'biaya_transport' => (float) ($validated['biaya_transport'] ?? 0),
                 'oleh_oleh' => (float) ($validated['oleh_oleh'] ?? 0),
+                'biaya_lain_lain' => (float) ($validated['biaya_lain_lain'] ?? 0),
                 'entertainment' => (float) ($validated['entertainment'] ?? 0),
                 'exam' => (float) ($validated['exam'] ?? 0),
                 'total_penjualan_bersih' => (float) ($validated['total_penjualan_sales'] ?? 0),
                 'PPN' => (float) ($validated['PPN'] ?? 0),
                 'PPH' => (float) ($validated['PPH'] ?? 0),
+                'pengurangan_pph' => (float) ($validated['pengurangan_pph'] ?? 0),
                 'status' => 'valid',
                 'materi' => $validated['materi'] ?? null,
                 'tanggal_mulai' => $validated['tanggal_mulai'] ?? null,

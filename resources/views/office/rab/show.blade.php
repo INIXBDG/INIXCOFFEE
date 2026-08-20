@@ -176,16 +176,40 @@
                     $linkedPengajuan = \App\Models\PengajuanBarang::with('detail')
                         ->where('id_kegiatan', $kegiatan->id)
                         ->get();
-                    $dataRincianKegiatan = \App\Models\RincianKegiatan::where('id_kegiatan', $kegiatan->id)->get();
 
-                    $totalBudgetPengajuan = $linkedPengajuan->sum(fn($pb) => $pb->detail->sum(fn($d) => $d->harga * $d->qty));
-                    $totalBudgetRincian = $dataRincianKegiatan->sum(fn($rk) => $rk->total);
+                    $dataRincianKegiatan = \App\Models\RincianKegiatan::where(
+                        'id_kegiatan',
+                        $kegiatan->id
+                    )->get();
+
+                    $totalBudgetPengajuan = $linkedPengajuan->sum(
+                        fn($pb) => $pb->detail->sum(fn($d) => $d->harga * $d->qty)
+                    );
+
+                    $totalBudgetRincian = $dataRincianKegiatan->sum(
+                        fn($rk) => $rk->total
+                    );
+
                     $totalBudget = $totalBudgetPengajuan + $totalBudgetRincian;
                     $totalRealisasi = $kegiatan->realisasi ?? 0;
-                    $percentage = $totalBudget > 0 ? min(($totalRealisasi / $totalBudget) * 100, 100) : 0;
+
                     $isOverload = $totalRealisasi > $totalBudget;
 
-                    $totalPengajuan = $linkedPengajuan->count() + $dataRincianKegiatan->count();
+                    if ($totalBudget > 0) {
+                        if ($isOverload) {
+                            $kelebihan = $totalRealisasi - $totalBudget;
+                            $percentageKelebihan = ($kelebihan / $totalBudget) * 100;
+
+                            $percentage = max(100 - $percentageKelebihan, 0);
+                        } else {
+                            $percentage = ($totalRealisasi / $totalBudget) * 100;
+                        }
+                    } else {
+                        $percentage = 0;
+                    }
+
+                    $totalPengajuan = $linkedPengajuan->count()
+                        + $dataRincianKegiatan->count();
                 @endphp
 
                 <div class="row g-4 align-items-center">

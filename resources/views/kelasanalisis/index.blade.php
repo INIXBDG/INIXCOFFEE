@@ -698,7 +698,6 @@
                                 monthData.weeksData.forEach(function(weekData, index) {
                                     console.log(`Processing week ${weekData.minggu} in ${monthName}: `,
                                         weekData);
-                                    const fakeWeekNumber = index + 1;
                                     const workdays = getWorkdayRange(
                                         weekData.tanggal_awal_minggu,
                                         weekData.tanggal_akhir_minggu
@@ -706,7 +705,7 @@
                                     html += '<div class="card my-1">';
                                     html += '<div class="card-body table-responsive">';
                                     html +=
-                                        `<h3 class="card-title my-1">Rencana Kelas Mingguan ${monthName} (Minggu ke - ${fakeWeekNumber}) ${workdays.start} - ${workdays.end}</h3>`;
+                                        `<h3 class="card-title my-1">Rencana Kelas Mingguan ${monthName} (Minggu ke - ${weekData.minggu}) ${workdays.start} - ${workdays.end}</h3>`;
 
                                     if (weekData.rkmfull === "ok" && jabatan == 'HRD') {
                                         var formId =
@@ -818,11 +817,9 @@
                             var rowColor = (item.status === 'Merah') ? 'rgba(255, 0, 0, 0.5); color: #fff' :
                                 'rgba(0, 99, 71, 0.5); color: #fff';
                             html += `<tr style="background-color:${rowColor}">`;
-                            if (index === 0) {
-                                html += `<td rowspan="${group.length}">${rowIndex}</td>`;
-                                html += `<td rowspan="${group.length}">${materi}</td>`;
-                                rowIndex++;
-                            }
+                            html += `<td>${rowIndex}</td>`;
+                            html += `<td>${materi}</td>`;
+                            rowIndex++;
                             html += `<td>${item.pax || 'N/A'}</td>`;
                             html += `<td>${item.durasi || 'N/A'}</td>`;
                             html += `<td>${formatRupiah(item.harga_jual || 0)}</td>`;

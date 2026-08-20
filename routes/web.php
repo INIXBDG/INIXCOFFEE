@@ -127,8 +127,9 @@ use App\Http\Controllers\HR\RekapInventarisController;
 use App\Http\Controllers\FeatureDocumentationController;
 use App\Http\Controllers\CodeDocumentationController;
 use App\Http\Controllers\DocumentationImportController;
+use App\Http\Controllers\KelasSettingController;
 use App\Http\Controllers\UserController;
-
+use App\Http\Controllers\KomisiSalesController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -318,6 +319,7 @@ Route::get('getRegistrasiexam', [App\Http\Controllers\registexamController::clas
 Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');
 Route::post('/generate/exam/absensi', [registexamController::class, 'generateAbsensi'])->name('absensi.exam');
 Route::get('getSouvenir', [App\Http\Controllers\SouvenirController::class, 'getSouvenir'])->name('getSouvenir');
+Route::get('getSouvenirInactive', [App\Http\Controllers\SouvenirController::class, 'getSouvenirInactive'])->name('getSouvenirInactive');
 Route::get('getSouvenirPeserta', [App\Http\Controllers\SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
 Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
 Route::get('/getTotalFeedbackPertahun', [App\Http\Controllers\feedbackController::class, 'getTotalFeedbackPertahun'])->name('office.feedback.get');
@@ -449,6 +451,8 @@ Route::get('/registexam/cc/{id}', [App\Http\Controllers\registexamController::cl
 Route::put('/registexam/cc/{id}', [App\Http\Controllers\registexamController::class, 'storecc'])->name('exam.storecc');
 Route::put('/souvenir/{id}/updatestok', [App\Http\Controllers\SouvenirController::class, 'updateStok'])->name('souvenir.updateStok');
 Route::get('/souvenir/{id}/editstok', [App\Http\Controllers\SouvenirController::class, 'editStok'])->name('souvenir.editStok');
+Route::post('/souvenir/{id}/inactive', [App\Http\Controllers\SouvenirController::class, 'inactive'])->name('souvenir.inactive');
+Route::post('/souvenir/{id}/active', [App\Http\Controllers\SouvenirController::class, 'active'])->name('souvenir.active');
 Route::get('/suratperjalanan/{id}/editspj', [App\Http\Controllers\SuratPerjalananController::class, 'editspj'])->name('suratperjalanan.editspj');
 Route::get('/tunjangangenerate', [App\Http\Controllers\TunjanganController::class, 'indexGenerate'])->name('tunjangangenerate.index');
 Route::put('/lembur/{id}/updateKaryawan', [App\Http\Controllers\lemburController::class, 'updateKaryawan'])->name('lembur.updateKaryawan');
@@ -498,7 +502,7 @@ Route::prefix('kpi-data/')
 
         Route::get('/get-routes-by-jabatan', [TargetKPIController::class, 'getAssistantRoutesByJabatan'])->name('getRoutesByJabatan');
         Route::get('/get-target-by-route', [TargetKPIController::class, 'getDataTargetByRoute'])->name('getTargetByRoute');
-
+        Route::get('/divisi-drilldown', [TargetKPIController::class, 'divisiDrilldown'])->name('divisiDrilldown');
         //Overview KPI
         route::prefix('overview/')
             ->name('overview.')
@@ -1083,6 +1087,20 @@ Route::prefix('office')->group(function () {
         Route::get('/get/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'get'])->name('get');
         Route::post('update/{id}', [ApprovalPendapatanController::class, 'update'])->name('update');
         Route::get('total-tahunan/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'totalTahunan']);
+        Route::get('/lock-status', [ApprovalPendapatanController::class, 'checkLockStatus']);
+        Route::post('/setup-lock', [ApprovalPendapatanController::class, 'setupLockPassword']);
+        Route::post('/unlock', [ApprovalPendapatanController::class, 'unlock']);
+        Route::post('/change-lock-password', [ApprovalPendapatanController::class, 'changeLockPassword']);
+    });
+
+    Route::prefix('komisi-sales')->name('komisiSales.')->group(function () {
+        Route::get('/index', [KomisiSalesController::class, 'index'])->name('index');
+        Route::get('/get/{tahun}/{quartal}', [KomisiSalesController::class, 'get'])->name('get');
+        Route::post('/export-pdf', [KomisiSalesController::class, 'exportPdf'])->name('export-pdf');
+        Route::get('/lock-status', [KomisiSalesController::class, 'checkLockStatus']);
+        Route::post('/unlock', [KomisiSalesController::class, 'unlock']);
+        Route::post('/setup-lock', [KomisiSalesController::class, 'setupLockPassword']);
+        Route::post('/change-lock-password', [KomisiSalesController::class, 'changeLockPassword']);
     });
 
     route::prefix('exam')->name('office.exam.')->group(function () {
@@ -1433,6 +1451,7 @@ Route::get('/jurnalakuntansi/pdf/{id}', [JurnalAkuntansiController::class, 'eksp
 Route::post('/jurnalakuntansi/otomatisasi/data', [JurnalAkuntansiController::class, 'otomatisasiJurnal'])->name('jurnalakuntansi.otomatisasiJurnal');
 Route::get('/jurnalakuntansi/belum-jurnal-sp', [JurnalAkuntansiController::class, 'getBelumJurnalSuratPerjalanan'])->name('jurnalakuntansi.belumJurnalSuratPerjalanan');
 Route::post('/jurnalakuntansi/store-manual-surat-perjalanan/{id}', [JurnalAkuntansiController::class, 'storeManualSuratPerjalanan'])->name('jurnalakuntansi.storeManualSuratPerjalanan');
+Route::get('/jurnalakuntansi/export-pdf-kk', [JurnalAkuntansiController::class, 'exportPdfKK'])->name('jurnalakuntansi.exportPdfKK');
 
 Route::middleware(['auth'])->group(function () {
     // Route Administrasi Project
@@ -1510,6 +1529,9 @@ Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() 
 
 Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::get('/', [HRController::class, 'index'])->name('index');
+    Route::get('/data', [HRController::class, 'getDashboardData'])->name('dashboard.data');
+    Route::get('/divisions', [HRController::class, 'getDivisions'])->name('dashboard.divisions');
+    Route::get('/card-details', [HRController::class, 'getCardDetails'])->name('dashboard.card');
     Route::prefix('employee')
         ->name('employee.')
         ->group(function () {
@@ -1542,6 +1564,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/division-stats', [presenceController::class, 'getDivisionDailyStats'])->name('division.stats');
         Route::get('/top-late', [presenceController::class, 'getTopLateEmployees'])->name('top.late');
         Route::get('/calendar', [presenceController::class, 'getAttendanceCalendar'])->name('calendar');
+        Route::get('/daily-details', [presenceController::class, 'getDailyAttendanceDetails'])->name('daily-details');
     });
 
     Route::prefix('executive')->name('executive.')->group(function () {
@@ -1716,6 +1739,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/get-data',  [payrollController::class, 'getPayrollDataPerhitungan'])->name('get-data');
         Route::get('/stats',     [payrollController::class, 'getStatsPerhitungan'])->name('stats');
         Route::post('/',         [payrollController::class, 'storePerhitungan'])->name('store');
+        Route::get('/logs-all',  [payrollController::class, 'getAllLogsPerhitungan'])->name('logs.all');
         Route::get('/{id}',      [payrollController::class, 'showPerhitungan'])->name('show');
         Route::put('/{id}',      [payrollController::class, 'updatePerhitungan'])->name('update');
         Route::delete('/{id}',   [payrollController::class, 'destroyPerhitungan'])->name('destroy');
@@ -1831,4 +1855,19 @@ Route::get('/sla-management', [DashboardSLAController::class, 'index'])->name('s
 Route::middleware(['auth'])->group(function () {
     Route::get('/knowledge-management/{id}/download', [KnowledgeManagementController::class, 'downloadFile'])->name('knowledge-management.download');
     Route::resource('knowledge-management', KnowledgeManagementController::class);
+
+});
+
+
+Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
+    Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
+    Route::get('/',               [KelasSettingController::class, 'getData'])->name('data');
+    Route::post('/store',              [KelasSettingController::class, 'store'])->name('store');
+    Route::patch('/{id}',         [KelasSettingController::class, 'update'])->name('update');
+    Route::delete('/{id}',        [KelasSettingController::class, 'destroy'])->name('destroy');
+    Route::post('/{id}/restore',  [KelasSettingController::class, 'restore'])->name('restore');
+
+    // Komentar
+    Route::post('/{id}/comment',           [KelasSettingController::class, 'addComment'])->name('comment.add');
+    Route::delete('/{id}/comment/{cmtId}', [KelasSettingController::class, 'removeComment'])->name('comment.remove');
 });

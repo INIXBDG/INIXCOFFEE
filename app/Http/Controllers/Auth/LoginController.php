@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use App\Models\karyawan;
 use App\Models\KontrolTugas;
 use App\Models\KategoriDaftarTugas;
-use App\Models\AbsensiKaryawan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\ShiftConfirmationNotification;
@@ -33,7 +32,7 @@ class LoginController extends Controller
 
     protected function authenticated(Request $request, $user)
     {
-        $karyawan = $user->karyawan;
+        $karyawan = $user->karyawan ?? Karyawan::where('id', $user->id)->first();
 
         if ($karyawan && $karyawan->jabatan === 'Office Boy') {
             return $this->handleShiftAssignment($karyawan);
@@ -73,10 +72,18 @@ class LoginController extends Controller
             return redirect($this->redirectTo)->with('info', 'Mohon konfirmasi pengambilan Shift 1 Anda.');
         }
 
-        if ($shift1UserId !== $karyawan->id && !$shift2UserId) {
+        if ($shift1UserId && $shift1UserId !== $karyawan->id && !$shift2UserId) {
             if ($hour >= 16) {
                 $this->generateTasksForShift($karyawan->id, 'Shift 2', $today);
                 return redirect($this->redirectTo)->with('success', 'Anda otomatis mengambil Shift 2.');
+            } else {
+                Cache::put("pending_shift_{$karyawan->id}", [
+                    'shift' => 2, 
+                    'date' => $today,
+                    'message' => 'Shift 1 sudah diambil. Setujui untuk mengambil Shift 2.'
+                ], now()->addHours(12));
+                
+                return redirect($this->redirectTo)->with('info', 'Mohon konfirmasi pengambilan Shift 2 Anda.');
             }
 
             Cache::put("pending_shift_{$karyawan->id}", [

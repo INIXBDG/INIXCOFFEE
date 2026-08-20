@@ -321,30 +321,39 @@ class TargetKPIController extends Controller
 
     public function getDataOverviewPersonal(Request $request, OverviewDashboardService $overviewService)
     {
-        $data = $overviewService->getPersonalOverviewData(
-            $request->id_karyawan ?? auth()->id(),
-            $request->tahun ?? now()->year
-        );
+        $karyawanId = auth()->id();
+        $tahunFilter = (int) ($request->tahun ?? now()->year);
 
-        return isset($data['error']) ? response()->json(['success' => false, 'message' => $data['error']], $data['code']) : response()->json($data);
+        $data = $overviewService->getPersonalOverviewData($karyawanId, $tahunFilter);
+
+        return isset($data['error'])
+            ? response()->json(['success' => false, 'message' => $data['error']], $data['code'])
+            : response()->json($data);
     }
 
     public function kpiOverview()
     {
         $userKaryawan = karyawan::where('id', Auth::id())->first();
         $departments = karyawan::where('divisi', '!=', 'Direksi')->whereNotNull('divisi')->distinct()->pluck('divisi')->values();
+        
         return view('KPIdata.TargetDivisi.overview', [
             'departments' => $departments,
             'divisi' => $userKaryawan->divisi ?? null,
-            'jabatan' => $userKaryawan->jabatan ?? null
+            'jabatan' => $userKaryawan->jabatan ?? null,
+            'user_id' => Auth::id()
         ]);
     }
 
     public function getDataOverview(Request $request, OverviewDashboardService $overviewService)
     {
-        if (!$request->divisi || !$request->tahun) return response()->json(['message' => 'Divisi dan tahun harus diisi'], 400);
+        if (!$request->divisi || !$request->tahun) {
+            return response()->json(['message' => 'Divisi dan tahun harus diisi'], 400);
+        }
 
-        $data = $overviewService->getDepartmentOverviewData($request->divisi, $request->tahun);
+        $personId = $request->id_karyawan ?? auth()->id();
+
+        $data = $overviewService->getDepartmentOverviewData($request->divisi, $request->tahun, $personId);
+        
         return response()->json($data);
     }
 
@@ -367,20 +376,27 @@ class TargetKPIController extends Controller
         $query = targetKPI::with(['karyawan', 'detailTargetKPI.dataTarget', 'detailTargetKPI.detailPersonKPI'])
             ->whereYear('created_at', now()->year);
 
+        // Logika Filtering untuk Memangkas Load Data
         if (filled($idUser) && filled($typeGet)) {
+            // Jika admin/atasan melihat data user spesifik
             $query->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $idUser));
         } elseif (!in_array($user->jabatan, $superRoles)) {
-            $query->whereHas('detailTargetKPI', fn($q) => $q->where('divisi', $divisiUser));
+            // OPTIMASI: Eliminasi KPI milik rekan satu divisi.
+            // Hanya tarik KPI yang secara spesifik ditugaskan ke user yang sedang login.
+            $query->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $user->id));
         }
+        // Catatan: Super Roles tanpa parameter idUser akan tetap menarik semua KPI (untuk kebutuhan dashboard overview)
 
         $detailList = $query->get();
 
         $data = [
-            'detail' => $detailList->map(function ($item) use ($idUser) {
+            'detail' => $detailList->map(function ($item) use ($idUser, $user) {
                 $detail = $item->detailTargetKPI->first();
                 if (!$detail) return null;
 
-                $personId = !empty($idUser) ? (int) $idUser : null;
+                // Perbaikan: Pastikan personId selalu memiliki nilai (ID User) 
+                // agar method calculateProgress di Trait tidak menerima nilai null.
+                $personId = !empty($idUser) ? (int) $idUser : $user->id;
                 $progress = $this->resolveProgress($item, $personId);
 
                 $totalPeserta = $item->detailTargetKPI->flatMap(function ($detailItem) {
@@ -456,6 +472,21 @@ class TargetKPIController extends Controller
         return response()->json($data);
     }
 
+    // Controller
+    public function divisiDrilldown(Request $request)
+    {
+        $divisi = $request->query('divisi');
+        $currentYear = now()->year;
+
+        if (!$divisi) {
+            return response()->json(['error' => 'Divisi wajib diisi'], 422);
+        }
+
+        $data = app(OverviewDashboardService::class)->getDivisiDrilldownData($divisi, $currentYear);
+
+        return response()->json($data);
+    }
+
     // ============================================
     // EXPORT FILE EXCEL & PDF
     // ============================================
@@ -507,19 +538,64 @@ class TargetKPIController extends Controller
         try {
             $karyawanId = (int)($request->id_karyawan ?? Auth::id());
             $tahun      = (int)($request->tahun ?? now()->year);
-            $filters    = ['periode' => $request->query('periode', 'all'), 'quarter' => $request->query('quarter'), 'tahun_filter' => $request->query('tahun_filter')];
 
-            // Manfaatkan fungsi overview untuk mem-build data export tanpa nulis ulang logikanya
-            // Anda bisa memindahkan logika map target export ke service khusus nanti, tapi kita pakai class Export yang dibuat
             $karyawan = karyawan::find($karyawanId);
+            
+            if (!$karyawan) {
+                return back()->withErrors(['export' => 'Data karyawan tidak ditemukan.']);
+            }
+
             $data = $overviewService->getPersonalOverviewData($karyawanId, $tahun);
 
-            $exportService = new MonitoringKPIExport($data, $karyawan->nama_lengkap ?? '-', $karyawan->jabatan ?? '-', $tahun);
+            $exportService = new MonitoringKPIExport(
+                $data, 
+                $karyawan->nama_lengkap, 
+                $karyawan->jabatan ?? '-', 
+                $tahun
+            );
             $tmpPath = $exportService->generate();
 
-            return response()->download($tmpPath, 'KPI_' . str_replace(' ', '_', $karyawan->nama_lengkap ?? '-') . '_' . $tahun . '.xlsx')->deleteFileAfterSend(true);
+            $fileName = 'KPI_' . str_replace(' ', '_', $karyawan->nama_lengkap) . '_' . $tahun . '.xlsx';
+
+            return response()->download($tmpPath, $fileName)->deleteFileAfterSend(true);
+            
         } catch (\Exception $e) {
+            Log::error('Export KPI Excel Failed: ' . $e->getMessage());
             return back()->withErrors(['export' => 'Gagal export Excel: ' . $e->getMessage()]);
+        }
+    }
+
+    public function exportMonitoringPdf(Request $request, OverviewDashboardService $overviewService)
+    {
+        try {
+            $karyawanId = (int)($request->id_karyawan ?? Auth::id());
+            $tahun      = (int)($request->tahun ?? now()->year);
+
+            $karyawan = karyawan::find($karyawanId);
+            
+            if (!$karyawan) {
+                return back()->withErrors(['export' => 'Data karyawan tidak ditemukan.']);
+            }
+
+            $data = $overviewService->getPersonalOverviewData($karyawanId, $tahun);
+
+            $fileName = 'KPI_Report_' . str_replace(' ', '_', $karyawan->nama_lengkap) . '_' . $tahun . '.pdf';
+
+            $pdf = Pdf::loadView('KPIdata.export.export_pdf', [
+                'data'     => $data,
+                'karyawan' => $karyawan,
+                'tahun'    => $tahun
+            ]);
+
+            $pdf->setPaper('A4', 'portrait');
+            $pdf->setOption('isHtml5ParserEnabled', true);
+            $pdf->setOption('isRemoteEnabled', true);
+
+            return $pdf->download($fileName);
+            
+        } catch (\Exception $e) {
+            Log::error('Export KPI PDF Failed: ' . $e->getMessage());
+            return back()->withErrors(['export' => 'Gagal export PDF: ' . $e->getMessage()]);
         }
     }
 
@@ -545,13 +621,34 @@ class TargetKPIController extends Controller
         try {
             $divisi = $request->query('divisi');
             $tahun  = (int)($request->query('tahun') ?? now()->year);
-            if (!$divisi) return back()->withErrors(['export' => 'Departemen belum dipilih.']);
+            
+            if (!$divisi) {
+                return back()->withErrors(['export' => 'Departemen belum dipilih.']);
+            }
 
+            // Ambil data dari service
             $data = $overviewService->getDepartmentOverviewData($divisi, $tahun);
-            $pdf = Pdf::loadView('KPIdata.export.export_dept_pdf', $data)->setPaper('a4', 'landscape');
-            return $pdf->download('KPI_Dept_' . str_replace(' ', '_', $divisi) . '_' . $tahun . '.pdf');
+            
+            // Tambahkan konteks untuk header di Blade PDF
+            $data['nama_divisi'] = $divisi;
+            $data['tahun']       = $tahun;
+
+            $fileName = 'KPI_Dept_' . str_replace(' ', '_', $divisi) . '_' . $tahun . '.pdf';
+
+            // Render ke PDF
+            $pdf = Pdf::loadView('KPIdata.export.export_dept_pdf', [
+                'data' => $data
+            ]);
+
+            $pdf->setPaper('A4', 'portrait');
+            $pdf->setOption('isHtml5ParserEnabled', true);
+            $pdf->setOption('isRemoteEnabled', true);
+
+            return $pdf->download($fileName);
+            
         } catch (\Exception $e) {
-            return back()->withErrors(['export' => 'Terjadi kesalahan saat export: ' . $e->getMessage()]);
+            Log::error('Export Dept PDF Failed: ' . $e->getMessage());
+            return back()->withErrors(['export' => 'Gagal export PDF: ' . $e->getMessage()]);
         }
     }
 

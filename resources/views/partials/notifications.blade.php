@@ -636,6 +636,70 @@
         </div>
     @endif
 
+    @if ($tipePesan == 'Pengingat Kelengkapan Data Kelas')
+        <div class="notification mb-3 p-3 border rounded bg-light" style="border-left: 4px solid #F59E0B;">
+            <p class="mb-2 fw-bold text-warning">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> Pengingat Kelengkapan Data Kelas
+            </p>
+
+            @php
+                $jumlahKelas = $notification->data['message']['jumlah_kelas'] ?? 0;
+                $tanggalTerdekat = $notification->data['message']['tanggal_terdekat'] ?? null;
+                $kelasList = $notification->data['message']['kelas'] ?? [];
+            @endphp
+
+            <p class="mb-2">
+                Anda memiliki <strong>{{ $jumlahKelas }} kelas</strong> yang datanya belum lengkap
+                @if ($tanggalTerdekat)
+                    dan akan dimulai paling cepat pada
+                    <strong>{{ \Carbon\Carbon::parse($tanggalTerdekat)->translatedFormat('d F Y') }}</strong>.
+                @else
+                    dan segera akan dimulai.
+                @endif
+                Mohon segera dilengkapi.
+            </p>
+
+            @if (!empty($kelasList) && is_array($kelasList))
+                <div class="p-2 bg-white border rounded mb-2" style="font-size: 0.85rem;">
+                    <ul class="list-unstyled mb-0">
+                        @foreach ($kelasList as $item)
+                            <li class="border-bottom pb-1 mb-1">
+                                <strong>{{ $item['kelas'] ?? '-' }}</strong>
+                                <span class="text-muted">
+                                    ({{ !empty($item['dari']) ? \Carbon\Carbon::parse($item['dari'])->format('d M Y') : '-' }})
+                                </span>
+                                @if (!empty($item['missing']) && is_array($item['missing']))
+                                    <br>
+                                    <span class="text-danger">
+                                        <i class="bi bi-x-circle"></i>
+                                        Belum diisi: {{ implode(', ', $item['missing']) }}
+                                    </span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i> Dikirim pada: {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-pencil-square me-1"></i> Lengkapi Sekarang
+                </a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+
     @if ($tipePesan == 'Memerintahkan anda untuk Lembur')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong> telah

@@ -192,7 +192,7 @@
                         <div class="row mb-4" id="vehicleSection" style="display:none;">
                             <label class="col-md-3 col-form-label fw-semibold">Kendaraan</label>
                             <div class="col-md-9">
-                                <select name="budget" class="form-select">
+                                <select name="kendaraan" class="form-select">
                                     <option value="">Belum Dipilih</option>
                                     @foreach ($kendaraan as $data)
                                         <option value="{{ $data }}">{{ $data }}</option>

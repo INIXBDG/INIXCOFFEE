@@ -10,6 +10,13 @@ use App\Models\PengajuanBarang;
 use App\Models\perhitunganNetSales;
 use App\Models\SuratPerjalanan;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Concerns\ToArray;
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
+
+class JurnalArrayImport implements ToArray, WithCalculatedFormulas
+{
+    public function array(array $array) {}
+}
 
 class JurnalAkuntansiController extends Controller
 {
@@ -424,52 +431,241 @@ class JurnalAkuntansiController extends Controller
 
         try {
             $file = $request->file('file');
-            $data = \Maatwebsite\Excel\Facades\Excel::toArray([], $file);
-            $sheet = $data[0];
 
-            foreach ($sheet as $key => $row) {
-                // Melewati baris pertama (index 0) yang berisi Header Kolom
-                if ($key === 0) continue;
+            $data  = \Maatwebsite\Excel\Facades\Excel::toArray(new JurnalArrayImport(), $file);
+            $sheet = $data[0] ?? [];
 
-                // Mengabaikan baris jika Tanggal atau Keterangan kosong
-                if (empty($row[1]) || empty($row[2])) continue;
+            $transactions        = [];
+            $currentTransaction  = null;
 
-                // Konversi format tanggal (mendukung Serial Date Excel maupun String Date biasa)
-                $tanggal = $row[1];
-                if (is_numeric($tanggal)) {
-                    $tanggal = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($tanggal)->format('Y-m-d');
-                } else {
-                    $tanggal = \Carbon\Carbon::parse($tanggal)->format('Y-m-d');
+            foreach ($sheet as $row) {
+
+                // Pastikan minimal 8 kolom
+                $row = array_pad($row, 8, null);
+
+                /*
+                * =====================================================
+                * BATAS AKHIR DATA
+                * =====================================================
+                */
+                $rowText = implode(' ', array_map(
+                    fn ($value) => trim((string) $value),
+                    $row
+                ));
+
+                if (
+                    stripos($rowText, 'Dilaporkan Oleh') !== false ||
+                    stripos($rowText, 'Diketahui Oleh') !== false ||
+                    stripos($rowText, 'Diperiksa Oleh') !== false
+                ) {
+                    break;
                 }
 
-                // Menentukan Nomor KK: Gunakan dari file Excel, jika kosong jalankan method generator
-                $nomor_kk = !empty($row[0]) ? $row[0] : $this->generateNomorKK($tanggal);
-                $no_akun_bersih = isset($row[3]) && $row[3] !== '' ? trim((string) $row[3]) : null;
-                // Normalisasi string mata uang menjadi float
-                $debit = isset($row[4]) ? (float) preg_replace('/[^0-9.]/', '', $row[4]) : 0;
-                $kredit = isset($row[5]) ? (float) preg_replace('/[^0-9.]/', '', $row[5]) : 0;
+                /*
+                * =====================================================
+                * AMBIL KOLOM
+                * =====================================================
+                */
+                $tanggalRaw = $row[0] ?? null;
+                $nomorKK    = trim((string) ($row[1] ?? ''));
+                $keterangan = trim((string) ($row[2] ?? ''));
+                $cat        = trim((string) ($row[3] ?? ''));
+                $debitRaw   = $row[4] ?? null;
+                $kreditRaw  = $row[5] ?? null;
 
-                JurnalAkuntansi::create([
-                    'nomor_kk' => $nomor_kk,
-                    'id_pengajuan_barang' => null,
-                    'tanggal_transaksi' => $tanggal,
-                    'keterangan' => $row[2],
-                    'no_akun' => $no_akun_bersih,
-                    'debit' => $debit,
-                    'kredit' => $kredit,
-                ]);
+                /*
+                * =====================================================
+                * DETEKSI TRANSAKSI BARU
+                * =====================================================
+                */
+                $isNomorKK = preg_match('/^KK-\d+$/i', $nomorKK);
+
+                $isTanggal = false;
+
+                if (is_numeric($tanggalRaw)) {
+                    $isTanggal = true;
+                } elseif (!empty($tanggalRaw)) {
+                    try {
+                        \Carbon\Carbon::parse($tanggalRaw);
+                        $isTanggal = true;
+                    } catch (\Exception $e) {
+                        $isTanggal = false;
+                    }
+                }
+
+                /*
+                * =====================================================
+                * TRANSAKSI BARU
+                * =====================================================
+                */
+                if ($isTanggal && $isNomorKK) {
+
+                    // Simpan transaksi sebelumnya
+                    if ($currentTransaction !== null) {
+                        $transactions[] = $currentTransaction;
+                    }
+
+                    // Konversi tanggal
+                    if (is_numeric($tanggalRaw)) {
+                        $tanggal = \PhpOffice\PhpSpreadsheet\Shared\Date
+                            ::excelToDateTimeObject($tanggalRaw)
+                            ->format('Y-m-d');
+                    } else {
+                        $tanggal = \Carbon\Carbon::parse($tanggalRaw)
+                            ->format('Y-m-d');
+                    }
+
+                    $currentTransaction = [
+                        'nomor_kk'          => $nomorKK,
+                        'tanggal_transaksi' => $tanggal,
+                        'keterangan'        => [],
+                        'no_akun'           => $cat !== '' ? $cat : null,
+
+                        // Nilai di baris deteksi ini tetap diambil,
+                        // nanti ditambah lagi kalau ada baris lanjutan.
+                        'debit'  => $this->parseExcelAmount($debitRaw),
+                        'kredit' => $this->parseExcelAmount($kreditRaw),
+                    ];
+
+                    if ($keterangan !== '') {
+                        $currentTransaction['keterangan'][] = $keterangan;
+                    }
+
+                    continue;
+                }
+
+                /*
+                * =====================================================
+                * BARIS LANJUTAN (Detail Keterangan + Debit/Kredit susulan)
+                * =====================================================
+                */
+                if ($currentTransaction !== null) {
+
+                    $debitVal  = $this->parseExcelAmount($debitRaw);
+                    $kreditVal = $this->parseExcelAmount($kreditRaw);
+
+                    if ($debitVal > 0) {
+                        $currentTransaction['debit'] += $debitVal;
+                    }
+
+                    if ($kreditVal > 0) {
+                        $currentTransaction['kredit'] += $kreditVal;
+                    }
+
+                    if ($keterangan !== '') {
+                        // "Petty Cash" tetap bukan bagian dari teks
+                        // keterangan, tapi angkanya (di atas) tetap diambil.
+                        if (strcasecmp(trim($keterangan), 'Petty Cash') !== 0) {
+                            $currentTransaction['keterangan'][] = $keterangan;
+                        }
+                    }
+                }
             }
+
+            /*
+            * =====================================================
+            * SIMPAN TRANSAKSI TERAKHIR
+            * =====================================================
+            */
+            if ($currentTransaction !== null) {
+                $transactions[] = $currentTransaction;
+            }
+
+            /*
+            * =====================================================
+            * INSERT DATABASE
+            * =====================================================
+            */
+            \DB::transaction(function () use ($transactions) {
+
+                foreach ($transactions as $transaction) {
+
+                    $keterangan = $transaction['keterangan'];
+
+                    if (count($keterangan) === 1) {
+                        $keterangan = $keterangan[0];
+                    } elseif (count($keterangan) > 1) {
+                        $keterangan = json_encode($keterangan, JSON_UNESCAPED_UNICODE);
+                    } else {
+                        $keterangan = null;
+                    }
+
+                    JurnalAkuntansi::create([
+                        'nomor_kk'            => $transaction['nomor_kk'],
+                        'id_pengajuan_barang' => null,
+                        'tanggal_transaksi'   => $transaction['tanggal_transaksi'],
+                        'keterangan'          => $keterangan,
+                        'no_akun'             => $transaction['no_akun'],
+                        'debit'               => $transaction['debit'],
+                        'kredit'              => $transaction['kredit'],
+                    ]);
+                }
+            });
 
             return response()->json([
                 'success' => true,
-                'message' => 'Data Jurnal Akuntansi dari Excel berhasil diimpor.'
+                'message' => count($transactions) . ' data Jurnal Akuntansi berhasil diimpor.',
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengimpor data: ' . $e->getMessage()
+                'message' => 'Gagal mengimpor data: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function parseExcelAmount($value)
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+
+        // Angka biasa
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        $value = trim((string) $value);
+
+        /*
+        * Excel kamu punya formula seperti:
+        *
+        * =75000+10000+65306-6+140000+4000
+        *
+        * Ini TIDAK bisa diproses dengan
+        * preg_replace menjadi angka.
+        *
+        * Jadi kita evaluasi formula aritmatika sederhana.
+        */
+
+        if (str_starts_with($value, '=')) {
+
+            $formula = substr($value, 1);
+
+            // Hanya izinkan angka + - * / ( )
+            if (preg_match('/^[0-9+\-*\/().\s]+$/', $formula)) {
+
+                try {
+                    return (float) eval("return {$formula};");
+                } catch (\Throwable $e) {
+                    return 0;
+                }
+            }
+        }
+
+        /*
+        * Fallback untuk format seperti:
+        * Rp75.000
+        * 75,000
+        * 75000
+        */
+
+        $clean = preg_replace('/[^0-9.-]/', '', $value);
+
+        return $clean !== ''
+            ? (float) $clean
+            : 0;
     }
 
     /**
@@ -772,5 +968,68 @@ class JurnalAkuntansiController extends Controller
                 'message' => 'Gagal membuat jurnal: ' . $e->getMessage()
             ];
         }
+    }
+
+    public function exportPdfKK(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:jurnal_akuntansis,id',
+            'saldo_awal' => 'nullable|numeric',
+            'kas_masuk' => 'nullable|numeric',
+            'kas_keluar' => 'nullable|numeric',
+            'saldo_akhir' => 'nullable|numeric',
+        ]);
+
+        $ids = $request->input('ids', []);
+
+        $data = JurnalAkuntansi::with('no_accounting', 'netSales', 'suratPerjalanan.karyawan')
+            ->whereIn('id', $ids)
+            ->orderBy('tanggal_transaksi')
+            ->get();
+
+        $data->transform(function ($jurnal) {
+            if (is_array($jurnal->id_pengajuan_barang) && count($jurnal->id_pengajuan_barang) > 0) {
+                $jurnal->list_pengajuan = PengajuanBarang::with('karyawan', 'detail')
+                    ->whereIn('id', $jurnal->id_pengajuan_barang)
+                    ->get();
+            } else {
+                $jurnal->list_pengajuan = [];
+            }
+            return $jurnal;
+        });
+
+        $tanggalMulai = $data->min('tanggal_transaksi');
+        $tanggalSelesai = $data->max('tanggal_transaksi');
+        $periodeLabel = \Carbon\Carbon::parse($tanggalMulai)->translatedFormat('d')
+            . '-' . \Carbon\Carbon::parse($tanggalSelesai)->translatedFormat('d F Y');
+
+        $saldoAwal = (float) $request->input('saldo_awal', 0);
+        $kasMasukManual = (float) $request->input('kas_masuk', 0);
+        $kasKeluarManual = (float) $request->input('kas_keluar', 0);
+        $saldoAkhirManual = $request->filled('saldo_akhir') ? (float) $request->input('saldo_akhir') : null;
+
+        $direktur = karyawan::where('status_aktif', '1')->where('jabatan', 'Direktur')->latest()->first();
+        $finance = karyawan::where('status_aktif', '1')->where('jabatan', 'Finance & Accounting')->where('nama_lengkap', 'like', '%Rifa%')->latest()->first();
+        $accounting = karyawan::where('status_aktif', '1')->where('jabatan', 'Finance & Accounting')->where('nama_lengkap', 'like', '%Xepi%')->latest()->first();
+
+
+        $penandatangan = [
+            ['label' => 'Dilaporkan Oleh,', 'nama' => $finance->nama_lengkap, 'jabatan' => 'Finance', 'ttd' => $finance->ttd],
+            ['label' => 'Diketahui Oleh,', 'nama' => $accounting->nama_lengkap, 'jabatan' => 'Accounting', 'ttd' => $accounting->ttd],
+            ['label' => 'Diperiksa Oleh,', 'nama' => $direktur->nama_lengkap, 'jabatan' => 'Director', 'ttd' => $direktur->ttd],
+        ];
+
+        $pdf = Pdf::loadView('jurnalakuntansi.pdf_kk', [
+            'data' => $data->toArray(),
+            'periode_label' => $periodeLabel,
+            'saldo_awal' => $saldoAwal,
+            'kas_masuk_manual' => $kasMasukManual,
+            'kas_keluar_manual' => $kasKeluarManual,
+            'saldo_akhir_manual' => $saldoAkhirManual,
+            'penandatangan' => $penandatangan,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('kas-kecil-' . now()->format('Ymd-His') . '.pdf');
     }
 }
