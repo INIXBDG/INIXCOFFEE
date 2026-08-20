@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Registration Form</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -579,6 +577,8 @@
 
     <div id="pdf-container"></div>
 
+    <script src="{{ asset('assets/vendor/libs/html2canvas/jspdf.umd.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/html2canvas/html2canvas.min.js') }}"></script>
     <script>
         let pesertaCount = 0;
         const termsData = @json($ketentuan);
@@ -644,7 +644,7 @@
                 `;
             });
 
-            let deskripsiPeserta = pesertaRows.length > 0 
+            let deskripsiPeserta = pesertaRows.length > 0
             ? [...pesertaRows].map((row, index) => {
                 const nama = row.querySelector('.nama-peserta').value;
                 const kontak = row.querySelector('.kontak-peserta').value;
@@ -943,14 +943,14 @@
                 const npwp = document.getElementById('npwp')?.value || '';
                 const materi = document.getElementById('materi')?.value || '';
                 const deskripsiTambahan = document.getElementById('deskripsi-tambahan')?.value || '';
-                
+
                 // 2. Ambil Logika PPN
                 const includePPN = document.getElementById('include-ppn').checked;
                 const ppnPercentage = parseFloat(document.getElementById('ppn-percentage').value) || 0;
 
                 // 3. Persiapkan Gambar
                 const logoBase64 = await fetchToBase64("{{ asset('assets/img/inix.png') }}");
-                const signatureUrl = "{{ asset('storage/ttd/' . ($sales->ttd ?? '')) }}"; 
+                const signatureUrl = "{{ asset('storage/ttd/' . ($sales->ttd ?? '')) }}";
                 const ttdBase64 = (signatureUrl && signatureUrl.length > 20) ? await fetchToBase64(signatureUrl) : null;
 
                 // 4. Buat Tabel Header
@@ -1067,7 +1067,7 @@
 
                 // 6. Buat Bagian Tanda Tangan (REVISI: ALIGNMENT & BORDER)
                 const sigRows = document.querySelectorAll('.signature-row');
-                
+
                 const name1 = sigRows[0]?.querySelector('.signature-name')?.value || '';
                 const post1 = sigRows[0]?.querySelector('.signature-position')?.value || '';
 
@@ -1079,13 +1079,13 @@
 
                 const signatureTable = new Table({
                     width: { size: 100, type: WidthType.PERCENTAGE },
-                    borders: { 
-                        top: { style: BorderStyle.NONE }, 
-                        bottom: { style: BorderStyle.NONE }, 
-                        left: { style: BorderStyle.NONE }, 
-                        right: { style: BorderStyle.NONE }, 
-                        insideVertical: { style: BorderStyle.NONE }, 
-                        insideHorizontal: { style: BorderStyle.NONE } 
+                    borders: {
+                        top: { style: BorderStyle.NONE },
+                        bottom: { style: BorderStyle.NONE },
+                        left: { style: BorderStyle.NONE },
+                        right: { style: BorderStyle.NONE },
+                        insideVertical: { style: BorderStyle.NONE },
+                        insideHorizontal: { style: BorderStyle.NONE }
                     },
                     rows: [
                         new TableRow({
@@ -1095,10 +1095,10 @@
                                     width: { size: 33, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.BOTTOM, // Align ke bawah agar sejajar
                                     children: [
-                                        new Paragraph({ text: " ", spacing: { before: 1400 } }), 
-                                        new Paragraph({ 
-                                            children: [new TextRun({ text: name1, bold: true })], 
-                                            alignment: AlignmentType.CENTER, 
+                                        new Paragraph({ text: " ", spacing: { before: 1400 } }),
+                                        new Paragraph({
+                                            children: [new TextRun({ text: name1, bold: true })],
+                                            alignment: AlignmentType.CENTER,
                                             border: { top: { style: BorderStyle.SINGLE, size: 6 } },
                                             indent: { left: 720, right: 720 } // Perpendek garis (1 inch total indent)
                                         }),
@@ -1111,7 +1111,7 @@
                                     width: { size: 33, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.BOTTOM, // Align ke bawah agar sejajar
                                     children: [
-                                        new Paragraph({ 
+                                        new Paragraph({
                                             alignment: AlignmentType.CENTER,
                                             children: ttdBase64 ? [
                                                 new ImageRun({
@@ -1121,9 +1121,9 @@
                                             ] : [new TextRun({ text: "", size: 20 })],
                                             spacing: { before: 200, after: 100 }
                                         }),
-                                        new Paragraph({ 
-                                            children: [new TextRun({ text: name2, bold: true })], 
-                                            alignment: AlignmentType.CENTER, 
+                                        new Paragraph({
+                                            children: [new TextRun({ text: name2, bold: true })],
+                                            alignment: AlignmentType.CENTER,
                                             border: { top: { style: BorderStyle.SINGLE, size: 6 } },
                                             indent: { left: 720, right: 720 } // Perpendek garis
                                         }),
@@ -1136,14 +1136,14 @@
                                     width: { size: 33, type: WidthType.PERCENTAGE },
                                     verticalAlign: VerticalAlign.BOTTOM, // Align ke bawah agar sejajar
                                     children: [
-                                        new Paragraph({ 
-                                            children: [new TextRun({ text: "Mengetahui", bold: true })], 
+                                        new Paragraph({
+                                            children: [new TextRun({ text: "Mengetahui", bold: true })],
                                             alignment: AlignmentType.CENTER,
                                             spacing: { after: 1400 } // Spasi ditaruh dibawah "Mengetahui"
                                         }),
-                                        new Paragraph({ 
-                                            children: [new TextRun({ text: name3, bold: true })], 
-                                            alignment: AlignmentType.CENTER, 
+                                        new Paragraph({
+                                            children: [new TextRun({ text: name3, bold: true })],
+                                            alignment: AlignmentType.CENTER,
                                             border: { top: { style: BorderStyle.SINGLE, size: 6 } },
                                             indent: { left: 720, right: 720 } // Perpendek garis
                                         }),
@@ -1174,7 +1174,7 @@
                         },
                         children: [
                             headerTable,
-                            
+
                             new Paragraph({
                                 text: "REGISTRATION FORM",
                                 heading: HeadingLevel.HEADING_1,
@@ -1201,7 +1201,7 @@
                                 children: [
                                     new TextRun({
                                         text: "*Wajib dilengkapi untuk pembuatan faktur pajak",
-                                        color: "C3110C", 
+                                        color: "C3110C",
                                         size: 16,
                                         italics: true
                                     })
@@ -1219,7 +1219,7 @@
                                 spacing: { before: 400, after: 100 }
                             }),
 
-                            ...Array.from(document.getElementById('syarat-select').selectedOptions).map((opt, i) => 
+                            ...Array.from(document.getElementById('syarat-select').selectedOptions).map((opt, i) =>
                                 new Paragraph({
                                     text: `${i+1}. ${opt.dataset.content}`,
                                     spacing: { after: 50 }
