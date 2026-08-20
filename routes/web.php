@@ -1091,6 +1091,8 @@ Route::prefix('office')->group(function () {
         Route::post('/setup-lock', [ApprovalPendapatanController::class, 'setupLockPassword']);
         Route::post('/unlock', [ApprovalPendapatanController::class, 'unlock']);
         Route::post('/change-lock-password', [ApprovalPendapatanController::class, 'changeLockPassword']);
+        Route::post('/change-accounting-password', [ApprovalPendapatanController::class, 'changeAccountingPassword']);
+        Route::post('/setup-accounting-password', [ApprovalPendapatanController::class, 'setupAccountingPassword']);
     });
 
     Route::prefix('komisi-sales')->name('komisiSales.')->group(function () {
@@ -1101,6 +1103,8 @@ Route::prefix('office')->group(function () {
         Route::post('/unlock', [KomisiSalesController::class, 'unlock']);
         Route::post('/setup-lock', [KomisiSalesController::class, 'setupLockPassword']);
         Route::post('/change-lock-password', [KomisiSalesController::class, 'changeLockPassword']);
+        Route::post('/change-accounting-password', [KomisiSalesController::class, 'changeAccountingPassword']);
+        Route::post('/setup-accounting-password', [KomisiSalesController::class, 'setupAccountingPassword']);
     });
 
     route::prefix('exam')->name('office.exam.')->group(function () {

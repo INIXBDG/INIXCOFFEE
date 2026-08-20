@@ -33,9 +33,14 @@ class KomisiSalesController extends Controller
         $isUnlocked = session('komisi_sales_unlocked', false)
             && $unlockedBy === $currentUser;
 
+        $hasFeaturePassword = (bool) ($lock && $lock->password_komisi);
+        $hasAccountingPassword = (bool) ($lock && $lock->password_accounting);
+
         return response()->json([
-            'has_password' => (bool) $lock,
-            'is_locked' => !$isUnlocked,
+            'has_password'              => $hasFeaturePassword,
+            'is_locked'                 => !$isUnlocked,
+            'has_accounting_password'   => $hasAccountingPassword,
+            'needs_accounting_setup'    => $hasFeaturePassword && !$hasAccountingPassword,
         ]);
     }
 
@@ -44,37 +49,56 @@ class KomisiSalesController extends Controller
         $validated = $request->validate([
             'login_password' => 'required|string',
             'new_password'   => 'required|string|min:4|confirmed',
+            'accounting_password' => 'nullable|string|min:4|confirmed',
         ]);
 
         $user = auth()->user();
+        $lock = ApprovalPendapatanLock::first();
 
-        if (!in_array($user->jabatan, ['Finance & Accounting'])) {
+        if ($lock && ($lock->password_approval || $lock->password_komisi) && !$lock->password_accounting) {
             throw ValidationException::withMessages([
-                'login_password' => 'Hanya user dengan jabatan Finance & Accounting yang dapat mengatur akses ini.',
+                'login_password' => 'Password Accounting belum diatur. Silakan setup Password Accounting terlebih dahulu.',
             ]);
         }
 
-        if (!Hash::check($validated['login_password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'login_password' => 'Password login tidak sesuai.',
-            ]);
+        if ($lock && $lock->password_accounting) {
+            if (!Hash::check($validated['login_password'], $lock->password_accounting)) {
+                throw ValidationException::withMessages([
+                    'login_password' => 'Password Accounting tidak sesuai.',
+                ]);
+            }
+        } else {
+            if (!in_array($user->jabatan, ['Finance & Accounting'])) {
+                throw ValidationException::withMessages([
+                    'login_password' => 'Hanya user dengan jabatan Finance & Accounting yang dapat mengatur akses ini.',
+                ]);
+            }
+            if (!Hash::check($validated['login_password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'login_password' => 'Password login tidak sesuai.',
+                ]);
+            }
         }
 
-        ApprovalPendapatanLock::updateOrCreate(
-            ['id' => 1],
-            [
-                'password'   => Hash::make($validated['new_password']),
-                'created_by' => $user->id,
-                'updated_by' => $user->id,
-            ]
-        );
+        $data = [
+            'password_komisi' => Hash::make($validated['new_password']),
+            'updated_by'      => $user->id,
+        ];
+
+        if (!$lock || !$lock->password_accounting) {
+            $accPass = $validated['accounting_password'] ?? $validated['login_password'];
+            $data['password_accounting'] = Hash::make($accPass);
+            $data['created_by'] = $user->id;
+        }
+
+        ApprovalPendapatanLock::updateOrCreate(['id' => 1], $data);
 
         session([
-            'komisi_sales_unlocked' => true,
+            'komisi_sales_unlocked'    => true,
             'komisi_sales_unlocked_by' => $user->id,
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Password berhasil dibuat.']);
+        return response()->json(['success' => true, 'message' => 'Password Komisi Sales berhasil dibuat/diubah.']);
     }
 
     public function unlock(Request $request)
@@ -85,10 +109,10 @@ class KomisiSalesController extends Controller
         ]);
 
         $user = auth()->user();
+        $lock = ApprovalPendapatanLock::first();
 
         if ($validated['type'] === 'approval') {
-            $lock = ApprovalPendapatanLock::first();
-            if (!$lock || !Hash::check($validated['password'], $lock->password)) {
+            if (!$lock || !$lock->password_komisi || !Hash::check($validated['password'], $lock->password_komisi)) {
                 return response()->json(['success' => false, 'message' => 'Password approval salah.'], 401);
             }
         } else {
@@ -98,7 +122,7 @@ class KomisiSalesController extends Controller
         }
 
         session([
-            'komisi_sales_unlocked' => true,
+            'komisi_sales_unlocked'    => true,
             'komisi_sales_unlocked_by' => $user->id,
         ]);
 
@@ -114,18 +138,88 @@ class KomisiSalesController extends Controller
 
         $lock = ApprovalPendapatanLock::first();
 
-        if (!$lock || !Hash::check($validated['current_password'], $lock->password)) {
+        if (!$lock || !$lock->password_komisi || !Hash::check($validated['current_password'], $lock->password_komisi)) {
             throw ValidationException::withMessages([
-                'current_password' => 'Password saat ini tidak sesuai.',
+                'current_password' => 'Password Komisi Sales saat ini tidak sesuai.',
             ]);
         }
 
         $lock->update([
-            'password'   => Hash::make($validated['new_password']),
-            'updated_by' => auth()->id(),
+            'password_komisi' => Hash::make($validated['new_password']),
+            'updated_by'      => auth()->id(),
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Password berhasil diubah.']);
+        return response()->json(['success' => true, 'message' => 'Password Komisi Sales berhasil diubah.']);
+    }
+
+    public function changeAccountingPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_accounting_password' => 'required|string',
+            'new_accounting_password'     => 'required|string|min:4|confirmed',
+        ]);
+
+        $lock = ApprovalPendapatanLock::first();
+
+        if (!$lock || !$lock->password_accounting || !Hash::check($validated['current_accounting_password'], $lock->password_accounting)) {
+            throw ValidationException::withMessages([
+                'current_accounting_password' => 'Password Accounting saat ini tidak sesuai.',
+            ]);
+        }
+
+        $lock->update([
+            'password_accounting' => Hash::make($validated['new_accounting_password']),
+            'updated_by'          => auth()->id(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Password Accounting berhasil diubah.']);
+    }
+
+    public function setupAccountingPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'login_password'          => 'required|string',
+            'accounting_password'     => 'required|string|min:4|confirmed',
+        ]);
+
+        $user = auth()->user();
+        $lock = ApprovalPendapatanLock::first();
+
+        if ($lock && $lock->password_accounting) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password Accounting sudah pernah diatur.',
+            ], 422);
+        }
+
+        if (!in_array($user->jabatan, ['Finance & Accounting'])) {
+            throw ValidationException::withMessages([
+                'login_password' => 'Hanya user dengan jabatan Finance & Accounting yang dapat mengatur ini.',
+            ]);
+        }
+
+        if (!Hash::check($validated['login_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'login_password' => 'Password login tidak sesuai.',
+            ]);
+        }
+
+        if (!$lock || (!$lock->password_approval && !$lock->password_komisi)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password fitur belum tersedia.',
+            ], 422);
+        }
+
+        $lock->update([
+            'password_accounting' => Hash::make($validated['accounting_password']),
+            'updated_by'          => $user->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password Accounting berhasil disimpan. Silakan lanjutkan.',
+        ]);
     }
 
     public function get($tahun, $quartal)

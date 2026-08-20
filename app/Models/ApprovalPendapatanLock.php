@@ -10,6 +10,6 @@ class ApprovalPendapatanLock extends Model
     use HasFactory;
 
     protected $table = 'approval_pendapatan_locks';
-    protected $fillable = ['password', 'created_by', 'updated_by'];
+    protected $fillable = ['password', 'password_approval', 'password_komisi', 'password_accounting', 'created_by', 'updated_by'];
     protected $hidden = ['password'];
 }
