@@ -1557,6 +1557,13 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
         Route::post('reports/preview-formula', [ReportController::class, 'previewFormula'])->name('preview.formula');
         Route::post('reports/{template}/reset-counter/{counterKey}', [ReportController::class, 'resetCounter'])->name('reset.counter');
+
+        Route::put('/history/{generation}', [ReportController::class, 'updateHistory'])->name('history.update');
+        Route::delete('/history/{generation}', [ReportController::class, 'destroyHistory'])->name('history.destroy');
+
+        Route::post('/{template}/preview-generate', [ReportController::class, 'previewGenerate'])->name('preview.generate');
+
+
     });
 
     Route::prefix('hire')->name('hire.')->group(function() {

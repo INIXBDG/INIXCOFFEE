@@ -1,6 +1,9 @@
 @extends('layout_HR.app')
 
 @section('content_HR')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
     <div id="report-generator-app" class="container-fluid">
         <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb">
@@ -106,11 +109,75 @@
         </div>
     </div>
 
+    <!-- Modal Edit History -->
+    <div class="modal fade" id="editHistoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><span class="iconify me-2" data-icon="mdi:pencil-box-outline"></span>Edit
+                        Riwayat</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit_history_id">
+                    <input type="hidden" id="edit_template_id">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Judul Laporan</label>
+                        <input type="text" id="edit_report_title" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveEditHistory"
+                        onclick="executeEditHistory()">
+                        <span class="iconify me-1" data-icon="mdi:content-save"></span>Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Delete History -->
+    <div class="modal fade" id="deleteHistoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header text-dark">
+                    <h5 class="modal-title"><span class="iconify me-2" data-icon="mdi:alert-circle"></span>Konfirmasi
+                        Hapus</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <span class="iconify text-danger" data-icon="mdi:trash-can-outline"
+                            style="font-size: 48px;"></span>
+                    </div>
+                    <p class="mb-2">Apakah Anda yakin ingin menghapus riwayat:</p>
+                    <h5 class="text-danger fw-bold text-center" id="delete_history_title"></h5>
+                    <div class="alert alert-warning small mt-3 mb-0">
+                        <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan. File laporan juga akan dihapus
+                        permanen.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <span class="iconify me-1" data-icon="mdi:close"></span>Batal
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmDeleteHistory"
+                        onclick="executeDeleteHistory()">
+                        <span class="iconify me-1" data-icon="mdi:delete"></span>Ya, Hapus Riwayat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://unpkg.com/docx-preview@0.3.0/dist/docx-preview.min.js"></script>
     <script>
         let allHistoryData = {};
+        // ✅ PERBAIKAN 1: Tambah variabel untuk track folder yang sedang dibuka
+        let currentFolderKey = null;
 
         $(function() {
             loadAllHistory();
@@ -119,8 +186,9 @@
         function loadAllHistory() {
             $.get('{{ route('HR.reports.history.data') }}', function(data) {
                 if (data.success && data.data) {
-                    // Group by template
+                    // ✅ PERBAIKAN 2: Hapus duplikasi - hanya 1 blok ini saja
                     allHistoryData = {};
+
                     data.data.forEach(function(item) {
                         const templateKey = item.template_id || 'unknown';
                         const templateName = item.template_name || 'Template Tidak Diketahui';
@@ -131,10 +199,20 @@
                                 files: []
                             };
                         }
+
                         allHistoryData[templateKey].files.push(item);
                     });
 
                     renderFolders();
+
+                    // ✅ PERBAIKAN 3: Jika sedang di tampilan file, re-render agar data edit/hapus langsung update
+                    if ($('#fileView').is(':visible') && currentFolderKey && allHistoryData[currentFolderKey]) {
+                        renderFiles(allHistoryData[currentFolderKey].files);
+                    } else if ($('#fileView').is(':visible') && currentFolderKey && !allHistoryData[
+                            currentFolderKey]) {
+                        // Kalau folder sudah kosong (semua history dihapus), kembali ke folder view
+                        showFolderView();
+                    }
                 } else {
                     $('#folderList').html(
                         '<div class="col-12 text-center py-5 text-muted">Belum ada riwayat generate</div>');
@@ -183,6 +261,9 @@
             const folder = allHistoryData[templateKey];
             if (!folder) return;
 
+            // ✅ PERBAIKAN 4: Simpan key folder yang sedang dibuka
+            currentFolderKey = templateKey;
+
             $('#folderNameText').text(folder.name);
             $('#folderView').hide();
             $('#fileView').show();
@@ -191,6 +272,8 @@
         }
 
         function showFolderView() {
+            // ✅ PERBAIKAN 5: Reset currentFolderKey saat kembali ke folder view
+            currentFolderKey = null;
             $('#fileView').hide();
             $('#folderView').show();
         }
@@ -212,9 +295,8 @@
                         statusText = 'Gagal';
                     }
 
-                    // FIX: Convert to uppercase for comparison
                     const ext = (item.file_extension || '').toUpperCase();
-                    
+
                     let fileIcon = 'mdi:file-document-outline';
                     let fileColor = 'text-secondary';
                     let btnOutline = 'secondary';
@@ -238,17 +320,24 @@
                                 </small>
                             </td>
                             <td>
-                                <small class="text-uppercase fw-semibold">${item.source_type}</small> 
-                                <span class="badge bg-light text-dark border ms-1">#${item.source_id}</span>
+                                <small class="text-uppercase fw-semibold">${item.source_type}</small>
+                                <div class="text-muted small mt-1">
+                                    <span class="iconify me-1" data-icon="mdi:account" style="font-size: 14px;"></span>
+                                    ${item.source_name || 'ID: ' + item.source_id}
+                                </div>
                             </td>
                             <td><small>${item.user_name || '-'}</small></td>
                             <td><span class="badge ${badgeClass}">${statusText}</span></td>
                             <td class="text-end">
-                                <button type="button" 
-                                        class="btn btn-sm btn-outline-${btnOutline}" 
-                                        onclick="previewFile('${item.id}', '${item.report_title}', '{{ route('HR.reports.preview', ':id') }}'.replace(':id', '${item.id}'), '${ext}')"
-                                        title="Preview ${ext}">
-                                    <span class="iconify ${fileColor}" data-icon="mdi:eye"></span>
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                    onclick="previewFile('${item.id}', '${(item.report_title||'').replace(/'/g,"\\'")}', '{{ route('HR.reports.preview', ':id') }}'.replace(':id', '${item.id}'), '${ext}')"
+                                    title="Preview">
+                                    <span class="iconify" data-icon="mdi:eye"></span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="openDeleteHistory(${item.id}, '${(item.report_title||'').replace(/'/g,"\\'")}')"
+                                    title="Hapus">
+                                    <span class="iconify" data-icon="mdi:delete"></span>
                                 </button>
                             </td>
                         </tr>
@@ -264,11 +353,15 @@
         }
 
         function previewFile(fileId, title, downloadUrl, extension) {
-            console.log('Preview file:', { fileId, title, downloadUrl, extension });
-            
+            console.log('Preview file:', {
+                fileId,
+                title,
+                downloadUrl,
+                extension
+            });
+
             const modal = new bootstrap.Modal(document.getElementById('previewModal'));
 
-            // Reset state
             document.getElementById('previewTitle').textContent = title;
             document.getElementById('previewLoading').style.display = 'block';
             document.getElementById('previewContent').style.display = 'none';
@@ -278,7 +371,6 @@
 
             modal.show();
 
-            // Check library availability
             if (extension === 'DOCX') {
                 if (!window.JSZip) {
                     console.error('JSZip library not loaded!');
@@ -292,13 +384,11 @@
                 }
             }
 
-            // Fetch file dan preview
             fetch(downloadUrl)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('HTTP error! status: ' + response.status);
                     }
-                    // Gunakan arrayBuffer (sama seperti di create page)
                     return response.arrayBuffer();
                 })
                 .then(arrayBuffer => {
@@ -310,30 +400,28 @@
 
                     if (extension === 'DOCX') {
                         console.log('Rendering DOCX...');
-                        
-                        // Siapkan container
                         const docxContainer = document.createElement('div');
                         docxContainer.className = 'docx-container-preview';
                         previewContainer.appendChild(docxContainer);
-                        
-                        // Render menggunakan arrayBuffer (SAMA seperti create page)
+
                         window.docx.renderAsync(arrayBuffer, docxContainer, null, {
-                            className: 'docx',
-                            inWrapper: true,
-                            ignoreWidth: false,
-                            ignoreHeight: false,
-                            breakPages: true,
-                        })
-                        .then(() => {
-                            console.log('DOCX rendered successfully');
-                        })
-                        .catch(err => {
-                            console.error('DOCX preview error:', err);
-                            showPreviewError('Gagal render DOCX: ' + err.message);
-                        });
+                                className: 'docx',
+                                inWrapper: true,
+                                ignoreWidth: false,
+                                ignoreHeight: false,
+                                breakPages: true,
+                            })
+                            .then(() => {
+                                console.log('DOCX rendered successfully');
+                            })
+                            .catch(err => {
+                                console.error('DOCX preview error:', err);
+                                showPreviewError('Gagal render DOCX: ' + err.message);
+                            });
                     } else if (extension === 'PDF') {
-                        // Untuk PDF, tetap gunakan blob
-                        const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+                        const blob = new Blob([arrayBuffer], {
+                            type: 'application/pdf'
+                        });
                         const url = URL.createObjectURL(blob);
                         const iframe = document.createElement('iframe');
                         iframe.src = url;
@@ -356,6 +444,145 @@
             document.getElementById('previewContent').style.display = 'none';
             document.getElementById('previewError').style.display = 'block';
             document.getElementById('previewError').querySelector('p').textContent = message;
+        }
+
+        // ============ EDIT HISTORY ============
+        function openEditHistory(id, title, templateId) {
+            document.getElementById('edit_history_id').value = id;
+            document.getElementById('edit_report_title').value = title;
+            document.getElementById('edit_template_id').value = templateId;
+
+            const btn = document.getElementById('btnSaveEditHistory');
+            btn.disabled = false;
+            btn.innerHTML = '<span class="iconify me-1" data-icon="mdi:content-save"></span>Simpan';
+
+            new bootstrap.Modal(document.getElementById('editHistoryModal')).show();
+            if (window.Iconify) Iconify.renderSVG();
+        }
+
+        function executeEditHistory() {
+            const id = document.getElementById('edit_history_id').value;
+            const title = document.getElementById('edit_report_title').value.trim();
+            const btn = document.getElementById('btnSaveEditHistory');
+            const originalText = btn.innerHTML;
+
+            if (!title) {
+                showToast('Judul laporan wajib diisi!', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';
+
+            fetch(`/HR-dashboard/reports/history/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        report_title: title
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('editHistoryModal')).hide();
+                        showToast(data.message, 'success');
+                        // ✅ PERBAIKAN 6: Panggil loadAllHistory() - otomatis re-render file yang sedang terbuka
+                        setTimeout(() => {
+                            loadAllHistory();
+                        }, 800);
+                    } else {
+                        showToast(data.message || 'Gagal update', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(() => {
+                    showToast('Error koneksi', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
+        }
+
+        // ============ DELETE HISTORY ============
+        let pendingDeleteId = null;
+
+        function openDeleteHistory(id, title) {
+            pendingDeleteId = id;
+            document.getElementById('delete_history_title').textContent = `"${title}"`;
+
+            const btn = document.getElementById('btnConfirmDeleteHistory');
+            btn.disabled = false;
+            btn.innerHTML = '<span class="iconify me-1" data-icon="mdi:delete"></span>Ya, Hapus Riwayat';
+
+            new bootstrap.Modal(document.getElementById('deleteHistoryModal')).show();
+            if (window.Iconify) Iconify.renderSVG();
+        }
+
+        function executeDeleteHistory() {
+            const btn = document.getElementById('btnConfirmDeleteHistory');
+            const originalText = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
+
+            fetch(`/HR-dashboard/reports/history/${pendingDeleteId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('deleteHistoryModal')).hide();
+                        showToast(data.message, 'success');
+                        // Panggil loadAllHistory() - otomatis re-render file yang sedang terbuka atau kembali ke folder view jika folder kosong
+                        setTimeout(() => {
+                            loadAllHistory();
+                        }, 800);
+                    } else {
+                        showToast(data.message || 'Gagal hapus', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(() => {
+                    showToast('Error koneksi', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
+        }
+
+        // ============ TOAST ============
+        function showToast(message, type = 'success') {
+            const c = document.getElementById('toastContainer') || (() => {
+                const d = document.createElement('div');
+                d.id = 'toastContainer';
+                d.className = 'toast-container position-fixed top-0 end-0 p-3';
+                d.style.zIndex = '1100';
+                document.body.appendChild(d);
+                return d;
+            })();
+            const bg = type === 'error' ? 'bg-danger' : 'bg-success';
+            const ic = type === 'error' ? 'mdi:alert-circle' : 'mdi:check-circle';
+            c.insertAdjacentHTML('beforeend', `
+                <div class="toast align-items-center text-white border-0 ${bg}" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body"><span class="iconify me-2" data-icon="${ic}"></span>${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>`);
+            const t = c.lastElementChild;
+            new bootstrap.Toast(t, {
+                delay: 3500
+            }).show();
+            t.addEventListener('hidden.bs.toast', () => t.remove());
+            if (window.Iconify) Iconify.renderSVG();
         }
     </script>
 
@@ -385,8 +612,8 @@
             padding: 0;
         }
 
-        .docx-container-preview .docx-wrapper > section.docx {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        .docx-container-preview .docx-wrapper>section.docx {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
             background: white;
             padding: 40px;
