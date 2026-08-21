@@ -1276,10 +1276,19 @@
             function computeTableContexts() {
                 var opts = getPeriodOptions(currentViewMode);
                 if (!opts.length) return [];
-                if (!currentPeriodValue || !opts.some(function(o) {
-                        return o.value === currentPeriodValue;
-                    })) {
-                    currentPeriodValue = opts[opts.length - 1].value;
+
+                if (!currentPeriodValue || !opts.some(function(o) { return o.value === currentPeriodValue; })) {
+                    var today = new Date();
+                    var todayISO = today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
+
+                    var found = opts.find(function(o) {
+                        return o.weeks.some(function(wk) {
+                            var w = weeksData[wk];
+                            return w && w.start <= todayISO && w.end >= todayISO;
+                        });
+                    });
+
+                    currentPeriodValue = found ? found.value : opts[opts.length - 1].value;
                 }
                 var period = opts.filter(function(o) {
                     return o.value === currentPeriodValue;
@@ -1381,15 +1390,35 @@
 
             function renderPeriodOptions() {
                 var opts = getPeriodOptions(currentViewMode);
-                if (!currentPeriodValue || !opts.some(function(o) {
-                        return o.value === currentPeriodValue;
-                    })) {
-                    currentPeriodValue = opts.length ? opts[opts.length - 1].value : null;
+
+                if (!currentPeriodValue || !opts.some(function(o) { return o.value === currentPeriodValue; })) {
+                    var today = new Date();
+                    var todayISO = today.getFullYear() + '-' + pad2(today.getMonth() + 1) + '-' + pad2(today.getDate());
+
+                    var found = null;
+
+                    if (currentViewMode === 'week' || currentViewMode === 'week2') {
+                        found = opts.find(function(o) {
+                            return o.weeks.some(function(wk) {
+                                var w = weeksData[wk];
+                                return w && w.start <= todayISO && w.end >= todayISO;
+                            });
+                        });
+                    } else if (currentViewMode === 'month' || currentViewMode === 'month2') {
+                        var currentMonthKey = today.getFullYear() + '-' + pad2(today.getMonth() + 1);
+                        found = opts.find(function(o) {
+                            return o.value === currentMonthKey || o.value.indexOf(currentMonthKey) > -1;
+                        });
+                    }
+
+                    currentPeriodValue = found ? found.value : (opts.length ? opts[opts.length - 1].value : null);
                 }
+
                 var html = '';
                 opts.forEach(function(o) {
-                    html += '<option value="' + esc(o.value) + '"' + (o.value === currentPeriodValue ?
-                        ' selected' : '') + '>' + esc(o.label) + '</option>';
+                    html += '<option value="' + esc(o.value) + '"' +
+                            (o.value === currentPeriodValue ? ' selected' : '') + '>' +
+                            esc(o.label) + '</option>';
                 });
                 $('#ksPeriod').html(html);
                 $('#ksViewMode').val(currentViewMode);
