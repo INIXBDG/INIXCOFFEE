@@ -202,14 +202,16 @@
             </li>
         @endcan
         
-        @can('View DashboardSouvenir')
+        {{-- @can('View DashboardSouvenir') --}}
+        @if (Auth::user()->jabatan == 'Customer Care')
             <li class="menu-item {{ request()->routeIs('dashboard.souvenir') ? 'active open' : '' }}">
                 <a href="{{ route('dashboard.souvenir') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-home-alt"></i>
                     <div class="text-truncate" data-i18n="contact">Dashboard Souvenir</div>
                 </a>
             </li>
-        @endcan
+        @endif
+        {{-- @endcan --}}
         
         @canany(['View DaftarTugas OB', 'View StockOpname', 'View KondisiTools', 'View KoordinasiOfficeBoy'])
             <li class="menu-header small text-uppercase">
