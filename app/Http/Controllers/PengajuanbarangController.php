@@ -116,24 +116,33 @@ class PengajuanBarangController extends Controller
 
         $query = PengajuanBarang::with('karyawan', 'tracking', 'detail');
 
+        $applyMonth = function($q) use ($month) {
+            if ($month !== 'Semua') {
+                $q->whereMonth('created_at', $month);
+            }
+        };
+
         if ($jabatan == 'Finance & Accounting') {
-            $PengajuanBarang = $query->whereMonth('created_at', $month)
-                ->whereYear('created_at', $year);
+            $PengajuanBarang = clone $query;
+            $PengajuanBarang->whereYear('created_at', $year);
+            $applyMonth($PengajuanBarang);
         } 
         elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
-            $PengajuanBarang = $query->whereHas('karyawan', function ($q) use ($divisi) {
+            $PengajuanBarang = clone $query;
+            $PengajuanBarang->whereHas('karyawan', function ($q) use ($divisi) {
                 $q->where('divisi', $divisi);
-            })->whereMonth('created_at', $month)
-                ->whereYear('created_at', $year);
+            })->whereYear('created_at', $year);
+            $applyMonth($PengajuanBarang);
         } 
         elseif ($jabatan == 'GM' || $jabatan == 'Koordinator Office') {
-            $PengajuanBarang = $query; // Semua data
+            $PengajuanBarang = clone $query; // Semua data
         } 
         else {
-            $PengajuanBarang = $query->whereHas('karyawan', function ($q) use ($user) {
+            $PengajuanBarang = clone $query;
+            $PengajuanBarang->whereHas('karyawan', function ($q) use ($user) {
                 $q->where('id', $user);
-            })->whereMonth('created_at', $month)
-                ->whereYear('created_at', $year);
+            })->whereYear('created_at', $year);
+            $applyMonth($PengajuanBarang);
         }
 
         $PengajuanBarang = $PengajuanBarang->latest('created_at')->get();
