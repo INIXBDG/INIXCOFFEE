@@ -13,6 +13,22 @@
         </div>
     </div>
 
+    <div class="row justify-content-end mx-3 mt-3 mb-2">
+        <div class="col-md-4 col-lg-3 d-flex align-items-center justify-content-end">
+            <label for="filterYear" class="fw-bold me-2 text-secondary mb-0" style="white-space: nowrap;">
+                Periode Tahun:
+            </label>
+            <select id="filterYear" class="form-select form-select-sm shadow-sm" style="border-radius: 6px; border-color: #cbd5e1; width: auto;">
+                <option value="all">Semua</option>
+                @if(isset($dropdownYears))
+                    @foreach($dropdownYears as $yr)
+                        <option value="{{ $yr }}">{{ $yr }}</option>
+                    @endforeach
+                @endif
+            </select>
+        </div>
+    </div>
+
     <div class="row justify-content-center m-3">
         <div class="col-md-4 d-flex justify-content-center">
             <div class="card-blog w-100 mb-4">
@@ -262,10 +278,13 @@
         };
 
         // Inisialisasi DataTables AJAX
-        $('#salesRecapTable').DataTable({
+        const salesTable = $('#salesRecapTable').DataTable({
             "ajax": {
                 "url": "{{ route('reports.sales.data') }}",
                 "type": "GET",
+                "data": function (d) {
+                    d.year = $('#filterYear').val();
+                },
                 "dataSrc": function (json) {
                     // Penugasan nilai ke elemen DOM Kartu Keuangan
                     if(json.summary) {
@@ -323,6 +342,11 @@
                     "render": function(data) { return formatRupiah(data); }
                 }
             ]
+        });
+
+        // Event listener saat dropdown tahun diubah
+        $('#filterYear').on('change', function() {
+            salesTable.ajax.reload();
         });
     });
 </script>
