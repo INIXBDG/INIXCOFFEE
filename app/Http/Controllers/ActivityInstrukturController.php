@@ -32,6 +32,7 @@ class ActivityInstrukturController extends Controller
         })
         ->where('tanggal_awal', '<=', $end)
         ->where('tanggal_akhir', '>=', $start)
+        ->where('status', '0') // Filter status = '0'
         ->get();
 
         foreach ($rkms as $rkm) {
@@ -58,7 +59,6 @@ class ActivityInstrukturController extends Controller
         $weekEnd = \Carbon\Carbon::parse($date)->endOfWeek(\Carbon\Carbon::SUNDAY);
         return now()->gt($weekEnd->addDays(7));
     }
-
 
     public function getActivitiesData(Request $request)
     {
@@ -128,6 +128,7 @@ class ActivityInstrukturController extends Controller
         */
         $rkmQuery = RKM::where('tanggal_awal', '<=', $end)
             ->where('tanggal_akhir', '>=', $start)
+            ->where('status', '0')
             ->with('materi');
 
         if ($instructorId !== $Eduman && $instructorId !== $GM) {
@@ -141,59 +142,44 @@ class ActivityInstrukturController extends Controller
 
         foreach ($rkmQuery->get() as $rkm) {
 
-            // Cek apakah Key 1 Kosong / Null / Strip
             $noInstruktur1 = empty($rkm->instruktur_key) || $rkm->instruktur_key === '-';
-            
-            // Cek apakah Key 2 Kosong / Null / Strip (Opsional, jika sistem Anda pakai 2 instruktur)
             $noInstruktur2 = empty($rkm->instruktur_key2) || $rkm->instruktur_key2 === '-';
 
-            // JIKA tidak ada instruktur sama sekali, lewati (jangan ditampilkan)
             if ($noInstruktur1 && $noInstruktur2) {
-                continue; 
+                continue;
             }
 
-            // 🔑 KEY UNIK UNTUK GROUPING
+            // 🔑 KUNCI UNIK: Gaburkan Materi ID, Tanggal Awal, dan Tanggal Akhir
             $groupKey = implode('|', [
-                $rkm->materi_id,
+                $rkm->materi_id ?? $rkm->materi_key,
                 $rkm->tanggal_awal,
-                $rkm->tanggal_akhir,
-                $rkm->instruktur_key
+                $rkm->tanggal_akhir
             ]);
 
+            // Jika kombinasi materi & rentang tanggal ini belum ada, simpan
             if (!isset($rkmGrouped[$groupKey])) {
-                $rkmGrouped[$groupKey] = [
-                    'rkm' => $rkm,
-                    'count' => 1
-                ];
-            } else {
-                $rkmGrouped[$groupKey]['count']++;
+                $rkmGrouped[$groupKey] = $rkm;
             }
         }
 
-        foreach ($rkmGrouped as $group) {
-
-            $rkm   = $group['rkm'];
-            $count = $group['count'];
+        foreach ($rkmGrouped as $rkm) {
 
             $title = optional($rkm->materi)->nama_materi ?? $rkm->materi_key;
 
-            // 🔥 EDUMAN → tampilkan kode instruktur
             if ($instructorId === $Eduman) {
                 $title .= ' (' . $rkm->instruktur_key . ')';
             }
 
             $events[] = [
-                'id' => 'rkm-group-' . md5($rkm->id),
+                'id' => 'rkm-' . $rkm->id,
                 'title' => $title,
                 'start' => $rkm->tanggal_awal,
-                'end' => Carbon::parse($rkm->tanggal_akhir)->addDay(),
+                'end' => Carbon::parse($rkm->tanggal_akhir)->addDay()->toDateString(),
                 'allDay' => true,
                 'backgroundColor' => '#28a745',
                 'borderColor' => '#28a745',
                 'extendedProps' => [
                     'type' => 'rkm',
-                    'grouped' => true,
-                    'total_kelas' => $count,
                     'materi' => optional($rkm->materi)->nama_materi ?? $rkm->materi_key,
                     'tanggal_awal' => $rkm->tanggal_awal,
                     'tanggal_akhir' => $rkm->tanggal_akhir,
@@ -201,6 +187,7 @@ class ActivityInstrukturController extends Controller
                 ]
             ];
         }
+
         /*
         |--------------------------------------------------------------------------
         | 3. CUTI & SAKIT (ADDED)
@@ -219,20 +206,20 @@ class ActivityInstrukturController extends Controller
        if ($instructorId !== $Eduman && $instructorId !== $GM) {
             $cutiQuery->where('id_karyawan', $userId);
         }
-        
+
         // Opsional: Filter hanya yang disetujui
-        // $cutiQuery->where('approval_manager', 1); 
+        // $cutiQuery->where('approval_manager', 1);
 
         foreach ($cutiQuery->get() as $cuti) {
-            
+
             // Tentukan Warna & Label berdasarkan Tipe
             // Asumsi kolom 'tipe' berisi string "Cuti" atau "Sakit"
-            $isSakit = stripos($cuti->tipe, 'sakit') !== false; 
-            
+            $isSakit = stripos($cuti->tipe, 'sakit') !== false;
+
             // Merah untuk Sakit, Oranye untuk Cuti
-            $bgColor = $isSakit ? '#dc3545' : '#fd7e14'; 
+            $bgColor = $isSakit ? '#dc3545' : '#fd7e14';
             // $icon    = $isSakit ? '🏥' : '✈️';
-            
+
             $title = "{$cuti->tipe} : {$cuti->alasan}";
 
             // Jika Eduman, tambahkan nama karyawan
@@ -277,12 +264,12 @@ class ActivityInstrukturController extends Controller
         if ($instructorId !== $Eduman && $instructorId !== $GM) {
             $izin3JamQuery->where('id_karyawan', $userId);
         }
-        
+
         // Opsional: Filter Approval
         // $izin3JamQuery->where('approval', 1);
 
         foreach ($izin3JamQuery->get() as $izin) {
-            
+
             // Format Judul: [Izin 3 Jam] 09:00-12:00 Alasan...
             $jamRange = substr($izin->jam_mulai, 0, 5) . '-' . substr($izin->jam_selesai, 0, 5);
             $title = "[Izin 3 Jam] ($jamRange): {$izin->alasan}";
@@ -294,16 +281,16 @@ class ActivityInstrukturController extends Controller
             }
 
             // Warna Ungu untuk membedakan dengan Cuti/Sakit/Mengajar
-            $bgColor = '#6f42c1'; 
+            $bgColor = '#6f42c1';
 
             $events[] = [
                 'id' => 'izin3jam-' . $izin->id,
                 'title' => $title,
-                'start' => $izin->tanggal, 
+                'start' => $izin->tanggal,
                 // Karena izin jam biasanya 1 hari, 'end' bisa disamakan atau tidak diisi (allDay true)
                 // Jika ingin spesifik jam, set allDay false dan masukkan start/end datetime lengkap
                 // Tapi agar rapi di view 'Month', kita set allDay true saja.
-                'allDay' => true, 
+                'allDay' => true,
                 'backgroundColor' => $bgColor,
                 'borderColor' => $bgColor,
                 'extendedProps' => [
@@ -320,8 +307,6 @@ class ActivityInstrukturController extends Controller
         return response()->json($events);
     }
 
-
-
     public function store(Request $request)
     {
         $instructorId = Auth::user()->id;
@@ -337,18 +322,18 @@ class ActivityInstrukturController extends Controller
         $activityDate = Carbon::parse($request->activity_date);
 
         // 2. Cek Status Locking (Guard Rail Server-Side)
-        
+
         // Tentukan akhir minggu dari tanggal aktivitas yang dikirim
         // $weekEndDate = $activityDate->copy()->endOfWeek(Carbon::SUNDAY);
-        
+
         // Tentukan ambang batas kunci: 7 hari setelah akhir minggu
-        // $lockThreshold = $weekEndDate->addDays(7); 
-        
+        // $lockThreshold = $weekEndDate->addDays(7);
+
         // if (Carbon::now()->gt($lockThreshold)) {
         //     // Jika hari ini sudah melewati ambang batas kunci, TOLAK
         //     return response()->json([
         //         'message' => 'Laporan Aktivitas untuk minggu tanggal ' . $activityDate->format('d M Y') . ' sudah dikunci dan tidak dapat diubah.'
-        //     ], 403); 
+        //     ], 403);
         // }
 
         // 3. Tentukan Aksi: CREATE atau UPDATE
@@ -366,7 +351,7 @@ class ActivityInstrukturController extends Controller
             // if ($activity->is_locked) {
             //     return redirect()->route('activities.index')->with(['error' => 'Aktivitas ini sudah ditandai terkunci di database']);
             // }
-            
+
             // Khusus Aktivitas Mengajar (RKM):
             // Jangan izinkan perubahan pada kolom 'activity' jika itu adalah aktivitas RKM
             $updateData = [
@@ -377,7 +362,7 @@ class ActivityInstrukturController extends Controller
                 // Jika ini Aktivitas Manual, izinkan perubahan pada judul
                 $updateData['activity'] = $request->activity;
             } else {
-                // Jika RKM, pastikan Judul tetap menggunakan data yang sudah di-auto-fill, 
+                // Jika RKM, pastikan Judul tetap menggunakan data yang sudah di-auto-fill,
                 // kecuali jika Anda ingin instruktur bisa meng-override, namun disarankan tidak.
             }
 
@@ -385,12 +370,12 @@ class ActivityInstrukturController extends Controller
 
         } else {
             // Aksi: CREATE (Hanya untuk Aktivitas Non-Mengajar/Manual)
-            
+
             // Cek apakah sudah ada aktivitas RKM untuk tanggal tersebut, jika ya, buat entry baru manual.
-            
-            // Catatan: Jika instruktur mengklik tanggal yang sama dua kali, ini akan membuat dua entri. 
+
+            // Catatan: Jika instruktur mengklik tanggal yang sama dua kali, ini akan membuat dua entri.
             // Pertimbangkan apakah Anda ingin membatasi 1 entri manual per hari.
-            
+
             $activity = ActivityInstruktur::create([
                 'user_id' => $instructorId,
                 'activity_date' => $request->activity_date,
@@ -435,8 +420,8 @@ class ActivityInstrukturController extends Controller
         // 3. Cek Locking
         $activityDate = Carbon::parse($activity->activity_date);
         $weekEndDate = $activityDate->copy()->endOfWeek(Carbon::SUNDAY);
-        $lockThreshold = $weekEndDate->addDays(7); 
-        
+        $lockThreshold = $weekEndDate->addDays(7);
+
         // if (Carbon::now()->gt($lockThreshold)) {
         //     return redirect()->route('activities.index')->with(['error' => 'Aktivitas ini sudah terkunci.']);
         // }
@@ -448,7 +433,7 @@ class ActivityInstrukturController extends Controller
             // Update Dokumen & Status (Jika user mengisi link dokumen)
             if ($request->filled('doc')) {
                 $dataToUpdate['doc'] = $request->doc;
-                
+
                 // Jika sebelumnya belum selesai, tandai selesai
                 if ($activity->status !== 'Selesai') {
                     $dataToUpdate['status'] = 'Selesai';
@@ -518,11 +503,11 @@ class ActivityInstrukturController extends Controller
             // Group Level 1: Activity Type (Contoh: "Sharing Knowledge")
             return $item->activity_type ?? 'Lainnya';
         })->map(function($group) {
-            
+
             // Group Level 2: Nama User di dalam tipe tersebut
             $users = $group->groupBy(function($item) {
                 // Pastikan kolom 'nama_lengkap' atau 'nama_karyawan' sesuai database Anda
-                return optional(optional($item->user)->karyawan)->nama_lengkap 
+                return optional(optional($item->user)->karyawan)->nama_lengkap
                     ?? optional($item->user)->name ?? 'Unknown';
             })->map(function($userGroup) {
                 return $userGroup->count(); // Hitung jumlah per orang
@@ -542,7 +527,8 @@ class ActivityInstrukturController extends Controller
         $rkmQuery = RKM::where('tanggal_awal', '<=', $end)
             ->where('tanggal_akhir', '>=', $start)
             ->whereNotNull('instruktur_key')
-            ->where('instruktur_key', '!=', '-');
+            ->where('instruktur_key', '!=', '-')
+            ->where('status', '0'); // Filter status = '0'
 
         if ($instructorId === $Eduman || $instructorId === $GM) {
             $rkmQuery->where(function ($q) use ($instructorId) {
@@ -550,7 +536,6 @@ class ActivityInstrukturController extends Controller
                 ->orWhere('instruktur_key2', $instructorId);
             });
         }
-
         $rkms = $rkmQuery->get();
 
         // Mapping Kode Instruktur ke Nama
@@ -558,16 +543,16 @@ class ActivityInstrukturController extends Controller
                         ->merge($rkms->pluck('instruktur_key2'))
                         ->unique()
                         ->filter();
-        
+
         $karyawanMap = karyawan::whereIn('kode_karyawan', $allCodes)
-                            ->pluck('nama_lengkap', 'kode_karyawan'); 
+                            ->pluck('nama_lengkap', 'kode_karyawan');
 
         // --- BAGIAN INI YANG DIUBAH (LOGIKA GROUPING) ---
         $rkmDetails = [];
         $processedEvents = []; // Array untuk melacak duplikasi
 
         foreach ($rkms as $rkm) {
-            
+
             // -----------------------------------------
             // LOGIKA UTAMA: Buat ID Unik
             // ID = NamaInstruktur + MateriID + Tanggal
@@ -576,7 +561,7 @@ class ActivityInstrukturController extends Controller
             // 1. Cek Instruktur 1
             if (!empty($rkm->instruktur_key) && $rkm->instruktur_key !== '-') {
                 $name = $karyawanMap[$rkm->instruktur_key] ?? $rkm->instruktur_key;
-                
+
                 if ($name !== '-') {
                     // Kunci Unik: Gabungan Nama, Materi, dan Tanggal
                     // Ini memastikan jika Instruktur SAMA, Materi SAMA, Tanggal SAMA -> Dianggap 1
@@ -587,16 +572,16 @@ class ActivityInstrukturController extends Controller
                     if (!isset($processedEvents[$uniqueId])) {
                         if (!isset($rkmDetails[$name])) $rkmDetails[$name] = 0;
                         $rkmDetails[$name]++; // Hitung +1
-                        
+
                         $processedEvents[$uniqueId] = true; // Tandai sudah dihitung
                     }
                 }
             }
-            
+
             // 2. Cek Instruktur 2 (Pendamping)
             if (!empty($rkm->instruktur_key2) && $rkm->instruktur_key2 !== '-') {
                 $name = $karyawanMap[$rkm->instruktur_key2] ?? $rkm->instruktur_key2;
-                
+
                 if ($name !== '-') {
                     // Buat ID Unik untuk Instruktur 2
                     $uniqueId = $name . '|' . $rkm->materi_id . '|' . $rkm->tanggal_awal;
@@ -604,7 +589,7 @@ class ActivityInstrukturController extends Controller
                     if (!isset($processedEvents[$uniqueId])) {
                         if (!isset($rkmDetails[$name])) $rkmDetails[$name] = 0;
                         $rkmDetails[$name]++;
-                        
+
                         $processedEvents[$uniqueId] = true;
                     }
                 }
@@ -618,7 +603,7 @@ class ActivityInstrukturController extends Controller
 
         // Filter User Biasa
         if ($instructorId === $Eduman || $instructorId === $GM) {
-            $myName = $karyawan->nama_lengkap; 
+            $myName = $karyawan->nama_lengkap;
             $rkmDetails = array_intersect_key($rkmDetails, [$myName => 0]);
         }
 
@@ -640,7 +625,7 @@ class ActivityInstrukturController extends Controller
         if ($instructorId === $Eduman || $instructorId === $GM) {
             $cutiQuery->where('id_karyawan', $userId);
         }
-        
+
         $cutiData = $cutiQuery->get();
 
         // Pisahkan Data Cuti dan Sakit
@@ -649,13 +634,13 @@ class ActivityInstrukturController extends Controller
 
         foreach ($cutiData as $row) {
             $nama = optional($row->karyawan)->nama_lengkap ?? 'Unknown';
-            
+
             // -----------------------------------------------------------
             // LOGIKA HITUNG HARI (INTERSECTION)
             // -----------------------------------------------------------
             // Kita hitung hari yang HANYA tampil di rentang filter ($start s/d $end)
             // Ini menangani kasus cuti lintas bulan.
-            
+
             $reqStart = Carbon::parse($start);
             $reqEnd   = Carbon::parse($end);
             $cutiStart = Carbon::parse($row->tanggal_awal);
@@ -738,7 +723,7 @@ class ActivityInstrukturController extends Controller
         ]);
     }
 
-    
+
 }
 
 
