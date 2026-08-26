@@ -358,12 +358,7 @@
 
         $('#leadsTable tbody').on('click', '.btn-edit-status', function (e) {
             e.preventDefault();
-            $('#edit_lead_id').val($(this).data('id'));
-            $('#edit_nama_lead').val($(this).data('nama'));
-            $('#edit_nama_pic').val($(this).data('pic'));
-            $('#edit_kontak_pic').val($(this).data('kontak'));
-            $('#edit_estimasi_nilai').val($(this).data('nilai'));
-            $('#edit_tahun_periode').val($(this).data('tahun_periode'));
+            $('#update_lead_id').val($(this).data('id'));
             $('#updateStatusModal').modal('show');
         });
 

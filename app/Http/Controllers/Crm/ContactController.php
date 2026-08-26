@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
-use App\Models\Contact;
+use App\Models\karyawan;
 use App\Models\lokasi;
 use App\Models\Materi;
 use App\Models\Peluang;
@@ -19,120 +19,166 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class ContactController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View CRM History Status', ['only' => ['allHistoryStatus', 'allHistoryStatusData']]);
+        $this->middleware('permission:View Contact CRM', ['only' => ['index', 'getPerusahaan', 'detail']]);
+        $this->middleware('permission:Store Contact CRM', ['only' => ['store']]);
+        $this->middleware('permission:Update Contact CRM', ['only' => ['update']]);
+        $this->middleware('permission:Delete Contact CRM', ['only' => ['delete']]);
+    }
+
     public function index()
     {
-        $lokasi = lokasi::all();
-        return view('crm.contact.index', compact('lokasi'));
+        $lokasi = lokasi::select('id', 'lokasi')->get();
+
+        $sales = karyawan::where('jabatan', 'sales')
+            ->where('status_aktif', '1')
+            ->select('kode_karyawan', 'nama_lengkap')
+            ->get();
+
+        return view('crm.contact.index', compact('lokasi', 'sales'));
     }
 
     public function getPerusahaan(Request $request)
     {
-        $user = Auth::user();
-        $allowedJabatan = [
-            'Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting',
-            'GM', 'Sales', 'Direktur Utama', 'Direktur'
-        ];
-
-        if ($user->jabatan === 'Sales') {
-            $idSales = $user->id_sales;
-            $baseQuery = Perusahaan::where('sales_key', $idSales);
-        } elseif (in_array($user->jabatan, $allowedJabatan)) {
-            $baseQuery = Perusahaan::query();
-        } else {
-            return response()->json(['error' => 'Anda tidak memiliki akses ke data ini.'], 403);
-        }
-
-        $recordsTotal = $baseQuery->count();
-
-        $query = clone $baseQuery;
-
-        if ($request->filled('sales_key')) {
-            $query->where('sales_key', $request->sales_key);
-        }
-
-        if ($request->has('search') && $request->search['value'] != '') {
-            $search = $request->search['value'];
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_perusahaan', 'like', "%$search%")
-                    ->orWhere('lokasi', 'like', "%$search%")
-                    ->orWhere('sales_key', 'like', "%$search%")
-                    ->orWhere('status', 'like', "%$search%");
-            });
-        }
-
-        $recordsFiltered = $query->count();
-
-        if ($request->has('order')) {
-            $columns = [
-                'id',
-                'nama_perusahaan',
-                'lokasi',
-                'status',
-                'sales_key',
-                'kelas_terakhir',
-                'aktivitas_terakhir_date',
+        try {
+            $user = Auth::user();
+            $allowedJabatan = [
+                'Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting',
+                'GM', 'Sales', 'Direktur Utama', 'Direktur'
             ];
-            $order = $request->order[0];
-            $colIndex = $order['column'] ?? 0;
-            $dir = $order['dir'] ?? 'asc';
-            if (isset($columns[$colIndex])) {
-                $query->orderBy($columns[$colIndex], $dir);
+
+            if (!in_array($user->jabatan, $allowedJabatan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses ke data ini.'], 403);
             }
-        } else {
-            $query->orderBy('id', 'desc');
-        }
 
-        $start = $request->input('start', 0);
-        $length = $request->input('length', 10);
-        $query->skip($start)->take($length);
+            // 1. Parameter Utama DataTables Server-Side
+            $draw = $request->input('draw');
+            $start = $request->input('start', 0);
+            $length = $request->input('length', 10);
+            $searchValue = $request->input('search.value');
+            $orderColumnIndex = $request->input('order.0.column', 0);
+            $orderDir = $request->input('order.0.dir', 'desc');
 
-        $data = $query->get();
-
-        $kelasTerakhir = [];
-        $aktivitasTerakhir = [];
-
-        foreach ($data as $item) {
-            $kelasTerakhir[$item->id] = RKM::where('perusahaan_key', $item->id)
-                ->latest()
-                ->with('materi')
-                ->first();
-
-            $contactIds = $item->contacts->pluck('id');
-
-            $aktivitasTerakhir[$item->id] = Aktivitas::whereIn('id_contact', $contactIds)
-                ->latest()
-                ->first();
-        }
-
-        $responseData = $data->map(function ($contact) use ($kelasTerakhir, $aktivitasTerakhir) {
-            return [
-                'id' => $contact->id,
-                'nama_perusahaan' => $contact->nama_perusahaan,
-                'npwp' => $contact->npwp,
-                'alamat' => $contact->alamat,
-                'kategori_perusahaan' => $contact->kategori_perusahaan,
-                'lokasi' => $contact->lokasi,
-                'email' => $contact->email,
-                'status' => $contact->status,
-                'sales_key' => $contact->sales_key,
-                'kelas_terakhir' => isset($kelasTerakhir[$contact->id])
-                    ? ($kelasTerakhir[$contact->id]->materi->nama_materi)
-                    : 'Belum ada kelas',
-                'kelas_terakhir_date' => isset($kelasTerakhir[$contact->id])
-                    ? $kelasTerakhir[$contact->id]->created_at->translatedFormat('d F Y')
-                    : null,
-                'aktivitas_terakhir_date' => isset($aktivitasTerakhir[$contact->id])
-                    ? $aktivitasTerakhir[$contact->id]->created_at->format('d-m-Y')
-                    : 'Belum ada aktivitas',
+            // 2. Pemetaan Indeks Kolom DataTables
+            $columns = [
+                0 => 'id',
+                1 => 'nama_perusahaan',
+                2 => 'lokasi',
+                3 => 'status',
+                4 => 'sales_key',
+                5 => 'id', // Pengganti semu untuk relasi
+                6 => 'id', // Pengganti semu untuk relasi
             ];
-        });
+            $orderColumn = $columns[$orderColumnIndex] ?? 'id';
 
-        return response()->json([
-            'draw' => intval($request->input('draw')),
-            'recordsTotal' => $recordsTotal,
-            'recordsFiltered' => $recordsFiltered,
-            'data' => $responseData,
-        ]);
+            // 3. Kueri Dasar dan Filter Otorisasi (Hanya mengambil kolom yang dibutuhkan)
+            $query = Perusahaan::select('id', 'nama_perusahaan', 'npwp', 'alamat', 'kategori_perusahaan', 'lokasi', 'email', 'status', 'sales_key');
+
+            if ($user->jabatan === 'Sales') {
+                $query->where('sales_key', $user->id_sales);
+            }
+
+            // Filter Kustom Sales
+            if ($request->filled('sales_key')) {
+                $query->where('sales_key', $request->sales_key);
+            }
+
+            // 4. Eksekusi Perhitungan Total Rekaman (Sebelum Pencarian)
+            $recordsTotal = $query->count();
+
+            // 5. Implementasi Pencarian Global
+            if (!empty($searchValue)) {
+                $query->where(function ($q) use ($searchValue) {
+                    $q->where('nama_perusahaan', 'like', "%{$searchValue}%")
+                      ->orWhere('lokasi', 'like', "%{$searchValue}%")
+                      ->orWhere('sales_key', 'like', "%{$searchValue}%")
+                      ->orWhere('status', 'like', "%{$searchValue}%");
+                });
+            }
+
+            // 6. Eksekusi Perhitungan Total Rekaman (Setelah Pencarian)
+            $recordsFiltered = $query->count();
+
+            // 7. Pengurutan dan Paginasi
+            $query->orderBy($orderColumn, $orderDir);
+            if ($length != -1) {
+                $query->offset($start)->limit($length);
+            }
+
+            // 8. Eksekusi Kueri Utama
+            $data = $query->get();
+
+            // 9. Optimasi N+1 Query: Pengambilan Relasi Masal (Bulk Eager Loading Terarah)
+            $perusahaanIds = $data->pluck('id')->toArray();
+
+            // Memuat RKM dan materi terkait
+            $rkmTerkait = RKM::whereIn('perusahaan_key', $perusahaanIds)
+                ->with('materi:id,nama_materi')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->groupBy('perusahaan_key');
+
+            // Memuat Contact dan Aktivitas terkait
+            $data->load('contacts:id,id_perusahaan'); // Pastikan 'id_perusahaan' adalah foreign key yang benar di tabel Contact
+            $contactIds = $data->pluck('contacts')->flatten()->pluck('id')->toArray();
+
+            $aktivitasTerkait = Aktivitas::whereIn('id_contact', $contactIds)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->groupBy('id_contact');
+
+            // 10. Pemetaan JSON (Mapping)
+            $responseData = $data->map(function ($contact) use ($rkmTerkait, $aktivitasTerkait) {
+                // Ekstraksi RKM Terbaru
+                $rkm = $rkmTerkait->get($contact->id)?->first();
+
+                // Ekstraksi Aktivitas Terbaru dari seluruh entitas Contact
+                $aktivitasTerbaru = null;
+                if ($contact->contacts) {
+                    foreach ($contact->contacts as $c) {
+                        $aktivitas = $aktivitasTerkait->get($c->id)?->first();
+                        if ($aktivitas) {
+                            if (!$aktivitasTerbaru || $aktivitas->created_at > $aktivitasTerbaru->created_at) {
+                                $aktivitasTerbaru = $aktivitas;
+                            }
+                        }
+                    }
+                }
+
+                return [
+                    'id' => $contact->id,
+                    'nama_perusahaan' => $contact->nama_perusahaan,
+                    'lokasi' => $contact->lokasi,
+                    'status' => $contact->status,
+                    'sales_key' => $contact->sales_key,
+                    'npwp' => $contact->npwp,
+                    'alamat' => $contact->alamat,
+                    'kategori_perusahaan' => $contact->kategori_perusahaan,
+                    'email' => $contact->email,
+                    'kelas_terakhir' => $rkm ? $rkm->materi->nama_materi : 'Belum ada kelas',
+                    'kelas_terakhir_date' => $rkm ? $rkm->created_at->translatedFormat('d F Y') : null,
+                    'aktivitas_terakhir_date' => $aktivitasTerbaru ? $aktivitasTerbaru->created_at->format('d-m-Y') : 'Belum ada aktivitas',
+                ];
+            });
+
+            // 11. Pengembalian Struktur JSON Standar DataTables
+            return response()->json([
+                'draw' => intval($draw),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $responseData,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Terjadi kesalahan pada server.',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function detail($id)
@@ -247,7 +293,7 @@ class ContactController extends Controller
 
     public function delete($id)
     {
-        $contact = Contact::where('id', $id)->first();
+        $contact = Perusahaan::where('id', $id)->first();
         $contact->delete();
 
         return back()->with([

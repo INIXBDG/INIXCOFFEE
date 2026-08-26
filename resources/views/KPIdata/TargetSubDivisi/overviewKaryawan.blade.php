@@ -448,13 +448,7 @@
         const allowedAssistantRoutes = [
             'dorong inovasi pelayanan',
             'inisiatif efisiensi keuangan',
-            'rasio biaya operasional terhadap revenue',
             'mengurangi manual work dan error',
-            'pengeluaran biaya karyawan'
-        ];
-
-        const allowedDoubleManualRoutes = [
-            'pengeluaran biaya karyawan'
         ];
 
         function formatNumber(value) {
@@ -859,8 +853,7 @@
                 else realisasiChange = target.progress + "%";
 
                 const allowedAssistantRouteButtonsManual = [
-                    'dorong inovasi pelayanan', 'inisiatif efisiensi keuangan',
-                    'rasio biaya operasional terhadap revenue', 'mengurangi manual work dan error', 'pengeluaran biaya karyawan'
+                    'dorong inovasi pelayanan', 'inisiatif efisiensi keuangan', 'mengurangi manual work dan error'
                 ];
 
                 let buttonIsiForm = '';
@@ -1122,7 +1115,6 @@
                         }
 
                         const allowedDetailAssistantRoutes = ['dorong inovasi pelayanan',
-                            'rasio biaya operasional terhadap revenue',
                             'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'pengeluaran biaya karyawan'
                         ];
                         const allowedDetailAssistantRoutesForRupiah = ['Pemasukan Kotor',

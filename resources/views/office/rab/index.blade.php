@@ -684,14 +684,13 @@
                         </div>
                         <div id="pickupDriverCondition">
                             <hr class="hidePickup">
-                            <small class="hidePickup text-danger">* digunakan hanya jika kegiatan diperlukan pengantaran
-                                driver!</small>
+                            <small class="hidePickup text-muted">* Kosongkan pilihan driver jika kegiatan tidak memerlukan pengantaran.</small>
                             <div class="col-12 mb-2 hidePickup" style="display: none;">
                                 <label class="form-label fw-semibold">
                                     <i class="fas fa-car text-primary me-2"></i>Pilih Driver
                                 </label>
                                 <select name="id_driver" class="form-select text-dark form-select-lg">
-                                    <option value="" selected disabled>Pilih Driver</option>
+                                    <option value="" selected>Pilih Driver (Opsional)</option>
                                     @foreach ($drivers as $driver)
                                         <option value="{{ $driver->id }}">{{ $driver->nama_lengkap }}</option>
                                     @endforeach
@@ -1339,13 +1338,15 @@
                     driverFields.forEach(field => {
                         field.style.display = 'block';
                     });
-                    driverSelect.setAttribute('required', true);
                 } else {
                     pickupDriverCondition.style.display = 'none';
                     driverFields.forEach(field => {
                         field.style.display = 'none';
                     });
-                    driverSelect.removeAttribute('required');
+                    
+                    driverSelect.value = '';
+                    document.getElementById('budgetInput').value = '';
+                    document.getElementById('budgetHidden').value = '';
                 }
             });
 

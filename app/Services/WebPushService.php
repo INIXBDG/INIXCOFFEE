@@ -17,20 +17,23 @@ class WebPushService
     public function __construct()
     {
         try {
-            $this->webPush = new WebPush([
-                'VAPID' => [
-                    'subject' => env('VAPID_SUBJECT', 'mailto:support@inixindobdg.co.id'),
-                    'publicKey' => env('VAPID_PUBLIC_KEY'),
-                    'privateKey' => env('VAPID_PRIVATE_KEY'),
-                ],
-                'timeout' => 30,
-                'connection_timeout' => 10,
-            ]);
-            $this->webPush->setDefaultOptions(['TTL' => 2419200]);
-            $this->webPush->setAutomaticPadding(false);
+            $pubKey = env('VAPID_PUBLIC_KEY');
+            $privKey = env('VAPID_PRIVATE_KEY');
+            if ($pubKey && $privKey) {
+                $this->webPush = new WebPush([
+                    'VAPID' => [
+                        'subject' => env('VAPID_SUBJECT', 'mailto:support@inixindobdg.co.id'),
+                        'publicKey' => $pubKey,
+                        'privateKey' => $privKey,
+                    ],
+                    'timeout' => 30,
+                    'connection_timeout' => 10,
+                ]);
+                $this->webPush->setDefaultOptions(['TTL' => 2419200]);
+                $this->webPush->setAutomaticPadding(false);
+            }
         } catch (Exception $e) {
             Log::error('WebPushService initialization error: ' . $e->getMessage());
-            throw new Exception('Gagal menginisialisasi WebPush service: ' . $e->getMessage());
         }
     }
 

@@ -24,6 +24,15 @@ use Maatwebsite\Excel\Facades\Excel;
 class ModulController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View PO Modul', ['only' => ['indexNomor', 'indexModul']]);
+        $this->middleware('permission:Store PO Modul', ['only' => ['storeModul', 'storeNomor', 'storePeserta']]);
+        $this->middleware('permission:Update PO Modul', ['only' => ['updateModul', 'updateNomor', 'updatePeserta']]);
+        $this->middleware('permission:Delete PO Modul', ['only' => ['deleteModul', 'deleteNomor', 'deletePeserta']]);
+    }
+
     public function indexNomor()
     {
         $nomor = NomorModul::all();
@@ -349,6 +358,25 @@ class ModulController extends Controller
         $nomor->save();
 
         return back()->with('success', 'Status uploaded berhasil diupdate');
+    }
+
+    public function updateSubscode(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:0,1',
+            'tanggal_subscode_masuk' => 'nullable|date',
+            'tanggal_tenggat' => 'nullable|date',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $modul = NomorModul::findOrFail($id);
+        $modul->status_subscode = $request->status;
+        $modul->tanggal_subscode_masuk = $request->tanggal_subscode_masuk;
+        $modul->tanggal_tenggat = $request->tanggal_tenggat;
+        $modul->catatan = $request->catatan;
+        $modul->save();
+
+        return redirect()->back()->with('success', 'Data subscode berhasil diupdate.');
     }
 
     public function deletePeserta(Request $request, $id)

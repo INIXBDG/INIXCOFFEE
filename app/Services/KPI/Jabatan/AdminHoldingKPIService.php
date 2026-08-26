@@ -13,29 +13,47 @@ class AdminHoldingKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function hitungSkorKetepatanPo($uploadedStr, $awalTrainingStr, $delay)
+    private function hitungSkorKetepatan($po, $modul)
     {
-        if (!$uploadedStr || !$awalTrainingStr) return 0;
+        if (!$po->uploaded || !$modul->awal_training) return 0;
 
-        $uploaded = Carbon::parse($uploadedStr)->startOfDay();
-        $awalTraining = Carbon::parse($awalTrainingStr)->startOfDay();
+        $uploaded = Carbon::parse($po->uploaded)->startOfDay();
+        $awalTraining = Carbon::parse($modul->awal_training)->startOfDay();
         
         $daysBefore = $awalTraining->diffInDays($uploaded);
+        $poScore = 0;
 
-        // Jika diunggah setelah hari H (minus), diffInDays tetap positif, maka cek manual arahnya
         if ($uploaded->gt($awalTraining)) {
-            return 0;
-        }
-
-        if ($daysBefore >= 7) {
-            return 100;
+            $poScore = 0;
+        } elseif ($daysBefore >= 7) {
+            $poScore = 100;
         } elseif ($daysBefore > 0) {
-            return ($delay !== null && $delay !== 'Admin')
+            $poScore = ($po->delay !== null && $po->delay !== 'Admin')
                 ? min(100, ($daysBefore * 150) / 7)
                 : ($daysBefore * 100) / 7;
         }
 
-        return 0;
+        if ($po->type === 'Authorize') {
+            $subscodeScore = 0;
+            
+            if ($po->tanggal_subscode_masuk) {
+                $subscode = Carbon::parse($po->tanggal_subscode_masuk)->startOfDay();
+                
+                $dayOfWeek = $awalTraining->dayOfWeekIso;
+                $seninDeadline = $awalTraining->copy()->subDays($dayOfWeek - 1);
+                
+                if ($subscode->lte($seninDeadline)) {
+                    $subscodeScore = 100;
+                } else {
+                    $daysLate = $seninDeadline->diffInDays($subscode); 
+                    $subscodeScore = max(0, 100 - ($daysLate * 25));
+                }
+            }
+            
+            return ($poScore + $subscodeScore) / 2;
+        }
+
+        return $poScore;
     }
 
     public function calculateKetepatanWaktuPo($item, $personId = null)
@@ -61,7 +79,7 @@ class AdminHoldingKPIService
             foreach ($po->moduls as $modul) {
                 if (!$modul->awal_training) continue;
 
-                $totalPercent += $this->hitungSkorKetepatanPo($po->uploaded, $modul->awal_training, $po->delay);
+                $totalPercent += $this->hitungSkorKetepatan($po, $modul);
                 $count++;
             }
         }
@@ -109,7 +127,7 @@ class AdminHoldingKPIService
             foreach ($po->moduls as $modul) {
                 if (!$modul->awal_training) continue;
 
-                $percent = $this->hitungSkorKetepatanPo($po->uploaded, $modul->awal_training, $po->delay);
+                $percent = $this->hitungSkorKetepatan($po, $modul);
                 
                 $totalPercent += $percent;
                 $count++;
@@ -118,7 +136,6 @@ class AdminHoldingKPIService
                     $aboveTarget++;
                 }
 
-                // Kumpulkan untuk grafik rata-rata bulanan & harian
                 $monthlyDataRaw[$monthKey][] = $percent;
                 $dailyDataRaw[$monthKey][$dayKey][] = $percent;
             }
@@ -126,7 +143,6 @@ class AdminHoldingKPIService
 
         if ($count === 0) return $emptyResponse;
 
-        // PERBAIKAN SINKRONISASI: Progress sekarang dihitung dari rata-rata kumulatif, sama dengan Primer
         $progress = round($totalPercent / $count, 1);
         
         $gapRaw = $progress - $nilaiTarget;
@@ -154,7 +170,7 @@ class AdminHoldingKPIService
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => [
-                'above' => $aboveTarget, // Jumlah modul yang memenuhi/melebihi target nilai kpi
+                'above' => $aboveTarget,
                 'below' => max(0, $count - $aboveTarget),
             ],
             'monthly_data' => $monthlyAverages,

@@ -72,13 +72,14 @@
     <div class="meta">Periode: {{ $period }} | Generated: {{ $generated_at }}</div>
 
     <div class="summary">
-        <strong>Ringkasan:</strong>
+        <strong>Ringkasan:</strong><br>
         Total: {{ $summary['total_karyawan'] }} |
         Sudah: {{ $summary['sudah_dihitung'] }} |
-        Belum: {{ $summary['belum_dihitung'] }} |
-        Rata-rata: {{ number_format($summary['avg_gaji_bersih'], 0, ',', '.') }} IDR |
-        Median: {{ number_format($summary['median_gaji_bersih'], 0, ',', '.') }} IDR |
-        Total Bersih: {{ number_format($summary['total_gaji_bersih'], 0, ',', '.') }} IDR
+        Belum: {{ $summary['belum_dihitung'] }}<br>
+        Potongan BPJS TK: {{ number_format($summary['total_potongan_bpjs_tk'] ?? 0, 0, ',', '.') }} IDR |
+        Potongan BPJS Kes: {{ number_format($summary['total_potongan_bpjs_kes'] ?? 0, 0, ',', '.') }} IDR |
+        Potongan PPh21: {{ number_format($summary['total_potongan_pph21'] ?? 0, 0, ',', '.') }} IDR<br>
+        Total Bersih: {{ number_format($summary['total_gaji_bersih'] ?? 0, 0, ',', '.') }} IDR
     </div>
 
     <table>

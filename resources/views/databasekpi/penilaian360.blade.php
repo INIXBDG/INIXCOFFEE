@@ -528,23 +528,22 @@
         let selectedJenis = null;
         let selectedEvaluator = null;
         let evaluatedName = '';
-        let currentQuartal = null;
+        let currentTahun = null;
 
         $(function() {
             loadData();
 
             $('#selectPeriode').on('change', function() {
-                currentQuartal = $(this).val();
-                loadData(currentQuartal);
+                currentTahun = $(this).val();
+                loadData(currentTahun);
             });
         });
 
-        function loadData(quartal = null) {
+        function loadData(tahun = null) {
             let url = `/penilaian360/get/{{ $id_karyawan }}`;
-            if (quartal) {
-                url += `?quartal=${encodeURIComponent(quartal)}`;
+            if (tahun) {
+                url += `?tahun=${encodeURIComponent(tahun)}`;
             }
-
             $('#groupButtonJenisPenilaian').html(
                 `<div class="loading-state w-100"><i class="fa-solid fa-spinner fa-spin"></i><p>Memuat jenis penilaian...</p></div>`
                 );
@@ -572,8 +571,8 @@
                     if (response.listPeriode && $('#selectPeriode option').length === 0) {
                         let options = '';
                         response.listPeriode.forEach(p => {
-                            let selected = (p.quartal == response.quartal) ? 'selected' : '';
-                            options += `<option value="${p.quartal}" ${selected}>${p.label}</option>`;
+                            let selected = (p.tahun == response.tahun) ? 'selected' : '';
+                            options += `<option value="${p.tahun}" ${selected}>${p.label}</option>`;
                         });
                         $('#selectPeriode').html(options);
                     }
@@ -630,7 +629,7 @@
                         <i class="fa-solid fa-calendar-day"></i> Periode Absensi
                     </div>
                     <div class="catatan-content">
-                        <strong>${response.quartal ?? '-'}</strong> Tahun <strong>${response.tahun ?? '-'}</strong>
+                        Tahun <strong>${response.tahun ?? '-'}</strong>
                     </div>
                 </div>
                 <div class="catatan-box">

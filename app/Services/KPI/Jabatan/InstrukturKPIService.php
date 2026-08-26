@@ -1022,12 +1022,10 @@ class InstrukturKPIService
         }
 
         if ($personId !== null) {
-            $progress = max(100, $countAchieved);
-        } else {
-            $progress = $countAchieved;
+            $countAchieved = min($countAchieved, $nilaiTarget);
         }
 
-        return round($progress);
+        return (float) $countAchieved;
     }
 
     public function calculateSertifikasiKompetensiInternalDetail($itemDetail, $personId)
@@ -1121,13 +1119,12 @@ class InstrukturKPIService
         }
 
         if ($personId !== null) {
-            $progress = max(100, $countAchieved);
-        } else {
-            $progress = $countAchieved;
+            $countAchieved = min($countAchieved, $nilaiTarget);
         }
-        $progress = round($progress);
 
-        $gapRaw = $progress - $nilaiTarget;
+        $progress = $countAchieved;
+        $actualTarget = $totalData * $nilaiTarget;
+        $gapRaw = $progress - $actualTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         if ($personId !== null) {
@@ -1219,26 +1216,24 @@ class InstrukturKPIService
         $countAchieved = 0;
 
         foreach ($detailPersons as $personItem) {
-            $validSertifikasi = Pelatihan::where('user_id', $personItem->id_karyawan)
+            $validPelatihan = Pelatihan::where('user_id', $personItem->id_karyawan)
                 ->whereBetween('tanggal_selesai', [$startYear, $endYear])
                 ->count();
 
             if ($personId !== null) {
-                $countAchieved += $validSertifikasi;
+                $countAchieved += $validPelatihan;
             } else {
-                if ($validSertifikasi > 0) {
+                if ($validPelatihan >= $nilaiTarget) {
                     $countAchieved += 1;
                 }
             }
         }
 
         if ($personId !== null) {
-            $progress = max(100, $countAchieved);
-        } else {
-            $progress = $countAchieved;
+            $countAchieved = min($countAchieved, $nilaiTarget);
         }
 
-        return round($progress);
+        return (float) $countAchieved;
     }
 
     public function calculatePelatihanKompetensiEksternalDetail($itemDetail, $personId)
@@ -1286,16 +1281,16 @@ class InstrukturKPIService
         $dailyValues = [];
 
         foreach ($detailPersons as $personItem) {
-            $validSertifikasis = Pelatihan::where('user_id', $personItem->id_karyawan)
+            $validPelatihans = Pelatihan::where('user_id', $personItem->id_karyawan)
                 ->whereBetween('tanggal_selesai', [$startYear, $endYear])
                 ->get();
 
-            $validSertifikasi = $validSertifikasis->count();
+            $validPelatihan = $validPelatihans->count();
 
             if ($personId !== null) {
-                $countAchieved += $validSertifikasi;
+                $countAchieved += $validPelatihan;
 
-                foreach ($validSertifikasis as $cert) {
+                foreach ($validPelatihans as $cert) {
                     $tanggal = Carbon::parse($cert->tanggal_selesai);
                     if ($tanggal < $startYear) {
                         $tanggal = $startYear;
@@ -1307,11 +1302,11 @@ class InstrukturKPIService
                     }
                 }
             } else {
-                if ($validSertifikasi > 0) {
+                if ($validPelatihan >= $nilaiTarget) {
                     $countAchieved += 1;
 
-                    if ($validSertifikasis->isNotEmpty()) {
-                        $firstCert = $validSertifikasis->sortBy('tanggal_selesai')->first();
+                    if ($validPelatihans->isNotEmpty()) {
+                        $firstCert = $validPelatihans->sortBy('tanggal_selesai')->first();
                         $tanggal = Carbon::parse($firstCert->tanggal_selesai);
 
                         if ($tanggal < $startYear) {
@@ -1328,13 +1323,12 @@ class InstrukturKPIService
         }
 
         if ($personId !== null) {
-            $progress = max(100, $countAchieved);
-        } else {
-            $progress = $countAchieved;
+            $countAchieved = min($countAchieved, $nilaiTarget);
         }
-        $progress = round($progress);
 
-        $gapRaw = $progress - $nilaiTarget;
+        $progress = $countAchieved;
+        $actualTarget = $totalData * $nilaiTarget;
+        $gapRaw = $progress - $actualTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         if ($personId !== null) {

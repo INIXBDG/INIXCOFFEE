@@ -6,9 +6,11 @@ use App\Models\AbsensiKaryawan;
 use App\Models\AdministrasiKaryawan;
 use App\Models\JenisTunjangan;
 use App\Models\Kegiatan;
+use App\Models\LogGaji;
 use App\Models\TunjanganKaryawan;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class HRDKPIService
@@ -201,184 +203,131 @@ class HRDKPIService
         $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
         $endOfYear = Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $parts = explode(',', $detail->manual_value ?? '');
+        $gajiQuery = LogGaji::whereBetween('created_at', [$startOfYear, $endOfYear]);
+        $gaji = (float) $gajiQuery->sum(DB::raw('COALESCE(gaji, 0) + COALESCE(tunjangan_jabatan, 0)'));
+        $scoreGaji = $gaji > 0 ? 25 : 0;
 
-        $gaji = (float) ($parts[0] ?? 0);
-        $bpjsManual = (float) ($parts[1] ?? 0);
-        $rekrutmenManual = (float) ($parts[2] ?? 0);
+        $bpjsIds = JenisTunjangan::whereIn('nama_tunjangan', ['BPJS Tenaga Kerja', 'BPJS Kesehatan'])->pluck('id');
+        
+        $bpjsQuery = TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])->whereIn('jenis_tunjangan', $bpjsIds);
+        $bpjs = (float) $bpjsQuery->sum('total');
 
-        $bpjsIds = JenisTunjangan::whereIn('nama_tunjangan', [
-            'BPJS Tenaga Kerja',
-            'BPJS Kesehatan'
-        ])->pluck('id');
+        $bpjsBudget = (float) TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])->whereIn('jenis_tunjangan', $bpjsIds)->sum('total');
+        $scoreBpjs = ($bpjs > 0 && $bpjsBudget > 0 && $bpjs <= $bpjsBudget) ? ($bpjs / $bpjsBudget) * 25 : 0;
 
-        $bpjsBudget = TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])
-            ->whereIn('jenis_tunjangan', $bpjsIds)
-            ->sum('total');
+        $rekrutmenQuery = Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment');
+        $rekrutmen = (float) $rekrutmenQuery->sum('realisasi');
 
-        $rekrutmenBudget = Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])
-            ->where('tipe', 'rekrutment')
-            ->sum('realisasi');
+        $rekrutmenBudget = (float) Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment')->sum('realisasi');
+        $scoreRekrutmen = ($rekrutmen > 0 && $rekrutmenBudget > 0 && $rekrutmen <= $rekrutmenBudget) ? ($rekrutmen / $rekrutmenBudget) * 25 : 0;
 
         $kegiatanBudget = 0;
         $kegiatanRealisasi = 0;
+        $kegiatansQuery = Kegiatan::with('pengajuan_barang.detail')->whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'kegiatan');
 
-        $kegiatans = Kegiatan::with('pengajuan_barang.detail')
-            ->whereBetween('created_at', [$startOfYear, $endOfYear])
-            ->where('tipe', 'kegiatan')
-            ->get();
-
-        foreach ($kegiatans as $kegiatan) {
+        foreach ($kegiatansQuery->get() as $kegiatan) {
             $kegiatanRealisasi += (float) $kegiatan->realisasi;
-
             if ($kegiatan->pengajuan_barang) {
                 foreach ($kegiatan->pengajuan_barang as $pengajuan) {
                     if ($pengajuan->detail) {
                         foreach ($pengajuan->detail as $d) {
-                            $qty = (float) ($d->qty ?? 0);
-                            $harga = (float) ($d->harga ?? 0);
-
-                            $kegiatanBudget += $qty * $harga;
+                            $kegiatanBudget += (float) ($d->qty ?? 0) * (float) ($d->harga ?? 0);
                         }
                     }
                 }
             }
         }
+        $scoreKegiatan = ($kegiatanRealisasi > 0 && $kegiatanBudget > 0 && $kegiatanRealisasi <= $kegiatanBudget) ? ($kegiatanRealisasi / $kegiatanBudget) * 25 : 0;
 
-        $score = 0;
-
-        if ($gaji > 0) {
-            $score++;
-        }
-
-        if ($bpjsManual > 0 && $bpjsManual <= $bpjsBudget) {
-            $score++;
-        }
-
-        if ($rekrutmenManual > 0 && $rekrutmenManual <= $rekrutmenBudget) {
-            $score++;
-        }
-
-        if ($kegiatanRealisasi > 0 && $kegiatanRealisasi <= $kegiatanBudget) {
-            $score++;
-        }
-
-        $progress = ($score / 4) * 100;
+        $progress = $scoreGaji + $scoreBpjs + $scoreRekrutmen + $scoreKegiatan;
 
         return round($progress, 1);
     }
 
-    public function calculatePengeluaranBiayaKaryawanDetail($itemDetail)
+    public function calculatePengeluaranBiayaKaryawanDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
+        $nilaiTarget = (int) ($detail->nilai_target ?? 0);
 
-        $defaultDataManual = [
-            'gaji' => 0,
-            'bpjs' => 0,
-            'rekrutmen' => 0,
-            'manual_document' => null,
-        ];
+        $defaultResponse = array_merge($this->getDefaultDetailResponse(), [
+            'dataManual' => ['gaji' => 0, 'bpjs' => 0, 'rekrutmen' => 0, 'manual_document' => null]
+        ]);
 
         if (!$detail || !is_numeric($detail->detail_jangka)) {
-            return array_merge($this->getDefaultDetailResponse(), [
-                'dataManual' => $defaultDataManual
-            ]);
+            return $defaultResponse;
         }
 
         $tahun = (int) $detail->detail_jangka;
-        $nilaiTarget = (int) $detail->nilai_target;
-
         if ($tahun < 2000 || $tahun > now()->year + 5) {
-            return array_merge($this->getDefaultDetailResponse(), [
-                'dataManual' => $defaultDataManual
-            ]);
+            return $defaultResponse;
         }
 
         $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
         $endOfYear = Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $parts = explode(',', $detail->manual_value ?? '');
+        $gajiQuery = LogGaji::whereBetween('created_at', [$startOfYear, $endOfYear]);
+        $gaji = (float) $gajiQuery->sum(DB::raw('COALESCE(gaji, 0) + COALESCE(tunjangan_jabatan, 0)'));
+        $scoreGaji = $gaji > 0 ? 25 : 0;
 
-        $gaji = (float) ($parts[0] ?? 0);
-        $bpjsManual = (float) ($parts[1] ?? 0);
-        $rekrutmenManual = (float) ($parts[2] ?? 0);
+        $bpjsIds = JenisTunjangan::whereIn('nama_tunjangan', ['BPJS Tenaga Kerja', 'BPJS Kesehatan'])->pluck('id');
+        
+        $bpjsQuery = TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])->whereIn('jenis_tunjangan', $bpjsIds);
+        $bpjs = (float) $bpjsQuery->sum('total');
 
-        $dataManual = [
-            'gaji' => $gaji,
-            'bpjs' => $bpjsManual,
-            'rekrutmen' => $rekrutmenManual,
-            'manual_document' => $detail->manual_document ?? null,
-        ];
+        $bpjsBudget = (float) TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])->whereIn('jenis_tunjangan', $bpjsIds)->sum('total');
+        $scoreBpjs = ($bpjs > 0 && $bpjsBudget > 0 && $bpjs <= $bpjsBudget) ? ($bpjs / $bpjsBudget) * 25 : 0;
 
-        $bpjsIds = JenisTunjangan::whereIn('nama_tunjangan', [
-            'BPJS Tenaga Kerja',
-            'BPJS Kesehatan'
-        ])->pluck('id');
+        $rekrutmenQuery = Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment');
+        $rekrutmen = (float) $rekrutmenQuery->sum('realisasi');
 
-        $bpjsBudget = TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])
-            ->whereIn('jenis_tunjangan', $bpjsIds)
-            ->sum('total');
-
-        $rekrutmenBudget = Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])
-            ->where('tipe', 'rekrutment')
-            ->sum('realisasi');
+        $rekrutmenBudget = (float) Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment')->sum('realisasi');
+        $scoreRekrutmen = ($rekrutmen > 0 && $rekrutmenBudget > 0 && $rekrutmen <= $rekrutmenBudget) ? ($rekrutmen / $rekrutmenBudget) * 25 : 0;
 
         $kegiatanBudget = 0;
         $kegiatanRealisasi = 0;
+        $kegiatansQuery = Kegiatan::with('pengajuan_barang.detail')->whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'kegiatan');
 
-        $kegiatans = Kegiatan::with('pengajuan_barang.detail')
-            ->whereBetween('created_at', [$startOfYear, $endOfYear])
-            ->where('tipe', 'kegiatan')
-            ->get();
-
-        foreach ($kegiatans as $kegiatan) {
+        foreach ($kegiatansQuery->get() as $kegiatan) {
             $kegiatanRealisasi += (float) $kegiatan->realisasi;
-
             if ($kegiatan->pengajuan_barang) {
                 foreach ($kegiatan->pengajuan_barang as $pengajuan) {
                     if ($pengajuan->detail) {
                         foreach ($pengajuan->detail as $d) {
-                            $qty = (float) ($d->qty ?? 0);
-                            $harga = (float) ($d->harga ?? 0);
-
-                            $kegiatanBudget += $qty * $harga;
+                            $kegiatanBudget += (float) ($d->qty ?? 0) * (float) ($d->harga ?? 0);
                         }
                     }
                 }
             }
         }
+        $scoreKegiatan = ($kegiatanRealisasi > 0 && $kegiatanBudget > 0 && $kegiatanRealisasi <= $kegiatanBudget) ? ($kegiatanRealisasi / $kegiatanBudget) * 25 : 0;
 
-        $score = 0;
+        $progress = round($scoreGaji + $scoreBpjs + $scoreRekrutmen + $scoreKegiatan, 1);
+        $gap = ($progress <= $nilaiTarget) ? ($progress - $nilaiTarget) : 0;
 
-        if ($gaji > 0) {
-            $score++;
-        }
-
-        if ($bpjsManual > 0 && $bpjsManual <= $bpjsBudget) {
-            $score++;
-        }
-
-        if ($rekrutmenManual > 0 && $rekrutmenManual <= $rekrutmenBudget) {
-            $score++;
-        }
-
-        if ($kegiatanRealisasi > 0 && $kegiatanRealisasi <= $kegiatanBudget) {
-            $score++;
-        }
-
-        $progress = round(($score / 4) * 100, 1);
-        $gap = 0;
-        if ($progress <= $nilaiTarget) {
-            $gap = $progress - $nilaiTarget;
-        }
+        $onTrack = 0;
+        if ($scoreGaji > 0) $onTrack++;
+        if ($scoreBpjs > 0) $onTrack++;
+        if ($scoreRekrutmen > 0) $onTrack++;
+        if ($scoreKegiatan > 0) $onTrack++;
 
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'dataManual' => $dataManual,
+            'dataManual' => [
+                'gaji' => $gaji,
+                'bpjs' => $bpjs,
+                'rekrutmen' => $rekrutmen,
+                'manual_document' => $detail->manual_document ?? null,
+            ],
+            'component_scores' => [
+                'gaji' => $scoreGaji,
+                'bpjs' => round($scoreBpjs, 1),
+                'rekrutmen' => round($scoreRekrutmen, 1),
+                'kegiatan' => round($scoreKegiatan, 1),
+            ],
             'pie_chart' => [
-                'above' => $score,
-                'below' => 4 - $score
+                'above' => $onTrack,
+                'below' => 4 - $onTrack
             ],
             'monthly_data' => [],
             'daily_breakdown_per_month' => [],

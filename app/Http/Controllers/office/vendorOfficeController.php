@@ -12,6 +12,15 @@ use App\Http\Controllers\Controller;
 
 class vendorOfficeController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View Vendor Office', ['only' => ['index']]);
+        $this->middleware('permission:Store Vendor Office', ['only' => ['store']]);
+        $this->middleware('permission:Delete Vendor Office', ['only' => ['destroy']]);
+    }
+
     public function index(Request $request)
     {
         $itemValue = $request->segment(3);

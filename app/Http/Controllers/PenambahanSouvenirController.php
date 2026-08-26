@@ -15,10 +15,15 @@ use Carbon\Carbon;
 
 class PenambahanSouvenirController extends Controller
 {
-    /**
-     * Menampilkan daftar distribusi souvenir.
-     * Hanya bisa diakses oleh Customer Care dan GM.
-     */
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View PenambahanSouvenir', ['only' => ['index', 'getPenambahanSouvenir']]);
+        $this->middleware('permission:Store PenambahanSouvenir', ['only' => ['create', 'store']]);
+        $this->middleware('permission:Update PenambahanSouvenir', ['only' => ['edit', 'update']]);
+    }
+
     public function index()
     {
         $user = auth()->user();

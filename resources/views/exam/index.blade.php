@@ -78,10 +78,6 @@
                         width="30px"> Rekap Exam</a>
                 {{-- @endcan --}}
 
-                @php
-                    $poExamItems = \App\Models\PoExamSertifa::with(['materi', 'perusahaan'])->latest()->get();
-                @endphp
-
                 <div class="card m-4">
                     <div class="card-body table-responsive">
                         <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Exam') }}</h3>
@@ -116,22 +112,10 @@
                                     <th>Perusahaan</th>
                                     <th>Pax</th>
                                     <th>Harga</th>
+                                    <th>Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @forelse($poExamItems as $index => $item)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $item->materi->nama_materi ?? '-' }}</td>
-                                        <td>{{ $item->tanggal_exam ? \Carbon\Carbon::parse($item->tanggal_exam)->format('d M Y') : '-' }}</td>
-                                        <td>{{ $item->perusahaan->nama_perusahaan ?? '-' }}</td>
-                                        <td>{{ $item->pax ?? '-' }}</td>
-                                        <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="6" class="text-center text-muted">Belum ada data PO Exam Sertifa</td></tr>
-                                @endforelse
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
@@ -177,6 +161,7 @@
                                     <th scope="col">Nama Perusahaan</th>
                                     <th scope="col">Pax</th>
                                     <th scope="col">Status</th>
+                                    <th scope="col">Status Approval</th>
                                     <th scope="col">Sales</th>
                                     <th scope="col">instruktur</th>
                                     <th scope="col">Aksi</th>
@@ -239,6 +224,7 @@
             var userJabatan = '{{ auth()->user()->jabatan }}';
             var userIdSales = '{{ auth()->user()->id_sales }}';
 
+
             $(document).ready(function () {
                 var userRole = '{{ auth()->user()->jabatan}}';
                 var idInstruktur = "{{ auth()->user()->id_instruktur }}";
@@ -248,15 +234,16 @@
                 if (idSales == 'VN' || userRole == 'SPV Sales') { var idSales = ""; }
                 if (userRole == "Technical Support") { var idInstruktur = ""; }
 
-                $('#poExamTableIndex').DataTable({
-                    "language": {
-                        "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json"
-                    }
-                });
+                // $('#poExamTableIndex').DataTable({
+                //     "language": {
+                //         "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json"
+                //     }
+                // });
 
                 var tableIndex1 = 1;
                 var tableIndex2 = 1;
                 var tableIndex3 = 1;
+                var tableIndex4 = 1;
 
                 $('#examtable').DataTable({
                     "ajax": {
@@ -443,6 +430,29 @@
                             }
                         },
                         {
+                            "data": null,
+                            "render": function (data) {
+                                if (data.approvalexam) {
+                                    var app = data.approvalexam;
+
+                                    if (app.technical_support == 1) {
+                                        return '<span class="badge bg-success">Selesai</span>';
+                                    }
+
+                                    if (app.office_manager == 1) {
+                                        return '<span class="badge bg-info text-dark">Office Manager</span>';
+                                    }
+
+                                    if (app.spv_sales == 1) {
+                                        return '<span class="badge bg-info text-dark">SPV Sales</span>';
+                                    }
+
+                                    return '<span class="badge bg-warning text-dark">Belum Approval</span>';
+                                }
+                                return '<span class="text-muted">-</span>';
+                            }
+                        },
+                        {
                             "data": null, "visible": true,
                             "render": function (data) { return data.rkm?.sales_key ?? '-'; }
                         },
@@ -525,8 +535,81 @@
                     ],
                     "order": [[0, 'asc']],
                     "initComplete": function () {
-                        this.api().columns(7).search(idInstruktur).draw();
-                        this.api().columns(6).search(idSales).draw();
+                        this.api().columns(8).search(idInstruktur).draw();
+                        this.api().columns(7).search(idSales).draw();
+                    }
+                });
+
+                $('#poExamTableIndex').DataTable({
+                    "ajax": {
+                        "url": "{{ route('getPoExamSertifa') }}",
+                        "type": "GET",
+                        "beforeSend": function () {
+                            $('#loadingModal').modal('show');
+                            $('#loadingModal').on('show.bs.modal', function () {
+                                $('#loadingModal').removeAttr('inert');
+                            });
+                        },
+                        "complete": function () {
+                            setTimeout(() => {
+                                $('#loadingModal').modal('hide');
+                                $('#loadingModal').on('hidden.bs.modal', function () {
+                                    $('#loadingModal').attr('inert', true);
+                                });
+                            }, 1000);
+                        }
+                    },
+                    "columns": [
+                        {
+                            "data": null,
+                            "render": function (data, type, row) {
+                                return tableIndex4++;
+                            }
+                        },
+                        {
+                            "data": null,
+                            "render": function (data) {
+                                return data.materi?.nama_materi ?? '-';
+                            }
+                        },
+                        {
+                            "data": null,
+                            "render": function (data) {
+                                return data.tanggal_exam ? moment(data.tanggal_exam).format('DD MMM YYYY') : '-';
+                            }
+                        },
+                        {
+                            "data": null,
+                            "render": function (data) {
+                                return data.perusahaan?.nama_perusahaan ?? '-';
+                            }
+                        },
+                        {
+                            "data": null,
+                            "render": function (data) {
+                                return data.pax ?? '-';
+                            }
+                        },
+                        {
+                            "data": null,
+                            "render": function (data) {
+                                if (data.harga) {
+                                    return 'Rp ' + parseInt(data.harga).toLocaleString('id-ID');
+                                }
+                                return 'Rp 0';
+                            }
+                        },
+                        {
+                            "data": null,
+                            "render": function (data) {
+                                var actions = "";
+                                actions += '<a href="/pengajuanExam/' + data.id_rkm + '" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
+                                return actions;                           
+                            }
+                        }
+                    ],
+                    "language": {
+                        "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json"
                     }
                 });
             });

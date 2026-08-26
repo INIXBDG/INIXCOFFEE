@@ -22,6 +22,9 @@ class MateriController extends Controller
         $this->middleware('permission:Create Materi', ['only' => ['create', 'store']]);
         $this->middleware('permission:Edit Materi', ['only' => ['update', 'edit', 'editstatusmateri']]);
         $this->middleware('permission:Delete Materi', ['only' => ['destroy']]);
+
+        $this->middleware('permission:View Alias', ['only' => ['indexAlias', 'indexJsonAlias']]);
+        $this->middleware('permission:Update Alias', ['only' => ['updateAlias']]);
     }
     public function index(): View
     {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\crm;
+namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\RKM;
@@ -14,6 +14,14 @@ use Illuminate\Http\JsonResponse;
 
 class checklistRKMController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View CRM Checklist RKM', ['only' => ['index', 'getData']]);
+        // $this->middleware('permission:Update CRM Checklist RKM', ['only' => ['updateChecklist', 'updateMultiple']]);
+    }
+
     public function index(): View
     {
         return view('crm.checklistRKM.index');

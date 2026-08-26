@@ -35,252 +35,532 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        .page-header { margin-bottom: 1.5rem; }
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+
         .page-title {
-            font-size: 1.6rem; font-weight: 700; color: var(--gray-900);
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--gray-900);
             margin-bottom: .15rem;
         }
-        .page-sub { color: var(--gray-400); font-size: .875rem; }
+
+        .page-sub {
+            color: var(--gray-400);
+            font-size: .875rem;
+        }
 
         /* ===== STAT CARDS ===== */
         .stat-card {
-            border: none; border-radius: var(--radius); box-shadow: var(--shadow);
-            transition: transform .25s, box-shadow .25s; background: #fff;
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: transform .25s, box-shadow .25s;
+            background: #fff;
             cursor: pointer;
         }
+
         .stat-card:hover {
-            transform: translateY(-3px); box-shadow: var(--shadow-lg);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
             border: 1px solid var(--pri-light);
         }
+
         .stat-icon {
-            width: 52px; height: 52px; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem; color: #fff;
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: #fff;
         }
+
         .stat-value {
-            font-size: 1.6rem; font-weight: 700; color: var(--gray-900);
-            margin: .4rem 0 .15rem; line-height: 1.1;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: .4rem 0 .15rem;
+            line-height: 1.1;
         }
+
         .stat-label {
-            color: var(--gray-400); font-size: .78rem; margin: 0;
-            text-transform: uppercase; letter-spacing: .5px; font-weight: 600;
+            color: var(--gray-400);
+            font-size: .78rem;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            font-weight: 600;
         }
 
         /* ===== TABS ===== */
-        .nav-tabs-custom { border-bottom: 2px solid var(--gray-200); }
+        .nav-tabs-custom {
+            border-bottom: 2px solid var(--gray-200);
+        }
+
         .nav-tabs-custom .nav-link {
-            border: none; color: var(--gray-400); font-weight: 600;
-            padding: .85rem 1.25rem; font-size: .875rem; transition: color .2s;
-            display: flex; align-items: center; gap: .5rem;
+            border: none;
+            color: var(--gray-400);
+            font-weight: 600;
+            padding: .85rem 1.25rem;
+            font-size: .875rem;
+            transition: color .2s;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
         }
-        .nav-tabs-custom .nav-link:hover { color: var(--pri); }
+
+        .nav-tabs-custom .nav-link:hover {
+            color: var(--pri);
+        }
+
         .nav-tabs-custom .nav-link.active {
-            color: var(--pri); border-bottom: 3px solid var(--pri); background: transparent;
+            color: var(--pri);
+            border-bottom: 3px solid var(--pri);
+            background: transparent;
         }
+
         .nav-tabs-custom .nav-link .tab-count {
-            background: var(--gray-100); color: var(--gray-600);
-            font-size: .7rem; padding: 2px 8px; border-radius: 10px;
+            background: var(--gray-100);
+            color: var(--gray-600);
+            font-size: .7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
             font-weight: 700;
         }
+
         .nav-tabs-custom .nav-link.active .tab-count {
-            background: var(--pri-light); color: var(--pri);
+            background: var(--pri-light);
+            color: var(--pri);
         }
 
         /* ===== CARDS ===== */
         .card-shell {
-            border: none; border-radius: var(--radius);
-            box-shadow: var(--shadow); background: #fff;
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            background: #fff;
         }
-        .card-shell .card-body { padding: 1.5rem; }
+
+        .card-shell .card-body {
+            padding: 1.5rem;
+        }
 
         /* ===== BUTTONS ===== */
         .btn-pri {
-            background: var(--pri); border: none; color: #fff; font-weight: 600;
-            padding: .5rem 1.25rem; border-radius: 8px; transition: all .25s;
+            background: var(--pri);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            padding: .5rem 1.25rem;
+            border-radius: 8px;
+            transition: all .25s;
             font-size: .85rem;
         }
+
         .btn-pri:hover {
-            background: var(--pri-dark); transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(79, 70, 229, .35); color: #fff;
+            background: var(--pri-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, .35);
+            color: #fff;
         }
+
         .btn-outline-sec {
-            background: #fff; border: 1px solid var(--gray-200); color: var(--gray-600);
-            font-weight: 500; padding: .4rem 1rem; border-radius: 8px;
-            transition: all .2s; font-size: .85rem;
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            color: var(--gray-600);
+            font-weight: 500;
+            padding: .4rem 1rem;
+            border-radius: 8px;
+            transition: all .2s;
+            font-size: .85rem;
         }
+
         .btn-outline-sec:hover {
-            background: var(--gray-50); border-color: var(--gray-400); color: var(--gray-900);
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+            color: var(--gray-900);
         }
 
         /* ===== CHARTS ===== */
-        .chart-wrap { position: relative; height: 300px; }
-        .chart-title {
-            font-size: .875rem; font-weight: 700; color: var(--gray-700);
-            margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem;
+        .chart-wrap {
+            position: relative;
+            height: 300px;
         }
-        .chart-title i { color: var(--pri); }
+
+        .chart-title {
+            font-size: .875rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .chart-title i {
+            color: var(--pri);
+        }
 
         /* ===== FILTER BAR ===== */
         .filter-badge {
-            display: inline-flex; align-items: center; gap: .4rem;
-            background: var(--pri-light); color: var(--pri);
-            padding: .4rem .85rem; border-radius: 20px;
-            font-size: .78rem; font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            background: var(--pri-light);
+            color: var(--pri);
+            padding: .4rem .85rem;
+            border-radius: 20px;
+            font-size: .78rem;
+            font-weight: 600;
         }
 
         /* ===== TABLE ===== */
-        .table-modern { border-collapse: separate; border-spacing: 0; width: 100%; }
+        .table-modern {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+
         .table-modern thead th {
-            font-size: .72rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .5px; color: var(--gray-600); background: var(--gray-50);
-            border-bottom: 2px solid var(--gray-200) !important; border-top: none !important;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--gray-600);
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200) !important;
+            border-top: none !important;
             padding: 0.85rem 1rem;
         }
-        .table-modern tbody tr { transition: background .15s; }
-        .table-modern tbody tr:hover { background: var(--pri-light) !important; }
+
+        .table-modern tbody tr {
+            transition: background .15s;
+        }
+
+        .table-modern tbody tr:hover {
+            background: var(--pri-light) !important;
+        }
+
         .table-modern tbody td {
-            vertical-align: middle; font-size: .875rem;
-            border-bottom: 1px solid var(--gray-100) !important; border-top: none !important;
-            padding: 0.85rem 1rem; color: var(--gray-700);
+            vertical-align: middle;
+            font-size: .875rem;
+            border-bottom: 1px solid var(--gray-100) !important;
+            border-top: none !important;
+            padding: 0.85rem 1rem;
+            color: var(--gray-700);
         }
 
         /* ===== BADGES ===== */
         .status-badge {
-            padding: .35rem .75rem; border-radius: 20px; font-size: .7rem;
-            font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+            padding: .35rem .75rem;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
         }
-        .status-active { background: var(--success-light); color: var(--success); }
-        .status-resign { background: var(--gray-100); color: var(--gray-600); }
+
+        .status-active {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .status-resign {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
 
         /* ===== FORM ===== */
-        .form-control, .form-select {
-            border: 1px solid var(--gray-200); border-radius: 8px;
-            padding: .5rem .85rem; font-size: .875rem; color: var(--gray-700);
+        .form-control,
+        .form-select {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: .5rem .85rem;
+            font-size: .875rem;
+            color: var(--gray-700);
             transition: all .2s;
         }
-        .form-control:focus, .form-select:focus {
-            border-color: var(--pri); box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--pri);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
             outline: none;
         }
+
         .form-label {
-            font-weight: 600; color: var(--gray-700);
-            font-size: .78rem; margin-bottom: .4rem;
-            text-transform: uppercase; letter-spacing: .3px;
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: .78rem;
+            margin-bottom: .4rem;
+            text-transform: uppercase;
+            letter-spacing: .3px;
         }
 
         /* ===== PAGINATION ===== */
-        .pagination-custom { display: flex; gap: 0.25rem; flex-wrap: wrap; }
-        .pagination-custom button {
-            padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: 6px;
-            border: 1px solid var(--gray-200); background: #fff; color: var(--gray-600);
-            cursor: pointer; transition: all 0.15s; font-weight: 600;
+        .pagination-custom {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
         }
-        .pagination-custom button:hover { background: var(--pri-light); color: var(--pri); border-color: var(--pri); }
-        .pagination-custom button.active { background: var(--pri); color: white; border-color: var(--pri); }
+
+        .pagination-custom button {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
+            background: #fff;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-weight: 600;
+        }
+
+        .pagination-custom button:hover {
+            background: var(--pri-light);
+            color: var(--pri);
+            border-color: var(--pri);
+        }
+
+        .pagination-custom button.active {
+            background: var(--pri);
+            color: white;
+            border-color: var(--pri);
+        }
 
         /* ===== MODAL ===== */
-        .modal-content { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); }
+        .modal-content {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+        }
+
         .modal-header-custom {
             background: linear-gradient(135deg, var(--pri) 0%, var(--pri-dark) 100%);
-            color: #fff; border-radius: 12px 12px 0 0; padding: 1.1rem 1.5rem;
+            color: #fff;
+            border-radius: 12px 12px 0 0;
+            padding: 1.1rem 1.5rem;
         }
-        .modal-header-custom .modal-title { font-weight: 700; font-size: 1rem; }
-        .modal-header-custom .btn-close { filter: brightness(0) invert(1); }
+
+        .modal-header-custom .modal-title {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .modal-header-custom .btn-close {
+            filter: brightness(0) invert(1);
+        }
 
         /* ===== RETENTION GAUGE ===== */
         .gauge-wrap {
-            position: relative; width: 160px; height: 160px; margin: 0 auto 1rem;
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 1rem;
         }
+
         .gauge-value {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
         }
+
         .gauge-value .num {
-            font-size: 2rem; font-weight: 700; color: var(--gray-900); line-height: 1;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            line-height: 1;
         }
-        .gauge-value .unit { font-size: .9rem; color: var(--gray-400); font-weight: 600; }
+
+        .gauge-value .unit {
+            font-size: .9rem;
+            color: var(--gray-400);
+            font-weight: 600;
+        }
 
         /* ===== LIST ITEMS ===== */
         .emp-list-item {
-            border: 1px solid var(--gray-200); border-radius: 8px;
-            padding: 1rem 1.15rem; margin-bottom: .6rem;
-            background: #fff; transition: all .2s;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 1rem 1.15rem;
+            margin-bottom: .6rem;
+            background: #fff;
+            transition: all .2s;
         }
+
         .emp-list-item:hover {
-            border-color: var(--pri); background: var(--pri-light);
+            border-color: var(--pri);
+            background: var(--pri-light);
             transform: translateX(3px);
         }
-        .emp-name { font-weight: 700; color: var(--gray-900); font-size: .9rem; }
-        .emp-meta { color: var(--gray-400); font-size: .78rem; }
+
+        .emp-name {
+            font-weight: 700;
+            color: var(--gray-900);
+            font-size: .9rem;
+        }
+
+        .emp-meta {
+            color: var(--gray-400);
+            font-size: .78rem;
+        }
 
         /* ===== BREAKDOWN BAR ===== */
         .breakdown-item {
-            display: flex; align-items: center; gap: 1rem;
-            padding: .6rem 0; border-bottom: 1px dashed var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: .6rem 0;
+            border-bottom: 1px dashed var(--gray-200);
         }
-        .breakdown-item:last-child { border-bottom: none; }
+
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+
         .breakdown-label {
-            min-width: 140px; font-weight: 600; color: var(--gray-700);
+            min-width: 140px;
+            font-weight: 600;
+            color: var(--gray-700);
             font-size: .85rem;
         }
+
         .breakdown-bar-wrap {
-            flex: 1; height: 8px; background: var(--gray-100);
-            border-radius: 4px; overflow: hidden;
+            flex: 1;
+            height: 8px;
+            background: var(--gray-100);
+            border-radius: 4px;
+            overflow: hidden;
         }
+
         .breakdown-bar {
-            height: 100%; background: linear-gradient(90deg, var(--pri), #7c3aed);
-            border-radius: 4px; transition: width .6s ease;
+            height: 100%;
+            background: linear-gradient(90deg, var(--pri), #7c3aed);
+            border-radius: 4px;
+            transition: width .6s ease;
         }
+
         .breakdown-value {
-            min-width: 50px; text-align: right; font-weight: 700;
-            color: var(--pri); font-size: .85rem;
+            min-width: 50px;
+            text-align: right;
+            font-weight: 700;
+            color: var(--pri);
+            font-size: .85rem;
         }
 
         /* ===== INSIGHT CARDS ===== */
         .insight-card {
-            background: var(--gray-50); border: 1px solid var(--gray-200);
-            border-radius: 8px; padding: .85rem 1rem; margin-bottom: .5rem;
-            font-size: .85rem; color: var(--gray-700);
-            display: flex; align-items: flex-start; gap: .6rem;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: .85rem 1rem;
+            margin-bottom: .5rem;
+            font-size: .85rem;
+            color: var(--gray-700);
+            display: flex;
+            align-items: flex-start;
+            gap: .6rem;
         }
-        .insight-card i { color: var(--success); margin-top: 2px; }
-        .insight-card.rec i { color: var(--pri); }
+
+        .insight-card i {
+            color: var(--success);
+            margin-top: 2px;
+        }
+
+        .insight-card.rec i {
+            color: var(--pri);
+        }
 
         /* ===== SUMMARY MINI ===== */
         .summary-mini {
-            background: var(--gray-50); border: 1px solid var(--gray-200);
-            border-radius: 8px; padding: 1rem; text-align: center;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
         }
+
         .summary-mini .value {
-            font-size: 1.4rem; font-weight: 700; line-height: 1.1;
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1.1;
         }
+
         .summary-mini .label {
-            font-size: .72rem; color: var(--gray-400); text-transform: uppercase;
-            letter-spacing: .5px; font-weight: 600; margin-top: .3rem;
+            font-size: .72rem;
+            color: var(--gray-400);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            font-weight: 600;
+            margin-top: .3rem;
         }
 
         /* ===== EMPTY STATE ===== */
         .empty-state {
-            text-align: center; padding: 3rem 1rem; color: var(--gray-400);
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--gray-400);
         }
-        .empty-state i { font-size: 2.5rem; margin-bottom: 1rem; opacity: .4; display: block; }
-        .empty-state p { font-size: .9rem; margin: 0; font-weight: 500; }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            opacity: .4;
+            display: block;
+        }
+
+        .empty-state p {
+            font-size: .9rem;
+            margin: 0;
+            font-weight: 500;
+        }
 
         /* ===== SECTION DIVIDER ===== */
         .section-title {
-            font-size: .85rem; font-weight: 700; color: var(--gray-700);
-            margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem;
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
         }
-        .section-title i { color: var(--pri); }
 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #a1a1c1; }
+        .section-title i {
+            color: var(--pri);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1c1;
+        }
 
         @media (max-width: 767px) {
-            .stat-value { font-size: 1.3rem; }
-            .chart-wrap { height: 240px; }
+            .stat-value {
+                font-size: 1.3rem;
+            }
+
+            .chart-wrap {
+                height: 240px;
+            }
         }
     </style>
 
@@ -293,7 +573,8 @@
             </div>
             <div class="text-end">
                 <small class="text-muted">Terakhir update:</small>
-                <div class="fw-semibold" style="font-size:.85rem;color:var(--gray-700)" id="last-update">{{ now()->format('d M Y, H:i') }}</div>
+                <div class="fw-semibold" style="font-size:.85rem;color:var(--gray-700)" id="last-update">
+                    {{ now()->format('d M Y, H:i') }}</div>
             </div>
         </div>
 
@@ -301,8 +582,10 @@
         <div class="card card-shell mb-4">
             <div class="card-body py-3">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-                    <span class="fw-bold" style="font-size:.875rem;color:var(--pri)"><i class="fa-solid fa-filter me-1"></i>Filter Data</span>
-                    <button class="btn btn-outline-sec btn-sm" id="btn-reset-filter"><i class="fa-solid fa-rotate me-1"></i>Reset</button>
+                    <span class="fw-bold" style="font-size:.875rem;color:var(--pri)"><i
+                            class="fa-solid fa-filter me-1"></i>Filter Data</span>
+                    <button class="btn btn-outline-sec btn-sm" id="btn-reset-filter"><i
+                            class="fa-solid fa-rotate me-1"></i>Reset</button>
                 </div>
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3 col-sm-6">
@@ -326,9 +609,12 @@
                     <div class="col-md-4 col-sm-12">
                         <label class="form-label">Pencarian</label>
                         <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
-                            <input type="text" id="search-employee" class="form-control border-start-0" placeholder="Cari nama, NIP, jabatan...">
-                            <button class="btn btn-pri" type="button" id="btn-search"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            <span class="input-group-text bg-white border-end-0"><i
+                                    class="fa-solid fa-search text-muted"></i></span>
+                            <input type="text" id="search-employee" class="form-control border-start-0"
+                                placeholder="Cari nama, NIP, jabatan...">
+                            <button class="btn btn-pri" type="button" id="btn-search"><i
+                                    class="fa-solid fa-magnifying-glass"></i></button>
                         </div>
                     </div>
                     <div class="col-md-3 col-sm-12">
@@ -350,7 +636,8 @@
                             <p class="stat-label">Karyawan Active</p>
                             <h3 class="stat-value" id="stat-active">-</h3>
                         </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)"><i class="fa-solid fa-user-check"></i></div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)"><i
+                                class="fa-solid fa-user-check"></i></div>
                     </div>
                 </div>
             </div>
@@ -361,7 +648,8 @@
                             <p class="stat-label">Karyawan Baru</p>
                             <h3 class="stat-value" id="stat-new" style="color:var(--success)">-</h3>
                         </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)"><i class="fa-solid fa-user-plus"></i></div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)"><i
+                                class="fa-solid fa-user-plus"></i></div>
                     </div>
                 </div>
             </div>
@@ -372,7 +660,8 @@
                             <p class="stat-label">Karyawan Resign</p>
                             <h3 class="stat-value" id="stat-resign" style="color:var(--gray-600)">-</h3>
                         </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#6b7280,#9ca3af)"><i class="fa-solid fa-user-minus"></i></div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#6b7280,#9ca3af)"><i
+                                class="fa-solid fa-user-minus"></i></div>
                     </div>
                 </div>
             </div>
@@ -381,9 +670,11 @@
                     <div class="card-body d-flex align-items-center justify-content-between">
                         <div>
                             <p class="stat-label">Tingkat Retensi</p>
-                            <h3 class="stat-value" id="stat-retention" style="color:var(--info)">-<small style="font-size:.9rem">%</small></h3>
+                            <h3 class="stat-value" id="stat-retention" style="color:var(--info)">-<small
+                                    style="font-size:.9rem">%</small></h3>
                         </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i
+                                class="fa-solid fa-chart-line"></i></div>
                     </div>
                 </div>
             </div>
@@ -402,6 +693,12 @@
                     <span class="tab-count" id="tabDataCount">0</span>
                 </button>
             </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabResign">
+                    <i class="fa-solid fa-user-minus"></i>Karyawan Resign
+                    <span class="tab-count" id="tabResignCount">0</span>
+                </button>
+            </li>
         </ul>
 
         <div class="tab-content">
@@ -413,8 +710,10 @@
                         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
                             <div class="chart-title mb-0"><i class="fa-solid fa-chart-line"></i>Headcount Trend</div>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-outline-sec btn-sm" id="btn-export-trend-csv"><i class="fa-solid fa-file-csv me-1"></i>CSV</button>
-                                <button class="btn btn-outline-sec btn-sm" id="btn-export-trend-pdf"><i class="fa-solid fa-file-pdf me-1"></i>PDF</button>
+                                <button class="btn btn-outline-sec btn-sm" id="btn-export-trend-csv"><i
+                                        class="fa-solid fa-file-csv me-1"></i>CSV</button>
+                                <button class="btn btn-outline-sec btn-sm" id="btn-export-trend-pdf"><i
+                                        class="fa-solid fa-file-pdf me-1"></i>PDF</button>
                             </div>
                         </div>
 
@@ -436,7 +735,8 @@
                                 </select>
                             </div>
                             <div class="col-md-3 d-flex align-items-end">
-                                <button class="btn btn-pri btn-sm w-100" id="btn-apply-trend-filter"><i class="fa-solid fa-check me-1"></i>Terapkan</button>
+                                <button class="btn btn-pri btn-sm w-100" id="btn-apply-trend-filter"><i
+                                        class="fa-solid fa-check me-1"></i>Terapkan</button>
                             </div>
                         </div>
 
@@ -475,10 +775,13 @@
                 <div class="card card-shell mb-4">
                     <div class="card-body">
                         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-                            <div class="chart-title mb-0"><i class="fa-solid fa-chart-column"></i>Headcount Breakdown</div>
+                            <div class="chart-title mb-0"><i class="fa-solid fa-chart-column"></i>Headcount Breakdown
+                            </div>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-outline-sec btn-sm" id="btn-export-breakdown-csv"><i class="fa-solid fa-file-csv me-1"></i>CSV</button>
-                                <button class="btn btn-outline-sec btn-sm" id="btn-export-breakdown-pdf"><i class="fa-solid fa-file-pdf me-1"></i>PDF</button>
+                                <button class="btn btn-outline-sec btn-sm" id="btn-export-breakdown-csv"><i
+                                        class="fa-solid fa-file-csv me-1"></i>CSV</button>
+                                <button class="btn btn-outline-sec btn-sm" id="btn-export-breakdown-pdf"><i
+                                        class="fa-solid fa-file-pdf me-1"></i>PDF</button>
                             </div>
                         </div>
 
@@ -501,10 +804,12 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Min. Masa Kerja (bln)</label>
-                                <input type="number" id="breakdown-min-tenure" class="form-control form-control-sm" value="0" min="0">
+                                <input type="number" id="breakdown-min-tenure" class="form-control form-control-sm"
+                                    value="0" min="0">
                             </div>
                             <div class="col-md-3 d-flex align-items-end">
-                                <button class="btn btn-pri btn-sm w-100" id="btn-apply-breakdown-filter"><i class="fa-solid fa-check me-1"></i>Terapkan</button>
+                                <button class="btn btn-pri btn-sm w-100" id="btn-apply-breakdown-filter"><i
+                                        class="fa-solid fa-check me-1"></i>Terapkan</button>
                             </div>
                         </div>
 
@@ -552,7 +857,8 @@
                                     <option value="new">Baru</option>
                                     <option value="resign">Resign</option>
                                 </select>
-                                <button class="btn btn-pri btn-sm" id="btn-load-employees"><i class="fa-solid fa-download me-1"></i>Load Data</button>
+                                <button class="btn btn-pri btn-sm" id="btn-load-employees"><i
+                                        class="fa-solid fa-download me-1"></i>Load Data</button>
                             </div>
                         </div>
 
@@ -566,6 +872,7 @@
                                         <th>Divisi</th>
                                         <th>Tanggal Join</th>
                                         <th class="text-center">Status</th>
+                                        <th class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="employee-table-body"></tbody>
@@ -577,6 +884,116 @@
                             <div class="pagination-custom mt-2 mt-md-0" id="employee-pagination"></div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {{-- ===== TAB 3: KARYAWAN RESIGN ===== --}}
+            <div class="tab-pane fade" id="tabResign">
+                <div class="card card-shell">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                            <div class="section-title mb-0"><i class="fa-solid fa-user-minus"></i>Daftar Karyawan Resign
+                            </div>
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="input-group input-group-sm" style="width:220px">
+                                    <input type="text" id="resign-search" class="form-control"
+                                        placeholder="Cari nama, NIP, jabatan...">
+                                    <button class="btn btn-pri" id="btn-resign-search"><i
+                                            class="fa-solid fa-magnifying-glass"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table-modern mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Nama</th>
+                                        <th>NIP</th>
+                                        <th>Jabatan</th>
+                                        <th>Divisi</th>
+                                        <th>Tanggal Resign</th>
+                                        <th>Alasan Resign</th>
+                                        <th class="text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resign-table-body"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mt-3">
+                            <small class="text-muted" id="resign-table-info">Menampilkan data karyawan resign</small>
+                            <div class="pagination-custom mt-2 mt-md-0" id="resign-pagination"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ===== MODAL: EDIT RESIGN ===== --}}
+    <div class="modal fade" id="modal-edit-resign" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-custom border-0">
+                    <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2"></i>Edit Data Resign</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <strong id="edit-resign-name" style="color:var(--gray-900)"></strong>
+                        <div class="emp-meta" id="edit-resign-meta"></div>
+                    </div>
+                    <input type="hidden" id="edit-resign-id">
+                    <div class="mb-3 mt-3">
+                        <label class="form-label">Tanggal Resign</label>
+                        <input type="date" id="edit-resign-date" class="form-control form-control-sm">
+                        <div class="invalid-feedback" id="edit-resign-date-error"></div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Alasan Resign</label>
+                        <textarea id="edit-resign-reason" class="form-control form-control-sm" rows="3"
+                            placeholder="Masukkan alasan resign..."></textarea>
+                        <div class="invalid-feedback" id="edit-resign-reason-error"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-sec btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-pri btn-sm" id="btn-save-resign"><i
+                            class="fa-solid fa-check me-1"></i>Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ===== MODAL: Move To Resign ===== --}}
+    <div class="modal fade" id="moveToResign" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-custom border-0">
+                    <h5 class="modal-title"><i class="fa-solid fa-user-minus me-2"></i>Pindahkan ke Resign</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <strong id="add-resign-name" style="color:var(--gray-900)"></strong>
+                        <div class="emp-meta" id="add-resign-meta"></div>
+                    </div>
+                    <input type="hidden" id="add-resign-id">
+                    <div class="mb-3 mt-3">
+                        <label class="form-label">Tanggal Resign</label>
+                        <input type="date" id="add-resign-date" class="form-control form-control-sm">
+                        <div class="invalid-feedback" id="add-resign-date-error"></div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Alasan Resign</label>
+                        <textarea id="add-resign-reason" class="form-control form-control-sm" rows="3" placeholder="Masukkan alasan resign..."></textarea>
+                        <div class="invalid-feedback" id="add-resign-reason-error"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-sec btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-pri btn-sm" id="btn-save-move-resign"><i class="fa-solid fa-check me-1"></i>Simpan</button>
                 </div>
             </div>
         </div>
@@ -643,8 +1060,12 @@
                         <div class="col-md-4 text-center">
                             <div class="gauge-wrap">
                                 <svg width="160" height="160" style="transform:rotate(-90deg)">
-                                    <circle cx="80" cy="80" r="65" fill="none" stroke="var(--gray-100)" stroke-width="12"></circle>
-                                    <circle class="progress-ring" cx="80" cy="80" r="65" fill="none" stroke="var(--pri)" stroke-width="12" stroke-linecap="round" stroke-dasharray="408.4" stroke-dashoffset="408.4" style="transition:stroke-dashoffset 0.6s ease"></circle>
+                                    <circle cx="80" cy="80" r="65" fill="none" stroke="var(--gray-100)"
+                                        stroke-width="12"></circle>
+                                    <circle class="progress-ring" cx="80" cy="80" r="65" fill="none"
+                                        stroke="var(--pri)" stroke-width="12" stroke-linecap="round"
+                                        stroke-dasharray="408.4" stroke-dashoffset="408.4"
+                                        style="transition:stroke-dashoffset 0.6s ease"></circle>
                                 </svg>
                                 <div class="gauge-value">
                                     <div class="num"><span id="gauge-value">0</span></div>
@@ -656,13 +1077,38 @@
                         <div class="col-md-8">
                             <div class="section-title"><i class="fa-solid fa-chart-simple"></i>Ringkasan Statistik</div>
                             <div class="row g-2 mb-3">
-                                <div class="col-6"><div class="summary-mini"><div class="value" style="color:var(--pri);font-size:1.1rem" id="summary-total">-</div><div class="label">Total</div></div></div>
-                                <div class="col-6"><div class="summary-mini"><div class="value" style="color:var(--success);font-size:1.1rem" id="summary-active">-</div><div class="label">Active</div></div></div>
-                                <div class="col-6"><div class="summary-mini"><div class="value" style="color:var(--gray-600);font-size:1.1rem" id="summary-resign">-</div><div class="label">Resign</div></div></div>
-                                <div class="col-6"><div class="summary-mini"><div class="value" style="color:var(--info);font-size:1.1rem" id="summary-ratio">-</div><div class="label">Rasio</div></div></div>
+                                <div class="col-6">
+                                    <div class="summary-mini">
+                                        <div class="value" style="color:var(--pri);font-size:1.1rem" id="summary-total">
+                                            -</div>
+                                        <div class="label">Total</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="summary-mini">
+                                        <div class="value" style="color:var(--success);font-size:1.1rem"
+                                            id="summary-active">-</div>
+                                        <div class="label">Active</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="summary-mini">
+                                        <div class="value" style="color:var(--gray-600);font-size:1.1rem"
+                                            id="summary-resign">-</div>
+                                        <div class="label">Resign</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="summary-mini">
+                                        <div class="value" style="color:var(--info);font-size:1.1rem"
+                                            id="summary-ratio">-</div>
+                                        <div class="label">Rasio</div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="section-title"><i class="fa-solid fa-lightbulb" style="color:var(--warning)"></i>Peluang Peningkatan</div>
+                            <div class="section-title"><i class="fa-solid fa-lightbulb"
+                                    style="color:var(--warning)"></i>Peluang Peningkatan</div>
                             <div id="opportunities-list"></div>
 
                             <div class="section-title mt-3"><i class="fa-solid fa-circle-check"></i>Rekomendasi</div>
@@ -696,7 +1142,9 @@
     <script>
         $(document).ready(function() {
             $.ajaxSetup({
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
             });
             let trendChart, breakdownChart;
             loadStats();
@@ -718,7 +1166,10 @@
                 loadStats();
             });
             $('#search-employee').on('keypress', function(e) {
-                if (e.which === 13) { updateFilterLabel(); loadStats(); }
+                if (e.which === 13) {
+                    updateFilterLabel();
+                    loadStats();
+                }
             });
             $('#btn-reset-filter').on('click', function() {
                 $('#periode').val('all');
@@ -735,23 +1186,29 @@
             // Trend events
             $('#btn-apply-trend-filter').on('click', loadTrendChart);
             $('#btn-export-trend-csv').on('click', function() {
-                window.location = "{{ route('HR.employee.trend.export.csv') }}?" + $.param(getTrendParams());
+                window.location = "{{ route('HR.employee.trend.export.csv') }}?" + $.param(
+                    getTrendParams());
             });
             $('#btn-export-trend-pdf').on('click', function() {
-                window.location = "{{ route('HR.employee.trend.export.pdf') }}?" + $.param(getTrendParams());
+                window.location = "{{ route('HR.employee.trend.export.pdf') }}?" + $.param(
+                    getTrendParams());
             });
 
             // Breakdown events
             $('#btn-apply-breakdown-filter').on('click', loadBreakdownChart);
             $('#btn-export-breakdown-csv').on('click', function() {
-                window.location = "{{ route('HR.employee.breakdown.export.csv') }}?" + $.param(getBreakdownParams());
+                window.location = "{{ route('HR.employee.breakdown.export.csv') }}?" + $.param(
+                    getBreakdownParams());
             });
             $('#btn-export-breakdown-pdf').on('click', function() {
-                window.location = "{{ route('HR.employee.breakdown.export.pdf') }}?" + $.param(getBreakdownParams());
+                window.location = "{{ route('HR.employee.breakdown.export.pdf') }}?" + $.param(
+                    getBreakdownParams());
             });
 
             // Employee table
-            $('#btn-load-employees').on('click', function() { loadEmployeeTable(1); });
+            $('#btn-load-employees').on('click', function() {
+                loadEmployeeTable(1);
+            });
 
             function getFilterParams() {
                 return {
@@ -778,7 +1235,9 @@
             }
 
             function updateFilterLabel() {
-                const p = $('#periode').val(), y = $('#year').val(), s = $('#search-employee').val();
+                const p = $('#periode').val(),
+                    y = $('#year').val(),
+                    s = $('#search-employee').val();
                 let lbl = 'Menampilkan: ';
                 if (p === 'all' && !s) lbl += 'Semua Data';
                 else {
@@ -794,15 +1253,166 @@
                         $('#stat-active').text(res.stats.active);
                         $('#stat-new').text(res.stats.new);
                         $('#stat-resign').text(res.stats.resign);
-                        $('#stat-retention').html(res.stats.retention_rate + '<small style="font-size:.9rem">%</small>');
+                        $('#stat-retention').html(res.stats.retention_rate +
+                            '<small style="font-size:.9rem">%</small>');
                         $('#tabDataCount').text(res.stats.active || 0);
                         $('#last-update').text(new Date().toLocaleString('id-ID', {
-                            day: '2-digit', month: 'short', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit'
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
                         }));
                     }
                 });
             }
+
+            $('button[data-bs-target="#tabResign"]').on('click', function() {
+                loadResignTable(1);
+            });
+
+            $('#btn-resign-search').on('click', function() {
+                loadResignTable(1);
+            });
+            $('#resign-search').on('keypress', function(e) {
+                if (e.which === 13) loadResignTable(1);
+            });
+
+            let resignRowCache = {};
+
+            function loadResignTable(page) {
+                const params = { search: $('#resign-search').val(), page };
+                $.get("{{ route('HR.employee.resigned') }}", params, function(res) {
+                    const tbody = $('#resign-table-body').empty();
+                    $('#tabResignCount').text(res.total_resign || 0);
+                    resignRowCache = {};
+
+                    if (res.data.length === 0) {
+                        tbody.append('<tr><td colspan="7"><div class="empty-state"><i class="fa-solid fa-users-slash"></i><p>Tidak ada data karyawan resign</p></div></td></tr>');
+                    } else {
+                        res.data.forEach(emp => {
+                            resignRowCache[emp.id] = emp;
+                            tbody.append(`
+                                <tr>
+                                    <td><strong style="color:var(--gray-900)">${emp.nama_lengkap}</strong></td>
+                                    <td class="text-muted">${emp.nip}</td>
+                                    <td>${emp.jabatan}</td>
+                                    <td>${emp.divisi}</td>
+                                    <td><span style="color:var(--danger)"><i class="fa-solid fa-calendar-xmark me-1"></i>${emp.resigned_at}</span></td>
+                                    <td>${emp.alasan_resign}</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-outline-sec btn-sm btn-edit-resign" data-id="${emp.id}" title="Edit">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        <button class="btn btn-outline-sec btn-sm btn-restore-resign" data-id="${emp.id}" title="Pulihkan ke Aktif">
+                                            <i class="fa-solid fa-rotate-left"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `);
+                        });
+                    }
+
+                    $('#resign-table-info').text(`Menampilkan ${res.data.length} dari ${res.pagination.total} data`);
+                    const pag = $('#resign-pagination').empty();
+                    if (res.pagination.last_page > 1) {
+                        for (let i = 1; i <= res.pagination.last_page; i++) {
+                            const active = i === res.pagination.current_page ? 'active' : '';
+                            pag.append(`<button class="${active}" data-page="${i}">${i}</button>`);
+                        }
+                        pag.off('click', 'button').on('click', 'button', function() {
+                            loadResignTable($(this).data('page'));
+                        });
+                    }
+                });
+            }
+
+            // Restore employee
+            $(document).on('click', '.btn-restore-resign', function() {
+                const id = $(this).data('id');
+                const emp = resignRowCache[id];
+                if (!emp) return;
+
+                if (!confirm(`Pulihkan ${emp.nama_lengkap} menjadi karyawan aktif?`)) return;
+
+                const btn = $(this);
+                btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i>');
+
+                $.ajax({
+                    url: "{{ route('HR.employee.restore', ':id') }}".replace(':id', id),
+                    method: 'POST',
+                    data: { _method: 'PUT' },
+                    success: function() {
+                        loadResignTable($('#resign-pagination .active').data('page') || 1);
+                        loadStats();
+                    },
+                    error: function(xhr) {
+                        alert(xhr.responseJSON?.error || 'Gagal memulihkan data');
+                        btn.prop('disabled', false).html('<i class="fa-solid fa-rotate-left"></i>');
+                    }
+                });
+            });
+
+            // Open edit modal
+            $(document).on('click', '.btn-edit-resign', function() {
+                const id = $(this).data('id');
+                const emp = resignRowCache[id];
+                if (!emp) return;
+
+                $('#edit-resign-id').val(emp.id);
+                $('#edit-resign-name').text(emp.nama);
+                $('#edit-resign-meta').text(`${emp.nip} • ${emp.jabatan} • ${emp.divisi}`);
+                $('#edit-resign-date').val(emp.resigned_at_raw || '').removeClass('is-invalid');
+                $('#edit-resign-reason').val(emp.alasan_resign === '-' ? '' : emp.alasan_resign)
+                    .removeClass('is-invalid');
+
+                new bootstrap.Modal(document.getElementById('modal-edit-resign')).show();
+            });
+
+            // Save edit
+            $('#btn-save-resign').on('click', function() {
+                const id = $('#edit-resign-id').val();
+                const btn = $(this);
+                const payload = {
+                    _method: 'PUT',
+                    resigned_at: $('#edit-resign-date').val(),
+                    alasan_resign: $('#edit-resign-reason').val(),
+                };
+
+                $('#edit-resign-date, #edit-resign-reason').removeClass('is-invalid');
+                btn.prop('disabled', true).html(
+                    '<i class="fa-solid fa-spinner fa-spin me-1"></i>Menyimpan...');
+
+                $.ajax({
+                    url: `/HR-dashboard/employee/resigned/${id}`,
+                    method: 'POST',
+                    data: payload,
+                    success: function(res) {
+                        bootstrap.Modal.getInstance(document.getElementById(
+                            'modal-edit-resign')).hide();
+                        loadResignTable($('#resign-pagination .active').data('page') || 1);
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 422 && xhr.responseJSON.errors) {
+                            const errors = xhr.responseJSON.errors;
+                            if (errors.resigned_at) {
+                                $('#edit-resign-date').addClass('is-invalid');
+                                $('#edit-resign-date-error').text(errors.resigned_at[0]);
+                            }
+                            if (errors.alasan_resign) {
+                                $('#edit-resign-reason').addClass('is-invalid');
+                                $('#edit-resign-reason-error').text(errors.alasan_resign[0]);
+                            }
+                        } else {
+                            alert(xhr.responseJSON?.error || 'Gagal memperbarui data');
+                        }
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html(
+                            '<i class="fa-solid fa-check me-1"></i>Simpan');
+                    }
+                });
+            });
 
             function loadTrendChart() {
                 $.get("{{ route('HR.employee.trend') }}", getTrendParams(), function(res) {
@@ -812,7 +1422,10 @@
                     $('#trend-avg-new').text(res.summary.avg_monthly_new);
 
                     if (trendChart) trendChart.destroy();
-                    const chartFont = { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto", size: 11 };
+                    const chartFont = {
+                        family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto",
+                        size: 11
+                    };
                     const colors = ['#4f46e5', '#059669', '#6b7280'];
 
                     trendChart = new Chart(document.getElementById('trendChart'), {
@@ -822,27 +1435,62 @@
                             datasets: res.datasets.map((d, i) => ({
                                 ...d,
                                 borderColor: colors[i] || colors[0],
-                                backgroundColor: colors[i] ? colors[i] + '20' : colors[0] + '20',
-                                tension: 0.4, fill: false, borderWidth: 2.5,
-                                pointRadius: 4, pointHoverRadius: 6,
+                                backgroundColor: colors[i] ? colors[i] + '20' : colors[
+                                    0] + '20',
+                                tension: 0.4,
+                                fill: false,
+                                borderWidth: 2.5,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
                                 pointBackgroundColor: '#fff',
                                 pointBorderColor: colors[i] || colors[0],
                                 pointBorderWidth: 2
                             }))
                         },
                         options: {
-                            responsive: true, maintainAspectRatio: false,
+                            responsive: true,
+                            maintainAspectRatio: false,
                             plugins: {
-                                legend: { position: 'bottom', labels: { font: chartFont, usePointStyle: true, padding: 15 } },
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        font: chartFont,
+                                        usePointStyle: true,
+                                        padding: 15
+                                    }
+                                },
                                 tooltip: {
                                     backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                                    titleFont: { size: 12, weight: 'bold' },
-                                    bodyFont: { size: 11 }, padding: 12, cornerRadius: 8
+                                    titleFont: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    bodyFont: {
+                                        size: 11
+                                    },
+                                    padding: 12,
+                                    cornerRadius: 8
                                 }
                             },
                             scales: {
-                                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: chartFont } },
-                                x: { grid: { display: false }, ticks: { font: chartFont, maxRotation: 45 } }
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(0,0,0,0.05)'
+                                    },
+                                    ticks: {
+                                        font: chartFont
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        font: chartFont,
+                                        maxRotation: 45
+                                    }
+                                }
                             }
                         }
                     });
@@ -856,7 +1504,10 @@
                     $('#breakdown-avg-retention').text(res.summary.avg_retention + '%');
 
                     if (breakdownChart) breakdownChart.destroy();
-                    const chartFont = { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto", size: 11 };
+                    const chartFont = {
+                        family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto",
+                        size: 11
+                    };
 
                     breakdownChart = new Chart(document.getElementById('breakdownChart'), {
                         type: 'bar',
@@ -866,34 +1517,70 @@
                                 label: 'Total',
                                 data: res.chart.total,
                                 backgroundColor: 'rgba(79, 70, 229, 0.85)',
-                                borderRadius: 6, borderSkipped: false
+                                borderRadius: 6,
+                                borderSkipped: false
                             }, {
                                 label: 'Active',
                                 data: res.chart.active,
                                 backgroundColor: 'rgba(5, 150, 105, 0.85)',
-                                borderRadius: 6, borderSkipped: false
+                                borderRadius: 6,
+                                borderSkipped: false
                             }]
                         },
                         options: {
-                            responsive: true, maintainAspectRatio: false,
+                            responsive: true,
+                            maintainAspectRatio: false,
                             plugins: {
-                                legend: { position: 'bottom', labels: { font: chartFont, usePointStyle: true, padding: 15 } },
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        font: chartFont,
+                                        usePointStyle: true,
+                                        padding: 15
+                                    }
+                                },
                                 tooltip: {
                                     backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                                    titleFont: { size: 12, weight: 'bold' },
-                                    bodyFont: { size: 11 }, padding: 12, cornerRadius: 8
+                                    titleFont: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    bodyFont: {
+                                        size: 11
+                                    },
+                                    padding: 12,
+                                    cornerRadius: 8
                                 }
                             },
                             scales: {
-                                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: chartFont } },
-                                x: { grid: { display: false }, ticks: { font: chartFont, maxRotation: 45, minRotation: 45 } }
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(0,0,0,0.05)'
+                                    },
+                                    ticks: {
+                                        font: chartFont
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        font: chartFont,
+                                        maxRotation: 45,
+                                        minRotation: 45
+                                    }
+                                }
                             }
                         }
                     });
 
                     const list = $('#breakdown-list').empty();
                     if (!res.breakdown || res.breakdown.length === 0) {
-                        list.html('<div class="empty-state"><i class="fa-solid fa-chart-simple"></i><p>Belum ada data breakdown</p></div>');
+                        list.html(
+                            '<div class="empty-state"><i class="fa-solid fa-chart-simple"></i><p>Belum ada data breakdown</p></div>'
+                        );
                         return;
                     }
                     res.breakdown.forEach(item => {
@@ -908,15 +1595,22 @@
                 });
             }
 
+            let employeeRowCache = {};
+
             function loadEmployeeTable(page) {
                 const params = { category: $('#list-category').val(), ...getFilterParams(), page };
                 $.get("{{ route('HR.employee.category') }}", params, function(res) {
                     const tbody = $('#employee-table-body').empty();
+                    employeeRowCache = {};
                     if (res.data.length === 0) {
-                        tbody.append('<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-users-slash"></i><p>Tidak ada data yang ditemukan</p><small>Coba ubah filter atau kategori</small></div></td></tr>');
+                        tbody.append('<tr><td colspan="7"><div class="empty-state"><i class="fa-solid fa-users-slash"></i><p>Tidak ada data yang ditemukan</p><small>Coba ubah filter atau kategori</small></div></td></tr>');
                     } else {
                         res.data.forEach(emp => {
+                            employeeRowCache[emp.id] = emp;
                             const statusClass = emp.status === 'Aktif' ? 'status-active' : 'status-resign';
+                            const actionBtn = emp.status === 'Aktif'
+                                ? `<button class="btn btn-outline-danger btn-sm btn-move-resign" data-id="${emp.id}" title="Pindahkan ke Resign"><i class="fa-solid fa-user-minus"></i></button>`
+                                : '';
                             tbody.append(`
                                 <tr>
                                     <td><strong style="color:var(--gray-900)">${emp.nama}</strong><br><small class="text-muted">${emp.nama_lengkap}</small></td>
@@ -925,6 +1619,7 @@
                                     <td>${emp.divisi}</td>
                                     <td>${emp.tanggal_join}</td>
                                     <td class="text-center"><span class="status-badge ${statusClass}">${emp.status}</span></td>
+                                    <td class="text-center">${actionBtn}</td>
                                 </tr>
                             `);
                         });
@@ -943,20 +1638,85 @@
                 });
             }
 
+            // Open move-to-resign modal
+            $(document).on('click', '.btn-move-resign', function() {
+                const id = $(this).data('id');
+                const emp = employeeRowCache[id];
+                if (!emp) return;
+
+                $('#add-resign-id').val(emp.id);
+                $('#add-resign-name').text(emp.nama);
+                $('#add-resign-meta').text(`${emp.nip} • ${emp.jabatan} • ${emp.divisi}`);
+                $('#add-resign-date').val(new Date().toISOString().split('T')[0]).removeClass('is-invalid');
+                $('#add-resign-reason').val('').removeClass('is-invalid');
+
+                new bootstrap.Modal(document.getElementById('moveToResign')).show();
+            });
+
+            // Save move-to-resign
+            $('#btn-save-move-resign').on('click', function() {
+                const id = $('#add-resign-id').val();
+                const btn = $(this);
+                const payload = {
+                    _method: 'PUT',
+                    resigned_at: $('#add-resign-date').val(),
+                    alasan_resign: $('#add-resign-reason').val(),
+                };
+
+                $('#add-resign-date, #add-resign-reason').removeClass('is-invalid');
+                btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i>Menyimpan...');
+
+                $.ajax({
+                    url: "{{ route('HR.employee.moveToResign', ':id') }}".replace(':id', id),
+                    method: 'POST',
+                    data: payload,
+                    success: function(res) {
+                        bootstrap.Modal.getInstance(document.getElementById('moveToResign')).hide();
+                        loadEmployeeTable($('#employee-pagination .active').data('page') || 1);
+                        loadStats();
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 422 && xhr.responseJSON.errors) {
+                            const errors = xhr.responseJSON.errors;
+                            if (errors.resigned_at) {
+                                $('#add-resign-date').addClass('is-invalid');
+                                $('#add-resign-date-error').text(errors.resigned_at[0]);
+                            }
+                            if (errors.alasan_resign) {
+                                $('#add-resign-reason').addClass('is-invalid');
+                                $('#add-resign-reason-error').text(errors.alasan_resign[0]);
+                            }
+                        } else {
+                            alert(xhr.responseJSON?.error || 'Gagal memindahkan data');
+                        }
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html('<i class="fa-solid fa-check me-1"></i>Simpan');
+                    }
+                });
+            });
+
             function loadEmployeeList(category, page) {
-                const listId = `#list-${category}`, paginationId = `#pagination-${category}`;
+                const listId = `#list-${category}`,
+                    paginationId = `#pagination-${category}`;
                 $(listId).empty();
                 $(paginationId).empty();
-                $.get("{{ route('HR.employee.category') }}", { ...getFilterParams(), category, page }, function(res) {
+                $.get("{{ route('HR.employee.category') }}", {
+                    ...getFilterParams(),
+                    category,
+                    page
+                }, function(res) {
                     if (res.data.length === 0) {
-                        $(listId).html('<div class="empty-state"><i class="fa-solid fa-inbox"></i><p>Tidak ada data</p></div>');
+                        $(listId).html(
+                            '<div class="empty-state"><i class="fa-solid fa-inbox"></i><p>Tidak ada data</p></div>'
+                        );
                     } else {
                         res.data.forEach(emp => {
-                            const dateDisplay = category === 'resign' && emp.resigned_at
-                                ? `<br><small style="color:var(--danger)"><i class="fa-solid fa-calendar-xmark me-1"></i>Resign: ${emp.resigned_at}</small>`
-                                : emp.tanggal_join !== '-'
-                                ? `<br><small class="emp-meta"><i class="fa-solid fa-calendar me-1"></i>${emp.tanggal_join}</small>`
-                                : '';
+                            const dateDisplay = category === 'resign' && emp.resigned_at ?
+                                `<br><small style="color:var(--danger)"><i class="fa-solid fa-calendar-xmark me-1"></i>Resign: ${emp.resigned_at}</small>` :
+                                emp.tanggal_join !== '-' ?
+                                `<br><small class="emp-meta"><i class="fa-solid fa-calendar me-1"></i>${emp.tanggal_join}</small>` :
+                                '';
                             $(listId).append(`
                                 <div class="emp-list-item">
                                     <div class="d-flex justify-content-between align-items-start">
@@ -978,9 +1738,10 @@
                             const active = i === res.pagination.current_page ? 'active' : '';
                             pagination += `<button class="${active}" data-page="${i}">${i}</button>`;
                         }
-                        $(paginationId).html(pagination).off('click', 'button').on('click', 'button', function() {
-                            loadEmployeeList(category, $(this).data('page'));
-                        });
+                        $(paginationId).html(pagination).off('click', 'button').on('click', 'button',
+                            function() {
+                                loadEmployeeList(category, $(this).data('page'));
+                            });
                     }
                 });
             }
@@ -992,13 +1753,29 @@
                     const circumference = 2 * Math.PI * 65;
                     const offset = circumference - (rate / 100) * circumference;
                     $('#gauge-value').text(rate);
-                    $('.progress-ring').css({ 'stroke-dasharray': circumference, 'stroke-dashoffset': offset });
+                    $('.progress-ring').css({
+                        'stroke-dasharray': circumference,
+                        'stroke-dashoffset': offset
+                    });
 
                     let strokeColor, statusText, statusClass;
-                    if (rate >= 90) { strokeColor = 'var(--success)'; statusText = 'Sangat Baik'; statusClass = 'status-active'; }
-                    else if (rate >= 75) { strokeColor = 'var(--pri)'; statusText = 'Baik'; statusClass = 'status-active'; }
-                    else if (rate >= 60) { strokeColor = 'var(--warning)'; statusText = 'Cukup'; statusClass = 'status-badge'; }
-                    else { strokeColor = 'var(--gray-400)'; statusText = 'Perlu Perhatian'; statusClass = 'status-resign'; }
+                    if (rate >= 90) {
+                        strokeColor = 'var(--success)';
+                        statusText = 'Sangat Baik';
+                        statusClass = 'status-active';
+                    } else if (rate >= 75) {
+                        strokeColor = 'var(--pri)';
+                        statusText = 'Baik';
+                        statusClass = 'status-active';
+                    } else if (rate >= 60) {
+                        strokeColor = 'var(--warning)';
+                        statusText = 'Cukup';
+                        statusClass = 'status-badge';
+                    } else {
+                        strokeColor = 'var(--gray-400)';
+                        statusText = 'Perlu Perhatian';
+                        statusClass = 'status-resign';
+                    }
 
                     $('.progress-ring').css('stroke', strokeColor);
                     $('#retention-status').text(statusText).attr('class', 'status-badge ' + statusClass);
@@ -1011,25 +1788,34 @@
                     const oppList = $('#opportunities-list').empty();
                     if (res.insights.opportunities && res.insights.opportunities.length > 0) {
                         res.insights.opportunities.forEach(opp => {
-                            oppList.append(`<div class="insight-card"><i class="fa-solid fa-lightbulb"></i><div>${opp}</div></div>`);
+                            oppList.append(
+                                `<div class="insight-card"><i class="fa-solid fa-lightbulb"></i><div>${opp}</div></div>`
+                            );
                         });
                     } else {
-                        oppList.html('<div class="empty-state" style="padding:1rem"><small>Tidak ada peluang saat ini</small></div>');
+                        oppList.html(
+                            '<div class="empty-state" style="padding:1rem"><small>Tidak ada peluang saat ini</small></div>'
+                        );
                     }
 
                     const recList = $('#recommendations-list').empty();
                     if (res.insights.recommendations && res.insights.recommendations.length > 0) {
                         res.insights.recommendations.slice(0, 3).forEach(rec => {
-                            recList.append(`<div class="insight-card rec"><i class="fa-solid fa-circle-check"></i><div>${rec}</div></div>`);
+                            recList.append(
+                                `<div class="insight-card rec"><i class="fa-solid fa-circle-check"></i><div>${rec}</div></div>`
+                            );
                         });
                     } else {
-                        recList.html('<div class="empty-state" style="padding:1rem"><small>Tidak ada rekomendasi saat ini</small></div>');
+                        recList.html(
+                            '<div class="empty-state" style="padding:1rem"><small>Tidak ada rekomendasi saat ini</small></div>'
+                        );
                     }
 
                     const projBody = $('#projections-body').empty();
                     if (res.insights.projections) {
                         Object.entries(res.insights.projections).forEach(([period, data]) => {
-                            const label = period === 'next_quarter' ? 'Kuartal Depan' : 'Tahun Depan';
+                            const label = period === 'next_quarter' ? 'Kuartal Depan' :
+                                'Tahun Depan';
                             let confClass = 'status-resign';
                             if (data.confidence === 'high') confClass = 'status-active';
                             else if (data.confidence === 'medium') confClass = 'status-badge';

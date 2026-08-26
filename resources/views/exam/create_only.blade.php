@@ -431,8 +431,6 @@ $(document).ready(function() {
         $('#total_final').val(totalNet);
     }
 
-    // --- INTEGRASI KONSTANTA VALIDASI TOMBOL GLOBAL ---
-    // Mengganti selektor $('form') menjadi ID spesifik
     $('#form-exam-only').on('submit', function(e) {
 
         // 1. Validasi Kondisional Khusus Formulir
@@ -460,15 +458,8 @@ $(document).ready(function() {
             return false;
         }
 
-        // 2. Eksekusi Penguncian Tombol
-        const submitButton = document.getElementById('btn-submit-exam-only');
-        if (!ButtonValidator.lock(submitButton)) {
-            // Batalkan pengiriman jika tombol sudah terkunci
-            e.preventDefault();
-            return false;
-        }
-
-        // 3. Pemrosesan Format Data (Hapus format Rupiah sebelum pengiriman)
+        // 2. Pemrosesan Format Data Pra-pengiriman (Unformat Rupiah)
+        // Catatan: Validasi penguncian tombol akan dieksekusi secara terpusat oleh skrip global
         $('#harga').val(removeRupiahFormat($('#harga').val()));
         $('#kurs').val(removeRupiahFormat($('#kurs').val()));
         $('#biaya_admin').val(removeRupiahFormat($('#biaya_admin').val()));

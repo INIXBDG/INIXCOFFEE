@@ -36,6 +36,13 @@ use function PHPUnit\Framework\matches;
 
 class OfficeController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:Fitur Menu Office', ['only' => ['dashboard']]);
+    }
+
     public function dashboard(Request $request)
     {
         // 1. Total Karyawan & Divisi Stats

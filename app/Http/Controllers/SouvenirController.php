@@ -23,13 +23,14 @@ class SouvenirController extends Controller
         $this->middleware('permission:Edit Souvenir', ['only' => ['update', 'edit', 'editstok']]);
         $this->middleware('permission:Souvenir RKM', ['only' => ['createSouvenirInhouse', 'storeSouvenirInhouse', 'updateSouvenirInhouse']]);
     }
+    
     public function index()
     {
         return view('souvenir.index');
     }
     public function getSouvenir()
     {
-        $souvenirs = Souvenir::all();
+        $souvenirs = Souvenir::orderBy('id', 'desc')->get();
 
         // Iterasi melalui setiap souvenir dan ubah blob_foto menjadi base64
         $souvenirsWithBase64 = $souvenirs->map(function ($souvenir) {
@@ -51,6 +52,32 @@ class SouvenirController extends Controller
             'data' => $souvenirsArray,
         ], 200, ['Content-type' => 'application/json; charset=utf-8']);
     }
+
+    public function getSouvenirInactive()
+    {
+        $souvenirs = Souvenir::onlyTrashed()->orderBy('id', 'desc')->get();
+
+        // Iterasi melalui setiap souvenir dan ubah blob_foto menjadi base64
+        $souvenirsWithBase64 = $souvenirs->map(function ($souvenir) {
+            if (!is_null($souvenir->blob_foto)) {
+                $souvenir->base64_foto = base64_encode($souvenir->blob_foto);
+            } else {
+                $souvenir->base64_foto = null;
+            }
+            // Sembunyikan kolom blob_foto
+            return $souvenir->makeHidden('blob_foto');
+        });
+
+        // Konversi koleksi menjadi array untuk memastikan encoding JSON
+        $souvenirsArray = $souvenirsWithBase64->toArray();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List Souvenir',
+            'data' => $souvenirsArray,
+        ], 200, ['Content-type' => 'application/json; charset=utf-8']);
+    }
+
     public function getSouvenirPeserta()
     {
         $souvenirs = souvenirpeserta::with('souvenir', 'rkm', 'rkm.materi', 'rkm.perusahaan', 'regist.peserta')->get();
@@ -282,13 +309,32 @@ class SouvenirController extends Controller
      * @param  mixed $post
      * @return void
      */
-    public function destroy($id): RedirectResponse
+    public function inactive($id): RedirectResponse
     {
-        $post = souvenir::findOrFail($id);
+        $post = Souvenir::findOrFail($id);
+
+        $post->deleted_by = auth()->id();
+        $post->save();
 
         $post->delete();
 
-        return redirect()->route('souvenir.index')->with(['success' => 'Data Berhasil Dihapus!']);
+        return redirect()
+            ->route('souvenir.index')
+            ->with(['success' => 'Data Berhasil dinonaktifkan!']);
+    }
+
+    public function active($id): RedirectResponse
+    {
+        $post = Souvenir::onlyTrashed()->findOrFail($id);
+
+        $post->restore();
+
+        $post->deleted_by = null;
+        $post->save();
+
+        return redirect()
+            ->route('souvenir.index')
+            ->with(['success' => 'Data Berhasil Diaktifkan Kembali!']);
     }
 
     public function createSouvenirInhouse($id): View

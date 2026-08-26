@@ -29,12 +29,9 @@
                                 <label for="filterSales" class="form-label">Filter Sales</label>
                                 <select id="filterSales" class="form-select">
                                     <option value="">Cari Sales</option>
-                                    <option value="HW">Hera</option>
-                                    <option value="VN">Savana</option>
-                                    <option value="RR">Rara</option>
-                                    <option value="NA">Nabila</option>
-                                    <option value="AN">Alfasyiani</option>
-                                    <option value="RN">Reni</option>
+                                    @foreach ($sales as $item)
+                                        <option value="{{$item->kode_karyawan}}">{{$item->nama_lengkap}}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -197,31 +194,25 @@
             </div>
 
             <!-- Modal Create Contact -->
-            <div class="modal fade" id="opportunityModal" tabindex="-1" aria-labelledby="opportunityModalLabel"
-                aria-hidden="true">
+            <div class="modal fade" id="opportunityModal" tabindex="-1" aria-labelledby="opportunityModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="opportunityModalLabel">Tambah Perusahaan</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="perusahaanForm" action="{{ route('store.contact') }}" method="POST"
-                                enctype="multipart/form-data">
+                            <form id="perusahaanForm" action="{{ route('store.contact') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
 
                                 <div class="mb-3">
                                     <label class="form-label" for="nama_perusahaan">Nama Perusahaan</label>
-                                    <input type="text" class="form-control" id="nama_perusahaan"
-                                        name="nama_perusahaan" required>
+                                    <input type="text" class="form-control" id="nama_perusahaan" name="nama_perusahaan" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="kategori_perusahaan">Kategori Perusahaan</label>
-                                    <select class="form-select @error('kategori_perusahaan') is-invalid @enderror"
-                                        name="kategori_perusahaan" id="kategori_perusahaan"
-                                        autocomplete="kategori_perusahaan">
+                                    <select class="form-select @error('kategori_perusahaan') is-invalid @enderror" name="kategori_perusahaan" id="kategori_perusahaan" autocomplete="kategori_perusahaan">
                                         <option value="" selected>Pilih Kategori Perusahaan</option>
                                         <option value="Pemerintahan Daerah">Pemerintahan Daerah</option>
                                         <option value="Kementerian">Kementerian</option>
@@ -255,8 +246,7 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="status">Status</label>
-                                    <select class="form-select @error('status') is-invalid @enderror" id="status"
-                                        name="status" autocomplete="status" required>
+                                    <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" autocomplete="status" required>
                                         <option value="" selected>Pilih Status</option>
                                         <option value="Q1">Q1</option>
                                         <option value="Q2">Q2</option>
@@ -281,26 +271,26 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="cp">Contact Person (CP)</label>
-                                    <input type="text" class="form-control" id="cp" name="cp" required>
+                                    <input type="text" class="form-control" id="cp" name="cp">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="no_telp">No Telepon</label>
-                                    <input type="text" class="form-control" id="no_telp" name="no_telp" required>
+                                    <input type="text" class="form-control" id="no_telp" name="no_telp">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="email">Email</label>
-                                    <input type="email" class="form-control" id="email" name="email" required>
+                                    <input type="email" class="form-control" id="email" name="email">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="foto_npwp">Foto NPWP</label>
-                                    <input class="form-control" type="file" id="foto_npwp" name="foto_npwp"
-                                        accept=".jpeg,.jpg,.png,.pdf">
+                                    <input class="form-control" type="file" id="foto_npwp" name="foto_npwp" accept=".jpeg,.jpg,.png,.pdf">
                                 </div>
 
-                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                <!-- Penambahan ID btn-submit-perusahaan -->
+                                <button type="submit" id="btn-submit-perusahaan" class="btn btn-primary">Simpan</button>
                             </form>
                         </div>
                     </div>
@@ -308,29 +298,37 @@
             </div>
         </div>
     </div>
-
+@endsection
+@section('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+
+        $(document).ready(function() {
+            const formElement = document.getElementById('perusahaanForm');
+
+            // Inisialisasi DataTables (Server-Side)
             let table = $('#perusahaanTable').DataTable({
                 processing: true,
                 serverSide: true,
+                deferRender: true,
+                // stateSave: true,
+                order: [[0, 'desc']], // Instruksi eksplisit untuk mengurutkan berdasarkan ID secara menurun
                 ajax: {
                     url: "{{ route('contact.data') }}",
                     type: "GET",
                     data: function(d) {
                         d.sales_key = $('#filterSales').val();
+                    },
+                    error: function(xhr, error, thrown) {
+                        alert('Gagal memuat data perusahaan: ' + thrown);
                     }
                 },
                 columns: [
-                    {
-                        data: null,
-                        render: function (data, type, row, meta) {
-                            return meta.row + meta.settings._iDisplayStart + 1; // ✅ Nomor urut
-                        },
-                        className: "text-center",
-                        orderable: false,
-                        searchable: false
-                    },
+                    { data: null, className: "text-center", orderable: false, searchable: false }, // Kolom penomoran akan diatur ulang oleh bindNumbering
                     { data: 'nama_perusahaan', name: 'nama_perusahaan' },
                     { data: 'lokasi', name: 'lokasi' },
                     { data: 'status', name: 'status' },
@@ -338,38 +336,56 @@
                     {
                         data: 'kelas_terakhir',
                         name: 'kelas_terakhir',
-                        render: function (data, type, row) {
-                            if (!data) return 'Belum ada kelas';
-                            return `${data} ${row.kelas_terakhir_date ? '| <span style="color:red;">(' + row.kelas_terakhir_date + ')</span>' : ''}`;
-                        }
-                    },
-                    { data: 'aktivitas_terakhir_date', name: 'aktivitas_terakhir_date' },
-                    {
-                        data: null,
                         orderable: false,
                         searchable: false,
                         render: function (data, type, row) {
+                            if (data === 'Belum ada kelas') return data;
+                            return `${data} ${row.kelas_terakhir_date ? '| <span style="color:red;">(' + row.kelas_terakhir_date + ')</span>' : ''}`;
+                        }
+                    },
+                    { data: 'aktivitas_terakhir_date', name: 'aktivitas_terakhir_date', orderable: false, searchable: false },
+                    {
+                        data: 'id',
+                        orderable: false,
+                        searchable: false,
+                        render: function (id, type, row) {
                             const contactData = JSON.stringify(row)
                                 .replace(/'/g, "&apos;")
                                 .replace(/"/g, "&quot;");
                             return `
                                 <div class="d-flex flex-column gap-2">
-                                    <a href="/crm/contact/${row.id}/detail" class="btn btn-sm btn-info">Detail</a>
-                                    <button class="btn btn-sm btn-warning"
+                                    <a href="/crm/contact/${id}/detail" class="btn btn-sm btn-info w-100">Detail</a>
+                                    <button class="btn btn-sm btn-warning w-100"
                                         data-contact="${contactData}"
                                         data-bs-toggle="modal"
                                         data-bs-target="#editContactModal"
                                         onclick="editContactFromButton(this)">Edit</button>
-                                    <form action="/crm/contact/delete/${row.id}" method="POST"
+                                    <form action="/crm/contact/delete/${id}" method="POST"
                                         onsubmit="return confirm('Yakin ingin menghapus?')" style="display:inline;">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                                        <button type="submit" class="btn btn-sm btn-danger w-100">Hapus</button>
                                     </form>
                                 </div>`;
                         }
                     }
-                ],
+                ]
+            });
+
+            // Callback Penomoran Asinkron yang Presisi untuk Server-Side Processing
+            function bindNumbering(tableInstance) {
+                tableInstance.on('draw.dt', function() {
+                    let info = tableInstance.page.info();
+                    tableInstance.column(0, { search: 'applied', order: 'applied' }).nodes().each(function(cell, i) {
+                        cell.innerHTML = info.start + i + 1;
+                    });
+                });
+            }
+            bindNumbering(table);
+
+            // Pemicu pembaruan tabel jika filter Sales diganti
+            $('#filterSales').on('change', function() {
+                table.ajax.reload();
             });
 
             window.exportPdf = function() {
@@ -380,12 +396,7 @@
                 window.open(url, '_blank');
             };
 
-            // 🔹 Trigger reload kalau filter diganti
-            $('#filterSales').on('change', function() {
-                table.ajax.reload();
-            });
-
-            // 🔹 Fungsi edit contact dari tombol
+            // Fungsi parsing data dari tombol Edit
             window.editContactFromButton = function(button) {
                 let contactStr = button.getAttribute('data-contact');
                 let contactJson = contactStr.replace(/&quot;/g, '"').replace(/&apos;/g, "'");
@@ -393,7 +404,7 @@
                 editContact(contact);
             };
 
-            // 🔹 Fungsi editContact
+            // Pemetaan data JSON ke input Form Modal
             window.editContact = function(contact) {
                 document.getElementById('edit_nama_perusahaan').value = contact.nama_perusahaan || '';
                 document.getElementById('edit_email').value = contact.email || '';
@@ -416,5 +427,4 @@
             };
         });
     </script>
-
 @endsection

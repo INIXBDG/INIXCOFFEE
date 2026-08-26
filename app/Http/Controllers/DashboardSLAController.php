@@ -15,6 +15,7 @@ use Carbon\CarbonPeriod;
 use App\Models\trackingLaporanInsiden;
 use App\Models\karyawan;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 class DashboardSLAController extends Controller
 {
@@ -498,6 +499,102 @@ class DashboardSLAController extends Controller
         ]);
     }
 
+    public function overallEventSla(Request $request)
+    {
+        $mappings = \App\Models\YearMapping::with('eventDetail')->where('year', date('Y'))->orderBy('month')->get();
+
+        $stats = [
+            'total_tasks' => 0,
+            'completed_tasks' => 0,
+            'on_time' => 0,
+            'late' => 0,
+            'overdue' => 0,
+        ];
+
+        $slaRules = $this->getSlaRules();
+        $eventList = [];
+
+        foreach ($mappings as $mapping) {
+            $mappingId = $mapping->id;
+            $dDay = \Carbon\Carbon::parse($mapping->planned_date, $this->timezone)->startOfDay();
+
+            $eventTodos = \App\Models\EventTodo::with('todo')
+                ->where('year_mapping_id', $mappingId)
+                ->get()
+                ->keyBy(function ($item) {
+                    return $item->todo->task_name;
+                });
+
+            $eventStats = [
+                'total_tasks' => 0,
+                'completed_tasks' => 0,
+                'on_time' => 0,
+                'late' => 0,
+                'overdue' => 0,
+            ];
+
+            foreach ($slaRules as $taskName => $rule) {
+                $eventStats['total_tasks']++;
+                $targetDate = $dDay->copy()->addDays($rule['offset'])->endOfDay();
+                $actualItem = $eventTodos->get($taskName);
+
+                if ($actualItem) {
+                    if ($actualItem->is_checked) {
+                        $eventStats['completed_tasks']++;
+                        $actualDateObj = \Carbon\Carbon::parse($actualItem->updated_at, $this->timezone);
+                        if ($actualDateObj->lte($targetDate)) {
+                            $eventStats['on_time']++;
+                        } else {
+                            $eventStats['late']++;
+                        }
+                    } else {
+                        if (\Carbon\Carbon::now($this->timezone)->gt($targetDate)) {
+                            $eventStats['overdue']++;
+                        }
+                    }
+                }
+            }
+
+            $evtTotal = $eventStats['total_tasks'];
+            $evtCompRate = ($evtTotal > 0) ? ($eventStats['completed_tasks'] / $evtTotal) * 100 : 0;
+            $evtSlaComp = ($eventStats['completed_tasks'] > 0) ? ($eventStats['on_time'] / $eventStats['completed_tasks']) * 100 : 0;
+
+            // Add to overall stats
+            $stats['total_tasks'] += $eventStats['total_tasks'];
+            $stats['completed_tasks'] += $eventStats['completed_tasks'];
+            $stats['on_time'] += $eventStats['on_time'];
+            $stats['late'] += $eventStats['late'];
+            $stats['overdue'] += $eventStats['overdue'];
+
+            $eventList[] = [
+                'id' => $mapping->id,
+                'month_name' => \Carbon\Carbon::createFromDate(null, $mapping->month)->translatedFormat('F'),
+                'theme' => $mapping->theme ?? 'Tema Belum Set',
+                'event_title' => $mapping->eventDetail->title ?? 'Belum Diset',
+                'planned_date' => $dDay->format('d M Y'),
+                'completion_rate' => $evtCompRate,
+                'sla_compliance' => $evtSlaComp,
+                'total_late' => $eventStats['late'],
+                'total_overdue' => $eventStats['overdue'],
+            ];
+        }
+
+        $total = $stats['total_tasks'];
+        $kpi = [
+            'completion_rate' => ($total > 0) ? ($stats['completed_tasks'] / $total) * 100 : 0,
+            'sla_compliance' => ($stats['completed_tasks'] > 0) ? ($stats['on_time'] / $stats['completed_tasks']) * 100 : 0,
+            'total_late' => $stats['late'],
+            'total_overdue' => $stats['overdue'],
+            'event_title' => 'Semua Event Webinar ' . date('Y'),
+            'event_date' => date('Y')
+        ];
+
+        return response()->json([
+            'kpi' => $kpi,
+            'events' => $eventList
+        ]);
+    }
+
     // =========================================================================
     // FUNGSI UTAMA 5: DASHBOARD TIM DIGITAL (TICKETING + KONTEN)
     // =========================================================================
@@ -545,20 +642,39 @@ class DashboardSLAController extends Controller
             $endOfWeek = $date->copy()->endOfWeek();
 
             // Batasi agar tidak melebihi range filter (jika filter parsial)
-            if ($startOfWeek < $dateRange['startDate'])
+            if ($startOfWeek < $dateRange['startDate']) {
                 $startOfWeek = $dateRange['startDate'];
-            if ($endOfWeek > $dateRange['endDate'])
+            }
+            if ($endOfWeek > $dateRange['endDate']) {
                 $endOfWeek = $dateRange['endDate'];
+            }
 
             // Skip jika start > end (edge case akhir periode)
-            if ($startOfWeek > $endOfWeek)
+            if ($startOfWeek > $endOfWeek) {
                 continue;
+            }
 
             $contentStats['total_weeks']++;
 
-            // 2. Hitung Upload pada Minggu Tersebut
-            $uploadCount = ContentSchedule::whereBetween('upload_date', [$startOfWeek, $endOfWeek], 'and', false)
-                ->count();
+            // 2. Hitung Upload pada Minggu Tersebut (Dengan format string Y-m-d untuk presisi DATE)
+            $startDateString = $startOfWeek->format('Y-m-d');
+            $endDateString = $endOfWeek->format('Y-m-d');
+
+            $query = ContentSchedule::whereBetween('upload_date', [$startDateString, $endDateString]);
+
+            // Pencatatan (Logging) diagnostik kueri SQL dan parameter
+            Log::info('--- Diagnostik Kueri Jadwal Konten ---', [
+                'periode_rentang' => "{$startDateString} s/d {$endDateString}",
+                'kueri_sql' => $query->toSql(),
+                'parameter_binding' => $query->getBindings()
+            ]);
+
+            $uploadCount = $query->count();
+
+            // Pencatatan hasil eksekusi perhitungan
+            Log::info('--- Hasil Kueri ---', [
+                'jumlah_ditemukan' => $uploadCount
+            ]);
 
             $contentStats['total_content'] += $uploadCount;
 
@@ -776,5 +892,13 @@ class DashboardSLAController extends Controller
 
         // Kembalikan dalam jam (float)
         return $totalBusinessMinutes / 60.0;
+    }
+
+    public function index()
+    {
+        if (!auth()->user()->karyawan || (auth()->user()->karyawan->divisi !== 'IT Service Management' && !auth()->user()->hasAnyRole(['Koordinator ITSM', 'Programmer', 'Technical Support', 'Tim Digital', 'Super Admin']))) {
+            abort(403, 'Unauthorized action.');
+        }
+        return view('itsm.sla');
     }
 }

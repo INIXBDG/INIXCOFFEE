@@ -158,6 +158,7 @@
 
         <div class="tab-content">
             <div class="tab-pane fade show active" id="tabDashboard">
+                {{-- BARIS CARD PERTAMA --}}
                 <div class="row g-3 mb-4">
                     <div class="col-xl-3 col-md-6">
                         <div class="card stat-card">
@@ -186,35 +187,44 @@
                     <div class="col-xl-3 col-md-6">
                         <div class="card stat-card">
                             <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Total Payroll</p><h3 class="stat-value" id="sumGross">Rp 0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i class="fa-solid fa-money-bill-wave"></i></div>
+                                <div><p class="stat-label">Total Basic Salary</p><h3 class="stat-value" id="sumBasicSalary" style="color:var(--info)">Rp 0</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#0ea5e9,#06b6d4)"><i class="fa-solid fa-sack-dollar"></i></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {{-- BARIS CARD KEDUA: Total Tunjangan + 3 Card Potongan --}}
                 <div class="row g-3 mb-4">
-                    <div class="col-xl-4 col-md-4">
-                        <div class="card stat-card">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Rata-rata Gaji Bersih</p><h3 class="stat-value" id="sumAvg">Rp 0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#8b5cf6,#a78bfa)"><i class="fa-solid fa-chart-line"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-4 col-md-4">
-                        <div class="card stat-card">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Median Gaji</p><h3 class="stat-value" id="sumMedian">Rp 0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#ec4899,#f472b6)"><i class="fa-solid fa-scale-balanced"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-4 col-md-4">
+                    <div class="col-xl-3 col-md-6">
                         <div class="card stat-card">
                             <div class="card-body d-flex align-items-center justify-content-between">
                                 <div><p class="stat-label">Total Tunjangan</p><h3 class="stat-value" id="sumAllowance" style="color:var(--info)">Rp 0</h3></div>
                                 <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i class="fa-solid fa-gift"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Potongan BPJS Tenaga Kerja</p><h3 class="stat-value" id="sumBpjsTk" style="color:var(--danger)">Rp 0</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#dc2626,#f87171)"><i class="fa-solid fa-helmet-safety"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Potongan BPJS Kesehatan</p><h3 class="stat-value" id="sumBpjsKes" style="color:var(--danger)">Rp 0</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#e11d48,#fb7185)"><i class="fa-solid fa-heart-pulse"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Potongan PPh 21</p><h3 class="stat-value" id="sumPph21" style="color:var(--danger)">Rp 0</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#b91c1c,#ef4444)"><i class="fa-solid fa-file-invoice-dollar"></i></div>
                             </div>
                         </div>
                     </div>
@@ -362,7 +372,7 @@
                 currentPage = page;
                 $('#mainLoading').removeClass('hidden');
                 const params = { month: $('#filterBulan').val(), year: $('#filterTahun').val(), search: searchQuery, page: page };
-                
+
                 $.get("{{ route('HR.payroll.dashboard') }}", params, function(res) {
                     if (!res.success) { alert(res.message); $('#mainLoading').addClass('hidden'); return; }
                     allData = res.data;
@@ -370,10 +380,11 @@
                     $('#sumTotal').text(res.summary.total_karyawan);
                     $('#sumDone').text(res.summary.sudah_dihitung);
                     $('#sumPending').text(res.summary.belum_dihitung);
-                    $('#sumGross').text(formatIDR(res.summary.total_payroll));
-                    $('#sumAvg').text(formatIDR(res.summary.avg_gaji_bersih));
-                    $('#sumMedian').text(formatIDR(res.summary.median_gaji_bersih));
+                    $('#sumBasicSalary').text(formatIDR(res.summary.total_basic_salary));
                     $('#sumAllowance').text(formatIDR(res.summary.total_tunjangan));
+                    $('#sumBpjsTk').text(formatIDR(res.summary.total_potongan_bpjs_tk));
+                    $('#sumBpjsKes').text(formatIDR(res.summary.total_potongan_bpjs_kes));
+                    $('#sumPph21').text(formatIDR(res.summary.total_potongan_pph21));
                     renderChartsSafe(res.charts);
                     renderTable(res);
                     $('#mainLoading').addClass('hidden');
@@ -386,7 +397,7 @@
                 ['salaryRangeChart', 'allowanceChart', 'trendChart', 'deductionChart'].forEach(id => {
                     const existing = Chart.getChart(id); if (existing) existing.destroy();
                 });
-                
+
                 const ctx1 = document.getElementById('salaryRangeChart');
                 if (ctx1 && charts?.salary_ranges?.labels?.length > 0) {
                     salaryChart = new Chart(ctx1, {
@@ -485,8 +496,11 @@
                 $('#modalKode').text(row.kode || '-');
                 $('#modalDivisi').text(row.divisi);
                 $('#modalJabatan').text(row.jabatan);
-                
+
                 let html = `<tr><td>Gaji Pokok</td><td>-</td><td>-</td><td class="text-end fw-semibold">${formatIDR(row.gaji_pokok)}</td></tr>`;
+                if ((row.tunjangan_jabatan || 0) > 0) {
+                    html += `<tr><td>Tunjangan Jabatan</td><td><small class="text-muted">Tunjangan</small></td><td><small class="text-muted">Dari log gaji</small></td><td class="text-end text-success">${formatIDR(row.tunjangan_jabatan)}</td></tr>`;
+                }
                 row.details.forEach(d => {
                     const valueClass = d.nilai < 0 ? 'text-danger' : 'text-success';
                     html += `<tr><td>${d.nama || '-'}</td><td><small class="text-muted">${d.tipe || '-'}</small></td><td><small class="text-muted">${d.keterangan || '-'}</small></td><td class="text-end ${valueClass}">${formatSigned(d.nilai)}</td></tr>`;
@@ -510,7 +524,7 @@
                     searchQuery = this.value; loadData(1);
                 }
             });
-            
+
             loadData(1);
         });
     </script>

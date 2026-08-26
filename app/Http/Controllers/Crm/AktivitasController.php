@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\Perusahaan;
 use App\Models\Contact;
+use App\Models\karyawan;
 use App\Models\Peserta;
 use App\Models\User;
 use App\Models\TargetActivity;
@@ -16,6 +17,15 @@ use Illuminate\Support\Facades\Log;
 
 class AktivitasController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View Aktivitas Sales', ['only' => ['index', 'indexJson']]);
+        $this->middleware('permission:Store Aktivitas Sales', ['only' => ['storeNew']]);
+        $this->middleware('permission:Update Aktivitas Sales', ['only' => ['update']]);
+        $this->middleware('permission:Delete Aktivitas Sales', ['only' => ['delete']]);
+    }
 
     public function index()
     {
@@ -33,9 +43,10 @@ class AktivitasController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
+        $sales_option = karyawan::where('jabatan', 'sales')->where('status_aktif', '1')->get();
         $contact = Contact::with('perusahaan')->get();
 
-        return view('crm.aktivitas.index', compact('data', 'perusahaan', 'contact'));
+        return view('crm.aktivitas.index', compact('data', 'perusahaan', 'contact', 'sales_option'));
     }
 
     public function getContactsAndPeserta($id)
@@ -160,7 +171,7 @@ class AktivitasController extends Controller
             $totalFiltered = $query->count();
             $total = $query->sum('total');
 
-            $data = $query->orderBy('waktu_aktivitas', 'desc')
+            $data = $query->orderBy('id', 'desc')
                 ->orderBy($orderColumn, $orderDirection)
                 ->offset($start)
                 ->limit($length)

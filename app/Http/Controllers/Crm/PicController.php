@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use Illuminate\Http\Request;
 use App\Models\Contact;
+use App\Models\karyawan;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
 use Carbon\Carbon;
@@ -18,6 +19,16 @@ use function Symfony\Component\VarDumper\Dumper\esc;
 
 class PicController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View PIC CRM', ['only' => ['index', 'indexJson']]);
+        $this->middleware('permission:Store PIC CRM', ['only' => ['store']]);
+        $this->middleware('permission:Update PIC CRM', ['only' => ['updatePIC']]);
+        $this->middleware('permission:Delete PIC CRM', ['only' => ['deletePIC']]);
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -31,9 +42,10 @@ class PicController extends Controller
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
+        $sales = karyawan::where('jabatan', 'Sales')->where('status_aktif', '1')->get();
 
         // dd($perusahaans);
-        return view('crm.pic.index', compact('perusahaans'));
+        return view('crm.pic.index', compact('perusahaans', 'sales'));
     }
 
     public function indexJson(Request $request)

@@ -904,10 +904,15 @@
         #subscribe-floating button:hover {
             background: #0b5ed7;
         }
+
+        .swal2-container {
+            z-index: 999999 !important;
+        }
     </style>
 </head>
 
 <body>
+    {{--
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert">
             {{ session('success') }}
@@ -928,6 +933,9 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+    --}}
+
+
     <div id="app">
         <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel"
             aria-hidden="true">
@@ -1755,6 +1763,23 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa-solid fa-chart-line"
+                                                                    style="font-size: 30px; color: #182f51;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="/sla-management"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">SLA Management</h5>
+                                                                </a>
+                                                                <p class="card-text">Pencapaian SLA ITSM.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             @endif
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
@@ -1791,6 +1816,42 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa-solid fa-square-poll-vertical"
+                                                                style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('documentation.features.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Documentation Fitur</h5>
+                                                            </a>
+                                                            <p class="card-text">Documentation Fitur.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @if (Auth::user()->hasAnyRole(['itsm', 'ITSM', 'Koordinator ITSM', 'Programmer', 'Technical Support']) || (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT Service Management'))
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa-solid fa-book-open-reader"
+                                                                    style="font-size: 30px;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="{{ route('knowledge-management.index') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Knowledge Management</h5>
+                                                                </a>
+                                                                <p class="card-text">Kelola SOP, FAQ, Tutorial, dan Panduan Instalasi ITSM.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
 
                                         </div>
                                     </div>
@@ -1822,6 +1883,25 @@
                                                                             </h5>
                                                                         </a>
                                                                         <p class="card-text">Rencana kelas Training.</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endcan
+                                                    @can('Index KelasSetting')
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/user.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="{{ route('KelasSetting.index') }}"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Kelas Setting</h5>
+                                                                        </a>
+                                                                        <p class="card-text">Setting seluruh kebutuhan kelas mingguan.</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -3337,6 +3417,8 @@
             let activeSubTabId = '#sales-tab-pane';
             let activeNestedTabId = '#pills-perquartal';
 
+
+
             $('#pills-home-tab').click(function() {
                 $('#loadingModal').modal('show');
                 $('.tab-pane.show').fadeOut(100, function() {
@@ -4069,8 +4151,38 @@
         });
         let uptimeCharts = {};
     </script>
+    @if(session('success') || session('error') || $errors->any())
+    @php
+        $swalType  = ''; $swalTitle = ''; $swalText = ''; $swalHtml = '';
+        if (session('success')) {
+            $swalType = 'success'; $swalTitle = 'Berhasil!'; $swalText = session('success');
+        } elseif (session('error')) {
+            $swalType = 'error'; $swalTitle = 'Gagal!'; $swalText = session('error');
+        } elseif ($errors->any()) {
+            $swalType = 'error'; $swalTitle = 'Terjadi Kesalahan!';
+            $errorItems = implode('', array_map(fn($e) => '<li>'.$e.'</li>', $errors->all()));
+            $swalHtml = '<ul style="text-align:left;margin:0;padding-left:20px;">'.$errorItems.'</ul>';
+        }
+    @endphp
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                Swal.fire({
+                    icon:  @json($swalType),
+                    title: @json($swalTitle),
+                    @if($swalHtml)
+                    html:  @json($swalHtml),
+                    @else
+                    text:  @json($swalText),
+                    @endif
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: false
+                });
+            }, 300);
+        });
+    </script>
+    @endif
 </body>
-
-</html>
 
 </html>

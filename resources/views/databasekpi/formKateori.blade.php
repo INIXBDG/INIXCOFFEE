@@ -492,6 +492,9 @@
                                             <i class="fa-solid fa-tags text-primary me-1"></i> Keterangan Tipe
                                         </label>
                                         <div class="ket-tipe-wrapper text-end">
+                                            <button type="button" class="btn btn-success btn-sm add-ket-tipe mb-2">
+                                                <i class="fa-solid fa-plus"></i> Tambah Keterangan
+                                            </button>
                                             <div class="input-group mb-2">
                                                 <input type="text" name="kriteria[0][sub_kriteria][0][ket_tipe][]"
                                                     class="form-control" placeholder="Masukkan keterangan tipe">
@@ -501,9 +504,6 @@
                                                 <button type="button" class="btn btn-danger btn-sm remove-ket-tipe"><i
                                                         class="mdi mdi-trash-can"></i></button>
                                             </div>
-                                            <button type="button" class="btn btn-success btn-sm add-ket-tipe">
-                                                <i class="fa-solid fa-plus"></i> Tambah Keterangan
-                                            </button>
                                         </div>
                                     </div>
 
@@ -670,6 +670,12 @@
                             const nilaiArr = Array.isArray(sData.nilai_ket_tipe) ? sData
                                 .nilai_ket_tipe : [];
 
+                            if (ketWrapper) {
+                                ketWrapper.insertAdjacentHTML('beforeend',
+                                    `<button type="button" class="btn btn-success btn-sm add-ket-tipe mt-2 mb-2"><i class="fa-solid fa-plus"></i> Tambah Keterangan</button>`
+                                );
+                            }
+
                             if (ketArr.length > 0) {
                                 ketArr.forEach((k, idx) => {
                                     const val = nilaiArr[idx] !== undefined ? nilaiArr[
@@ -694,11 +700,6 @@
                                         </div>
                                     `);
                                 }
-                            }
-                            if (ketWrapper) {
-                                ketWrapper.insertAdjacentHTML('beforeend',
-                                    `<button type="button" class="btn btn-success btn-sm add-ket-tipe mt-2"><i class="fa-solid fa-plus"></i> Tambah Keterangan</button>`
-                                );
                             }
                         } else {
                             if (ketSection) ketSection.classList.add('d-none');
@@ -846,59 +847,68 @@
                     }
                 });
 
-            // Bind Dynamic Sub Kriteria Events
-            function bindDynamicSubKriteriaEvents(kriteriaBlock) {
-                const subKriteriaItems = kriteriaBlock.querySelectorAll(
-                    '.form-group-item[data-sub-kriteria-index]');
-                subKriteriaItems.forEach(container => {
-                    const tipeSelect = container.querySelector('.tipe-kategori');
-                    const ketTipeSection = container.querySelector('.ket-tipe-section');
-                    const ketTipeWrapper = container.querySelector('.ket-tipe-wrapper');
-                    const addKeteranganBtn = container.querySelector('.add-ket-tipe');
-                    const currentKriteriaIndex = kriteriaBlock.getAttribute('data-kriteria-index');
-                    const currentSubKriteriaIndex = container.getAttribute('data-sub-kriteria-index');
+                function bindDynamicSubKriteriaEvents(kriteriaBlock) {
+                    const subKriteriaItems = kriteriaBlock.querySelectorAll('.form-group-item[data-sub-kriteria-index]');
+                    subKriteriaItems.forEach(container => {
+                        const tipeSelect = container.querySelector('.tipe-kategori');
+                        const ketTipeSection = container.querySelector('.ket-tipe-section');
+                        const ketTipeWrapper = container.querySelector('.ket-tipe-wrapper');
+                        const currentKriteriaIndex = kriteriaBlock.getAttribute('data-kriteria-index');
+                        const currentSubKriteriaIndex = container.getAttribute('data-sub-kriteria-index');
 
-                    function toggleKeterangan() {
-                        const showTypes = ['checkbox', 'radio', 'select'];
-                        if (showTypes.includes(tipeSelect.value)) ketTipeSection.classList.remove('d-none');
-                        else ketTipeSection.classList.add('d-none');
-                    }
-                    if (tipeSelect) {
-                        tipeSelect.onchange = toggleKeterangan;
-                        toggleKeterangan();
-                    }
+                        function toggleKeterangan() {
+                            const showTypes = ['checkbox', 'radio', 'select'];
+                            if (showTypes.includes(tipeSelect.value)) {
+                                ketTipeSection.classList.remove('d-none');
 
-                    if (addKeteranganBtn) {
-                        addKeteranganBtn.onclick = () => {
-                            ketTipeWrapper.insertAdjacentHTML('beforeend', `
-                                <div class="input-group mb-2">
-                                    <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
-                                    <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
-                                    <button type="button" class="btn btn-danger btn-sm remove-ket-tipe"><i class="mdi mdi-trash-can"></i></button>
-                                </div>
-                            `);
-                        };
-                    }
-
-                    if (ketTipeWrapper) {
-                        ketTipeWrapper.onclick = (e) => {
-                            if (e.target.closest('.remove-ket-tipe')) {
-                                const inputGroups = ketTipeWrapper.querySelectorAll('.input-group');
-                                if (inputGroups.length > 1) e.target.closest('.input-group').remove();
-                                else {
-                                    const group = e.target.closest('.input-group');
-                                    const inputs = group.querySelectorAll('input');
-                                    inputs.forEach(input => input.value = '');
+                                if (ketTipeWrapper && ketTipeWrapper.innerHTML.trim() === '') {
+                                    ketTipeWrapper.innerHTML = `
+                                        <button type="button" class="btn btn-success btn-sm add-ket-tipe mt-2 mb-2"><i class="fa-solid fa-plus"></i> Tambah Keterangan</button>
+                                        <div class="input-group mb-2">
+                                            <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
+                                            <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
+                                            <button type="button" class="btn btn-danger btn-sm remove-ket-tipe"><i class="mdi mdi-trash-can"></i></button>
+                                        </div>
+                                    `;
                                 }
+                            } else {
+                                ketTipeSection.classList.add('d-none');
                             }
-                        };
-                    }
-                });
-            }
+                        }
+
+                        if (tipeSelect) {
+                            tipeSelect.addEventListener('change', toggleKeterangan);
+                            toggleKeterangan();
+                        }
+                        if (ketTipeWrapper) {
+                            ketTipeWrapper.addEventListener('click', (e) => {
+                                if (e.target.closest('.add-ket-tipe')) {
+                                    ketTipeWrapper.insertAdjacentHTML('beforeend', `
+                                        <div class="input-group mb-2">
+                                            <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
+                                            <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
+                                            <button type="button" class="btn btn-danger btn-sm remove-ket-tipe"><i class="mdi mdi-trash-can"></i></button>
+                                        </div>
+                                    `);
+                                }
+
+                                if (e.target.closest('.remove-ket-tipe')) {
+                                    const inputGroups = ketTipeWrapper.querySelectorAll('.input-group');
+                                    if (inputGroups.length > 1) {
+                                        e.target.closest('.input-group').remove();
+                                    } else {
+                                        const group = e.target.closest('.input-group');
+                                        const inputs = group.querySelectorAll('input');
+                                        inputs.forEach(input => input.value = '');
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
 
             if (baseKriteriaBlock) bindDynamicSubKriteriaEvents(baseKriteriaBlock);
 
-            // Kriteria Container Event Delegation
             document.getElementById('kriteria-container').addEventListener('click', function(e) {
                 if (e.target.classList.contains('add-sub-kriteria-block') || e.target.closest(
                         '.add-sub-kriteria-block')) {
@@ -931,12 +941,12 @@
 
                     const ketWrapper = clone.querySelector('.ket-tipe-wrapper');
                     ketWrapper.innerHTML = `
+                        <button type="button" class="btn btn-success btn-sm add-ket-tipe mt-2 mb-2"><i class="fa-solid fa-plus"></i> Tambah Keterangan</button>
                         <div class="input-group mb-2">
                             <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
                             <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
                             <button type="button" class="btn btn-danger btn-sm remove-ket-tipe"><i class="mdi mdi-trash-can"></i></button>
                         </div>
-                        <button type="button" class="btn btn-success btn-sm add-ket-tipe mt-2"><i class="fa-solid fa-plus"></i> Tambah Keterangan</button>
                     `;
 
                     subWrapper.appendChild(clone);
@@ -982,12 +992,12 @@
                         });
                         const ketWrapper = item.querySelector('.ket-tipe-wrapper');
                         ketWrapper.innerHTML = `
+                            <button type="button" class="btn btn-success btn-sm add-ket-tipe mt-2 mb-2"><i class="fa-solid fa-plus"></i> Tambah Keterangan</button>
                             <div class="input-group mb-2">
                                 <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
                                 <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
                                 <button type="button" class="btn btn-danger btn-sm remove-ket-tipe"><i class="mdi mdi-trash-can"></i></button>
                             </div>
-                            <button type="button" class="btn btn-success btn-sm add-ket-tipe mt-2"><i class="fa-solid fa-plus"></i> Tambah Keterangan</button>
                         `;
                     } else {
                         item.remove();

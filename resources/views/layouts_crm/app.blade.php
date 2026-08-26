@@ -31,12 +31,12 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}" />
 
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    {{-- DataTables CSS --}}
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/dataTables.bootstrap5.min.css') }}">
 
-    <!-- CSS bawaan Select2 -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    {{-- CSS Bawaan Select2 --}}
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/select2.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/select2-bootstrap-5-theme.min.css') }}" />
 
     <!-- Page CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
@@ -56,7 +56,10 @@
             height: 100%;
             object-fit: cover;
             object-position: center;
-    }
+        }
+        .swal2-container {
+            z-index: 999999 !important;
+        }
     </style>
 </head>
 
@@ -152,14 +155,24 @@
         </div>
     </div>
 
-    <!-- Core JS -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+
+    <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}"></script>
+
+    {{-- Global Validator JS --}}
     <script src="{{ asset('js/global-validator.js') }}"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    {{-- Select2 JS --}}
+    <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}"></script>
+
+    {{-- Moment JS --}}
+    {{-- <script src="{{ asset('assets/vendor/libs/moment/moment.min.js') }}"></script> --}} 
+    <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}"></script>
+
+
+    {{-- DataTables JS --}}
+    <script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/dataTables/dataTables.bootstrap5.min.js') }}"></script>
 
     <!-- Bootstrap JS -->
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
@@ -175,11 +188,12 @@
     <script src="{{ asset('assets/js/dashboards-analytics.js') }}"></script>
 
     <!-- Iconify JS -->
-    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/iconify/iconify.min.js') }}"></script>
 
     <!-- GitHub button -->
-    <script async defer src="https://buttons.github.io/buttons.js"></script>
+    <script async defer src="{{ asset('assets/vendor/libs/buttongithub/buttons.js') }}"></script>
 
+    <script src="{{ asset('assets/vendor/libs/chartjs/chart.js') }}"></script>
 
     <!-- User Profile Ajax -->
     <script>
@@ -214,6 +228,74 @@
             });
         });
     </script>
+
+    @if($errors->any())
+        @php
+            $swalType = 'error';
+            $swalTitle = 'Terjadi Kesalahan!';
+            $errorItems = implode('', array_map(fn($e) => '<li>'.$e.'</li>', $errors->all()));
+            $swalHtml  = '<ul style="text-align:left;margin:0;padding-left:20px;">'.$errorItems.'</ul>';
+        @endphp
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    Swal.fire({
+                        icon: @json($swalType),
+                        title: @json($swalTitle),
+                        html: @json($swalHtml),
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                    });
+                }, 300);
+            });
+        </script>
+    @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function getCookie(name) {
+                let matches = document.cookie.match(new RegExp(
+                    "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+                ));
+                return matches ? decodeURIComponent(matches[1].replace(/\+/g, ' ')) : undefined;
+            }
+
+            let successAlert = getCookie('swal_success');
+            let errorAlert = getCookie('swal_error');
+
+            if (successAlert) {
+                document.cookie = "swal_success=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                setTimeout(function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: successAlert,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                    });
+                }, 300);
+            } else if (errorAlert) {
+                document.cookie = "swal_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                setTimeout(function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: errorAlert,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                    });
+                }, 300);
+            }
+        });
+    </script>
+
+    @yield('scripts')
 </body>
 
 </html>

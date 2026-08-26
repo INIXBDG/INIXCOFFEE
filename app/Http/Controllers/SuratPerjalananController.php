@@ -17,6 +17,7 @@ use App\Notifications\PengajuanSPJNotification;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Exports\SuratPerjalananExport;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use PDF;
 
@@ -531,11 +532,7 @@ class SuratPerjalananController extends Controller
                 return redirect()->back()->with('error', 'Approval Manager, HRD, & GM belum lengkap.');
             }
         }
-
-        if ($suratPerjalanan->bukti_transfer) {
-            return redirect()->back()->with('error', 'Bukti transfer sudah diupload sebelumnya.');
-        }
-
+        
         $request->validate([
             'bukti_transfer' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ], [
@@ -544,13 +541,21 @@ class SuratPerjalananController extends Controller
             'bukti_transfer.max' => 'Ukuran file maksimal 5MB.',
         ]);
 
-        $file = $request->file('bukti_transfer');
-        $filename = time() . '_bukti_' . $suratPerjalanan->id . '_' . $file->getClientOriginalName();
-        $path = $file->storeAs('bukti_transfer', $filename, 'public');
+        if ($request->hasFile('bukti_transfer')) {
+            $file = $request->file('bukti_transfer');
 
-        $suratPerjalanan->update([
-            'bukti_transfer' => $path,
-        ]);
+            if ($suratPerjalanan->bukti_transfer) {
+                Storage::disk('public')->delete($suratPerjalanan->bukti_transfer);
+            }
+
+            $filename = time() . '_bukti_' . $suratPerjalanan->id . '_' . $file->getClientOriginalName();
+
+            $path = $file->storeAs('bukti_transfer', $filename, 'public');
+
+            $suratPerjalanan->update([
+                'bukti_transfer' => $path,
+            ]);
+        }
 
         $this->checkAndCreateJurnalOtomatis($suratPerjalanan);
 

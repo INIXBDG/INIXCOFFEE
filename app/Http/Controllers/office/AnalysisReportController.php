@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\Storage;
 
 class AnalysisReportController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View LaporanAnalisis Accounting', ['only' => ['index']]);
+        $this->middleware('permission:Store LaporanAnalisis Accounting', ['only' => ['store']]);
+        $this->middleware('permission:Update LaporanAnalisis Accounting', ['only' => ['update', 'updateAnnualReport', 'updateQuarterDescription', 'updateYearDescription']]);
+        $this->middleware('permission:Delete LaporanAnalisis Accounting', ['only' => ['destroy']]);
+        }
+
     public function index(Request $request)
     {
         $allowedRoles = ['Finance & Accounting', 'GM'];

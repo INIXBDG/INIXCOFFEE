@@ -19,9 +19,10 @@ class KoordinasiOfficeBoyController extends Controller
         $this->botToken = '8637052174:AAFSALsROZZSHz-fr2PM0IWe-EsYatdYXvI';
         $this->groupId = '-5410138806';
 
-        $this->middleware('auth')->only([
-            'index', 'getData', 'store', 'update', 'delete'
-        ]);
+        $this->middleware('permission:View KoordinasiOfficeBoy', ['only' => ['index', 'getData']]);
+        $this->middleware('permission:Store KoordinasiOfficeBoy', ['only' => ['store']]);
+        $this->middleware('permission:Update KoordinasiOfficeBoy', ['only' => ['update']]);
+        $this->middleware('permission:Delete KoordinasiOfficeBoy', ['only' => ['delete']]);
     }
 
     public function index()

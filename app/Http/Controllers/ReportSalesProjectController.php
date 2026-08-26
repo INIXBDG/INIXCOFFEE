@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Lead;
+use App\Models\LeadProject; // Integrasi Model Lead
 use App\Models\Project;
-use App\Models\Lead; // Integrasi Model Lead
-use App\Models\LeadProject;
-use Illuminate\Http\Request;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ReportSalesProjectController extends Controller
 {
@@ -32,10 +33,21 @@ class ReportSalesProjectController extends Controller
 
     public function getRecapData(Request $request): JsonResponse
     {
-        $year = $request->input('year');
+        $year = $request->input('year', Carbon::now()->year);
 
+        // ==========================================
         // 1. Agregasi Data Keuangan (Project)
-        $projectsQuery = Project::with(['client', 'administration.projectManager', 'lead'])
+        // Berdasarkan tahun_periode LeadProject
+        // ==========================================
+
+        $projects = Project::with([
+            'client',
+            'administration.projectManager',
+            'lead',
+        ])
+            ->whereHas('lead', function ($query) use ($year) {
+                $query->where('tahun_periode', $year);
+            })
             ->whereNotNull('nilai_proyek')
             ->where('phase', '!=', 'gagal');
 
@@ -99,6 +111,9 @@ class ReportSalesProjectController extends Controller
 
         return response()->json([
             'success' => true,
+
+            'year' => $year,
+
             'summary' => [
                 'total_revenue' => $totalSales,
                 'realized_revenue' => $completedSales,
@@ -108,7 +123,8 @@ class ReportSalesProjectController extends Controller
                 'closing_won' => $closingWon,
                 'closing_lost' => $closingLost,
             ],
-            'data' => $projects
+
+            'data' => $projects,
         ], 200);
     }
 }

@@ -14,18 +14,25 @@ class PoExamSertifaController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permission:View PoSertifa', ['only' => ['index', 'getData']]);
+        $this->middleware('permission:Store PoSertifa', ['only' => ['store']]);
+        $this->middleware('permission:Update PoSertifa', ['only' => ['update']]);
+        $this->middleware('permission:Delete PoSertifa', ['only' => ['destroy']]);
     }
 
     public function index()
     {
-        // Mengambil data RKM beserta relasi materi dan perusahaan
         $rkms = RKM::with(['materi', 'perusahaan'])
                 ->where('exam', '1')
-                ->whereBetween('tanggal_awal', [now()->subMonth(), now()->addMonth()])
+                ->where('status', '0')
                 ->orderBy('id')
                 ->get();
+        $skemas = PoExamSertifa::whereNotNull('skema')
+                    ->where('skema', '!=', '')
+                    ->distinct()
+                    ->pluck('skema');
 
-        return view('office.exam.po_exam_sertifa', compact('rkms'));
+        return view('office.exam.po_exam_sertifa', compact('rkms', 'skemas'));
     }
 
     public function getData()
@@ -52,12 +59,13 @@ class PoExamSertifaController extends Controller
             'id_perusahaan' => 'nullable|integer',
             'pax' => 'nullable|integer',
             'harga' => 'nullable|numeric',
+            'skema' => 'nullable|string',
         ]);
 
         PoExamSertifa::create($validatedData);
 
         return redirect()
-            ->route('office.exam.index')
+            ->route('office.certifa.index')
             ->with('success', 'Data PO Exam Sertifa berhasil ditambahkan.');
     }
 
@@ -72,6 +80,7 @@ class PoExamSertifaController extends Controller
             'id_perusahaan' => 'nullable|integer',
             'pax' => 'nullable|integer',
             'harga' => 'nullable|numeric',
+            'skema' => 'nullable|string',
         ]);
 
         $item->update($validatedData);
@@ -87,7 +96,7 @@ class PoExamSertifaController extends Controller
         $item->delete();
 
         return redirect()
-            ->route('office.certifa.c')
+            ->route('office.certifa.index')
             ->with('success', 'Data PO Exam Sertifa berhasil dihapus.');
     }
 }

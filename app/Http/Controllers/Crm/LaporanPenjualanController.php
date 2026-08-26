@@ -23,6 +23,14 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanPenjualanController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View CRM Laporan Penjualan 1', ['only' => ['index']]);
+        $this->middleware('permission:View CRM Laporan Penjualan 2', ['only' => ['laporanForGm']]);
+    }
+
     public function index(Request $request)
     {
         $sales = karyawan::where('jabatan', 'Sales')->where('status_aktif', '1')->get();

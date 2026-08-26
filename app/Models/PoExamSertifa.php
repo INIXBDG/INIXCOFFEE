@@ -18,6 +18,7 @@ class PoExamSertifa extends Model
         'id_perusahaan',
         'pax',
         'harga',
+        'skema'
     ];
 
     public function materi()

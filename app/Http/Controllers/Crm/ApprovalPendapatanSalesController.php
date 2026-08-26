@@ -115,10 +115,13 @@ class ApprovalPendapatanSalesController extends Controller
                     'total_uang_saku' => (float) ($valid?->total_uang_saku ?? 0),
                     'total_akomodasi' => (float) ($valid?->total_akomodasi ?? 0),
                     'oleh_oleh' => (float) ($valid?->oleh_oleh ?? 0),
+                    'biaya_lain_lain' => (float) ($valid?->biaya_lain_lain ?? 0),
                     'entertainment' => (float) ($valid?->entertainment ?? 0),
                     'total_penjualan_sales' => (float) ($valid?->total_penjualan_sales ?? 0),
                     'jenis_transport' => $valid?->jenis_transport ?? '-',
                     'biaya_transport' => (float) ($valid?->biaya_transport ?? 0),
+                    'exam_value' => (float) ($valid?->exam ?? 0),
+                    'exam' => ($valid?->exam ?? 0) ? 'Rp ' . number_format((float) $valid->exam, 0, ',', '.') : '-',
                     'valid' => $valid?->status ?? 'belum tervalidasi',
                     'materi_id' => $valid?->materi ?? $rkm->materi_key,
                     'tanggal_mulai' => $valid?->tanggal_mulai ? Carbon::parse($valid->tanggal_mulai)->format('Y-m-d') : Carbon::parse($rkm->tanggal_awal)->format('Y-m-d'),
@@ -155,6 +158,7 @@ class ApprovalPendapatanSalesController extends Controller
                 SUM(CAST(total_uang_saku AS UNSIGNED)) as total_uang_saku,
                 SUM(CAST(total_akomodasi AS UNSIGNED)) as total_akomodasi,
                 SUM(CAST(oleh_oleh AS UNSIGNED)) as oleh_oleh,
+                SUM(CAST(biaya_lain_lain AS UNSIGNED)) as biaya_lain_lain,
                 SUM(CAST(entertainment AS UNSIGNED)) as entertainment,
                 SUM(CAST(total_penjualan_sales AS UNSIGNED)) as total_penjualan_sales,
                 SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport
@@ -162,7 +166,14 @@ class ApprovalPendapatanSalesController extends Controller
             )
             ->first();
 
-        if (!$footerBulanan) {
+        $examBulanan = ApprovalPendapatanSales::whereYear('tanggal_mulai', $tahun)
+            ->whereMonth('tanggal_mulai', $bulan)
+            ->where('status', 'valid')
+            ->sum('exam');
+
+        if ($footerBulanan) {
+            $footerBulanan->total_exam = $examBulanan;
+        } else {
             $footerBulanan = (object) [
                 'total_penjualan' => 0,
                 'total_diskon' => 0,
@@ -171,8 +182,10 @@ class ApprovalPendapatanSalesController extends Controller
                 'total_uang_saku' => 0,
                 'total_akomodasi' => 0,
                 'oleh_oleh' => 0,
+                'biaya_lain_lain' => 0,
                 'total_penjualan_sales' => 0,
                 'biaya_transport' => 0,
+                'total_exam' => $examBulanan,
             ];
         }
 
@@ -187,6 +200,7 @@ class ApprovalPendapatanSalesController extends Controller
                 SUM(CAST(total_uang_saku AS UNSIGNED)) as total_uang_saku,
                 SUM(CAST(total_akomodasi AS UNSIGNED)) as total_akomodasi,
                 SUM(CAST(oleh_oleh AS UNSIGNED)) as oleh_oleh,
+                SUM(CAST(biaya_lain_lain AS UNSIGNED)) as biaya_lain_lain,
                 SUM(CAST(entertainment AS UNSIGNED)) as entertainment,
                 SUM(CAST(total_penjualan_sales AS UNSIGNED)) as total_penjualan_sales,
                 SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport
@@ -194,7 +208,13 @@ class ApprovalPendapatanSalesController extends Controller
             )
             ->first();
 
-        if (!$footerTahunan) {
+        $examTahunan = ApprovalPendapatanSales::whereYear('tanggal_mulai', $tahun)
+            ->where('status', 'valid')
+            ->sum('exam');
+
+        if ($footerTahunan) {
+            $footerTahunan->total_exam = $examTahunan;
+        } else {
             $footerTahunan = (object) [
                 'total_penjualan' => 0,
                 'total_diskon' => 0,
@@ -203,9 +223,11 @@ class ApprovalPendapatanSalesController extends Controller
                 'total_uang_saku' => 0,
                 'total_akomodasi' => 0,
                 'oleh_oleh' => 0,
+                'biaya_lain_lain' => 0,
                 'entertainment' => 0,
                 'total_penjualan_sales' => 0,
                 'biaya_transport' => 0,
+                'total_exam' => $examTahunan,
             ];
         }
 
@@ -232,7 +254,9 @@ class ApprovalPendapatanSalesController extends Controller
             'jenis_transport' => 'nullable|string|max:255',
             'biaya_transport' => 'nullable|numeric',
             'oleh_oleh' => 'nullable|numeric',
+            'biaya_lain_lain' => 'nullable|numeric|min:0',
             'entertainment' => 'nullable|numeric',
+            'exam' => 'nullable|numeric|min:0',
             'total_penjualan_sales' => 'nullable|numeric|min:0',
             'materi' => 'nullable',
             'perusahaan' => 'nullable',
@@ -261,7 +285,9 @@ class ApprovalPendapatanSalesController extends Controller
                 'jenis_transport' => $validated['jenis_transport'] ?? null,
                 'biaya_transport' => (float) ($validated['biaya_transport'] ?? 0),
                 'oleh_oleh' => (float) ($validated['oleh_oleh'] ?? 0),
+                'biaya_lain_lain' => (float) ($validated['biaya_lain_lain'] ?? 0),
                 'entertainment' => (float) ($validated['entertainment'] ?? 0),
+                'exam' => (float) ($validated['exam'] ?? 0),
                 'total_penjualan_sales' => (float) ($validated['total_penjualan_sales'] ?? 0),
                 'status' => 'valid',
                 'materi' => $validated['materi'] ?? null,

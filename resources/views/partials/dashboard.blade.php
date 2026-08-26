@@ -128,225 +128,258 @@
             </li>
         </ul>
         <div class="tab-content" id="chartContent" style="">
-            <div class="tab-pane fade" id="inix-tab-pane" role="tabpanel" aria-labelledby="inix-tab"
-                tabindex="0">
-                <div class="container-fluid">
-                    <div class="row my-1">
-                        <div class="col-md-12" style="height: auto; padding:0">
-                            <div class="card" style="height: auto">
-                                <div class="card-body">
-                                    <div class="row justify-content-center text-center">
-                                        <h5 class="position-header">Keterlambatan</h5>
+            <div class="tab-pane fade" id="inix-tab-pane" role="tabpanel" aria-labelledby="inix-tab" tabindex="0">
+                <div class="container-fluid px-0">
+                    
+                    <!-- Section 1: Keterlambatan Leaderboard -->
+                    <!-- Section 1: Keterlambatan Leaderboard (Blue Scheme) -->
+                    <div class="row my-2">
+                        <div class="col-12">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-body p-4">
+                                    <div class="text-center mb-4">
+                                        <h5 class="fw-bold text-dark mb-1">
+                                            <i class="bi bi-clock-history text-primary me-2"></i>Keterlambatan Terbanyak
+                                        </h5>
+                                        <small class="text-muted">Top 3 karyawan dengan akumulasi waktu keterlambatan tertinggi</small>
                                     </div>
-                                    <div class="row justify-content-center align-items-end modern-ranking">
-
-                                        <!-- First Place -->
-                                        <div
-                                            class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-1 order-md-2">
-                                            <div class="card-podium rank-1">
-                                                <div class="circle-satu first-position shadow">
-                                                    <img src="{{ asset('css/b1.png') }}" alt="Keterlambatan ke-1"
-                                                        class="present-photo-satu rounded-circle border border-white"
-                                                        id="present-photo-satu">
+                                    
+                                    <div class="row g-3 justify-content-center">
+                                        <!-- Peringkat 1 (Royal Blue Accent) -->
+                                        <div class="col-12 col-md-4">
+                                            <div class="inix-late-card rank-1-card h-100">
+                                                <span class="late-card-badge rank-1-badge mb-3"><i class="bi bi-trophy-fill me-1"></i>Peringkat 1</span>
+                                                <div class="late-avatar-box ring-blue-1">
+                                                    <img src="{{ asset('images/download.png') }}" alt="Peringkat 1" class="late-avatar" id="present-photo-satu">
                                                 </div>
-                                                <p class="position-label">Peringkat 1</p>
-                                                <img src="{{ asset('images/medal-1.png') }}" class="medal-bawah"
-                                                    alt="Medal">
-                                            </div>
-                                        </div>
-
-                                        <!-- Second Place -->
-                                        <div
-                                            class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-2 order-md-1">
-                                            <div class="card-podium rank-2">
-                                                <div class="circle second-position shadow-sm">
-                                                    <img src="{{ asset('storage/photos/pemain2.jpg') }}"
-                                                        alt="Keterlambatan ke-2"
-                                                        class="present-photo rounded-circle border border-white"
-                                                        id="present-photo-dua">
-                                                </div>
-                                                <p class="position-label">Peringkat 2</p>
-                                                <img src="{{ asset('images/medal-2.png') }}" alt="Medali Perak"
-                                                    class="medal-bawah">
-                                            </div>
-                                        </div>
-
-                                        <!-- Third Place -->
-                                        <div
-                                            class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-3 order-md-3">
-                                            <div class="card-podium rank-3">
-                                                <div class="circle third-position shadow-sm">
-                                                    <img src="{{ asset('storage/photos/pemain3.jpg') }}"
-                                                        alt="Keterlambatan ke-3"
-                                                        class="present-photo rounded-circle border border-white"
-                                                        id="present-photo-tiga">
-                                                </div>
-                                                <p class="position-label">Peringkat 3</p>
-                                                <img src="{{ asset('images/medal-3.png') }}" alt="Medali Perunggu"
-                                                    class="medal-bawah">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row my-1">
-                        <div class="col-md-12" style="padding:0">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="row text-center">
-                                        <h5>Terbaik</h5>
-                                    </div>
-                                    <div class="row">
-                                        <!-- SALES TERBAIK -->
-                                        <div
-                                            class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
-                                            <div class="card_foto">
-                                                <div class="imgbox">
-                                                    <img src="{{ asset('images/download.png') }}" alt="Sales Image"
-                                                        class="dynamic-image" id="foto_sales">
-                                                </div>
-                                                <div class="details">
-                                                    <span class="caption">Sales Terbaik</span>
-                                                    <h4 class="title" id="nama_sales">John doe</h4>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- INSTRUKTUR TERBAIK -->
-                                        <div
-                                            class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
-                                            <div class="card_foto">
-                                                <div class="imgbox">
-                                                    <img src="{{ asset('images/download.png') }}"
-                                                        alt="Instruktur Image" class="dynamic-image"
-                                                        id="foto_instruktur">
-                                                </div>
-                                                <div class="details">
-                                                    <span class="caption mb-30">Instruktur Terbaik</span>
-                                                    <h4 class="title" id="nama_instruktur">John doe</h4>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- OFFICE TERBAIK -->
-                                        <div
-                                            class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
-                                            <div class="card_foto">
-                                                <div class="imgbox">
-                                                    <img src="{{ asset('images/download.png') }}" alt="Office Image"
-                                                        class="dynamic-image" id="foto_office">
-                                                </div>
-                                                <div class="details">
-                                                    <span class="caption">Office Terbaik</span>
-                                                    <h4 class="title" id="nama_office">John doe</h4>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- ITSM TERBAIK -->
-                                        <div
-                                            class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
-                                            <div class="card_foto">
-                                                <div class="imgbox">
-                                                    <img src="{{ asset('images/download.png') }}" alt="ITSM Image"
-                                                        class="dynamic-image" id="foto_itsm">
-                                                </div>
-                                                <div class="details">
-                                                    <span class="caption">ITSM Terbaik</span>
-                                                    <h4 class="title" id="nama_itsm">John doe</h4>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row my-1">
-                        <div class="col-md-12" style="padding:0">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="row text-center">
-                                        <h5>Kelas</h5>
-                                    </div>
-                                    <div class="row justify-content-center">
-                                        <!-- Baris pertama dengan 3 kolom -->
-                                        <div class="col-12 col-md-4 text-center d-flex justify-content-center mb-2">
-                                            <div class="card-uiverse" style="width: 100%;">
-                                                <div class="d-flex flex-column align-items-center">
-                                                    <h2>Total Kelas</h2>
-                                                    <p id="total_kelas"></p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-12 col-md-4 text-center d-flex justify-content-center mb-2">
-                                            <div class="card-uiverse" style="width: 100%;">
-                                                <div class="d-flex flex-column align-items-center">
-                                                    <h2>Jumlah Peserta</h2>
-                                                    <p id="jumlah_peserta"></p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-12 col-md-4 text-center d-flex justify-content-center mb-2">
-                                            <div class="card-uiverse" style="width: 100%;">
-                                                <div class="d-flex flex-column align-items-center">
-                                                    <h2>Offline</h2>
-                                                    <p id="offline"></p>
-                                                    <h2>Virtual</h2>
-                                                    <p id="virtual"></p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Baris kedua dengan 2 kolom -->
-                                    <div class="row justify-content-center">
-                                        <div class="col-12 col-md-6 text-center d-flex justify-content-center mb-2">
-                                            <div class="card-uiverse" style="width: 100%;">
-                                                <div class="d-flex flex-column align-items-center">
-                                                    <h2>Rata-rata Kelas Per Bulan</h2>
-                                                    <p id="ratarata_kelas_perbulan"></p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-12 col-md-6 text-center d-flex justify-content-center mb-2">
-                                            <div class="card-uiverse" style="width: 100%;">
-                                                <div class="d-flex flex-column align-items-center">
-                                                    <h2>Rata-rata Peserta Per Bulan</h2>
-                                                    <p id="jumlah_peserta_perbulan"></p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-
-                                    <div class="row mt-2">
-                                        <div class="col">
-                                            <div class="card-uiverse-feedback" style="width: 100%;">
-                                                <div class="row" style="width:100%; margin:10px">
-                                                    <div class="col-12 text-center">
-                                                        <h2>Rata-rata Feedback</h2>
+                                                <div class="w-100 mt-2">
+                                                    <h6 class="late-emp-name text-truncate" id="nama_telat_1">-</h6>
+                                                    <div class="late-stat-badge">
+                                                        <i class="bi bi-clock-fill me-1 text-primary"></i>
+                                                        <span class="text-primary fw-bold" id="durasi_telat_1">00:00:00</span>
                                                     </div>
-                                                    <div class="col-12">
-                                                        <div class="row text-center">
-                                                            <div class="col-6 col-md-3">
-                                                                <h4>Materi</h4>
-                                                                <span id="materi"></span>
-                                                            </div>
-                                                            <div class="col-6 col-md-3">
-                                                                <h4>Fasilitas</h4>
-                                                                <span id="fasilitas"></span>
-                                                            </div>
-                                                            <div class="col-6 col-md-3">
-                                                                <h4>Pelayanan</h4>
-                                                                <span id="pelayanan"></span>
-                                                            </div>
-                                                            <div class="col-6 col-md-3">
-                                                                <h4>Instruktur</h4>
-                                                                <span id="instruktur"></span>
-                                                            </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Peringkat 2 (Sky Blue Accent) -->
+                                        <div class="col-12 col-md-4">
+                                            <div class="inix-late-card rank-2-card h-100">
+                                                <span class="late-card-badge rank-2-badge mb-3"><i class="bi bi-award-fill me-1"></i>Peringkat 2</span>
+                                                <div class="late-avatar-box ring-blue-2">
+                                                    <img src="{{ asset('images/download.png') }}" alt="Peringkat 2" class="late-avatar" id="present-photo-dua">
+                                                </div>
+                                                <div class="w-100 mt-2">
+                                                    <h6 class="late-emp-name text-truncate" id="nama_telat_2">-</h6>
+                                                    <div class="late-stat-badge">
+                                                        <i class="bi bi-clock-fill me-1 text-primary"></i>
+                                                        <span class="text-primary fw-bold" id="durasi_telat_2">00:00:00</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Peringkat 3 (Ice Blue Accent) -->
+                                        <div class="col-12 col-md-4">
+                                            <div class="inix-late-card rank-3-card h-100">
+                                                <span class="late-card-badge rank-3-badge mb-3"><i class="bi bi-award-fill me-1"></i>Peringkat 3</span>
+                                                <div class="late-avatar-box ring-blue-3">
+                                                    <img src="{{ asset('images/download.png') }}" alt="Peringkat 3" class="late-avatar" id="present-photo-tiga">
+                                                </div>
+                                                <div class="w-100 mt-2">
+                                                    <h6 class="late-emp-name text-truncate" id="nama_telat_3">-</h6>
+                                                    <div class="late-stat-badge">
+                                                        <i class="bi bi-clock-fill me-1 text-primary"></i>
+                                                        <span class="text-primary fw-bold" id="durasi_telat_3">00:00:00</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Karyawan Terbaik (Blue Cards) -->
+                    <div class="row my-2">
+                        <div class="col-12">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-body p-4">
+                                    <div class="text-center mb-4">
+                                        <h5 class="fw-bold text-dark mb-1">
+                                            <i class="bi bi-award-fill text-primary me-2"></i>Karyawan Terbaik
+                                        </h5>
+                                        <small class="text-muted">Apresiasi performa terbaik masing-masing divisi</small>
+                                    </div>
+                                    <div class="row g-3 justify-content-center">
+                                        <!-- Sales Terbaik -->
+                                        <div class="col-12 col-sm-6 col-lg-3">
+                                            <div class="inix-best-card h-100">
+                                                <div class="best-photo-container">
+                                                    <img src="{{ asset('images/download.png') }}" alt="Sales Terbaik" class="best-photo dynamic-image" id="foto_sales">
+                                                </div>
+                                                <div class="w-100">
+                                                    <span class="best-category-tag mb-2"><i class="bi bi-graph-up-arrow me-1"></i>Sales Terbaik</span>
+                                                    <h6 class="best-name text-truncate" id="nama_sales">John doe</h6>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Instruktur Terbaik -->
+                                        <div class="col-12 col-sm-6 col-lg-3">
+                                            <div class="inix-best-card h-100">
+                                                <div class="best-photo-container">
+                                                    <img src="{{ asset('images/download.png') }}" alt="Instruktur Terbaik" class="best-photo dynamic-image" id="foto_instruktur">
+                                                </div>
+                                                <div class="w-100">
+                                                    <span class="best-category-tag mb-2"><i class="bi bi-mortarboard-fill me-1"></i>Instruktur Terbaik</span>
+                                                    <h6 class="best-name text-truncate" id="nama_instruktur">John doe</h6>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Office Terbaik -->
+                                        <div class="col-12 col-sm-6 col-lg-3">
+                                            <div class="inix-best-card h-100">
+                                                <div class="best-photo-container">
+                                                    <img src="{{ asset('images/download.png') }}" alt="Office Terbaik" class="best-photo dynamic-image" id="foto_office">
+                                                </div>
+                                                <div class="w-100">
+                                                    <span class="best-category-tag mb-2"><i class="bi bi-briefcase-fill me-1"></i>Office Terbaik</span>
+                                                    <h6 class="best-name text-truncate" id="nama_office">John doe</h6>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- ITSM Terbaik -->
+                                        <div class="col-12 col-sm-6 col-lg-3">
+                                            <div class="inix-best-card h-100">
+                                                <div class="best-photo-container">
+                                                    <img src="{{ asset('images/download.png') }}" alt="ITSM Terbaik" class="best-photo dynamic-image" id="foto_itsm">
+                                                </div>
+                                                <div class="w-100">
+                                                    <span class="best-category-tag mb-2"><i class="bi bi-shield-check me-1"></i>ITSM Terbaik</span>
+                                                    <h6 class="best-name text-truncate" id="nama_itsm">John doe</h6>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Kelas & Feedback (Clean Initial Pastel Layout) -->
+                    <div class="row my-2">
+                        <div class="col-12">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-body p-4">
+                                    <div class="text-center mb-4">
+                                        <h5 class="fw-bold text-dark mb-1">
+                                            <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Statistik Kelas
+                                        </h5>
+                                        <small class="text-muted">Ringkasan kelas, peserta, dan kepuasan pelatihan</small>
+                                    </div>
+
+                                    <!-- Baris 1: 3 Card Utama (Total Kelas, Jumlah Peserta, Metode Kelas) -->
+                                    <div class="row g-3 justify-content-center mb-3">
+                                        <div class="col-12 col-md-4">
+                                            <div class="inix-stat-card">
+                                                <div class="stat-icon-wrapper icon-blue">
+                                                    <img src="{{ asset('icon/book-open.svg') }}" width="26px" height="26px" alt="Total Kelas">
+                                                </div>
+                                                <div class="stat-content">
+                                                    <span class="stat-label">Total Kelas</span>
+                                                    <h3 class="stat-value" id="total_kelas">0</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <div class="inix-stat-card">
+                                                <div class="stat-icon-wrapper icon-green">
+                                                    <img src="{{ asset('icon/users.svg') }}" width="26px" height="26px" alt="Jumlah Peserta">
+                                                </div>
+                                                <div class="stat-content">
+                                                    <span class="stat-label">Jumlah Peserta</span>
+                                                    <h3 class="stat-value" id="jumlah_peserta">0</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <div class="inix-stat-card inix-split-card">
+                                                <div class="split-item">
+                                                    <span class="split-badge badge-offline"><i class="bi bi-building me-1"></i>Offline</span>
+                                                    <h4 class="split-value text-primary" id="offline">0</h4>
+                                                </div>
+                                                <div class="split-divider"></div>
+                                                <div class="split-item">
+                                                    <span class="split-badge badge-virtual"><i class="bi bi-laptop me-1"></i>Virtual</span>
+                                                    <h4 class="split-value text-purple" id="virtual">0</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Baris 2: 2 Card Rata-rata Bulanan -->
+                                    <div class="row g-3 justify-content-center mb-4">
+                                        <div class="col-12 col-md-6">
+                                            <div class="inix-stat-card">
+                                                <div class="stat-icon-wrapper icon-amber">
+                                                    <img src="{{ asset('icon/calendar.svg') }}" width="26px" height="26px" alt="Rata-rata Kelas Per Bulan">
+                                                </div>
+                                                <div class="stat-content">
+                                                    <span class="stat-label">Rata-rata Kelas Per Bulan</span>
+                                                    <h3 class="stat-value" id="ratarata_kelas_perbulan">0</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="inix-stat-card">
+                                                <div class="stat-icon-wrapper icon-teal">
+                                                    <img src="{{ asset('icon/user-check.svg') }}" width="26px" height="26px" alt="Rata-rata Peserta Per Bulan">
+                                                </div>
+                                                <div class="stat-content">
+                                                    <span class="stat-label">Rata-rata Peserta Per Bulan</span>
+                                                    <h3 class="stat-value" id="jumlah_peserta_perbulan">0</h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Baris 3: Feedback Card -->
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="inix-feedback-box">
+                                                <div class="feedback-header text-center mb-3">
+                                                    <h6 class="fw-bold mb-0 text-dark">
+                                                        <i class="bi bi-chat-square-text-fill text-primary me-2"></i>Rata-rata Feedback Peserta
+                                                    </h6>
+                                                </div>
+                                                <div class="row g-3 text-center">
+                                                    <div class="col-6 col-md-3">
+                                                        <div class="feedback-item">
+                                                            <span class="feedback-name">Materi</span>
+                                                            <h3 class="feedback-number"><i class="bi bi-star-fill text-warning fs-6 me-1"></i><span id="materi">0</span></h3>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 col-md-3">
+                                                        <div class="feedback-item">
+                                                            <span class="feedback-name">Fasilitas</span>
+                                                            <h3 class="feedback-number"><i class="bi bi-star-fill text-warning fs-6 me-1"></i><span id="fasilitas">0</span></h3>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 col-md-3">
+                                                        <div class="feedback-item">
+                                                            <span class="feedback-name">Pelayanan</span>
+                                                            <h3 class="feedback-number"><i class="bi bi-star-fill text-warning fs-6 me-1"></i><span id="pelayanan">0</span></h3>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 col-md-3">
+                                                        <div class="feedback-item">
+                                                            <span class="feedback-name">Instruktur</span>
+                                                            <h3 class="feedback-number"><i class="bi bi-star-fill text-warning fs-6 me-1"></i><span id="instruktur">0</span></h3>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -354,10 +387,42 @@
                                         </div>
                                     </div>
 
+                                    <!-- Baris 4: Ranking Kelas Paling Banyak Diambil (Blue Scheme) -->
+                                    <div class="row mt-4">
+                                        <div class="col-12">
+                                            <div class="inix-top-class-box">
+                                                <div class="text-center mb-4">
+                                                    <h5 class="fw-bold text-dark mb-1">
+                                                        <i class="bi bi-trophy-fill text-primary me-2"></i>Peringkat Kelas Paling Banyak Diambil
+                                                    </h5>
+                                                    <small class="text-muted">Top 5 kelas dengan frekuensi pelaksanaan terbanyak</small>
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover align-middle mb-0 inix-top-class-table">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th style="width: 70px;" class="text-center">Rank</th>
+                                                                <th>Nama Kelas / Materi</th>
+                                                                <th style="width: 160px;" class="text-center">Kategori</th>
+                                                                <th style="width: 150px;" class="text-center">Total Diambil</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="top_kelas_tbody">
+                                                            <tr>
+                                                                <td colspan="4" class="text-center text-muted py-3">Memuat data peringkat kelas...</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
             <div class="tab-pane fade show " id="sales-tab-pane" role="tabpanel" aria-labelledby="sales-tab"
@@ -1431,18 +1496,43 @@
                     <div class="tab-pane fade" style="height:auto;" id="pills-sla-digital" role="tabpanel"
                         aria-labelledby="pills-sla-digital-tab" tabindex="0">
                         <div class="container-fluid" id="sla-digital-container"
-                            data-url="{{ \Illuminate\Support\Facades\Route::has('dashboard.digital') ? route('dashboard.digital') : url('/dashboard/digital') }}"
+                            data-url="{{ \Illuminate\Support\Facades\Route::has('dashboard.digital') ? route('dashboard.digital') : url('/dashboard-sla/digital') }}"
                              data-team="digital">
-                            <div class="row mb-3">
-                                <div class="col-md-12">
-                                    <div class="alert alert-info" role="alert">
+
+                            <!-- Bagian Header dan Filter -->
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-8 mb-2 mb-md-0">
+                                    <div class="alert alert-info mb-0" role="alert">
                                         <h4 class="alert-heading mb-0 fs-5" id="digital_sla_period">
                                             Memuat periode data...
                                         </h4>
                                     </div>
                                 </div>
+                                <div class="col-md-4">
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white">
+                                            <i class="bi bi-calendar-month text-primary"></i>
+                                        </span>
+                                        <select id="filterBulanDigital" class="form-select fw-bold">
+                                            <option value="all">Semua Bulan</option>
+                                            <option value="1" {{ date('n') == 1 ? 'selected' : '' }}>Januari</option>
+                                            <option value="2" {{ date('n') == 2 ? 'selected' : '' }}>Februari</option>
+                                            <option value="3" {{ date('n') == 3 ? 'selected' : '' }}>Maret</option>
+                                            <option value="4" {{ date('n') == 4 ? 'selected' : '' }}>April</option>
+                                            <option value="5" {{ date('n') == 5 ? 'selected' : '' }}>Mei</option>
+                                            <option value="6" {{ date('n') == 6 ? 'selected' : '' }}>Juni</option>
+                                            <option value="7" {{ date('n') == 7 ? 'selected' : '' }}>Juli</option>
+                                            <option value="8" {{ date('n') == 8 ? 'selected' : '' }}>Agustus</option>
+                                            <option value="9" {{ date('n') == 9 ? 'selected' : '' }}>September</option>
+                                            <option value="10" {{ date('n') == 10 ? 'selected' : '' }}>Oktober</option>
+                                            <option value="11" {{ date('n') == 11 ? 'selected' : '' }}>November</option>
+                                            <option value="12" {{ date('n') == 12 ? 'selected' : '' }}>Desember</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
+                            <!-- Bagian Kartu SLA -->
                             <div class="row mb-4">
                                 <div class="col-lg-6 mb-4">
                                     <div class="card shadow-sm h-100 border-primary border-start border-4">
@@ -1504,12 +1594,13 @@
                                 </div>
                             </div>
 
+                            <!-- Bagian Tabel Mingguan -->
                             <div class="row">
                                 <div class="col-12">
-                                    <div class="card-header">
-                                        <i class="bi bi-calendar-week me-2"></i> Detail Pencapaian Mingguan
-                                    </div>
                                     <div class="card shadow-sm">
+                                        <div class="card-header bg-white fw-bold">
+                                            <i class="bi bi-calendar-week me-2"></i> Detail Pencapaian Mingguan
+                                        </div>
                                         <div class="card-body p-0">
                                             <div class="table-responsive">
                                                 <table class="table table-striped table-hover mb-0">
@@ -2012,594 +2103,435 @@
         /* Allow horizontal scrolling when screen is too small */
     }
 
-    /* Circle styles */
-    .circle,
-    .circle-satu {
-        position: relative;
-        width: 130px;
-        height: 130px;
-        margin: 0 auto;
-        border-radius: 50%;
-        overflow: hidden;
-        background: linear-gradient(145deg, #1c1b2f, #282740);
-        border: 4px solid #fff;
-        box-shadow:
-            0 0 0 4px rgba(255, 255, 255, 0.05),
-            0 10px 20px rgba(0, 0, 0, 0.3),
-            inset 0 0 8px rgba(255, 255, 255, 0.1);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .circle:hover,
-    .circle-satu:hover {
-        transform: scale(1.05);
-        box-shadow:
-            0 0 0 4px rgba(255, 255, 255, 0.1),
-            0 20px 25px rgba(0, 0, 0, 0.5),
-            inset 0 0 12px rgba(255, 255, 255, 0.2);
-    }
-
-    /* Default sizes */
-    .circle {
-        width: 180px;
-        height: 180px;
-    }
-
-
-    .circle-satu {
-        width: 200px;
-        height: 200px;
-    }
-
-    /* present photo adjustments for each circle */
-    .present-photo {
-        width: 170px;
-        height: 170px !important;
-        border-radius: 50%;
-        object-fit: cover;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-
-    .present-photo-satu {
-        width: 190px;
-        height: 190px !important;
-        border-radius: 50%;
-        object-fit: cover;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-
-    .modern-ranking .col-4 {
+    /* ==========================================================================
+       LEADERBOARD KETERLAMBATAN (MATCHED WITH PROFILE CARD STYLE)
+       ========================================================================== */
+    .inix-late-card {
+        background: #ffffff;
+        border: 1.5px solid #dbeafe;
+        border-radius: 16px;
+        padding: 22px 14px 18px 14px;
+        text-align: center;
         display: flex;
         flex-direction: column;
         align-items: center;
-    }
-
-    .first-position {
-        margin-top: 60px;
-    }
-
-    .second-position {
-        margin-top: 40px;
-    }
-
-    .third-position {
-        margin-top: 0px;
-    }
-
-    .medal-bawah {
-        margin-top: 5px;
-        width: 70px;
-        height: auto;
-    }
-
-    /* ANIMASI MUNCUL */
-    @keyframes slideFadeUp {
-        0% {
-            transform: translateY(40px);
-            opacity: 0;
-        }
-
-        100% {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    /* ANIMASI MELAYANG */
-    @keyframes floatCard {
-        0% {
-            transform: translateY(0);
-        }
-
-        50% {
-            transform: translateY(-8px);
-        }
-
-        100% {
-            transform: translateY(0);
-        }
-    }
-
-
-    /* PODIUM CARD */
-    .podium-card {
-        /* background: linear-gradient(to bottom right, #f5f7fa, #b7cceeff); */
-        background-image: url('/images/pixel1.jpg');
-        background-size: cover;
-        background-repeat: repeat;
-        border-radius: 15px;
-        padding: 15px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-        backdrop-filter: blur(6px);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        /* Tambahkan ini: */
-        animation: slideFadeUp 1s ease-out forwards, floatCard 6s ease-in-out infinite;
-    }
-
-
-
-    /* GLOW HOVER EFFECT */
-    .podium-card:hover {
-        box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
-        transform: scale(1.03);
-    }
-
-    /* OPTIONAL: BACKGROUND BINTANG */
-    .podium-section {
-        background: radial-gradient(ellipse at center, #0d1a2d 0%, #0b0f20 100%);
+        justify-content: space-between;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        box-shadow: 0 3px 12px rgba(37, 99, 235, 0.05);
         position: relative;
+    }
+
+    .inix-late-card:hover {
+        transform: translateY(-5px);
+        border-color: #3b82f6;
+        box-shadow: 0 12px 28px rgba(37, 99, 235, 0.15);
+    }
+
+    .rank-1-card {
+        border-top: 4px solid #1d4ed8;
+    }
+
+    .rank-2-card {
+        border-top: 4px solid #2563eb;
+    }
+
+    .rank-3-card {
+        border-top: 4px solid #60a5fa;
+    }
+
+    .late-avatar-box {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        padding: 3px;
+        background: #ffffff;
+        margin: 0 auto 12px auto;
         overflow: hidden;
+        flex-shrink: 0;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2);
     }
 
+    .ring-blue-1 { border: 3px solid #1d4ed8; }
+    .ring-blue-2 { border: 3px solid #2563eb; }
+    .ring-blue-3 { border: 3px solid #60a5fa; }
 
-    /* Peringkat label warna */
-    .rank-1 .position-label {
-        color: #FFD93D;
-        /* Menambahkan outline hitam setebal 1px */
-        text-shadow:
-            -1px -1px 0 #000,
-            1px -1px 0 #000,
-            -1px 1px 0 #000,
-            1px 1px 0 #000;
-    }
-
-    .rank-2 .position-label {
-        color: #c0aaff;
-        /* Menambahkan outline putih setebal 1px agar kontras dengan teks gelap */
-        text-shadow:
-            -1px -1px 0 #000,
-            1px -1px 0 #000,
-            -1px 1px 0 #000,
-            1px 1px 0 #000;
-    }
-
-    .rank-3 .position-label {
-        color: #ff914d;
-        /* Menambahkan outline hitam setebal 1px */
-        text-shadow:
-            -1px -1px 0 #000,
-            1px -1px 0 #000,
-            -1px 1px 0 #000,
-            1px 1px 0 #000;
-    }
-
-
-
-
-    /* Position badge */
-    .position-badge {
-        position: absolute;
-        top: -10px;
-        right: -10px;
-        width: 40px;
-        height: 40px;
-    }
-
-    /* Label Peringkat di Bawah */
-    .position-label {
-        font-size: 1.4rem;
-        font-weight: bold;
-        margin-top: 12px;
-        letter-spacing: 1px;
-        text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
-    }
-
-    .position-header {
-        font-size: 1.4rem;
-        font-weight: bold;
-        margin-top: 12px;
-        letter-spacing: 1px;
-        text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
-    }
-
-    /* Warna Spesifik Tiap Peringkat */
-    /* .first-position+.position-label {
-        color: #ffd700;
-    }
-
-    .second-position+.position-label {
-        color: #c0aaff;
-    }
-
-    .third-position+.position-label {
-        color: #ff914d;
-    } */
-
-    /* Responsive Optimization */
-    @media (max-width: 768px) {
-
-        .circle,
-        .circle-satu {
-            width: 100px;
-            height: 100px;
-        }
-
-        .position-badge {
-            width: 30px;
-            height: 30px;
-        }
-
-        .position-label {
-            font-size: 1.1rem;
-        }
-    }
-
-
-    /* From Uiverse.io by bhaveshxrawat */
-    .card-uiverse {
-        width: auto;
-        height: 254px;
-        background: #182F51;
-        position: relative;
-        display: flex;
-        place-content: center;
-        place-items: center;
-        overflow: hidden;
-        border-radius: 20px;
-    }
-
-
-    .card-uiverse-feedback span {
-        z-index: 1;
-        color: white;
-        font-size: 2em;
-    }
-
-    .card-uiverse-feedback h4 {
-        z-index: 1;
-        color: white;
-        font-size: 2em;
-    }
-
-    .card-uiverse h2 {
-        z-index: 1;
-        color: white;
-        font-size: 2em;
-    }
-
-    .card-uiverse p {
-        z-index: 1;
-        color: white;
-        font-size: 2em;
-    }
-
-    .card-uiverse::before {
-        content: '';
-        position: absolute;
-        width: 100px;
-        background: linear-gradient(180deg, rgb(0, 136, 255) 50%, rgba(255, 0, 0, 1) 50%);
-        height: 400%;
-        animation: rotBGimg 3s linear infinite;
-        transition: all 0.2s linear;
-    }
-
-    .card-uiverse::after {
-        content: '';
-        position: absolute;
-        background: #182f51;
-        inset: 5px;
-        border-radius: 15px;
-    }
-
-    .card-uiverse-feedback {
-        position: relative;
-        color: #fff;
-        height: 254px;
-        background: #182F51;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-        border-radius: 20px;
-        z-index: 99;
-        /* Set higher z-index for the text content */
-    }
-
-    .card-uiverse-feedback::before {
-        content: '';
-        position: absolute;
-        width: 100px;
-        background: linear-gradient(180deg, rgb(0, 136, 255) 50%, rgba(255, 0, 0, 1) 50%);
-        height: 700%;
-        animation: rotBGimg 3s linear infinite;
-        transition: all 0.2s linear;
-        /* opacity: 0.3; Lower opacity for better text contrast */
-        z-index: -2;
-        /* Lower z-index for the background effect */
-    }
-
-    .card-uiverse-feedback::after {
-        content: '';
-        position: absolute;
-        background: #182f51;
-        inset: 5px;
-        border-radius: 15px;
-        z-index: -1;
-    }
-
-    @keyframes rotBGimg {
-        from {
-            transform: rotate(0deg);
-        }
-
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    .card_foto {
-        /* background-image: url('/images/pixel1.jpg');
-        background-size: cover;
-        background-repeat: repeat; */
-        overflow: hidden;
-        position: relative;
-        width: 100%;
-        max-width: 330px;
-        height: 325px;
-        background: #fff;
-        border-radius: 15px;
-        padding: 0 4px 12px rgba(0, 0, 0, 0.08);
-        transition: transform 0.3 ease;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
-        text-align: center;
-        /* animation: floatCard 6s ease-in-out infinite; */
-    }
-
-    .card_foto:before,
-    .card_foto:after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
+    .late-avatar {
         width: 100%;
         height: 100%;
-        background: #fff;
-        border-radius: 4px;
-        transition: 0.5s ease;
-        z-index: -99;
-    }
-
-    .card_foto:hover:before {
-        transform: rotate(20deg);
-        box-shadow: 0 2px 20px rgba(0, 0, 0, .2);
-    }
-
-    .card_foto:hover:after {
-        transform: rotate(10deg);
-        box-shadow: 0 2px 20px rgba(0, 0, 0, .2);
-    }
-
-    /* Bagian details hanya untuk title */
-    .details {
-        margin-top: 10px;
-        position: absolute;
-        bottom: 20px;
-        left: 0;
-        right: 0;
-        height: 60px;
-        text-align: center;
-        text-transform: uppercase;
-        background: rgba(255, 255, 255, 0.8);
-        padding-top: 5px;
-    }
-
-    .title {
-        font-weight: 500;
-        font-size: 18px;
-        color: #777;
-        opacity: 0;
-        /* Sembunyikan title awalnya */
-        transition: opacity 0.3s ease-in-out;
-    }
-
-    /* Tampilkan title hanya saat di-hover */
-    .card_foto:hover .title {
-        opacity: 1;
-    }
-
-    .caption {
-        font-style: italic;
-        font-weight: 500;
-        font-size: 0.9rem;
-        color: #4158D0;
-        display: block;
-        margin-top: 0px;
-        /* Pastikan caption selalu terlihat tanpa efek hover */
-        opacity: 1;
-    }
-
-    /* Bagian imgbox dan dynamic-image */
-    .imgbox {
-        /* background:linear-gradient(to bottom right, #f5f7fa, #a0bbe7ff); */
-        background-image: url('/images/pixel1.jpg');
-        background-size: cover;
-        background-repeat: repeat;
-        padding: 8px;
-        border-radius: 12px;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        position: relative;
-        transition: 0.3s ease-in-out;
-        bottom: 30px;
-        animation: slideFadeUp 1s ease-out forwards, floatCard 6s ease-in-out infinite;
-    }
-
-    .dynamic-image {
-        width: 100%;
-        height: auto;
-        border-radius: 10px;
+        border-radius: 50%;
         object-fit: cover;
         transition: transform 0.3s ease;
     }
 
-    .card_foto:hover .dynamic-image {
-        transform: scale(1.05);
+    .inix-late-card:hover .late-avatar {
+        transform: scale(1.06);
     }
 
-    /* Hover pada imgbox */
-    .card_foto:hover .imgbox {
-        bottom: 20px;
+    .late-card-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #ffffff;
+        padding: 4px 14px;
+        border-radius: 20px;
+        margin-bottom: 12px;
+    }
+
+    .rank-1-badge {
+        background: linear-gradient(135deg, #182F51 0%, #1d4ed8 100%);
+        box-shadow: 0 2px 8px rgba(29, 78, 216, 0.25);
+    }
+
+    .rank-2-badge {
+        background: linear-gradient(135deg, #182F51 0%, #2563eb 100%);
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    }
+
+    .rank-3-badge {
+        background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
+        box-shadow: 0 2px 8px rgba(96, 165, 250, 0.25);
+    }
+
+    .late-emp-name {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 4px 0 6px 0;
+        max-width: 100%;
+    }
+
+    .late-stat-badge {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        padding: 4px 14px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 4px;
+    }
+
+    /* Karyawan Terbaik Cards (Modern Refined Blue Profile Cards) */
+    .inix-best-card {
+        background: #ffffff;
+        border: 1.5px solid #dbeafe;
+        border-top: 4px solid #2563eb;
+        border-radius: 16px;
+        padding: 22px 14px 18px 14px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        box-shadow: 0 3px 12px rgba(37, 99, 235, 0.05);
+        position: relative;
+    }
+
+    .inix-best-card:hover {
+        transform: translateY(-5px);
+        border-color: #3b82f6;
+        box-shadow: 0 12px 28px rgba(37, 99, 235, 0.15);
+    }
+
+    .best-photo-container {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        padding: 3px;
+        background: #ffffff;
+        border: 3px solid #2563eb;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2);
+        margin: 0 auto 14px auto;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .best-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        transition: transform 0.3s ease;
+    }
+
+    .inix-best-card:hover .best-photo {
+        transform: scale(1.06);
+    }
+
+    .best-info {
+        width: 100%;
+    }
+
+    .best-category-tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #ffffff;
+        background: linear-gradient(135deg, #182F51 0%, #2563eb 100%);
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        padding: 4px 14px;
+        border-radius: 20px;
+        margin-bottom: 8px;
+    }
+
+    .best-name {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+        max-width: 100%;
+    }
+
+    /* STAT CARDS - CLEAN & FRESH PASTEL */
+    .inix-stat-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        min-height: 96px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .inix-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .stat-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        margin-right: 14px;
+        flex-shrink: 0;
+    }
+
+    .stat-icon-wrapper img {
+        width: 26px;
+        height: 26px;
+        object-fit: contain;
+    }
+
+    .icon-blue { background: #eff6ff; color: #2563eb; }
+    .icon-green { background: #ecfdf5; color: #059669; }
+    .icon-amber { background: #fffbeb; color: #d97706; }
+    .icon-teal { background: #f0fdf4; color: #16a34a; }
+
+    .stat-content {
+        flex-grow: 1;
+    }
+
+    .stat-label {
+        display: block;
+        font-size: 0.82rem;
+        color: #64748b;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .stat-value {
+        font-size: 1.7rem;
+        font-weight: 800;
+        margin: 0;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+
+    /* Split Card */
+    .inix-split-card {
+        justify-content: space-around;
+        text-align: center;
+        padding: 14px 10px;
+    }
+
+    .split-item {
+        flex: 1;
+    }
+
+    .split-badge {
+        display: inline-block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 12px;
+        margin-bottom: 4px;
+    }
+
+    .badge-offline { background: #eff6ff; color: #1e40af; }
+    .badge-virtual { background: #faf5ff; color: #7e22ce; }
+
+    .split-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .text-purple { color: #7e22ce; }
+
+    .split-divider {
+        width: 1px;
+        height: 40px;
+        background: #e2e8f0;
+        margin: 0 6px;
+    }
+
+    /* Feedback Box */
+    .inix-feedback-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+    }
+
+    .feedback-item {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        transition: transform 0.2s ease;
+    }
+
+    .feedback-item:hover {
+        transform: translateY(-2px);
+    }
+
+    .feedback-name {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+
+    .feedback-number {
+        font-size: 1.4rem;
+        font-weight: 800;
+        margin: 0;
+        color: #1e293b;
+    }
+
+    /* Top Class Table */
+    .inix-top-class-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .inix-top-class-table thead th {
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e2e8f0;
+        background-color: #f8fafc;
+    }
+
+    .inix-top-class-table tbody td {
+        font-size: 0.9rem;
+        padding: 12px 14px;
+        color: #334155;
+    }
+
+    .rank-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        font-weight: 800;
+        font-size: 0.85rem;
+    }
+
+    .rank-pill-1 {
+        background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(29, 78, 216, 0.35);
+        border: none;
+    }
+
+    .rank-pill-2 {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+
+    .rank-pill-3 {
+        background: #eff6ff;
+        color: #2563eb;
+        border: 1px solid #dbeafe;
+    }
+
+    .rank-pill-other {
+        background: #f8fafc;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+
+    .class-code-tag {
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 2px 8px;
+        border-radius: 6px;
+        margin-left: 6px;
+    }
+
+    .class-total-badge {
+        font-size: 0.85rem;
+        font-weight: 700;
+        background: #eff6ff;
+        color: #1d4ed8;
+        padding: 5px 14px;
+        border-radius: 20px;
+        border: 1px solid #dbeafe;
     }
 
     .chart-wrapper {
         position: relative;
         height: 500px;
-        /* 🔥 FIXED, TIDAK NGE-GROW */
         width: 100%;
     }
 
-
-    /* Responsive adjustments for mobile screens */
-    @media (max-width: 576px) {
-        .card {
-            padding: 8px !important;
+    @media (max-width: 768px) {
+        .late-avatar-box {
+            width: 72px;
+            height: 72px;
         }
 
-        .card-body {
-            padding: 8px !important;
+        .stat-value {
+            font-size: 1.4rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .late-avatar-box {
+            width: 72px;
+            height: 72px;
         }
 
-        .card-uiverse-feedback {
-            padding: 15px;
-            background-color: #182F51;
-            /* Sesuaikan warna latar belakang sesuai keinginan */
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            color: #ffffff;
-        }
-
-        .card-uiverse-feedback h2 {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-        }
-
-        .card-uiverse-feedback h4 {
-            font-size: 1rem;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-
-        .card-uiverse-feedback span {
-            font-size: 1rem;
-            font-weight: bold;
-        }
-
-
-        .card-uiverse h2,
-        .card-uiverse p {
-            z-index: 1;
-            color: white;
-            font-size: 1em;
-        }
-
-        .card-uiverse {
-            /* background: linear-gradient(to bottom right, #182F51, #c3cfe2); */
-            background-color: #182F51;
-            /* Sesuaikan dengan tema Anda */
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .title {
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: #222;
-            opacity: 0;
-            margin-top: 5px;
-            /* Sembunyikan title awalnya */
-            transition: opacity 0.3s ease-in-out;
-        }
-
-        .caption {
-
-            font-weight: 200;
-            font-size: 13px;
-            color: #4158D0;
-            display: block;
-            margin-top: 5px;
-            /* Pastikan caption selalu terlihat tanpa efek hover */
-            opacity: 1;
-        }
-
-        .second-position {
-            position: relative;
-            bottom: 5%;
-            left: -13%;
-        }
-
-        .first-position {
-            position: relative;
-            bottom: 3%;
-            left: 51%;
-            transform: translateX(-50%);
-        }
-
-        .third-position {
-            position: relative;
-            bottom: 14%;
-            right: 23%;
-        }
-
-        .card {
-            width: auto;
-            height: auto;
-        }
-
-        /* Resize circles for mobile */
-        .circle,
-        .circle-satu {
-            width: 100px;
-            height: 100px;
-        }
-
-        /* Resize present photos for mobile */
-        .present-photo {
-            width: 90px;
-            height: 90px !important;
-        }
-
-        .present-photo-satu {
-            width: 90px;
-            height: 90px !important;
-        }
-
-        /* Adjust position badge size for mobile */
-        .position-badge {
-            top: -10px;
-            right: -40px;
-            padding: 3px;
-            font-size: 0.7rem;
+        .stat-value {
+            font-size: 1.4rem;
         }
     }
 

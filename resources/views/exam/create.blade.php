@@ -53,22 +53,24 @@
                             </div>
                         </div>
 
-                        <div class="row mb-3">
-                            <label for="kode_exam" class="col-md-4 col-form-label text-md-start">{{ __('Kode Exam') }}</label>
-                            <div class="col-md-6">
-                                <select name="kode_exam" id="kode_exam" class="form-select">
-                                    <option value="" selected>Pilih Kode Exam</option>
-                                    @foreach ($kode_exam as $list)
-                                    <option value="{{ $list->kode_exam }}">{{ $list->kode_exam }} - {{ $list->nama_exam }} - {{ $list->provider }} - {{ $list->vendor }}</option>
-                                    @endforeach
-                                </select>
-                                @error('kode_exam')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
+                        @if (!$sertifa)
+                            <div class="row mb-3">
+                                <label for="kode_exam" class="col-md-4 col-form-label text-md-start">{{ __('Kode Exam') }}</label>
+                                <div class="col-md-6">
+                                    <select name="kode_exam" id="kode_exam" class="form-select">
+                                        <option value="" selected>Pilih Kode Exam</option>
+                                        @foreach ($kode_exam as $list)
+                                        <option value="{{ $list->kode_exam }}">{{ $list->kode_exam }} - {{ $list->nama_exam }} - {{ $list->provider }} - {{ $list->vendor }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('kode_exam')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
                             </div>
-                        </div>
+                        @endif
 
                         <div class="row mb-3">
                             <label for="mata_uang" class="col-md-4 col-form-label text-md-start">{{ __('Mata Uang') }}</label>
@@ -109,7 +111,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control @error('kurs') is-invalid @enderror" name="kurs" id="kurs" required>
+                                    <input type="text" class="form-control @error('kurs') is-invalid @enderror" name="kurs" id="kurs">
                                 </div>
                                 @error('kurs')
                                     <span class="invalid-feedback" role="alert">
@@ -124,7 +126,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">$</span>
-                                    <input type="text" step="0.01" class="form-control @error('biaya_admin') is-invalid @enderror" name="biaya_admin" id="biaya_admin" required>
+                                    <input type="text" step="0.01" class="form-control @error('biaya_admin') is-invalid @enderror" name="biaya_admin" id="biaya_admin">
                                 </div>
                                 @error('biaya_admin')
                                     <span class="invalid-feedback" role="alert">
@@ -139,7 +141,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control @error('kurs_dollar') is-invalid @enderror" name="kurs_dollar" id="kurs_dollar" required>
+                                    <input type="text" class="form-control @error('kurs_dollar') is-invalid @enderror" name="kurs_dollar" id="kurs_dollar">
                                 </div>
                                 @error('kurs_dollar')
                                     <span class="invalid-feedback" role="alert">
@@ -216,7 +218,13 @@ $(document).ready(function() {
     $('#tanggal_pengajuan').val(today);
     var paxInput = $('#pax');
     var totalInput = $('#total');
+    const isSertifa = @json((bool) $sertifa);
+
     $('#mata_uang, #harga, #kurs, #biaya_admin, #kurs_dollar').on('input change', function() {
+        if (!isSertifa) {
+            return;
+        }
+        toggleCurrencyFields();
         updateHargaRupiah();
     });
 
@@ -225,11 +233,40 @@ $(document).ready(function() {
         $(this).val(formatRupiah($(this).val()));
     });
 
+    // Show/hide Kurs field & ubah simbol mata uang pada Harga
+    // tergantung mata uang yang dipilih
+    function toggleCurrencyFields() {
+        const selectedCurrency = $('#mata_uang').val();
+
+        if (selectedCurrency === 'Rupiah') {
+            // Sembunyikan field Kurs, tidak perlu konversi
+            $('#kurs_harga_div').hide();
+            $('#kurs_dollar_div').hide();
+            $('#biaya_admin_div').hide();
+            $('#kurs').val('1').prop('required', false);
+
+            // Ganti simbol "$" menjadi "Rp." pada field Harga
+            $('#currency-symbol').text('Rp.');
+        } else {
+            $('#kurs_harga_div').show();
+            $('#kurs_dollar_div').show();
+            $('#biaya_admin_div').show();
+            $('#kurs').prop('required', true);
+
+            // Kembalikan simbol ke "$" untuk mata uang asing
+            $('#currency-symbol').text('$');
+        }
+    }
+
+    // Jalankan sekali saat load (untuk kasus old-input/edit form)
+    if(isSertifa) {
+        toggleCurrencyFields();
+    }
+
     // Function to update Harga Rupiah
     function updateHargaRupiah() {
         const selectedCurrency = $('#mata_uang').val();
         const harga = parseFloat(($('#harga').val())) || 0;
-        const kurs = parseFloat(removeRupiahFormat($('#kurs').val())) || 0;
         const biayaAdmin = parseFloat(removeRupiahFormat($('#biaya_admin').val())) || 0;
         const kursDollar = parseFloat(removeRupiahFormat($('#kurs_dollar').val())) || 0;
         let totalHarga = 0;
@@ -237,16 +274,19 @@ $(document).ready(function() {
         // Calculate totalHarga based on selectedCurrency
         switch (selectedCurrency) {
             case 'Rupiah':
-                totalHarga = (harga * kurs) + (biayaAdmin * kursDollar);
+                // Harga sudah dalam Rupiah, tidak perlu dikali kurs
+                totalHarga = harga + (biayaAdmin * kursDollar);
                 break;
             case 'Dollar':
                 totalHarga = (harga + biayaAdmin) * kursDollar;
                 break;
             case 'Poundsterling':
             case 'Euro':
-            case 'Franc Swiss':
+            case 'Franc Swiss': {
+                const kurs = parseFloat(removeRupiahFormat($('#kurs').val())) || 0;
                 totalHarga = (harga * kurs) + (biayaAdmin * kursDollar);
                 break;
+            }
             default:
                 totalHarga = 0;
                 break;
@@ -288,16 +328,8 @@ $(document).ready(function() {
     });
 
     $('#form-pengajuan-exam').on('submit', function(e) {
-        const submitButton = document.getElementById('btn-submit-exam');
-
-        // Eksekusi fungsi penguncian dari objek global
-        if (!ButtonValidator.lock(submitButton)) {
-            // Batalkan pengiriman formulir jika tombol sudah terkunci
-            e.preventDefault();
-            return false;
-        }
-
         // Pemrosesan Data (Hapus Format Rupiah) sebelum pengiriman dieksekusi
+        // Catatan: e.preventDefault() dihapus agar event bubbling diteruskan ke document level listener
         $('#kurs').val(removeRupiahFormat($('#kurs').val()));
         $('#kurs_dollar').val(removeRupiahFormat($('#kurs_dollar').val()));
         $('#harga_rupiah').val(removeRupiahFormat($('#harga_rupiah').val()));

@@ -11,10 +11,16 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="mb-0">Data Exam Sertifa</h4>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#poExamModal">Tambah Data</button>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">Data Exam Sertifa</h4>
+
+                    <div class="d-flex gap-2">
+                        <a href="/exam" class="btn btn-primary" target="_blank">Exam</a>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#poExamModal">
+                            Tambah Data
+                        </button>
                     </div>
+                </div>
 
                     @if ($errors->any())
                         <div class="alert alert-danger">
@@ -36,6 +42,7 @@
                                 <tr>
                                     <th>No</th>
                                     <th>Materi</th>
+                                    <th>Skema</th>
                                     <th>Tanggal Exam</th>
                                     <th>Perusahaan</th>
                                     <th>Pax</th>
@@ -76,7 +83,17 @@
                             @endforeach
                         </select>
                     </div>
-                    
+
+                    <div class="mb-3">
+                        <label class="form-label">Skema</label>
+                        <select name="skema" id="skema" class="form-select">
+                            <option value="">- Pilih / Ketik Skema -</option>
+                            @foreach($skemas as $skema)
+                                <option value="{{ $skema }}">{{ $skema }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                                        
                     <input type="hidden" name="id_materi" id="id_materi" required>
                     <input type="hidden" name="id_perusahaan" id="id_perusahaan">
                     
@@ -123,6 +140,16 @@
                                         data-perusahaan="{{ $rkm->perusahaan_key }}">
                                     {{ $rkm->id }} | {{ $rkm->materi->nama_materi ?? 'Materi Tidak Tersedia' }} - {{ $rkm->perusahaan->nama_perusahaan ?? 'Perusahaan Tidak Tersedia' }} | {{ $rkm->tanggal_awal ? $rkm->tanggal_awal->format('d M Y') : '-' }} s/d {{ $rkm->tanggal_akhir ? $rkm->tanggal_akhir->format('d M Y') : '-' }}
                                 </option>          
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Skema</label>
+                        <select name="skema" id="edit_skema" class="form-select">
+                            <option value="">- Pilih / Ketik Skema -</option>
+                            @foreach($skemas as $skema)
+                                <option value="{{ $skema }}">{{ $skema }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -198,6 +225,10 @@
                     defaultContent: '-'
                 },
                 {
+                    data: 'skema',
+                    defaultContent: '-'
+                },
+                {
                     data: 'tanggal_exam',
                     render: function (data) {
                         if (!data) return '-';
@@ -227,6 +258,7 @@
                     render: function (data, type, row) {
                         var updateUrl = "{{ route('office.certifa.update', ':id') }}".replace(':id', data);
                         var destroyUrl = "{{ route('office.certifa.destroy', ':id') }}".replace(':id', data);
+                        var examUrl = "/pengajuanExam";
                         var csrfToken = '{{ csrf_token() }}';
 
                         var btnEdit = `
@@ -237,7 +269,8 @@
                                 data-tanggal_exam="${row.tanggal_exam || ''}"
                                 data-id_perusahaan="${row.id_perusahaan || ''}"
                                 data-pax="${row.pax || ''}"
-                                data-harga="${row.harga || ''}">
+                                data-harga="${row.harga || ''}"
+                                data-skema="${row.skema || ''}">
                                 Edit
                             </button>
                         `;
@@ -250,7 +283,29 @@
                             </form>
                         `;
 
-                        return btnEdit + ' ' + btnDelete;
+                        var btnExam = '';
+
+                        if (row.exam) {
+                            btnExam = `
+                                <button class="btn btn-sm btn-info" disabled>
+                                    Diajukan
+                                </button>
+                            `;
+                        } else {
+                            btnExam = `
+                                <a href="${examUrl}/${row.id_rkm}" class="btn btn-sm btn-info" target="_blank">
+                                    Ajukan
+                                </a>
+                            `;
+                        }
+
+                        return `
+                            <div class="d-flex gap-1">
+                                ${btnEdit}
+                                ${btnDelete}
+                                ${btnExam}
+                            </div>
+                        `;                    
                     }
                 }
             ],
@@ -273,6 +328,24 @@
             dropdownParent: $('#editPoExamModal'),
             width: '100%',
             placeholder: '- Pilih RKM -'
+        });
+
+        $('#skema').select2({
+            theme: 'bootstrap-5',
+            dropdownParent: $('#poExamModal'),
+            width: '100%',
+            placeholder: '- Pilih / Ketik Skema -',
+            tags: true,
+            allowClear: true
+        });
+
+        $('#edit_skema').select2({
+            theme: 'bootstrap-5',
+            dropdownParent: $('#editPoExamModal'),
+            width: '100%',
+            placeholder: '- Pilih / Ketik Skema -',
+            tags: true,
+            allowClear: true
         });
 
         // Logika pengisian otomatis hidden input saat Select2 RKM diubah (Tambah Data)
@@ -323,7 +396,18 @@
             
             // Injeksi dan manipulasi format data harga ke format Rupiah
             $('#edit_harga').val(formatRupiah(btn.data('harga')));
-            
+
+            var skemaValue = btn.data('skema');
+            if (skemaValue) {
+                if ($('#edit_skema').find("option[value='" + skemaValue + "']").length === 0) {
+                    var newOption = new Option(skemaValue, skemaValue, true, true);
+                    $('#edit_skema').append(newOption);
+                }
+                $('#edit_skema').val(skemaValue).trigger('change');
+            } else {
+                $('#edit_skema').val('').trigger('change');
+            }
+    
             $('#editPoExamModal').modal('show');
         });
     });
