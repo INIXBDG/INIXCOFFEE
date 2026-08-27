@@ -167,6 +167,8 @@
         
         // Initialize tablekaryawan
         var tableKaryawan = $('#tablekaryawan').DataTable({
+            "processing": true,
+            "serverSide": true,
             "ajax": {
                 "url": "{{ route('getUserall') }}", // URL API untuk mengambil data
                 "type": "GET",

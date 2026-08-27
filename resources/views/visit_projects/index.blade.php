@@ -157,6 +157,8 @@
         var assetUrl = "{{ asset('storage') }}";
 
         var table = $('#visitsTable').DataTable({
+            "processing": true,
+            "serverSide": true,
             "ajax": {
                 "url": "{{ route('visit-projects.get') }}",
                 "type": "GET",

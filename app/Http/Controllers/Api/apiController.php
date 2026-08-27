@@ -241,8 +241,74 @@ class apiController extends Controller
     }
 
 
-    public function getUserall()
+    public function getUserall(Request $request)
     {
+        if ($request->has('draw')) {
+            $query = User::with('karyawan')->where('status_akun', '1');
+
+            // Total records before filtering
+            $recordsTotal = $query->count();
+
+            // Search filter
+            if ($search = $request->input('search.value')) {
+                $query->where(function($q) use ($search) {
+                    $q->whereHas('karyawan', function($qk) use ($search) {
+                        $qk->where('nama_lengkap', 'like', "%{$search}%")
+                           ->orWhere('nip', 'like', "%{$search}%")
+                           ->orWhere('jabatan', 'like', "%{$search}%")
+                           ->orWhere('divisi', 'like', "%{$search}%")
+                           ->orWhere('kode_karyawan', 'like', "%{$search}%");
+                    });
+                });
+            }
+
+            // Total records after filtering
+            $recordsFiltered = $query->count();
+
+            // Order
+            $orderColumnIndex = $request->input('order.0.column');
+            $orderColumnData = $request->input("columns.{$orderColumnIndex}.data");
+            $orderDir = $request->input('order.0.dir', 'desc');
+
+            if ($orderColumnData) {
+                if (str_starts_with($orderColumnData, 'karyawan.')) {
+                    $field = str_replace('karyawan.', '', $orderColumnData);
+                    if (in_array($field, ['nip', 'nama_lengkap', 'jabatan', 'divisi', 'kode_karyawan', 'cuti'])) {
+                        $query->join('karyawans', 'users.karyawan_id', '=', 'karyawans.id')
+                              ->orderBy('karyawans.' . $field, $orderDir)
+                              ->select('users.*');
+                    } else {
+                        $query->orderBy('users.id', 'desc');
+                    }
+                } else {
+                    if (in_array($orderColumnData, ['id', 'status_akun'])) {
+                        $query->orderBy('users.' . $orderColumnData, $orderDir);
+                    } else {
+                        $query->orderBy('users.id', 'desc');
+                    }
+                }
+            } else {
+                $query->orderBy('users.id', 'desc');
+            }
+
+            // Paging
+            $start = $request->input('start', 0);
+            $length = $request->input('length', 10);
+
+            if ($length != -1) {
+                $query->offset($start)->limit($length);
+            }
+
+            $user = $query->get();
+
+            return response()->json([
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $user
+            ]);
+        }
+
         // $registrasi = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')->get();
         $user = User::with('karyawan')->where('status_akun', '1')->get();
 

@@ -28,53 +28,166 @@ class SouvenirController extends Controller
     {
         return view('souvenir.index');
     }
-    public function getSouvenir()
+    public function getSouvenir(Request $request)
     {
+        if ($request->has('draw')) {
+            $query = Souvenir::query();
+
+            // Total records before filtering
+            $recordsTotal = $query->count();
+
+            // Search filter
+            if ($search = $request->input('search.value')) {
+                $query->where(function($q) use ($search) {
+                    $q->where('nama_souvenir', 'like', "%{$search}%")
+                      ->orWhere('harga', 'like', "%{$search}%")
+                      ->orWhere('stok', 'like', "%{$search}%");
+                });
+            }
+
+            // Total records after filtering
+            $recordsFiltered = $query->count();
+
+            // Order
+            $orderColumnIndex = $request->input('order.0.column');
+            $orderDir = $request->input('order.0.dir', 'desc');
+
+            $columnsMap = [
+                1 => 'nama_souvenir',
+                2 => 'harga',
+                4 => 'stok'
+            ];
+
+            if (isset($columnsMap[$orderColumnIndex])) {
+                $query->orderBy($columnsMap[$orderColumnIndex], $orderDir);
+            } else {
+                $query->orderBy('id', 'desc');
+            }
+
+            // Paging
+            $start = $request->input('start', 0);
+            $length = $request->input('length', 10);
+
+            if ($length != -1) {
+                $query->offset($start)->limit($length);
+            }
+
+            $souvenirs = $query->get();
+
+            // Iterasi melalui setiap souvenir dan ubah blob_foto menjadi base64 hanya untuk data yang di-page
+            $souvenirsWithBase64 = $souvenirs->map(function ($souvenir) {
+                if (!is_null($souvenir->blob_foto)) {
+                    $souvenir->base64_foto = base64_encode($souvenir->blob_foto);
+                } else {
+                    $souvenir->base64_foto = null;
+                }
+                return $souvenir->makeHidden('blob_foto');
+            });
+
+            return response()->json([
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $souvenirsWithBase64->toArray()
+            ], 200, ['Content-type' => 'application/json; charset=utf-8']);
+        }
+
         $souvenirs = Souvenir::orderBy('id', 'desc')->get();
 
-        // Iterasi melalui setiap souvenir dan ubah blob_foto menjadi base64
         $souvenirsWithBase64 = $souvenirs->map(function ($souvenir) {
             if (!is_null($souvenir->blob_foto)) {
                 $souvenir->base64_foto = base64_encode($souvenir->blob_foto);
             } else {
                 $souvenir->base64_foto = null;
             }
-            // Sembunyikan kolom blob_foto
             return $souvenir->makeHidden('blob_foto');
         });
-
-        // Konversi koleksi menjadi array untuk memastikan encoding JSON
-        $souvenirsArray = $souvenirsWithBase64->toArray();
 
         return response()->json([
             'success' => true,
             'message' => 'List Souvenir',
-            'data' => $souvenirsArray,
+            'data' => $souvenirsWithBase64->toArray(),
         ], 200, ['Content-type' => 'application/json; charset=utf-8']);
     }
 
-    public function getSouvenirInactive()
+    public function getSouvenirInactive(Request $request)
     {
+        if ($request->has('draw')) {
+            $query = Souvenir::onlyTrashed();
+
+            // Total records before filtering
+            $recordsTotal = $query->count();
+
+            // Search filter
+            if ($search = $request->input('search.value')) {
+                $query->where(function($q) use ($search) {
+                    $q->where('nama_souvenir', 'like', "%{$search}%")
+                      ->orWhere('harga', 'like', "%{$search}%")
+                      ->orWhere('stok', 'like', "%{$search}%");
+                });
+            }
+
+            // Total records after filtering
+            $recordsFiltered = $query->count();
+
+            // Order
+            $orderColumnIndex = $request->input('order.0.column');
+            $orderDir = $request->input('order.0.dir', 'desc');
+
+            $columnsMap = [
+                1 => 'nama_souvenir',
+                2 => 'harga',
+                4 => 'stok'
+            ];
+
+            if (isset($columnsMap[$orderColumnIndex])) {
+                $query->orderBy($columnsMap[$orderColumnIndex], $orderDir);
+            } else {
+                $query->orderBy('id', 'desc');
+            }
+
+            // Paging
+            $start = $request->input('start', 0);
+            $length = $request->input('length', 10);
+
+            if ($length != -1) {
+                $query->offset($start)->limit($length);
+            }
+
+            $souvenirs = $query->get();
+
+            $souvenirsWithBase64 = $souvenirs->map(function ($souvenir) {
+                if (!is_null($souvenir->blob_foto)) {
+                    $souvenir->base64_foto = base64_encode($souvenir->blob_foto);
+                } else {
+                    $souvenir->base64_foto = null;
+                }
+                return $souvenir->makeHidden('blob_foto');
+            });
+
+            return response()->json([
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $souvenirsWithBase64->toArray()
+            ], 200, ['Content-type' => 'application/json; charset=utf-8']);
+        }
+
         $souvenirs = Souvenir::onlyTrashed()->orderBy('id', 'desc')->get();
 
-        // Iterasi melalui setiap souvenir dan ubah blob_foto menjadi base64
         $souvenirsWithBase64 = $souvenirs->map(function ($souvenir) {
             if (!is_null($souvenir->blob_foto)) {
                 $souvenir->base64_foto = base64_encode($souvenir->blob_foto);
             } else {
                 $souvenir->base64_foto = null;
             }
-            // Sembunyikan kolom blob_foto
             return $souvenir->makeHidden('blob_foto');
         });
 
-        // Konversi koleksi menjadi array untuk memastikan encoding JSON
-        $souvenirsArray = $souvenirsWithBase64->toArray();
-
         return response()->json([
             'success' => true,
-            'message' => 'List Souvenir',
-            'data' => $souvenirsArray,
+            'message' => 'List Souvenir Inactive',
+            'data' => $souvenirsWithBase64->toArray(),
         ], 200, ['Content-type' => 'application/json; charset=utf-8']);
     }
 

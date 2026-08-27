@@ -145,6 +145,8 @@
         var tableIndex2 = 1;
 
         $('#souvenirtable').DataTable({
+            "processing": true,
+            "serverSide": true,
             "ajax": {
                 "url": "{{ route('getSouvenir') }}", // URL API untuk mengambil data
                 "type": "GET",
@@ -164,9 +166,12 @@
                 }
             },
             "columns": [
-                {   "data": null,
-                    "render": function (data){
-                        return tableIndex++
+                {
+                    "data": null,
+                    "searchable": false,
+                    "orderable": false,
+                    "render": function (data, type, row, meta) {
+                        return meta.row + meta.settings._iDisplayStart + 1;
                     }
                 },
                 {"data": "nama_souvenir"},
@@ -214,6 +219,8 @@
         });
 
         $('#souvenirtableinactive').DataTable({
+            "processing": true,
+            "serverSide": true,
             "ajax": {
                 "url": "{{ route('getSouvenirInactive') }}",
                 "type": "GET",
@@ -233,9 +240,12 @@
                 }
             },
             "columns": [
-                {   "data": null,
-                    "render": function (data){
-                        return tableIndex2++
+                {
+                    "data": null,
+                    "searchable": false,
+                    "orderable": false,
+                    "render": function (data, type, row, meta) {
+                        return meta.row + meta.settings._iDisplayStart + 1;
                     }
                 },
                 {"data": "nama_souvenir"},
