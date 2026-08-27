@@ -260,6 +260,7 @@ Route::resource('/rekapmengajarinstruktur', \App\Http\Controllers\rekapInstruktu
 Route::resource('/lembur', \App\Http\Controllers\LemburController::class);
 Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
+Route::resource('/pengajuansubs', \App\Http\Controllers\PengajuanSubsController::class);
 Route::resource('/pengajuansouvenir', \App\Http\Controllers\PengajuanSouvenirController::class);
 Route::resource('/daily-activities', DailyActivityController::class);
 Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas'])->except(['show']);
@@ -351,6 +352,16 @@ Route::post('/api/master-labs/{id}/renew', [App\Http\Controllers\PengajuanLabdan
 Route::put('/api/master-labs/{id}', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'updateMasterLab']);
 Route::get('/api/get-labs-by-rkm/{id}', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'getLabsByRkm']);
 Route::get('/api/get-master-labs', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'getMasterLabs'])->name('api.master-labs');
+
+Route::get('getPengajuanSubs/{month}/{year}', [App\Http\Controllers\PengajuanSubsController::class, 'getPengajuanSubs'])->name('getPengajuanSubs');
+Route::put('pengajuansubs/updatesubssubs/{id}', [App\Http\Controllers\PengajuanSubsController::class, 'updateSubsSubs'])->name('pengajuansubs.updatesubssubs');
+Route::post('/pengajuansubs/{id}/upload-invoice', [App\Http\Controllers\PengajuanSubsController::class, 'uploadInvoice'])->name('pengajuansubs.uploadInvoice');
+Route::get('pengajuansubs/export-pdf/{id}', [App\Http\Controllers\PengajuanSubsController::class, 'exportPDF'])->name('pengajuansubs.exportpdf');
+Route::post('/api/master-subs/{id}/renew', [App\Http\Controllers\PengajuanSubsController::class, 'renewSubs']);
+Route::put('/api/master-subs/{id}', [App\Http\Controllers\PengajuanSubsController::class, 'updateMasterSubs']);
+Route::post('/api/master-subs', [App\Http\Controllers\PengajuanSubsController::class, 'storeMasterSubs'])->name('api.master-subs.store');
+Route::get('/api/get-subs-by-rkm/{id}', [App\Http\Controllers\PengajuanSubsController::class, 'getSubsByRkm']);
+Route::get('/api/get-master-subs', [App\Http\Controllers\PengajuanSubsController::class, 'getMasterSubs'])->name('api.master-subs');
 Route::get('getAbsen', [App\Http\Controllers\RekapitulasiAbsenController::class, 'getAbsen'])->name('getAbsen');
 Route::get('getTarget', [App\Http\Controllers\TargetController::class, 'getTarget'])->name('getTarget');
 Route::get('getOutstandingLunas', [App\Http\Controllers\OutstandingController::class, 'getOutstandingLunas'])->name('getOutstandingLunas');
