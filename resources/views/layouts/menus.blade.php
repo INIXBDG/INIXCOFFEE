@@ -912,6 +912,9 @@
 </head>
 
 <body>
+    @if (app()->environment('staging'))
+        <div aria-hidden="true" style="position: fixed; top: 50%; left: 50%; z-index: 999998; color: rgba(220, 38, 38, 0.18); font-size: clamp(4rem, 12vw, 10rem); font-weight: 800; letter-spacing: 0.2em; pointer-events: none; transform: translate(-50%, -50%) rotate(-25deg); user-select: none; white-space: nowrap;">STAGING</div>
+    @endif
     {{--
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert">
