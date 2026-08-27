@@ -212,130 +212,119 @@
 
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-$(document).ready(function() {
-    var today = new Date().toISOString().split('T')[0];
-    $('#tanggal_pengajuan').val(today);
-    var paxInput = $('#pax');
-    var totalInput = $('#total');
-    const isSertifa = @json((bool) $sertifa);
+    <script>
+    $(document).ready(function() {
+        // 1. Inisialisasi Tanggal
+        var today = new Date().toISOString().split('T')[0];
+        $('#tanggal_pengajuan').val(today);
 
-    $('#mata_uang, #harga, #kurs, #biaya_admin, #kurs_dollar').on('input change', function() {
-        if (!isSertifa) {
-            return;
-        }
-        toggleCurrencyFields();
-        updateHargaRupiah();
-    });
+        // 2. Deklarasi Konstanta
+        const isSertifa = @json((bool) $sertifa);
 
-    // Apply Rupiah format to kurs, kurs_dollar, and harga_rupiah on input
-    $('#kurs, #kurs_dollar, #harga_rupiah').on('input', function() {
-        $(this).val(formatRupiah($(this).val()));
-    });
+        // 3. Fungsi Utilitas Format Angka
+        function formatRupiah(angka, prefix) {
+            var numberString = angka.toString().replace(/[^,\d]/g, ''),
+                split = numberString.split(','),
+                sisa = split[0].length % 3,
+                rupiah = split[0].substr(0, sisa),
+                ribuan = split[0].substr(sisa).match(/\d{3}/gi);
 
-    // Show/hide Kurs field & ubah simbol mata uang pada Harga
-    // tergantung mata uang yang dipilih
-    function toggleCurrencyFields() {
-        const selectedCurrency = $('#mata_uang').val();
-
-        if (selectedCurrency === 'Rupiah') {
-            // Sembunyikan field Kurs, tidak perlu konversi
-            $('#kurs_harga_div').hide();
-            $('#kurs_dollar_div').hide();
-            $('#biaya_admin_div').hide();
-            $('#kurs').val('1').prop('required', false);
-
-            // Ganti simbol "$" menjadi "Rp." pada field Harga
-            $('#currency-symbol').text('Rp.');
-        } else {
-            $('#kurs_harga_div').show();
-            $('#kurs_dollar_div').show();
-            $('#biaya_admin_div').show();
-            $('#kurs').prop('required', true);
-
-            // Kembalikan simbol ke "$" untuk mata uang asing
-            $('#currency-symbol').text('$');
-        }
-    }
-
-    // Jalankan sekali saat load (untuk kasus old-input/edit form)
-    if(isSertifa) {
-        toggleCurrencyFields();
-    }
-
-    // Function to update Harga Rupiah
-    function updateHargaRupiah() {
-        const selectedCurrency = $('#mata_uang').val();
-        const harga = parseFloat(($('#harga').val())) || 0;
-        const biayaAdmin = parseFloat(removeRupiahFormat($('#biaya_admin').val())) || 0;
-        const kursDollar = parseFloat(removeRupiahFormat($('#kurs_dollar').val())) || 0;
-        let totalHarga = 0;
-
-        // Calculate totalHarga based on selectedCurrency
-        switch (selectedCurrency) {
-            case 'Rupiah':
-                // Harga sudah dalam Rupiah, tidak perlu dikali kurs
-                totalHarga = harga + (biayaAdmin * kursDollar);
-                break;
-            case 'Dollar':
-                totalHarga = (harga + biayaAdmin) * kursDollar;
-                break;
-            case 'Poundsterling':
-            case 'Euro':
-            case 'Franc Swiss': {
-                const kurs = parseFloat(removeRupiahFormat($('#kurs').val())) || 0;
-                totalHarga = (harga * kurs) + (biayaAdmin * kursDollar);
-                break;
+            if (ribuan) {
+                var separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
             }
-            default:
-                totalHarga = 0;
-                break;
+
+            rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+            return (prefix === undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : ''));
         }
 
-        // Update harga_rupiah with formatted Rupiah
-        $('#harga_rupiah').val(formatRupiah(totalHarga.toString()));
-    }
-
-    // Function to format numbers as Rupiah
-    function formatRupiah(angka, prefix) {
-        var numberString = angka.toString().replace(/[^,\d]/g, ''),
-            split = numberString.split(','),
-            sisa = split[0].length % 3,
-            rupiah = split[0].substr(0, sisa),
-            ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-
-        if (ribuan) {
-            var separator = sisa ? '.' : '';
-            rupiah += separator + ribuan.join('.');
+        function removeRupiahFormat(angka) {
+            if (!angka) return 0;
+            return parseFloat(angka.toString().replace(/[^\d,]/g, '').replace(',', '.'));
         }
 
-        rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-        return (prefix === undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : ''));
-    }
+        // 4. Fungsi Visibilitas Field Mata Uang
+        function toggleCurrencyFields() {
+            const selectedCurrency = $('#mata_uang').val();
 
-    // Function to remove Rupiah format before calculations
-    function removeRupiahFormat(angka) {
-        if (!angka) return 0;
-        return parseFloat(angka.toString().replace(/[^\d,]/g, '').replace(',', '.'));
-    }
+            if (selectedCurrency === 'Rupiah') {
+                $('#kurs_harga_div').hide();
+                $('#kurs_dollar_div').hide();
+                $('#biaya_admin_div').hide();
+                $('#kurs').val('1').prop('required', false);
+                $('#currency-symbol').text('Rp.');
+            } else {
+                $('#kurs_harga_div').show();
+                $('#kurs_dollar_div').show();
+                $('#biaya_admin_div').show();
+                $('#kurs').prop('required', true);
+                $('#currency-symbol').text('$');
+            }
+        }
 
-    paxInput.change(function() {
-        // Mengambil nilai dari input pax
-        var pax = parseInt(paxInput.val()) || 0;
-        var hargaRupiah = $('#harga_rupiah').val();
-        var totalRupiah = removeRupiahFormat(hargaRupiah) * pax;
-        totalInput.val(formatRupiah(totalRupiah));
+        if(isSertifa) {
+            toggleCurrencyFields();
+        }
+
+        // 5. Fungsi Kalkulasi Utama terpusat
+        function calculateAll() {
+            const selectedCurrency = $('#mata_uang').val();
+            const harga = parseFloat($('#harga').val()) || 0;
+            const biayaAdmin = parseFloat(removeRupiahFormat($('#biaya_admin').val())) || 0;
+            const kursDollar = parseFloat(removeRupiahFormat($('#kurs_dollar').val())) || 0;
+            let totalHarga = 0;
+
+            switch (selectedCurrency) {
+                case 'Rupiah':
+                    totalHarga = harga + (biayaAdmin * kursDollar);
+                    break;
+                case 'Dollar':
+                    totalHarga = (harga + biayaAdmin) * kursDollar;
+                    break;
+                case 'Poundsterling':
+                case 'Euro':
+                case 'Franc Swiss': {
+                    const kurs = parseFloat(removeRupiahFormat($('#kurs').val())) || 0;
+                    totalHarga = (harga * kurs) + (biayaAdmin * kursDollar);
+                    break;
+                }
+                default:
+                    totalHarga = 0;
+                    break;
+            }
+
+            // Pembaruan UI Field Harga Rupiah
+            $('#harga_rupiah').val(formatRupiah(totalHarga.toString()));
+
+            // Eksekusi Kalkulasi Total
+            const pax = parseInt($('#pax').val()) || 0;
+            const totalRupiah = totalHarga * pax;
+
+            // Pembaruan UI Field Total
+            $('#total').val(formatRupiah(totalRupiah.toString()));
+        }
+
+        // 6. Global Event Listener untuk Real-Time Input
+        $('#mata_uang, #harga, #kurs, #biaya_admin, #kurs_dollar, #pax').on('input', function() {
+            if (isSertifa) {
+                toggleCurrencyFields();
+            }
+            calculateAll();
+        });
+
+        // 7. Event Listener Khusus Format Rupiah (UI Input UX)
+        $('#kurs, #kurs_dollar').on('input', function() {
+            $(this).val(formatRupiah($(this).val()));
+        });
+
+        // 8. Event Listener Pre-Submission
+        $('#form-pengajuan-exam').on('submit', function(e) {
+            $('#kurs').val(removeRupiahFormat($('#kurs').val()));
+            $('#kurs_dollar').val(removeRupiahFormat($('#kurs_dollar').val()));
+            $('#harga_rupiah').val(removeRupiahFormat($('#harga_rupiah').val()));
+            $('#total').val(removeRupiahFormat($('#total').val()));
+        });
     });
-
-    $('#form-pengajuan-exam').on('submit', function(e) {
-        // Pemrosesan Data (Hapus Format Rupiah) sebelum pengiriman dieksekusi
-        // Catatan: e.preventDefault() dihapus agar event bubbling diteruskan ke document level listener
-        $('#kurs').val(removeRupiahFormat($('#kurs').val()));
-        $('#kurs_dollar').val(removeRupiahFormat($('#kurs_dollar').val()));
-        $('#harga_rupiah').val(removeRupiahFormat($('#harga_rupiah').val()));
-        $('#total').val(removeRupiahFormat($('#total').val()));
-    });
-});
-</script>
+    </script>
 @endpush
 @endsection
