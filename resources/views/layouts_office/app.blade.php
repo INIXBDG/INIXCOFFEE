@@ -211,17 +211,17 @@
         }
 
         @keyframes animateLoaders {
-            0% {
-                transform: scale(0.8);
-            }
-
-            50% {
-                transform: scale(1.2);
-            }
-
+            0%,
             100% {
                 transform: scale(0.8);
             }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        .swal2-container {
+            z-index: 999999 !important;
         }
     </style>
 </head>
@@ -291,6 +291,11 @@
     <!-- Iconify -->
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
 
+
+    <script src="{{ asset('js/global-validator.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
     <!-- Mobile menu toggle logic -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -355,6 +360,133 @@
         });
     </script>
 
+    @yield('scripts')
+
+    @if($errors->any())
+    @php
+        $swalType = 'error';
+        $swalTitle = 'Terjadi Kesalahan!';
+        $errorItems = implode('', array_map(fn($e) => '<li>'.$e.'</li>', $errors->all()));
+        $swalHtml  = '<ul style="text-align:left;margin:0;padding-left:20px;">'.$errorItems.'</ul>';
+    @endphp
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                Swal.fire({
+                    icon: @json($swalType),
+                    title: @json($swalTitle),
+                    html: @json($swalHtml),
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    allowOutsideClick: false
+                });
+            }, 300);
+        });
+    </script>
+    @endif
+
+    @if (auth()->check() && optional(auth()->user()->karyawan)->jabatan === 'Office Boy')
+    <script>
+        let swalOpen = false;
+
+        function checkPendingShift() {
+            if (swalOpen) return;
+
+            fetch("{{ route('shift.pending') }}", { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.pending) return;
+
+                    swalOpen = true;
+                    Swal.fire({
+                        title: 'Konfirmasi Shift ' + data.shift,
+                        text: data.message,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Saya Setuju',
+                        cancelButtonText: 'Tolak',
+                        allowOutsideClick: false,
+                    }).then(result => {
+                        const url = result.isConfirmed
+                            ? "{{ route('shift.approve') }}"
+                            : "{{ route('shift.reject') }}";
+
+                        fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            },
+                            body: JSON.stringify({
+                                notification_id: data.notification_id,
+                                shift: data.shift,
+                                date: data.date,
+                            }),
+                        })
+                        .then(r => r.json())
+                        .then(res => {
+                            swalOpen = false;
+                            if (res.success) {
+                                Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 2000, showConfirmButton: false })
+                                    .then(() => location.reload());
+                            } else {
+                                Swal.fire('Gagal', res.message || 'Terjadi kesalahan', 'error');
+                            }
+                        })
+                        .catch(() => { swalOpen = false; });
+                    });
+                })
+                .catch(err => console.error(err));
+        }
+
+        document.addEventListener('DOMContentLoaded', checkPendingShift);
+        setInterval(checkPendingShift, 60000);
+    </script>
+    @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function getCookie(name) {
+                let matches = document.cookie.match(new RegExp(
+                    "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+                ));
+                return matches ? decodeURIComponent(matches[1].replace(/\+/g, ' ')) : undefined;
+            }
+
+            let successAlert = getCookie('swal_success');
+            let errorAlert = getCookie('swal_error');
+
+            if (successAlert) {
+                document.cookie = "swal_success=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                setTimeout(function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: successAlert,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                    });
+                }, 300);
+            } else if (errorAlert) {
+                document.cookie = "swal_error=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                setTimeout(function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: errorAlert,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                    });
+                }, 300);
+            }
+        });
+    </script>
 </body>
 
 </html>

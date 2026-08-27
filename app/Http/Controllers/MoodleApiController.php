@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Http\JsonResponse;
 use Exception;
 
 class MoodleApiController extends Controller
 {
-    public function fetchGradesSharingKnowledge(): JsonResponse
+    public function fetchGradesSharingKnowledge()
     {
         try {
             // Ekstraksi Variabel Environment

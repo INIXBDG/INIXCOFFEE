@@ -4,7 +4,7 @@ namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
 use App\Models\karyawan;
-use App\Models\Kegiatan;
+use App\Models\Pelamar;
 use App\Models\ReportTemplate;
 use App\Models\TemplatePlaceholder;
 use App\Models\ReportGeneration;
@@ -263,100 +263,294 @@ class ReportController extends Controller
 
     public function edit(ReportTemplate $template)
     {
-        if ($template->created_by !== Auth::id() && !Auth::user()->hasRole('admin')) {
-            abort(403, 'Unauthorized action');
+        // if ($template->created_by !== Auth::id() && !Auth::user()->hasRole('admin')) {
+        //     abort(403, 'Unauthorized action');
+        // }
+
+ $availableColumns = $this->getAllowedColumns();
+         $placeholders = $template->placeholders->sortBy('sort_order');
+
+        //  TAMBAHAN BARU: Siapkan data mapping existing untuk dikirim sebagai JSON
+        // (pakai foreach biasa agar aman dari error parser Blade)
+        $existingMappings = [];
+        foreach ($placeholders as $p) {
+            $existingMappings[] = [
+                'key' => $p->placeholder_key,
+                'label' => $p->placeholder_label,
+                'type' => $p->field_type,
+                'is_manual' => (bool) $p->is_manual,
+                'source_column' => $p->source_column,
+                'config' => $p->config,
+            ];
         }
 
-        $availableColumns = $this->getAllowedColumns()[$template->source_table] ?? [];
-        $placeholders = $template->placeholders->sortBy('sort_order');
-
-        return view('HR.template.edit', compact('template', 'availableColumns', 'placeholders'));
+        //  UBAH: Tambahkan 'existingMappings' ke compact()
+        return view('HR.template.edit', compact(
+            'template', 
+            'availableColumns', 
+            'placeholders',
+            'existingMappings'   // ← variabel baru
+        ));
     }
 
     public function update(Request $request, ReportTemplate $template): JsonResponse
     {
         try {
-            if ($template->created_by !== Auth::id() && !Auth::user()->hasRole('admin')) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
-            }
-
+            //     if ($template->created_by !== Auth::id() && !Auth::user()->hasRole('admin')) {
+            //     return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            // }
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
+                'code' => [
+                    'required',
+                    'string',
+                    'max:50',
+                    Rule::unique('report_templates', 'code')->ignore($template->id),
+                ],
+                'category' => 'nullable|string|max:100',
+                'source_table' => ['nullable', 'string', Rule::in(array_keys($this->getAvailableTables()))],
                 'description' => 'nullable|string|max:1000',
-                'is_active' => 'boolean',
-                'field_mappings' => 'nullable|array',
-                'labels' => 'nullable|array',
-                'types' => 'nullable|array',
-                'manual_fields' => 'nullable|array',
+                'is_active' => 'nullable|boolean',
+                'template_file' => 'nullable|file|mimes:docx,doc|max:10240',
+                'replacements' => 'nullable|array',
+                'special_fields' => 'nullable|string',
+            ], [
+                'code.unique' => 'Kode Template ":input" sudah digunakan oleh template lain.',
+                'name.required' => 'Nama Template wajib diisi.',
+                'code.required' => 'Kode Template wajib diisi.',
+                'template_file.mimes' => 'File harus bertipe .docx atau .doc',
             ]);
+
+            $sourceTable = strtolower($validated['source_table'] ?? $template->source_table);
+
+            
+            // KUMPULKAN MAPPING DARI REQUEST (dipakai 2 skenario)
+            
+            $allDbMappings = [];  // semua mapping DB (existing + baru)
+            $replacements  = [];  // hanya yang BARU (punya find text) → untuk proses dokumen
+            foreach ((array) ($validated['replacements'] ?? []) as $item) {
+                $find  = trim($item['find'] ?? '');
+                $field = trim($item['replace'] ?? '');
+                if (!empty($field)) {
+                    $allDbMappings[] = ['find' => $find, 'replace' => $field];
+                    if (!empty($find)) {
+                        $replacements[] = ['find' => $find, 'replace' => $field];
+                    }
+                }
+            }
+
+            $specialFields = [];
+            if (!empty($validated['special_fields'])) {
+                $decoded = json_decode($validated['special_fields'], true);
+                if (is_array($decoded)) $specialFields = $decoded;
+            }
+
+            foreach ($specialFields as $idx => $sf) {
+                if (empty($sf['placeholder_key']) || empty($sf['field_type'])) {
+                    unset($specialFields[$idx]);
+                    continue;
+                }
+                if (!in_array($sf['field_type'], self::ALL_FIELD_TYPES)) {
+                    return response()->json(['success' => false, 'message' => "Tipe field tidak valid: {$sf['field_type']}"], 422);
+                }
+                if (!preg_match('/^[a-z0-9_]+$/', $sf['placeholder_key'])) {
+                    return response()->json(['success' => false, 'message' => "Key placeholder tidak valid: {$sf['placeholder_key']}. Hanya huruf kecil, angka, dan underscore."], 422);
+                }
+            }
+            $specialFields = array_values($specialFields);
+
+            // Special field BARU juga jadi replacement di dokumen
+            foreach ($specialFields as $sf) {
+                if (!empty($sf['find_text']) && !empty($sf['placeholder_key'])) {
+                    $replacements[] = ['find' => $sf['find_text'], 'replace' => $sf['placeholder_key']];
+                }
+            }
+
+            Log::info('update template', [
+                'id' => $template->id,
+                'has_new_file' => $request->hasFile('template_file'),
+                'new_replacements' => count($replacements),
+                'db_mappings' => count($allDbMappings),
+                'special_fields' => count($specialFields),
+            ]);
+
+            
+            // SKENARIO A: USER UPLOAD FILE BARU
+            
+            if ($request->hasFile('template_file')) {
+                $file = $request->file('template_file');
+                $tempPath = $file->getRealPath();
+
+                $processedPath = $this->generatorService->replaceDummyWithPlaceholders($tempPath, $replacements);
+
+                $filename = 'template_' . time() . '_' . Str::random(10) . '.docx';
+                $storedPath = Storage::disk('public')->putFileAs('report_templates', $processedPath, $filename);
+                @unlink($processedPath);
+
+                if (!$storedPath) throw new \Exception('Gagal menyimpan file ke storage');
+
+                // Hapus file lama
+                if ($template->template_file_path && Storage::disk('public')->exists($template->template_file_path)) {
+                    Storage::disk('public')->delete($template->template_file_path);
+                }
+
+                $availableFields = array_keys($this->getAllowedColumns()[$sourceTable] ?? []);
+                foreach ($specialFields as $sf) {
+                    if (!in_array($sf['placeholder_key'], $availableFields)) {
+                        $availableFields[] = $sf['placeholder_key'];
+                    }
+                }
+
+                $template->update([
+                    'name' => $validated['name'],
+                    'code' => $validated['code'],
+                    'category' => $validated['category'] ?? $template->category,
+                    'source_table' => $sourceTable,
+                    'template_file_path' => $storedPath,
+                    'description' => $validated['description'] ?? $template->description,
+                    'available_fields' => $availableFields,
+                    'is_active' => $validated['is_active'] ?? $template->is_active,
+                ]);
+
+                // Re-extract placeholder dari file baru
+                $template->placeholders()->delete();
+                $absolutePath = $this->generatorService->getTemplateAbsolutePath($storedPath);
+                $placeholders = $this->generatorService->extractPlaceholdersFromDocx($absolutePath);
+                $allowedColumns = $this->getAllowedColumns()[$sourceTable] ?? [];
+
+                foreach ($placeholders as $index => $ph) {
+                    $specialMatch = null;
+                    foreach ($specialFields as $sf) {
+                        if ($sf['placeholder_key'] === $ph['key']) { $specialMatch = $sf; break; }
+                    }
+
+                    if ($specialMatch) {
+                        $fieldType = $specialMatch['field_type'];
+                        $config = is_array($specialMatch['config'] ?? null) ? $this->cleanConfig($fieldType, $specialMatch['config']) : null;
+
+                        TemplatePlaceholder::create([
+                            'template_id' => $template->id,
+                            'placeholder_key' => $specialMatch['placeholder_key'],
+                            'placeholder_label' => $specialMatch['placeholder_label'] ?? $this->generateLabelFromKey($specialMatch['placeholder_key']),
+                            'field_type' => $fieldType,
+                            'is_manual' => $this->isManualFieldType($fieldType),
+                            'source_column' => null,
+                            'config' => $config,
+                            'default_value' => $this->extractDefaultValue($fieldType, $config),
+                            'options' => $this->extractOptions($fieldType, $config),
+                            'sort_order' => $index,
+                        ]);
+                    } else {
+                        TemplatePlaceholder::create([   
+                            'template_id' => $template->id,
+                            'placeholder_key' => $ph['key'],
+                            'placeholder_label' => $allowedColumns[$ph['key']] ?? $this->generateLabelFromKey($ph['key']),
+                            'field_type' => 'text',
+                            'is_manual' => false,
+                            'source_column' => $ph['key'],
+                            'sort_order' => $index,
+                        ]);
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Template berhasil diupdate dengan file baru (' . count($placeholders) . ' placeholder).',
+                ]);
+            }
+
+            
+            
+            // SKENARIO B: TANPA FILE BARU → mapping baru diterapkan            
+            if (!empty($replacements)) {
+                $oldPath = $template->template_file_path;
+                $existingAbsolute = $this->generatorService->getTemplateAbsolutePath($oldPath);
+
+                //  TERAPKAN mapping baru ke dokumen lama
+                $processedPath = $this->generatorService->replaceDummyWithPlaceholders($existingAbsolute, $replacements);
+
+                $filename = 'template_' . time() . '_' . Str::random(10) . '.docx';
+                $storedPath = Storage::disk('public')->putFileAs('report_templates', $processedPath, $filename);
+                @unlink($processedPath);
+
+                if (!$storedPath) throw new \Exception('Gagal menyimpan file hasil proses');
+
+                // Hapus file lama, ganti dengan yang baru diproses
+                if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+                $template->template_file_path = $storedPath;
+            }
+
+            // Update metadata + available fields
+            $availableFields = array_keys($this->getAllowedColumns()[$sourceTable] ?? []);
+            foreach (array_merge($specialFields, $allDbMappings) as $f) {
+                $key = $f['placeholder_key'] ?? $f['replace'] ?? null;
+                if ($key && !in_array($key, $availableFields)) {
+                    $availableFields[] = $key;
+                }
+            }
 
             $template->update([
                 'name' => $validated['name'],
+                'code' => $validated['code'],
+                'category' => $validated['category'] ?? $template->category,
+                'source_table' => $sourceTable,
                 'description' => $validated['description'] ?? $template->description,
+                'available_fields' => $availableFields,
                 'is_active' => $validated['is_active'] ?? $template->is_active,
             ]);
 
-            // Update field mappings dari database
-            if (!empty($validated['field_mappings'])) {
-                foreach ($validated['field_mappings'] as $key => $column) {
-                    if (!empty($column)) {
-                        $template->placeholders()->updateOrCreate(
-                            ['placeholder_key' => $key],
-                            [
-                                'placeholder_label' => $request->input("labels.{$key}", $key),
-                                'source_column' => $column,
-                                'field_type' => $request->input("types.{$key}", 'text'),
-                                'is_manual' => false,
-                            ],
-                        );
-                    }
-                }
+            
+            //  SYNC PLACEHOLDER: bangun ulang dari daftar mapping
+            //    yang dikirim frontend (baru tersimpan, terhapus hilang)
+            
+            $template->placeholders()->delete();
+
+            $allowedColumns = $this->getAllowedColumns()[$sourceTable] ?? [];
+            $sort = 0;
+
+              foreach ($allDbMappings as $m) {
+                TemplatePlaceholder::create([
+                    'template_id' => $template->id,
+                    'placeholder_key' => $m['replace'],
+                    'placeholder_label' => $allowedColumns[$m['replace']] ?? $this->generateLabelFromKey($m['replace']),
+                    'field_type' => 'text',
+                    'is_manual' => false,
+                    'source_column' => $m['replace'],  
+                    'sort_order' => $sort++,
+                ]);
             }
 
-            // Update manual fields
-            if (!empty($validated['manual_fields'])) {
-                foreach ($validated['manual_fields'] as $field) {
-                    // Validasi tipe field
-                    if (!in_array($field['type'] ?? 'text', self::ALL_FIELD_TYPES)) {
-                        continue;
-                    }
+            foreach ($specialFields as $sf) {
+                $fieldType = $sf['field_type'];
+                $config = is_array($sf['config'] ?? null) ? $this->cleanConfig($fieldType, $sf['config']) : null;
 
-                    $isManual = $this->isManualFieldType($field['type'] ?? 'text');
-
-                    $template->placeholders()->updateOrCreate(
-                        ['placeholder_key' => $field['key']],
-                        [
-                            'placeholder_label' => $field['label'],
-                            'field_type' => $field['type'] ?? 'text',
-                            'is_manual' => $isManual,
-                            'default_value' => $field['default'] ?? null,
-                            'options' => !empty($field['options']) 
-                                ? (is_string($field['options']) ? explode(',', $field['options']) : $field['options']) 
-                                : null,
-                            'sort_order' => $field['sort_order'] ?? null,
-                            'config' => $field['config'] ?? null,
-                        ],
-                    );
-                }
+                TemplatePlaceholder::create([
+                    'template_id' => $template->id,
+                    'placeholder_key' => $sf['placeholder_key'],
+                    'placeholder_label' => $sf['placeholder_label'] ?? $this->generateLabelFromKey($sf['placeholder_key']),
+                    'field_type' => $fieldType,
+                    'is_manual' => $this->isManualFieldType($fieldType),
+                    'source_column' => null,
+                    'config' => $config,
+                    'default_value' => $this->extractDefaultValue($fieldType, $config),
+                    'options' => $this->extractOptions($fieldType, $config),
+                    'sort_order' => $sort++,
+                ]);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Template berhasil diperbarui',
-                'data' => $template->fresh(['creator']),
+                'message' => 'Template berhasil diperbarui (' . $sort . ' placeholder tersimpan).',
             ]);
+            
+
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'Validasi gagal', 
-                'errors' => $e->errors()
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Validasi gagal', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            Log::error('Failed to update template: ' . $e->getMessage());
-            return response()->json([
-                'success' => false, 
-                'message' => 'Gagal memperbarui template'
-            ], 500);
+            Log::error('Failed to update template: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['success' => false, 'message' => 'Gagal memperbarui template: ' . $e->getMessage()], 500);
         }
     }
 
@@ -365,7 +559,6 @@ class ReportController extends Controller
         $sourceTable = $template->source_table ?? '';
         $sourceData = !empty($sourceTable) ? $this->getSourceOptions($sourceTable) : collect();
         
-        // Sort placeholders: non-manual dulu, lalu manual, berdasarkan sort_order
         $placeholders = $template->placeholders->sortBy(fn($p) => [
             $this->isManualFieldType($p->field_type) ? 1 : 0, 
             $p->sort_order
@@ -478,7 +671,7 @@ class ReportController extends Controller
         } catch (\Exception $e) {
             Log::error('Report generation failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->with('error', 'Gagal generate laporan: ' . $e->getMessage());
-        }
+        }   
     }
 
     public function previewFormula(Request $request): JsonResponse
@@ -610,33 +803,37 @@ class ReportController extends Controller
         return view('HR.template.history', compact('generations', 'template'));
     }
 
-    public function getHistoryData(Request $request, ?ReportTemplate $template = null): JsonResponse
-    {
-        $query = ReportGeneration::with(['template', 'generator'])
-            ->where('generated_by', Auth::id());
-        
-        if ($template) {
-            $query->where('template_id', $template->id);
-        }
-
-        $generations = $query->latest()->take(50)->get()->map(
-            fn($g) => [
-                'id' => $g->id,
-                'template_id' => $g->template_id,
-                'template_name' => $g->template?->name ?? 'Template Tidak Diketahui',
-                'report_title' => $g->report_title,
-                'source_type' => $g->source_type,
-                'source_id' => $g->source_id,
-                'created_at' => $g->created_at->format('d/m/Y H:i'),
-                'user_name' => $g->generator?->name ?? '-',
-                'status' => $g->status,
-                'file_extension' => pathinfo($g->output_file_path, PATHINFO_EXTENSION),
-                'download_url' => route('HR.reports.download', $g),
-            ],
-        );
-
-        return response()->json(['success' => true, 'data' => $generations]);
+   public function getHistoryData(Request $request, ?ReportTemplate $template = null): JsonResponse
+{
+    $query = ReportGeneration::with(['template', 'generator'])
+        ->where('generated_by', Auth::id());
+    
+    if ($template) {
+        $query->where('template_id', $template->id);
     }
+
+    $generations = $query->latest()->take(50)->get()->map(
+        fn($g) => [
+            'id' => $g->id,
+            'template_id' => $g->template_id,
+            'template_name' => $g->template?->name ?? 'Template Tidak Diketahui',
+            'report_title' => $g->report_title,
+            'source_type' => $g->source_type,
+            'source_id' => $g->source_id,
+            'created_at' => $g->created_at->format('d/m/Y H:i'),
+
+            'user_name' => $g->generator?->nama_lengkap 
+                        ?? $g->generator?->name 
+                        ?? $g->generator?->username 
+                        ?? '-',
+            'status' => $g->status,
+            'file_extension' => pathinfo($g->output_file_path, PATHINFO_EXTENSION),
+            'download_url' => route('HR.reports.download', $g),
+        ],
+    );
+
+    return response()->json(['success' => true, 'data' => $generations]);
+}
 
     public function preview(ReportGeneration $generation)
     {
@@ -770,6 +967,7 @@ class ReportController extends Controller
             'formula' => [
                 'template' => 'required|string',
                 'counter_key' => 'nullable|string|max:100',
+                'last_number' => 'nullable|integer|min:0',
             ],
             'auth_field' => [
                 'field' => 'required|string',
@@ -929,7 +1127,7 @@ class ReportController extends Controller
     {
         $allowedKeys = match ($fieldType) {
             'auto_date' => ['day_format', 'month_format', 'year_format', 'separator', 'label'],
-            'formula' => ['template', 'counter_key', 'label'],
+            'formula' => ['template', 'counter_key', 'last_number', 'label'],
             'auth_field' => ['field', 'label'],
             'relation_single' => ['relation', 'field', 'label'],
             'loop_manual' => ['columns', 'label'],
@@ -981,7 +1179,7 @@ class ReportController extends Controller
     {
         return [
             'karyawan' => 'Data Karyawan',
-            'kegiatan' => 'Data Kegiatan',
+            'pelamar' => 'Data Rekturan',
         ];
     }
 
@@ -989,7 +1187,7 @@ class ReportController extends Controller
     {
         return match ($sourceTable) {
             'karyawan' => karyawan::class,
-            'kegiatan' => Kegiatan::class,
+            'pelamar' => Pelamar::class,
             default => throw new \Exception('Source table tidak dikenali: ' . $sourceTable),
         };
     }
@@ -998,7 +1196,7 @@ class ReportController extends Controller
     {
         return match ($sourceTable) {
             'karyawan' => karyawan::orderBy('nama_lengkap')->get(['id', 'nip', 'nama_lengkap']),
-            'kegiatan' => Kegiatan::orderBy('nama_kegiatan')->get(['id', 'nama_kegiatan']),
+            'pelamar' => Pelamar::orderBy('nama_lengkap')->get(['id', 'nama_lengkap']),
             default => collect(),
         };
     }
@@ -1026,17 +1224,72 @@ class ReportController extends Controller
                 'akhir_tetap' => 'Tanggal Akhir Tetap',
                 'email' => 'Email',
             ],
-            'kegiatan' => [
-                'nama_kegiatan' => 'Nama Kegiatan',
-                'waktu_kegiatan' => 'Tanggal & Waktu Kegiatan',
-                'lama_kegiatan' => 'Durasi',
-                'pic' => 'PIC',
-                'status' => 'Status',
+            'pelamar' => [
+                'nama_lengkap' => 'Nama Lengkap',
+                'email' => 'Email',
+                'no_telepon' => 'No. Telepon',
+                'domisili' => 'domisili',
+                'tanggal_lahir' => 'Tanggal Lahir',
                 'realisasi' => 'Realisasi',
+                'jenis_kelamin' => 'Jenis Kelamin',
+                'divisi' => 'Divisi',
+                'jabatan' => 'Jabatan',
+                'detail_jabatan' => 'Spesifikasi Jabatan',
+                'tanggal_melamar' => 'Tanggal Melamar',
+                'sumber_lamaran' => 'Sumber Melamar',
+                'gaji_ditawarkan' => 'Gaji Ditawarkan',
+                'tunjangan_makan' => 'Tunjangan Makan',
+                'tunjangan_transport' => 'Tunjangan Transportasi',
+                'tanggal_mulai_kerja' => 'Tanggal Masuk Kerja',
+                'status_kepegawaian' => 'Status Kepegawaian',
+                'nik_karyawan' => 'NIK Karyawan',
             ],
         ];
     }
 
+
+
+    public function updateHistory(Request $request, ReportGeneration $generation): JsonResponse
+{
+    try {
+        if ($generation->generated_by !== Auth::id() && !Auth::user()->hasRole('admin')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'report_title' => 'required|string|max:255',
+        ], [
+            'report_title.required' => 'Judul laporan wajib diisi.',
+        ]);
+
+        $generation->update(['report_title' => $validated['report_title']]);
+
+        return response()->json(['success' => true, 'message' => 'Riwayat berhasil diperbarui.']);
+    } catch (\Exception $e) {
+        Log::error('Failed to update history: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'Gagal update: ' . $e->getMessage()], 500);
+    }
+}
+
+public function destroyHistory(ReportGeneration $generation): JsonResponse
+{
+    try {
+        if ($generation->generated_by !== Auth::id() && !Auth::user()->hasRole('admin')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        if ($generation->output_file_path) {
+            $filePath = storage_path('app/public/' . $generation->output_file_path);
+            if (file_exists($filePath)) @unlink($filePath);
+        }
+
+        $generation->delete();
+        return response()->json(['success' => true, 'message' => 'Riwayat berhasil dihapus.']);
+    } catch (\Exception $e) {
+        Log::error('Failed to delete history: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'Gagal hapus: ' . $e->getMessage()], 500);
+    }
+}
     public function destroy(ReportTemplate $template): JsonResponse
     {
         try {
@@ -1070,6 +1323,45 @@ class ReportController extends Controller
                 'success' => false,
                 'message' => 'Gagal menghapus template: ' . $e->getMessage()
             ], 500);
+        }
+    }
+        
+//   PREVIEW: generate dokumen sementara TANPA menyimpan riwayat
+    
+    public function previewGenerate(Request $request, ReportTemplate $template)
+    {
+        try {
+            $validated = $request->validate([
+                'source_id' => 'required|integer',
+                'manual_inputs' => 'nullable|array',
+            ]);
+
+            $sourceTable = $template->source_table ?? '';
+            $modelClass = $this->getModelClass($sourceTable);
+
+            if (!$modelClass::find($validated['source_id'])) {
+                return response()->json(['success' => false, 'message' => 'Data sumber tidak ditemukan'], 422);
+            }
+
+            $sourceData = $this->generatorService->getSourceData($sourceTable, $validated['source_id']);
+            $manualInputs = $validated['manual_inputs'] ?? [];
+
+            // Generate dokumen (sama seperti generate biasa)
+            $outputPath = $this->generatorService->generateDocxReport($template, $sourceData, $manualInputs);
+
+            // Ambil isi file, lalu HAPUS file sementara (tidak jadi riwayat)
+            $content = Storage::disk('public')->get($outputPath);
+            Storage::disk('public')->delete($outputPath);
+
+            return response($content, 200, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition' => 'inline; filename="preview_' . $template->code . '.docx"',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Validasi gagal', 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            Log::error('Preview generate failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['success' => false, 'message' => 'Gagal membuat preview: ' . $e->getMessage()], 500);
         }
     }
 }

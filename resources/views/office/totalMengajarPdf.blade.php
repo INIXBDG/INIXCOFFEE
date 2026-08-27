@@ -128,7 +128,7 @@
                 <div class="instructor-section">
                     <div class="instructor-title">
                         {{ $noGlobal }}. {{ $item['namaKaryawan'] ?? '-' }} ({{ $item['kodeKaryawan'] ?? '-' }})
-                        - Total: {{ $item['totalMengajar'] ?? 0 }} sesi
+                        - Total: {{ $item['totalMengajar'] ?? 0 }} kelas
                         - Avg Feedback: {{ $item['overall_feedback'] ?? '-' }}
                     </div>
 
@@ -137,7 +137,7 @@
                             <tr>
                                 <th style="width: 5%;">No</th>
                                 <th style="width: 25%;">Bulan/Periode</th>
-                                <th style="width: 15%;">Instruktur</th>
+                                <th style="width: 15%;">Kelas</th>
                                 <th style="width: 10%;">Feedback</th>
                                 <th style="width: 15%;">Metode</th>
                             </tr>
@@ -147,7 +147,7 @@
                                 <tr>
                                     <td style="text-align: center;">{{ $index + 1 }}</td>
                                     <td>{{ $period['periode'] ?? '-' }}</td>
-                                    <td>{{ $item['namaKaryawan'] ?? '-' }}</td>
+                                    <td>{{ $period['materi'] ?? '-' }}</td>
                                     <td style="text-align: center;">{{ $period['feedback_avg'] ?? '-' }}</td>
                                     <td>{{ $period['metode'] ?? '-' }}</td>
                                 </tr>

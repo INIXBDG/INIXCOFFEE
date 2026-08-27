@@ -174,13 +174,15 @@
                                     4. Cat. (No Akun)<br>
                                     5. Debit (Rp)<br>
                                     6. Kredit (Rp)<br>
-                                    <i>*Baris pertama pada file akan diabaikan (sebagai Header).</i>
+                                    <i>*Baris pertama pada file akan diabaikan (sebagai Header).</i><br>
+                                    <i>*Pastikan format file sesuai dengan template yang tersedia.</i>
                                 </div>
                             </div>
                         </form>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <a href="{{ asset('templates/dummy_jurnal_akuntansi.xlsx') }}" download class="btn btn-success" target="_blank">Templates</a>
                         <button type="button" class="btn btn-success" id="btn-submit-import">Mulai Import</button>
                     </div>
                 </div>
@@ -370,6 +372,112 @@
             </div>
         </div>
 
+        {{-- Modal Pilih Karyawan untuk PDF --}}
+        <div class="modal fade" id="pdfJurnalModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Cetak PDF Jurnal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Pilih Karyawan</label>
+                            <select class="form-control" id="pdf_karyawan_id">
+                                <option value="">-- Pilih Karyawan --</option>
+                                @foreach ($karyawan as $k)
+                                    <option value="{{ $k->id }}">{{ $k->nama_lengkap }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Input Karyawan</label>
+                            <input type="text" name="orang_luar" id="orang_luar" class="form-control">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-danger" id="btn-cetak-pdf">
+                            <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Cetak PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal Export KK (Manual Multi-Select) --}}
+        <div class="modal fade" id="exportKKModal" tabindex="-1" aria-labelledby="exportKKModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exportKKModalLabel">Export Kas Kecil (Pilih Manual)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-2 align-items-end mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Tanggal Mulai</label>
+                                <input type="date" class="form-control" id="kk_start_date">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tanggal Selesai</label>
+                                <input type="date" class="form-control" id="kk_end_date">
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-primary w-100" id="btn-apply-kk-filter">
+                                    <span class="spinner-border spinner-border-sm d-none" id="kk-filter-spinner"></span>
+                                    Terapkan Filter
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Ganti filter lalu klik "Terapkan Filter" untuk memuat data lain. Data yang sudah dicentang tidak akan hilang walau filter diganti.</small>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="btn-reset-kk-selection">Reset Pilihan</button>
+                        </div>
+
+                        <select class="form-control" id="kkMultiSelect" multiple="multiple" style="width: 100%"></select>
+
+                        <div class="mt-2">
+                            <span class="badge bg-primary" id="kk-selected-count">0 data dipilih</span>
+                        </div>
+
+                        <h6 class="fw-bold mb-3">Konfigurasi Saldo Manual</h6>
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <label class="form-label">Saldo Awal (Rp)</label>
+                                <input type="number" class="form-control" id="kk_saldo_awal" min="0" step="0.01" value="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Kas Masuk (Rp)</label>
+                                <input type="number" class="form-control" id="kk_kas_masuk" min="0" step="0.01" value="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Kas Keluar (Rp)</label>
+                                <input type="number" class="form-control" id="kk_kas_keluar" min="0" step="0.01" value="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Saldo Akhir (Rp)</label>
+                                <input type="number" class="form-control" id="kk_saldo_akhir" min="0" step="0.01" value="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-danger" id="btn-export-kk-pdf" data-format="pdf">
+                           Export PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Hidden form, submit ke route export yang sama tapi dengan ids[] --}}
+        <form id="formExportKK" action="{{ route('jurnalakuntansi.exportPdfKK') }}" method="GET" target="_blank" class="d-none">
+            <input type="hidden" name="format_export" value="kk_manual">
+            <div id="kk-ids-container"></div>
+        </form>
+
         <div class="row justify-content-center">
             <div class="col-md-12">
                 <div class="d-flex justify-content-end mb-3 ">
@@ -378,6 +486,9 @@
                     <button type="button" class="btn btn-secondary ms-2" data-bs-toggle="modal"
                         data-bs-target="#exportModal">
                         <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export Laporan
+                    </button>
+                    <button type="button" class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#exportKKModal">
+                        <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export KK
                     </button>
                     <button type="button" class="btn click-primary ms-2" id="btn-master-no-akun">Master No Akun</button>
                     <button type="button" class="btn click-primary ms-2" id="btn-otomatisasi-jurnal">Otomatisasi
@@ -617,6 +728,118 @@
                 // Helper format rupiah
                 function formatRupiah(angka) { return Number(angka).toLocaleString('id-ID'); }
 
+                // ==================== EXPORT KK (Manual Multi-Select) ====================
+                var kkSelect2Initialized = false;
+                var selectedKKIds = new Set();   // id yang lagi dipilih (string)
+                var selectedKKData = {};         // cache: id -> row object, biar tetep ada walau kefilter out
+
+                function kkFormatLabel(row) {
+                    var tgl = row.tanggal_transaksi
+                        ? new Date(row.tanggal_transaksi).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : '-';
+                    var nominal = formatRupiah(row.debit > 0 ? row.debit : row.kredit);
+                    return (row.nomor_kk ? row.nomor_kk + ' | ' : '') + tgl + ' | ' + (row.keterangan || '-') + ' | Rp ' + nominal;
+                }
+
+                function initKKSelect2() {
+                    if (kkSelect2Initialized) return;
+                    $('#kkMultiSelect').select2({
+                        placeholder: 'Terapkan filter dulu untuk memuat data',
+                        allowClear: true,
+                        dropdownParent: $('#exportKKModal'),
+                        width: '100%'
+                    });
+                    kkSelect2Initialized = true;
+                }
+
+                function loadKKOptions() {
+                    var start = $('#kk_start_date').val();
+                    var end = $('#kk_end_date').val();
+
+                    $('#kk-filter-spinner').removeClass('d-none');
+                    $('#btn-apply-kk-filter').prop('disabled', true);
+
+                    $.ajax({
+                        url: "{{ route('getJurnalAkuntansi') }}",
+                        type: "GET",
+                        data: { start_date: start, end_date: end },
+                        success: function (response) {
+                            var rows = response.data || [];
+                            var allRowsMap = {};
+
+                            rows.forEach(function (row) { allRowsMap[row.id] = row; });
+
+                            // Data yang sudah dipilih tapi tidak muncul di filter baru tetap dipertahankan
+                            selectedKKIds.forEach(function (id) {
+                                if (!allRowsMap[id] && selectedKKData[id]) allRowsMap[id] = selectedKKData[id];
+                            });
+                            selectedKKIds.forEach(function (id) {
+                                if (allRowsMap[id]) selectedKKData[id] = allRowsMap[id];
+                            });
+
+                            $('#kkMultiSelect').empty();
+                            Object.values(allRowsMap).forEach(function (row) {
+                                var idStr = String(row.id);
+                                var isSelected = selectedKKIds.has(idStr);
+                                var el = new Option(kkFormatLabel(row), idStr, isSelected, isSelected);
+                                $('#kkMultiSelect').append(el);
+                            });
+                            $('#kkMultiSelect').trigger('change');
+                        },
+                        error: function () {
+                            alert('Gagal memuat data jurnal untuk export.');
+                        },
+                        complete: function () {
+                            $('#kk-filter-spinner').addClass('d-none');
+                            $('#btn-apply-kk-filter').prop('disabled', false);
+                        }
+                    });
+                }
+
+                $('#exportKKModal').on('shown.bs.modal', function () {
+                    initKKSelect2();
+                    if ($('#kkMultiSelect option').length === 0) loadKKOptions();
+                });
+
+                $('#btn-apply-kk-filter').click(function () { loadKKOptions(); });
+
+                $('#kkMultiSelect').on('change', function () {
+                    var vals = new Set($(this).val() || []);
+                    Object.keys(selectedKKData).forEach(function (id) {
+                        if (!vals.has(id)) delete selectedKKData[id];
+                    });
+                    selectedKKIds = vals;
+                    $('#kk-selected-count').text(selectedKKIds.size + ' data dipilih');
+                });
+
+                $('#btn-reset-kk-selection').click(function () {
+                    selectedKKIds = new Set();
+                    selectedKKData = {};
+                    $('#kkMultiSelect').val(null).trigger('change');
+                    $('#kk-selected-count').text('0 data dipilih');
+                });
+
+                $('#btn-export-kk-pdf').click(function () {
+                    if (selectedKKIds.size === 0) {
+                        alert('Pilih minimal 1 data terlebih dahulu.');
+                        return;
+                    }
+                    var container = $('#kk-ids-container');
+                    container.empty();
+
+                    selectedKKIds.forEach(function (id) {
+                        container.append('<input type="hidden" name="ids[]" value="' + id + '">');
+                    });
+
+                    // Konfigurasi Saldo Manual — dikirim sebagai field biasa
+                    container.append('<input type="hidden" name="saldo_awal" value="' + ($('#kk_saldo_awal').val() || 0) + '">');
+                    container.append('<input type="hidden" name="kas_masuk" value="' + ($('#kk_kas_masuk').val() || 0) + '">');
+                    container.append('<input type="hidden" name="kas_keluar" value="' + ($('#kk_kas_keluar').val() || 0) + '">');
+                    container.append('<input type="hidden" name="saldo_akhir" value="' + ($('#kk_saldo_akhir').val() || 0) + '">');
+
+                    $('#formExportKK').submit();
+                });
+
                 // 1. DataTables Jurnal Utama
                 var table = $('#jurnaltable').DataTable({
                     "ajax": {
@@ -639,12 +862,55 @@
                         },
                         { "data": "tanggal_transaksi", "render": (data) => new Date(data).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) },
                         {
-                            "data": "keterangan", "render": function (data, type, row) {
-                                let info = data;
-                                if (row.list_pengajuan && row.list_pengajuan.length > 0) {
-                                    let ids = row.list_pengajuan.map(p => p.id).join(', ');
-                                    info += `<br><small class="text-muted">ID Pengajuan: ${ids}</small>`;
+                            "data": "keterangan",
+                            "render": function (data, type, row) {
+
+                                let info = '';
+
+                                if (data) {
+                                    try {
+                                        let parsed = JSON.parse(data);
+
+                                        // Kalau JSON array
+                                        if (Array.isArray(parsed)) {
+
+                                            if (parsed.length > 0) {
+                                                info += `<div>${parsed[0]}</div>`;
+
+                                                if (parsed.length > 1) {
+                                                    info += `<div class="mt-1">`;
+
+                                                    parsed.slice(1).forEach(function (item) {
+                                                        info += `<small class="text-muted d-block">• ${item}</small>`;
+                                                    });
+
+                                                    info += `</div>`;
+                                                }
+                                            }
+
+                                        } else {
+                                            // JSON valid tapi bukan array
+                                            info = data;
+                                        }
+
+                                    } catch (e) {
+                                        // String biasa
+                                        info = data;
+                                    }
                                 }
+
+                                if (row.list_pengajuan && row.list_pengajuan.length > 0) {
+
+                                    let ids = row.list_pengajuan
+                                        .map(p => p.id)
+                                        .join(', ');
+
+                                    info += `<br>
+                                        <small class="text-muted">
+                                            ID Pengajuan: ${ids}
+                                        </small>`;
+                                }
+
                                 return info;
                             }
                         },
@@ -656,7 +922,7 @@
                                 var actions = '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
                                 actions += '<div class="dropdown-menu px-2">';
                                 actions += '<button type="button" class="btn-edit-jurnal dropdown-item mb-2 rounded-2 bg-primary text-white" data-id="' + row.id + '">Edit</button>';
-                                actions += '<a class="dropdown-item bg-danger text-white rounded-2" href="{{ url('/jurnalakuntansi/pdf') }}/' + row.id + '">PDF</a>';
+                                actions += '<button type="button" class="dropdown-item bg-danger text-white rounded-2 btn-pdf-jurnal" data-id="' + row.id + '">PDF</button>';                                
                                 actions += '</div>';
                                 return actions;
                             }
@@ -687,7 +953,27 @@
                     html += '<table class="table table-bordered table-striped table-sm mb-4">';
                     html += `<tr><th width="35%" class="bg-light">Nomor KK</th><td>${data.nomor_kk || '-'}</td></tr>`;
                     html += `<tr><th class="bg-light">Tanggal Transaksi</th><td>${tglTransaksi}</td></tr>`;
-                    html += `<tr><th class="bg-light">Keterangan</th><td>${data.keterangan || '-'}</td></tr>`;
+
+                    let keterangan = data.keterangan || '-';
+                    try {
+                        let parsed = JSON.parse(data.keterangan);
+
+                        if (Array.isArray(parsed)) {
+                            keterangan = parsed[0] || '-';
+
+                            if (parsed.length > 1) {
+                                keterangan += '<br>';
+
+                                parsed.slice(1).forEach(function (item) {
+                                    keterangan += `${item}<br>`;
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        console.log('Keterangan bukan JSON, menggunakan string biasa.');
+                    }
+                    html += `<tr><th class="bg-light">Keterangan</th> <td>${keterangan}</td></tr>`;
+
                     html += `<tr><th class="bg-light">No. Akun</th><td>${akunText}</td></tr>`;
                     html += `<tr><th class="bg-light">Debit</th><td class="text-success fw-bold">${formatRupiah(data.debit)}</td></tr>`;
                     html += `<tr><th class="bg-light">Kredit</th><td class="text-danger fw-bold">${formatRupiah(data.kredit)}</td></tr>`;
@@ -877,7 +1163,19 @@
                                 $('#editJurnalForm')[0].reset();
                                 $('#edit_id').val(response.data.id);
                                 $('#edit_tanggal_transaksi').val(response.data.tanggal_transaksi.split(' ')[0]);
-                                $('#edit_keterangan').val(response.data.keterangan);
+
+                                let keterangan = response.data.keterangan || '';
+                                try {
+                                    let parsed = JSON.parse(response.data.keterangan);
+
+                                    if (Array.isArray(parsed)) {
+                                        keterangan = parsed.join('\n');
+                                    }
+                                } catch (e) {
+                                    console.log('Keterangan bukan JSON, menggunakan string biasa.');
+                                }
+                                $('#edit_keterangan').val(keterangan);
+
                                 if (response.data.no_akun != null) $('#no_akun').val(response.data.no_akun); else $('#no_akun').prop('selectedIndex', 0);
                                 $('#edit_debit').val(response.data.debit);
                                 $('#edit_kredit').val(response.data.kredit);
@@ -895,7 +1193,31 @@
                     var idJurnal = $('#edit_id').val();
                     var urlUpdate = "{{ url('/jurnalakuntansi') }}/" + idJurnal;
                     $.ajax({
-                        url: urlUpdate, type: 'POST', data: $('#editJurnalForm').serialize(),
+                        url: urlUpdate, type: 'POST',
+                        data: (() => { let formData = $('#editJurnalForm').serializeArray();
+                        let keterangan = $('#edit_keterangan').val();
+
+                        let lines = keterangan
+                            .split(/\r?\n/)
+                            .map(line => line.trim())
+                            .filter(line => line !== '');
+
+                        if (lines.length > 1) {
+                            keterangan = JSON.stringify(lines);
+                        } else if (lines.length === 1) {
+                            keterangan = lines[0];
+                        } else {
+                            keterangan = '';
+                        }
+
+                        formData = formData.filter(item => item.name !== 'keterangan');
+
+                        formData.push({
+                            name: 'keterangan',
+                            value: keterangan
+                        });
+
+                        return $.param(formData);})(),
                         beforeSend: function () { $('#editJurnalModal').modal('hide'); $('#loadingModal').modal('show'); $('#loadingModal').removeAttr('inert'); },
                         success: function (response) {
                             $('#loadingModal').modal('hide'); $('#loadingModal').attr('inert', true);
@@ -903,6 +1225,26 @@
                         },
                         error: function () { $('#loadingModal').modal('hide'); $('#loadingModal').attr('inert', true); alert('Terjadi kesalahan validasi.'); }
                     });
+                });
+
+                // Buka modal PDF
+                $('#jurnaltable tbody').on('click', '.btn-pdf-jurnal', function () {
+                    var idJurnal = $(this).data('id');
+                    $('#btn-cetak-pdf').data('jurnal-id', idJurnal);
+                    $('#pdf_karyawan_id').val('');
+                    $('#orang_luar').val('');
+                    $('#pdfJurnalModal').modal('show');
+                });
+
+                // Cetak PDF
+                $('#btn-cetak-pdf').click(function () {
+                    var idJurnal = $(this).data('jurnal-id');
+                    var idKaryawan = $('#pdf_karyawan_id').val();
+                    var orangLuar = $('#orang_luar').val();
+
+                    var url = "{{ url('/jurnalakuntansi/pdf') }}/" + idJurnal + "?id_penerima=" + idKaryawan + "&orang_luar=" + orangLuar;
+                    window.open(url, '_blank');
+                    $('#pdfJurnalModal').modal('hide');
                 });
 
                 // Filter & Reset

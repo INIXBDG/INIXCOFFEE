@@ -58,7 +58,7 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-body table-responsive">
-                        <h4 class="card-title mt-3 text-center">&nbsp;Data Feedback</h4>
+                        <h4 class="card-title mt-3 text-center">&nbsp;Data Pengajuan Cuti</h4>
                         <table id="datacuti" class="display" style="width:100%">
                             <thead>
                                 <tr>

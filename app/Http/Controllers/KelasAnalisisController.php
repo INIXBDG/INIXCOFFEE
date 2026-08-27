@@ -32,8 +32,8 @@ class KelasAnalisisController extends Controller
             return new PostResource(false, 'Parameter bulan tidak valid', null);
         }
 
-        $startDate = CarbonImmutable::create($year, $monthStart, 1);
-        $endDate = CarbonImmutable::create($year, $monthEnd, 1)->endOfMonth();
+        $startDate = CarbonImmutable::create($year, $monthStart, 1, 0, 0, 0);
+        $endDate = CarbonImmutable::create($year, $monthEnd, 1, 0, 0, 0)->endOfMonth();
 
         $monthRanges = [];
         $date = $startDate;
@@ -50,12 +50,6 @@ class KelasAnalisisController extends Controller
             while ($startOfWeek->lte($endOfMonth)) {
                 $endOfWeek = $startOfWeek->copy()->endOfWeek();
 
-                // Hindari minggu dari luar bulan target
-                if ($startOfWeek->month != $date->month) {
-                    $startOfWeek = $startOfWeek->addWeek();
-                    $weekNumber++;
-                    continue;
-                }
 
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
@@ -63,6 +57,7 @@ class KelasAnalisisController extends Controller
                 $rkm = RKM::with(['materi', 'analisisrkm', 'analisisrkm.analisisrkmmingguan'])
                     ->where('status', '0')
                     ->whereYear('tanggal_awal', $year)
+                    ->whereMonth('tanggal_awal', $date->month)
                     ->whereBetween('tanggal_awal', [$start, $end])
                     ->get();
 
@@ -267,7 +262,7 @@ class KelasAnalisisController extends Controller
         }
 
         // Create date range for the specified month and year
-        $startOfMonth = CarbonImmutable::create($year, Carbon::parse($englishMonth)->month, 1);
+        $startOfMonth = CarbonImmutable::create($year, Carbon::parse($englishMonth)->month, 1, 0, 0, 0);
         $endOfMonth = $startOfMonth->endOfMonth();
 
         // Fetch RKM data for the specified year and status
@@ -469,14 +464,15 @@ class KelasAnalisisController extends Controller
             foreach ($weekItems as $item) {
 
                 $analisis = $item->analisisrkm;
-                $mingguan = $analisis->analisisrkmmingguan ?? [];
-
-                foreach ($mingguan as $data) {
-
-                    $totalNett += floatval($data['nett_penjualan'] ?? 0);
-
-                    if ($fixCost === null) {
-                        $fixCost = floatval($data['fixcost'] ?? 0);
+                
+                if ($analisis) {
+                    $totalNett += floatval($analisis->nett_penjualan ?? 0);
+                    
+                    $mingguan = $analisis->analisisrkmmingguan ?? [];
+                    foreach ($mingguan as $data) {
+                        if ($fixCost === null) {
+                            $fixCost = floatval($data['fixcost'] ?? 0);
+                        }
                     }
                 }
             }

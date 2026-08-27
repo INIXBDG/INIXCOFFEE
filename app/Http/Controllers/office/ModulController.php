@@ -24,6 +24,15 @@ use Maatwebsite\Excel\Facades\Excel;
 class ModulController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View PO Modul', ['only' => ['indexNomor', 'indexModul']]);
+        $this->middleware('permission:Store PO Modul', ['only' => ['storeModul', 'storeNomor', 'storePeserta']]);
+        $this->middleware('permission:Update PO Modul', ['only' => ['updateModul', 'updateNomor', 'updatePeserta']]);
+        $this->middleware('permission:Delete PO Modul', ['only' => ['deleteModul', 'deleteNomor', 'deletePeserta']]);
+    }
+
     public function indexNomor()
     {
         $nomor = NomorModul::all();
@@ -61,11 +70,16 @@ class ModulController extends Controller
         $perusahaan = Perusahaan::all();
         $peserta = PesertaModul::with('perusahaan')->where('no_modul', $id)->get();
 
-        $modul = $modul->map(function ($item) {
-            $materi_asli = Materi::where('nama_materi', $item->nama_materi)->first();
-            $item->materi_id = $materi_asli ? $materi_asli->id : null;
-            return $item;
-        });
+        // $modul = $modul->map(function ($item) {
+        //     // Gunakan closure untuk membungkus kondisi where dan orWhere
+        //     $materi_asli = Materi::where(function ($query) use ($item) {
+        //         $query->where('nama_materi', $item->nama_materi)
+        //             ->orWhere('kode_materi', $item->kode_materi);
+        //     })->first();
+
+        //     $item->materi_id = $materi_asli ? $materi_asli->id : null;
+        //     return $item;
+        // });
 
         return view('office.modul.index', compact('nomor', 'modul', 'materi', 'perusahaan', 'peserta'));
     }
@@ -83,28 +97,31 @@ class ModulController extends Controller
         ]);
 
         $total   = $request->jumlah * $request->harga_satuan;
-        $materi  = Materi::findOrFail($request->materi_id);
         $nomor   = NomorModul::findOrFail($request->no_modul);
 
         if ($nomor->type == 'Authorize') {
+            $modulCount = Modul::where('no_modul', $request->no_modul)->count();
 
-            $modul = Modul::where('no_modul', $request->no_modul)->count();
-
-            if ($modul >= 1) {
+            if ($modulCount >= 1) {
                 return back()->with('error', 'Modul untuk Authorize hanya boleh 1. Data sudah tersedia.');
             }
         }
 
+        // 1. Ambil data materi berdasarkan ID yang dikirim dari form
+        $materi = Materi::findOrFail($request->materi_id);
+
+        // 2. Masukkan kode_materi dan nama_materi ke dalam create
         Modul::create([
-            'no_modul'      => $request->no_modul,
-            'kode_materi'   => $materi->kode_materi,
-            'nama_materi'   => $materi->nama_materi,
-            'awal_training' => $request->awal_training,
+            'no_modul'       => $request->no_modul,
+            'id_materi'      => $request->materi_id,
+            'kode_materi'    => $materi->kode_materi ?? '-', // Gunakan fallback '-' jika null di master materi
+            'nama_materi'    => $materi->nama_materi ?? '-', 
+            'awal_training'  => $request->awal_training,
             'akhir_training' => $request->akhir_training,
-            'jumlah'        => $request->jumlah,
-            'harga_satuan'  => $request->harga_satuan,
-            'total'         => $total,
-            'note'          => $request->note,
+            'jumlah'         => $request->jumlah,
+            'harga_satuan'   => $request->harga_satuan,
+            'total'          => $total,
+            'note'           => $request->note,
         ]);
 
         return redirect()
@@ -125,14 +142,11 @@ class ModulController extends Controller
         ]);
 
         $modul = Modul::findOrFail($id);
-        $materi = Materi::findOrFail($request->materi_id);
 
         $total = $request->jumlah * $request->harga_satuan;
 
         $modul->update([
-            'materi_id'        => $materi->id,
-            'kode_materi'      => $materi->kode_materi,
-            'nama_materi'      => $materi->nama_materi,
+            'id_materi'        => $request->materi_id,
             'awal_training'    => $request->awal_training,
             'akhir_training'   => $request->akhir_training,
             'jumlah'           => $request->jumlah,
@@ -195,6 +209,7 @@ class ModulController extends Controller
     {
         $request->validate([
             'no_modul'  => 'required',
+            'uploaded'  => 'nullable',
             'type'      => 'in:Regular,Authorize',
         ]);
 
@@ -203,6 +218,7 @@ class ModulController extends Controller
         $nomor->update([
             'no_modul' => $request->no_modul,
             'type' => $request->type,
+            'uploaded' => $request->uploaded,
         ]);
 
         if ($request->type === 'Regular') {
@@ -333,13 +349,34 @@ class ModulController extends Controller
         return back()->with('success', 'Data peserta berhasil diperbarui');
     }
 
-    public function uploaded($id){
+    public function uploaded(Request $request, $id){
         $nomor = NomorModul::findOrFail($id);
         $nomor->status = 'Uploaded';
-        $nomor->uploaded = Carbon::now();
+        $nomor->uploaded = $request->uploaded;
+        $nomor->delay = $request->delay;
+        $nomor->keterangan = $request->keterangan;
         $nomor->save();
 
         return back()->with('success', 'Status uploaded berhasil diupdate');
+    }
+
+    public function updateSubscode(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:0,1',
+            'tanggal_subscode_masuk' => 'nullable|date',
+            'tanggal_tenggat' => 'nullable|date',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $modul = NomorModul::findOrFail($id);
+        $modul->status_subscode = $request->status;
+        $modul->tanggal_subscode_masuk = $request->tanggal_subscode_masuk;
+        $modul->tanggal_tenggat = $request->tanggal_tenggat;
+        $modul->catatan = $request->catatan;
+        $modul->save();
+
+        return redirect()->back()->with('success', 'Data subscode berhasil diupdate.');
     }
 
     public function deletePeserta(Request $request, $id)

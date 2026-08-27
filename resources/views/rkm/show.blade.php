@@ -88,14 +88,14 @@
                                                             </a>
                                                         </div>
                                                         @endcan
-                                                        @if ($post->ruang == "Inhouse" || $post->metode_kelas == "Inhouse Bandung" || $post->metode_kelas == "Inhouse Luar Bandung" || $post->metode_kelas == "Virtual")
-                                                        @can('Souvenir RKM')
-                                                        <div class="col-md-4 col-sm-4 col-xs-4 ml-auto">
-                                                            <a class="btn click-primary mx-1" href="{{ route('createSouvenirInhouse', $post->id) }}">
-                                                                <img src="{{ asset('icon/tag-white.svg') }}" class="img-responsive" width="20px"> Souvenir
-                                                            </a>
-                                                        </div>
-                                                        @endcan
+                                                        @if ($post->ruang == "Inhouse" || $post->metode_kelas == "Inhouse Bandung" || $post->metode_kelas == "Inhouse Luar Bandung")
+                                                            @can('Souvenir RKM')
+                                                            <div class="col-md-4 col-sm-4 col-xs-4 ml-auto">
+                                                                <a class="btn click-primary mx-1" href="{{ route('createSouvenirInhouse', $post->id) }}">
+                                                                    <img src="{{ asset('icon/tag-white.svg') }}" class="img-responsive" width="20px"> Souvenir
+                                                                </a>
+                                                            </div>
+                                                            @endcan
                                                         @endif
                                                     </div>
                                                     <div class="col-md-4 col-sm-4 col-xs-4">

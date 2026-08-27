@@ -22,6 +22,16 @@ use Illuminate\Support\Facades\DB;
 
 class CateringController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View Catering', ['only' => ['index', 'getData']]);
+        $this->middleware('permission:Store Catering', ['only' => ['store']]);
+        $this->middleware('permission:Update Catering', ['only' => ['update', 'approved', 'upgradeToCatering']]);
+        $this->middleware('permission:Delete Catering', ['only' => ['destroy']]);
+    }
+
     public function index()
     {
         return view('catering.index');

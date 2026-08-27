@@ -56,11 +56,19 @@
     .signature-box .title-row td {
         height: 18px;
         vertical-align: middle;
+        padding: 3px 5px;
+    }
+
+    .signature-box .signature-row td {
+        height: 42px;
+        vertical-align: middle;
+        padding: 2px 5px;
     }
 
     .signature-box .space-row td {
-        height: 105px;
+        height: 30px;
         vertical-align: middle;
+        padding: 2px 5px;
     }
 
     .info-box td {
@@ -87,6 +95,13 @@
 
 <!-- ================= PAGE 1: BUKTI PENGELUARAN KAS ================= -->
 <div class="page-body">
+
+    @php
+        $isNoRelation = empty($jurnalAkuntansi->id_surat_perjalanan) && empty($jurnalAkuntansi->id_perhitungan_net_sales) && empty($jurnalAkuntansi->id_pengajuan_barang);
+        $keteranganRaw = $jurnalAkuntansi->keterangan;
+        $keteranganArr = json_decode($keteranganRaw, true);
+        $isKeteranganJson = is_array($keteranganArr) && json_last_error() === JSON_ERROR_NONE && count($keteranganArr) > 0;
+    @endphp
 
     <!-- HEADER -->
     <table class="no-border">
@@ -125,7 +140,7 @@
                     </tr>
                     <tr>
                         <td>Dibayarkan Kepada</td>
-                        <td>{{ $listPengajuan->first()->karyawan->nama_lengkap ?? '-' }}</td>
+                        <td>{{ $listPengajuan->first()?->karyawan?->nama_lengkap ?? '-' }}</td>
                     </tr>
                     <tr>
                         <td>Alamat</td>
@@ -143,35 +158,63 @@
         <thead>
             <tr class="text-center" style="background-color: #f2f2f2;">
                 <th width="5%">No</th>
-                <th width="20%">Kode</th>
+                <th width="15%">Kode</th>
                 <th>Keterangan</th>
-                <th width="25%">Jumlah</th>
+                @if($isNoRelation)
+                    <th width="17%">Debit</th>
+                    <th width="17%">Kredit</th>
+                @else
+                    <th width="25%">Jumlah</th>
+                @endif
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td class="text-center">1</td>
                 <td class="text-center">{{ $jurnalAkuntansi->no_accounting->no ?? $jurnalAkuntansi->no_akun }}</td>
-                <td>{{ $jurnalAkuntansi->keterangan }}</td>
-                <td class="text-right">
-                    @if ($jurnalAkuntansi->kredit === '0.00' || $jurnalAkuntansi->kredit == 0)
-                        {{ formatRupiah($jurnalAkuntansi->debit) }}
+                <td>
+                    @if($isKeteranganJson)
+                        <strong>{{ $keteranganArr[0] }}</strong>
+                        @if(count($keteranganArr) > 1)
+                            <ul style="margin: 3px 0 0 14px; padding: 0;">
+                                @foreach(array_slice($keteranganArr, 1) as $item)
+                                    <li>{{ $item }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
                     @else
-                        {{ formatRupiah($jurnalAkuntansi->kredit) }}
+                        {{ $keteranganRaw }}
                     @endif
                 </td>
+                @if($isNoRelation)
+                    <td class="text-right">{{ formatRupiah($jurnalAkuntansi->debit) }}</td>
+                    <td class="text-right">{{ formatRupiah($jurnalAkuntansi->kredit) }}</td>
+                @else
+                    <td class="text-right">
+                        @if ($jurnalAkuntansi->kredit === '0.00' || $jurnalAkuntansi->kredit == 0)
+                            {{ formatRupiah($jurnalAkuntansi->debit) }}
+                        @else
+                            {{ formatRupiah($jurnalAkuntansi->kredit) }}
+                        @endif
+                    </td>
+                @endif
             </tr>
             <tr>
                 <td colspan="3" class="text-right"><strong>TOTAL</strong></td>
-                <td class="text-right">
-                    <strong>
-                    @if ($jurnalAkuntansi->kredit === '0.00' || $jurnalAkuntansi->kredit == 0)
-                        {{ formatRupiah($jurnalAkuntansi->debit) }}
-                    @else
-                        {{ formatRupiah($jurnalAkuntansi->kredit) }}
-                    @endif
-                    </strong>
-                </td>
+                @if($isNoRelation)
+                    <td class="text-right"><strong>{{ formatRupiah($jurnalAkuntansi->debit) }}</strong></td>
+                    <td class="text-right"><strong>{{ formatRupiah($jurnalAkuntansi->kredit) }}</strong></td>
+                @else
+                    <td class="text-right">
+                        <strong>
+                        @if ($jurnalAkuntansi->kredit === '0.00' || $jurnalAkuntansi->kredit == 0)
+                            {{ formatRupiah($jurnalAkuntansi->debit) }}
+                        @else
+                            {{ formatRupiah($jurnalAkuntansi->kredit) }}
+                        @endif
+                        </strong>
+                    </td>
+                @endif
             </tr>
         </tbody>
     </table>
@@ -180,10 +223,10 @@
 
     <table class="no-border">
         <tr>
-            <td width="45%" style="vertical-align: top;">
+            @unless($isNoRelation)
+            <td width="{{ $isNoRelation ? '100%' : '45%' }}" style="vertical-align: top;">
                 Terbilang :<br><br>
-                ___________________________________<br><br>
-                ___________________________________
+                {{ $terbilang }}
             </td>
             <td width="55%">
                 <table class="signature-box">
@@ -193,14 +236,41 @@
                         <td>Yang Membayar</td>
                         <td>Yang Menerima</td>
                     </tr>
+                    <tr class="signature-row">
+                        <td>
+                            @if($ttd_accounting)
+                                <img src="{{ public_path('storage/ttd/' . $ttd_accounting->ttd) }}" style="height: 60px; width: auto;">
+                            @endif
+                        </td>
+                        <td>
+                            @if($ttd_gm)
+                                <img src="{{ public_path('storage/ttd/' . $ttd_gm->ttd) }}" style="height: 60px; width: auto;">
+                            @endif
+                        </td>
+                        <td>
+                            @if($ttd_keuangan)
+                                <img src="{{ public_path('storage/ttd/' . $ttd_keuangan->ttd) }}" style="height: 60px; width: auto;">
+                            @endif
+                        </td>
+                        <td>
+                            @if($penerima)
+                                <img src="{{ public_path('storage/ttd/' . $penerima->ttd) }}" style="height: 60px; width: auto;">
+                            @endif
+                        </td>
+                    </tr>
                     <tr class="space-row">
                         <td>Accounting</td>
                         <td>Ka. Div</td>
                         <td>Keuangan</td>
-                        <td></td>
+                        @if ($penerima)
+                            <td>{{ $penerima->nama_lengkap ?? '' }}</td>
+                        @else
+                            <td>{{ $orangluar ?? ''}}</td>
+                        @endif
                     </tr>
                 </table>
             </td>
+            @endunless
         </tr>
     </table>
 
@@ -212,12 +282,13 @@
 
 <!-- ================= PAGE 2: FORM PERMINTAAN BARANG (GABUNGAN) ================= -->
 @php
-    $isNetSales = empty($jurnalAkuntansi->id_pengajuan_barang);
-    $isPengajuanBarang = empty($jurnalAkuntansi->id_perhitungan_net_sales);
+    $isNetSales = !empty($jurnalAkuntansi->id_perhitungan_net_sales);
+    $isPengajuanBarang = !empty($jurnalAkuntansi->id_pengajuan_barang) && $listPengajuan->isNotEmpty();
 @endphp
 
 @if($isPengajuanBarang)
 <div class="page-body">
+    @php $firstKaryawan = $listPengajuan->first()?->karyawan; @endphp
     <table class="no-border">
         <tr>
             <td>
@@ -237,7 +308,7 @@
         </tr>
         <tr>
             <td>Divisi</td>
-            <td>: {{ $listPengajuan->first()->karyawan->divisi ?? '-' }}</td>
+            <td>: {{ $firstKaryawan?->divisi ?? '-' }}</td>
         </tr>
         <tr>
             <td>Ref. Pengajuan ID</td>
@@ -294,8 +365,8 @@
         <tr>
             <!-- Menggunakan public_path() agar DomPDF mendeteksi letak ttd lokal -->
             <td height="70" style="vertical-align: middle;">
-                @if ($listPengajuan->first()->karyawan && $listPengajuan->first()->karyawan->ttd && file_exists(public_path('storage/ttd/' . $listPengajuan->first()->karyawan->ttd)))
-                    <img src="{{ public_path('storage/ttd/' . $listPengajuan->first()->karyawan->ttd) }}" style="width: 100px; height: auto;">
+                @if ($firstKaryawan && $firstKaryawan->ttd && file_exists(public_path('storage/ttd/' . $firstKaryawan->ttd)))
+                    <img src="{{ public_path('storage/ttd/' . $firstKaryawan->ttd) }}" style="width: 100px; height: auto;">
                 @endif
             </td>
             <td style="vertical-align: middle;">
@@ -310,7 +381,7 @@
             </td>
         </tr>
         <tr style="font-weight: bold;">
-            <td>{{ $listPengajuan->first()->karyawan->nama_lengkap ?? '-' }}</td>
+            <td>{{ $firstKaryawan?->nama_lengkap ?? '-' }}</td>
             <td>{{ $finance->nama_lengkap ?? '_________________' }}</td>
             <td>{{ $gm->nama_lengkap ?? '_________________' }}</td>
         </tr>
@@ -515,7 +586,7 @@
                                     </th>
                                     <th style="border-left: none;">
                                         @if($finance && $finance->ttd)
-                                            <img src="{{ public_path('storage/ttd/' . $approval['person']->ttd) }}" style="max-width: 45px; max-height: 40px; margin-top: 5px;">
+                                            <img src="{{ public_path('storage/ttd/' . $finance->ttd) }}" style="max-width: 45px; max-height: 40px; margin-top: 5px;">
                                         @endif
                                     </th>                                
                                 </tr>

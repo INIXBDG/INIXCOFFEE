@@ -59,12 +59,13 @@
                                     Tambah Aktivitas
                                 </button>
 
-                                <form action="{{ route('delete.peluang', $peluang->id) }}" method="POST"
-                                    onsubmit="return confirm('Yakin ingin menghapus peluang ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger" @if($peluang->tahap === 'merah') disabled @endif>Hapus</button>
-                                </form>
+                                @can('ForceDelete Peluang')
+                                    <form action="{{ route('forceDelete.peluang', $peluang->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus data secara permanen?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger">Force Delete</button>
+                                    </form>
+                                @endcan
                             </div>
                         </div>
 
@@ -132,6 +133,12 @@
                                 <dt class="col-sm-4">Client</dt>
                                 <dd class="col-sm-8">
                                     {{ $peluang->perusahaan->nama_perusahaan ?? '-' }}
+                                </dd>
+
+                                <!-- Output Data Perusahaan Pendaftar -->
+                                <dt class="col-sm-4">Perusahaan Pendaftar</dt>
+                                <dd class="col-sm-8">
+                                    {{ $peluang->perusahaan_pendaftar ?? '-' }}
                                 </dd>
 
                                 <dt class="col-sm-4">Sales</dt>
@@ -448,11 +455,14 @@
                         </div>
 
                         <div class="modal-body">
-                            @if (session('error'))
-                                <div class="alert alert-danger">
+                            {{-- 🔹 Pesan informasi / error duplikasi di dalam modal --}}
+                            @if(session('error'))
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                     {{ session('error') }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             @endif
+
                             @if ($errors->any())
                                 <div class="alert alert-danger">
                                     <ul>
@@ -478,6 +488,15 @@
                                 <input type="hidden" name="id_perusahaan" value="{{ $peluang->perusahaan?->id }}">
 
                                 @error('id_perusahaan')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="edit_perusahaan_pendaftar" class="form-label">Perusahaan Pendaftar (Opsional)</label>
+                                <input type="text" class="form-control" id="edit_perusahaan_pendaftar" name="perusahaan_pendaftar"
+                                    value="{{ old('perusahaan_pendaftar', $peluang->perusahaan_pendaftar) }}">
+                                @error('perusahaan_pendaftar')
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -635,7 +654,6 @@
                                 <label class="form-check-label" for="authorizeToggle">Authorize</label>
                             </div>
 
-                            <!-- Related Activities -->
                             <div class="mb-3">
                                 <h6 class="fw-bold">Aktivitas Terkait</h6>
                                 <div id="editAktivitasTableWrapper">
@@ -1165,351 +1183,356 @@
                 </div>
             </div>
         </div>
+@endsection
+@section('scripts')
+    <script>
+        // 1. Inisialisasi variabel global
+        let approveType = '';
 
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-        <script>
-            // 1. Inisialisasi variabel global
-            let approveType = '';
+        // 2. Fungsi untuk membuka modal Approve (Global Scope)
+        window.openApproveModal = function (id_rkm) {
+            console.log('ID RKM yang dikirim ke modal:', id_rkm);
 
-            // 2. Fungsi untuk membuka modal Approve (Global Scope)
-            window.openApproveModal = function (id_rkm) {
-                console.log('ID RKM yang dikirim ke modal:', id_rkm);
+            // --- TAMBAHAN: Tutup modal detail PA terlebih dahulu ---
+            const detailPAModalEl = document.getElementById('detailPAModal');
+            const detailPAModalInstance = bootstrap.Modal.getInstance(detailPAModalEl);
+            if (detailPAModalInstance) {
+                detailPAModalInstance.hide();
+            } else {
+                // Jika instance belum ada (fallback menggunakan jQuery)
+                $('#detailPAModal').modal('hide');
+            }
+            // -------------------------------------------------------
 
-                // --- TAMBAHAN: Tutup modal detail PA terlebih dahulu ---
-                const detailPAModalEl = document.getElementById('detailPAModal');
-                const detailPAModalInstance = bootstrap.Modal.getInstance(detailPAModalEl);
-                if (detailPAModalInstance) {
-                    detailPAModalInstance.hide();
-                } else {
-                    // Jika instance belum ada (fallback menggunakan jQuery)
-                    $('#detailPAModal').modal('hide');
-                }
-                // -------------------------------------------------------
+            // Reset form dan state modal approve
+            $('#approveForm')[0].reset();
+            $('#id_rkm').val(id_rkm);
+            $('#alasanManagerInput').hide();
+            $('#status_tracking').removeClass('is-invalid');
+            approveType = '';
 
-                // Reset form dan state modal approve
-                $('#approveForm')[0].reset();
-                $('#id_rkm').val(id_rkm);
-                $('#alasanManagerInput').hide();
-                $('#status_tracking').removeClass('is-invalid');
-                approveType = '';
+            // Tampilkan modal approve menggunakan instance Bootstrap 5
+            const modalElement = document.getElementById('approveModal');
+            const modalInstance = new bootstrap.Modal(modalElement);
+            modalInstance.show();
+        };
 
-                // Tampilkan modal approve menggunakan instance Bootstrap 5
-                const modalElement = document.getElementById('approveModal');
-                const modalInstance = new bootstrap.Modal(modalElement);
-                modalInstance.show();
-            };
+        // 3. Fungsi toggle alasan penolakan (Global Scope)
+        window.toggleAlasanManager = function (show) {
+            if (show) {
+                $('#alasanManagerInput').slideDown();
+                $('#btnApproveYes').hide(); // Sembunyikan tombol "Ya" jika memilih "Tidak"
+            } else {
+                $('#alasanManagerInput').slideUp();
+                $('#alasan_manager').val('');
+                $('#btnApproveYes').show();
+            }
+        };
 
-            // 3. Fungsi toggle alasan penolakan (Global Scope)
-            window.toggleAlasanManager = function (show) {
-                if (show) {
-                    $('#alasanManagerInput').slideDown();
-                    $('#btnApproveYes').hide(); // Sembunyikan tombol "Ya" jika memilih "Tidak"
-                } else {
-                    $('#alasanManagerInput').slideUp();
-                    $('#alasan_manager').val('');
-                    $('#btnApproveYes').show();
-                }
-            };
+        // 4. Event Listeners (Jquery Ready)
+        $(document).ready(function () {
 
-            // 4. Event Listeners (Jquery Ready)
-            $(document).ready(function () {
+            // 🔹 Otomatis buka kembali modal Edit Lead jika terjadi error (duplikasi/validasi)
+            @if(session('error') || $errors->any())
+                var editPeluangModal = new bootstrap.Modal(document.getElementById('editPeluangModal'));
+                editPeluangModal.show();
+            @endif
 
-                // Menentukan tipe approve berdasarkan tombol yang diklik
-                $(document).on('click', '#btnApproveYes', function () {
-                    approveType = 'ya';
-                    window.toggleAlasanManager(false);
-                });
+            // Menentukan tipe approve berdasarkan tombol yang diklik
+            $(document).on('click', '#btnApproveYes', function () {
+                approveType = 'ya';
+                window.toggleAlasanManager(false);
+            });
 
-                $(document).on('click', '#approveNo', function () {
-                    approveType = 'tidak';
-                });
+            $(document).on('click', '#approveNo', function () {
+                approveType = 'tidak';
+            });
 
-                // Handle Submit Form via AJAX
-                $(document).on('submit', '#approveForm', function (e) {
-                    e.preventDefault();
+            // Handle Submit Form via AJAX
+            $(document).on('submit', '#approveForm', function (e) {
+                e.preventDefault();
 
-                    const jabatan = "{{ auth()->user()->jabatan }}";
-                    const selectedTracking = $('#status_tracking').val();
+                const jabatan = "{{ auth()->user()->jabatan }}";
+                const selectedTracking = $('#status_tracking').val();
 
-                    // Validasi tracking khusus Finance jika memilih "Ya"
-                    if (approveType === 'ya' && jabatan === 'Finance & Accounting') {
-                        if (!selectedTracking || selectedTracking === "null" || selectedTracking === "") {
-                            alert('Silakan pilih status tracking terlebih dahulu.');
-                            $('#status_tracking').addClass('is-invalid');
-                            return;
-                        }
+                // Validasi tracking khusus Finance jika memilih "Ya"
+                if (approveType === 'ya' && jabatan === 'Finance & Accounting') {
+                    if (!selectedTracking || selectedTracking === "null" || selectedTracking === "") {
+                        alert('Silakan pilih status tracking terlebih dahulu.');
+                        $('#status_tracking').addClass('is-invalid');
+                        return;
                     }
+                }
 
-                    let formData = new FormData(this);
-                    // Tambahkan flag ke FormData agar controller tahu ini Approve atau Reject
-                    formData.append('approval_status', approveType);
+                let formData = new FormData(this);
+                // Tambahkan flag ke FormData agar controller tahu ini Approve atau Reject
+                formData.append('approval_status', approveType);
 
-                    $.ajax({
-                        url: "{{ route('netsales.approved') }}",
-                        method: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        dataType: 'json',
-                        beforeSend: function () {
-                            $('button[type="submit"]').prop('disabled', true).text('Processing...');
-                        },
-                        success: function (response) {
-                            const modalEl = document.getElementById('approveModal');
-                            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                            if (modalInstance) modalInstance.hide();
+                $.ajax({
+                    url: "{{ route('netsales.approved') }}",
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+                    beforeSend: function () {
+                        $('button[type="submit"]').prop('disabled', true).text('Processing...');
+                    },
+                    success: function (response) {
+                        const modalEl = document.getElementById('approveModal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) modalInstance.hide();
 
-                            location.reload();
-                        },
-                        error: function (xhr) {
-                            $('button[type="submit"]').prop('disabled', false).text('Kirim');
-                            console.error(xhr.responseText);
-                            alert('Terjadi kesalahan saat memproses data.');
-                        }
-                    });
+                        location.reload();
+                    },
+                    error: function (xhr) {
+                        $('button[type="submit"]').prop('disabled', false).text('Kirim');
+                        console.error(xhr.responseText);
+                        alert('Terjadi kesalahan saat memproses data.');
+                    }
                 });
             });
-        </script>
-        <script>
-            $(document).ready(function () {
-                const perusahaanId = $('#id_perusahaan').val();
+        });
+    </script>
+    <script>
+        $(document).ready(function () {
+            const perusahaanId = $('#id_perusahaan').val();
 
-                // Function to fetch and display activities
-                function loadActivities(targetElementId) {
-                    $.ajax({
-                        url: `/crm/ambil/aktivitas/${perusahaanId}`,
-                        method: 'GET',
-                        dataType: 'json',
-                        success: function (data) {
-                            const activities = data.data || data;
+            // Function to fetch and display activities
+            function loadActivities(targetElementId) {
+                $.ajax({
+                    url: `/crm/ambil/aktivitas/${perusahaanId}`,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        const activities = data.data || data;
 
-                            if (!Array.isArray(activities) || activities.length === 0) {
-                                $(`#${targetElementId}`).html(
-                                    `<p class="text-muted">Tidak ada aktivitas yang tersedia untuk contact ini.</p>`
-                                );
-                                return;
-                            }
+                        if (!Array.isArray(activities) || activities.length === 0) {
+                            $(`#${targetElementId}`).html(
+                                `<p class="text-muted">Tidak ada aktivitas yang tersedia untuk contact ini.</p>`
+                            );
+                            return;
+                        }
 
-                            let table = `
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-hover">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Pilih</th>
-                                                <th>Kontak</th>
-                                                <th>Jenis Aktivitas</th>
-                                                <th>Subjek</th>
-                                                <th>Deskripsi</th>
-                                                <th>Waktu Aktivitas</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                            `;
+                        let table = `
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Pilih</th>
+                                            <th>Kontak</th>
+                                            <th>Jenis Aktivitas</th>
+                                            <th>Subjek</th>
+                                            <th>Deskripsi</th>
+                                            <th>Waktu Aktivitas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
 
-                            activities.forEach(a => {
-                                const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
-                                    day: '2-digit',
-                                    month: 'long',
-                                    year: 'numeric'
-                                });
-
-                                // Evaluasi label aktivitas
-                                let labelAktivitas = a.aktivitas || '-';
-                                if (a.aktivitas === 'PI') {
-                                    labelAktivitas = 'Leads';
-                                } else if (a.aktivitas === 'Form_Masuk') {
-                                    labelAktivitas = 'Regis Form';
-                                } else if (a.aktivitas === 'Incharge') {
-                                    labelAktivitas = 'Incharge Inhouse';
-                                }
-
-                                table += `
-                                    <tr>
-                                        <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
-                                        <td>${a.kontak || '-'}</td>
-                                        <td>${labelAktivitas}</td>
-                                        <td>${a.subject || '-'}</td>
-                                        <td>${a.deskripsi ?? '-'}</td>
-                                        <td>${waktu}</td>
-                                    </tr>
-                                `;
+                        activities.forEach(a => {
+                            const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric'
                             });
 
-                            table += `</tbody></table></div>`;
-                            $(`#${targetElementId}`).html(table);
-                        },
-                        error: function (err) {
-                            console.error('Gagal memuat aktivitas:', err);
-                            $(`#${targetElementId}`).html(
-                                `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas. Periksa console untuk detail.</p>`
-                            );
-                        }
-                    }); // Pastikan penutup ajax terstruktur dengan benar
-                }
+                            // Evaluasi label aktivitas
+                            let labelAktivitas = a.aktivitas || '-';
+                            if (a.aktivitas === 'PI') {
+                                labelAktivitas = 'Leads';
+                            } else if (a.aktivitas === 'Form_Masuk') {
+                                labelAktivitas = 'Regis Form';
+                            } else if (a.aktivitas === 'Incharge') {
+                                labelAktivitas = 'Incharge Inhouse';
+                            }
 
-                // Load activities for the main "Aktivitas Terkait" table
-                loadActivities('aktivitasTableWrapper');
+                            table += `
+                                <tr>
+                                    <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
+                                    <td>${a.kontak || '-'}</td>
+                                    <td>${labelAktivitas}</td>
+                                    <td>${a.subject || '-'}</td>
+                                    <td>${a.deskripsi ?? '-'}</td>
+                                    <td>${waktu}</td>
+                                </tr>
+                            `;
+                        });
 
-                // Load activities when Edit Lead Modal is opened
-                $('#editPeluangModal').on('show.bs.modal', function () {
-                    loadActivities('editAktivitasTableWrapper');
-                });
-
-                // Existing JavaScript for Select2 and input formatting
-                initContactSelect2();
-                initPerusahaanSelect2();
-                initMateriSelect2();
-
-                let peluang = @json($peluang);
-                console.log(peluang);
-
-                const editLead = document.querySelectorAll(".editLead");
-                const rupiahInputs = document.querySelectorAll(".rupiah");
-                const tahapSelect = document.getElementById('tahap');
-                const closeWinInput = document.getElementById('input-close-win');
-                const displayInput = document.getElementById('close_win_display');
-                const hiddenInput = document.getElementById('close_win');
-                const descLostInput = document.getElementById('input-desc-lost');
-                const descLostField = document.getElementById('desc_lost');
-
-                // Toggle inputs based on stage
-                function toggleInputs() {
-                    if (tahapSelect.value.toLowerCase() === 'merah') {
-                        closeWinInput.classList.remove('d-none');
-                        displayInput.setAttribute('required', 'required');
-                        hiddenInput.setAttribute('required', 'required');
-                        descLostInput.classList.add('d-none');
-                        descLostField.removeAttribute('required');
-                    } else if (tahapSelect.value.toLowerCase() === 'lost') {
-                        descLostInput.classList.remove('d-none');
-                        descLostField.setAttribute('required', 'required');
-                        closeWinInput.classList.add('d-none');
-                        displayInput.removeAttribute('required');
-                        hiddenInput.removeAttribute('required');
-                    } else {
-                        closeWinInput.classList.add('d-none');
-                        displayInput.removeAttribute('required');
-                        hiddenInput.removeAttribute('required');
-                        descLostInput.classList.add('d-none');
-                        descLostField.removeAttribute('required');
+                        table += `</tbody></table></div>`;
+                        $(`#${targetElementId}`).html(table);
+                    },
+                    error: function (err) {
+                        console.error('Gagal memuat aktivitas:', err);
+                        $(`#${targetElementId}`).html(
+                            `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas. Periksa console untuk detail.</p>`
+                        );
                     }
+                }); // Pastikan penutup ajax terstruktur dengan benar
+            }
+
+            // Load activities for the main "Aktivitas Terkait" table
+            loadActivities('aktivitasTableWrapper');
+
+            // Load activities when Edit Lead Modal is opened
+            $('#editPeluangModal').on('show.bs.modal', function () {
+                loadActivities('editAktivitasTableWrapper');
+            });
+
+            // Existing JavaScript for Select2 and input formatting
+            initContactSelect2();
+            initPerusahaanSelect2();
+            initMateriSelect2();
+
+            let peluang = @json($peluang);
+            console.log(peluang);
+
+            const editLead = document.querySelectorAll(".editLead");
+            const rupiahInputs = document.querySelectorAll(".rupiah");
+            const tahapSelect = document.getElementById('tahap');
+            const closeWinInput = document.getElementById('input-close-win');
+            const displayInput = document.getElementById('close_win_display');
+            const hiddenInput = document.getElementById('close_win');
+            const descLostInput = document.getElementById('input-desc-lost');
+            const descLostField = document.getElementById('desc_lost');
+
+            // Toggle inputs based on stage
+            function toggleInputs() {
+                if (tahapSelect.value.toLowerCase() === 'merah') {
+                    closeWinInput.classList.remove('d-none');
+                    displayInput.setAttribute('required', 'required');
+                    hiddenInput.setAttribute('required', 'required');
+                    descLostInput.classList.add('d-none');
+                    descLostField.removeAttribute('required');
+                } else if (tahapSelect.value.toLowerCase() === 'lost') {
+                    descLostInput.classList.remove('d-none');
+                    descLostField.setAttribute('required', 'required');
+                    closeWinInput.classList.add('d-none');
+                    displayInput.removeAttribute('required');
+                    hiddenInput.removeAttribute('required');
+                } else {
+                    closeWinInput.classList.add('d-none');
+                    displayInput.removeAttribute('required');
+                    hiddenInput.removeAttribute('required');
+                    descLostInput.classList.add('d-none');
+                    descLostField.removeAttribute('required');
+                }
+            }
+
+            if (tahapSelect) {
+                tahapSelect.addEventListener('change', toggleInputs);
+                toggleInputs(); // Initial trigger
+            }
+
+            // Format rupiah for close_win_display
+            displayInput.addEventListener('input', function () {
+                let value = this.value.replace(/\D/g, ''); // Pure numbers
+                if (!value) {
+                    this.value = "";
+                    hiddenInput.value = "";
+                    return;
                 }
 
-                if (tahapSelect) {
-                    tahapSelect.addEventListener('change', toggleInputs);
-                    toggleInputs(); // Initial trigger
-                }
+                this.value = new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(value);
+                hiddenInput.value = value;
+            });
 
-                // Format rupiah for close_win_display
-                displayInput.addEventListener('input', function () {
-                    let value = this.value.replace(/\D/g, ''); // Pure numbers
+            // Ensure hiddenInput is clean before submission
+            document.getElementById('updates').addEventListener('submit', function () {
+                hiddenInput.value = displayInput.value.replace(/\D/g, '');
+            });
+
+            // Format rupiah inputs
+            rupiahInputs.forEach(input => {
+                input.addEventListener("input", function () {
+                    let value = this.value.replace(/\D/g, "");
                     if (!value) {
                         this.value = "";
-                        hiddenInput.value = "";
                         return;
                     }
-
-                    this.value = new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
+                    this.value = new Intl.NumberFormat("id-ID", {
+                        style: "currency",
+                        currency: "IDR",
                         minimumFractionDigits: 0
                     }).format(value);
-                    hiddenInput.value = value;
                 });
-
-                // Ensure hiddenInput is clean before submission
-                document.getElementById('updates').addEventListener('submit', function () {
-                    hiddenInput.value = displayInput.value.replace(/\D/g, '');
-                });
-
-                // Format rupiah inputs
-                rupiahInputs.forEach(input => {
-                    input.addEventListener("input", function () {
-                        let value = this.value.replace(/\D/g, "");
-                        if (!value) {
-                            this.value = "";
-                            return;
-                        }
-                        this.value = new Intl.NumberFormat("id-ID", {
-                            style: "currency",
-                            currency: "IDR",
-                            minimumFractionDigits: 0
-                        }).format(value);
-                    });
-                });
-
-                // Clean rupiah inputs before submission
-                document.getElementById("StorePA").addEventListener("submit", function () {
-                    rupiahInputs.forEach(input => {
-                        input.value = input.value.replace(/\D/g, "");
-                    });
-                });
-
-                editLead.forEach(input => {
-                    input.addEventListener("input", function () {
-                        let value = this.value.replace(/\D/g, "");
-                        if (!value) {
-                            this.value = "";
-                            return;
-                        }
-                        this.value = new Intl.NumberFormat("id-ID", {
-                            style: "currency",
-                            currency: "IDR",
-                            minimumFractionDigits: 0
-                        }).format(value);
-                    });
-                });
-
-                document.getElementById("editLeads").addEventListener("submit", function () {
-                    editLead.forEach(input => {
-                        input.value = input.value.replace(/\D/g, "");
-                    });
-                });
-
-                function initContactSelect2() {
-                    var $select = $('#id_contact');
-                    if (typeof $.fn.select2 !== 'function') {
-                        console.error('Select2 belum ter-load!');
-                        return;
-                    }
-                    var $closestModal = $select.closest('.modal');
-                    $select.select2({
-                        width: '100%',
-                        theme: 'bootstrap-5',
-                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
-                    });
-                }
-
-                function initPerusahaanSelect2() {
-                    // Ubah selektor menjadi #edit_id_perusahaan sesuai dengan ID elemen HTML
-                    var $select = $('#edit_id_perusahaan');
-                    if (typeof $.fn.select2 !== 'function') {
-                        console.error('Select2 belum ter-load!');
-                        return;
-                    }
-                    var $closestModal = $select.closest('.modal');
-                    $select.select2({
-                        width: '100%',
-                        theme: 'bootstrap-5',
-                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
-                    });
-                }
-
-                function initMateriSelect2() {
-                    // Ubah selektor menjadi #edit_id_materi sesuai dengan ID elemen HTML
-                    var $select = $('#edit_id_materi');
-                    if (typeof $.fn.select2 !== 'function') {
-                        console.error('Select2 belum ter-load!');
-                        return;
-                    }
-                    var $closestModal = $select.closest('.modal');
-                    $select.select2({
-                        width: '100%',
-                        theme: 'bootstrap-5',
-                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
-                    });
-                }
             });
-        </script>
+
+            // Clean rupiah inputs before submission
+            document.getElementById("StorePA").addEventListener("submit", function () {
+                rupiahInputs.forEach(input => {
+                    input.value = input.value.replace(/\D/g, "");
+                });
+            });
+
+            editLead.forEach(input => {
+                input.addEventListener("input", function () {
+                    let value = this.value.replace(/\D/g, "");
+                    if (!value) {
+                        this.value = "";
+                        return;
+                    }
+                    this.value = new Intl.NumberFormat("id-ID", {
+                        style: "currency",
+                        currency: "IDR",
+                        minimumFractionDigits: 0
+                    }).format(value);
+                });
+            });
+
+            document.getElementById("editLeads").addEventListener("submit", function () {
+                editLead.forEach(input => {
+                    input.value = input.value.replace(/\D/g, "");
+                });
+            });
+
+            function initContactSelect2() {
+                var $select = $('#id_contact');
+                if (typeof $.fn.select2 !== 'function') {
+                    console.error('Select2 belum ter-load!');
+                    return;
+                }
+                var $closestModal = $select.closest('.modal');
+                $select.select2({
+                    width: '100%',
+                    theme: 'bootstrap-5',
+                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                });
+            }
+
+            function initPerusahaanSelect2() {
+                // Ubah selektor menjadi #edit_id_perusahaan sesuai dengan ID elemen HTML
+                var $select = $('#edit_id_perusahaan');
+                if (typeof $.fn.select2 !== 'function') {
+                    console.error('Select2 belum ter-load!');
+                    return;
+                }
+                var $closestModal = $select.closest('.modal');
+                $select.select2({
+                    width: '100%',
+                    theme: 'bootstrap-5',
+                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                });
+            }
+
+            function initMateriSelect2() {
+                // Ubah selektor menjadi #edit_id_materi sesuai dengan ID elemen HTML
+                var $select = $('#edit_id_materi');
+                if (typeof $.fn.select2 !== 'function') {
+                    console.error('Select2 belum ter-load!');
+                    return;
+                }
+                var $closestModal = $select.closest('.modal');
+                $select.select2({
+                    width: '100%',
+                    theme: 'bootstrap-5',
+                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                });
+            }
+        });
+    </script>
 @endsection

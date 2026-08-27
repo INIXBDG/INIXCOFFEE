@@ -349,6 +349,24 @@ class ChartController extends Controller
             $office_nama = 'Static Office';
             $office_foto = 'office.jpg'; // simpan di storage/posts
 
+            $top_kelas = RKM::whereYear('tanggal_awal', $year)
+                ->where('status', '0')
+                ->whereNotNull('materi_key')
+                ->with('materi')
+                ->select('materi_key', DB::raw('count(id) as total_diambil'))
+                ->groupBy('materi_key')
+                ->orderByDesc('total_diambil')
+                ->limit(5)
+                ->get()
+                ->map(function ($item, $index) {
+                    return [
+                        'rank' => $index + 1,
+                        'nama_materi' => $item->materi->nama_materi ?? 'Materi Tidak Diketahui',
+                        'kode_materi' => $item->materi->kode_materi ?? '-',
+                        'kategori' => $item->materi->kategori_materi ?? '-',
+                        'total' => $item->total_diambil,
+                    ];
+                });
 
             return response()->json([
                 'success' => true,
@@ -391,6 +409,7 @@ class ChartController extends Controller
                         ],
                     ],
                     'keterlambatan' => $leaderboard,
+                    'top_kelas' => $top_kelas,
                 ]
             ]);
     }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
 use Jenssegers\Agent\Agent;
+use Carbon\Carbon;
 
 class SessionTimeout
 {
@@ -19,13 +20,15 @@ class SessionTimeout
     {
         $timeout = 1800;
         $now = time();
+        $lastActivity = session('last_activity');
 
-        if (!session()->has('last_activity')) {
-            session(['last_activity' => $now]);
-            return $next($request);
+        if ($lastActivity instanceof \Carbon\Carbon) {
+            $inactiveSeconds = now()->diffInSeconds($lastActivity);
+        } else {
+            $inactiveSeconds = time() - (int) $lastActivity;
         }
 
-        if (Auth::check() && $now - session('last_activity') > $timeout) {
+        if (Auth::check() && $inactiveSeconds > $timeout) {
             $agent = new Agent();
             $user = Auth::user();
 

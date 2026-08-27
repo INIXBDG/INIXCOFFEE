@@ -1,17 +1,18 @@
 @extends('layouts_crm.app')
-
 @section('crm_contents')
     @php
-        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+        $allowedUser = ['HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
     @endphp
 
     <div class="content-wrapper">
+
         @if(session('error'))
             <div class="alert alert-danger">
                 {{ session('error') }}
             </div>
         @endif
 
+        {{-- Modal Restore --}}
         <div class="modal fade" id="modalRestore" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -60,6 +61,179 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tambah Lead Modal -->
+        <div class="modal fade" id="opportunityModal" tabindex="-1" aria-labelledby="opportunityModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Tambah Lead</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        {{-- 🔹 Pesan informasi / error duplikasi di dalam modal --}}
+                        @if(session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                {{ session('error') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        <form id="form-data" action="{{ route('store.peluang') }}" method="POST"
+                            class="needs-validation" novalidate>
+                            @csrf
+
+                            @if(in_array(Auth::user()->jabatan, ['Adm Sales', 'SPV Sales']))
+                            <div class="mb-3">
+                                <label class="form-label" for="id_sales">Sales Penanggung Jawab</label>
+                                <select class="form-select" id="id_sales" name="id_sales" required>
+                                    <option value="" disabled selected>Pilih Sales</option>
+                                    @foreach ($salesList as $sales)
+                                        <option value="{{ $sales->id_sales }}" {{ old('id_sales') == $sales->id_sales ? 'selected' : '' }}>{{ $sales->username }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="invalid-feedback">Pilih Sales.</div>
+                            </div>
+                            @endif
+
+                            <div class="mb-3">
+                                <label class="form-label" for="id_perusahaan">Perusahaan</label>
+                                <select class="form-select" id="id_perusahaan" name="id_contact" required>
+                                    <option value="" disabled selected>Pilih Perusahaan</option>
+                                    @foreach ($Perusahaan as $p)
+                                        <option value="{{ $p->id }}" {{ old('id_contact') == $p->id ? 'selected' : '' }}>
+                                            {{ $p->nama_perusahaan }} ({{ $p->cp ?? '-' }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="invalid-feedback">Pilih Perusahaan.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="perusahaan_pendaftar">Perusahaan Pendaftar (Opsional)</label>
+                                <input type="text" class="form-control" id="perusahaan_pendaftar" name="perusahaan_pendaftar" value="{{ old('perusahaan_pendaftar') }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="materi">Materi</label>
+                                <select class="form-select" id="materi" name="materi" required>
+                                    <option value="" disabled selected>Pilih Materi</option>
+                                    @foreach ($materi as $item)
+                                        <option value="{{ $item->id }}" {{ old('materi') == $item->id ? 'selected' : '' }}>
+                                            {{ $item->nama_materi }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="invalid-feedback">Pilih materi.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="catatan">Catatan</label>
+                                <textarea class="form-control" id="catatan" name="catatan">{{ old('catatan') }}</textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="harga">Harga Penawaran (Rp)</label>
+                                <input type="text" class="form-control" id="harga" name="harga" value="{{ old('harga') }}" required>
+                                <div class="invalid-feedback">Masukkan harga.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="pax">Jumlah Peserta (Pax)</label>
+                                <input type="number" class="form-control" id="pax" name="pax" min="1"
+                                    value="{{ old('pax') }}" required>
+                                <div class="invalid-feedback">Masukkan jumlah peserta.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="periode_mulai">Periode Mulai</label>
+                                <input type="date" class="form-control" id="periode_mulai" name="periode_mulai" value="{{ old('periode_mulai') }}">
+                                <div class="invalid-feedback">Pilih tanggal mulai.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="periode_selesai">Periode Selesai</label>
+                                <input type="date" class="form-control" id="periode_selesai"
+                                    name="periode_selesai" value="{{ old('periode_selesai') }}">
+                                <div class="invalid-feedback">Pilih tanggal selesai.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="metode_kelas">Metode Kelas</label>
+                                <select class="form-select" id="metode_kelas" name="metode_kelas" required>
+                                    <option value="" disabled selected>Pilih Metode Kelas</option>
+                                    <option value="Inhouse Bandung" {{ old('metode_kelas') == 'Inhouse Bandung' ? 'selected' : '' }}>Inhouse Bandung</option>
+                                    <option value="Inhouse Luar Bandung" {{ old('metode_kelas') == 'Inhouse Luar Bandung' ? 'selected' : '' }}>Inhouse Luar Bandung</option>
+                                    <option value="Offline" {{ old('metode_kelas') == 'Offline' ? 'selected' : '' }}>Offline</option>
+                                    <option value="Virtual" {{ old('metode_kelas') == 'Virtual' ? 'selected' : '' }}>Virtual</option>
+                                </select>
+                                <div class="invalid-feedback">Pilih metode kelas.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="event">Event</label>
+                                <select class="form-select" id="event" name="event" required>
+                                    <option value="" disabled selected>Pilih Event</option>
+                                    <option value="Kelas" {{ old('event') == 'Kelas' ? 'selected' : '' }}>Kelas</option>
+                                    <option value="Workshop" {{ old('event') == 'Workshop' ? 'selected' : '' }}>Workshop</option>
+                                    <option value="Webinar" {{ old('event') == 'Webinar' ? 'selected' : '' }}>Webinar</option>
+                                    <option value="Narasumber" {{ old('event') == 'Narasumber' ? 'selected' : '' }}>Narasumber</option>
+                                    <option value="Pinjam Instruktur" {{ old('event') == 'Pinjam Instruktur' ? 'selected' : '' }}>Pinjam Instruktur</option>
+                                </select>
+                                <div class="invalid-feedback">Pilih event.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Exam</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="examToggle" role="switch"
+                                        onchange="document.getElementById('exam').value = this.checked ? '1' : '0';"
+                                        {{ old('exam', '0') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="examToggle">Aktif</label>
+                                </div>
+                                <input type="hidden" id="exam" name="exam" value="{{ old('exam', '0') }}">
+                                <div class="invalid-feedback">Pilih status exam.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Authorize</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="authorizeToggle"
+                                        role="switch"
+                                        onchange="document.getElementById('authorize').value = this.checked ? '1' : '0';"
+                                        {{ old('authorize', '0') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="authorizeToggle">Aktif</label>
+                                </div>
+                                <input type="hidden" id="authorize" name="authorize" value="{{ old('authorize', '0') }}">
+                                <div class="invalid-feedback">Pilih status authorize.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Tentatif</label>
+                                <input type="hidden" name="tentatif" value="0">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        id="tentatifSwitch" name="tentatif" value="1"
+                                        {{ old('tentatif') ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="tentatifSwitch">Tentatif</label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Pilih Aktivitas (Opsional)</label>
+                                <div id="aktivitasTableWrapper" class="overflow-auto">
+                                    <p class="text-muted">Silakan pilih contact client terlebih dahulu.</p>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Simpan</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="container-xxl flex-grow-1 container-p-y">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Prospect Management</h4>
@@ -74,7 +248,7 @@
                     <h5 class="card-title mb-0 text-primary">Data Prospek</h5>
                 </div>
                 <div class="card-body mt-3">
-                    <div class="table-responsive">
+                    <div class="table-responsive" style="min-height: 500px;">
                         <table id="peluangTable" class="table table-bordered table-hover w-100">
                             <thead class="table-primary">
                                 <tr>
@@ -131,161 +305,12 @@
                 </div>
             </div>
 
-            <!-- Tambah Lead Modal -->
-            <div class="modal fade" id="opportunityModal" tabindex="-1" aria-labelledby="opportunityModalLabel"
-                aria-hidden="true">
-                <div class="modal-dialog modal-xl">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Tambah Lead</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="form-data" action="{{ route('store.peluang') }}" method="POST"
-                                class="needs-validation" novalidate>
-                                @csrf
-
-                                <!-- Form Kontak -->
-                                <div class="mb-3">
-                                    <label class="form-label" for="id_perusahaan">Perusahaan</label>
-                                    <select class="form-select" id="id_perusahaan" name="id_contact" required>
-                                        <option value="" disabled selected>Pilih Perusahaan</option>
-                                        @foreach ($Perusahaan as $p)
-                                            <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}
-                                                ({{ $p->cp ?? '-' }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <div class="invalid-feedback">Pilih Perusahaan.</div>
-                                </div>
-
-                                <!-- Form Materi -->
-                                <div class="mb-3">
-                                    <label class="form-label" for="materi">Materi</label>
-                                    <select class="form-select" id="materi" name="materi" required>
-                                        <option value="" disabled selected>Pilih Materi</option>
-                                        @foreach ($materi as $item)
-                                            <option value="{{ $item->id }}">{{ $item->nama_materi }}</option>
-                                        @endforeach
-                                    </select>
-                                    <div class="invalid-feedback">Pilih materi.</div>
-                                </div>
-
-                                <!-- Lain-lain -->
-                                <div class="mb-3">
-                                    <label class="form-label" for="catatan">Catatan</label>
-                                    <textarea class="form-control" id="catatan" name="catatan"></textarea>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="harga">Harga Penawaran (Rp)</label>
-                                    <input type="text" class="form-control" id="harga" name="harga" required>
-                                    <div class="invalid-feedback">Masukkan harga.</div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="pax">Jumlah Peserta (Pax)</label>
-                                    <input type="number" class="form-control" id="pax" name="pax" min="1"
-                                        required>
-                                    <div class="invalid-feedback">Masukkan jumlah peserta.</div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="periode_mulai">Periode Mulai</label>
-                                    <input type="date" class="form-control" id="periode_mulai" name="periode_mulai">
-                                    <div class="invalid-feedback">Pilih tanggal mulai.</div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="periode_selesai">Periode Selesai</label>
-                                    <input type="date" class="form-control" id="periode_selesai"
-                                        name="periode_selesai">
-                                    <div class="invalid-feedback">Pilih tanggal selesai.</div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="metode_kelas">Metode Kelas</label>
-                                    <select class="form-select" id="metode_kelas" name="metode_kelas" required>
-                                        <option value="" disabled selected>Pilih Metode Kelas</option>
-                                        <option value="Inhouse Bandung">Inhouse Bandung</option>
-                                        <option value="Inhouse Luar Bandung">Inhouse Luar Bandung</option>
-                                        <option value="Offline">Offline</option>
-                                        <option value="Virtual">Virtual</option>
-                                        <!-- Tambahkan opsi lain jika diperlukan -->
-                                    </select>
-                                    <div class="invalid-feedback">Pilih metode kelas.</div>
-                                </div>
-
-                                <!-- Tambahan: Event (Dropdown) -->
-                                <div class="mb-3">
-                                    <label class="form-label" for="event">Event</label>
-                                    <select class="form-select" id="event" name="event" required>
-                                        <option value="" disabled selected>Pilih Event</option>
-                                        <option value="Kelas">Kelas</option>
-                                        <option value="Workshop">Workshop</option>
-                                        <option value="Webinar">Webinar</option>
-                                        <option value="Narasumber">Narasumber</option>
-                                        <option value="Pinjam Instruktur">Pinjam Instruktur</option>
-                                    </select>
-                                    <div class="invalid-feedback">Pilih event.</div>
-                                </div>
-
-                                <!-- Tambahan: Exam (Button Toggle) -->
-                                <div class="mb-3">
-                                    <label class="form-label">Exam</label>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="examToggle" role="switch"
-                                            onchange="document.getElementById('exam').value = this.checked ? '1' : '0';">
-                                        <label class="form-check-label" for="examToggle">Aktif</label>
-                                    </div>
-                                    <input type="hidden" id="exam" name="exam" value="0">
-                                    <div class="invalid-feedback">Pilih status exam.</div>
-                                </div>
-
-                                <!-- Tambahan: Authorize (Toggle Switch) -->
-                                <div class="mb-3">
-                                    <label class="form-label">Authorize</label>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="authorizeToggle"
-                                            role="switch"
-                                            onchange="document.getElementById('authorize').value = this.checked ? '1' : '0';">
-                                        <label class="form-check-label" for="authorizeToggle">Aktif</label>
-                                    </div>
-                                    <input type="hidden" id="authorize" name="authorize" value="0">
-                                    <div class="invalid-feedback">Pilih status authorize.</div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Tentatif</label>
-                                    <input type="hidden" name="tentatif" value="0">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" role="switch"
-                                            id="tentatifSwitch" name="tentatif" value="1"
-                                            {{ old('tentatif', $model->tentatif ?? false) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="tentatifSwitch">Tentatif</label>
-                                    </div>
-                                </div>
-
-                                <!-- Aktivitas yang bisa dikaitkan -->
-                                <div class="mb-3">
-                                    <label class="form-label">Pilih Aktivitas (Opsional)</label>
-                                    <div id="aktivitasTableWrapper" class="overflow-auto">
-                                        <p class="text-muted">Silakan pilih contact client terlebih dahulu.</p>
-                                    </div>
-                                </div>
-
-                                <button type="submit" class="btn btn-primary">Simpan</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
-    </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    </div>
+@endsection
+
+@section('scripts')
     <script>
         // Global CSRF token setup for AJAX
         $.ajaxSetup({
@@ -295,6 +320,12 @@
         });
 
         $(document).ready(function() {
+            // 🔹 Otomatis buka kembali modal Tambah Lead jika terjadi error (duplikasi/validasi)
+            @if(session('error') || $errors->any())
+                var opportunityModal = new bootstrap.Modal(document.getElementById('opportunityModal'));
+                opportunityModal.show();
+            @endif
+
             // 1. Konfigurasi Kolom yang digunakan bersama oleh kedua tabel
             const tableColumns = [
                 { data: null, className: "text-center", orderable: false, searchable: false },
@@ -407,13 +438,16 @@
                 }
             };
 
-            // 3. Inisialisasi Tabel Aktif (Filter data SELAIN 'lost')
+            // 3. Inisialisasi Tabel Aktif (Server-Side Processing)
             let tableAktif = $('#peluangTable').DataTable({
                 processing: true,
+                serverSide: true,
+                order: [[11, 'desc']],
                 ajax: {
                     url: '{{ route("index.peluang.json") }}',
-                    dataSrc: function(json) {
-                        return json.data.filter(item => item.tahap?.toLowerCase() !== 'lost');
+                    type: 'GET',
+                    data: function(d) {
+                        d.status_filter = 'aktif';
                     },
                     error: function(xhr, error, thrown) {
                         alert('Gagal memuat data peluang aktif: ' + thrown);
@@ -423,13 +457,16 @@
                 columns: tableColumns
             });
 
-            // 4. Inisialisasi Tabel Lost (Filter data HANYA 'lost')
+            // 4. Inisialisasi Tabel Lost (Server-Side Processing)
             let tableLost = $('#peluangLostTable').DataTable({
                 processing: true,
+                serverSide: true,
+                order: [[11, 'desc']],
                 ajax: {
                     url: '{{ route("index.peluang.json") }}',
-                    dataSrc: function(json) {
-                        return json.data.filter(item => item.tahap?.toLowerCase() === 'lost');
+                    type: 'GET',
+                    data: function(d) {
+                        d.status_filter = 'lost';
                     },
                     error: function(xhr, error, thrown) {
                         alert('Gagal memuat data peluang lost: ' + thrown);
@@ -441,11 +478,12 @@
 
             // 5. Callback penomoran untuk kedua tabel
             function bindNumbering(tableInstance) {
-                tableInstance.on('order.dt search.dt draw.dt', function() {
+                tableInstance.on('draw.dt', function() {
+                    let info = tableInstance.page.info();
                     tableInstance.column(0, { search: 'applied', order: 'applied' }).nodes().each(function(cell, i) {
-                        cell.innerHTML = i + 1;
+                        cell.innerHTML = info.start + i + 1;
                     });
-                }).draw();
+                });
             }
 
             bindNumbering(tableAktif);
@@ -454,7 +492,7 @@
             initPerusahaanSelect2();
             initMateriSelect2();
 
-            // Event listener Select2 untuk perusahaan (Sama seperti sebelumnya)
+            // Event listener Select2 untuk perusahaan
             $('#id_perusahaan').on('change', function() {
                 const perusahaanId = $(this).val();
 
@@ -523,40 +561,22 @@
 
         function initPerusahaanSelect2() {
             var $select = $('#id_perusahaan');
-
-            // safety: pastikan select2 tersedia
-            if (typeof $.fn.select2 !== 'function') {
-                console.error('Select2 belum ter-load!');
-                return;
-            }
-
-            // cari modal parent (jika ada)
+            if (typeof $.fn.select2 !== 'function') return;
             var $closestModal = $select.closest('.modal');
-
             $select.select2({
                 width: '100%',
                 theme: 'bootstrap-5',
-                // pastikan dropdown di-append ke modal (atau body jika tidak ada modal)
                 dropdownParent: $closestModal.length ? $closestModal : $(document.body)
             });
         }
 
         function initMateriSelect2() {
             var $select = $('#materi');
-
-            // safety: pastikan select2 tersedia
-            if (typeof $.fn.select2 !== 'function') {
-                console.error('Select2 belum ter-load!');
-                return;
-            }
-
-            // cari modal parent (jika ada)
+            if (typeof $.fn.select2 !== 'function') return;
             var $closestModal = $select.closest('.modal');
-
             $select.select2({
                 width: '100%',
                 theme: 'bootstrap-5',
-                // pastikan dropdown di-append ke modal (atau body jika tidak ada modal)
                 dropdownParent: $closestModal.length ? $closestModal : $(document.body)
             });
         }
@@ -564,6 +584,8 @@
         function resetForm() {
             const form = document.getElementById('form-data');
             form.reset();
+            $('#id_perusahaan').val(null).trigger('change');
+            $('#materi').val(null).trigger('change');
             document.getElementById('aktivitasTableWrapper').innerHTML =
                 `<p class="text-muted">Silakan pilih contact client terlebih dahulu.</p>`;
             form.classList.remove('was-validated');
@@ -582,14 +604,14 @@
                 })
                 .then(response => {
                     if (response.ok) {
-                        return response.json(); // Parse JSON response
+                        return response.json();
                     } else {
                         throw new Error('Gagal mengubah status.');
                     }
                 })
                 .then(data => {
-                    alert(data.message || 'Peluang berhasil diubah statusnya.'); // Show success message
-                    $('#peluangTable').DataTable().ajax.reload(); // Refresh DataTable
+                    alert(data.message || 'Peluang berhasil diubah statusnya.');
+                    $('#peluangTable').DataTable().ajax.reload();
                 })
                 .catch(error => {
                     console.error("Error:", error);
@@ -635,13 +657,16 @@
                 if (!this.checkValidity()) {
                     e.preventDefault();
                     e.stopPropagation();
+                    this.classList.add('was-validated');
+                    return;
                 }
+
                 this.classList.add('was-validated');
 
                 if (hargaInput !== null) {
                     hargaInput.value = unformatRupiah(hargaInput.value);
                 }
-                if (netsalesInput !== null) {
+                if (typeof netsalesInput !== 'undefined' && netsalesInput !== null && netsalesInput.value !== '') {
                     netsalesInput.value = unformatRupiah(netsalesInput.value);
                 }
             });

@@ -14,6 +14,20 @@ use Illuminate\Support\Facades\Auth;
 
 class StockOpnameController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View StockOpname', ['only' => ['index', 'getData']]);
+        $this->middleware('permission:Store StockOpname', ['only' => ['store']]);
+        $this->middleware('permission:Update StockOpname', ['only' => ['update']]);
+        $this->middleware('permission:Delete StockOpname', ['only' => ['delete']]);
+        $this->middleware('permission:CleanLog StockOpname', ['only' => ['cleanLog']]);
+        $this->middleware('permission:SyncBaseline StockOpname', ['only' => ['syncBaseline']]);
+        $this->middleware('permission:StoreKeluar StockOpname', ['only' => ['storeKeluar']]);
+        $this->middleware('permission:InlineUpdate StockOpname', ['only' => ['inlineUpdate']]);
+    }
+
     public function index()
     {
         $barang = StockOpname::latest()->get();

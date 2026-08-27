@@ -43,6 +43,10 @@
                             <label for="estimasi_nilai" class="form-label">{{ __('Estimasi Nilai (Rp)') }}</label>
                             <input type="number" class="form-control" id="estimasi_nilai" name="estimasi_nilai" min="0" required>
                         </div>
+                        <div class="mb-3">
+                            <label for="tahun_periode" class="form-label">{{ __('Tahun Periode') }}</label>
+                            <input type="number" class="form-control" id="tahun_periode" name="tahun_periode" min="2000" placeholder="Masukkan Tahun Periode">
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
@@ -118,6 +122,10 @@
                             <label for="edit_estimasi_nilai" class="form-label">{{ __('Estimasi Nilai (Rp)') }}</label>
                             <input type="number" class="form-control" id="edit_estimasi_nilai" name="estimasi_nilai" min="0" required>
                         </div>
+                        <div class="mb-3">
+                            <label for="edit_tahun_periode" class="form-label">{{ __('Tahun Periode') }}</label>
+                            <input type="number" class="form-control" id="edit_tahun_periode" name="tahun_periode" min="2000" placeholder="Masukkan Tahun Periode">
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
@@ -149,6 +157,7 @@
                                 <th scope="col">Perusahaan</th>
                                 <th scope="col">PIC Klien</th>
                                 <th scope="col">Estimasi Nilai</th>
+                                <th scope="col">Tahun Periode</th>
                                 <th scope="col">Tahapan / Status</th>
                                 <th scope="col">Proyek Terhubung</th>
                                 <th scope="col">Aksi</th>
@@ -243,6 +252,10 @@
                     "render": function(data) { return formatRupiah(data); }
                 },
                 {
+                    "data": "tahun_periode",
+                    "render": function(data) { return data ? data : '-'; }
+                },
+                {
                     "data": "status",
                     "render": function(data) { return formatStatus(data); }
                 },
@@ -260,7 +273,11 @@
                         actions += 'Actions ';
                         actions += '</button>';
                         actions += '<div class="dropdown-menu shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
-                        actions += '<a class="dropdown-item btn-edit-status" href="#" data-id="' + row.id + '" data-status="' + row.status + '">Perbarui Tahapan</a>';
+                        actions += '<a class="dropdown-item btn-edit-status" href="#"'
+                        + ' data-id="' + row.id + '"'
+                        + ' data-status="' + row.status + '"'
+                        + ' data-nama="' + row.nama_lead + '">'
+                        + 'Perbarui Tahapan</a>';
                         actions += '<a class="dropdown-item btn-edit-lead" href="#" \
                         data-id="' + row.id + '" \
                         data-nama="' + row.nama_lead + '" \
@@ -341,13 +358,8 @@
 
         $('#leadsTable tbody').on('click', '.btn-edit-status', function (e) {
             e.preventDefault();
-            $('#edit_lead_id').val($(this).data('id'));
-            $('#edit_nama_lead').val($(this).data('nama'));
-            $('#edit_nama_pic').val($(this).data('pic'));
-            $('#edit_kontak_pic').val($(this).data('kontak'));
-            $('#edit_estimasi_nilai').val($(this).data('nilai'));
-
-            $('#editLeadModal').modal('show');
+            $('#update_lead_id').val($(this).data('id'));
+            $('#updateStatusModal').modal('show');
         });
 
         $('#formUpdateStatus').on('submit', function(e) {
@@ -386,6 +398,7 @@
             $('#edit_nama_pic').val($(this).data('pic'));
             $('#edit_kontak_pic').val($(this).data('kontak'));
             $('#edit_estimasi_nilai').val($(this).data('nilai'));
+            $('#edit_tahun_periode').val($(this).data('tahun_periode'));
 
             let perusahaanId = $(this).data('perusahaan');
             let perusahaanNama = $(this).data('perusahaan-nama');

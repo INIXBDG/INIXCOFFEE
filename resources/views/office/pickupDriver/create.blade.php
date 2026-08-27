@@ -99,6 +99,18 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3">
+                            <label class="col-md-4 col-form-label">Tipe Perjalanan</label>
+                            <div class="col-md-6">
+                                <select name="tipe[]" class="form-select tipe-select" required>
+                                    <option selected disabled>Pilih Tipe</option>
+                                    <option value="Operasional Kantor">Operasional Kantor</option>
+                                    <option value="Mobile/Inhouse">Mobile/Inhouse</option>
+                                    <option value="Kepentingan Direksi">Kepentingan Direksi</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="mb-3 text-end">
                             <button type="button" class="btn btn-success" id="addRow">
                                 <i class="fa-solid fa-plus"></i>
@@ -107,7 +119,7 @@
 
                         <div id="koordinasi-wrapper">
                             <div class="koordinasi-item border rounded p-3 mb-3">
-                                <div class="row mb-3">
+                                {{-- <div class="row mb-3">
                                     <label class="col-md-4 col-form-label">Tipe Perjalanan</label>
                                     <div class="col-md-6">
                                         <select name="tipe[]" class="form-select tipe-select" required>
@@ -117,7 +129,7 @@
                                             <option value="Kepentingan Direksi">Kepentingan Direksi</option>
                                         </select>
                                     </div>
-                                </div>
+                                </div> --}}
 
                                 <div class="row mb-3">
                                     <label class="col-md-4 col-form-label">Jenis Perjalanan</label>
@@ -308,18 +320,6 @@
         $(document).on('click', '#addRow', function() {
             let html = `
 <div class="koordinasi-item border rounded p-3 mb-3">
-    <div class="row mb-3">
-        <label class="col-md-4 col-form-label">Tipe Perjalanan</label>
-        <div class="col-md-6">
-            <select name="tipe[]" class="form-select tipe-select" required>
-                <option selected disabled>Pilih Tipe</option>
-                <option value="Operasional Kantor">Operasional Kantor</option>
-                <option value="Mobile/Inhouse">Mobile/Inhouse</option>
-                <option value="Kepentingan Direksi">Kepentingan Direksi</option>
-            </select>
-        </div>
-    </div>
-
     <div class="row mb-3">
         <label class="col-md-4 col-form-label">Jenis Perjalanan</label>
         <div class="col-md-6">

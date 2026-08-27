@@ -20,6 +20,10 @@
             </div>
         @endif
 
+        <a href="{{ route('office.indexKegiatan') }}" class="btn btn-secondary mb-3 fw-semibold px-4 py-2">
+            Kembali
+        </a>
+
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-semibold">{{ $kegiatan->nama_kegiatan }}</h5>
@@ -172,16 +176,40 @@
                     $linkedPengajuan = \App\Models\PengajuanBarang::with('detail')
                         ->where('id_kegiatan', $kegiatan->id)
                         ->get();
-                    $dataRincianKegiatan = \App\Models\RincianKegiatan::where('id_kegiatan', $kegiatan->id)->get();
 
-                    $totalBudgetPengajuan = $linkedPengajuan->sum(fn($pb) => $pb->detail->sum(fn($d) => $d->harga * $d->qty));
-                    $totalBudgetRincian = $dataRincianKegiatan->sum(fn($rk) => $rk->total);
+                    $dataRincianKegiatan = \App\Models\RincianKegiatan::where(
+                        'id_kegiatan',
+                        $kegiatan->id
+                    )->get();
+
+                    $totalBudgetPengajuan = $linkedPengajuan->sum(
+                        fn($pb) => $pb->detail->sum(fn($d) => $d->harga * $d->qty)
+                    );
+
+                    $totalBudgetRincian = $dataRincianKegiatan->sum(
+                        fn($rk) => $rk->total
+                    );
+
                     $totalBudget = $totalBudgetPengajuan + $totalBudgetRincian;
                     $totalRealisasi = $kegiatan->realisasi ?? 0;
-                    $percentage = $totalBudget > 0 ? min(($totalRealisasi / $totalBudget) * 100, 100) : 0;
+
                     $isOverload = $totalRealisasi > $totalBudget;
 
-                    $totalPengajuan = $linkedPengajuan->count() + $dataRincianKegiatan->count();
+                    if ($totalBudget > 0) {
+                        if ($isOverload) {
+                            $kelebihan = $totalRealisasi - $totalBudget;
+                            $percentageKelebihan = ($kelebihan / $totalBudget) * 100;
+
+                            $percentage = max(100 - $percentageKelebihan, 0);
+                        } else {
+                            $percentage = ($totalRealisasi / $totalBudget) * 100;
+                        }
+                    } else {
+                        $percentage = 0;
+                    }
+
+                    $totalPengajuan = $linkedPengajuan->count()
+                        + $dataRincianKegiatan->count();
                 @endphp
 
                 <div class="row g-4 align-items-center">

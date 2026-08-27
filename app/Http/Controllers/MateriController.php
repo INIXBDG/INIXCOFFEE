@@ -22,6 +22,9 @@ class MateriController extends Controller
         $this->middleware('permission:Create Materi', ['only' => ['create', 'store']]);
         $this->middleware('permission:Edit Materi', ['only' => ['update', 'edit', 'editstatusmateri']]);
         $this->middleware('permission:Delete Materi', ['only' => ['destroy']]);
+
+        $this->middleware('permission:View Alias', ['only' => ['indexAlias', 'indexJsonAlias']]);
+        $this->middleware('permission:Update Alias', ['only' => ['updateAlias']]);
     }
     public function index(): View
     {
@@ -317,5 +320,24 @@ class MateriController extends Controller
         });
 
         return response()->json($result);
+    }
+
+    public function indexAlias(){
+        return view('office.alias.index');
+    }
+
+    public function indexJsonAlias(){
+        $materi = Materi::where('status', 'aktif')->select(['id', 'nama_materi', 'alias', 'kode_alias', 'kategori_exam'])->get();
+        return response()->json($materi);
+    }
+
+    public function updateAlias(Request $request, $id){
+        $materi = Materi::findOrFail($id);
+        $materi->alias = $request->input('alias');
+        $materi->kode_alias = $request->input('kode_alias');
+        $materi->kategori_exam = $request->input('kategori_exam');
+        $materi->save();
+
+        return response()->json(['message' => 'Alias berhasil diperbarui.']);
     }
 }

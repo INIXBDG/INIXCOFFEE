@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\Storage;
 
 class AnalysisReportController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View LaporanAnalisis Accounting', ['only' => ['index']]);
+        $this->middleware('permission:Store LaporanAnalisis Accounting', ['only' => ['store']]);
+        $this->middleware('permission:Update LaporanAnalisis Accounting', ['only' => ['update', 'updateAnnualReport', 'updateQuarterDescription', 'updateYearDescription']]);
+        $this->middleware('permission:Delete LaporanAnalisis Accounting', ['only' => ['destroy']]);
+        }
+
     public function index(Request $request)
     {
         $allowedRoles = ['Finance & Accounting', 'GM'];
@@ -77,7 +87,7 @@ class AnalysisReportController extends Controller
             'files.*'     => 'file|max:10240',
             'year'        => 'required|digits:4|integer',
             'month'       => 'required|integer|between:1,12',
-            'nilai'       => 'required',
+            'nilai' => 'required|numeric',
         ]);
 
         $filePaths = [];
@@ -111,7 +121,7 @@ class AnalysisReportController extends Controller
             'files.*'     => 'file|max:10240',
             'year'        => 'required|digits:4|integer',
             'month'       => 'required|integer|between:1,12',
-            'nilai'       => 'required'
+            'nilai'       => 'required|numeric',
         ]);
 
         $filePaths = $report->file_paths ?? [];

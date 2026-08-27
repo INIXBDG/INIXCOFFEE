@@ -1,135 +1,160 @@
 @extends('layout_HR.app')
 
 @section('content_HR')
-        <style>
-            #docx-container {
-                border: 1px solid #dee2e6;
-                min-height: 500px;
-                background: #f8f9fa;
-                overflow: auto;
-                padding: 20px;
-                cursor: text;
-                user-select: text;
-            }
+    <style>
+        #docx-container {
+            border: 1px solid #dee2e6;
+            min-height: 500px;
+            background: #f8f9fa;
+            overflow: auto;
+            padding: 20px;
+            cursor: text;
+            user-select: text;
+        }
 
-            .docx-wrapper>section.docx {
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                margin-bottom: 20px;
-                background: white;
-                padding: 40px;
-            }
+        .docx-wrapper>section.docx {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            background: white;
+            padding: 40px;
+        }
 
-            .text-mapped {
-                background-color: #d1e7dd !important;
-                color: #0f5132;
-                border-bottom: 2px solid #198754;
-                border-radius: 2px;
-                cursor: default;
-            }
+        .text-mapped {
+            background-color: #d1e7dd !important;
+            color: #0f5132;
+            border-bottom: 2px solid #198754;
+            border-radius: 2px;
+            cursor: default;
+        }
 
-            .text-mapped-auto_date {
-                background-color: #cfe2ff !important;
-                color: #084298;
-                border-bottom: 2px solid #0d6efd;
-            }
+        .text-mapped-auto_date {
+            background-color: #cfe2ff !important;
+            color: #084298;
+            border-bottom: 2px solid #0d6efd;
+        }
 
-            .text-mapped-formula {
-                background-color: #e2d9f3 !important;
-                color: #59359a;
-                border-bottom: 2px solid #6f42c1;
-            }
+        .text-mapped-formula {
+            background-color: #e2d9f3 !important;
+            color: #59359a;
+            border-bottom: 2px solid #6f42c1;
+        }
 
-            .text-mapped-auth_field {
-                background-color: #fff3cd !important;
-                color: #664d03;
-                border-bottom: 2px solid #ffc107;
-            }
+        .text-mapped-auth_field {
+            background-color: #fff3cd !important;
+            color: #664d03;
+            border-bottom: 2px solid #ffc107;
+        }
 
-            .text-mapped-relation_single {
-                background-color: #d1ecf1 !important;
-                color: #055160;
-                border-bottom: 2px solid #0dcaf0;
-            }
+        .text-mapped-relation_single {
+            background-color: #d1ecf1 !important;
+            color: #055160;
+            border-bottom: 2px solid #0dcaf0;
+        }
 
-            .text-mapped-loop_manual {
-                background-color: #f8d7da !important;
-                color: #842029;
-                border-bottom: 2px solid #dc3545;
-            }
+        .text-mapped-loop_manual {
+            background-color: #f8d7da !important;
+            color: #842029;
+            border-bottom: 2px solid #dc3545;
+        }
 
-            .text-mapped-loop_relation {
-                background-color: #f5c2c7 !important;
-                color: #58151c;
-                border-bottom: 2px solid #b02a37;
-            }
+        .text-mapped-loop_relation {
+            background-color: #f5c2c7 !important;
+            color: #58151c;
+            border-bottom: 2px solid #b02a37;
+        }
 
-            .text-mapped-manual_text,
-            .text-mapped-manual_textarea,
-            .text-mapped-manual_number,
-            .text-mapped-manual_select,
-            .text-mapped-manual_checkbox {
-                background-color: #e7f1ff !important;
-                color: #0a58ca;
-                border-bottom: 2px solid #6ea8fe;
-            }
+        .text-mapped-manual_text,
+        .text-mapped-manual_textarea,
+        .text-mapped-manual_number,
+        .text-mapped-manual_select,
+        .text-mapped-manual_checkbox {
+            background-color: #e7f1ff !important;
+            color: #0a58ca;
+            border-bottom: 2px solid #6ea8fe;
+        }
 
-            .placeholder-badge {
-                font-size: 9px;
-                vertical-align: super;
-                background: #198754;
-                color: white;
-                padding: 1px 5px;
-                border-radius: 3px;
-                margin-left: 3px;
-                font-weight: bold;
-                white-space: nowrap;
-                user-select: none;
-            }
+        .placeholder-badge {
+            font-size: 9px;
+            vertical-align: super;
+            background: #198754;
+            color: white;
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin-left: 3px;
+            font-weight: bold;
+            white-space: nowrap;
+            user-select: none;
+        }
 
-            .placeholder-badge-auto_date {
-                background: #0d6efd;
-            }
+        .placeholder-badge-auto_date {
+            background: #0d6efd;
+        }
 
-            .placeholder-badge-formula {
-                background: #6f42c1;
-            }
+        .placeholder-badge-formula {
+            background: #6f42c1;
+        }
 
-            .placeholder-badge-auth_field {
-                background: #ffc107;
-                color: #000;
-            }
+        .placeholder-badge-auth_field {
+            background: #ffc107;
+            color: #000;
+        }
 
-            .placeholder-badge-relation_single {
-                background: #0dcaf0;
-                color: #000;
-            }
+        .placeholder-badge-relation_single {
+            background: #0dcaf0;
+            color: #000;
+        }
 
-            .placeholder-badge-loop_manual {
-                background: #dc3545;
-            }
+        .placeholder-badge-loop_manual {
+            background: #dc3545;
+        }
 
-            .placeholder-badge-loop_relation {
-                background: #b02a37;
-            }
+        .placeholder-badge-loop_relation {
+            background: #b02a37;
+        }
 
-            .placeholder-badge-manual_text,
-            .placeholder-badge-manual_textarea,
-            .placeholder-badge-manual_number,
-            .placeholder-badge-manual_select,
-            .placeholder-badge-manual_checkbox {
-                background: #6ea8fe;
-                color: #000;
-            }
+        .placeholder-badge-manual_text,
+        .placeholder-badge-manual_textarea,
+        .placeholder-badge-manual_number,
+        .placeholder-badge-manual_select,
+        .placeholder-badge-manual_checkbox {
+            background: #6ea8fe;
+            color: #000;
+        }
 
-            ::selection {
-                background: #0dcaf0;
-                color: white;
-            }
+        ::selection {
+            background: #0dcaf0;
+            color: white;
+        }
 
-            .mapping-item {
-                font-size: 0.8rem;
-            }
-        </style>
+        .mapping-item {
+            font-size: 0.8rem;
+        }
+
+        .docx-wrapper {
+            background: transparent !important;
+        }
+
+        .docx-wrapper>section.docx {
+            background: white !important;
+            box-shadow: none !important;
+        }
+
+        /* Pastikan container bersih */
+        #docx-container {
+            background: white !important;
+        }
+
+        /* Hilangkan overlay gelap jika ada */
+        .modal-backdrop {
+            display: none !important;
+        }
+
+        /* Pastikan preview area bersih */
+        .docx-container-preview,
+        #docx-container {
+            background-color: #ffffff !important;
+        }
+    </style>
 
     <div class="container-fluid">
         <nav aria-label="breadcrumb" class="mb-4">
@@ -186,7 +211,7 @@
                                 <select name="source_table" id="source_table_select" class="form-select form-select-sm"
                                     required>
                                     <option value="karyawan">Karyawan</option>
-                                    <option value="kegiatan">Kegiatan</option>
+                                    <option value="pelamar">Rekrutan</option>
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm w-100" id="btnLoad">
@@ -273,7 +298,7 @@
                                 <label class="form-label small fw-semibold">Kategori</label>
                                 <select name="category" class="form-select form-select-sm">
                                     <option value="karyawan">Karyawan</option>
-                                    <option value="kegiatan">Kegiatan</option>
+                                    <option value="pelamar">Rekrutan</option>
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm w-100" id="btnSave"
@@ -333,40 +358,7 @@
             const CSRF_TOKEN = window.APP_DATA.csrfToken;
             const REDIRECT_URL = window.APP_DATA.redirectUrl;
 
-            const RELATIONS = {
-                karyawan: {
-                    single: {
-                        divisi: {
-                            label: 'Divisi',
-                            fields: ['nama_divisi', 'kode_divisi']
-                        },
-                        jabatan: {
-                            label: 'Jabatan',
-                            fields: ['nama_jabatan', 'level']
-                        }
-                    },
-                    collection: {
-                        kegiatans: {
-                            label: 'Kegiatan',
-                            fields: ['nama_kegiatan', 'waktu_kegiatan', 'status']
-                        }
-                    }
-                },
-                kegiatan: {
-                    single: {
-                        pic: {
-                            label: 'PIC',
-                            fields: ['nama_lengkap', 'nip']
-                        }
-                    },
-                    collection: {
-                        pesertas: {
-                            label: 'Peserta',
-                            fields: ['nama_lengkap', 'nip']
-                        }
-                    }
-                }
-            };
+            const RELATIONS = {};
 
             const AUTH_FIELDS = {
                 'Data User Login': ['username', 'jabatan'],
@@ -488,6 +480,14 @@
                 const text = sel ? sel.toString().trim() : '';
                 if (text.length < 2) return;
 
+                if (text.includes('{') || text.includes('}')) {
+                    alert('Teks yang dipilih mengandung tanda "{" atau "}". ' +
+                        'Ini biasanya sisa placeholder lama di dokumen. ' +
+                        'Hapus dulu tanda kurung tersebut dari file docx, lalu upload ulang.');
+                    sel.removeAllRanges();
+                    return;
+                }
+
                 currentSelection = {
                     text: text,
                     range: sel.getRangeAt(0).cloneRange()
@@ -548,7 +548,8 @@
                         title = 'Konfigurasi Tanggal Otomatis';
                         html = '<div class="mb-3">' +
                             '<label class="form-label fw-semibold">Placeholder Key</label>' +
-                            '<input type="text" id="cfg_key" class="form-control form-control-sm" value="tanggal_' + Date.now().toString().slice(-6) + '" pattern="^[a-z0-9_]+$" required>' +
+                            '<input type="text" id="cfg_key" class="form-control form-control-sm" value="tanggal_' + Date
+                            .now().toString().slice(-6) + '" pattern="^[a-z0-9_]+$" required>' +
                             '<small class="text-muted">Huruf kecil, angka, underscore.</small>' +
                             '</div>' +
                             '<hr>' +
@@ -593,11 +594,13 @@
                         const placeholder = 'KP/{tahun}/{bulan_romawi}/{urutan:4}';
                         html = '<div class="mb-3">' +
                             '<label class="form-label fw-semibold">Placeholder Key</label>' +
-                            '<input type="text" id="cfg_key" class="form-control form-control-sm" value="nomor_surat_' + Date.now().toString().slice(-6) + '" pattern="^[a-z0-9_]+$" required>' +
+                            '<input type="text" id="cfg_key" class="form-control form-control-sm" value="nomor_surat_' +
+                            Date.now().toString().slice(-6) + '" pattern="^[a-z0-9_]+$" required>' +
                             '</div>' +
                             '<div class="mb-3">' +
                             '<label class="form-label fw-semibold">Template Rumus</label>' +
-                            '<input type="text" id="cfg_template" class="form-control form-control-sm" placeholder="' + placeholder + '">' +
+                            '<input type="text" id="cfg_template" class="form-control form-control-sm" placeholder="' +
+                            placeholder + '">' +
                             '<small class="text-muted d-block mt-2"><strong>Variabel tersedia:</strong><br>' +
                             '• {tahun} → 2026<br>' +
                             '• {bulan} → 06<br>' +
@@ -618,7 +621,7 @@
                     } else if (type === 'auth_field') {
                         title = 'Konfigurasi Data User / Karyawan Login';
                         let optionsHtml = '';
-                        
+
                         for (const group in AUTH_FIELDS) {
                             optionsHtml += '<optgroup label="' + group + '">';
                             AUTH_FIELDS[group].forEach(function(f) {
@@ -626,10 +629,11 @@
                             });
                             optionsHtml += '</optgroup>';
                         }
-                        
+
                         html = '<div class="mb-3">' +
                             '<label class="form-label fw-semibold">Placeholder Key</label>' +
-                            '<input type="text" id="cfg_key" class="form-control form-control-sm" value="pembuat_' + Date.now().toString().slice(-6) + '" pattern="^[a-z0-9_]+$" required>' +
+                            '<input type="text" id="cfg_key" class="form-control form-control-sm" value="pembuat_' + Date
+                            .now().toString().slice(-6) + '" pattern="^[a-z0-9_]+$" required>' +
                             '</div>' +
                             '<div class="mb-3">' +
                             '<label class="form-label fw-semibold">Field yang Diambil</label>' +
@@ -737,7 +741,8 @@
                         title = 'Konfigurasi Tanggal Manual';
                         html = '<div class="mb-3">' +
                             '<label class="form-label fw-semibold">Placeholder Key</label>' +
-                            '<input type="text" id="cfg_key" class="form-control form-control-sm" value="tanggal_manual_' + Date.now().toString().slice(-6) + '" pattern="^[a-z0-9_]+$" required>' +
+                            '<input type="text" id="cfg_key" class="form-control form-control-sm" value="tanggal_manual_' +
+                            Date.now().toString().slice(-6) + '" pattern="^[a-z0-9_]+$" required>' +
                             '</div>' +
                             '<div class="mb-3">' +
                             '<label class="form-label fw-semibold">Label Field</label>' +
@@ -941,7 +946,7 @@
                             alert('Template rumus wajib diisi!');
                             return;
                         }
-                        
+
                         const lastNumberStr = document.getElementById('cfg_last_number').value.trim();
                         const lastNumber = lastNumberStr !== '' ? parseInt(lastNumberStr) : null;
 
@@ -1115,7 +1120,11 @@
                     wrapperEl.className = 'text-mapped text-mapped-' + type;
                     wrapperEl.dataset.field = key;
                     wrapperEl.dataset.type = type;
-                    currentSelection.range.surroundContents(wrapperEl);
+
+                    const contents = currentSelection.range.extractContents();
+                    wrapperEl.appendChild(contents);
+                    currentSelection.range.insertNode(wrapperEl);
+
                     const badge = document.createElement('span');
                     badge.className = 'placeholder-badge placeholder-badge-' + type;
                     badge.textContent = key;
@@ -1195,12 +1204,25 @@
 
             window._removeMapping = function(idx) {
                 const m = mappings[idx];
+                if (!m) return;
+
+                // 1. Kembalikan teks asli ke dokumen dan hapus highlight/badge
                 if (m.el && m.el.parentNode) {
                     const parent = m.el.parentNode;
-                    while (m.el.firstChild && !m.el.firstChild.classList.contains('placeholder-badge')) {
-                        parent.insertBefore(m.el.firstChild, m.el);
+
+                    // Pindahkan semua isi wrapper ke parent, kecuali badge
+                    while (m.el.firstChild) {
+                        const child = m.el.firstChild;
+
+                        if (child.nodeType === 1 && child.classList && child.classList.contains('placeholder-badge')) {
+                            m.el.removeChild(child);
+                        } else {
+                            parent.insertBefore(child, m.el);
+                        }
                     }
-                    parent.removeChild(m.el);
+                    if (m.el.parentNode) {
+                        m.el.parentNode.removeChild(m.el);
+                    }
                 }
                 mappings.splice(idx, 1);
                 updateMappingsList();

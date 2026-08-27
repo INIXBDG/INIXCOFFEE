@@ -23,35 +23,83 @@ class PesertaController extends Controller
         $this->middleware('permission:Create Peserta', ['only' => ['create','store']]);
         $this->middleware('permission:Edit Peserta', ['only' => ['update','edit']]);
     }
+
+    /**
+     * Helper untuk mendapatkan sales_key milik user yang sedang login
+     */
+    private function getSalesKey()
+    {
+        $user = Auth::user();
+        if (!$user) {   
+            return null;
+        }
+        if (!empty($user->id_sales)) {
+            return $user->id_sales;
+        }
+        if (!empty($user->karyawan_id)) {
+            return karyawan::where('id', $user->karyawan_id)->value('kode_karyawan');
+        }
+        return null;
+    }
+
     public function index()
     {
-        // $post = Peserta::with('perusahaan')->all();
-        $post = Peserta::with('perusahaan')->get();
+        $user = Auth::user();
+        $query = Peserta::with('perusahaan');
 
-        // return $post;
+        if ($user && $user->jabatan === 'Sales') {
+            $salesKey = $this->getSalesKey();
+            $query->whereHas('perusahaan', function ($q) use ($salesKey) {
+                $q->where('sales_key', $salesKey);
+            });
+        }
+
+        $post = $query->get();
+
         return view('peserta.index', compact('post'));
     }
 
     public function getPesertaall()
     {
-        // $registrasi = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')->get();
-        // $peserta = $registrasi->peserta;
-        $peserta = Peserta::with('perusahaan', 'latestRegistrasi')->latest()->get();
+        $user = Auth::user();
+        $jabatan = $user->jabatan;
 
-        // return $peserta;
+        $query = Peserta::with('perusahaan', 'latestRegistrasi')->latest();
 
-        $jabatan = Auth::user()->jabatan;
-        if ($jabatan == 'Sales'|| $jabatan == 'Adm Sales' || $jabatan == 'GM'|| $jabatan == 'SPV Sales'
-        || $jabatan == 'Instruktur'|| $jabatan == 'Education Manager' || $jabatan == 'Office Manager'
-        || $jabatan == 'Customer Care' || $jabatan == 'Customer Service' || $jabatan == 'Admin Holding' 
-        || $jabatan == 'Finance & Accounting' || $jabatan == 'Koordinator Office'
-        || $jabatan == 'HRD' || $jabatan == 'Programmer' || $jabatan == 'Direktur Utama' || $jabatan == 'Direktur' || $jabatan == 'Technical Support') {
+        if ($jabatan === 'Sales') {
+            $salesKey = $this->getSalesKey();
+            $query->whereHas('perusahaan', function ($q) use ($salesKey) {
+                $q->where('sales_key', $salesKey);
+            });
+        }
+
+        $peserta = $query->get();
+
+        if (in_array($jabatan, [
+            'Sales',
+            'Adm Sales',
+            'GM',
+            'SPV Sales',
+            'Instruktur',
+            'Education Manager',
+            'Office Manager',
+            'Customer Care',
+            'Customer Service',
+            'Admin Holding',
+            'Finance & Accounting',
+            'Koordinator Office',
+            'HRD',
+            'Programmer',
+            'Direktur Utama',
+            'Direktur',
+            'Technical Support',
+        ])) {
             return response()->json([
                 'success' => true,
                 'message' => 'List Peserta',
                 'data' => $peserta,
             ]);
-        }else{
+        } else {
             return response()->json([
                 'success' => true,
                 'message' => 'List Peserta',
@@ -62,12 +110,23 @@ class PesertaController extends Controller
 
     public function getPesertaById($id)
     {
-        $peserta = Peserta::with('perusahaan')->findOrFail($id);
-            return response()->json([
-                'success' => true,
-                'message' => 'List Registrasi',
-                'data' => $peserta,
-            ]);
+        $user = Auth::user();
+        $query = Peserta::with('perusahaan');
+
+        if ($user && $user->jabatan === 'Sales') {
+            $salesKey = $this->getSalesKey();
+            $query->whereHas('perusahaan', function ($q) use ($salesKey) {
+                $q->where('sales_key', $salesKey);
+            });
+        }
+
+        $peserta = $query->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List Registrasi',
+            'data' => $peserta,
+        ]);
     }
 
     /**
@@ -77,7 +136,14 @@ class PesertaController extends Controller
      */
     public function create(): View
     {
-        $perusahaans = Perusahaan::all();
+        $user = Auth::user();
+        if ($user && $user->jabatan === 'Sales') {
+            $salesKey = $this->getSalesKey();
+            $perusahaans = Perusahaan::where('sales_key', $salesKey)->get();
+        } else {
+            $perusahaans = Perusahaan::all();
+        }
+
         return view('peserta.create', compact('perusahaans'));
     }
 
@@ -89,27 +155,24 @@ class PesertaController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        //validate form
-        // dd($request->all());
         $this->validate($request, [
-            'nama'     => 'required',
+            'nama'            => 'required',
             'jenis_kelamin'   => 'required',
-            'email'   => 'required',
-            'no_hp'   => 'required',
-            'alamat'   => 'nullable',
-            'perusahaan_key'   => 'required',
+            'email'           => 'required',
+            'no_hp'           => 'required',
+            'alamat'          => 'nullable',
+            'perusahaan_key'  => 'required',
             'tanggal_lahir'   => 'nullable',
-
         ]);
 
         Peserta::create([
-            'nama'     => $request->nama,
-            'jenis_kelamin'     => $request->jenis_kelamin,
-            'email'     => $request->email,
-            'no_hp'     => $request->no_hp,
-            'alamat'     => $request->alamat,
-            'perusahaan_key'     => $request->perusahaan_key,
-            'tanggal_lahir'   => $request->tanggal_lahir
+            'nama'           => $request->nama,
+            'jenis_kelamin'  => $request->jenis_kelamin,
+            'email'          => $request->email,
+            'no_hp'          => $request->no_hp,
+            'alamat'         => $request->alamat,
+            'perusahaan_key' => $request->perusahaan_key,
+            'tanggal_lahir'  => $request->tanggal_lahir
         ]);
 
         return redirect()->route('peserta.index')->with(['success' => 'Data Berhasil Disimpan!']);
@@ -123,7 +186,17 @@ class PesertaController extends Controller
      */
     public function show(string $id): View
     {
-        $post = Peserta::findOrFail($id);
+        $user = Auth::user();
+        $query = Peserta::query();
+
+        if ($user && $user->jabatan === 'Sales') {
+            $salesKey = $this->getSalesKey();
+            $query->whereHas('perusahaan', function ($q) use ($salesKey) {
+                $q->where('sales_key', $salesKey);
+            });
+        }
+
+        $post = $query->findOrFail($id);
 
         return view('peserta.show', compact('post'));
     }
@@ -136,8 +209,17 @@ class PesertaController extends Controller
      */
     public function edit(string $id)
     {
-        $peserta = Peserta::with('perusahaan')->findOrFail($id);
-        // return $peserta;
+        $user = Auth::user();
+        $query = Peserta::with('perusahaan');
+
+        if ($user && $user->jabatan === 'Sales') {
+            $salesKey = $this->getSalesKey();
+            $query->whereHas('perusahaan', function ($q) use ($salesKey) {
+                $q->where('sales_key', $salesKey);
+            });
+        }
+
+        $peserta = $query->findOrFail($id);
 
         return view('peserta.edit', compact('peserta'));
     }
@@ -151,28 +233,37 @@ class PesertaController extends Controller
      */
     public function update(Request $request, $id): RedirectResponse
     {
-        // dd($request->all());
+        $user = Auth::user();
+        $query = Peserta::query();
+
+        if ($user && $user->jabatan === 'Sales') {
+            $salesKey = $this->getSalesKey();
+            $query->whereHas('perusahaan', function ($q) use ($salesKey) {
+                $q->where('sales_key', $salesKey);
+            });
+        }
+
+        $post = $query->findOrFail($id);
+
         $this->validate($request, [
-            'nama'     => 'required',
-            'jenis_kelamin'   => 'required',
-            'email'   => 'required',
-            'no_hp'   => 'required',
-            'alamat'   => 'required',
-            'tanggal_lahir'   => 'required',
-            'perusahaan_key'   => 'required',
+            'nama'           => 'required',
+            'jenis_kelamin'  => 'required',
+            'email'          => 'required',
+            'no_hp'          => 'required',
+            'alamat'         => 'required',
+            'tanggal_lahir'  => 'required',
+            'perusahaan_key' => 'required',
         ]);
 
-        $post = Peserta::findOrFail($id);
-
-            $post->update([
-                'nama'     => $request->nama,
-                'jenis_kelamin'     => $request->jenis_kelamin,
-                'email'     => $request->email,
-                'no_hp'     => $request->no_hp,
-                'alamat'     => $request->alamat,
-                'tanggal_lahir'   => $request->tanggal_lahir,
-                'perusahaan_key'   => $request->perusahaan_key
-            ]);
+        $post->update([
+            'nama'           => $request->nama,
+            'jenis_kelamin'  => $request->jenis_kelamin,
+            'email'          => $request->email,
+            'no_hp'          => $request->no_hp,
+            'alamat'         => $request->alamat,
+            'tanggal_lahir'  => $request->tanggal_lahir,
+            'perusahaan_key' => $request->perusahaan_key
+        ]);
 
         return redirect()->route('peserta.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
@@ -180,12 +271,22 @@ class PesertaController extends Controller
     /**
      * destroy
      *
-     * @param  mixed $post
-     * @return void
+     * @param  mixed $id
+     * @return RedirectResponse
      */
     public function destroy($id): RedirectResponse
     {
-        $post = Peserta::findOrFail($id);
+        $user = Auth::user();
+        $query = Peserta::query();
+
+        if ($user && $user->jabatan === 'Sales') {
+            $salesKey = $this->getSalesKey();
+            $query->whereHas('perusahaan', function ($q) use ($salesKey) {
+                $q->where('sales_key', $salesKey);
+            });
+        }
+
+        $post = $query->findOrFail($id);
 
         $post->delete();
 
@@ -194,31 +295,37 @@ class PesertaController extends Controller
 
     public function exportExcel()
     {
-        $dataPeserta = Peserta::with('perusahaan')->get(); // Ambil data dari model
+        $user = Auth::user();
+        if ($user && $user->jabatan === 'Sales') {
+            return $this->exportExcelKhusus();
+        }
 
-        // Konfigurasi header Excel
+        $dataPeserta = Peserta::with('perusahaan')->get();
+
         $data = $dataPeserta->map(function ($peserta, $index) {
             return [
-                'No' => $index + 1,
-                'Nama' => $peserta->nama,
-                'Email' => $peserta->email,
-                'Jenis Kelamin' => $peserta->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan',
-                'Nomor Handphone' => $peserta->no_hp,
-                'Alamat' => $peserta->alamat,
-                'Perusahaan' => $peserta->perusahaan->nama_perusahaan,
-                'Tanggal Lahir' => \Carbon\Carbon::parse($peserta->tanggal_lahir)->format('d F Y')
+                'No'             => $index + 1,
+                'Nama'           => $peserta->nama,
+                'Email'          => $peserta->email,
+                'Jenis Kelamin'  => $peserta->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan',
+                'Nomor Handphone'=> $peserta->no_hp,
+                'Alamat'         => $peserta->alamat,
+                'Perusahaan'     => $peserta->perusahaan ? $peserta->perusahaan->nama_perusahaan : '-',
+                'Tanggal Lahir'  => \Carbon\Carbon::parse($peserta->tanggal_lahir)->format('d F Y')
             ];
         });
 
-        // Ekspor ke Excel
         return Excel::download(new \App\Exports\PesertaExport($data), 'Data_Peserta.xlsx');
     }
 
     public function exportPDF()
     {
-        $dataPeserta = Peserta::with('perusahaan')->get(); // Ambil data dari model
+        $user = Auth::user();
+        if ($user && $user->jabatan === 'Sales') {
+            return $this->exportPDFKhusus();
+        }
 
-        // Buat file PDF dari tampilan yang berisi data
+        $dataPeserta = Peserta::with('perusahaan')->get();
         $pdf = PDF::loadView('exports.peserta-pdf', compact('dataPeserta'));
 
         return $pdf->download('Data_Peserta.pdf');
@@ -226,52 +333,47 @@ class PesertaController extends Controller
 
     public function exportExcelKhusus()
     {
-        $user = auth()->user()->karyawan_id;
-        $kode_karyawan = karyawan::where('id', $user)->value('kode_karyawan'); // Mengambil kode_karyawan
-         // Mengambil data peserta dengan filter pada sales_key di relasi perusahaan
+        $salesKey = $this->getSalesKey();
+
         $dataPeserta = Peserta::with('perusahaan')
-                ->whereHas('perusahaan', function($query) use ($kode_karyawan) {
-                    $query->where('sales_key', $kode_karyawan); // Filter berdasarkan sales_key di perusahaan
+                ->whereHas('perusahaan', function($query) use ($salesKey) {
+                    $query->where('sales_key', $salesKey);
                 })
                 ->latest()
                 ->get();
 
-        // Konfigurasi header Excel
         $data = $dataPeserta->map(function ($peserta, $index) {
             return [
-                'No' => $index + 1,
-                'Nama' => $peserta->nama,
-                'Email' => $peserta->email,
-                'Jenis Kelamin' => $peserta->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan',
-                'Nomor Handphone' => $peserta->no_hp,
-                'Alamat' => $peserta->alamat,
-                'Perusahaan' => $peserta->perusahaan->nama_perusahaan,
-                'Sales' => $peserta->perusahaan->sales_key,  // Mengambil sales_key dari relasi perusahaan
-                'Tanggal Lahir' => \Carbon\Carbon::parse($peserta->tanggal_lahir)->format('d F Y')
+                'No'             => $index + 1,
+                'Nama'           => $peserta->nama,
+                'Email'          => $peserta->email,
+                'Jenis Kelamin'  => $peserta->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan',
+                'Nomor Handphone'=> $peserta->no_hp,
+                'Alamat'         => $peserta->alamat,
+                'Perusahaan'     => $peserta->perusahaan ? $peserta->perusahaan->nama_perusahaan : '-',
+                'Sales'          => $peserta->perusahaan ? $peserta->perusahaan->sales_key : '-',
+                'Tanggal Lahir'  => \Carbon\Carbon::parse($peserta->tanggal_lahir)->format('d F Y')
             ];
         });
 
-        // Ekspor ke Excel
         return Excel::download(new \App\Exports\PesertaPerSalesExport($data), 'Data_Peserta.xlsx');
     }
 
     public function exportPDFKhusus()
     {
-        $user = auth()->user()->karyawan_id;
-        $kode_karyawan = karyawan::where('id', $user)->value('kode_karyawan'); // Mengambil kode_karyawan
-    
+        $salesKey = $this->getSalesKey();
+
         $dataPeserta = Peserta::with('perusahaan')
-                ->whereHas('perusahaan', function($query) use ($kode_karyawan) {
-                    $query->where('sales_key', $kode_karyawan); // Filter berdasarkan sales_key di perusahaan
+                ->whereHas('perusahaan', function($query) use ($salesKey) {
+                    $query->where('sales_key', $salesKey);
                 })
                 ->latest()
                 ->get();
-    
-        // Buat file PDF dari tampilan yang berisi data
+
         $pdf = PDF::loadView('exports.peserta-pdf', compact('dataPeserta'))
-                  ->setPaper('a4', 'landscape'); // Set paper to A4 landscape
-    
+                  ->setPaper('a4', 'landscape');
+
         return $pdf->download('Data_Peserta.pdf');
     }
-    
 }
+

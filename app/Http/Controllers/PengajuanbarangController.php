@@ -21,6 +21,8 @@ use App\Models\HistoriPerubahanBarang;
 use App\Models\no_akun;
 use App\Models\PerbaikanKendaraan;
 use Illuminate\Support\Facades\Log;
+use App\Models\PembelianHr;
+use App\Models\TrackingPembelianHr;
 
 class PengajuanBarangController extends Controller
 {
@@ -108,36 +110,59 @@ class PengajuanBarangController extends Controller
     public function getPengajuanBarang($month, $year)
     {
         $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrfail($user);
+        $karyawan = Karyawan::findOrFail($user);
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
-        // dd($year, $month);
+
+        $query = PengajuanBarang::with('karyawan', 'tracking', 'detail');
+
+        $applyMonth = function($q) use ($month) {
+            if ($month !== 'Semua') {
+                $q->whereMonth('created_at', $month);
+            }
+        };
+
         if ($jabatan == 'Finance & Accounting') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->whereMonth('created_at', $month)->whereYear('created_at', $year)->get();
-        } elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
-                ->whereHas('karyawan', function ($query) use ($divisi) {
-                    $query->where('divisi', $divisi);
-                })->whereMonth('created_at', $month)->whereYear('created_at', $year)
-                ->latest()
-                ->get();
-        } elseif ($jabatan == 'GM' || $jabatan == 'Koordinator Office') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->latest()->get();
-        } else {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
-                ->whereHas('karyawan', function ($query) use ($user) {
-                    $query->where('id', $user);
-                })->whereMonth('created_at', $month)->whereYear('created_at', $year)
-                ->latest()
-                ->get();
+            $PengajuanBarang = clone $query;
+            $PengajuanBarang->whereYear('created_at', $year);
+            $applyMonth($PengajuanBarang);
+        } 
+        elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
+            $PengajuanBarang = clone $query;
+            $PengajuanBarang->whereHas('karyawan', function ($q) use ($divisi) {
+                $q->where('divisi', $divisi);
+            })->whereYear('created_at', $year);
+            $applyMonth($PengajuanBarang);
+        } 
+        elseif ($jabatan == 'GM' || $jabatan == 'Koordinator Office') {
+            $PengajuanBarang = clone $query; // Semua data
+        } 
+        else {
+            $PengajuanBarang = clone $query;
+            $PengajuanBarang->whereHas('karyawan', function ($q) use ($user) {
+                $q->where('id', $user);
+            })->whereYear('created_at', $year);
+            $applyMonth($PengajuanBarang);
         }
+
+        $PengajuanBarang = $PengajuanBarang->latest('created_at')->get();
+
+        $PengajuanBarang->each(function ($item) {
+            $item->waktu_lalu = $item->created_at
+                ->locale('id')                    
+                ->diffForHumans(now(), [
+                    'syntax' => true,
+                    'parts'  => 1,                
+                ]);
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'List PengajuanBarang',
             'data' => $PengajuanBarang,
         ]);
     }
-
+    
     /**
      * Menampilkan form untuk membuat Pengajuan Barang baru.
      */
@@ -276,12 +301,37 @@ class PengajuanBarangController extends Controller
         $type = 'Mengajukan Permintaan Barang';
         $path = '/pengajuanbarang';
 
-        foreach ($users as $user) {
-            $receiverId = $user->id;
-            NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type, $receiverId));
+        try {
+            if ($request->pembelianHr && $request->id_rencana) {
+                $rencana = PembelianHr::find($request->id_rencana);
+                if ($rencana) {
+                    $rencana->update([
+                        'id_pengajuan' => $PengajuanBarang->id
+                    ]);
+
+                    $auth = auth()->user()->karyawan;
+                    TrackingPembelianHr::create([
+                        'id_pembelian' => $rencana->id,
+                        'tracking' => $auth->nama_lengkap . ' telah membuat pengajuan barang',
+                        'id_karyawan' => $auth->id
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Gagal memproses PembelianHr: ' . $e->getMessage());
         }
 
-        return back()->with('success', 'Pengajuan Barang berhasil dibuat.');
+        try {
+            foreach ($users as $user) {
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type, $receiverId));
+            }
+        } catch (\Exception $e) {
+            Log::error('Gagal kirim notifikasi pengajuan barang: ' . $e->getMessage());
+        }
+
+        return redirect()->route('pengajuanbarang.index')
+            ->with('success', 'Pengajuan Barang berhasil dibuat.');
     }
 
     /**
@@ -340,6 +390,63 @@ class PengajuanBarangController extends Controller
 
             // Perbaikan logika status "Pencairan Sudah Selesai"
             if ($status === 'Pencairan Sudah Selesai') {
+                // 1. PROSES JURNAL AKUNTANSI 
+                // (Sekarang diproses selalu, terlepas dari invoice ada atau tidak)
+                try {
+                    Log::info('Mulai proses jurnal', ['id_pengajuan' => $id]);
+                    $totalPengeluaran = 0;
+                    foreach ($detail as $item) {
+                        $qtyValue = (int) $item->qty;
+                        $hargaValue = (float) $item->harga;
+                        $subtotal = $qtyValue * $hargaValue;
+                        $totalPengeluaran += $subtotal;
+                    }
+
+                    $nomorKK = $request->no_kk;
+                    $nomorAkun = $request->no_akun;
+                    $jurnalExist = JurnalAkuntansi::where('nomor_kk', $nomorKK)->first();
+
+                    if ($jurnalExist) {
+                        $currentIds = is_array($jurnalExist->id_pengajuan_barang)
+                            ? $jurnalExist->id_pengajuan_barang
+                            : [];
+
+                        if (!in_array($id, $currentIds)) {
+                            $currentIds[] = (int)$id;
+
+                            $jurnalExist->update([
+                                'id_pengajuan_barang' => $currentIds,
+                                'kredit' => $jurnalExist->kredit + $totalPengeluaran,
+                                'keterangan' => 'Pengeluaran untuk pengajuan barang'
+                            ]);
+
+                            Log::info('Jurnal diupdate (ditambah ke KK yang sama)', ['jurnal_id' => $jurnalExist->id]);
+                        }
+                    } else {
+                        $jurnal = JurnalAkuntansi::create([
+                            'nomor_kk' => $nomorKK,
+                            'no_akun' => $nomorAkun,
+                            'id_pengajuan_barang' => [(int)$id], // Simpan sebagai array
+                            'tanggal_transaksi' => now(),
+                            'keterangan' => 'Pengeluaran untuk Pengajuan Barang ID: ' . $id . ' (' . $data->tipe . ')',
+                            'kredit' => $totalPengeluaran,
+                            'debit' => 0,
+                        ]);
+
+                        Log::info('Jurnal baru berhasil dibuat', ['jurnal_id' => $jurnal->id]);
+                    }
+                } catch (\Exception $ex) {
+                    Log::error('Gagal memproses jurnal', [
+                        'message' => $ex->getMessage()
+                    ]);
+                }
+
+
+                // 2. LOGIKA PENGECEKAN INVOICE & NOTIFIKASI
+                $updatePayload = [];
+                $updatePayload['no_kk'] = $request->no_kk;
+                $updatePayload['tanggal_pencairan'] = $request->filled('tanggal_pencairan') ? $request->tanggal_pencairan : now();
+
                 if ($data->invoice != null) {
                     // Jika invoice sudah ada, ubah status tracking menjadi "selesai"
                     $status = 'selesai';
@@ -349,69 +456,11 @@ class PengajuanBarangController extends Controller
                         'tanggal' => now(),
                     ]);
 
-                    $updateData = [
-                        'id_tracking' => $e2->id,
-                    ];
-
-                    if ($request->filled('tanggal_pencairan')) {
-                        $updateData['tanggal_pencairan'] = $request->tanggal_pencairan;
-                    }
-
-                    $data->update($updateData);
+                    $updatePayload['id_tracking'] = $e2->id;
 
                     if ($perbaikanKendaraan) {
                         $perbaikanKendaraan->update([
                             'status' => $status
-                        ]);
-                    }
-
-                    try {
-                        Log::info('Mulai proses jurnal', ['id_pengajuan' => $id]);
-                        $totalPengeluaran = 0;
-                        foreach ($detail as $item) {
-                            $qtyValue = (int) $item->qty;
-                            $hargaValue = (float) $item->harga;
-                            $subtotal = $qtyValue * $hargaValue;
-                            $totalPengeluaran += $subtotal;
-                        }
-
-                        $nomorKK = $request->no_kk;
-                        $nomorAkun = $request->no_akun;
-                        $jurnalExist = JurnalAkuntansi::where('nomor_kk', $nomorKK)->first();
-
-                        if ($jurnalExist) {
-                            $currentIds = is_array($jurnalExist->id_pengajuan_barang)
-                                ? $jurnalExist->id_pengajuan_barang
-                                : [];
-
-                            if (!in_array($id, $currentIds)) {
-                                $currentIds[] = (int)$id;
-
-                                $jurnalExist->update([
-                                    'id_pengajuan_barang' => $currentIds,
-                                    'kredit' => $jurnalExist->kredit + $totalPengeluaran,
-                                    'keterangan' => 'Pengeluaran untuk pengajuan barang'
-                                ]);
-
-                                Log::info('Jurnal diupdate (ditambah ke KK yang sama)', ['jurnal_id' => $jurnalExist->id]);
-                            }
-                        } else {
-
-                            $jurnal = JurnalAkuntansi::create([
-                                'nomor_kk' => $nomorKK,
-                                'no_akun' => $nomorAkun,
-                                'id_pengajuan_barang' => [(int)$id], // Simpan sebagai array
-                                'tanggal_transaksi' => now(),
-                                'keterangan' => 'Pengeluaran untuk Pengajuan Barang ID: ' . $id . ' (' . $data->tipe . ')',
-                                'kredit' => $totalPengeluaran,
-                                'debit' => 0,
-                            ]);
-
-                            Log::info('Jurnal baru berhasil dibuat', ['jurnal_id' => $jurnal->id]);
-                        }
-                    } catch (\Exception $ex) {
-                        Log::error('Gagal memproses jurnal', [
-                            'message' => $ex->getMessage()
                         ]);
                     }
 
@@ -423,19 +472,38 @@ class PengajuanBarangController extends Controller
                         'status' => $status,
                     ];
                 } else {
-                    // Jika invoice belum ada, kirim notifikasi agar upload invoice
+                    // Jika invoice belum ada, gunakan id tracking yang dibuat di atas (Pencairan Sudah Selesai)
+                    $updatePayload['id_tracking'] = $e->id;
+
                     $to = $data->karyawan->nama_lengkap;
                     $path = '/pengajuanbarang';
                     $type = 'Segera Upload Bukti Pembelian/Invoice';
                     $notifData = [
                         'tanggal' => now(),
-                        'status' => $status,
+                        'status' => $status, // Status masih 'Pencairan Sudah Selesai'
                     ];
                 }
-                $updatePayload = ['id_tracking' => $e->id];
-                $updatePayload['no_kk'] = $request->no_kk;
-                $updatePayload['tanggal_pencairan'] = $request->tanggal_pencairan ?? now();
+
+                // Update Pengajuan Barang cukup 1 kali eksekusi
                 $data->update($updatePayload);
+
+                // 3. UPDATE DATA PEMBELIAN HR (Jika ada)
+                $pembelianHr = PembelianHr::where('id_pengajuan', $data->id)->first();
+                if (!is_null($pembelianHr)) {
+                    $pembelianHr->update([
+                        'status_pembelian' => 'Terlaksana',
+                        'no_kk' => $request->no_kk,
+                        'invoice' => $data->invoice
+                    ]);
+            
+                    $auth = auth()->user()->karyawan;
+                    TrackingPembelianHr::create([
+                        'id_pembelian' => $pembelianHr->id,
+                        'tracking' => $auth->nama_lengkap . ' telah menyelesaikan rencana pembelian',
+                        'id_karyawan' => $auth->id
+                    ]);
+                }
+                
             } elseif ($status === 'Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager') {
                 $to = $data->karyawan->nama_lengkap;
                 $path = '/pengajuanbarang';
@@ -479,9 +547,12 @@ class PengajuanBarangController extends Controller
                 NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
             }
 
-            return redirect()
-                ->route('pengajuanbarang.index')
-                ->with(['success' => 'Data berhasil diperbarui!']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil diperbarui!',
+                'status' => $status,
+                'id_pengajuan' => $id
+            ], 200);
         } elseif ($request->approval == '2') {
             $status = 'Pengajuan ditolak dikarenakan ' . $request->alasan;
             $e = tracking_pengajuan_barang::create([
@@ -691,6 +762,20 @@ class PengajuanBarangController extends Controller
             $post->update([
                 'invoice' => $path,
                 'bukti'   => $pathBukti,
+            ]);
+        }
+
+        $pembelianHr = PembelianHr::where('id_pengajuan', $post->id)->first();
+        if (!is_null($pembelianHr)) {
+            $pembelianHr->update([
+                'invoice' => $post->invoice
+            ]);
+    
+            $auth = auth()->user()->karyawan;
+            TrackingPembelianHr::create([
+                'id_pembelian' => $pembelianHr->id,
+                'tracking' => $auth->nama_lengkap . ' telah mengupload invoice',
+                'id_karyawan' => $auth->id
             ]);
         }
 

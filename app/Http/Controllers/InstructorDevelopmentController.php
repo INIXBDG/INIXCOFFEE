@@ -684,11 +684,6 @@ class InstructorDevelopmentController extends Controller
                 return redirect()->back()->with('error', 'Gagal: Kode Instruktur/Karyawan tidak ditemukan.');
             }
 
-            // Cek apakah instruktur sudah punya data (karena schema unique)
-            $exists = SpecializationArea::where('kode_instruktur', $kodeInstruktur)->exists();
-            if ($exists) {
-                return redirect()->back()->with('error', 'Gagal: Anda sudah memiliki data Specialization Area (Data harus unik per instruktur). Silakan edit data yang ada.');
-            }
 
             SpecializationArea::create([
                 'specialization'        => $request->specialization,

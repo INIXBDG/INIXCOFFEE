@@ -11,7 +11,6 @@ class RekomendasiLanjutan extends Model
 
     protected $fillable = ['id_materi', 'id_rkm', 'keterangan'];
 
-
     public function rkm()
     {
         return $this->belongsTo(RKM::class, 'id_rkm', 'id');

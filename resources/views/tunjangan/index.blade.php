@@ -139,7 +139,10 @@
 
                                             <div class="col-md-4 mx-1">
                                                 <button type="submit" onclick="fetchTunjanganSaya()"
-                                                    class="btn click-primary" style="margin-top: 37px">Cari Data</button> <a href="{{route('SlipGaji')}}" class="btn click-primary" style="margin-top: 37px">Slip Gaji</a>
+                                                    class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+
+                                                <button type="button" id="btn-slip-gaji" data-base-url="{{ route('SlipGaji') }}"
+                                                    onclick="gotoSlipGaji()" class="btn click-primary" style="margin-top: 37px">Slip Gaji</button>
                                             </div>
                                         </div>
                                     </div>
@@ -256,6 +259,21 @@
 
                 return rupiah;
             }
+
+                function gotoSlipGaji() {
+                    const tahun = document.getElementById('tahun').value;
+                    const bulan = document.getElementById('bulan').value;
+
+                    if (!tahun || !bulan) {
+                        alert('Pilih tahun dan bulan terlebih dahulu!');
+                        return;
+                    }
+
+                    const btn = document.getElementById('btn-slip-gaji');
+                    const baseUrl = btn.dataset.baseUrl;
+
+                    window.location.href = `${baseUrl}?bulan=${bulan}&tahun=${tahun}`;
+                }
 
             function fetchTunjanganSaya() {
                 if ($.fn.DataTable.isDataTable('#table_tunjangan_saya')) {

@@ -13,6 +13,14 @@ use App\Models\User;
 
 class PenukaranSouvenirController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View PenukaranSouvenir', ['only' => ['index']]);
+        $this->middleware('permission:Store PenukaranSouvenir', ['only' => ['create', 'store']]);
+    }
+
     public function index()
     {
         $user = auth()->user();

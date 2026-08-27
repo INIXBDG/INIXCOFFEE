@@ -104,7 +104,7 @@ function updateCarPosition(totalSales, target) {
 
 function getProjectTarget(year) {
     $.ajax({
-        url: `/getProjectTarget/${year}`,
+        url: `/getProjectTarget/${year}/target-project`,
         type: 'GET',
         dataType: 'json',
         success: function (response) {
@@ -928,55 +928,131 @@ function fetchTabInix(year) {
         success: function (response) {
             if (response.success && response.data) {
                 const data = response.data;
-                console.log(data);
-                $('#total_kelas').text(data.total_kelas);
-                $('#jumlah_peserta').text(data.jumlah_peserta);
-                $('#ratarata_kelas_perbulan').text(data.ratarata_kelas_perbulan);
-                $('#jumlah_peserta_perbulan').text(data.jumlah_peserta_perbulan);
-                $('#offline').text(data.offline);
-                $('#virtual').text(data.virtual);
-                $('#materi').text(data.ratarata_feedback.materi);
-                $('#pelayanan').text(data.ratarata_feedback.pelayanan);
-                $('#fasilitas').text(data.ratarata_feedback.fasilitas);
-                $('#instruktur').text(data.ratarata_feedback.instruktur);
-                // Objek berisi URL gambar untuk setiap id elemen gambar
-                const imageUrls = {
-                    "foto_sales": `/storage/posts/${data.sales_terbaik.sales.foto}`,
-                    "foto_instruktur": `/storage/posts/${data.instruktur_terbaik.instruktur.foto}`,
-                    "foto_office": `/storage/posts/${data.office_terbaik.sales_foto}`,
-                    "foto_itsm": `/storage/posts/${data.office_terbaik.itsm_foto}`,
-                };
+                console.log('Inixindo dalam angka data:', data);
 
-                // Menetapkan src pada setiap elemen .dynamic-image berdasarkan id
-                $('.dynamic-image').each(function () {
-                    const imageId = $(this).attr('id'); // Mendapatkan id dari setiap elemen gambar
+                // Metrik Kelas
+                $('#total_kelas').text(data.total_kelas ?? 0);
+                $('#jumlah_peserta').text(data.jumlah_peserta ?? 0);
+                $('#ratarata_kelas_perbulan').text(data.ratarata_kelas_perbulan ?? 0);
+                $('#jumlah_peserta_perbulan').text(data.jumlah_peserta_perbulan ?? 0);
+                $('#offline').text(data.offline ?? 0);
+                $('#virtual').text(data.virtual ?? 0);
 
-                    // Cek apakah id ada di objek imageUrls, lalu set src-nya
-                    if (imageUrls[imageId]) {
-                        $(this).attr('src', imageUrls[imageId]);
+                // Feedback
+                if (data.ratarata_feedback) {
+                    $('#materi').text(data.ratarata_feedback.materi ?? 0);
+                    $('#pelayanan').text(data.ratarata_feedback.pelayanan ?? 0);
+                    $('#fasilitas').text(data.ratarata_feedback.fasilitas ?? 0);
+                    $('#instruktur').text(data.ratarata_feedback.instruktur ?? 0);
+                }
+
+                // Foto Karyawan Terbaik
+                const defaultImage = '/images/download.png';
+                const fotoSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.foto) 
+                    ? `/storage/posts/${data.sales_terbaik.sales.foto}` 
+                    : defaultImage;
+                const fotoInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.foto) 
+                    ? `/storage/posts/${data.instruktur_terbaik.instruktur.foto}` 
+                    : defaultImage;
+                const fotoOffice = (data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.foto)
+                    ? `/storage/posts/${data.office_terbaik.office.foto}`
+                    : ((data.office_terbaik && data.office_terbaik.office_foto) ? `/storage/posts/${data.office_terbaik.office_foto}` : defaultImage);
+                const fotoItsm = (data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.foto)
+                    ? `/storage/posts/${data.itsm_terbaik.itsm.foto}`
+                    : ((data.itsm_terbaik && data.itsm_terbaik.itsm_foto) ? `/storage/posts/${data.itsm_terbaik.itsm_foto}` : defaultImage);
+
+                $('#foto_sales').attr('src', fotoSales);
+                $('#foto_instruktur').attr('src', fotoInstruktur);
+                $('#foto_office').attr('src', fotoOffice);
+                $('#foto_itsm').attr('src', fotoItsm);
+
+                // Nama Karyawan Terbaik
+                const namaSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.nama_lengkap) 
+                    ? data.sales_terbaik.sales.nama_lengkap 
+                    : (data.sales_terbaik && data.sales_terbaik.sales_key ? data.sales_terbaik.sales_key : 'Belum Ada');
+                const namaInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.nama_lengkap) 
+                    ? data.instruktur_terbaik.instruktur.nama_lengkap 
+                    : 'Belum Ada';
+                const namaOffice = (data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.nama_lengkap) 
+                    ? data.office_terbaik.office.nama_lengkap 
+                    : ((data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.office_nama) ? data.office_terbaik.office.office_nama : 'Belum Ada');
+                const namaItsm = (data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.nama_lengkap) 
+                    ? data.itsm_terbaik.itsm.nama_lengkap 
+                    : ((data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.itsm_nama) ? data.itsm_terbaik.itsm.itsm_nama : 'Belum Ada');
+
+                $('#nama_sales').text(namaSales);
+                $('#nama_instruktur').text(namaInstruktur);
+                $('#nama_office').text(namaOffice);
+                $('#nama_itsm').text(namaItsm);
+
+                // Podium Keterlambatan
+                $('#nama_telat_1, #nama_telat_2, #nama_telat_3').text('-');
+                $('#durasi_telat_1, #durasi_telat_2, #durasi_telat_3').text('00:00:00');
+                $('#present-photo-satu, #present-photo-dua, #present-photo-tiga').attr('src', defaultImage);
+
+                if (data.keterlambatan && Array.isArray(data.keterlambatan)) {
+                    // Peringkat 1
+                    if (data.keterlambatan[0]) {
+                        const item1 = data.keterlambatan[0];
+                        if (item1.foto) $('#present-photo-satu').attr('src', '/storage/' + item1.foto);
+                        const nama1 = (item1.karyawan && item1.karyawan.nama_lengkap) ? item1.karyawan.nama_lengkap : 'Karyawan 1';
+                        $('#nama_telat_1').text(nama1);
+                        $('#durasi_telat_1').text(item1.total_keterlambatan || '00:00:00');
                     }
-                });
-                $('#nama_sales').text(data.sales_terbaik.sales.nama_lengkap);
-                $('#nama_instruktur').text(data.instruktur_terbaik.instruktur.nama_lengkap);
-                $('#nama_itsm').text(data.itsm_terbaik.itsm.itsm_nama);
-                $('#nama_office').text(data.office_terbaik.office.office_nama);
+                    // Peringkat 2
+                    if (data.keterlambatan[1]) {
+                        const item2 = data.keterlambatan[1];
+                        if (item2.foto) $('#present-photo-dua').attr('src', '/storage/' + item2.foto);
+                        const nama2 = (item2.karyawan && item2.karyawan.nama_lengkap) ? item2.karyawan.nama_lengkap : 'Karyawan 2';
+                        $('#nama_telat_2').text(nama2);
+                        $('#durasi_telat_2').text(item2.total_keterlambatan || '00:00:00');
+                    }
+                    // Peringkat 3
+                    if (data.keterlambatan[2]) {
+                        const item3 = data.keterlambatan[2];
+                        if (item3.foto) $('#present-photo-tiga').attr('src', '/storage/' + item3.foto);
+                        const nama3 = (item3.karyawan && item3.karyawan.nama_lengkap) ? item3.karyawan.nama_lengkap : 'Karyawan 3';
+                        $('#nama_telat_3').text(nama3);
+                        $('#durasi_telat_3').text(item3.total_keterlambatan || '00:00:00');
+                    }
+                }
 
-                if (data.keterlambatan.length >= 3) {
-                    // Mengisi src untuk foto peringkat kedua
-                    $('.second-position #present-photo-dua').attr('src', '/storage/' + data.keterlambatan[1].foto);
+                // Peringkat Kelas Paling Banyak Diambil
+                const tbody = $('#top_kelas_tbody');
+                tbody.empty();
 
-                    // Mengisi src untuk foto peringkat pertama
-                    $('.first-position #present-photo-satu').attr('src', '/storage/' + data.keterlambatan[0].foto);
+                if (data.top_kelas && Array.isArray(data.top_kelas) && data.top_kelas.length > 0) {
+                    data.top_kelas.forEach((item) => {
+                        let rankBadgeClass = 'rank-pill-other';
+                        if (item.rank === 1) rankBadgeClass = 'rank-pill-1';
+                        else if (item.rank === 2) rankBadgeClass = 'rank-pill-2';
+                        else if (item.rank === 3) rankBadgeClass = 'rank-pill-3';
 
-                    // Mengisi src untuk foto peringkat ketiga
-                    $('.third-position #present-photo-tiga').attr('src', '/storage/' + data.keterlambatan[2].foto);
+                        const kodeHtml = item.kode_materi && item.kode_materi !== '-' 
+                            ? `<span class="class-code-tag">${item.kode_materi}</span>` 
+                            : '';
+
+                        const row = `
+                            <tr>
+                                <td class="text-center"><span class="rank-pill ${rankBadgeClass}">${item.rank}</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold text-dark">${item.nama_materi}</span>
+                                        ${kodeHtml}
+                                    </div>
+                                </td>
+                                <td class="text-center"><span class="badge bg-light text-muted border">${item.kategori || '-'}</span></td>
+                                <td class="text-center"><span class="class-total-badge">${item.total} Kali</span></td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
                 } else {
-                    console.warn('Data keterlambatan kurang dari 3');
+                    tbody.html('<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada data kelas untuk tahun ini.</td></tr>');
                 }
 
             } else {
                 console.warn("Data pada tahun ini tidak tersedia");
-                alert("Data pada tahun ini tidak tersedia");
             }
         },
         error: function (xhr, status, error) {
@@ -2886,19 +2962,19 @@ function renderPermintaanSeringDiajukanChart(labels, values) {
     });
 }
 
-// =========================================================
-// 📦 MODULE: SLA DIGITAL KREATIF (STANDALONE)
-
 const formatPercent = (val) => `${parseFloat(val).toFixed(1)}%`;
 const formatHours = (val) => `${parseFloat(val).toFixed(1)} Jam`;
 const formatValue = (val) => parseFloat(val).toFixed(0);
 const getSlaClass = (val) => (val >= 90 ? 'text-success' : (val >= 80 ? 'text-warning' : 'text-danger'));
 
-async function loadSlaDigital() {
+/**
+ * Memuat data SLA Digital berdasarkan filter bulan yang dipilih.
+ * @param {string|null} selectedMonth - Nilai bulan (1-12) atau 'all'.
+ */
+async function loadSlaDigital(selectedMonth = null) {
     console.log('🚀 [SLA Digital] Memuat data dari endpoint dashboardDigital()');
 
     const $container = $('#sla-digital-container');
-    // Gunakan endpoint khusus digital yang sudah ada di controller
     const baseUrl = $container.data('url') || '/dashboard-digital';
 
     console.log('📡 [SLA Digital] Request URL:', baseUrl);
@@ -2910,14 +2986,28 @@ async function loadSlaDigital() {
     $('#digital-weekly-table-body').html('<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
 
     try {
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        let startDate, endDate;
+        // Ambil referensi tahun aktif, gunakan tahun berjalan sebagai nilai awal
+        const currentYear = $('#tahun').val() ? parseInt($('#tahun').val()) : new Date().getFullYear();
+
+        // Logika resolusi tanggal berdasarkan parameter bulan
+        if (selectedMonth && selectedMonth !== 'all') {
+            const monthIndex = parseInt(selectedMonth) - 1;
+            startDate = new Date(currentYear, monthIndex, 1).toISOString().split('T')[0];
+            endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
+        } else if (selectedMonth === 'all') {
+            startDate = new Date(currentYear, 0, 1).toISOString().split('T')[0];
+            endDate = new Date(currentYear, 11, 31).toISOString().split('T')[0];
+        } else {
+            const now = new Date();
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        }
 
         const response = await $.ajax({
             url: baseUrl,
             method: 'GET',
-            data: { start_date: startOfMonth, end_date: endOfMonth },
+            data: { start_date: startDate, end_date: endDate },
             dataType: 'json',
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             timeout: 15000
@@ -2952,7 +3042,7 @@ async function loadSlaDigital() {
             .attr('class', `fs-2 fw-bold ${getSlaClass(respComp)}`);
         $('#digital-ticket-avg').text(`${avgTime.toFixed(1)} Jam`);
 
-        // 3. Update SLA Konten - kiri (INI YANG BARU!)
+        // 3. Update SLA Konten - kiri
         const contentComp = parseFloat(kpi.content_sla_compliance) || 0;
         const totalContent = parseInt(kpi.total_content_uploaded) || 0;
         const weeksMet = parseInt(kpi.weeks_met) || 0;
@@ -2994,7 +3084,6 @@ function renderDigitalWeeklyTable(data) {
     }
 
     const rows = data.map(row => {
-        // Mapping field dari controller: week_range → period, count → uploads
         const period = row.week_range || row.period || '-';
         const uploads = row.count ?? row.uploads ?? 0;
         const target = row.target ?? 3;
@@ -3037,6 +3126,13 @@ $(document).ready(function () {
     $('#filterMonth').on('change', function () { fetchRerataDurasiData(this.value); });
     $('#filterMonthKetepatan').on('change', function () { fetchRerataKetepatanResponseData(this.value); });
 
+    // Event Listener Filter Bulan untuk SLA Digital
+    $('#filterBulanDigital').on('change', function () {
+        if (typeof loadSlaDigital === 'function') {
+            loadSlaDigital($(this).val());
+        }
+    });
+
     // Event Listeners PILLS (Tab Lama)
     $('#pills-jumlah-ticketing-tab').on('shown.bs.tab', function () { fetchJumlahTicketingData($('#filterBulan').val() || 'all'); });
     $('#pills-jumlah-pic-tab').on('shown.bs.tab', function () { fetchJumlahPICData($('#filterMonthPIC').val() || 'all'); });
@@ -3045,12 +3141,18 @@ $(document).ready(function () {
     $('#pills-jumlah-permintaan-tab').on('shown.bs.tab', function () { fetchJumlahPermintaanPerBulanData(); });
     $('#pills-permintaan-sering-diajukan-tab').on('shown.bs.tab', function () { fetchPermintaanSeringDiajukanData(); });
 
-
     $('#tahun').on('change', function () {
         let year = $(this).val();
         if (year) {
             initializeYearlySales();
             // initializeProjectTarget();
+
+            // Perbarui data SLA Digital jika tab tersebut sedang aktif
+            if ($('#pills-sla-digital-tab').hasClass('active')) {
+                if (typeof loadSlaDigital === 'function') {
+                    loadSlaDigital($('#filterBulanDigital').val());
+                }
+            }
         }
     });
 
@@ -3235,7 +3337,6 @@ $(document).ready(function () {
                 tableBody.html('<tr><td colspan="6" class="text-center p-4">Tidak ada data checklist ditemukan.</td></tr>');
             } else {
                 $.each(details, function (stage, items) {
-                    // HEADER GROUP (colspan=6)
                     tableBody.append(`
                         <tr class="table-secondary">
                             <td colspan="6" class="fw-bold text-uppercase px-3 py-2">
@@ -3244,12 +3345,9 @@ $(document).ready(function () {
                         </tr>
                     `);
 
-                    // ITEM ROWS
                     items.forEach(item => {
                         let badge = '';
                         let rowClass = '';
-
-                        // Logika Badge
                         switch (item.status) {
                             case 'On Time': badge = '<span class="badge bg-success">On Time</span>'; break;
                             case 'Late': badge = '<span class="badge bg-warning text-dark">Terlambat</span>'; break;
@@ -3271,7 +3369,6 @@ $(document).ready(function () {
         }
     }
 
-    // Listener Dropdown Event SLA
     $('#eventSlaFilter').on('change', function () {
         loadSlaEvent($(this).val());
     });
@@ -3286,19 +3383,17 @@ $(document).ready(function () {
 
         console.log(`Tab ${activePillId} ditampilkan.`);
 
-        // --- Logika Tab SLA ---
         if (activePill.hasClass('sla-tab-trigger')) {
-
-            // A. Logika Tab Digital Kreatif (BARU)
             if (activePillId === 'pills-sla-digital-tab') {
                 if (!isLoaded) {
-                    loadSlaDigital();
+                    if (typeof loadSlaDigital === 'function') {
+                        loadSlaDigital($('#filterBulanDigital').val());
+                    }
                     activePill.data('loaded', true);
                 }
                 return;
             }
 
-            // B. Logika Tab Event Webinar
             if (activePillId === 'pills-sla-event-tab') {
                 if (!isLoaded) {
                     const selectedEvent = $('#eventSlaFilter').val();
@@ -3310,7 +3405,6 @@ $(document).ready(function () {
                 return;
             }
 
-            // C. Logika Tab Tim IT (Programmer & TS)
             const team = activePill.data('team');
             if (!isLoaded && team) {
                 if (team === 'programmer') {
@@ -3321,7 +3415,6 @@ $(document).ready(function () {
                 activePill.data('loaded', true);
             }
 
-            // --- Logika Tab Lama (Legacy) ---
         } else {
             if (!isLoaded) {
                 switch (activePillId) {
@@ -3336,38 +3429,27 @@ $(document).ready(function () {
             }
         }
     });
-    // Trigger Awal
+
+    // =======================================================================
+    // 9. TRIGGER AWAL (AUTO-LOAD)
+    // =======================================================================
+
     setTimeout(() => {
         const activePill = $('#itsm-pills-tab .nav-link.active');
-        if (activePill.length) activePill.trigger('shown.bs.tab');
-        else $('#itsm-pills-tab button:first').trigger('shown.bs.tab');
+        if (activePill.length) {
+            activePill.trigger('shown.bs.tab');
+        } else {
+            $('#itsm-pills-tab button:first').trigger('shown.bs.tab');
+        }
     }, 50);
 
-});
-
-// =========================================================
-// 🔗 EVENT BINDING: TAB SLA DIGITAL (ROBUST)
-// =========================================================
-$(document).ready(function () {
-
-    // Binding event untuk tab SLA Digital
-    $('#pills-sla-digital-tab').on('shown.bs.tab', function () {
-        console.log('📌 [EVENT] Tab SLA Digital aktif!');
-        const $tab = $(this);
-        const isLoaded = $tab.data('loaded');
-
-        if (!isLoaded) {
-            console.log('🔄 Memanggil loadSlaDigital()...');
-            loadSlaDigital();
-            $tab.data('loaded', true);
-        }
-    });
-
-    // Auto-load jika tab sudah aktif saat halaman pertama kali dibuka
     setTimeout(function () {
         if ($('#pills-sla-digital-tab').hasClass('active') || $('#pills-sla-digital').hasClass('show active')) {
             console.log('🚀 Auto-load SLA Digital karena tab aktif');
-            loadSlaDigital();
+            if (typeof loadSlaDigital === 'function') {
+                loadSlaDigital($('#filterBulanDigital').val());
+            }
         }
     }, 600);
+
 });

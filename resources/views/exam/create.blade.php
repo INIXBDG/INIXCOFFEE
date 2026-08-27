@@ -10,7 +10,9 @@
                         <img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back
                     </a> --}}
                     <h5 class="card-title text-center mb-4">{{ __('Tambah Pengajuan Exam') }}</h5>
-                    <form method="POST" action="{{ route('exam.store') }}">
+
+                    <!-- Penambahan ID form-pengajuan-exam -->
+                    <form id="form-pengajuan-exam" method="POST" action="{{ route('exam.store') }}">
                         @csrf
 
                         <div class="row mb-3">
@@ -51,22 +53,24 @@
                             </div>
                         </div>
 
-                        <div class="row mb-3">
-                            <label for="kode_exam" class="col-md-4 col-form-label text-md-start">{{ __('Kode Exam') }}</label>
-                            <div class="col-md-6">
-                                <select name="kode_exam" id="kode_exam" class="form-select">
-                                    <option value="" selected>Pilih Kode Exam</option>
-                                    @foreach ($kode_exam as $list)
-                                    <option value="{{ $list->kode_exam }}">{{ $list->kode_exam }} - {{ $list->nama_exam }} - {{ $list->provider }} - {{ $list->vendor }}</option>
-                                    @endforeach
-                                </select>
-                                @error('kode_exam')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
+                        @if (!$sertifa)
+                            <div class="row mb-3">
+                                <label for="kode_exam" class="col-md-4 col-form-label text-md-start">{{ __('Kode Exam') }}</label>
+                                <div class="col-md-6">
+                                    <select name="kode_exam" id="kode_exam" class="form-select">
+                                        <option value="" selected>Pilih Kode Exam</option>
+                                        @foreach ($kode_exam as $list)
+                                        <option value="{{ $list->kode_exam }}">{{ $list->kode_exam }} - {{ $list->nama_exam }} - {{ $list->provider }} - {{ $list->vendor }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('kode_exam')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
                             </div>
-                        </div>
+                        @endif
 
                         <div class="row mb-3">
                             <label for="mata_uang" class="col-md-4 col-form-label text-md-start">{{ __('Mata Uang') }}</label>
@@ -107,7 +111,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control @error('kurs') is-invalid @enderror" name="kurs" id="kurs" required>
+                                    <input type="text" class="form-control @error('kurs') is-invalid @enderror" name="kurs" id="kurs">
                                 </div>
                                 @error('kurs')
                                     <span class="invalid-feedback" role="alert">
@@ -122,7 +126,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">$</span>
-                                    <input type="text" step="0.01" class="form-control @error('biaya_admin') is-invalid @enderror" name="biaya_admin" id="biaya_admin" required>
+                                    <input type="text" step="0.01" class="form-control @error('biaya_admin') is-invalid @enderror" name="biaya_admin" id="biaya_admin">
                                 </div>
                                 @error('biaya_admin')
                                     <span class="invalid-feedback" role="alert">
@@ -137,7 +141,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control @error('kurs_dollar') is-invalid @enderror" name="kurs_dollar" id="kurs_dollar" required>
+                                    <input type="text" class="form-control @error('kurs_dollar') is-invalid @enderror" name="kurs_dollar" id="kurs_dollar">
                                 </div>
                                 @error('kurs_dollar')
                                     <span class="invalid-feedback" role="alert">
@@ -192,7 +196,8 @@
 
                         <div class="row mb-0">
                             <div class="col-md-8 offset-md-4">
-                                <button type="submit" class="btn click-primary">
+                                <!-- Penambahan ID btn-submit-exam -->
+                                <button type="submit" id="btn-submit-exam" class="btn click-primary">
                                     {{ __('Simpan') }}
                                 </button>
                             </div>
@@ -204,98 +209,122 @@
         </div>
     </div>
 </div>
+
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-{{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-price-format/2.2.0/jquery.priceformat.min.js" integrity="sha512-qHlEL6N+fxDGsJoPhq/jFcxJkRURgMerSFixe39WoYaB2oj91lvJXYDVyEO1+tOuWO+sBtUGHhl3v3hUp1tGMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> --}}
-<script>
+    <script>
+    $(document).ready(function() {
+        // 1. Inisialisasi Tanggal
+        var today = new Date().toISOString().split('T')[0];
+        $('#tanggal_pengajuan').val(today);
 
-$(document).ready(function() {
-    var today = new Date().toISOString().split('T')[0];
-    $('#tanggal_pengajuan').val(today);
-    var paxInput = $('#pax');
-    var totalInput = $('#total');
-    $('#mata_uang, #harga, #kurs, #biaya_admin, #kurs_dollar').on('input change', function() {
-        updateHargaRupiah();
-    });
+        // 2. Deklarasi Konstanta
+        const isSertifa = @json((bool) $sertifa);
 
-    // Apply Rupiah format to kurs, kurs_dollar, and harga_rupiah on input
-    $('#kurs, #kurs_dollar, #harga_rupiah').on('input', function() {
-        $(this).val(formatRupiah($(this).val()));
-    });
+        // 3. Fungsi Utilitas Format Angka
+        function formatRupiah(angka, prefix) {
+            var numberString = angka.toString().replace(/[^,\d]/g, ''),
+                split = numberString.split(','),
+                sisa = split[0].length % 3,
+                rupiah = split[0].substr(0, sisa),
+                ribuan = split[0].substr(sisa).match(/\d{3}/gi);
 
-    // Function to update Harga Rupiah
-    function updateHargaRupiah() {
-        const selectedCurrency = $('#mata_uang').val();
-        const harga = parseFloat(($('#harga').val())) || 0;
-        const kurs = parseFloat(removeRupiahFormat($('#kurs').val())) || 0;
-        const biayaAdmin = parseFloat(removeRupiahFormat($('#biaya_admin').val())) || 0;
-        const kursDollar = parseFloat(removeRupiahFormat($('#kurs_dollar').val())) || 0;
-        let totalHarga = 0;
+            if (ribuan) {
+                var separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
+            }
 
-        // Calculate totalHarga based on selectedCurrency
-        switch (selectedCurrency) {
-            case 'Rupiah':
-                totalHarga = (harga * kurs) + (biayaAdmin * kursDollar);
-                break;
-            case 'Dollar':
-                totalHarga = (harga + biayaAdmin) * kursDollar;
-                break;
-            case 'Poundsterling':
-            case 'Euro':
-            case 'Franc Swiss':
-                totalHarga = (harga * kurs) + (biayaAdmin * kursDollar);
-                break;
-            default:
-                totalHarga = 0;
-                break;
+            rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+            return (prefix === undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : ''));
         }
 
-        // Update harga_rupiah with formatted Rupiah
-        $('#harga_rupiah').val(formatRupiah(totalHarga.toString()));
-    }
-
-    // Function to format numbers as Rupiah
-    function formatRupiah(angka, prefix) {
-        var numberString = angka.toString().replace(/[^,\d]/g, ''),
-            split = numberString.split(','),
-            sisa = split[0].length % 3,
-            rupiah = split[0].substr(0, sisa),
-            ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-
-        if (ribuan) {
-            var separator = sisa ? '.' : '';
-            rupiah += separator + ribuan.join('.');
+        function removeRupiahFormat(angka) {
+            if (!angka) return 0;
+            return parseFloat(angka.toString().replace(/[^\d,]/g, '').replace(',', '.'));
         }
 
-        rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-        return (prefix === undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : ''));
-    }
+        // 4. Fungsi Visibilitas Field Mata Uang
+        function toggleCurrencyFields() {
+            const selectedCurrency = $('#mata_uang').val();
 
-    // Function to remove Rupiah format before calculations
-    function removeRupiahFormat(angka) {
-        return parseFloat(angka.replace(/[^\d,]/g, '').replace(',', '.'));
-    }
+            if (selectedCurrency === 'Rupiah') {
+                $('#kurs_harga_div').hide();
+                $('#kurs_dollar_div').hide();
+                $('#biaya_admin_div').hide();
+                $('#kurs').val('1').prop('required', false);
+                $('#currency-symbol').text('Rp.');
+            } else {
+                $('#kurs_harga_div').show();
+                $('#kurs_dollar_div').show();
+                $('#biaya_admin_div').show();
+                $('#kurs').prop('required', true);
+                $('#currency-symbol').text('$');
+            }
+        }
 
-    paxInput.change(function() {
-        // Mengambil nilai dari input pax
-            var pax = parseInt(paxInput.val());
-            var hargaRupiah = $('#harga_rupiah').val()
-            var totalRupiah = removeRupiahFormat(hargaRupiah) * pax;
-            // console.log(totalRupiah);
-            totalInput.val(formatRupiah(totalRupiah));
+        if(isSertifa) {
+            toggleCurrencyFields();
+        }
+
+        // 5. Fungsi Kalkulasi Utama terpusat
+        function calculateAll() {
+            const selectedCurrency = $('#mata_uang').val();
+            const harga = parseFloat($('#harga').val()) || 0;
+            const biayaAdmin = parseFloat(removeRupiahFormat($('#biaya_admin').val())) || 0;
+            const kursDollar = parseFloat(removeRupiahFormat($('#kurs_dollar').val())) || 0;
+            let totalHarga = 0;
+
+            switch (selectedCurrency) {
+                case 'Rupiah':
+                    totalHarga = harga + (biayaAdmin * kursDollar);
+                    break;
+                case 'Dollar':
+                    totalHarga = (harga + biayaAdmin) * kursDollar;
+                    break;
+                case 'Poundsterling':
+                case 'Euro':
+                case 'Franc Swiss': {
+                    const kurs = parseFloat(removeRupiahFormat($('#kurs').val())) || 0;
+                    totalHarga = (harga * kurs) + (biayaAdmin * kursDollar);
+                    break;
+                }
+                default:
+                    totalHarga = 0;
+                    break;
+            }
+
+            // Pembaruan UI Field Harga Rupiah
+            $('#harga_rupiah').val(formatRupiah(totalHarga.toString()));
+
+            // Eksekusi Kalkulasi Total
+            const pax = parseInt($('#pax').val()) || 0;
+            const totalRupiah = totalHarga * pax;
+
+            // Pembaruan UI Field Total
+            $('#total').val(formatRupiah(totalRupiah.toString()));
+        }
+
+        // 6. Global Event Listener untuk Real-Time Input
+        $('#mata_uang, #harga, #kurs, #biaya_admin, #kurs_dollar, #pax').on('input', function() {
+            if (isSertifa) {
+                toggleCurrencyFields();
+            }
+            calculateAll();
+        });
+
+        // 7. Event Listener Khusus Format Rupiah (UI Input UX)
+        $('#kurs, #kurs_dollar').on('input', function() {
+            $(this).val(formatRupiah($(this).val()));
+        });
+
+        // 8. Event Listener Pre-Submission
+        $('#form-pengajuan-exam').on('submit', function(e) {
+            $('#kurs').val(removeRupiahFormat($('#kurs').val()));
+            $('#kurs_dollar').val(removeRupiahFormat($('#kurs_dollar').val()));
+            $('#harga_rupiah').val(removeRupiahFormat($('#harga_rupiah').val()));
+            $('#total').val(removeRupiahFormat($('#total').val()));
+        });
     });
-
-    $('form').on('submit', function() {
-        $('#kurs').val(removeRupiahFormat($('#kurs').val()));
-        $('#kurs_dollar').val(removeRupiahFormat($('#kurs_dollar').val()));
-        $('#harga_rupiah').val(removeRupiahFormat($('#harga_rupiah').val()));
-        $('#total').val(removeRupiahFormat($('#total').val()));
-    });
-});
-
-
-</script>
+    </script>
 @endpush
-
 @endsection
-

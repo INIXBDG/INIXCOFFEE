@@ -10,7 +10,7 @@
                         <img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back
                     </a>
 
-                    <h5 class="card-title text-center mb-4">{{ __('Souvenir Khusus Inhouse / Online') }}</h5>
+                    <h5 class="card-title text-center mb-4">{{ __('Souvenir Khusus Inhouse') }}</h5>
 
                     <form method="POST" action="{{ route('storeSouvenirInhouse') }}">
                         @csrf

@@ -40,7 +40,7 @@
                             @if (auth()->user()->id_instruktur && auth()->user()->jabatan != 'Education Manager' && auth()->user()->jabatan != 'Technical Support')
                                 <th scope="col">id</th>
                             @endif
-                            @if (auth()->user()->id_sales && auth()->user()->jabatan != 'SPV Sales')
+                            @if (auth()->user()->id_sales && auth()->user()->jabatan != 'SPV Sales' && auth()->user()->jabatan != 'Adm Sales')
                                 <th scope="col">id</th>
                                 <th scope="col">id</th>
                             @endif
@@ -133,7 +133,7 @@
         if(jabatan == 'Education Manager' || jabatan == "Technical Support"){
             var idInstruktur = "";
         }
-        if(jabatan == "SPV Sales"){
+        if(jabatan == "SPV Sales" || jabatan == "Adm Sales"){
             var idSales = "";
         }
         

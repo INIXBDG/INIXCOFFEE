@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 
-class InventarisImport implements ToModel, WithValidation, SkipsOnFailure, WithHeadingRow
+class InventarisImport implements ToModel, SkipsOnFailure, WithHeadingRow
 {
     use SkipsFailures;
 
@@ -65,6 +65,34 @@ class InventarisImport implements ToModel, WithValidation, SkipsOnFailure, WithH
         }
 
         return '-';
+    }
+
+    // Fungsi baru untuk mapping fleksibel berdasarkan daftar alias (keyword)
+    private function getFlexibleValue($row, array $aliases, $default = '-')
+    {
+        // 1. Coba pencocokan persis dulu
+        foreach ($aliases as $alias) {
+            $cleanAlias = str_replace(['_', ' '], '', strtolower($alias));
+            foreach ($row as $key => $value) {
+                $cleanKey = str_replace(['_', ' '], '', strtolower($key));
+                if ($cleanKey === $cleanAlias && $value !== null && $value !== '') {
+                    return $value;
+                }
+            }
+        }
+        
+        // 2. Jika tidak ada yang cocok persis, coba pencocokan sebagian (contains)
+        foreach ($aliases as $alias) {
+            $cleanAlias = str_replace(['_', ' '], '', strtolower($alias));
+            foreach ($row as $key => $value) {
+                $cleanKey = str_replace(['_', ' '], '', strtolower($key));
+                if (str_contains($cleanKey, $cleanAlias) && $value !== null && $value !== '') {
+                    return $value;
+                }
+            }
+        }
+
+        return $default;
     }
 
 
@@ -123,43 +151,50 @@ class InventarisImport implements ToModel, WithValidation, SkipsOnFailure, WithH
         Log::debug('Normalized row keys: ' . json_encode(array_keys($row)));
         Log::debug('Processing row: ' . json_encode($row));
 
-        // Validasi key yang penting
-        $namaBarang = $row['nama_barang'] ?? '-';
-        $kategori = $row['kategori'] ?? '-';
-
-        if ($namaBarang === '-' || $kategori === '-') {
-            $this->skippedRows[] = ['row' => $row, 'reason' => 'Missing nama_barang or kategori'];
-            Log::info('Skipped row: missing nama_barang or kategori', ['row' => $row]);
+        // Daftar keyword/alias untuk setiap target kolom
+        $idbarang = $this->getFlexibleValue($row, ['id_barang', 'idbarang', 'nomor_inventaris', 'no_inv', 'kode', 'id']);
+        $namaBarang = $this->getFlexibleValue($row, ['nama_barang', 'nama', 'barang', 'item', 'deskripsi_barang']);
+        $kategori = $this->getFlexibleValue($row, ['tipe', 'kategori', 'jenis', 'type', 'kelompok']);
+        $pic = $this->getFlexibleValue($row, ['pic', 'pengguna', 'user', 'penanggung_jawab', 'pemakai', 'karyawan']);
+        $ruangan = $this->getFlexibleValue($row, ['ruangan', 'lokasi', 'tempat', 'posisi']);
+        $kondisi = $this->getFlexibleValue($row, ['kondisi', 'status', 'keadaan']);
+        $tglBeli = $this->getFlexibleValue($row, ['tanggal_pembelian', 'tgl_beli', 'waktu_pembelian', 'tanggal', 'tahun', 'pembelian'], null);
+        
+        // Kolom lain yang mungkin ada (opsional)
+        $jumlah = $this->getFlexibleValue($row, ['jumlah', 'qty', 'kuantitas'], 1);
+        $hargaSatuan = $this->getFlexibleValue($row, ['harga', 'biaya', 'satuan'], 0);
+        
+        if ($namaBarang === '-') {
+            $this->skippedRows[] = ['row' => $row, 'reason' => 'Missing nama_barang'];
+            Log::info('Skipped row: missing nama_barang', ['row' => $row]);
             return null;
         }
 
-        $idbarang = $row['nomor_inventaris'] ?? '-';
         if ($idbarang !== '-' && Inventaris::where('idbarang', $idbarang)->exists()) {
             $this->skippedRows[] = ['row' => $row, 'reason' => 'Duplicate idbarang: ' . $idbarang];
             Log::info('Skipped row: duplicate idbarang', ['row' => $row]);
             return null;
         }
 
-        // Pastikan field sesuai key
-        $jumlah = $row['jumlah'] !== '-' ? (int)$row['jumlah'] : 1;
-        $hargaSatuan = $row['harga_satuan_rp'] !== '-' ? (float)$row['harga_satuan_rp'] : 0;
-        $totalHarga = $row['total_harga_rp'] !== '-' ? (float)$row['total_harga_rp'] : ($jumlah * $hargaSatuan);
+        $jumlah = (int)$jumlah;
+        $hargaSatuan = (float) preg_replace('/[\,\.Rp\s]+/', '', $hargaSatuan);
+        $totalHarga = $jumlah * $hargaSatuan;
 
         $data = [
             'idbarang' => $idbarang === '-' ? null : $idbarang,
             'name' => $namaBarang,
-            'kodebarang' => $row['kode_barang'] ?? '-',
-            'merk_kode_seri_hardware' => $row['merkkode_serikode_hardware'] ?? '-',
+            'kodebarang' => $idbarang, // Fallback kodebarang = idbarang
+            'merk_kode_seri_hardware' => '-',
             'qty' => $jumlah,
-            'satuan' => $row['satuan'] ?? 'unit',
+            'satuan' => 'unit',
             'type' => $this->mapKategoriToType($kategori),
             'harga_beli' => $hargaSatuan,
             'total_harga' => $totalHarga,
-            'waktu_pembelian' => $this->transformDate($row['tanggal_pembelian'] ?? null),
-            'pengguna' => $row['user'] ?? '-',
-            'ruangan' => $row['lokasi_barang'] ?? '-',
-            'kondisi' => $this->normalizeKondisi($row['kondisi_barang'] ?? null),
-            'deskripsi' => $row['keterangan'] ?? '-',
+            'waktu_pembelian' => $this->transformDate($tglBeli),
+            'pengguna' => $pic,
+            'ruangan' => $ruangan,
+            'kondisi' => $this->normalizeKondisi($kondisi),
+            'deskripsi' => '-',
         ];
 
         try {
@@ -173,26 +208,6 @@ class InventarisImport implements ToModel, WithValidation, SkipsOnFailure, WithH
             Log::error('DB Error during import: ' . $e->getMessage(), ['row' => $row]);
             return null;
         }
-    }
-
-    public function rules(): array
-    {
-        return [
-            'nama_barang' => 'required|string|max:255',
-            'kode_barang' => 'nullable|string|max:255',
-            'merkkode_serikode_hardware' => 'nullable|string|max:255',
-            'nomor_inventaris' => 'nullable|string|max:255',
-            'jumlah' => 'nullable|integer|min:1',
-            'satuan' => 'nullable|string|max:255',
-            'kategori' => 'required|string',
-            'harga_satuan_rp' => 'nullable|numeric|min:0',
-            'total_harga_rp' => 'nullable|numeric|min:0',
-            'tanggal_pembelian' => 'nullable',
-            'user' => 'nullable|string|max:255',
-            'lokasi_barang' => 'nullable|string|max:255',
-            'kondisi_barang' => ['nullable', 'string', Rule::in(['baik', 'rusak', 'kurang layak'])],
-            'keterangan' => 'nullable|string',
-        ];
     }
 
     public function getSkippedRows()

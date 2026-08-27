@@ -108,8 +108,8 @@
                 $jabatan = auth()->user()->jabatan;
             @endphp
             <div class="card" style="width: 100%">
-                <div class="card-body d-flex justify-content-center">
-                    <div class="col-md-4 mx-1">
+                <div class="card-body d-flex flex-wrap justify-content-center align-items-end">
+                    <div class="col-md-3 mx-1 mb-2">
                         <label for="tahun" class="form-label">Tahun</label>
                         <select id="tahun" class="form-select" aria-label="tahun">
                             <option disabled>Pilih Tahun</option>
@@ -123,7 +123,7 @@
                         </select>
 
                     </div>
-                    <div class="col-md-4 mx-1">
+                    <div class="col-md-3 mx-1 mb-2">
                         <label for="bulan" class="form-label">Bulan</label>
                         <select id="bulan" class="form-select" aria-label="bulan">
                             <option disabled>Pilih Bulan</option>
@@ -139,14 +139,29 @@
                         </select>
                     </div>
 
-                    <div class="col-md-4 mx-1">
+                    @if ($jabatan == 'Finance & Accounting')
+                        <div class="col-md-3 mx-1 mb-2">
+                            <label for="mode_tampilan" class="form-label">Tampilan</label>
+                            <select id="mode_tampilan" class="form-select" onchange="toggleMingguSelector()">
+                                <option value="">Per Bulan</option>
+                                <option value="minggu">Per Minggu</option>
+                                <option value="bulanminggu">Per Bulan &amp; Minggu</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mx-1 mb-2" id="minggu_wrapper" style="display:none;">
+                            <label for="minggu_pilihan" class="form-label">Pilih Minggu</label>
+                            <select id="minggu_pilihan" class="form-select"></select>
+                        </div>
+                    @endif
+
+                    <div class="col-md-3 mx-1 mb-2">
                         @if ($jabatan == 'Finance & Accounting')
-                            <button type="submit" onclick="tableFinance()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
-                            <button type="button" onclick="exportAllToExcel()" class="btn btn-success" style="margin-top: 37px">
+                            <button type="submit" onclick="tableFinance()" class="btn btn-primary" style="margin-top: 4px">Cari Data</button>
+                            <button type="button" onclick="exportAllToExcel()" class="btn btn-success" style="margin-top: 4px">
                                 <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export All to Excel
                             </button>
                         @else
-                        <button type="submit" onclick="tableKaryawan()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+                        <button type="submit" onclick="tableKaryawan()" class="btn click-primary" style="margin-top: 4px">Cari Data</button>
                         @endif
                     </div>
                 </div>
@@ -211,6 +226,57 @@
                         <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Selesai)') }}</h3>
                         <table class="table table-striped" id="datasudah">
                             <thead>
+                                <tr>
+                                    <th scope="col">Tanggal Pengajuan</th>
+                                    <th scope="col">Nama Karyawan</th>
+                                    <th scope="col">Divisi</th>
+                                    <th scope="col">Jabatan</th>
+                                    <th scope="col">Tipe</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Nama Barang</th>
+                                    <th scope="col">Total Item</th>
+                                    <th scope="col">Total Pengajuan</th>
+                                    <th scope="col">No KK</th>
+                                    <th scope="col">Tanggal Pencairan</th>
+                                    <th scope="col">SLA</th>
+                                    <th scope="col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                            <tfoot>
+
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="card m-4">
+                    <div class="card-body table-responsive">
+                        <div id="tabs-container"></div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+                            <h3 class="card-title my-1">{{ __('Data Pengajuan Semua') }}</h3>
+                            <div class="d-flex" style="gap: 10px;">
+                                <select id="filter-tahun-dummy" class="form-select form-select-sm w-auto">
+                                    @php
+                                    $tahun_sekarang = now()->year;
+                                    for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                        $selected = $tahun == $tahun_sekarang ? 'selected' : '';
+                                        echo "<option value=\"$tahun\" $selected>$tahun</option>";
+                                    }
+                                    @endphp
+                                </select>
+                                <select id="filter-status-dummy" class="form-select form-select-sm w-auto">
+                                    <option value="Semua">Semua Status</option>
+                                    <option value="Hold">Hold</option>
+                                    <option value="Has Invoice">Has Invoice</option>
+                                    <option value="Selesai">Selesai</option>
+                                </select>
+                            </div>
+                        </div>
+                        <table class="table table-striped" id="datadummy">
+                            <thead>
+                                <tr>
                                     <th scope="col">Tanggal Pengajuan</th>
                                     <th scope="col">Nama Karyawan</th>
                                     <th scope="col">Divisi</th>
@@ -329,6 +395,15 @@
     }
 
     }
+
+    /* Header pemisah per minggu (DataTables RowGroup) */
+    tr.dtrg-group.dtrg-start td {
+        background-color: #eef2f7;
+        font-weight: 700;
+        color: #2c3e50;
+        border-top: 2px solid #b9c4d0 !important;
+        border-bottom: 1px solid #b9c4d0 !important;
+    }
 </style>
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -338,8 +413,10 @@
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.3.1/css/rowGroup.dataTables.min.css">
+<script src="https://cdn.datatables.net/rowgroup/1.3.1/js/dataTables.rowGroup.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
@@ -372,10 +449,111 @@
         width: '100%',
         dropdownParent: $('#approveModal')
     });
-    
+
+    // Jika bulan/tahun berubah dan mode tampilan sedang "Per Minggu",
+    // perbarui daftar pilihan minggu supaya sesuai bulan yang baru dipilih.
+    $('#tahun, #bulan').on('change', function () {
+        if ($('#mode_tampilan').length && $('#mode_tampilan').val() === 'minggu') {
+            generateMingguOptions();
+        }
+    });
+
 });
 
+/* =========================================================
+   HELPER: Pembagian Minggu Dalam 1 Bulan (Minggu = Minggu-Sabtu)
+   Minggu 1 selalu mulai dari tanggal 1 pada bulan tsb, dan
+   berakhir di hari Sabtu terdekat (atau akhir bulan jika lebih dulu).
+   ========================================================= */
+function getWeeksInMonth(year, month) {
+    year = parseInt(year);
+    month = parseInt(month); // 1-12
+    var start = moment([year, month - 1, 1]);
+    var end = moment([year, month - 1, 1]).endOf('month');
+    var weeks = [];
+    var cursor = start.clone();
 
+    while (cursor.isSameOrBefore(end, 'day')) {
+        var dow = cursor.day(); // 0 = Minggu ... 6 = Sabtu
+        var daysToSaturday = 6 - dow;
+        var weekEnd = cursor.clone().add(daysToSaturday, 'days');
+        if (weekEnd.isAfter(end)) {
+            weekEnd = end.clone();
+        }
+        weeks.push({ start: cursor.clone(), end: weekEnd.clone() });
+        cursor = weekEnd.clone().add(1, 'days');
+    }
+    return weeks;
+}
+
+function getMingguIndexForDate(dateStr, weeks) {
+    var d = moment(dateStr);
+    for (var i = 0; i < weeks.length; i++) {
+        if (d.isBetween(weeks[i].start, weeks[i].end, 'day', '[]')) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function formatMingguLabel(idx, weeks) {
+    if (idx < 0 || !weeks[idx]) return '-';
+    moment.locale('id');
+    var w = weeks[idx];
+    var startFmt = w.start.format('DD MMMM');
+    var endFmt = w.end.format('DD MMMM');
+    return 'Minggu ' + (idx + 1) + ' (' + startFmt + ' - ' + endFmt + ')';
+}
+
+function toggleMingguSelector() {
+    var mode = $('#mode_tampilan').val();
+    if (mode === 'minggu') {
+        $('#minggu_wrapper').show();
+        generateMingguOptions();
+    } else {
+        $('#minggu_wrapper').hide();
+    }
+}
+
+function generateMingguOptions() {
+    var tahun = $('#tahun').val();
+    var bulan = $('#bulan').val();
+    if (!tahun || !bulan) return;
+
+    var weeks = getWeeksInMonth(tahun, bulan);
+    var $sel = $('#minggu_pilihan');
+    var previousVal = $sel.val();
+    $sel.empty();
+
+    weeks.forEach(function (w, idx) {
+        $sel.append('<option value="' + idx + '">' + formatMingguLabel(idx, weeks) + '</option>');
+    });
+
+    // Default: minggu berjalan (jika bulan/tahun yang dipilih adalah bulan/tahun sekarang),
+    // jika tidak maka default ke Minggu 1.
+    var defaultIdx = 0;
+    var now = moment();
+    if (now.year() == parseInt(tahun) && (now.month() + 1) == parseInt(bulan)) {
+        var currentIdx = getMingguIndexForDate(now.format('YYYY-MM-DD'), weeks);
+        if (currentIdx >= 0) defaultIdx = currentIdx;
+    }
+
+    if (previousVal !== null && previousVal !== undefined && weeks[previousVal] !== undefined) {
+        $sel.val(previousVal);
+    } else {
+        $sel.val(defaultIdx);
+    }
+}
+
+function buildRowGroupConfig(weeks) {
+    return {
+        dataSrc: function (row) {
+            var idx = getMingguIndexForDate(row.created_at, weeks);
+            return formatMingguLabel(idx, weeks);
+        }
+    };
+}
+/* ========================================================= */
 
 function tableKaryawan() {
     var tahun = $('#tahun').val();
@@ -584,29 +762,146 @@ function tableFinance(){
         $('#datasudahinv').DataTable().clear().destroy();
     }
 
+    var currentPageDummy = 0;
+    if ($.fn.DataTable.isDataTable('#datadummy')) {
+        currentPageDummy = $('#datadummy').DataTable().page();
+        $('#datadummy').DataTable().clear().destroy();
+    }
+
 
     $('#loadingModal').modal('show');
     var tahun = $('#tahun').val();
     var bulan = $('#bulan').val();
-    $.ajax({
-        url: "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}".replace(':month', bulan).replace(':year',tahun),
-        type: "GET",
-        success: function(data) {
-            $('#loadingModal').modal('hide');
-            console.log(data.data);
-            var dataSelesai = data.data.filter(item =>
-                item.tracking.tracking.includes("Selesai") || item.tracking.tracking.includes("tolak")
-            );
+    var tahunDummy = $('#filter-tahun-dummy').length ? $('#filter-tahun-dummy').val() : tahun;
 
-            var dataHasInvoice = data.data.filter(item =>
-                item.invoice && !item.tracking.tracking.includes('Selesai') && !item.tracking.tracking.includes("tolak")
-            );
-            
-            var dataBelum = data.data.filter(item =>
-                !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
-            );
+    // Mode tampilan: '' (default / per bulan), 'minggu', atau 'bulanminggu'
+    var mode = $('#mode_tampilan').length ? ($('#mode_tampilan').val() || '') : '';
+    var mingguIdxSelected = $('#minggu_pilihan').length ? parseInt($('#minggu_pilihan').val()) : NaN;
+    var weeks = getWeeksInMonth(tahun, bulan);
+
+    // Fungsi untuk menerapkan filter mode 'minggu' (tidak mengubah data untuk mode lain,
+    // karena filter per bulan tetap menggunakan data 1 bulan penuh dari controller yang sama)
+    function applyModeFilter(dataset) {
+        if (mode === 'minggu') {
+            var idx = isNaN(mingguIdxSelected) ? 0 : mingguIdxSelected;
+            return dataset.filter(function (item) {
+                return getMingguIndexForDate(item.created_at, weeks) === idx;
+            });
+        }
+        return dataset;
+    }
+
+    var urlBulan = "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}".replace(':month', bulan).replace(':year',tahun);
+    var urlTahun = "{{ route('getPengajuanBarang', ['month' => 'Semua', 'year' => ':year'] ) }}".replace(':year',tahunDummy);
+
+    $.when(
+        $.ajax({ url: urlBulan, type: "GET" }),
+        $.ajax({ url: urlTahun, type: "GET" })
+    ).done(function(res1, res2) {
+        $('#loadingModal').modal('hide');
+        let data = res1[0];
+        let dataSemua = res2[0];
+        console.log(data.data);
+        
+        // Jika sudah ada invoice DAN bukti, otomatis dianggap Selesai
+        // (pindah dari tabel Has Invoice ke tabel Selesai) walaupun status tracking-nya belum "Selesai".
+        var dataSelesai = data.data.filter(item =>
+            item.tracking.tracking.includes("Selesai") ||
+            item.tracking.tracking.includes("tolak") ||
+            (item.invoice && item.bukti)
+        );
+
+        var dataHasInvoice = data.data.filter(item =>
+            item.invoice && !item.bukti &&
+            !item.tracking.tracking.includes('Selesai') &&
+            !item.tracking.tracking.includes("tolak")
+        );
+        
+        var dataBelum = data.data.filter(item =>
+            !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
+        );
+
+        var dataDummy = dataSemua.data;
+
+        // Setup Tabs for Filter Tipe
+        let uniqueTypes = [...new Set(dataSemua.data.map(item => item.tipe))].filter(t => t);
+        let tabsHtml = `<ul class="nav nav-tabs flex-nowrap" id="dynamicTabs" style="overflow-x: auto; overflow-y: hidden; white-space: nowrap;">`;
+        tabsHtml += `<li class="nav-item"><a class="nav-link active text-nowrap" href="#" data-tipe="Semua">Semua</a></li>`;
+        uniqueTypes.forEach(t => {
+            tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="${t}">${t}</a></li>`;
+        });
+        tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="Lab">Lab (Filter Nama)</a></li>`;
+        tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="Dummy">Dummy (Filter Nama)</a></li>`;
+        tabsHtml += `</ul>`;
+        $('#tabs-container').html(tabsHtml);
+
+            $.fn.dataTable.ext.search.length = 0;
+            window.activeFilterTipe = 'Semua';
+            window.activeFilterStatusDummy = 'Semua';
+
+            $.fn.dataTable.ext.search.push(function(settings, dataArr, dataIndex, rowData, counter) {
+                var tableId = settings.nTable.id;
+                if (tableId === 'datadummy') {
+                    if (window.activeFilterTipe !== 'Semua' && window.activeFilterTipe !== 'Lab' && window.activeFilterTipe !== 'Dummy') {
+                        if (rowData.tipe !== window.activeFilterTipe) return false;
+                    }
+                    if (window.activeFilterTipe === 'Lab') {
+                        let names = '';
+                        if (rowData.detail && Array.isArray(rowData.detail)) {
+                            names = rowData.detail.map(d => d.nama_barang ? d.nama_barang.toLowerCase() : '').join(' ');
+                        }
+                        if (!names.includes('lab')) return false;
+                    }
+                    if (window.activeFilterTipe === 'Dummy') {
+                        let names = '';
+                        if (rowData.detail && Array.isArray(rowData.detail)) {
+                            names = rowData.detail.map(d => d.nama_barang ? d.nama_barang.toLowerCase() : '').join(' ');
+                        }
+                        if (!names.includes('dummy')) return false;
+                    }
+
+                    if (window.activeFilterStatusDummy !== 'Semua') {
+                        let statusText = rowData.tracking && rowData.tracking.tracking ? rowData.tracking.tracking : '';
+                        let isSelesai = statusText.includes("Selesai") || statusText.includes("tolak") || (rowData.invoice && rowData.bukti);
+                        let isHasInvoice = rowData.invoice && !rowData.bukti && !statusText.includes('Selesai') && !statusText.includes("tolak");
+                        let isHold = !rowData.invoice && statusText !== 'Selesai' && !statusText.includes("tolak");
+
+                        if (window.activeFilterStatusDummy === 'Selesai' && !isSelesai) return false;
+                        if (window.activeFilterStatusDummy === 'Has Invoice' && !isHasInvoice) return false;
+                        if (window.activeFilterStatusDummy === 'Hold' && !isHold) return false;
+                    }
+                    return true;
+                }
+                return true;
+            });
+
+            // Bind dropdown status change
+            $('#filter-status-dummy').off('change').on('change', function() {
+                window.activeFilterStatusDummy = $(this).val();
+                if ($.fn.DataTable.isDataTable('#datadummy')) $('#datadummy').DataTable().draw();
+            });
+
+            // Bind dropdown tahun dummy change
+            $('#filter-tahun-dummy').off('change').on('change', function() {
+                tableFinance();
+            });
+
+            // Bind tab clicks
+            $('#tabs-container').off('click', '#dynamicTabs .nav-link').on('click', '#dynamicTabs .nav-link', function(e) {
+                e.preventDefault();
+                $('#dynamicTabs .nav-link').removeClass('active');
+                $(this).addClass('active');
+                window.activeFilterTipe = $(this).data('tipe');
+                if ($.fn.DataTable.isDataTable('#datadummy')) $('#datadummy').DataTable().draw();
+            });
+
+            // Terapkan filter tampilan (hanya berefek jika mode == 'minggu')
+            dataSelesai = applyModeFilter(dataSelesai);
+            dataHasInvoice = applyModeFilter(dataHasInvoice);
+            dataBelum = applyModeFilter(dataBelum);
 
             let totalItemsSelesai = dataSelesai.length;
+
             let totalHargaSelesai = 0;
             dataSelesai.forEach(item => {
                 if (item.detail && Array.isArray(item.detail)) {
@@ -627,7 +922,7 @@ function tableFinance(){
             });
 
             // Initialize datasudah table
-            var datasudahTable = $('#datasudah').DataTable({
+            var datasudahConfig = {
                 data: dataSelesai,
                 dom: 'Bfrtip',
                 buttons: [
@@ -706,9 +1001,13 @@ function tableFinance(){
                         }
                     },
                     // KOLOM BARU: SLA (LOGIKA HITUNG 7 HARI)
-                   {
+                    {
                         "data": null,
                         "render": function(data, type, row) {
+                            if (!row.no_kk) {
+                                return '-';
+                            }
+
                             if (!row.tanggal_pencairan) {
                                 return '-';
                             }
@@ -738,9 +1037,22 @@ function tableFinance(){
                         "data": null,
                         "render": function(data, type, row) {
                             var actions = "";
+                            var userRole = '{{ auth()->user()->jabatan }}';
+                            var userKaryawanId = {{ auth()->user()->karyawan_id }};
+                            var trackingStatus = (row.tracking && row.tracking.tracking) ? row.tracking.tracking : '';
+                            var karyawanId = row.karyawan ? row.karyawan.id : null;
+
                             actions += '<div class="dropdown">';
                             actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                             actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+
+                            // Approve button
+                            if (userRole == 'Finance &amp; Accounting' && (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses') || trackingStatus.includes('Selesai'))) {
+                                actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
+                            } else {
+                                actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
+                            }
+
                             actions += '<a class="dropdown-item" disabled href="{{ url('/pengajuanbarang') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
                             actions += '<a class="dropdown-item" disabled href="{{ url('/pengajuanbarang/uploadinvoice') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Upload Invoice</a>';
                             actions += '</div>'
@@ -769,7 +1081,11 @@ function tableFinance(){
                     `;
                     $('#datasudah tfoot').html(footerHtml);
                 }
-            });
+            };
+            if (mode === 'bulanminggu') {
+                datasudahConfig.rowGroup = buildRowGroupConfig(weeks);
+            }
+            var datasudahTable = $('#datasudah').DataTable(datasudahConfig);
 
             // Set page for datasudah table
             if (currentPageSudah > 0) {
@@ -777,7 +1093,7 @@ function tableFinance(){
             }
 
             // Initialize databelum table
-            var databelumTable = $('#databelum').DataTable({
+            var databelumConfig = {
                 data: dataBelum,
                 dom: 'Bfrtip',
                 buttons: [
@@ -920,9 +1236,14 @@ function tableFinance(){
                     `;
                     $('#databelum tfoot').html(footerHtml);
                 }
-            });
+            };
+            if (mode === 'bulanminggu') {
+                databelumConfig.rowGroup = buildRowGroupConfig(weeks);
+            }
+            var databelumTable = $('#databelum').DataTable(databelumConfig);
+
             // ================= HAS INVOICE
-            var datasudahinvTable = $('#datasudahinv').DataTable({
+            var datasudahinvConfig = {
                 data: dataHasInvoice,
                 dom: 'Bfrtip',
                 buttons: [
@@ -1035,13 +1356,66 @@ function tableFinance(){
                     }
                 ],
                 order: [[0, 'desc']]
-            });
+            };
+            if (mode === 'bulanminggu') {
+                datasudahinvConfig.rowGroup = buildRowGroupConfig(weeks);
+            }
+            var datasudahinvTable = $('#datasudahinv').DataTable(datasudahinvConfig);
+
+            var datadummyConfig = Object.assign({}, datasudahConfig);
+            datadummyConfig.data = dataDummy;
+            datadummyConfig.buttons = [
+                {
+                    extend: 'excelHtml5',
+                    text: 'Export Excel',
+                    className: 'btn btn-success btn-sm mb-3',
+                    title: 'Data_Pengajuan_Dummy_' + bulan + '_' + tahun,
+                    exportOptions: {
+                        columns: ':visible:not(:last-child)'
+                    }
+                }
+            ];
+            datadummyConfig.drawCallback = function(settings) {
+                var api = this.api();
+                var currentData = api.rows({ search: 'applied' }).data().toArray();
+                var filteredItems = currentData.length;
+                var filteredHarga = 0;
+                currentData.forEach(item => {
+                    if (item.detail && Array.isArray(item.detail)) {
+                        item.detail.forEach(detail => {
+                            filteredHarga += detail.qty * detail.harga;
+                        });
+                    }
+                });
+                var formattedHargaDummy = new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR'
+                }).format(filteredHarga);
+                var footerHtml = `
+                    <tr>
+                        <th colspan="6" style="text-align: left;">
+                            Total Pengajuan: ${filteredItems}
+                        </th>
+                        <th colspan="4" style="text-align: left;">
+                            Total Harga Pengajuan: ${formattedHargaDummy}
+                        </th>
+                    </tr>
+                `;
+                $('#datadummy tfoot').html(footerHtml);
+            };
+            if (mode === 'bulanminggu') {
+                datadummyConfig.rowGroup = buildRowGroupConfig(weeks);
+            }
+            var datadummyTable = $('#datadummy').DataTable(datadummyConfig);
+
+            if (currentPageDummy > 0) {
+                datadummyTable.page(currentPageDummy).draw('page');
+            }
 
             // Set page for databelum table
             if (currentPageBelum > 0) {
                 databelumTable.page(currentPageBelum).draw('page');
             }
-        },
     });
 }
 
@@ -1134,7 +1508,25 @@ function openApproveModal(id, jabatan) {
     $('#approveForm').attr('action', approveUrl);
     $('#approveModal').modal('show');
 
-    // trigger toggle saat modal dibuka
+    if ($('#no_kk').length) {
+        var lastNoKk = localStorage.getItem('last_no_kk');
+        $('#no_kk').val(lastNoKk || 'KK-');
+    }
+
+    if ($('#no_akun').length) {
+        var lastNoAkun = localStorage.getItem('last_no_akun');
+        if (lastNoAkun) {
+            $('#no_akun').val(lastNoAkun).trigger('change'); 
+        }
+    }
+
+    if ($('#tanggal_pencairan').length) {
+        var lastTanggalPencairan = localStorage.getItem('last_tanggal_pencairan');
+        if (lastTanggalPencairan) {
+            $('#tanggal_pencairan').val(lastTanggalPencairan);
+        }
+    }
+
     const status = document.getElementById('status');
     if (status) {
         toggleFinanceInputs(status.value);
@@ -1160,10 +1552,19 @@ function toggleFinanceInputs(status) {
         }
     }
 
- $('#approveForm').on('submit', function(e) {
+$('#approveForm').on('submit', function(e) {
         e.preventDefault();
         let form = $(this);
         let actionUrl = form.attr('action');
+
+        var noKkVal = $('#no_kk').val();
+        var noAkunVal = $('#no_akun').val();
+        var tanggalPencairanVal = $('#tanggal_pencairan').val();
+
+        if (noKkVal) localStorage.setItem('last_no_kk', noKkVal);
+        if (noAkunVal) localStorage.setItem('last_no_akun', noAkunVal);
+        if (tanggalPencairanVal) localStorage.setItem('last_tanggal_pencairan', tanggalPencairanVal);
+
         $('#loadingModal').modal('show');
 
         $.ajax({
@@ -1175,19 +1576,55 @@ function toggleFinanceInputs(status) {
                 $('#approveModal').modal('hide');
                 $('#approveForm')[0].reset();
 
+                // Cek apakah response berupa JSON (dari manager) atau HTML (redirect Finance)
+                if (typeof res === 'object' && res !== null && res.success !== undefined) {
+                    if (res.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: res.message || 'Data berhasil diperbarui.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: res.message || 'Terjadi kesalahan.'
+                        });
+                    }
+                } else {
+                    // Response HTML (redirect dari Finance) — anggap sukses
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Data berhasil diperbarui!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+
+                // Reload tabel
                 if ($.fn.DataTable.isDataTable('#barangTable')) {
                     $('#barangTable').DataTable().ajax.reload(null, false);
                 }
-                tableFinance();
-                tableKaryawan();
-
                 if ('{{ auth()->user()->jabatan }}' == 'Finance & Accounting') {
                     tableFinance();
+                } else {
+                    tableKaryawan();
                 }
             },
             error: function(err) {
                 $('#loadingModal').modal('hide');
-                alert('Gagal menyimpan data, silakan coba lagi.');
+                let msg = 'Gagal menyimpan data, silakan coba lagi.';
+                if (err.responseJSON && err.responseJSON.message) {
+                    msg = err.responseJSON.message;
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: msg
+                });
             }
         });
     });

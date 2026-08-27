@@ -17,6 +17,9 @@ use Vinkla\Hashids\Facades\Hashids;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Sertifikasi;
 use App\Models\Pelatihan;
+use App\Exports\UserExport;
+use Maatwebsite\Excel\Facades\Excel;
+
 
 class UserController extends Controller
 {
@@ -113,7 +116,7 @@ class UserController extends Controller
         if (empty($decoded)) abort(404);
 
         $userId = $decoded[0];
-        $users = User::with('karyawan.educations')->findOrFail($userId);
+        $users = User::with(['karyawan.educations', 'karyawan'])->findOrFail($userId);
         $karyawan = karyawan::findOrFail($userId);
 
         // Batasi akses: hanya user itu sendiri atau admin
@@ -156,6 +159,7 @@ class UserController extends Controller
             'dataVisit',
             'dataAbsen',
             'users',
+            'karyawan',
             'sertifikasis'
         ]));
     }
@@ -292,5 +296,10 @@ class UserController extends Controller
         $user->syncRoles($request->roles);
 
         return redirect('/userRolePermissions')->with('success', 'User Updated Successfully with roles');
+    }
+
+    // Nama lengkap & email saja
+    public function ExportExcel(){
+        return Excel::download(new UserExport, 'Data User.xlsx');
     }
 }

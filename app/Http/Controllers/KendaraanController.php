@@ -25,6 +25,21 @@ use Illuminate\Support\Facades\Auth;
 
 class KendaraanController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View KondisiKendaraan', ['only' => ['indexKondisi', 'detailKondisi']]);
+        $this->middleware('permission:Store KondisiKendaraan', ['only' => ['storeKondisi']]);
+        $this->middleware('permission:Update KondisiKendaraan', ['only' => ['updateKondisi']]);
+        $this->middleware('permission:Delete KondisiKendaraan', ['only' => ['deleteKondisi']]);
+        
+        $this->middleware('permission:View PerbaikanKendaraan', ['only' => ['indexPerbaikan', 'detailPerbaikan']]);
+        $this->middleware('permission:Store PerbaikanKendaraan', ['only' => ['storePerbaikan']]);
+        $this->middleware('permission:Update PerbaikanKendaraan', ['only' => ['updatePerbaikan', 'SelesaiPerbaikan']]);
+        $this->middleware('permission:Delete PerbaikanKendaraan', ['only' => ['deletePerbaikan']]);
+    }
+
     public function indexKondisi()
     {
         $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
@@ -297,49 +312,49 @@ class KendaraanController extends Controller
         $perbaikan = PerbaikanKendaraan::findOrFail($id);
 
         $validated = $request->validate([
-            'kendaraan' => 'required|string|max:100',
-            'type_condition' => 'required|in:Perawatan,Kecelakaan',
+            'kendaraan'              => 'required|string|max:100',
+            'type_condition'         => 'required|in:Perawatan,Kecelakaan',
             'type_vehicle_condition' => 'required|in:Kerusakan Ringan,Kerusakan Sedang,Kerusakan Berat,Kerusakan Total',
-            'type_repair' => 'required|in:Penggantian,Peningkatan,Perbaikan,Perbaikan Total',
-            'estimasi' => 'required|integer',
-            'deskripsi_kondisi' => 'required|string',
-            'tanggal_kejadian' => 'nullable|date',
-            'waktu_kejadian' => 'nullable',
-            'lokasi' => 'nullable|string',
-            'tanggal_perbaikan' => 'nullable|date',
-            'harga_akhir' => 'nullable|integer',
-            'deskripsi_perbaikan' => 'nullable|string',
-            'vendor' => 'nullable|exists:vendor_bengkels,id',
-            'bukti' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi|max:20480',
-            'invoice' => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx,doc,docx|max:10240',
+            'type_repair'            => 'required|in:Penggantian,Peningkatan,Perbaikan,Perbaikan Total',
+            'estimasi'               => 'required|integer',
+            'deskripsi_kondisi'      => 'required|string',
+            'tanggal_kejadian'       => 'nullable|date',
+            'waktu_kejadian'         => 'nullable',
+            'lokasi'                 => 'nullable|string',
+            'tanggal_perbaikan'      => 'nullable|date',
+            'harga_akhir'            => 'nullable|integer',
+            'deskripsi_perbaikan'    => 'nullable|string',
+            'vendor'                 => 'nullable|exists:vendor_bengkels,id',
+            'bukti'                  => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi|max:20480',
+            'invoice'                => 'nullable|file|mimes:jpg,jpeg,png,pdf,xls,xlsx,doc,docx|max:10240',
             // Field untuk PengajuanBarang
-            'id_karyawan' => 'nullable|exists:users,id',
-            'tipe' => 'nullable|string|max:255',
-            'no_kk' => 'nullable|string|max:50',
-            'tanggal_pencairan' => 'nullable|date',
-            'status' => 'nullable|string',
+            'id_karyawan'            => 'nullable|exists:users,id',
+            'tipe'                   => 'nullable|string|max:255',
+            'no_kk'                  => 'nullable|string|max:50',
+            'tanggal_pencairan'      => 'nullable|date',
+            'status'                 => 'nullable|string',
         ]);
 
         // === 1. UPDATE DATA PERBAIKAN ===
-        $perbaikan->kendaraan = $request->kendaraan;
-        $perbaikan->type_condition = $request->type_condition;
+        $perbaikan->kendaraan              = $request->kendaraan;
+        $perbaikan->type_condition         = $request->type_condition;
         $perbaikan->type_vehicle_condition = $request->type_vehicle_condition;
-        $perbaikan->type_repair = $request->type_repair;
-        $perbaikan->estimasi = $request->estimasi;
-        $perbaikan->deskripsi_kondisi = $request->deskripsi_kondisi;
-        $perbaikan->deskripsi_perbaikan = $request->deskripsi_perbaikan;
-        $perbaikan->tanggal_perbaikan = $request->tanggal_perbaikan;
-        $perbaikan->id_vendor = $request->vendor;
-        $perbaikan->harga_akhir = $request->filled('harga_akhir') ? (int) $request->harga_akhir : null;
+        $perbaikan->type_repair            = $request->type_repair;
+        $perbaikan->estimasi               = $request->estimasi;
+        $perbaikan->deskripsi_kondisi      = $request->deskripsi_kondisi;
+        $perbaikan->deskripsi_perbaikan    = $request->deskripsi_perbaikan;
+        $perbaikan->tanggal_perbaikan      = $request->tanggal_perbaikan;
+        $perbaikan->id_vendor              = $request->vendor;
+        $perbaikan->harga_akhir            = $request->filled('harga_akhir') ? (int) $request->harga_akhir : null;
 
         if ($request->type_condition === 'Kecelakaan') {
             $perbaikan->tanggal_kejadian = $request->tanggal_kejadian;
-            $perbaikan->waktu_kejadian = $request->waktu_kejadian;
-            $perbaikan->lokasi = $request->lokasi;
+            $perbaikan->waktu_kejadian   = $request->waktu_kejadian;
+            $perbaikan->lokasi           = $request->lokasi;
         } else {
             $perbaikan->tanggal_kejadian = null;
-            $perbaikan->waktu_kejadian = null;
-            $perbaikan->lokasi = null;
+            $perbaikan->waktu_kejadian   = null;
+            $perbaikan->lokasi           = null;
         }
 
         // Handle upload bukti
@@ -347,9 +362,9 @@ class KendaraanController extends Controller
             if ($perbaikan->bukti && Storage::disk('public')->exists($perbaikan->bukti)) {
                 Storage::disk('public')->delete($perbaikan->bukti);
             }
-            $file = $request->file('bukti');
+            $file     = $request->file('bukti');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('perbaikan/bukti', $filename, 'public');
+            $path     = $file->storeAs('perbaikan/bukti', $filename, 'public');
             $perbaikan->bukti = $path;
         }
 
@@ -358,9 +373,9 @@ class KendaraanController extends Controller
             if ($perbaikan->invoice && Storage::disk('public')->exists($perbaikan->invoice)) {
                 Storage::disk('public')->delete($perbaikan->invoice);
             }
-            $file = $request->file('invoice');
+            $file     = $request->file('invoice');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('perbaikan/invoice', $filename, 'public');
+            $path     = $file->storeAs('perbaikan/invoice', $filename, 'public');
             $perbaikan->invoice = $path;
         }
 
@@ -368,36 +383,50 @@ class KendaraanController extends Controller
 
         // === 2. CEK ACTION: KIRIM PENGAJUAN BARANG ===
         if ($request->action === 'kirim_pengajuan') {
+
             if ($perbaikan->pengajuanbarangs_id) {
-                return redirect()->back()->withErrors(['error' => 'Data perbaikan ini sudah terhubung dengan Pengajuan Barang dan tidak bisa diajukan ulang.']);
+                return redirect()->back()->withErrors([
+                    'error' => 'Data perbaikan ini sudah terhubung dengan Pengajuan Barang dan tidak bisa diajukan ulang.'
+                ]);
             }
+
             try {
+                // Ambil id_karyawan yang benar
+                $idKaryawan = $request->id_karyawan
+                            ?? $perbaikan->id_user
+                            ?? Auth::id();
+
+                $karyawanPemohon = Karyawan::find($idKaryawan);
+
+                if (!$karyawanPemohon) {
+                    throw new \Exception('Data karyawan tidak ditemukan (id: ' . $idKaryawan . ')');
+                }
+
                 // A. Buat record PengajuanBarang
                 $pengajuan = PengajuanBarang::create([
-                    'id_karyawan' => $request->id_karyawan ?? Auth::id(),
-                    'id_kegiatan' => null,
-                    'id_tracking' => null,
-                    'tipe' => $request->tipe ?? 'Perbaikan Kendaraan',
-                    'invoice' => $perbaikan->invoice,
-                    'no_kk' => $request->no_kk ?? 'KK-' . $perbaikan->id,
-                    'tanggal_pencairan' => $request->tanggal_pencairan ?? null,
+                    'id_karyawan'            => $idKaryawan,
+                    'id_kegiatan'            => null,
+                    'id_tracking'            => null,
+                    'tipe'                   => $request->tipe ?? 'Perbaikan Kendaraan',
+                    'invoice'                => $perbaikan->invoice,
+                    'no_kk'                  => $request->no_kk ?? 'KK-' . $perbaikan->id,
+                    'tanggal_pencairan'      => $request->tanggal_pencairan ?? null,
                     'tanggal_terima_finance' => null,
                 ]);
 
+                // B. Detail Pengajuan
                 detailPengajuanBarang::create([
                     'id_pengajuan_barang' => $pengajuan->id,
-                    'nama_barang' => 'Biaya Perbaikan Kendaraan (' . strtoupper($perbaikan->kendaraan) . ')',
-                    'qty' => 1,
-                    'harga' => $perbaikan->harga_akhir ?: $request->estimasi, 
-                    'keterangan' => $perbaikan->deskripsi_kondisi ?? 'Estimasi biaya perbaikan kendaraan',
+                    'nama_barang'         => 'Biaya Perbaikan Kendaraan (' . strtoupper($perbaikan->kendaraan) . ')',
+                    'qty'                 => 1,
+                    'harga'               => $perbaikan->harga_akhir ?: $request->estimasi,
+                    'keterangan'          => $perbaikan->deskripsi_kondisi ?? 'Estimasi biaya perbaikan kendaraan',
                 ]);
 
                 // C. Buat tracking awal
-                $karyawanPemohon = Karyawan::find($pengajuan->id_karyawan);
                 $divisi = $karyawanPemohon->divisi;
-                $tipe = $request->tipe ?? 'Perbaikan Kendaraan';
+                $tipe   = $request->tipe ?? 'Perbaikan Kendaraan';
 
-                // Tentukan tracking awal sesuai divisi & tipe
                 if ($divisi == 'Education') {
                     $trackingStatus = 'Diajukan dan Sedang Ditinjau oleh Education Manager';
                 } elseif ($divisi == 'Office' && in_array($tipe, ['Makanan', 'Operasional'])) {
@@ -409,14 +438,14 @@ class KendaraanController extends Controller
                 } elseif ($divisi == 'IT Service Management') {
                     $trackingStatus = 'Diajukan dan Sedang Ditinjau oleh Koordinator IT Service Management';
                 } else {
-                    $trackingStatus = 'Diajukan dan Sedang Ditinjau oleh General Manager'; // Fallback
+                    $trackingStatus = 'Diajukan dan Sedang Ditinjau oleh General Manager';
                 }
 
                 $tracking = tracking_pengajuan_barang::create([
                     'id_pengajuan_barang' => $pengajuan->id,
-                    'tracking' => $trackingStatus, // ✅ SESUAIKAN DENGAN ALUR EXISTING
-                    'keterangan' => 'Pengajuan otomatis dari perbaikan kendaraan #' . $perbaikan->id,
-                    'created_by' => Auth::id(),
+                    'tracking'            => $trackingStatus,
+                    'keterangan'          => 'Pengajuan otomatis dari perbaikan kendaraan #' . $perbaikan->id,
+                    'created_by'          => Auth::id(),
                 ]);
 
                 // D. Link tracking ke PengajuanBarang
@@ -429,13 +458,13 @@ class KendaraanController extends Controller
 
                 // F. Kirim notifikasi
                 $penerima = User::whereIn('jabatan', ['GM', 'Finance & Accounting'])->get();
-                $karyawan = \App\Models\Karyawan::find($pengajuan->id_karyawan);
+                $karyawan = Karyawan::find($pengajuan->id_karyawan);
 
                 $dataNotif = [
-                    'user' => $karyawan->nama_lengkap ?? 'Driver',
+                    'user'      => $karyawan->nama_lengkap ?? 'Driver',
                     'kendaraan' => $perbaikan->kendaraan,
-                    'estimasi' => 'Rp ' . number_format($perbaikan->estimasi, 0, ',', '.'),
-                    'tanggal' => now()->format('d M Y'),
+                    'estimasi'  => 'Rp ' . number_format($perbaikan->estimasi, 0, ',', '.'),
+                    'tanggal'   => now()->format('d M Y'),
                 ];
 
                 $path = '/office/kendaraan/detail/perbaikan/' . $perbaikan->id;
@@ -446,8 +475,8 @@ class KendaraanController extends Controller
                 }
 
                 return redirect()->back()->with('success', 'Data diperbarui & Pengajuan Barang berhasil dikirim!');
+
             } catch (\Exception $e) {
-                Log::error('Gagal kirim pengajuan: ' . $e->getMessage());
                 return redirect()->back()
                     ->withInput()
                     ->withErrors(['error' => 'Gagal kirim pengajuan: ' . $e->getMessage()]);
@@ -563,8 +592,8 @@ class KendaraanController extends Controller
 
         // ✅ Handle upload invoice
         if ($request->hasFile('invoice')) {
-            if ($data->invoice && \Storage::disk('public')->exists($data->invoice)) {
-                \Storage::disk('public')->delete($data->invoice);
+            if ($data->invoice && Storage::disk('public')->exists($data->invoice)) {
+                Storage::disk('public')->delete($data->invoice);
             }
             $file = $request->file('invoice');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();

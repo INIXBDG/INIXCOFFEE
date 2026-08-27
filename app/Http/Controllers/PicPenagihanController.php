@@ -8,6 +8,16 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PicPenagihanController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View PicPenagihan', ['only' => ['index', 'getData']]);
+        $this->middleware('permission:Store PicPenagihan', ['only' => ['store']]);
+        $this->middleware('permission:Update PicPenagihan', ['only' => ['update']]);
+        $this->middleware('permission:Delete PicPenagihan', ['only' => ['destroy']]);
+    }
+
     public function index()
     {
         return view('office.picpenagihan.index');

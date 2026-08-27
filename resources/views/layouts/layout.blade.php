@@ -85,9 +85,13 @@
             z-index: 1050; /* Memastikan alert berada di atas elemen lain */
             width: 100%; /* Atau sesuaikan dengan lebar yang diinginkan */
         }
+        .swal2-container {
+            z-index: 999999 !important;
+        }
     </style>
 </head>
 <body>
+    {{-- 
     @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert">
         {{ session('success') }}
@@ -102,6 +106,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     @endif
+    --}}
 
     <div id="app">
                <main class="py-2" style="height: 100vh" id="bgsvg">
@@ -120,5 +125,39 @@
             })
         })
     </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @if(session('success') || session('error') || $errors->any())
+    @php
+        $swalType  = ''; $swalTitle = ''; $swalText = ''; $swalHtml = '';
+        if (session('success')) {
+            $swalType = 'success'; $swalTitle = 'Berhasil!'; $swalText = session('success');
+        } elseif (session('error')) {
+            $swalType = 'error'; $swalTitle = 'Gagal!'; $swalText = session('error');
+        } elseif ($errors->any()) {
+            $swalType = 'error'; $swalTitle = 'Terjadi Kesalahan!';
+            $errorItems = implode('', array_map(fn($e) => '<li>'.$e.'</li>', $errors->all()));
+            $swalHtml = '<ul style="text-align:left;margin:0;padding-left:20px;">'.$errorItems.'</ul>';
+        }
+    @endphp
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                Swal.fire({
+                    icon:  @json($swalType),
+                    title: @json($swalTitle),
+                    @if($swalHtml)
+                    html:  @json($swalHtml),
+                    @else
+                    text:  @json($swalText),
+                    @endif
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: false
+                });
+            }, 300);
+        });
+    </script>
+    @endif
 </body>
 </html>

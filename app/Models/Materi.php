@@ -18,7 +18,10 @@ class Materi extends Model
         'status',
         'keterangan',
         'tipe_materi',
-        'silabus'
+        'silabus',
+        'alias',
+        'kode_alias',
+        'kategori_exam',
     ];
 
     public function rkms()

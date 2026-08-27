@@ -168,7 +168,7 @@
                     </button>
 
 
-                    @if (Auth()->user()->jabatan === 'HRD' || Auth()->user()->jabatan === 'GM' || Auth()->user()->jabatan === 'Office Boy')
+                    @if (in_array(Auth::user()->jabatan, ['Customer Care', 'HRD', 'Office Boy', 'GM']))
                         <div class="btn-group">
                             <button id="refreshBtn" onclick="refreshTable()" class="btn btn-primary">Refresh</button>
                             {{-- <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">

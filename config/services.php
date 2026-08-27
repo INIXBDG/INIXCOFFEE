@@ -40,4 +40,9 @@ return [
     'vapid' => [
         'public_key' => env('VAPID_PUBLIC_KEY'),
     ],
+
+    'telegram_pickup_driver' => [
+        'bot_token' => env('TELEGRAM_PICKUP_BOT_TOKEN'),
+        'chat_id'   => env('TELEGRAM_PICKUP_CHAT_ID'),
+    ],
 ];

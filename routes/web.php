@@ -3,6 +3,7 @@
 use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\ActivityInstrukturController;
 use App\Http\Controllers\AdministrasiKaryawanController;
+use App\Http\Controllers\AliasController;
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\ApprovalPendapatanController;
 use App\Http\Controllers\approvedNetSalesController;
@@ -10,8 +11,9 @@ use App\Http\Controllers\HR\ArsipRekrutmenController;
 use App\Http\Controllers\CateringController;
 use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\Crm\AktivitasController;
+use App\Http\Controllers\Crm\ApprovalPendapatanSalesController;
 use App\Http\Controllers\Crm\CatatanSalesController;
-use App\Http\Controllers\crm\checklistRKMController;
+use App\Http\Controllers\Crm\checklistRKMController;
 use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CRMController;
 use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
@@ -42,7 +44,9 @@ use App\Http\Controllers\HR\HRController;
 use App\Http\Controllers\HR\KaryawanProfileController;
 use App\Http\Controllers\HR\KaryawanTaskController;
 use App\Http\Controllers\HR\payrollController;
+use App\Http\Controllers\HR\PerhitunganTunjanganHRController;
 use App\Http\Controllers\HR\presenceController;
+use App\Http\Controllers\HR\RencanaPembelianHrController;
 use App\Http\Controllers\HR\RekapSJPController;
 use App\Http\Controllers\HR\ReportController;
 use App\Http\Controllers\HR\SopController;
@@ -73,9 +77,11 @@ use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\office\ModulController;
 use App\Http\Controllers\office\OfficeController;
-use App\Http\Controllers\Office\pickupDriverController;
+use App\Http\Controllers\office\pickupDriverController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\office\KondisiToolsController;
+use App\Http\Controllers\office\PoExamSertifaController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\PenukaranSouvenirController;
@@ -92,6 +98,7 @@ use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TelegramController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\WebhookController;
+use App\Http\Controllers\KnowledgeManagementController;
 use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\Webinar\ChecklistController;
 use App\Http\Controllers\Webinar\TimelineItemController;
@@ -114,7 +121,15 @@ use App\Http\Controllers\Office\OfficeExamController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\ScheduleLogController;
 use App\Http\Controllers\VisitProjectController;
-
+use App\Http\Controllers\CVInstrukturController;
+use App\Http\Controllers\HR\RekapPenjualanController;
+use App\Http\Controllers\HR\RekapInventarisController;
+use App\Http\Controllers\FeatureDocumentationController;
+use App\Http\Controllers\CodeDocumentationController;
+use App\Http\Controllers\DocumentationImportController;
+use App\Http\Controllers\KelasSettingController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\KomisiSalesController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -148,6 +163,7 @@ Auth::routes(['register' => false, 'password.request' => false, 'password.email'
 Route::middleware('auth')->group(function () {
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('/user', [App\Http\Controllers\UserController::class, 'index'])->name('user.index');
+    Route::get('/user/excel', [UserController::class, 'ExportExcel'])->name('user.excel');
 
     Route::get('/karyawan/{hashid}/edit', [App\Http\Controllers\KaryawanController::class, 'edit'])->name('karyawan.edit'); //fixing route
     Route::put('/karyawan/{hashid}', [App\Http\Controllers\KaryawanController::class, 'updateData'])->name('karyawan.update'); //fixing route
@@ -165,6 +181,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/webpush/vapid-key', [WebPushController::class, 'getVapidKey'])->name('webpush.vapid-key');
     Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('webpush.test');
     Route::get('/webpush/status', [WebPushController::class, 'subscriptionStatus']);
+
+    Route::get('getPerusahaanall', [App\Http\Controllers\Api\apiController::class, 'getPerusahaanall'])->name('getPerusahaanall');
 });
 // test
 Route::get('/testdata', [App\Http\Controllers\TestController::class, 'index'])->name('testdata');
@@ -288,6 +306,7 @@ Route::get('getRegistrasiall', [App\Http\Controllers\RegistrasiController::class
 Route::get('getPesertaall', [App\Http\Controllers\PesertaController::class, 'getPesertaall'])->name('getPesertaall');
 Route::get('getExam', [App\Http\Controllers\examController::class, 'getExam'])->name('getExam');
 Route::get('getExamKondisi', [App\Http\Controllers\examController::class, 'getExamKondisi'])->name('getExamKondisi');
+Route::get('/get-po-exam-sertifa', [examController::class, 'getPoExamSertifa'])->name('getPoExamSertifa');
 Route::post('/exam/{id}/upload-invoice', [examController::class, 'uploadInvoice'])->name('exam.uploadInvoice');
 Route::post('/exam/{id}/update-kurs', [examController::class, 'updateKurs'])->name('exam.updateKurs');
 Route::get('/exam/get-kurs/{id}', [examController::class, 'getKurs'])->name('exam.getKurs');
@@ -300,6 +319,7 @@ Route::get('getRegistrasiexam', [App\Http\Controllers\registexamController::clas
 Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');
 Route::post('/generate/exam/absensi', [registexamController::class, 'generateAbsensi'])->name('absensi.exam');
 Route::get('getSouvenir', [App\Http\Controllers\SouvenirController::class, 'getSouvenir'])->name('getSouvenir');
+Route::get('getSouvenirInactive', [App\Http\Controllers\SouvenirController::class, 'getSouvenirInactive'])->name('getSouvenirInactive');
 Route::get('getSouvenirPeserta', [App\Http\Controllers\SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
 Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
 Route::get('/getTotalFeedbackPertahun', [App\Http\Controllers\feedbackController::class, 'getTotalFeedbackPertahun'])->name('office.feedback.get');
@@ -381,7 +401,7 @@ Route::get('getOvertimeLemburByKaryawan/{id}/{month}/{year}', [App\Http\Controll
 Route::post('/export-rkm-excel-admsales', [RKMController::class, 'exportExcel'])->name('export.rkm.excel');
 
 Route::get('getYearlySales/{year}', [App\Http\Controllers\HomeController::class, 'getYearSales'])->name('getYearSales');
-Route::get('/getProjectTarget/{year}', [App\Http\Controllers\HomeController::class, 'getProjectTarget'])->name('getProjectTarget');
+Route::get('/getProjectTarget/{year}/target-project', [App\Http\Controllers\HomeController::class, 'getProjectTarget'])->name('getProjectTarget');
 Route::get('getPenjualanPerBulan/{year}', [App\Http\Controllers\ChartController::class, 'getPenjualanPerBulan'])->name('getPenjualanPerBulan');
 Route::get('getPerSalesPerTahun/{year}', [App\Http\Controllers\ChartController::class, 'getPerSalesPerTahun'])->name('getPerSalesPerTahun');
 Route::get('getPerSalesPerQuartal/{year}', [App\Http\Controllers\ChartController::class, 'getPerSalesPerQuartal'])->name('getPerSalesPerQuartal');
@@ -431,6 +451,8 @@ Route::get('/registexam/cc/{id}', [App\Http\Controllers\registexamController::cl
 Route::put('/registexam/cc/{id}', [App\Http\Controllers\registexamController::class, 'storecc'])->name('exam.storecc');
 Route::put('/souvenir/{id}/updatestok', [App\Http\Controllers\SouvenirController::class, 'updateStok'])->name('souvenir.updateStok');
 Route::get('/souvenir/{id}/editstok', [App\Http\Controllers\SouvenirController::class, 'editStok'])->name('souvenir.editStok');
+Route::post('/souvenir/{id}/inactive', [App\Http\Controllers\SouvenirController::class, 'inactive'])->name('souvenir.inactive');
+Route::post('/souvenir/{id}/active', [App\Http\Controllers\SouvenirController::class, 'active'])->name('souvenir.active');
 Route::get('/suratperjalanan/{id}/editspj', [App\Http\Controllers\SuratPerjalananController::class, 'editspj'])->name('suratperjalanan.editspj');
 Route::get('/tunjangangenerate', [App\Http\Controllers\TunjanganController::class, 'indexGenerate'])->name('tunjangangenerate.index');
 Route::put('/lembur/{id}/updateKaryawan', [App\Http\Controllers\lemburController::class, 'updateKaryawan'])->name('lembur.updateKaryawan');
@@ -480,7 +502,7 @@ Route::prefix('kpi-data/')
 
         Route::get('/get-routes-by-jabatan', [TargetKPIController::class, 'getAssistantRoutesByJabatan'])->name('getRoutesByJabatan');
         Route::get('/get-target-by-route', [TargetKPIController::class, 'getDataTargetByRoute'])->name('getTargetByRoute');
-
+        Route::get('/divisi-drilldown', [TargetKPIController::class, 'divisiDrilldown'])->name('divisiDrilldown');
         //Overview KPI
         route::prefix('overview/')
             ->name('overview.')
@@ -596,7 +618,6 @@ Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentControll
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
 Route::put('/suratperjalanan/{id}/approve-direksi/{status}', [App\Http\Controllers\SuratPerjalananController::class, 'approveDireksi'])->name('suratperjalanan.approve.direksi');
-Route::put('/suratperjalanan/{id}/finance-approval', [App\Http\Controllers\SuratPerjalananController::class, 'financeApproval'])->name('suratperjalanan.financeApproval');
 Route::put('/suratperjalanan/{id}/upload-bukti', [App\Http\Controllers\SuratPerjalananController::class, 'uploadBuktiTransfer'])->name('suratperjalanan.uploadBukti');
 Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
@@ -694,6 +715,7 @@ Route::get('/inventaris/export', [InventarisController::class, 'export'])->name(
 Route::get('/ticketing-data', [DashboardItsmController::class, 'getJumlahPermintaan']);
 Route::get('/jumlah-pic', [DashboardItsmController::class, 'getJumlahPIC']);
 Route::get('/rerata-durasi-data', [DashboardItsmController::class, 'getRerataDurasi']);
+Route::get('/rerata-ketepatan-response-data', [DashboardItsmController::class, 'getRerataKetepatanResponse']);
 Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'getJumlahPermintaanPerBulan']);
 Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
 Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
@@ -745,6 +767,7 @@ Route::prefix('crm')->group(function () {
     Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
     Route::post('/peluang/paymentAdvance', [PeluangController::class, 'storePaymentAdvance'])->name('store.payment.advance');
     Route::post('/peluang/restore/{id}', [PeluangController::class, 'restore'])->name('restore.peluang');
+    Route::delete('/crm/peluang/force-delete/{id}', [PeluangController::class, 'forceDelete'])->name('forceDelete.peluang');
 
     // Aktivitas CRM
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('index.aktivitas');
@@ -831,7 +854,14 @@ Route::prefix('crm')->group(function () {
         Route::post('/transfer', [PerpindahanDBController::class, 'transfer'])->name('transfer');
         Route::get('/history/{id}', [PerpindahanDBController::class, 'exportHistory'])->name('history');
     });
+
+    Route::get('/contact/export-pdf', [ContactController::class, 'exportPdf'])->name('contact.export_pdf');
+
 });
+
+Route::get('/crm/approval-pendapatan-sales', [ApprovalPendapatanSalesController::class, 'index'])->name('crm.approval.index');
+Route::get('/crm/approval-pendapatan-sales/get/{tahun}/{bulan}', [ApprovalPendapatanSalesController::class, 'get']);
+Route::post('/crm/approval-pendapatan-sales/update/{id}', [ApprovalPendapatanSalesController::class, 'update']);
 
 //INVOICE
 Route::get('/invoice', [InvoiceRKMController::class, 'index'])->name('invoice.index');
@@ -888,7 +918,8 @@ Route::get('/rekapExamExportExcel/{year}/{month}', [examController::class, 'reka
 Route::get('/ticketing-data', [DashboardItsmController::class, 'getJumlahPermintaan']);
 Route::get('/jumlah-pic', [DashboardItsmController::class, 'getJumlahPIC']);
 Route::get('/rerata-durasi-data', [DashboardItsmController::class, 'getRerataDurasi']);
-Route::get('/dashboard-digital', [DashboardSLAController::class, 'dashboardDigital'])->name('dashboard.digital')->middleware('auth');
+Route::get('/rerata-ketepatan-response-data', [DashboardItsmController::class, 'getRerataKetepatanResponse']);
+// Route::get('/dashboard-digital', [DashboardSLAController::class, 'dashboardDigital'])->name('dashboard.digital')->middleware('auth');
 Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'getJumlahPermintaanPerBulan']);
 Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
 Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
@@ -969,6 +1000,7 @@ Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
+    Route::get('/detail-data-mengajar/{id}', [OfficeController::class, 'detailMengajar']);
     Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan']);
     Route::get('/karyawan-information/{id}', [OfficeController::class, 'dataKaryawan']);
     Route::get('/laporan/status-karyawan', [OfficeController::class, 'laporanStatusKaryawan'])->name('office.laporan.status-karyawan');
@@ -1021,7 +1053,7 @@ Route::prefix('office')->group(function () {
     Route::post('/sop-perusahaan/store', [PerusahaanController::class, 'storeSop'])->name('sop.perusahaan.store');
     Route::put('/sop-perusahaan/update/{id}', [PerusahaanController::class, 'updateSop'])->name('sop.perusahaan.update');
     Route::delete('/sop-perusahaan/delete/{id}', [PerusahaanController::class, 'deleteSop'])->name('sop.perusahaan.delete');
-    
+
 
     // administrasi karyawan
     Route::get('data-administrasi/{id}', [AdministrasiKaryawanController::class, 'getData']);
@@ -1055,13 +1087,49 @@ Route::prefix('office')->group(function () {
         Route::get('/get/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'get'])->name('get');
         Route::post('update/{id}', [ApprovalPendapatanController::class, 'update'])->name('update');
         Route::get('total-tahunan/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'totalTahunan']);
+        Route::get('/lock-status', [ApprovalPendapatanController::class, 'checkLockStatus']);
+        Route::post('/setup-lock', [ApprovalPendapatanController::class, 'setupLockPassword']);
+        Route::post('/unlock', [ApprovalPendapatanController::class, 'unlock']);
+        Route::post('/change-lock-password', [ApprovalPendapatanController::class, 'changeLockPassword']);
+        Route::post('/change-accounting-password', [ApprovalPendapatanController::class, 'changeAccountingPassword']);
+        Route::post('/setup-accounting-password', [ApprovalPendapatanController::class, 'setupAccountingPassword']);
+    });
+
+    Route::prefix('komisi-sales')->name('komisiSales.')->group(function () {
+        Route::get('/index', [KomisiSalesController::class, 'index'])->name('index');
+        Route::get('/get/{tahun}/{quartal}', [KomisiSalesController::class, 'get'])->name('get');
+        Route::post('/export-pdf', [KomisiSalesController::class, 'exportPdf'])->name('export-pdf');
+        Route::get('/lock-status', [KomisiSalesController::class, 'checkLockStatus']);
+        Route::post('/unlock', [KomisiSalesController::class, 'unlock']);
+        Route::post('/setup-lock', [KomisiSalesController::class, 'setupLockPassword']);
+        Route::post('/change-lock-password', [KomisiSalesController::class, 'changeLockPassword']);
+        Route::post('/change-accounting-password', [KomisiSalesController::class, 'changeAccountingPassword']);
+        Route::post('/setup-accounting-password', [KomisiSalesController::class, 'setupAccountingPassword']);
     });
 
     route::prefix('exam')->name('office.exam.')->group(function () {
         route::get('/index', [OfficeExamController::class, 'indexOffice'])->name('index');
         Route::get('/detail/{id}', [OfficeExamController::class, 'showDetailExam']);
         route::post('/update-bundling', [OfficeExamController::class, 'updateBundling'])->name('updateBundling');
-        Route::get('/{year}/{month}', [OfficeExamController::class, 'showExamMonth']);
+
+        Route::get('/rekap', [OfficeExamController::class, 'indexRekap'])->name('rekap.index');
+        Route::get('/rekap/json', [OfficeExamController::class, 'rekapJson'])->name('rekap.json');
+
+        Route::get('/{year}/{month}', [OfficeExamController::class, 'showExamMonth'])->where(['year' => '[0-9]+', 'month' => '[0-9]+']);
+    });
+
+    route::prefix('certifa')->name('office.certifa.')->group(function () {
+        Route::get('/data', [PoExamSertifaController::class, 'getData'])->name('data');
+        Route::get('index', [PoExamSertifaController::class, 'index'])->name('index');
+        Route::post('/store', [PoExamSertifaController::class, 'store'])->name('store');
+        Route::put('/update/{id}', [PoExamSertifaController::class, 'update'])->name('update');
+        Route::delete('/destroy/{id}', [PoExamSertifaController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('alias')->name('office.alias.')->group(function () {
+        Route::get('/index', [MateriController::class, 'indexAlias'])->name('index');
+        Route::get('/index/json', [MateriController::class, 'indexJsonAlias'])->name('index.json');
+        Route::put('/update/{id}', [MateriController::class, 'updateAlias'])->name('update');
     });
 });
 
@@ -1071,9 +1139,16 @@ Route::prefix('dashboard-sla/{team}')->group(function () {
     Route::get('/user', [DashboardSLAController::class, 'dashboardUser']);
     Route::get('/kritis', [DashboardSLAController::class, 'dashboardKritis']);
 });
+Route::get('/dashboard-sla/event/overall', [DashboardSLAController::class, 'overallEventSla']);
 Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, 'dashboardEventSla']);
 Route::get('/dashboard-sla/digital', [DashboardSLAController::class, 'dashboardDigital']);
 Route::get('/dashboard/uptime/monitoring', [KPIDatabaseKPIController::class, 'UptimePresentase'])->name('dashboard.uptimeMonitoring');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/shift/pending',  [DaftarTugasController::class, 'getPendingShift'])->name('shift.pending');
+    Route::post('/shift/approve', [DaftarTugasController::class, 'approveShift'])->name('shift.approve');
+    Route::post('/shift/reject',  [DaftarTugasController::class, 'rejectShift'])->name('shift.reject');
+});
 
 Route::prefix('office')
     ->name('office.')
@@ -1126,6 +1201,13 @@ Route::prefix('office')
                 Route::get('/export-excel', [BiayaTransportasiController::class, 'exportExcel'])->name('exportExcel');
                 Route::get('/export-pdf', [BiayaTransportasiController::class, 'exportPdf'])->name('exportPdf');
                 Route::post('upload-invoice/{id}', [BiayaTransportasiController::class, 'uploadInvoice']);
+                Route::get('search-pickup', [BiayaTransportasiController::class, 'searchPickup'])->name('searchPickup');
+                Route::get('search-spj', [BiayaTransportasiController::class, 'searchSpj'])->name('searchSpj');
+                Route::get('/budget-summary', [BiayaTransportasiController::class, 'budgetWeeklySummary'])->name('budgetSummary');
+                Route::get('/budget-summary-all', [BiayaTransportasiController::class, 'budgetAllSummary'])->name('budgetSummaryAll');
+                Route::post('/budget-operasional', [BiayaTransportasiController::class, 'storeBudgetOperasional'])->name('storeBudgetOperasional');
+                Route::post('/update-tipe/{id}', [BiayaTransportasiController::class, 'updateTipeBiaya'])->name('updateTipe');
+                Route::get('/export-budget-summary', [BiayaTransportasiController::class, 'exportBudgetSummary'])->name('exportBudgetSummary');
             });
 
         Route::prefix('feedback')
@@ -1141,6 +1223,7 @@ Route::prefix('office')
             Route::put('/update/nomor/{id}', [ModulController::class, 'updateNomor'])->name('modul.update.nomor');
             Route::delete('/delete/nomor/{id}', [ModulController::class, 'deleteNomor'])->name('modul.delete.nomor');
             Route::put('/update/nomor/status/{id}', [ModulController::class, 'uploaded'])->name('modul.update.status.nomor');
+            Route::put('/update/subscode/{id}', [ModulController::class, 'updateSubscode'])->name('modul.update.subscode');
 
             Route::get('/detail/{id}', [ModulController::class, 'indexModul'])->name('modul.detail');
             Route::post('/store', [ModulController::class, 'storeModul'])->name('modul.store');
@@ -1208,6 +1291,15 @@ Route::prefix('office')
 
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
 
+            Route::post('/kategori/reorder', [DaftarTugasController::class, 'reorderKategori'])->name('reorderKategori');
+            Route::post('/reorder', [DaftarTugasController::class, 'reorderTugas'])->name('reorderTugas');
+
+            Route::get('/perbaikan-data', [DaftarTugasController::class, 'perbaikanData'])->name('perbaikanData');
+            Route::get('/perbaikan-data/list', [DaftarTugasController::class, 'getForPerbaikan'])->name('getForPerbaikan');
+            Route::post('/perbaikan-data/update', [DaftarTugasController::class, 'updatePerbaikan'])->name('updatePerbaikan');
+            Route::post('/perbaikan-data/bulk-update', [DaftarTugasController::class, 'bulkUpdatePerbaikan'])->name('bulkUpdatePerbaikan');
+            Route::post('/perbaikan/bulk-save', [DaftarTugasController::class, 'bulkSavePerbaikan'])->name('bulkSavePerbaikan');
+
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
         });
 
@@ -1218,6 +1310,20 @@ Route::prefix('office')
             Route::post('/update', [KoordinasiOfficeBoyController::class, 'update'])->name('update');
             Route::post('/update-status-{action}/{id}', [KoordinasiOfficeBoyController::class, 'updateStatus'])->name('updateStatus');
             Route::delete('/delete/{id}', [KoordinasiOfficeBoyController::class, 'delete'])->name('delete');
+            Route::get('/detail/{id}', [KoordinasiOfficeBoyController::class, 'telegramDetail'])->name('telegram.detail');
+        });
+
+        Route::prefix('kondisi-tools')->name('KondisiTools.')->group(function() {
+            Route::get('/', [KondisiToolsController::class, 'index'])->name('index');
+            Route::post('/store', [KondisiToolsController::class, 'store'])->name('store');
+            Route::post('/update/{id}', [KondisiToolsController::class, 'update'])->name('update');
+            Route::post('/delete/{id}', [KondisiToolsController::class, 'delete'])->name('delete');
+            Route::get('/get-tools', [KondisiToolsController::class, 'getTools'])->name('get-tools');
+            Route::get('/get-pemeriksaan', [KondisiToolsController::class, 'getPemeriksaan'])->name('get-pemeriksaan');
+            Route::get('/get-template', [KondisiToolsController::class, 'getTemplate'])->name('get-template');
+            Route::post('/import-alat', [KondisiToolsController::class, 'importAlat'])->name('importAlat');
+            Route::get('/export-exel', [KondisiToolsController::class, 'exportExcel'])->name('exportExcel');
+            Route::get('/export-pdf', [KondisiToolsController::class, 'exportPdf'])->name('exportPdf');
         });
 
         Route::prefix('/rekomendasi-lanjutan')
@@ -1349,6 +1455,7 @@ Route::get('/jurnalakuntansi/pdf/{id}', [JurnalAkuntansiController::class, 'eksp
 Route::post('/jurnalakuntansi/otomatisasi/data', [JurnalAkuntansiController::class, 'otomatisasiJurnal'])->name('jurnalakuntansi.otomatisasiJurnal');
 Route::get('/jurnalakuntansi/belum-jurnal-sp', [JurnalAkuntansiController::class, 'getBelumJurnalSuratPerjalanan'])->name('jurnalakuntansi.belumJurnalSuratPerjalanan');
 Route::post('/jurnalakuntansi/store-manual-surat-perjalanan/{id}', [JurnalAkuntansiController::class, 'storeManualSuratPerjalanan'])->name('jurnalakuntansi.storeManualSuratPerjalanan');
+Route::get('/jurnalakuntansi/export-pdf-kk', [JurnalAkuntansiController::class, 'exportPdfKK'])->name('jurnalakuntansi.exportPdfKK');
 
 Route::middleware(['auth'])->group(function () {
     // Route Administrasi Project
@@ -1413,8 +1520,22 @@ Route::put('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'upda
 Route::delete('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'destroy'])->name('no_akun.destroy');
 Route::post('/no-akun/import', [App\Http\Controllers\NoAkunController::class, 'importExcel'])->name('no_akun.import');
 
+Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() {
+    Route::get('', [RencanaPembelianHrController::class, 'index'])->name('index');
+    Route::post('/store', [RencanaPembelianHrController::class, 'store'])->name('store');
+    Route::post('/update/{id}', [RencanaPembelianHrController::class, 'update'])->name('update');
+    Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');
+    Route::post('/update-nvoice/{id}', [RencanaPembelianHrController::class, 'updateInvoice'])->name('updateInvoice');
+    Route::post('/update-status', [RencanaPembelianHrController::class, 'updateStatus'])->name('updateStatus');
+    Route::get('/get-jurnal', [RencanaPembelianHrController::class, 'getJurnalAkuntansi']);
+    Route::post('/store-rekap', [RencanaPembelianHrController::class, 'storeRekap'])->name('storeRekap');
+});
+
 Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::get('/', [HRController::class, 'index'])->name('index');
+    Route::get('/data', [HRController::class, 'getDashboardData'])->name('dashboard.data');
+    Route::get('/divisions', [HRController::class, 'getDivisions'])->name('dashboard.divisions');
+    Route::get('/card-details', [HRController::class, 'getCardDetails'])->name('dashboard.card');
     Route::prefix('employee')
         ->name('employee.')
         ->group(function () {
@@ -1427,13 +1548,17 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
             Route::get('/export/trend/pdf', [employeeController::class, 'exportHeadcountTrendPdf'])->name('trend.export.pdf');
             Route::get('/export/breakdown/csv', [employeeController::class, 'exportHeadcountBreakdownCsv'])->name('breakdown.export.csv');
             Route::get('/export/breakdown/pdf', [employeeController::class, 'exportHeadcountBreakdownPdf'])->name('breakdown.export.pdf');
+            Route::get('/resigned', [employeeController::class, 'getResignedEmployees'])->name('resigned');
+            Route::put('/resigned/{id}', [employeeController::class, 'updateResignData'])->name('resigned.update');
+            Route::put('/{id}/move-to-resign', [employeeController::class, 'moveToResign'])->name('moveToResign');
+            Route::put('/{id}/restore', [employeeController::class, 'restoreEmployee'])->name('restore');
         });
     Route::prefix('payroll')
         ->name('payroll.')
         ->group(function () {
             Route::get('/index', [payrollController::class, 'index'])->name('index');
             Route::get('/dashboard', [payrollController::class, 'getPayrollDashboard'])->name('dashboard');
-            Route::get('/export/csv', [payrollController::class, 'exportPayrollCsv'])->name('export.csv');
+            Route::get('/export/excel', [payrollController::class, 'exportPayrollExcel'])->name('export.excel');
             Route::get('/export/pdf', [payrollController::class, 'exportPayrollPdf'])->name('export.pdf');
         });
     Route::prefix('absensi')->name('absensi.')->group(function () {
@@ -1443,6 +1568,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/division-stats', [presenceController::class, 'getDivisionDailyStats'])->name('division.stats');
         Route::get('/top-late', [presenceController::class, 'getTopLateEmployees'])->name('top.late');
         Route::get('/calendar', [presenceController::class, 'getAttendanceCalendar'])->name('calendar');
+        Route::get('/daily-details', [presenceController::class, 'getDailyAttendanceDetails'])->name('daily-details');
     });
 
     Route::prefix('executive')->name('executive.')->group(function () {
@@ -1452,6 +1578,18 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
             Route::get('/trend', [TargetKPIController::class, 'getExecutiveTrend'])->name('trend');
             Route::get('/prediction', [TargetKPIController::class, 'getPredictiveAnalysis'])->name('prediction');
             Route::get('/matrix-unified', [TargetKPIController::class, 'getPotentialMatrixUnified'])->name('matrix.unified');
+        });
+    });
+
+    Route::prefix('performance')->name('performance.')->group(function () {
+        Route::get('/dashboard', [TargetKPIController::class, 'performanceDashboard'])->name('index');
+        Route::get('/dashboard/data', [TargetKPIController::class, 'getPerformanceDashboardData'])->name('dashboard.data');
+        Route::get('/dashboard/assessment-360-detail-tab', [TargetKPIController::class, 'getAssessment360DetailTab'])->name('dashboard.assessment360.detailTab');
+        Route::get('/dashboard/performance-employee-details/{id}', [TargetKPIController::class, 'getPerformanceEmployeeDetails'])->name('dashboard.performanceEmployeeDetails');
+        Route::prefix('analytics')->name('analytics.')->group(function () {
+            Route::get('/trend', [TargetKPIController::class, 'getPerformanceTrend'])->name('trend');
+            Route::get('/prediction', [TargetKPIController::class, 'getPerformancePrediction'])->name('prediction');
+            Route::get('/matrix', [TargetKPIController::class, 'getPerformanceMatrix'])->name('matrix');
         });
     });
 
@@ -1484,6 +1622,13 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
         Route::post('reports/preview-formula', [ReportController::class, 'previewFormula'])->name('preview.formula');
         Route::post('reports/{template}/reset-counter/{counterKey}', [ReportController::class, 'resetCounter'])->name('reset.counter');
+
+        Route::put('/history/{generation}', [ReportController::class, 'updateHistory'])->name('history.update');
+        Route::delete('/history/{generation}', [ReportController::class, 'destroyHistory'])->name('history.destroy');
+
+        Route::post('/{template}/preview-generate', [ReportController::class, 'previewGenerate'])->name('preview.generate');
+
+
     });
 
     Route::prefix('hire')->name('hire.')->group(function() {
@@ -1577,7 +1722,19 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::delete('/{karyawanId}', [KaryawanProfileController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('rekap-spj')->name('rekap_spj.')->middleware('auth')->group(function () {
+    Route::prefix('maintenance')
+        ->name('maintenance.')
+        ->group(function () {
+            Route::get('/', [App\Http\Controllers\HR\MaintenanceController::class, 'index'])->name('index');
+            Route::get('/export-pdf', [App\Http\Controllers\HR\MaintenanceController::class, 'export_pdf'])->name('export_pdf');
+            Route::get('/export-excel', [App\Http\Controllers\HR\MaintenanceController::class, 'export_excel'])->name('export_excel');
+            Route::post('/store', [App\Http\Controllers\HR\MaintenanceController::class, 'store'])->name('store');
+            Route::post('/{id}/done', [App\Http\Controllers\HR\MaintenanceController::class, 'markAsDone'])->name('markAsDone');
+            Route::post('/import', [App\Http\Controllers\HR\MaintenanceController::class, 'import'])->name('import');
+            Route::get('/template-excel', [App\Http\Controllers\HR\MaintenanceController::class, 'template_excel'])->name('template_excel');
+        });
+
+    Route::prefix('rekap-spj')->name('rekap_spj.')->group(function () {
         Route::get('/', [RekapSJPController::class, 'index'])->name('index');
         Route::get('/load-data', [RekapSJPController::class, 'getRekapData'])->name('load_data');
         Route::get('/export', [RekapSJPController::class, 'export'])->name('export');
@@ -1585,6 +1742,51 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/ajax/karyawan/{jabatan}', [RekapSJPController::class, 'getKaryawan']);
         Route::get('/export-pdf', [RekapSJPController::class, 'exportPdf'])->name('export_pdf');
         Route::get('/detail-data', [RekapSJPController::class, 'getDetailData'])->name('detail_data');
+    });
+
+    Route::prefix('perhitungan-tunjangan')->name('perhitungan-tunjangan.')->group(function () {
+        Route::get('/',          [payrollController::class, 'indexPerhitungan'])->name('index');
+        Route::get('/karyawan-data', [payrollController::class, 'getKaryawanDataPerhitungan'])->name('karyawan-data');
+        Route::get('/get-data',  [payrollController::class, 'getPayrollDataPerhitungan'])->name('get-data');
+        Route::get('/stats',     [payrollController::class, 'getStatsPerhitungan'])->name('stats');
+        Route::post('/',         [payrollController::class, 'storePerhitungan'])->name('store');
+        Route::get('/logs-all',  [payrollController::class, 'getAllLogsPerhitungan'])->name('logs.all');
+        Route::get('/{id}',      [payrollController::class, 'showPerhitungan'])->name('show');
+        Route::put('/{id}',      [payrollController::class, 'updatePerhitungan'])->name('update');
+        Route::delete('/{id}',   [payrollController::class, 'destroyPerhitungan'])->name('destroy');
+        Route::post('/{id}/approve', [payrollController::class, 'approvePerhitungan'])->name('approve');
+        Route::get('/perhitungan-tunjangan/export/excel', [payrollController::class, 'exportExcelPerhitungan'])->name('export.excel');
+        Route::get('/perhitungan-tunjangan/export/pdf', [payrollController::class, 'exportPdfPerhitungan'])->name('export.pdf');
+    });
+
+    Route::prefix('rekap-inventaris')->name('rekap_inventaris.')->middleware('auth')->group(function () {
+        Route::get('/', [RekapInventarisController::class, 'index'])->name('index');
+        Route::get('/load-data', [RekapInventarisController::class, 'getRekapData'])->name('load_data');
+        Route::get('/export', [RekapInventarisController::class, 'export'])->name('export');
+
+        Route::get('/ajax/lokasi/{kategori}', [RekapInventarisController::class, 'getLokasi']);
+        Route::get('/ajax/jenis/{lokasi}', [RekapInventarisController::class, 'getJenis']);
+
+        Route::get('/export-pdf', [RekapInventarisController::class, 'exportPdf'])->name('export_pdf');
+        Route::get('/detail-data', [RekapInventarisController::class, 'getDetailData'])->name('detail_data');
+        Route::post('/store', [RekapInventarisController::class, 'store'])->name('store');
+        Route::post('/import', [RekapInventarisController::class, 'import'])->name('import');
+        Route::get('/sync', [RekapInventarisController::class, 'syncFromInventaris'])->name('sync');
+    });
+
+    Route::prefix('perhitungan-pph')->name('perhitungan-pph.')->group(function () {
+        Route::get('/',          [payrollController::class, 'indexPph'])->name('index');
+        Route::get('/data', [payrollController::class, 'getPphData'])->name('HR.pph21.data');
+        Route::post('/store', [payrollController::class, 'storePph'])->name('HR.pph21.store');
+        Route::delete('/{id}', [payrollController::class, 'deletePph'])->name('HR.pph21.delete');
+    });
+
+    Route::prefix('/rekapan-penjualan')->name('rekap-penjualan.')->group(function () {
+        Route::get('/', [RekapPenjualanController::class, 'index'])->name('index');
+        Route::get('/data/{year}/{monthStart?}/{monthEnd?}', [RekapPenjualanController::class, 'getData'])->name('data');
+        Route::get('/materi/{year}', [RekapPenjualanController::class, 'getMateriData'])->name('materi');
+        Route::get('/mingguan/{year}/{month}', [RekapPenjualanController::class, 'getMingguanData'])->name('mingguan');
+        Route::get('/profitabilitas/{year}', [RekapPenjualanController::class, 'getProfitabilitas'])->name('profitabilitas');
     });
 });
 
@@ -1615,3 +1817,68 @@ Route::get('/visit-projects/get', [VisitProjectController::class, 'get'])->name(
 Route::post('/visit-projects/store', [VisitProjectController::class, 'store'])->name('visit-projects.store');
 Route::put('/visit-projects/{visitProject}', [VisitProjectController::class, 'update'])->name('visit-projects.update');
 Route::delete('/visit-projects/{visitProject}', [VisitProjectController::class, 'destroy'])->name('visit-projects.destroy');
+
+// CV Instruktur
+Route::get('/cv-instruktur', [CVInstrukturController::class, 'index'])->name('cv-instruktur.index');
+Route::get('/cv-instruktur/data', [CVInstrukturController::class, 'data'])->name('cv-instruktur.data');
+Route::get('/cv-instruktur/{id}', [CVInstrukturController::class, 'show'])->name('cv-instruktur.show');
+Route::get('/cv-instruktur/{id}/pdf', [CVInstrukturController::class, 'downloadPdf'])->name('cv-instruktur.pdf');
+
+// Feature Documentation
+Route::get('/system/documentation/features', [FeatureDocumentationController::class, 'index'])
+    ->name('documentation.features.index');
+Route::post('/system/documentation/features', [FeatureDocumentationController::class, 'store'])
+    ->name('documentation.features.store');
+Route::get('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'show'])
+    ->name('documentation.features.show');
+Route::put('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'update'])
+    ->name('documentation.features.update');
+Route::delete('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'destroy'])
+    ->name('documentation.features.destroy');
+Route::get('/system/documentation/features/{id}/manual', [FeatureDocumentationController::class, 'downloadManual'])
+    ->name('documentation.features.manual');
+Route::get('features/options/list', [FeatureDocumentationController::class, 'options'])
+    ->name('documentation.features.options');
+
+Route::get('system/documentation/import/template', [DocumentationImportController::class, 'downloadTemplate'])
+    ->name('documentation.import.template');
+Route::post('system/documentation/import', [DocumentationImportController::class, 'import'])
+    ->name('documentation.import');
+Route::get('system/documentation/export/all', [DocumentationImportController::class, 'exportAll'])
+    ->name('documentation.export.all');
+Route::get('system/documentation/export/feature/{id}', [DocumentationImportController::class, 'exportFeature'])
+    ->name('documentation.export.feature');
+
+// Code Documentation
+Route::get('/system/documentation/features/{featureId}/codes', [CodeDocumentationController::class, 'index'])
+    ->name('documentation.codes.index');
+Route::post('/system/documentation/features/{featureId}/codes', [CodeDocumentationController::class, 'store'])
+    ->name('documentation.codes.store');
+Route::get('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'show'])
+    ->name('documentation.codes.show');
+Route::put('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'update'])
+    ->name('documentation.codes.update');
+Route::delete('/system/documentation/codes/{id}', [CodeDocumentationController::class, 'destroy'])
+    ->name('documentation.codes.destroy');
+
+Route::get('/sla-management', [DashboardSLAController::class, 'index'])->name('sla.management')->middleware('auth');
+// Knowledge Management Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/knowledge-management/{id}/download', [KnowledgeManagementController::class, 'downloadFile'])->name('knowledge-management.download');
+    Route::resource('knowledge-management', KnowledgeManagementController::class);
+
+});
+
+
+Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
+    Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
+    Route::get('/',               [KelasSettingController::class, 'getData'])->name('data');
+    Route::post('/store',              [KelasSettingController::class, 'store'])->name('store');
+    Route::patch('/{id}',         [KelasSettingController::class, 'update'])->name('update');
+    Route::delete('/{id}',        [KelasSettingController::class, 'destroy'])->name('destroy');
+    Route::post('/{id}/restore',  [KelasSettingController::class, 'restore'])->name('restore');
+
+    // Komentar
+    Route::post('/{id}/comment',           [KelasSettingController::class, 'addComment'])->name('comment.add');
+    Route::delete('/{id}/comment/{cmtId}', [KelasSettingController::class, 'removeComment'])->name('comment.remove');
+});

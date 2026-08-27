@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\Perusahaan;
 use App\Models\Contact;
+use App\Models\karyawan;
 use App\Models\Peserta;
 use App\Models\User;
 use App\Models\TargetActivity;
@@ -16,6 +17,15 @@ use Illuminate\Support\Facades\Log;
 
 class AktivitasController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:View Aktivitas Sales', ['only' => ['index', 'indexJson']]);
+        $this->middleware('permission:Store Aktivitas Sales', ['only' => ['storeNew']]);
+        $this->middleware('permission:Update Aktivitas Sales', ['only' => ['update']]);
+        $this->middleware('permission:Delete Aktivitas Sales', ['only' => ['delete']]);
+    }
 
     public function index()
     {
@@ -33,9 +43,10 @@ class AktivitasController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
+        $sales_option = karyawan::where('jabatan', 'sales')->where('status_aktif', '1')->get();
         $contact = Contact::with('perusahaan')->get();
 
-        return view('crm.aktivitas.index', compact('data', 'perusahaan', 'contact'));
+        return view('crm.aktivitas.index', compact('data', 'perusahaan', 'contact', 'sales_option'));
     }
 
     public function getContactsAndPeserta($id)
@@ -160,7 +171,7 @@ class AktivitasController extends Controller
             $totalFiltered = $query->count();
             $total = $query->sum('total');
 
-            $data = $query->orderBy('waktu_aktivitas', 'desc')
+            $data = $query->orderBy('id', 'desc')
                 ->orderBy($orderColumn, $orderDirection)
                 ->offset($start)
                 ->limit($length)
@@ -176,7 +187,7 @@ class AktivitasController extends Controller
                         $perusahaan = $item->perusahaanLangsung;
                         $namaPerusahaan = $perusahaan?->nama_perusahaan;
                         $idContact = $item->id_contact;
-                    } elseif ($item->aktivitas === 'Form_Masuk') {
+                    } elseif (in_array($item->aktivitas, ['Form_Masuk', 'Regis Form'])) {
                         $perusahaan = $item->perusahaanLangsung;
 
                         if (empty($perusahaan) && !empty($item->contact)) {
@@ -233,7 +244,7 @@ class AktivitasController extends Controller
                     return [
                         'id' => $item->id,
                         'kontak' => $kontak,
-                        'contact_type' => in_array($item->aktivitas, ['PA', 'Form_Masuk']) ? 'perusahaan' : 'contact',
+                        'contact_type' => in_array($item->aktivitas, ['PA', 'Form_Masuk', 'Regis Form']) ? 'perusahaan' : 'contact',
                         'id_sales' => $item->id_sales,
                         'aktivitas' => $aktivitas,
                         'pax' => $item->pax,

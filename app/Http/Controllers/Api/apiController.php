@@ -17,10 +17,10 @@ use App\Models\RekomendasiLanjutan;
 use App\Models\RKM;
 use App\Models\User;
 use Carbon\Carbon;
-use DB;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class apiController extends Controller
 {
@@ -210,7 +210,28 @@ class apiController extends Controller
 
     public function getPerusahaanall()
     {
-        $perusahaan = Perusahaan::with('karyawan')->withCount('rkms', 'peserta', 'contacts', 'peluang')->get();
+        $user = auth()->user();
+        $perusahaanQuery = Perusahaan::with('karyawan')->withCount('rkms', 'peserta', 'contacts', 'peluang');
+
+        if ($user) {
+            $allowedFullAccessRoles = [
+                'Customer Care',
+                'Admin Holding',
+                'Education Manager',
+                'Office Manager',
+                'SPV Sales',
+                'GM',
+                'Koordinator ITSM',
+                'Koordinator Office',
+                'Adm Sales',
+            ];
+
+            if ($user->id_sales !== 'VN' && !in_array($user->jabatan, $allowedFullAccessRoles)) {
+                $perusahaanQuery->where('sales_key', $user->id_sales);
+            }
+        }
+
+        $perusahaan = $perusahaanQuery->get();
 
         return response()->json([
             'success' => true,

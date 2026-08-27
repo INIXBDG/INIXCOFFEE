@@ -212,21 +212,32 @@
                         const tanggalSekarang = new Date().setHours(0,0,0,0);
                         const validUntil = new Date(data).setHours(0,0,0,0);
 
-                        var actions = "";
-                                actions += '<div class="btn">';
-                                    if (validUntil < tanggalSekarang) {
-                                        actions += '<a class="dropdown-item bg-warning rounded-2" disabled href="{{ url('/pengajuanUpdateExam') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Edit List Exam"><img src="{{ asset('icon/send.svg') }}" class="">Minta Update</a>';
-                                    } else {
-                                        actions += '<a class="dropdown-item" disabled href="{{ url('/detailHargaExam') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Edit List Exam"><img src="{{ asset('icon/file-text.svg') }}" class="">Detail</a>';
-                                    }
-                                actions += '</div>';
-                        return actions;
+                       var actions = "";
+actions += '<div class="btn">';
+
+if (validUntil < tanggalSekarang) {
+    actions += '<a class="dropdown-item bg-warning rounded-2 btn-update-exam" href="{{ url('/pengajuanUpdateExam') }}/' + row.id + '">';
+    actions += '<img src="{{ asset('icon/send.svg') }}" class="">Minta Update</a>';
+} else {
+    actions += '<a class="dropdown-item" href="{{ url('/detailHargaExam') }}/' + row.id + '">';
+    actions += '<img src="{{ asset('icon/file-text.svg') }}" class="">Detail</a>';
+}
+
+actions += '</div>';
+
+return actions;
                     }
                 }
 
             ]
         });
+        
     });
+    $(document).on('click', '.btn-update-exam', function(e){
+    $(this).addClass('disabled');
+    $(this).css('pointer-events', 'none');
+    $(this).html('Memproses...');
+});
 </script>
 @endpush
 @endsection

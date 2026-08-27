@@ -269,23 +269,29 @@ class LemburController extends Controller
     {
         // return $request->all();
         // Validasi dasar
+        $post = Lembur::with('karyawan')->findOrFail($id);
+
         $rules = [
-            'tanggal_spl' => 'required',
+            'tanggal_spl' => 'required|date',
             'jam_mulai' => 'required',
             'jam_selesai' => 'required',
-            'keterangan' => 'required',
-            'foto_mulai' => 'required',
-            'foto_selesai' => 'required'
+            'uraian_tugas' => 'required|string',
+            'waktu_lembur' => 'required|in:Kerja,Libur',
+            'tanggal_lembur' => 'required|date',
+            'keterangan' => 'required|string',
+            'foto_mulai' => $post->foto_masuk ? 'nullable|image' : 'required|image',
+            'foto_selesai' => $post->foto_selesai ? 'nullable|image' : 'required|image'
         ];
 
         $this->validate($request, $rules);
-
-        $post = Lembur::with('karyawan')->findOrFail($id);
 
         // Update data dasar
         $post->tanggal_spl = $request->tanggal_spl;
         $post->jam_mulai = $request->jam_mulai;
         $post->jam_selesai = $request->jam_selesai;
+        $post->uraian_tugas = $request->uraian_tugas;
+        $post->waktu_lembur = $request->waktu_lembur;
+        $post->tanggal_lembur = $request->tanggal_lembur;
         $post->keterangan = $request->keterangan;
 
         if ($request->hasFile('foto_mulai')) {

@@ -57,8 +57,10 @@ class RekomendasiLanjutanController extends Controller
 
                 $rows = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
                     ->whereBetween('tanggal_awal', [$start, $end])
-                    ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1);
+                    ->where('status', '0')
+                    ->whereNull('r_k_m_s.deleted_at')
+                    ->whereHas('peluang', function ($query) {
+                        $query->where('tentatif', 0);
                     })
                     ->orderBy('status', 'asc')
                     ->orderBy('tanggal_awal', 'asc')
@@ -91,39 +93,65 @@ class RekomendasiLanjutanController extends Controller
 
     public function store(Request $request)
     {
-        // Validasi input sebagai array
-        $request->validate([
-            'data' => 'required|array',
-            'data.*.id_rkm' => 'required',
-            'data.*.rekomendasi' => 'nullable|array',
-            'data.*.keterangan' => 'nullable|string',
-        ]);
+        // Normalisasi request
+        if ($request->has('data')) {
+            $items = $request->input('data');
+        } else {
+            $items = [[
+                'id_rkm'      => $request->id_rkm,
+                'rekomendasi' => $request->rekomendasi,
+                'keterangan'  => $request->keterangan,
+            ]];
+        }
+
+        $validator = validator(
+            ['items' => $items],
+            [
+                'items' => 'required|array',
+                'items.*.id_rkm' => 'required',
+                'items.*.rekomendasi' => 'nullable|array',
+                'items.*.keterangan' => 'nullable|string',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         try {
-            foreach ($request->data as $item) {
-                if (!empty($item['rekomendasi'])) {
-                    $materi_string = implode(',', $item['rekomendasi']);
 
-                    RekomendasiLanjutan::updateOrCreate(
-                        ['id_rkm' => $item['id_rkm']],
-                        [
-                            'id_materi' => $materi_string,
-                            'keterangan' => $item['keterangan'] ?? null
-                        ]
-                    );
-                }
+            foreach ($items as $item) {
+
+                $materiString = !empty($item['rekomendasi'])
+                    ? implode(',', $item['rekomendasi'])
+                    : null;
+
+                RekomendasiLanjutan::updateOrCreate(
+                    [
+                        'id_rkm' => $item['id_rkm']
+                    ],
+                    [
+                        'id_materi' => $materiString,
+                        'keterangan' => $item['keterangan']
+                    ]
+                );
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Semua rekomendasi berhasil disimpan.'
+                'message' => 'Rekomendasi berhasil disimpan.'
             ]);
 
         } catch (\Exception $e) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => $e->getMessage()
             ], 500);
+
         }
     }
 }

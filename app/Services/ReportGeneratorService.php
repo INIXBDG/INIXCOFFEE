@@ -14,7 +14,7 @@ class ReportGeneratorService
 {
     protected array $allowedModels = [
         'karyawan' => \App\Models\karyawan::class,
-        'kegiatan' => \App\Models\Kegiatan::class,
+        'pelamar' => \App\Models\Pelamar::class,
     ];
 
     protected array $allowedFieldTypes = [
@@ -42,7 +42,7 @@ class ReportGeneratorService
     {
         return [
             'karyawan' => [],
-            'kegiatan' => ['pic', 'pesertas'],
+            'pelamar' => [],
         ][$sourceType] ?? [];
     }
 
@@ -954,6 +954,11 @@ class ReportGeneratorService
             return $tempOutput;
         }
 
+        foreach ($replacements as $item) {
+            $find = trim($item['find'] ?? '');
+            if (empty($find)) continue;
+        }
+
         $zip        = new \ZipArchive();
         $tempOutput = tempnam(sys_get_temp_dir(), 'docx_mapped_');
         copy($docxPath, $tempOutput);
@@ -1037,6 +1042,25 @@ class ReportGeneratorService
         }
 
         $pos = mb_strpos($fullText, $find, 0, 'UTF-8');
+        if ($pos === false && (str_contains($find, '{') || str_contains($find, '}'))) {
+            $cleanKey = trim(str_replace(['{', '}'], '', $find));
+            $variations = [
+                '{{ ' . $cleanKey . ' }}',
+                '{{' . $cleanKey . '}}',
+                '{{ ' . $cleanKey . '}}',
+                '{{' . $cleanKey . ' }}',
+                '{{{' . $cleanKey . '}}}',
+                '{{{ ' . $cleanKey . ' }}}',
+            ];
+            foreach ($variations as $var) {
+                $varPos = mb_strpos($fullText, $var, 0, 'UTF-8');
+                if ($varPos !== false) {
+                    $find = $var;
+                    $pos = $varPos;
+                    break;
+                }
+            }
+        }
         if ($pos === false) return;
 
         $matchStart = $pos;

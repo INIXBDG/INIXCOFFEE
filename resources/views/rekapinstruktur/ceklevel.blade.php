@@ -54,6 +54,7 @@
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
+                                        <th>ID</th>
                                         <th>Instruktur</th>
                                         <th>Nama Materi</th>
                                         <th>Tanggal Mulai</th>
@@ -67,20 +68,39 @@
                                 <tbody>
                                     @foreach ($data as $item)
                                         <tr>
-                                            <td>{{$item->instruktur->nama_lengkap}}</td>
+                                            <td>{{ $item->id }}</td>
+                                            <td>{{ $item->instruktur->nama_lengkap ?? 'N/A' }}</td>
+                                            
+                                            <!-- Looping untuk setiap RKM yang ada di dalam baris ini -->
                                             <td>
-                                                @if($item->rkm && $item->rkm->materi)
-                                                    {{$item->rkm->materi->nama_materi}}
-                                                @else
-                                                    N/A <!-- Atau bisa ditampilkan pesan lain sesuai kebutuhan -->
-                                                @endif
+                                                @forelse($item->daftar_rkm as $rkm)
+                                                    <span class="d-block">{{ $rkm->materi->nama_materi ?? 'N/A' }}</span>
+                                                @empty
+                                                    <span class="d-block">N/A</span>
+                                                @endforelse
                                             </td>
+                                            
                                             <td>{{ \Carbon\Carbon::parse($item->tanggal_awal)->translatedFormat('l, j F Y') }}</td>
                                             <td>{{ \Carbon\Carbon::parse($item->tanggal_akhir)->translatedFormat('l, j F Y') }}</td>
-                                            <td>{{$item->rkm->metode_kelas ?? 'N/A'}}</td>
-                                            <td>{{$item->rkm->event ?? 'N/A'}}</td>
-                                            <td>{{$item->durasi}} Hari</td>
-                                            <td>{{$item->level}}</td>
+                                            
+                                            <td>
+                                                @forelse($item->daftar_rkm as $rkm)
+                                                    <span class="d-block">{{ $rkm->metode_kelas ?? 'N/A' }}</span>
+                                                @empty
+                                                    <span class="d-block">N/A</span>
+                                                @endforelse
+                                            </td>
+                                            
+                                            <td>
+                                                @forelse($item->daftar_rkm as $rkm)
+                                                    <span class="d-block">{{ $rkm->event ?? 'N/A' }}</span>
+                                                @empty
+                                                    <span class="d-block">N/A</span>
+                                                @endforelse
+                                            </td>
+                                            
+                                            <td>{{ $item->durasi }} Hari</td>
+                                            <td>{{ $item->level }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
