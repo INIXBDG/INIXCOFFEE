@@ -6,9 +6,6 @@ use App\Models\karyawan;
 use App\Models\targetKPI;
 use App\Models\DetailTargetKPI;
 use App\Models\nilaiKPI;
-use App\Services\KPI\Jabatan\GMKPIService;
-use App\Services\KPI\Jabatan\ProjectAdminKPIService;
-use App\Services\KPI\Jabatan\SPVSalesKPIService;
 use App\Traits\KPIResolverTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -46,7 +43,7 @@ class OverviewDashboardService
             return empty($jenisTotalRaw) ? 0 : round(array_sum($jenisTotalRaw), 1);
         };
 
-        $targetKPIs = targetKPI::with(['detailTargetKPI.dataTarget', 'detailTargetKPI.detailPersonKPI', 'karyawan'])
+        $targetKPIs = targetKPI::with(['detailTargetKPI.dataTarget', 'karyawan'])
             ->whereYear('created_at', $currentYear)
             ->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $targetEmployeeId))
             ->get();
@@ -59,7 +56,7 @@ class OverviewDashboardService
 
         $kpiHealth = ['on_track' => 0, 'at_risk' => 0, 'behind' => 0];
         $trends = ['up' => 0, 'down' => 0, 'stable' => 0];
-        $consistency = ['stable' => 0, 'fluctuating' => 0];
+        $consistency = ['stable' => 0, 'fluctuating' => 0]; // NEW
         $insights = [];
         $topPerformers = [];
         $lowestPerformers = [];
@@ -67,48 +64,36 @@ class OverviewDashboardService
         $kpiCards = [];
 
         foreach ($targetKPIs as $target) {
-            $detail = $target->detailTargetKPI->first(
-                fn($d) => $d->detailPersonKPI->contains('id_karyawan', $targetEmployeeId)
-            ) ?? $target->detailTargetKPI->first();
-
-            if (!$detail) {
-                continue;
-            }
-
-            $resolved = $this->resolveProgressByRoute($target, $detail, $targetEmployeeId);
             $calculation = $this->getCalculationByRoute($target, $targetEmployeeId);
 
-            $progress = $resolved['progress'];
+            $progress = $calculation['progress'] ?? 0;
             $allProgressValues[] = $progress;
-
-            $tipeTarget = $detail->tipe_target ?? ($detail->dataTarget?->tipe_target ?? 'persen');
-            $nilaiTarget = (float) ($detail->nilai_target ?? ($detail->dataTarget?->nilai_target ?? 0));
 
             if (!empty($calculation['monthly_progress'])) {
                 foreach ($calculation['monthly_progress'] as $month => $val) {
-                    $monthly_progress[$month][] = $this->normalizeToPercent($val, $tipeTarget, $nilaiTarget);
+                    $monthly_progress[$month][] = $val;
                 }
             }
             if (!empty($calculation['daily_progress_per_month'])) {
                 foreach ($calculation['daily_progress_per_month'] as $month => $days) {
                     foreach ($days as $day => $val) {
-                        $daily_progress_per_month[$month][$day][] = $this->normalizeToPercent($val, $tipeTarget, $nilaiTarget);
+                        $daily_progress_per_month[$month][$day][] = $val;
                     }
                 }
             }
 
-            if (isset($resolved['target_status'], $kpiHealth[$resolved['target_status']])) {
-                $kpiHealth[$resolved['target_status']]++;
+            if (isset($calculation['target_status'], $kpiHealth[$calculation['target_status']])) {
+                $kpiHealth[$calculation['target_status']]++;
             }
-            if (isset($resolved['trend'], $trends[$resolved['trend']])) {
-                $trends[$resolved['trend']]++;
+            if (isset($calculation['trend'], $trends[$calculation['trend']])) {
+                $trends[$calculation['trend']]++;
             }
             if (isset($calculation['consistency'], $consistency[$calculation['consistency']])) {
                 $consistency[$calculation['consistency']]++;
             }
 
-            if (!empty($resolved['insight'])) {
-                $insights[] = ['kpi_title' => $target->judul, 'insight' => $resolved['insight']];
+            if (!empty($calculation['insight'])) {
+                $insights[] = ['kpi_title' => $target->judul, 'insight' => $calculation['insight']];
             }
             if (!empty($calculation['top_performer']['label'])) {
                 $topPerformers[] = [
@@ -135,17 +120,14 @@ class OverviewDashboardService
                 }
             }
 
-            if (!empty($resolved['monthly_progress'])) {
-                $mp = [];
-                foreach ($resolved['monthly_progress'] as $month => $val) {
-                    $mp[$month] = $this->normalizeToPercent($val, $tipeTarget, $nilaiTarget);
-                }
+            if (!empty($calculation['monthly_progress'])) {
+                $mp = $calculation['monthly_progress'];
                 ksort($mp);
                 $kpiCards[] = [
                     'kpi_title' => $target->judul,
                     'progress' => $progress,
-                    'status' => $resolved['target_status'] ?? 'behind',
-                    'trend' => $resolved['trend'] ?? 'stable',
+                    'status' => $calculation['target_status'] ?? 'behind',
+                    'trend' => $calculation['trend'] ?? 'stable',
                     'trend_value' => $calculation['trend_value'] ?? 0,
                     'sparkline' => array_slice($mp, -6, 6, true),
                 ];
@@ -191,6 +173,9 @@ class OverviewDashboardService
             ];
         }
 
+        // ==========================================
+        // OUTPUT 1: Personal Dashboard (tidak berubah)
+        // ==========================================
         $personalDashboard = [
             'nilai_kpi_anda' => $nilaiKpiAnda,
             'rata_rata_target_kpi' => $avgTargetYearly,
@@ -204,6 +189,10 @@ class OverviewDashboardService
             'monthly_progress' => $avgMonthlyProgress,
         ];
 
+        // ==========================================
+        // OUTPUT 2: KPI Insights & Health — direstruktur per "widget"
+        // supaya frontend bisa render jenis chart berbeda-beda per section
+        // ==========================================
         $categoryRadar = [];
         foreach ($categoryAggregate as $cat => $agg) {
             $categoryRadar[] = ['category' => $cat, 'value' => round($agg['total'] / $agg['count'], 1)];
@@ -211,6 +200,7 @@ class OverviewDashboardService
 
         $kpiInsights = [
             'summary_cards' => [
+                // NEW: ringkasan angka besar di atas
                 'total_kpi_tracked' => count($targetKPIs),
                 'avg_progress' => $avgTargetYearly,
                 'on_track_percentage' => count($targetKPIs) > 0 ? round(($kpiHealth['on_track'] / count($targetKPIs)) * 100, 1) : 0,
@@ -279,55 +269,6 @@ class OverviewDashboardService
         return max(0, min(100, $raw));
     }
 
-    protected function getRouteCalculators(): array
-    {
-        return [
-            'pemasukan kotor' => fn($t, $p) => app(GMKPIService::class)->calculatePemasukanKotor($t, $p),
-            'target penjualan project tahunan' => fn($t, $p) => app(GMKPIService::class)->calculateTargetPenjualanProjectTahunan($t, $p),
-            'meningkatkan revenue perusahaan' => fn($t, $p) => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($t, $p),
-            'pendapatan penjualan project' => fn($t, $p) => app(ProjectAdminKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
-        ];
-    }
-
-    protected function resolveProgressByRoute($target, $detail, $personId): array
-    {
-        $route = strtolower($detail->dataTarget?->asistant_route ?? '');
-        $tipeTarget = $detail->tipe_target ?? ($detail->dataTarget?->tipe_target ?? 'persen');
-        $nilaiTarget = (float) ($detail->nilai_target ?? ($detail->dataTarget?->nilai_target ?? 0));
-
-        $calculator = $this->getRouteCalculators()[$route] ?? null;
-
-        if ($calculator) {
-            $rawValue = (float) $calculator($target, $personId);
-            $progress = $this->normalizeToPercent($rawValue, $tipeTarget, $nilaiTarget);
-
-            return [
-                'progress' => $progress,
-                'raw_value' => $rawValue,
-                'target_value' => $nilaiTarget,
-                'target_status' => $progress >= 100 ? 'on_track' : ($progress >= 70 ? 'at_risk' : 'behind'),
-                'trend' => 'stable',
-                'monthly_progress' => [],
-                'insight' => null,
-            ];
-        }
-
-        $calc = $this->getCalculationByRoute($target, $personId);
-        $rawValue = (float) ($calc['progress'] ?? 0);
-        $progress = $this->normalizeToPercent($rawValue, $tipeTarget, $nilaiTarget);
-
-        return [
-            'progress' => $progress,
-            'raw_value' => $rawValue,
-            'target_value' => $nilaiTarget,
-            'target_status' => $calc['target_status'] ?? 'behind',
-            'trend' => $calc['trend'] ?? 'stable',
-            'monthly_progress' => $calc['monthly_progress'] ?? [],
-            'insight' => $calc['insight'] ?? null,
-            'prediction' => $calc['prediction'] ?? null,
-        ];
-    }
-
     protected function getCompanyProgressOverview($currentYear)
     {
         $allTargets = targetKPI::with(['karyawan', 'detailTargetKPI.dataTarget', 'detailTargetKPI.detailPersonKPI.karyawan'])
@@ -337,6 +278,7 @@ class OverviewDashboardService
         $buckets = [];
 
         foreach ($allTargets as $target) {
+            // Kelompokkan karyawan terassign per divisi (keyed by id karyawan => auto-dedup)
             $personsByDivisi = [];
             foreach ($target->detailTargetKPI as $detail) {
                 foreach ($detail->detailPersonKPI as $person) {
@@ -356,8 +298,6 @@ class OverviewDashboardService
                         'progresses' => [],
                         'predictions' => [],
                         'health' => ['on_track' => 0, 'at_risk' => 0, 'behind' => 0],
-                        'total_achieved' => 0,
-                        'total_target' => 0,
                     ];
                 }
 
@@ -366,18 +306,19 @@ class OverviewDashboardService
 
                 foreach ($assignments as $a) {
                     $k = $a['karyawan'];
-                    $detail = $a['detail'];
+                    $detail = $a['detail']; // pakai detail jabatan si karyawan agar nilai_target tepat
 
                     $bucket['employee_ids'][$k->id] = true;
 
-                    $resolved = $this->resolveProgressByRoute($target, $detail, $k->id);
+                    $calc = $this->getCalculationByRoute($target, $k->id);
+                    $tipe = $detail->tipe_target ?? ($detail->dataTarget?->tipe_target ?? 'persen');
+                    $nilai = $detail->nilai_target ?? ($detail->dataTarget?->nilai_target ?? 0);
 
-                    $bucket['progresses'][] = $resolved['progress'];
-                    $bucket['predictions'][] = $resolved['prediction'] ?? $resolved['progress'];
-                    $bucket['total_achieved'] += $resolved['raw_value'];
-                    $bucket['total_target'] += $resolved['target_value'];
+                    // KONVERSI ke persen sebelum dipakai
+                    $bucket['progresses'][] = $this->normalizeToPercent($calc['progress'] ?? 0, $tipe, $nilai);
+                    $bucket['predictions'][] = $this->normalizeToPercent($calc['prediction'] ?? ($calc['progress'] ?? 0), $tipe, $nilai);
 
-                    $status = $resolved['target_status'];
+                    $status = $calc['target_status'] ?? 'behind';
                     if (isset($bucket['health'][$status])) {
                         $bucket['health'][$status]++;
                     }
@@ -391,14 +332,10 @@ class OverviewDashboardService
             $overview[] = [
                 'divisi' => $divisi,
                 'total_kpi' => count($b['kpi_ids']),
-                'total_karyawan' => count($b['employee_ids']),
+                'total_karyawan' => count($b['employee_ids']), // sekarang jumlah riil anggota tim
                 'avg_progress' => count($b['progresses']) ? round(array_sum($b['progresses']) / count($b['progresses']), 1) : 0,
                 'avg_prediction' => count($b['predictions']) ? round(array_sum($b['predictions']) / count($b['predictions']), 1) : 0,
                 'health' => $b['health'],
-                'total_achieved' => $b['total_achieved'],
-                'total_target' => $b['total_target'],
-                'total_achieved_display' => number_format($b['total_achieved'], 0, ',', '.'),
-                'total_target_display' => number_format($b['total_target'], 0, ',', '.'),
             ];
         }
         usort($overview, fn($a, $b) => $b['avg_progress'] <=> $a['avg_progress']);
@@ -413,109 +350,6 @@ class OverviewDashboardService
             ],
         ];
     }
-
-    public function getDivisiDrilldownData($divisi, $currentYear)
-    {
-        $targets = targetKPI::with(['karyawan', 'detailTargetKPI.dataTarget', 'detailTargetKPI.detailPersonKPI.karyawan'])
-            ->whereYear('created_at', $currentYear)
-            ->whereHas('detailTargetKPI.detailPersonKPI.karyawan', fn($q) => $q->where('divisi', $divisi))
-            ->get();
-
-        if ($targets->isEmpty()) {
-            return ['divisi' => $divisi, 'monthly_progress' => [], 'team' => [], 'insights' => []];
-        }
-
-        $monthlyProgress = [];
-        $teamMap = [];
-        $insights = [];
-
-        foreach ($targets as $target) {
-            $insightAdded = false;
-
-            foreach ($target->detailTargetKPI as $detail) {
-                foreach ($detail->detailPersonKPI as $person) {
-                    $k = $person->karyawan;
-                    if (!$k || $k->divisi !== $divisi) {
-                        continue;
-                    }
-
-                    $empId = $k->id;
-                    if (!isset($teamMap[$empId])) {
-                        $teamMap[$empId] = [
-                            'nama_karyawan' => $k->nama_lengkap ?? '-',
-                            'jabatan' => $k->jabatan ?? '-',
-                            'progresses' => [],
-                            'trend_up' => 0,
-                            'trend_down' => 0,
-                            'trend_stable' => 0,
-                            'total_achieved' => 0,
-                            'total_target' => 0,
-                        ];
-                    }
-
-                    $resolved = $this->resolveProgressByRoute($target, $detail, $empId);
-
-                    $teamMap[$empId]['progresses'][] = $resolved['progress'];
-                    $teamMap[$empId]['total_achieved'] += $resolved['raw_value'];
-                    $teamMap[$empId]['total_target'] += $resolved['target_value'];
-
-                    $trendKey = 'trend_' . $resolved['trend'];
-                    if (isset($teamMap[$empId][$trendKey])) {
-                        $teamMap[$empId][$trendKey]++;
-                    }
-
-                    if (!empty($resolved['monthly_progress'])) {
-                        foreach ($resolved['monthly_progress'] as $month => $val) {
-                            $monthlyProgress[$month][] = $this->normalizeToPercent($val, $detail->tipe_target, $resolved['target_value']);
-                        }
-                    }
-
-                    if (!$insightAdded && !empty($resolved['insight'])) {
-                        $insights[] = ['kpi_title' => $target->judul, 'insight' => $resolved['insight']];
-                        $insightAdded = true;
-                    }
-                }
-            }
-        }
-
-        $avgMonthly = [];
-        foreach ($monthlyProgress as $month => $vals) {
-            $avgMonthly[$month] = round(array_sum($vals) / count($vals), 1);
-        }
-        ksort($avgMonthly);
-
-        $team = [];
-        foreach ($teamMap as $emp) {
-            $avgProgress = count($emp['progresses']) ? round(array_sum($emp['progresses']) / count($emp['progresses']), 1) : 0;
-
-            $dominantTrend = 'stable';
-            if ($emp['trend_up'] > $emp['trend_down'] && $emp['trend_up'] > $emp['trend_stable']) {
-                $dominantTrend = 'up';
-            } elseif ($emp['trend_down'] > $emp['trend_up'] && $emp['trend_down'] > $emp['trend_stable']) {
-                $dominantTrend = 'down';
-            }
-
-            $team[] = [
-                'nama_karyawan' => $emp['nama_karyawan'],
-                'jabatan' => $emp['jabatan'],
-                'progress' => $avgProgress,
-                'trend' => $dominantTrend,
-                'total_achieved' => $emp['total_achieved'],
-                'total_target' => $emp['total_target'],
-                'total_achieved_display' => number_format($emp['total_achieved'], 0, ',', '.'),
-                'total_target_display' => number_format($emp['total_target'], 0, ',', '.'),
-            ];
-        }
-        usort($team, fn($a, $b) => $b['progress'] <=> $a['progress']);
-
-        return [
-            'divisi' => $divisi,
-            'monthly_progress' => $avgMonthly,
-            'team' => $team,
-            'insights' => array_slice($insights, 0, 5),
-        ];
-    }
-
     protected function forecastNextMonths(array $monthlySeries, int $monthsAhead = 2): array
     {
         $values = array_values($monthlySeries);
@@ -553,6 +387,103 @@ class OverviewDashboardService
         return $forecast;
     }
 
+    public function getDivisiDrilldownData($divisi, $currentYear)
+    {
+        $targets = targetKPI::with(['karyawan', 'detailTargetKPI.dataTarget', 'detailTargetKPI.detailPersonKPI.karyawan'])
+            ->whereYear('created_at', $currentYear)
+            ->whereHas('detailTargetKPI.detailPersonKPI.karyawan', fn($q) => $q->where('divisi', $divisi))
+            ->get();
+
+        if ($targets->isEmpty()) {
+            return ['divisi' => $divisi, 'monthly_progress' => [], 'team' => [], 'insights' => []];
+        }
+
+        $monthlyProgress = [];
+        $teamMap = [];
+        $insights = [];
+
+        foreach ($targets as $target) {
+            $insightAdded = false;
+
+            foreach ($target->detailTargetKPI as $detail) {
+                $tipe = $detail->tipe_target ?? ($detail->dataTarget?->tipe_target ?? 'persen');
+                $nilai = $detail->nilai_target ?? ($detail->dataTarget?->nilai_target ?? 0);
+
+                foreach ($detail->detailPersonKPI as $person) {
+                    $k = $person->karyawan;
+                    if (!$k || $k->divisi !== $divisi) {
+                        continue;
+                    }
+
+                    $empId = $k->id;
+                    if (!isset($teamMap[$empId])) {
+                        $teamMap[$empId] = [
+                            'nama_karyawan' => $k->nama_lengkap ?? '-',
+                            'jabatan' => $k->jabatan ?? '-',
+                            'progresses' => [],
+                            'trend_up' => 0,
+                            'trend_down' => 0,
+                            'trend_stable' => 0,
+                        ];
+                    }
+
+                    $calc = $this->getCalculationByRoute($target, $empId);
+
+                    $teamMap[$empId]['progresses'][] = $this->normalizeToPercent($calc['progress'] ?? 0, $tipe, $nilai);
+
+                    $trendKey = 'trend_' . ($calc['trend'] ?? 'stable');
+                    if (isset($teamMap[$empId][$trendKey])) {
+                        $teamMap[$empId][$trendKey]++;
+                    }
+
+                    if (!empty($calc['monthly_progress'])) {
+                        foreach ($calc['monthly_progress'] as $month => $val) {
+                            $monthlyProgress[$month][] = $this->normalizeToPercent($val, $tipe, $nilai);
+                        }
+                    }
+
+                    if (!$insightAdded && !empty($calc['insight'])) {
+                        $insights[] = ['kpi_title' => $target->judul, 'insight' => $calc['insight']];
+                        $insightAdded = true;
+                    }
+                }
+            }
+        }
+
+        $avgMonthly = [];
+        foreach ($monthlyProgress as $month => $vals) {
+            $avgMonthly[$month] = round(array_sum($vals) / count($vals), 1);
+        }
+        ksort($avgMonthly);
+
+        $team = [];
+        foreach ($teamMap as $emp) {
+            $avgProgress = count($emp['progresses']) ? round(array_sum($emp['progresses']) / count($emp['progresses']), 1) : 0;
+
+            $dominantTrend = 'stable';
+            if ($emp['trend_up'] > $emp['trend_down'] && $emp['trend_up'] > $emp['trend_stable']) {
+                $dominantTrend = 'up';
+            } elseif ($emp['trend_down'] > $emp['trend_up'] && $emp['trend_down'] > $emp['trend_stable']) {
+                $dominantTrend = 'down';
+            }
+
+            $team[] = [
+                'nama_karyawan' => $emp['nama_karyawan'],
+                'jabatan' => $emp['jabatan'],
+                'progress' => $avgProgress,
+                'trend' => $dominantTrend,
+            ];
+        }
+        usort($team, fn($a, $b) => $b['progress'] <=> $a['progress']);
+
+        return [
+            'divisi' => $divisi,
+            'monthly_progress' => $avgMonthly,
+            'team' => $team,
+            'insights' => array_slice($insights, 0, 5),
+        ];
+    }
+
     public function getChartStatisticsData($userJabatan, $requestJabatan, $tahunFilter, $idTargetFilter, $bulanFilter)
     {
         $allowedJabatans = null;
@@ -560,11 +491,11 @@ class OverviewDashboardService
             $jLower = strtolower($userJabatan);
             if (in_array($jLower, ['gm', 'hrd', 'direktur utama', 'direktur'])) {
                 $allowedJabatans = null;
-            } elseif ($jLower === 'koordinator itsm') {
+            } elseif ($jLower === 'Koordinator ITSM') {
                 $allowedJabatans = ['Programmer', 'Tim Digital', 'Technical Support', 'Koordinator ITSM'];
-            } elseif ($jLower === 'education manager') {
+            } elseif ($jLower === 'Education Manager') {
                 $allowedJabatans = ['Instruktur', 'Education Manager'];
-            } elseif ($jLower === 'spv sales') {
+            } elseif ($jLower === 'SPV Sales') {
                 $allowedJabatans = ['SPV Sales', 'Sales'];
             } else {
                 $allowedJabatans = [$userJabatan];

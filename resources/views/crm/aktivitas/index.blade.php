@@ -443,16 +443,20 @@
             </div>
         </div>
     </div>
-@endsection
-<style>
-    #salesTargetWrapper {
-        scroll-behavior: smooth;
-        scrollbar-width: thin;
-    }
-</style>    
-@section('scripts')
+
+    <!-- Include jQuery and DataTables -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ asset('js/webcam.js') }}"></script>
     <script>
+        // ===============================
+        // Fungsi Format Angka (IDR)
+        // ===============================
         function unformatNumber(value) {
             if (!value) return '';
             return parseFloat(value.toString().replace(/\./g, '').replace(/,/g, '')) || '';
@@ -493,6 +497,9 @@
             }
         }
 
+        // ===============================
+        // DataTable & Form Events
+        // ===============================
         $(document).ready(function() {
             $('#aktivitasTable').DataTable({
                 processing: true,
@@ -639,6 +646,9 @@
             });
         });
 
+        // ===============================
+        // Fungsi Select2
+        // ===============================
         function initPerusahaanSelect2() {
             const $select = $('#id_perusahaan');
             if (!$.fn.select2) return console.error('Select2 belum ter-load!');
@@ -680,18 +690,21 @@
 
         window.isAllowedUser = {{ $isAllowedUser ? 'true' : 'false' }};
 
+        // ===============================
+        // Fungsi Load Semua Target Aktivitas
+        // ===============================
         async function loadSemuaTargetAktivitas(isAllowedUser = false) {
             try {
-                console.log("Memulai loadSemuaTargetAktivitas...");
+                console.log("🚀 Memulai loadSemuaTargetAktivitas...");
                 const res = await fetch(`/crm/semua-target-aktivitas`);
                 if (!res.ok) throw new Error("Gagal mengambil data target aktivitas");
 
                 const response = await res.json();
-                console.log("Data dari API:", response);
+                console.log("🧩 Data dari API:", response);
 
                 const wrapper = document.getElementById("salesTargetWrapper");
                 if (!wrapper) {
-                    console.error("Elemen #salesTargetWrapper tidak ditemukan!");
+                    console.error("❌ Elemen #salesTargetWrapper tidak ditemukan!");
                     return;
                 }
 
@@ -699,10 +712,10 @@
                 let list = [];
 
                 if (response.id_sales && Array.isArray(response.data)) {
-                    console.log("Mode Sales Tunggal");
+                    console.log("👤 Mode Sales Tunggal");
                     list = [response];
                 } else if (Array.isArray(response.data)) {
-                    console.log("Mode Multi Sales");
+                    console.log("👥 Mode Multi Sales");
                     list = response.data;
                 } else {
                     console.warn("⚠️ Format data tidak dikenali:", response);
@@ -1095,4 +1108,10 @@
             });
         });
     </script>
+    <style>
+        #salesTargetWrapper {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+        }
+    </style>
 @endsection

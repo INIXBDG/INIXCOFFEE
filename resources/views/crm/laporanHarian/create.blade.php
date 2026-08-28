@@ -1,183 +1,184 @@
 @extends('layouts_crm.app')
 
 @section('crm_contents')
-    <div class="container mt-4">
+<div class="container mt-4">
 
-        <div class="card shadow-sm">
-
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Tambah Laporan MoM</h5>
-            </div>
-
-            @if ($errors->any())
-                <div class="alert alert-danger mt-3 mx-3">
-                    <div class="fw-bold mb-2">
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                        Terjadi kesalahan:
-                    </div>
-
-                    <ul class="mb-0 ps-3">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <div class="card-body">
-
-                <form class="auto-save" method="POST" action="{{ route('laporan.harian.store') }}" enctype="multipart/form-data">
-                    @csrf
-
-                    <div class="row g-3">
-
-                        <div class="col-md-6">
-                            <label class="form-label">Topik <span class="text-danger">*</span></label>
-                            <input type="text" name="topic" class="form-control">
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Tanggal Pelaksanaan <span class="text-danger">*</span></label>
-                            <input type="date" name="tanggal_pelaksanaan" class="form-control">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Waktu Pelaksanaan <span class="text-danger">*</span></label>
-                            <input type="time" name="waktu_pelaksanaan" class="form-control">
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Tempat / Media Pelaksanaan <span class="text-danger">*</span></label>
-                            <input type="text" name="tempat_or_media" class="form-control">
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Pimpinan Meeting <span class="text-danger">*</span></label>
-                            <select name="pic" class="form-select">
-                                <option value="" hidden disable>Pilih Pimpinan</option>
-                                @foreach ($sales as $item)
-                                    <option value="{{ $item->id }}">{{ $item->nama_lengkap }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Notulis <span class="text-danger">*</span></label>
-                            <select name="notulis" class="form-select">
-                                <option value="" hidden disable>Pilih Notulis</option>
-                                @foreach ($sales as $item)
-                                    <option value="{{ $item->id }}">{{ $item->nama_lengkap }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Jenis Meeting <span class="text-danger">*</span></label>
-
-                            <select name="jenis_meeting" id="jenis_meeting" class="form-control select2">
-                                <option value="" hidden disable>Pilih Jenis</option>
-                                <option value="Briefing">Briefing</option>
-                                <option value="Evaluasi">Evaluasi</option>
-                                <option value="Prospek">Prospek</option>
-                                <option value="Meeting">Meeting</option>
-                                <option value="Client">Client</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Jumlah Peserta Hadir <span class="text-danger">*</span></label>
-                            <input type="number" name="jumlah_peserta_hadir" class="form-control">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Jumlah Peserta Tidak Hadir</label>
-                            <input type="number" name="jumlah_peserta_tidak_hadir" class="form-control">
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Alasan Peserta Tidak Hadir</label>
-                            <input type="text" name="alasan_peserta_tidak_hadir" class="form-control">
-                        </div>
-
-                        <div class="col-6">
-                            <label class="form-label">Catatan Tambahan Meeting (Opsional)</label>
-                            <textarea name="catatan" class="form-control" rows="3"></textarea>
-                        </div>
-
-                    </div>
-
-                    <div class="row mt-4 justify-content-between col-md-12">
-
-                        <div class="col-md-4">
-                            <label class="form-label">Jenis Catatan Lainnya</label>
-
-                            <select id="jenis_catatan" class="form-select">
-                                <option value="" selected hidden>Pilih Jenis Catatan</option>
-                                <option value="sales">Catatan Untuk Sales</option>
-                                <option value="client">Catatan Untuk Client</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-3 mt-4 text-end">
-                            <div class="col-md-12">
-                                <button type="button" class="btn btn-info" id="autoSaveBtn" disabled>
-                                    <i class="bi bi-cloud-arrow-up me-1"></i>Simpan Draf
-                                </button>
-                            </div>
-                            <small class="form-text text-muted">Harap isi topik untuk menyimpan draf</small>
-                        </div>
-
-                    </div>
-
-                    <div id="section-sales" style="display:none">
-                        {{-- Catatan Untuk sales --}}
-                        <div class="p-0 my-5">
-
-                            <div class="card-header d-flex justify-content-between align-items-center p-0">
-                                <h5 class="mb-0">Catatan Untuk Sales</h5>
-                            </div>
-
-                            <div id="sales-wrapper" style="display: none;">
-                            </div>
-
-                            <div class="mt-3">
-                                <button type="button" class="btn btn-outline-primary" id="add-sales">
-                                    + Tambah
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="section-client" style="display:none">
-                        {{-- Catatan untuk Client --}}
-                        <div class="p-0 my-5">
-
-                            <div class="card-header d-flex justify-content-between align-items-center p-0">
-                                <h5 class="mb-0">Catatan Untuk Client</h5>
-                            </div>
-
-                            <div id="client-wrapper" style="display: none;">
-                            </div>
-
-                            <div class="mt-3">
-                                <button type="button" class="btn btn-outline-primary" id="add-client">
-                                    + Tambah
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 d-flex justify-content-end gap-2">
-                        <a href="{{ url()->previous() }}" class="btn btn-secondary">Kembali</a>
-                        <button type="submit" class="btn btn-primary" id="submitBtn">Simpan</button>
-                    </div>
-
-                    <input type="hidden" id="is_draft_input" name="is_draft" value="false">
-
-                </form>
-
-            </div>
+    <div class="card shadow-sm">
+        
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Tambah Laporan MoM</h5>
         </div>
 
+        @if ($errors->any())
+            <div class="alert alert-danger mt-3 mx-3">
+                <div class="fw-bold mb-2">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    Terjadi kesalahan:
+                </div>
+
+                <ul class="mb-0 ps-3">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <div class="card-body">
+
+            <form class="auto-save" method="POST" action="{{ route('laporan.harian.store') }}" enctype="multipart/form-data">
+                @csrf
+
+                <div class="row g-3"> 
+
+                    <div class="col-md-6">
+                        <label class="form-label">Topik <span class="text-danger">*</span></label>
+                        <input type="text" name="topic" class="form-control">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Tanggal Pelaksanaan <span class="text-danger">*</span></label>
+                        <input type="date" name="tanggal_pelaksanaan" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Waktu Pelaksanaan <span class="text-danger">*</span></label>
+                        <input type="time" name="waktu_pelaksanaan" class="form-control">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Tempat / Media Pelaksanaan <span class="text-danger">*</span></label>
+                        <input type="text" name="tempat_or_media" class="form-control">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Pimpinan Meeting <span class="text-danger">*</span></label>
+                        <select name="pic" class="form-select">
+                            <option value="" hidden disable>Pilih Pimpinan</option>
+                            @foreach ($sales as $item)
+                                <option value="{{ $item->id }}">{{ $item->nama_lengkap }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label">Notulis <span class="text-danger">*</span></label>
+                        <select name="notulis" class="form-select">
+                            <option value="" hidden disable>Pilih Notulis</option>
+                            @foreach ($sales as $item)
+                                <option value="{{ $item->id }}">{{ $item->nama_lengkap }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Jenis Meeting <span class="text-danger">*</span></label>
+
+                        <select name="jenis_meeting" id="jenis_meeting" class="form-control select2">
+                            <option value="" hidden disable>Pilih Jenis</option>
+                            <option value="Briefing">Briefing</option>
+                            <option value="Evaluasi">Evaluasi</option>
+                            <option value="Prospek">Prospek</option>
+                            <option value="Meeting">Meeting</option>
+                            <option value="Client">Client</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Jumlah Peserta Hadir <span class="text-danger">*</span></label>
+                        <input type="number" name="jumlah_peserta_hadir" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Jumlah Peserta Tidak Hadir</label>
+                        <input type="number" name="jumlah_peserta_tidak_hadir" class="form-control">
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Alasan Peserta Tidak Hadir</label>
+                        <input type="text" name="alasan_peserta_tidak_hadir" class="form-control">
+                    </div>
+
+                    <div class="col-6">
+                        <label class="form-label">Catatan Tambahan Meeting (Opsional)</label>
+                        <textarea name="catatan" class="form-control" rows="3"></textarea>
+                    </div>
+
+                </div>
+
+                <div class="row mt-4 justify-content-between col-md-12">
+
+                    <div class="col-md-4">
+                        <label class="form-label">Jenis Catatan Lainnya</label>
+
+                        <select id="jenis_catatan" class="form-select">
+                            <option value="" selected hidden>Pilih Jenis Catatan</option>
+                            <option value="sales">Catatan Untuk Sales</option>
+                            <option value="client">Catatan Untuk Client</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 mt-4 text-end">
+                        <div class="col-md-12">
+                            <button type="button" class="btn btn-info" id="autoSaveBtn" disabled>
+                                <i class="bi bi-cloud-arrow-up me-1"></i>Simpan Draf
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">Harap isi topik untuk menyimpan draf</small>
+                    </div>
+
+                </div>
+
+                <div id="section-sales" style="display:none">
+                    {{-- Catatan Untuk sales --}}
+                    <div class="p-0 my-5">
+
+                        <div class="card-header d-flex justify-content-between align-items-center p-0">
+                            <h5 class="mb-0">Catatan Untuk Sales</h5>
+                        </div>
+
+                        <div id="sales-wrapper" style="display: none;">
+                        </div>
+
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-outline-primary" id="add-sales">
+                                + Tambah
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="section-client" style="display:none">
+                    {{-- Catatan untuk Client --}}
+                    <div class="p-0 my-5">
+
+                        <div class="card-header d-flex justify-content-between align-items-center p-0">
+                            <h5 class="mb-0">Catatan Untuk Client</h5>
+                        </div>
+
+                        <div id="client-wrapper" style="display: none;">
+                        </div>
+
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-outline-primary" id="add-client">
+                                + Tambah
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end gap-2">
+                    <a href="{{ url()->previous() }}" class="btn btn-secondary">Kembali</a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Simpan</button>
+                </div>
+
+                <input type="hidden" id="is_draft_input" name="is_draft" value="false">
+
+            </form>
+
+        </div>
     </div>
+
+</div>
+
 <style>
     /* samakan dengan form-control bootstrap */
     .select2-container--default .select2-selection--single {
@@ -223,6 +224,7 @@
 
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
     $(document).ready(function () {
@@ -245,7 +247,7 @@
                 $('#section-sales').show();
                 $('#section-client').hide();
 
-            }
+            } 
             else if(jenis == 'client'){
 
                 $('#section-client').show();
@@ -304,8 +306,8 @@
             }
 
         });
-
-
+        
+        
         // Tambah catatan untuk client
         $('#add-client').click(function () {
 
@@ -371,12 +373,12 @@
         // Fungsi untuk validasi autosave (hanya topic)
         function isValidAutoSave() {
             let topic = $('input[name="topic"]').val();
-
+            
             // Topic HARUS terisi sebagai persyaratan utama
             if (!topic || topic.trim() === '') {
                 return false;
             }
-
+            
             return true;
         }
 
@@ -465,11 +467,11 @@
                 },
                 success: function (response) {
                     if (response.success) {
-
+                        
                         if (response.id && !momId) {
                             momId = response.id;
                             console.log('Laporan draft dibuat dengan ID:', momId);
-
+                           
                             showNotification('Draf berhasil disimpan', 'success');
                         } else if (response.id) {
                             console.log('Laporan draft diperbarui, ID:', response.id);
@@ -496,18 +498,18 @@
 
         function showNotification(message, type) {
             let alertClass = type === 'success' ? 'success' : 'danger';
-
+            
             let notification = `
-                <div class="alert alert-${alertClass} alert-dismissible fade show position-fixed"
-                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;"
+                <div class="alert alert-${alertClass} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" 
                      role="alert">
                     ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             `;
-
+            
             $('body').append(notification);
-
+            
             // Auto remove after 3 seconds
             setTimeout(() => {
                 $('.position-fixed.alert').fadeOut(() => {
@@ -520,7 +522,7 @@
         $('.auto-save').on('submit', function(e) {
             // Set is_draft menjadi false untuk submit manual
             $('#is_draft_input').val('false');
-
+            
             // Jika ada draft ID, tambahkan sebagai hidden input
             if (momId) {
                 // Hapus hidden input id jika sudah ada

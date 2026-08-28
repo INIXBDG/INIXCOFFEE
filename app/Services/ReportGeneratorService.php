@@ -956,7 +956,12 @@ class ReportGeneratorService
 
         foreach ($replacements as $item) {
             $find = trim($item['find'] ?? '');
-            if (empty($find)) continue;
+            if (str_contains($find, '{') || str_contains($find, '}')) {
+                throw new \Exception(
+                    'Teks yang dipilih ("' . $find . '") mengandung tanda kurung kurawal. ' .
+                    'Bersihkan dokumen dari placeholder lama sebelum membuat template baru.'
+                );
+            }
         }
 
         $zip        = new \ZipArchive();
@@ -1042,25 +1047,6 @@ class ReportGeneratorService
         }
 
         $pos = mb_strpos($fullText, $find, 0, 'UTF-8');
-        if ($pos === false && (str_contains($find, '{') || str_contains($find, '}'))) {
-            $cleanKey = trim(str_replace(['{', '}'], '', $find));
-            $variations = [
-                '{{ ' . $cleanKey . ' }}',
-                '{{' . $cleanKey . '}}',
-                '{{ ' . $cleanKey . '}}',
-                '{{' . $cleanKey . ' }}',
-                '{{{' . $cleanKey . '}}}',
-                '{{{ ' . $cleanKey . ' }}}',
-            ];
-            foreach ($variations as $var) {
-                $varPos = mb_strpos($fullText, $var, 0, 'UTF-8');
-                if ($varPos !== false) {
-                    $find = $var;
-                    $pos = $varPos;
-                    break;
-                }
-            }
-        }
         if ($pos === false) return;
 
         $matchStart = $pos;

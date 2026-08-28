@@ -39,7 +39,7 @@ class CommentController extends Controller
 		// Ekstrak kode_karyawan dari setiap model
 		$cs_codes = $CS->pluck('kode_karyawan')->filter()->all(); // array string
 		$ah_codes = $AH->pluck('kode_karyawan')->filter()->all(); // array string
-		// return $cs_codes;
+		// return $cs_codes;  
         // Mengambil pengguna yang terlibat
         $users = array_map(function ($user) {
             return $user === '-' ? null : $user;
@@ -55,7 +55,7 @@ class CommentController extends Controller
             $GM->kode_karyawan,
             $cs_codes, // ✅ semua kode CS
 			$ah_codes, // ✅ semua kode AH
-
+            
         ]);
 
         // Pastikan $users adalah array datar
@@ -84,25 +84,32 @@ class CommentController extends Controller
 
     public function markAsRead($notificationId)
     {
+        // dd($notificationId);
+        // Temukan notifikasi berdasarkan ID
         $notification = \App\Models\Notification::findOrFail($notificationId);
 
-        $notification->delete();
+        // Cek apakah notifikasi ada
+        if ($notification) {
+            $notification->update(['read_at' => now()]);
+        }
 
         return redirect()->back();
     }
 
     public function markAllAsRead()
     {
+        // Ambil semua notifikasi yang belum dibaca, kecuali yang bertipe OutstandingNotification dan BayarExamNotification
         $notifications = auth()->user()->unreadNotifications->filter(function ($notification) {
             return $notification->type !== "App\\Notifications\\OutstandingNotification"
                 && $notification->type !== "App\\Notifications\\BayarExamNotification";
         });
 
-        foreach ($notifications as $notification) {
-            $notification->delete();
-        }
+        // Tandai semua notifikasi yang tersisa sebagai dibaca dengan timestamp sekarang
+        $notifications->each(function ($notification) {
+            $notification->update(['read_at' => now()]);
+        });
 
-        return redirect()->back()->with('success', 'Semua notifikasi terkait telah dihapus.');
+        return redirect()->back()->with('success', 'Semua notifikasi telah ditandai sebagai dibaca.');
     }
 
     public function update(Request $request, $id)

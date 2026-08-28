@@ -63,6 +63,20 @@
                                             <label class="form-label">Alasan Penolakan <span class="text-danger">*</span></label>
                                             <textarea class="form-control" name="alasan" id="alasan" rows="3"></textarea>
                                         </div>
+
+                                        <div class="mb-3 d-none" id="financeStatusContainer">
+                                            <label class="form-label">Update Status Pencairan</label>
+                                            <select class="form-select" id="finance_status" name="finance_status">
+                                                <option value="">-- Pilih Status --</option>
+                                                <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                                <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                                <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                                <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                                <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                                <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                                <option value="Selesai">Selesai</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -137,7 +151,7 @@
                                         <th>Jabatan</th>
                                         <th>Kategori</th>
                                         <th>Nama Lab</th>
-                                        <th>Status Tracking Terkini</th>
+                                        <th>Status Tracking</th>
                                         <th>RKM / Materi</th>
                                         <th>Aksi</th>
                                     </tr>
@@ -488,6 +502,7 @@
         });
     }
 
+    // --- RENDER ROW ---
     function renderRow(item, status) {
         let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-info">Pengadaan Baru</span>' :
                       (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
@@ -546,6 +561,7 @@
         `;
     }
 
+    // --- LOGIC GENERATE BUTTONS ---
     function generateButtons(item, status) {
         let isOwner = (item.karyawan_id == userId);
         let btns = `<div class="dropdown">
@@ -580,6 +596,23 @@
              btns += `<li><button class="dropdown-item" onclick="editPengajuan(${item.id})"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Edit Teknis</button></li>`;
         }
 
+        if ((userRole === 'Finance & Accounting' || userRole === 'Finance &amp; Accounting') && (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan')) {
+             const financeStatuses = [
+                'diproses oleh finance',
+                'sedang dikonfirmasi oleh bagian finance kepada general manager',
+                'sedang dikonfirmasi oleh bagian finance kepada direksi',
+                'finance menunggu approve direksi',
+                'membuat permintaan ke direktur utama',
+                'pengajuan sedang dalam proses pencairan',
+                'pencairan sudah selesai',
+                'selesai'
+            ];
+
+            if (financeStatuses.some(finStatus => statusLower.includes(finStatus))) {
+                 btns += `<li><button class="dropdown-item text-warning" onclick="openApproveRejectModal(${item.id}, 'finance-update')"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Update Pencairan</button></li>`;
+             }
+        }
+
         if (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') {
             btns += invoiceAction(item.id, item.invoice, item);
         }
@@ -610,6 +643,7 @@
         $('#modalApproval').val('');
         $('#alasan').val('');
         $('#reasonContainer').addClass('d-none');
+        $('#financeStatusContainer').addClass('d-none');
 
         if (type === 'approve') {
             $('#actionLabel').text('Anda yakin ingin MENYETUJUI pengajuan ini?');
@@ -618,6 +652,9 @@
             $('#actionLabel').text('Anda yakin ingin MENOLAK pengajuan ini?');
             $('#modalApproval').val('2');
             $('#reasonContainer').removeClass('d-none');
+        } else if (type === 'finance-update') {
+            $('#actionLabel').text('Pilih status proses pencairan:');
+            $('#financeStatusContainer').removeClass('d-none');
         }
         new bootstrap.Modal(document.getElementById('approveRejectModal')).show();
     }
@@ -631,6 +668,10 @@
         e.preventDefault();
         let id = $('#modalId').val();
         let formData = $(this).serialize();
+
+        if ($('#financeStatusContainer').is(':visible')) {
+             formData = formData.replace('approval=', '') + '&approval=' + $('#finance_status').val();
+        }
 
         $.ajax({
             url: `/pengajuanlabsdansubs/${id}`,
@@ -849,6 +890,7 @@
         });
     });
 
+    // FUNGSI PEMBAHARUAN LAB OTOMATIS
     function renewLab(id, namaLab) {
         Swal.fire({
             title: 'Perbarui Lab?',

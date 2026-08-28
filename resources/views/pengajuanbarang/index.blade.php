@@ -251,56 +251,6 @@
                         </table>
                     </div>
                 </div>
-                <div class="card m-4">
-                    <div class="card-body table-responsive">
-                        <div id="tabs-container"></div>
-                        <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-                            <h3 class="card-title my-1">{{ __('Data Pengajuan Semua') }}</h3>
-                            <div class="d-flex" style="gap: 10px;">
-                                <select id="filter-tahun-dummy" class="form-select form-select-sm w-auto">
-                                    @php
-                                    $tahun_sekarang = now()->year;
-                                    for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
-                                        $selected = $tahun == $tahun_sekarang ? 'selected' : '';
-                                        echo "<option value=\"$tahun\" $selected>$tahun</option>";
-                                    }
-                                    @endphp
-                                </select>
-                                <select id="filter-status-dummy" class="form-select form-select-sm w-auto">
-                                    <option value="Semua">Semua Status</option>
-                                    <option value="Hold">Hold</option>
-                                    <option value="Has Invoice">Has Invoice</option>
-                                    <option value="Selesai">Selesai</option>
-                                </select>
-                            </div>
-                        </div>
-                        <table class="table table-striped" id="datadummy">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Tanggal Pengajuan</th>
-                                    <th scope="col">Nama Karyawan</th>
-                                    <th scope="col">Divisi</th>
-                                    <th scope="col">Jabatan</th>
-                                    <th scope="col">Tipe</th>
-                                    <th scope="col">Status</th>
-                                    <th scope="col">Nama Barang</th>
-                                    <th scope="col">Total Item</th>
-                                    <th scope="col">Total Pengajuan</th>
-                                    <th scope="col">No KK</th>
-                                    <th scope="col">Tanggal Pencairan</th>
-                                    <th scope="col">SLA</th>
-                                    <th scope="col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-
-                            </tbody>
-                            <tfoot>
-
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
             @else
             <div class="card m-4">
                 <div class="card-body table-responsive">
@@ -762,17 +712,10 @@ function tableFinance(){
         $('#datasudahinv').DataTable().clear().destroy();
     }
 
-    var currentPageDummy = 0;
-    if ($.fn.DataTable.isDataTable('#datadummy')) {
-        currentPageDummy = $('#datadummy').DataTable().page();
-        $('#datadummy').DataTable().clear().destroy();
-    }
-
 
     $('#loadingModal').modal('show');
     var tahun = $('#tahun').val();
     var bulan = $('#bulan').val();
-    var tahunDummy = $('#filter-tahun-dummy').length ? $('#filter-tahun-dummy').val() : tahun;
 
     // Mode tampilan: '' (default / per bulan), 'minggu', atau 'bulanminggu'
     var mode = $('#mode_tampilan').length ? ($('#mode_tampilan').val() || '') : '';
@@ -791,109 +734,29 @@ function tableFinance(){
         return dataset;
     }
 
-    var urlBulan = "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}".replace(':month', bulan).replace(':year',tahun);
-    var urlTahun = "{{ route('getPengajuanBarang', ['month' => 'Semua', 'year' => ':year'] ) }}".replace(':year',tahunDummy);
+    $.ajax({
+        url: "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}".replace(':month', bulan).replace(':year',tahun),
+        type: "GET",
+        success: function(data) {
+            $('#loadingModal').modal('hide');
+            console.log(data.data);
+            // Jika sudah ada invoice DAN bukti, otomatis dianggap Selesai
+            // (pindah dari tabel Has Invoice ke tabel Selesai) walaupun status tracking-nya belum "Selesai".
+            var dataSelesai = data.data.filter(item =>
+                item.tracking.tracking.includes("Selesai") ||
+                item.tracking.tracking.includes("tolak") ||
+                (item.invoice && item.bukti)
+            );
 
-    $.when(
-        $.ajax({ url: urlBulan, type: "GET" }),
-        $.ajax({ url: urlTahun, type: "GET" })
-    ).done(function(res1, res2) {
-        $('#loadingModal').modal('hide');
-        let data = res1[0];
-        let dataSemua = res2[0];
-        console.log(data.data);
-        
-        // Jika sudah ada invoice DAN bukti, otomatis dianggap Selesai
-        // (pindah dari tabel Has Invoice ke tabel Selesai) walaupun status tracking-nya belum "Selesai".
-        var dataSelesai = data.data.filter(item =>
-            item.tracking.tracking.includes("Selesai") ||
-            item.tracking.tracking.includes("tolak") ||
-            (item.invoice && item.bukti)
-        );
-
-        var dataHasInvoice = data.data.filter(item =>
-            item.invoice && !item.bukti &&
-            !item.tracking.tracking.includes('Selesai') &&
-            !item.tracking.tracking.includes("tolak")
-        );
-        
-        var dataBelum = data.data.filter(item =>
-            !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
-        );
-
-        var dataDummy = dataSemua.data;
-
-        // Setup Tabs for Filter Tipe
-        let uniqueTypes = [...new Set(dataSemua.data.map(item => item.tipe))].filter(t => t);
-        let tabsHtml = `<ul class="nav nav-tabs flex-nowrap" id="dynamicTabs" style="overflow-x: auto; overflow-y: hidden; white-space: nowrap;">`;
-        tabsHtml += `<li class="nav-item"><a class="nav-link active text-nowrap" href="#" data-tipe="Semua">Semua</a></li>`;
-        uniqueTypes.forEach(t => {
-            tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="${t}">${t}</a></li>`;
-        });
-        tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="Lab">Lab (Filter Nama)</a></li>`;
-        tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="Dummy">Dummy (Filter Nama)</a></li>`;
-        tabsHtml += `</ul>`;
-        $('#tabs-container').html(tabsHtml);
-
-            $.fn.dataTable.ext.search.length = 0;
-            window.activeFilterTipe = 'Semua';
-            window.activeFilterStatusDummy = 'Semua';
-
-            $.fn.dataTable.ext.search.push(function(settings, dataArr, dataIndex, rowData, counter) {
-                var tableId = settings.nTable.id;
-                if (tableId === 'datadummy') {
-                    if (window.activeFilterTipe !== 'Semua' && window.activeFilterTipe !== 'Lab' && window.activeFilterTipe !== 'Dummy') {
-                        if (rowData.tipe !== window.activeFilterTipe) return false;
-                    }
-                    if (window.activeFilterTipe === 'Lab') {
-                        let names = '';
-                        if (rowData.detail && Array.isArray(rowData.detail)) {
-                            names = rowData.detail.map(d => d.nama_barang ? d.nama_barang.toLowerCase() : '').join(' ');
-                        }
-                        if (!names.includes('lab')) return false;
-                    }
-                    if (window.activeFilterTipe === 'Dummy') {
-                        let names = '';
-                        if (rowData.detail && Array.isArray(rowData.detail)) {
-                            names = rowData.detail.map(d => d.nama_barang ? d.nama_barang.toLowerCase() : '').join(' ');
-                        }
-                        if (!names.includes('dummy')) return false;
-                    }
-
-                    if (window.activeFilterStatusDummy !== 'Semua') {
-                        let statusText = rowData.tracking && rowData.tracking.tracking ? rowData.tracking.tracking : '';
-                        let isSelesai = statusText.includes("Selesai") || statusText.includes("tolak") || (rowData.invoice && rowData.bukti);
-                        let isHasInvoice = rowData.invoice && !rowData.bukti && !statusText.includes('Selesai') && !statusText.includes("tolak");
-                        let isHold = !rowData.invoice && statusText !== 'Selesai' && !statusText.includes("tolak");
-
-                        if (window.activeFilterStatusDummy === 'Selesai' && !isSelesai) return false;
-                        if (window.activeFilterStatusDummy === 'Has Invoice' && !isHasInvoice) return false;
-                        if (window.activeFilterStatusDummy === 'Hold' && !isHold) return false;
-                    }
-                    return true;
-                }
-                return true;
-            });
-
-            // Bind dropdown status change
-            $('#filter-status-dummy').off('change').on('change', function() {
-                window.activeFilterStatusDummy = $(this).val();
-                if ($.fn.DataTable.isDataTable('#datadummy')) $('#datadummy').DataTable().draw();
-            });
-
-            // Bind dropdown tahun dummy change
-            $('#filter-tahun-dummy').off('change').on('change', function() {
-                tableFinance();
-            });
-
-            // Bind tab clicks
-            $('#tabs-container').off('click', '#dynamicTabs .nav-link').on('click', '#dynamicTabs .nav-link', function(e) {
-                e.preventDefault();
-                $('#dynamicTabs .nav-link').removeClass('active');
-                $(this).addClass('active');
-                window.activeFilterTipe = $(this).data('tipe');
-                if ($.fn.DataTable.isDataTable('#datadummy')) $('#datadummy').DataTable().draw();
-            });
+            var dataHasInvoice = data.data.filter(item =>
+                item.invoice && !item.bukti &&
+                !item.tracking.tracking.includes('Selesai') &&
+                !item.tracking.tracking.includes("tolak")
+            );
+            
+            var dataBelum = data.data.filter(item =>
+                !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
+            );
 
             // Terapkan filter tampilan (hanya berefek jika mode == 'minggu')
             dataSelesai = applyModeFilter(dataSelesai);
@@ -901,7 +764,6 @@ function tableFinance(){
             dataBelum = applyModeFilter(dataBelum);
 
             let totalItemsSelesai = dataSelesai.length;
-
             let totalHargaSelesai = 0;
             dataSelesai.forEach(item => {
                 if (item.detail && Array.isArray(item.detail)) {
@@ -1362,60 +1224,11 @@ function tableFinance(){
             }
             var datasudahinvTable = $('#datasudahinv').DataTable(datasudahinvConfig);
 
-            var datadummyConfig = Object.assign({}, datasudahConfig);
-            datadummyConfig.data = dataDummy;
-            datadummyConfig.buttons = [
-                {
-                    extend: 'excelHtml5',
-                    text: 'Export Excel',
-                    className: 'btn btn-success btn-sm mb-3',
-                    title: 'Data_Pengajuan_Dummy_' + bulan + '_' + tahun,
-                    exportOptions: {
-                        columns: ':visible:not(:last-child)'
-                    }
-                }
-            ];
-            datadummyConfig.drawCallback = function(settings) {
-                var api = this.api();
-                var currentData = api.rows({ search: 'applied' }).data().toArray();
-                var filteredItems = currentData.length;
-                var filteredHarga = 0;
-                currentData.forEach(item => {
-                    if (item.detail && Array.isArray(item.detail)) {
-                        item.detail.forEach(detail => {
-                            filteredHarga += detail.qty * detail.harga;
-                        });
-                    }
-                });
-                var formattedHargaDummy = new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: 'IDR'
-                }).format(filteredHarga);
-                var footerHtml = `
-                    <tr>
-                        <th colspan="6" style="text-align: left;">
-                            Total Pengajuan: ${filteredItems}
-                        </th>
-                        <th colspan="4" style="text-align: left;">
-                            Total Harga Pengajuan: ${formattedHargaDummy}
-                        </th>
-                    </tr>
-                `;
-                $('#datadummy tfoot').html(footerHtml);
-            };
-            if (mode === 'bulanminggu') {
-                datadummyConfig.rowGroup = buildRowGroupConfig(weeks);
-            }
-            var datadummyTable = $('#datadummy').DataTable(datadummyConfig);
-
-            if (currentPageDummy > 0) {
-                datadummyTable.page(currentPageDummy).draw('page');
-            }
-
             // Set page for databelum table
             if (currentPageBelum > 0) {
                 databelumTable.page(currentPageBelum).draw('page');
             }
+        },
     });
 }
 

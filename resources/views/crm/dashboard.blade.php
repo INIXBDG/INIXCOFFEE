@@ -650,204 +650,10 @@
         </div>
     </div>
 
-    <style>
-        /* Map container styling */
-        #map {
-            height: 400px;
-            width: 100%;
-            border-radius: 0.5rem;
-            border: 1px solid #e3e6f0;
-            background-color: #f8f9fa;
-            z-index: 1;
-        }
-
-        /* Responsive map height */
-        @media (max-width: 767.98px) {
-            #map {
-                height: 300px;
-            }
-
-            .card-body {
-                padding: 1rem !important;
-            }
-
-            .btn-group {
-                width: 100%;
-                flex-wrap: wrap;
-            }
-
-            .btn-group .btn {
-                flex: 1 0 45%;
-                margin-bottom: 5px;
-            }
-
-            .form-select-sm {
-                width: 100% !important;
-                max-width: 100% !important;
-            }
-        }
-
-        /* Ensure Leaflet container inherits dimensions */
-        .leaflet-container {
-            width: 100%;
-            height: 100%;
-            border-radius: 0.5rem;
-        }
-
-        /* Prevent overflow in card */
-        .card.h-100 {
-            overflow: hidden;
-        }
-
-        /* Ensure card-body has proper spacing */
-        .card-body {
-            padding: 1.5rem !important;
-        }
-
-        /* Style Leaflet controls */
-        .leaflet-control {
-            border-radius: 0.25rem;
-            background-color: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
-        }
-
-        /* Chart and activity container styling */
-        .chart-container,
-        .activity-container {
-            max-height: 280px;
-            overflow: hidden;
-        }
-
-        /* Scrollbar styling */
-        .activity-container::-webkit-scrollbar,
-        .card-body::-webkit-scrollbar,
-        .table-responsive::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        .activity-container::-webkit-scrollbar-track,
-        .card-body::-webkit-scrollbar-track,
-        .table-responsive::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-
-        .activity-container::-webkit-scrollbar-thumb,
-        .card-body::-webkit-scrollbar-thumb,
-        .table-responsive::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-
-        /* Progress bars */
-        .progress {
-            background-color: #f0f0f0;
-            border-radius: 3px;
-        }
-
-        .progress-bar {
-            border-radius: 3px;
-        }
-
-        /* Table styling */
-        .table {
-            margin-bottom: 0;
-        }
-
-        .table th,
-        .table td {
-            padding: 0.75rem;
-            vertical-align: middle;
-            text-align: center;
-        }
-
-        .table thead th {
-            position: sticky;
-            top: 0;
-            background: #fff;
-            z-index: 1;
-            border-bottom: 2px solid #dee2e6;
-        }
-
-        /* Modal Styling */
-        .w3-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .w3-modal-content {
-            background-color: #fff;
-            margin: 5% auto;
-            padding: 0;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-            border-radius: 0.5rem;
-        }
-
-        .w3-animate-zoom {
-            animation: zoom 0.3s;
-        }
-
-        @keyframes zoom {
-            from {
-                transform: scale(0);
-            }
-
-            to {
-                transform: scale(1);
-            }
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid #dee2e6;
-        }
-
-        .btn-close {
-            background: transparent;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: #6c757d;
-        }
-
-        .btn-close:hover {
-            color: #343a40;
-        }
-
-        /* Responsive modal */
-        @media (max-width: 576px) {
-            .w3-modal-content {
-                margin: 10% auto;
-                width: 95%;
-            }
-
-            .modal-body {
-                padding: 1rem;
-            }
-
-            .modal-footer {
-                padding: 0.75rem 1rem;
-            }
-        }
-    </style>
-
+    <!-- Leaflet.js and Chart.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="{{ asset('assets/vendor/libs/leaflet/leaflet.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/chartjs/chart.umd.min.js') }}"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
     <script>
         document.querySelectorAll('.show-detail').forEach(btn => {
@@ -1706,4 +1512,198 @@
         });
     </script>
 
+    <style>
+        /* Map container styling */
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 0.5rem;
+            border: 1px solid #e3e6f0;
+            background-color: #f8f9fa;
+            z-index: 1;
+        }
+
+        /* Responsive map height */
+        @media (max-width: 767.98px) {
+            #map {
+                height: 300px;
+            }
+
+            .card-body {
+                padding: 1rem !important;
+            }
+
+            .btn-group {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .btn-group .btn {
+                flex: 1 0 45%;
+                margin-bottom: 5px;
+            }
+
+            .form-select-sm {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
+
+        /* Ensure Leaflet container inherits dimensions */
+        .leaflet-container {
+            width: 100%;
+            height: 100%;
+            border-radius: 0.5rem;
+        }
+
+        /* Prevent overflow in card */
+        .card.h-100 {
+            overflow: hidden;
+        }
+
+        /* Ensure card-body has proper spacing */
+        .card-body {
+            padding: 1.5rem !important;
+        }
+
+        /* Style Leaflet controls */
+        .leaflet-control {
+            border-radius: 0.25rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+        }
+
+        /* Chart and activity container styling */
+        .chart-container,
+        .activity-container {
+            max-height: 280px;
+            overflow: hidden;
+        }
+
+        /* Scrollbar styling */
+        .activity-container::-webkit-scrollbar,
+        .card-body::-webkit-scrollbar,
+        .table-responsive::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .activity-container::-webkit-scrollbar-track,
+        .card-body::-webkit-scrollbar-track,
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .activity-container::-webkit-scrollbar-thumb,
+        .card-body::-webkit-scrollbar-thumb,
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        /* Progress bars */
+        .progress {
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        .progress-bar {
+            border-radius: 3px;
+        }
+
+        /* Table styling */
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        .table thead th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        /* Modal Styling */
+        .w3-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .w3-modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 0;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            border-radius: 0.5rem;
+        }
+
+        .w3-animate-zoom {
+            animation: zoom 0.3s;
+        }
+
+        @keyframes zoom {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .btn-close {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+
+        .btn-close:hover {
+            color: #343a40;
+        }
+
+        /* Responsive modal */
+        @media (max-width: 576px) {
+            .w3-modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+
+            .modal-body {
+                padding: 1rem;
+            }
+
+            .modal-footer {
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
 @endsection

@@ -298,7 +298,18 @@
 
                 <div class="filter-bar">
                     <div class="row g-3">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
+                            <label for="quartal" class="form-label">
+                                <i class="fa-solid fa-calendar-day text-primary me-1"></i> Quartal
+                            </label>
+                            <select class="form-select" name="quartal" id="quartal">
+                                <option value="Q1">Q1 (Januari - Maret)</option>
+                                <option value="Q2">Q2 (April - Juni)</option>
+                                <option value="Q3">Q3 (Juli - September)</option>
+                                <option value="Q4">Q4 (Oktober - Desember)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
                             <label for="tahun" class="form-label">
                                 <i class="fa-solid fa-calendar text-primary me-1"></i> Tahun
                             </label>
@@ -319,13 +330,14 @@
                                 <th width="5%">No</th>
                                 <th>Kode Form</th>
                                 <th>Evaluated</th>
+                                <th>Quartal</th>
                                 <th>Tahun</th>
                                 <th width="10%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="body_content">
                             <tr>
-                                <td colspan="5" class="text-center py-5">
+                                <td colspan="6" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center">
                                         <div class="spinner-border text-primary mb-3" role="status">
                                             <span class="visually-hidden">Loading...</span>
@@ -365,21 +377,33 @@
 
     <script>
         $(document).ready(function() {
+            setDefaultQuartal();
             $("#tahun").val(new Date().getFullYear());
             loadData();
 
-            $("#tahun").on("change", function() {
+            $("#quartal, #tahun").on("change", function() {
                 loadData();
             });
         });
 
+        function setDefaultQuartal() {
+            const month = new Date().getMonth() + 1;
+            let quartal = "Q1";
+            if (month >= 4 && month <= 6) quartal = "Q2";
+            else if (month >= 7 && month <= 9) quartal = "Q3";
+            else if (month >= 10 && month <= 12) quartal = "Q4";
+            $("#quartal").val(quartal);
+        }
+
         function loadData() {
+            const quartal = $("#quartal").val();
             const tahun = $("#tahun").val();
 
             $.ajax({
                 url: "{{ route('penilaian.form.get') }}",
                 type: 'get',
                 data: {
+                    quartal: quartal,
                     tahun: tahun
                 },
                 beforeSend: function() {
@@ -449,6 +473,7 @@
                                             ${moreLink}
                                         </div>
                                     </td>
+                                    <td><span class="badge bg-primary bg-opacity-10 text-primary">${item.quartal}</span></td>
                                     <td>${item.tahun}</td>
                                     <td class="text-center">
                                         <a class="btn-table-action" href="/penilaian/data-form/edit/${item.kode_form}" title="Edit Form">

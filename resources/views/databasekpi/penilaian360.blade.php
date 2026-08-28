@@ -528,22 +528,23 @@
         let selectedJenis = null;
         let selectedEvaluator = null;
         let evaluatedName = '';
-        let currentTahun = null;
+        let currentQuartal = null;
 
         $(function() {
             loadData();
 
             $('#selectPeriode').on('change', function() {
-                currentTahun = $(this).val();
-                loadData(currentTahun);
+                currentQuartal = $(this).val();
+                loadData(currentQuartal);
             });
         });
 
-        function loadData(tahun = null) {
+        function loadData(quartal = null) {
             let url = `/penilaian360/get/{{ $id_karyawan }}`;
-            if (tahun) {
-                url += `?tahun=${encodeURIComponent(tahun)}`;
+            if (quartal) {
+                url += `?quartal=${encodeURIComponent(quartal)}`;
             }
+
             $('#groupButtonJenisPenilaian').html(
                 `<div class="loading-state w-100"><i class="fa-solid fa-spinner fa-spin"></i><p>Memuat jenis penilaian...</p></div>`
                 );
@@ -571,8 +572,8 @@
                     if (response.listPeriode && $('#selectPeriode option').length === 0) {
                         let options = '';
                         response.listPeriode.forEach(p => {
-                            let selected = (p.tahun == response.tahun) ? 'selected' : '';
-                            options += `<option value="${p.tahun}" ${selected}>${p.label}</option>`;
+                            let selected = (p.quartal == response.quartal) ? 'selected' : '';
+                            options += `<option value="${p.quartal}" ${selected}>${p.label}</option>`;
                         });
                         $('#selectPeriode').html(options);
                     }
@@ -629,7 +630,7 @@
                         <i class="fa-solid fa-calendar-day"></i> Periode Absensi
                     </div>
                     <div class="catatan-content">
-                        Tahun <strong>${response.tahun ?? '-'}</strong>
+                        <strong>${response.quartal ?? '-'}</strong> Tahun <strong>${response.tahun ?? '-'}</strong>
                     </div>
                 </div>
                 <div class="catatan-box">

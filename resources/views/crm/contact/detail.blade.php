@@ -1,5 +1,4 @@
 @extends('layouts_crm.app')
-
 @section('crm_contents')
     <div class="container py-4">
         <!-- Section: Perusahaan & Peluang (Side by Side) -->
@@ -502,10 +501,10 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h2 class="card-title h4 fw-bold mb-0">Data Aktivitas</h2>
-                    {{-- <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
+                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
                         data-bs-target="#tambahAktivitasModal">
                         Tambah Aktivitas
-                    </button> --}}
+                    </button>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-hover">
@@ -646,8 +645,9 @@
             </div>
         </div>
 
+
         <!-- Modal: Tambah Aktivitas -->
-        {{-- <div class="modal fade" id="tambahAktivitasModal" tabindex="-1" aria-labelledby="tambahAktivitasModalLabel"
+        <div class="modal fade" id="tambahAktivitasModal" tabindex="-1" aria-labelledby="tambahAktivitasModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -690,6 +690,7 @@
                                 </select>
                             </div>
 
+                            {{-- Hidden fields untuk jenis aktivitas tertentu --}}
                             <div id="hiddenContainer" style="display: none;">
                                 <div class="mb-3">
                                     <label for="pax" class="form-label">Jumlah Pax</label>
@@ -720,7 +721,7 @@
                     </div>
                 </div>
             </div>
-        </div> --}}
+        </div>
 
         <!-- Modal: Edit Aktivitas -->
         <div class="modal fade" id="editAktivitasModal" tabindex="-1" aria-labelledby="editAktivitasModalLabel"
@@ -771,158 +772,157 @@
                 </div>
             </div>
         </div>
-    </div>
-@endsection
-@section('scripts')
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            initMateriSelect2();
-            initContactSelect2();
 
-            // --- Ambil data contact dari halaman detail ---
-            const currentContactId = "{{ $data->id_contact ?? '' }}"; // sesuaikan variabel Blade
-            const currentContactType = "{{ $data->type ?? '' }}";
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                initMateriSelect2();
+                initContactSelect2();
 
-            const contactSelect = document.getElementById('id_contact');
-            const contactTypeInput = document.getElementById('contact_type');
+                // --- Ambil data contact dari halaman detail ---
+                const currentContactId = "{{ $data->id_contact ?? '' }}"; // sesuaikan variabel Blade
+                const currentContactType = "{{ $data->type ?? '' }}";
 
-            if (currentContactId) {
-                contactSelect.value = currentContactId;
-                contactTypeInput.value = currentContactType;
-                contactSelect.closest('.mb-3').style.display = 'none';
+                const contactSelect = document.getElementById('id_contact');
+                const contactTypeInput = document.getElementById('contact_type');
 
-                const hiddenContact = document.createElement('input');
-                hiddenContact.type = 'hidden';
-                hiddenContact.name = 'id_contact';
-                hiddenContact.value = currentContactId;
-                formPrependHidden(hiddenContact);
-            } else {
-                if (contactSelect) {
-                    contactSelect.addEventListener('change', function () {
-                        const selectedOption = this.options[this.selectedIndex];
-                        const type = selectedOption.getAttribute('data-type');
-                        contactTypeInput.value = type || '';
-                    });
-                }
-            }
+                if (currentContactId) {
+                    contactSelect.value = currentContactId;
+                    contactTypeInput.value = currentContactType;
+                    contactSelect.closest('.mb-3').style.display = 'none';
 
-            // --- Tampilkan hidden fields sesuai aktivitas ---
-            const aktivitasSelect = document.getElementById('aktivitas');
-            const hiddenContainer = document.getElementById('hiddenContainer');
-
-            if (aktivitasSelect && hiddenContainer) {
-                aktivitasSelect.addEventListener('change', function() {
-                    const selected = this.value;
-                    // hanya tampil jika aktivitas termasuk PA, Form_Masuk, Form_Keluar
-                    if (["PA", "Form_Masuk", "Form_Keluar"].includes(selected)) {
-                        hiddenContainer.style.display = 'block';
-                    } else {
-                        hiddenContainer.style.display = 'none';
-                        // reset nilai jika disembunyikan
-                        document.getElementById('pax').value = '';
-                        document.getElementById('harga').value = '';
+                    const hiddenContact = document.createElement('input');
+                    hiddenContact.type = 'hidden';
+                    hiddenContact.name = 'id_contact';
+                    hiddenContact.value = currentContactId;
+                    formPrependHidden(hiddenContact);
+                } else {
+                    if (contactSelect) {
+                        contactSelect.addEventListener('change', function () {
+                            const selectedOption = this.options[this.selectedIndex];
+                            const type = selectedOption.getAttribute('data-type');
+                            contactTypeInput.value = type || '';
+                        });
                     }
-                });
-            }
-
-            // --- Format harga ---
-            const hargaInput = document.getElementById("harga");
-            if (hargaInput) {
-                hargaInput.addEventListener("input", function () {
-                    let value = this.value.replace(/\D/g, "");
-                    if (value) {
-                        this.value = new Intl.NumberFormat("id-ID", {
-                            style: "currency",
-                            currency: "IDR",
-                            minimumFractionDigits: 0
-                        }).format(value);
-                    } else {
-                        this.value = "";
-                    }
-                });
-
-                if (hargaInput.form) {
-                    hargaInput.form.addEventListener("submit", function () {
-                        hargaInput.value = hargaInput.value.replace(/\D/g, "");
-                    });
                 }
-            }
 
-            // --- Submit AJAX edit aktivitas ---
-            const form = document.getElementById('editAktivitasForm');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    const url = form.action;
-                    const formData = new FormData(form);
+                // --- Tampilkan hidden fields sesuai aktivitas ---
+                const aktivitasSelect = document.getElementById('aktivitas');
+                const hiddenContainer = document.getElementById('hiddenContainer');
 
-                    fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                        },
-                        body: formData
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            alert('Data berhasil diperbarui');
-                            window.location.reload();
+                if (aktivitasSelect && hiddenContainer) {
+                    aktivitasSelect.addEventListener('change', function() {
+                        const selected = this.value;
+                        // hanya tampil jika aktivitas termasuk PA, Form_Masuk, Form_Keluar
+                        if (["PA", "Form_Masuk", "Form_Keluar"].includes(selected)) {
+                            hiddenContainer.style.display = 'block';
                         } else {
-                            alert('Gagal menyimpan data');
+                            hiddenContainer.style.display = 'none';
+                            // reset nilai jika disembunyikan
+                            document.getElementById('pax').value = '';
+                            document.getElementById('harga').value = '';
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Terjadi kesalahan');
                     });
+                }
+
+                // --- Format harga ---
+                const hargaInput = document.getElementById("harga");
+                if (hargaInput) {
+                    hargaInput.addEventListener("input", function () {
+                        let value = this.value.replace(/\D/g, "");
+                        if (value) {
+                            this.value = new Intl.NumberFormat("id-ID", {
+                                style: "currency",
+                                currency: "IDR",
+                                minimumFractionDigits: 0
+                            }).format(value);
+                        } else {
+                            this.value = "";
+                        }
+                    });
+
+                    if (hargaInput.form) {
+                        hargaInput.form.addEventListener("submit", function () {
+                            hargaInput.value = hargaInput.value.replace(/\D/g, "");
+                        });
+                    }
+                }
+
+                // --- Submit AJAX edit aktivitas ---
+                const form = document.getElementById('editAktivitasForm');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const url = form.action;
+                        const formData = new FormData(form);
+
+                        fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                            },
+                            body: formData
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                alert('Data berhasil diperbarui');
+                                window.location.reload();
+                            } else {
+                                alert('Gagal menyimpan data');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Terjadi kesalahan');
+                        });
+                    });
+                }
+            });
+
+            // --- Fungsi bantu untuk prepend hidden input ke form modal ---
+            function formPrependHidden(inputEl) {
+                const form = document.querySelector('#tambahAktivitasModal form');
+                if (form) form.prepend(inputEl);
+            }
+
+            // --- Fungsi edit aktivitas ---
+            function editAktivitas(data) {
+                document.getElementById('edit_id').value = data.id;
+                document.getElementById('edit_id_contact').value = data.id_contact;
+                document.getElementById('edit_aktivitas').value = data.aktivitas;
+                document.getElementById('edit_subject').value = data.subject;
+                document.getElementById('edit_deskripsi').value = data.deskripsi || '';
+                document.getElementById('edit_waktu_aktivitas').value = data.waktu_aktivitas.split(' ')[0];
+                document.getElementById('editAktivitasForm').action = `/crm/aktivitas/update/${data.id}`;
+            }
+
+            // --- Init Select2 functions ---
+            function initMateriSelect2() {
+                var $select = $('#materi');
+                if (typeof $.fn.select2 !== 'function') {
+                    console.error('Select2 belum ter-load!');
+                    return;
+                }
+                var $closestModal = $select.closest('.modal');
+                $select.select2({
+                    width: '100%',
+                    theme: 'bootstrap-5',
+                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
                 });
             }
-        });
 
-        // --- Fungsi bantu untuk prepend hidden input ke form modal ---
-        function formPrependHidden(inputEl) {
-            const form = document.querySelector('#tambahAktivitasModal form');
-            if (form) form.prepend(inputEl);
-        }
-
-        // --- Fungsi edit aktivitas ---
-        function editAktivitas(data) {
-            document.getElementById('edit_id').value = data.id;
-            document.getElementById('edit_id_contact').value = data.id_contact;
-            document.getElementById('edit_aktivitas').value = data.aktivitas;
-            document.getElementById('edit_subject').value = data.subject;
-            document.getElementById('edit_deskripsi').value = data.deskripsi || '';
-            document.getElementById('edit_waktu_aktivitas').value = data.waktu_aktivitas.split(' ')[0];
-            document.getElementById('editAktivitasForm').action = `/crm/aktivitas/update/${data.id}`;
-        }
-
-        // --- Init Select2 functions ---
-        function initMateriSelect2() {
-            var $select = $('#materi');
-            if (typeof $.fn.select2 !== 'function') {
-                console.error('Select2 belum ter-load!');
-                return;
+            function initContactSelect2() {
+                var $select = $('#id_contact');
+                if (typeof $.fn.select2 !== 'function') {
+                    console.error('Select2 belum ter-load!');
+                    return;
+                }
+                var $closestModal = $select.closest('.modal');
+                $select.select2({
+                    width: '100%',
+                    theme: 'bootstrap-5',
+                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                });
             }
-            var $closestModal = $select.closest('.modal');
-            $select.select2({
-                width: '100%',
-                theme: 'bootstrap-5',
-                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
-            });
-        }
-
-        function initContactSelect2() {
-            var $select = $('#id_contact');
-            if (typeof $.fn.select2 !== 'function') {
-                console.error('Select2 belum ter-load!');
-                return;
-            }
-            var $closestModal = $select.closest('.modal');
-            $select.select2({
-                width: '100%',
-                theme: 'bootstrap-5',
-                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
-            });
-        }
-    </script>    
+        </script>
+    </div>
 @endsection

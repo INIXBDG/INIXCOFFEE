@@ -203,24 +203,17 @@
             }
         </style>
     @endpush
-@endsection
-@section('scripts')
-    <script>
-        $(document).ready(function() {
-            // Initialize DataTables for Ketentuan
-            $('#ketentuanTable').DataTable({
-                responsive: true,
-                pageLength: 10,
-                order: [[0, 'desc']],
-                columnDefs: [
-                    { targets: 0, width: '10%' },
-                    { targets: 2, width: '20%', orderable: false }
-                ]
-            });
 
-            // Initialize DataTables for Deskripsi if exists
-            if ($('#deskripsiTable').length) {
-                $('#deskripsiTable').DataTable({
+    @push('scripts')
+        <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+        <script>
+            $(document).ready(function() {
+                // Initialize DataTables for Ketentuan
+                $('#ketentuanTable').DataTable({
                     responsive: true,
                     pageLength: 10,
                     order: [[0, 'desc']],
@@ -229,77 +222,90 @@
                         { targets: 2, width: '20%', orderable: false }
                     ]
                 });
-            }
 
-            // Handle form submissions with AJAX for Ketentuan and Deskripsi
-            $('#createKetentuanForm, .edit-ketentuan-form, #deskripsiForm').on('submit', function(e) {
-                e.preventDefault();
-                const form = $(this);
-                $.ajax({
-                    url: form.attr('action'),
-                    method: form.find('input[name="_method"]').val() || form.attr('method'),
-                    data: form.serialize(),
-                    success: function(response) {
-                        showToast('Success', response.message || 'Operation successful!', 'success');
-                        setTimeout(() => location.reload(), 1500);
-                    },
-                    error: function(xhr) {
-                        showToast('Error', xhr.responseJSON?.message || 'An error occurred.', 'danger');
+                // Initialize DataTables for Deskripsi if exists
+                if ($('#deskripsiTable').length) {
+                    $('#deskripsiTable').DataTable({
+                        responsive: true,
+                        pageLength: 10,
+                        order: [[0, 'desc']],
+                        columnDefs: [
+                            { targets: 0, width: '10%' },
+                            { targets: 2, width: '20%', orderable: false }
+                        ]
+                    });
+                }
+
+                // Handle form submissions with AJAX for Ketentuan and Deskripsi
+                $('#createKetentuanForm, .edit-ketentuan-form, #deskripsiForm').on('submit', function(e) {
+                    e.preventDefault();
+                    const form = $(this);
+                    $.ajax({
+                        url: form.attr('action'),
+                        method: form.find('input[name="_method"]').val() || form.attr('method'),
+                        data: form.serialize(),
+                        success: function(response) {
+                            showToast('Success', response.message || 'Operation successful!', 'success');
+                            setTimeout(() => location.reload(), 1500);
+                        },
+                        error: function(xhr) {
+                            showToast('Error', xhr.responseJSON?.message || 'An error occurred.', 'danger');
+                        }
+                    });
+                });
+
+                // Confirm delete with a better UI for Ketentuan
+                $('.delete-form').on('submit', function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to delete this ketentuan?')) {
+                        const form = $(this);
+                        $.ajax({
+                            url: form.attr('action'),
+                            method: 'DELETE',
+                            data: form.serialize(),
+                            success: function(response) {
+                                showToast('Success', 'Ketentuan deleted successfully!', 'success');
+                                setTimeout(() => location.reload(), 1500);
+                            },
+                            error: function(xhr) {
+                                showToast('Error', xhr.responseJSON?.message || 'An error occurred.', 'danger');
+                            }
+                        });
                     }
                 });
-            });
 
-            // Confirm delete with a better UI for Ketentuan
-            $('.delete-form').on('submit', function(e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to delete this ketentuan?')) {
-                    const form = $(this);
-                    $.ajax({
-                        url: form.attr('action'),
-                        method: 'DELETE',
-                        data: form.serialize(),
-                        success: function(response) {
-                            showToast('Success', 'Ketentuan deleted successfully!', 'success');
-                            setTimeout(() => location.reload(), 1500);
-                        },
-                        error: function(xhr) {
-                            showToast('Error', xhr.responseJSON?.message || 'An error occurred.', 'danger');
-                        }
-                    });
-                }
-            });
-
-            // Confirm delete with a better UI for Deskripsi
-            $('.delete-deskripsi-form').on('submit', function(e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to delete this deskripsi?')) {
-                    const form = $(this);
-                    $.ajax({
-                        url: form.attr('action'),
-                        method: 'DELETE',
-                        data: form.serialize(),
-                        success: function(response) {
-                            showToast('Success', 'Deskripsi deleted successfully!', 'success');
-                            setTimeout(() => location.reload(), 1500);
-                        },
-                        error: function(xhr) {
-                            showToast('Error', xhr.responseJSON?.message || 'An error occurred.', 'danger');
-                        }
-                    });
-                }
-            });
-
-            // Toast notification function
-            function showToast(title, message, type) {
-                const toast = $('#toastNotification');
-                toast.find('.toast-header strong').text(title);
-                toast.find('.toast-body').text(message);
-                toast.removeClass('text-bg-success text-bg-danger').addClass(`text-bg-${type}`);
-                toast.toast({
-                    delay: 3000
+                // Confirm delete with a better UI for Deskripsi
+                $('.delete-deskripsi-form').on('submit', function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to delete this deskripsi?')) {
+                        const form = $(this);
+                        $.ajax({
+                            url: form.attr('action'),
+                            method: 'DELETE',
+                            data: form.serialize(),
+                            success: function(response) {
+                                showToast('Success', 'Deskripsi deleted successfully!', 'success');
+                                setTimeout(() => location.reload(), 1500);
+                            },
+                            error: function(xhr) {
+                                showToast('Error', xhr.responseJSON?.message || 'An error occurred.', 'danger');
+                            }
+                        });
+                    }
                 });
-                toast.toast('show');
-            }
-        });
-    </script>
+
+                // Toast notification function
+                function showToast(title, message, type) {
+                    const toast = $('#toastNotification');
+                    toast.find('.toast-header strong').text(title);
+                    toast.find('.toast-body').text(message);
+                    toast.removeClass('text-bg-success text-bg-danger').addClass(`text-bg-${type}`);
+                    toast.toast({
+                        delay: 3000
+                    });
+                    toast.toast('show');
+                }
+            });
+        </script>
+    @endpush
 @endsection

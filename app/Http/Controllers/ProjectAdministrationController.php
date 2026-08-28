@@ -15,39 +15,24 @@ class ProjectAdministrationController extends Controller
     {
         return view('administrasi_projek.index');
     }
-
     public function getAdministrasi(Request $request): JsonResponse
     {
-        // Mulai query dengan relasi yang dibutuhkan
-        $query = ProjectAdministration::with([
-            'dataproject', 
-            'dataproject.tasks', 
-            'dataproject.client', 
-            'project_handover'
-        ]);
+        // if ($request->ajax()) {
+            $data = ProjectAdministration::with('dataproject', 'dataproject.tasks', 'dataproject.client', 'project_handover')->get();
 
-        // ✅ FILTER TAHUN: Jika parameter 'year' dikirim dari frontend
-        if ($request->filled('year')) {
-            $year = $request->year;
-            $query->whereHas('dataproject', function ($q) use ($year) {
-                // Filter berdasarkan tahun pembuatan atau tahun tanggal awal proyek
-                $q->whereYear('created_at', $year)
-                  ->orWhereYear('tanggal_awal', $year);
-            });
-        }
+            return response()->json([
+                'data' => $data
+            ], 200);
+        // }
 
-        // Urutkan dari yang terbaru agar UX lebih baik
-        $query->orderBy('created_at', 'desc');
-
-        $data = $query->get();
-
-        return response()->json([
-            'data' => $data
-        ], 200);
+        // return response()->json(['message' => 'Permintaan tidak valid'], 400);
     }
 
     /**
      * Menyimpan data Project dan ProjectAdministration baru ke basis data.
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
@@ -55,22 +40,24 @@ class ProjectAdministrationController extends Controller
             $request->validate([
                 'nama_projek' => 'required|string|max:255',
                 'deskripsi' => 'nullable|string',
-                'perusahaan_key' => 'required|exists:perusahaans,id',
+                'perusahaan_key' => 'required|exists:perusahaans,id', // Sesuaikan nama tabel referensi perusahaan Anda
             ]);
 
             DB::beginTransaction();
             try {
+                // 1. Pembuatan entitas Project
                 $project = Project::create([
                     'name' => $request->nama_projek,
                     'description' => $request->deskripsi,
-                    'client_id' => $request->perusahaan_key,
+                    'client_id' => $request->perusahaan_key, // Menyimpan relasi klien
                     'phase' => 'administrasi',
                 ]);
 
+                // 2. Pembuatan entitas ProjectAdministration terkait
                 ProjectAdministration::create([
                     'project_id' => $project->id,
                     'current_stage' => 'kak',
-                    'pm_id' => 'AD', // Pertimbangkan auth()->user()->kode_karyawan di masa depan
+                    'pm_id' => 'AD',
                 ]);
 
                 DB::commit();
@@ -140,6 +127,7 @@ class ProjectAdministrationController extends Controller
             return response()->json(['success' => false, 'message' => 'File tidak ditemukan.'], 422);
         }
 
+        // ✅ Validasi Seragam: Memaksa format Array untuk SEMUA stage
         $validStages = implode(',', array_keys($columnMap));
         $request->validate([
             'current_stage' => 'required|in:' . $validStages,
@@ -152,6 +140,7 @@ class ProjectAdministrationController extends Controller
             $paths = [];
             $columnName = $columnMap[$stage];
 
+            // 1. Tentukan Direktori Penyimpanan
             $storageFolder = 'administrasi_projects';
             if ($stage === 'dokumen_klien') {
                 $storageFolder = 'administrasi_projects/client_docs';
@@ -159,11 +148,14 @@ class ProjectAdministrationController extends Controller
                 $storageFolder = 'handover_projects';
             }
 
+            // 2. Simpan Berkas Fisik ke Storage
             foreach ($files as $file) {
                 $paths[] = $file->store($storageFolder, 'public');
             }
 
+            // 3. Tentukan Model Target (Administrasi atau Handover)
             $targetModel = $administration;
+            
             if (in_array($stage, ['bast', 'final_report'])) {
                 $handover = $administration->project_handover;
                 if (!$handover) {
@@ -173,18 +165,20 @@ class ProjectAdministrationController extends Controller
                 $targetModel = $handover;
             }
 
+            // 4. Penggabungan Data Aman (Kompatibilitas Mundur untuk Data Lama)
             $existingData = $targetModel->{$columnName};
             $existingArray = [];
             
             if (!empty($existingData)) {
                 $decoded = json_decode($existingData, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $existingArray = $decoded;
+                    $existingArray = $decoded; // Format JSON Array
                 } else {
-                    $existingArray = [$existingData];
+                    $existingArray = [$existingData]; // Format lawas (Single String)
                 }
             }
 
+            // 5. Gabungkan Berkas Lama dengan Baru lalu Simpan
             $allFiles = array_merge($existingArray, $paths);
             $targetModel->{$columnName} = json_encode($allFiles);
             $targetModel->save();
@@ -212,16 +206,16 @@ class ProjectAdministrationController extends Controller
             'nama_projek' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'tanggal_awal' => 'nullable|date',
-            'tanggal_akhir' => 'nullable|date|after_or_equal:tanggal_awal', // ✅ DIPERBAIKI: tanggal_akhir
+            'tanggal_akhir' => 'nullable|date|after_or_equal:tanggal_awal',
         ]);
 
         try {
             $project = \App\Models\Project::findOrFail($id);
             $project->update([
-                'name' => $request->nama_projek,
+                'name' => $request->nama_projek, // Sesuaikan dengan nama kolom tabel Anda
                 'description' => $request->deskripsi,
                 'tanggal_awal' => $request->tanggal_awal,
-                'tanggal_akhir' => $request->tanggal_akhir, // ✅ DIPERBAIKI: tanggal_akhir
+                'tanggal_akhir' => $request->tanggal_akhir,
             ]);
 
             return response()->json([

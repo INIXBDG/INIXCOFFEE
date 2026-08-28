@@ -83,7 +83,7 @@
                 </a>
             </li>
         @endif
-
+        
             <!-- Untuk user lain: menu default -->
             <!-- Dashboards -->
             <li class="menu-item {{ request()->routeIs('CRM.index') ? 'active open' : '' }}">

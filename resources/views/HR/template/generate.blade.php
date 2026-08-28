@@ -1,8 +1,6 @@
 @extends('layout_HR.app')
 
 @section('content_HR')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://unpkg.com/docx-preview@0.3.0/dist/docx-preview.min.js"></script>
     <div class="container-fluid">
         <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb">
@@ -37,14 +35,13 @@
                                 <label class="form-label fw-semibold">Judul Laporan <span
                                         class="text-danger">*</span></label>
                                 <input type="text" name="report_title" class="form-control" required
-                                    value="{{ old('report_title', $template->name) }}">
+                                    value="{{ old('report_title', $template->name . ' - ' . date('d/m/Y')) }}">
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Pilih Data Sumber <span
                                         class="text-danger">*</span></label>
-                                {{--  HAPUS class "select2-ajax" biar jadi dropdown native --}}
-                                <select name="source_id" class="form-select" required>
+                                <select name="source_id" class="form-select select2-ajax" required>
                                     <option value="">-- Pilih Data --</option>
                                     @foreach ($sourceData as $item)
                                         @php
@@ -52,8 +49,7 @@
                                             $itemLabel =
                                                 $item->nama_lengkap ??
                                                 ($item->nama ??
-                                                    ($item->nama_lengkap ??
-                                                        ($item->nama_lengkap ?? 'Item #' . $itemId)));
+                                                    ($item->nama_lengkap ?? ($item->nama_lengkap ?? 'Item #' . $itemId)));
                                         @endphp
                                         <option value="{{ $itemId }}"
                                             {{ old('source_id') == $itemId ? 'selected' : '' }}>
@@ -64,29 +60,9 @@
                             </div>
 
                             @php
-                                $manualFields = $placeholders->filter(
-                                    fn($p) => $p->is_manual &&
-                                        !in_array($p->field_type, [
-                                            'loop_manual',
-                                            'manual_text',
-                                            'manual_textarea',
-                                            'manual_date',
-                                            'manual_number',
-                                            'manual_select',
-                                            'manual_checkbox',
-                                        ]),
-                                );
+                                $manualFields = $placeholders->filter(fn($p) => $p->is_manual && !in_array($p->field_type, ['loop_manual', 'manual_text', 'manual_textarea', 'manual_date', 'manual_number', 'manual_select', 'manual_checkbox']));
                                 $autoFields = $placeholders->filter(fn($p) => !$p->is_manual);
-                                $manualInputFields = $placeholders->filter(
-                                    fn($p) => in_array($p->field_type, [
-                                        'manual_text',
-                                        'manual_textarea',
-                                        'manual_date',
-                                        'manual_number',
-                                        'manual_select',
-                                        'manual_checkbox',
-                                    ]),
-                                );
+                                $manualInputFields = $placeholders->filter(fn($p) => in_array($p->field_type, ['manual_text', 'manual_textarea', 'manual_date', 'manual_number', 'manual_select', 'manual_checkbox']));
                             @endphp
 
                             @if ($autoFields->isNotEmpty())
@@ -165,34 +141,36 @@
                                             @php
                                                 $config = $field->config ?? [];
                                                 $label = $config['label'] ?? $field->placeholder_label;
-                                                $defaultValue = old(
-                                                    "manual_inputs.{$field->placeholder_key}",
-                                                    $config['default'] ?? ($field->default_value ?? ''),
-                                                );
+                                                $defaultValue = old("manual_inputs.{$field->placeholder_key}", $config['default'] ?? $field->default_value ?? '');
                                             @endphp
                                             <div class="mb-3">
                                                 <label class="form-label small fw-medium">{{ $label }}</label>
-
+                                                
                                                 @if ($field->field_type === 'manual_text')
-                                                    <input type="text"
-                                                        name="manual_inputs[{{ $field->placeholder_key }}]"
-                                                        class="form-control form-control-sm" value="{{ $defaultValue }}"
-                                                        placeholder="{{ $config['placeholder'] ?? '' }}"
-                                                        {{ $config['required'] ?? false ? 'required' : '' }}>
+                                                    <input type="text" 
+                                                           name="manual_inputs[{{ $field->placeholder_key }}]"
+                                                           class="form-control form-control-sm"
+                                                           value="{{ $defaultValue }}"
+                                                           placeholder="{{ $config['placeholder'] ?? '' }}"
+                                                           {{ ($config['required'] ?? false) ? 'required' : '' }}>
+                                                   
                                                 @elseif($field->field_type === 'manual_textarea')
-                                                    <textarea name="manual_inputs[{{ $field->placeholder_key }}]" class="form-control form-control-sm"
-                                                        rows="{{ $config['rows'] ?? 3 }}" {{ $config['required'] ?? false ? 'required' : '' }}>{{ $defaultValue }}</textarea>
+                                                    <textarea name="manual_inputs[{{ $field->placeholder_key }}]"
+                                                              class="form-control form-control-sm"
+                                                              rows="{{ $config['rows'] ?? 3 }}"
+                                                              {{ ($config['required'] ?? false) ? 'required' : '' }}>{{ $defaultValue }}</textarea>
+                                                   
                                                 @elseif($field->field_type === 'manual_date')
                                                     @php
                                                         $dayFormat = $config['day_format'] ?? 'number';
                                                         $monthFormat = $config['month_format'] ?? 'number';
                                                         $yearFormat = $config['year_format'] ?? 'number';
                                                         $separator = $config['separator'] ?? ' ';
-
+                                                        
                                                         $inputType = 'date';
                                                         $helpText = 'Format output: ';
                                                         $formatParts = [];
-
+                                                        
                                                         if ($dayFormat !== 'none') {
                                                             $dayLabels = [
                                                                 'number' => 'Angka (25)',
@@ -203,7 +181,7 @@
                                                             ];
                                                             $formatParts[] = $dayLabels[$dayFormat] ?? 'Angka';
                                                         }
-
+                                                        
                                                         if ($monthFormat !== 'none') {
                                                             $monthLabels = [
                                                                 'number' => 'Angka (06)',
@@ -212,7 +190,7 @@
                                                             ];
                                                             $formatParts[] = $monthLabels[$monthFormat] ?? 'Angka';
                                                         }
-
+                                                        
                                                         if ($yearFormat !== 'none') {
                                                             $yearLabels = [
                                                                 'number' => 'Angka (2026)',
@@ -221,49 +199,41 @@
                                                             ];
                                                             $formatParts[] = $yearLabels[$yearFormat] ?? 'Angka';
                                                         }
-
+                                                        
                                                         $helpText .= implode($separator, $formatParts);
-
+                                                        
                                                         // Jika hanya bulan+tahun atau tahun saja, bisa pakai input month/year
-                                                        if (
-                                                            $dayFormat === 'none' &&
-                                                            $monthFormat !== 'none' &&
-                                                            $yearFormat !== 'none'
-                                                        ) {
+                                                        if ($dayFormat === 'none' && $monthFormat !== 'none' && $yearFormat !== 'none') {
                                                             $inputType = 'month';
-                                                        } elseif (
-                                                            $dayFormat === 'none' &&
-                                                            $monthFormat === 'none' &&
-                                                            $yearFormat !== 'none'
-                                                        ) {
+                                                        } elseif ($dayFormat === 'none' && $monthFormat === 'none' && $yearFormat !== 'none') {
                                                             $inputType = 'number';
                                                         }
                                                     @endphp
-
-                                                    @if ($inputType === 'date')
-                                                        <input type="date"
+                                                    
+                                                    @if($inputType === 'date')
+                                                        <input type="date" 
                                                             name="manual_inputs[{{ $field->placeholder_key }}]"
                                                             class="form-control form-control-sm"
                                                             value="{{ $defaultValue }}"
-                                                            {{ $config['required'] ?? false ? 'required' : '' }}>
+                                                            {{ ($config['required'] ?? false) ? 'required' : '' }}>
                                                     @elseif($inputType === 'month')
-                                                        <input type="month"
+                                                        <input type="month" 
                                                             name="manual_inputs[{{ $field->placeholder_key }}]"
                                                             class="form-control form-control-sm"
                                                             value="{{ $defaultValue }}"
-                                                            {{ $config['required'] ?? false ? 'required' : '' }}>
+                                                            {{ ($config['required'] ?? false) ? 'required' : '' }}>
                                                     @elseif($inputType === 'number')
-                                                        <input type="number"
+                                                        <input type="number" 
                                                             name="manual_inputs[{{ $field->placeholder_key }}]"
                                                             class="form-control form-control-sm"
-                                                            value="{{ $defaultValue }}" min="1900" max="2100"
+                                                            value="{{ $defaultValue }}"
+                                                            min="1900" max="2100"
                                                             placeholder="Contoh: 2026"
-                                                            {{ $config['required'] ?? false ? 'required' : '' }}>
+                                                            {{ ($config['required'] ?? false) ? 'required' : '' }}>
                                                     @endif
-
+                                                    
                                                     <small class="text-muted d-block mt-1">
-                                                        <span class="iconify me-1"
-                                                            data-icon="mdi:information-outline"></span>
+                                                        <span class="iconify me-1" data-icon="mdi:information-outline"></span>
                                                         {{ $helpText }}
                                                     </small>
                                                 @elseif($field->field_type === 'manual_number')
@@ -271,11 +241,12 @@
                                                         $numberType = $config['number_type'] ?? 'number';
                                                         $step = $numberType === 'integer' ? '1' : '0.01';
                                                     @endphp
-                                                    <input type="number"
-                                                        name="manual_inputs[{{ $field->placeholder_key }}]"
-                                                        class="form-control form-control-sm" value="{{ $defaultValue }}"
-                                                        step="{{ $step }}"
-                                                        {{ $config['required'] ?? false ? 'required' : '' }}>
+                                                    <input type="number" 
+                                                           name="manual_inputs[{{ $field->placeholder_key }}]"
+                                                           class="form-control form-control-sm"
+                                                           value="{{ $defaultValue }}"
+                                                           step="{{ $step }}"
+                                                           {{ ($config['required'] ?? false) ? 'required' : '' }}>
                                                     <small class="text-muted">
                                                         @if ($numberType === 'currency')
                                                             Format: Mata Uang (Rp)
@@ -285,14 +256,15 @@
                                                             Format: Angka Desimal
                                                         @endif
                                                     </small>
+                                                   
                                                 @elseif($field->field_type === 'manual_select')
                                                     @php
                                                         $options = $config['options'] ?? [];
                                                     @endphp
                                                     @if (!empty($options))
                                                         <select name="manual_inputs[{{ $field->placeholder_key }}]"
-                                                            class="form-select form-select-sm"
-                                                            {{ $config['required'] ?? false ? 'required' : '' }}>
+                                                                class="form-select form-select-sm"
+                                                                {{ ($config['required'] ?? false) ? 'required' : '' }}>
                                                             <option value="">-- Pilih --</option>
                                                             @foreach ($options as $opt)
                                                                 <option value="{{ $opt }}"
@@ -302,15 +274,17 @@
                                                             @endforeach
                                                         </select>
                                                     @endif
+                                                   
                                                 @elseif($field->field_type === 'manual_checkbox')
                                                     <div class="form-check">
-                                                        <input type="hidden"
-                                                            name="manual_inputs[{{ $field->placeholder_key }}]"
-                                                            value="0">
-                                                        <input type="checkbox"
-                                                            name="manual_inputs[{{ $field->placeholder_key }}]"
-                                                            class="form-check-input" value="1"
-                                                            {{ $defaultValue ? 'checked' : '' }}>
+                                                        <input type="hidden" 
+                                                               name="manual_inputs[{{ $field->placeholder_key }}]"
+                                                               value="0">
+                                                        <input type="checkbox" 
+                                                               name="manual_inputs[{{ $field->placeholder_key }}]"
+                                                               class="form-check-input" 
+                                                               value="1"
+                                                               {{ $defaultValue ? 'checked' : '' }}>
                                                         <label class="form-check-label small">{{ $label }}</label>
                                                     </div>
                                                 @endif
@@ -322,9 +296,7 @@
 
                             @php
                                 $loopManualFields = $placeholders->filter(fn($p) => $p->field_type === 'loop_manual');
-                                $loopRelationFields = $placeholders->filter(
-                                    fn($p) => $p->field_type === 'loop_relation',
-                                );
+                                $loopRelationFields = $placeholders->filter(fn($p) => $p->field_type === 'loop_relation');
                             @endphp
 
                             @if ($loopManualFields->isNotEmpty())
@@ -336,8 +308,7 @@
                                     </div>
                                     <div class="card-body">
                                         <div class="alert alert-info small">
-                                            <strong>Wajib diisi</strong> sebelum generate. Klik "Tambah Baris" untuk
-                                            menambah data.
+                                            <strong>Wajib diisi</strong> sebelum generate. Klik "Tambah Baris" untuk menambah data.
                                         </div>
 
                                         @foreach ($loopManualFields as $field)
@@ -346,11 +317,9 @@
                                                 $loopKey = $field->placeholder_key;
                                             @endphp
                                             <div class="mb-4 p-3 bg-light rounded border">
-                                                <label
-                                                    class="form-label fw-semibold">{{ $field->placeholder_label }}</label>
+                                                <label class="form-label fw-semibold">{{ $field->placeholder_label }}</label>
                                                 <div class="table-responsive">
-                                                    <table class="table table-sm table-bordered align-middle"
-                                                        data-loop-key="{{ $loopKey }}">
+                                                    <table class="table table-sm table-bordered align-middle" data-loop-key="{{ $loopKey }}">
                                                         <thead class="table-light">
                                                             <tr>
                                                                 <th width="40">#</th>
@@ -368,24 +337,20 @@
                                                                         <input type="{{ $col['type'] ?? 'text' }}"
                                                                             name="manual_inputs[{{ $loopKey }}][0][{{ $col['key'] }}]"
                                                                             class="form-control form-control-sm"
-                                                                            {{ $col['required'] ?? false ? 'required' : '' }}
+                                                                            {{ ($col['required'] ?? false) ? 'required' : '' }}
                                                                             placeholder="{{ $col['placeholder'] ?? '' }}">
                                                                     </td>
                                                                 @endforeach
                                                                 <td class="text-center">
-                                                                    <button type="button"
-                                                                        class="btn btn-sm btn-outline-danger"
-                                                                        onclick="removeLoopRow(this)">
-                                                                        <span class="iconify"
-                                                                            data-icon="mdi:delete"></span>
+                                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLoopRow(this)">
+                                                                        <span class="iconify" data-icon="mdi:delete"></span>
                                                                     </button>
                                                                 </td>
                                                             </tr>
                                                         </tbody>
                                                     </table>
                                                 </div>
-                                                <button type="button" class="btn btn-sm btn-secondary"
-                                                    onclick="addLoopRow(this, '{{ $loopKey }}')">
+                                                <button type="button" class="btn btn-sm btn-secondary" onclick="addLoopRow(this, '{{ $loopKey }}')">
                                                     <span class="iconify me-1" data-icon="mdi:plus"></span>Tambah Baris
                                                 </button>
                                             </div>
@@ -398,8 +363,7 @@
                                 <div class="card mb-3">
                                     <div class="card-header bg-info bg-opacity-10">
                                         <h6 class="mb-0">
-                                            <span class="iconify me-2" data-icon="mdi:database"></span>Data Loop dari
-                                            Relasi
+                                            <span class="iconify me-2" data-icon="mdi:database"></span>Data Loop dari Relasi
                                         </h6>
                                     </div>
                                     <div class="card-body">
@@ -431,20 +395,11 @@
 
                             <div class="mt-4 pt-3 border-top d-flex gap-2">
                                 <a href="{{ route('HR.reports.index') }}" class="btn btn-secondary">Batal</a>
-
-                                <button type="button" class="btn btn-outline-primary px-4" id="btnPreview"
-                                    onclick="doPreview()">
-                                    <span class="iconify me-2" data-icon="mdi:eye-outline"></span>
-                                    <span class="btn-text-preview" id="previewBtnText">Preview Dokumen</span>
-                                    <span class="spinner-border spinner-border-sm d-none ms-2" id="previewSpinner"></span>
-                                </button>
-
                                 <button type="submit" class="btn btn-primary px-4" id="btnGenerate">
                                     <span class="iconify me-2" data-icon="mdi:file-document-check-outline"></span>
                                     <span class="btn-text">Proses & Download Laporan</span>
                                     <span class="spinner-border spinner-border-sm d-none ms-2" id="loadingSpinner"></span>
                                 </button>
-
                             </div>
                         </form>
                     </div>
@@ -465,8 +420,7 @@
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Manual Fields:</span>
-                            <span
-                                class="fw-bold text-warning">{{ $manualFields->count() + $manualInputFields->count() }}</span>
+                            <span class="fw-bold text-warning">{{ $manualFields->count() + $manualInputFields->count() }}</span>
                         </div>
                         <div class="d-flex justify-content-between">
                             <span class="text-muted">Input Manual:</span>
@@ -514,176 +468,52 @@
                 @endif
             </div>
         </div>
-        {{--  MODAL PREVIEW DOKUMEN --}}
-        <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <span class="iconify me-2" data-icon="mdi:file-eye-outline"></span>
-                            Preview Dokumen: {{ $template->name }}
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body p-0" style="height: 80vh;">
-                        <div id="previewLoading" class="text-center py-5">
-                            <div class="spinner-border text-primary" role="status"></div>
-                            <p class="mt-3 text-muted">Membuat preview...</p>
-                        </div>
-                        <div id="previewContent" style="display: none; height: 100%;"></div>
-                    </div>
-                    <div class="modal-footer">
-                        <small class="text-muted me-auto">
-                            <span class="iconify me-1" data-icon="mdi:information-outline"></span>
-                            Ini hanya preview — dokumen belum disimpan. Klik "Proses & Download" untuk menyimpan.
-                        </small>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
-    <style>
-        .docx-container-preview {
-            background: #e9ecef !important;
-            padding: 10px !important;
-            /* dulu 20px → sekarang 10px */
-            min-height: 100%;
-            overflow: auto;
-        }
 
-        .docx-container-preview .docx-wrapper {
-            background: #e9ecef !important;
-            padding: 0 !important;
-            margin: 0 auto !important;
-            max-width: 100% !important;
-        }
-
-        .docx-container-preview .docx-wrapper>section.docx {
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-            margin-bottom: 10px !important;
-            background: white;
-            padding: 20px 30px !important;
-            transform: scale(0.85);
-            transform-origin: top center;
-        }
-    </style>
     <script>
-        // ==========================================
-        // FUNGSI PREVIEW (DIDEFINISIKAN DULU DI GLOBAL SCOPE)
-        // ==========================================
-        window.doPreview = function() {
-            var GENERATE_URL = "{{ route('HR.reports.preview.generate', $template) }}";
+        $(function() {
+            if ($.fn.select2) {
+                $('.select2-ajax').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Cari data...',
+                    dropdownParent: $(document.body)
+                });
+            }
 
-            //  BACA source_id (dukung Select2 & select biasa)
-            var sourceEl = document.querySelector('[name="source_id"]');
-            var sourceId = '';
-            if (sourceEl) {
-                if (window.jQuery && window.jQuery(sourceEl).data('select2')) {
-                    sourceId = window.jQuery(sourceEl).val() || '';
-                } else {
-                    sourceId = sourceEl.value || '';
+            $('#generateForm').on('submit', function(e) {
+                const sourceId = $('[name="source_id"]').val();
+                if (!sourceId) {
+                    e.preventDefault();
+                    alert('Silakan pilih data sumber terlebih dahulu!');
+                    return false;
                 }
-            }
 
-            console.log('🔍 doPreview → sourceId:', sourceId);
+                const btn = $('#btnGenerate');
+                btn.prop('disabled', true);
+                btn.find('.btn-text').addClass('d-none');
+                btn.find('#loadingSpinner').removeClass('d-none');
+            });
+        });
 
-            //  WAJIB: harus pilih sumber data dulu, kalau tidak → alert & berhenti
-            if (!sourceId) {
-                alert('Silakan pilih data sumber terlebih dahulu sebelum preview!');
-                return;
-            }
-
-            // Helper: tampilkan modal + render docx
-            function showDocx(arrayBuffer) {
-                var modalEl = document.getElementById('previewModal');
-                var modal = new bootstrap.Modal(modalEl);
-                document.getElementById('previewLoading').style.display = 'block';
-                document.getElementById('previewContent').style.display = 'none';
-                modal.show();
-
-                var container = document.getElementById('previewContent');
-                container.innerHTML = '';
-                var docxContainer = document.createElement('div');
-                docxContainer.className = 'docx-container-preview';
-                container.appendChild(docxContainer);
-
-                window.docx.renderAsync(arrayBuffer, docxContainer, null, {
-                    className: 'docx',
-                    inWrapper: true,
-                    ignoreWidth: false,
-                    ignoreHeight: false,
-                    breakPages: true,
-                }).then(function() {
-                    document.getElementById('previewLoading').style.display = 'none';
-                    container.style.display = 'block';
-                }).catch(function(err) {
-                    alert('Gagal merender preview: ' + err.message);
-                    var m = bootstrap.Modal.getInstance(modalEl);
-                    if (m) m.hide();
-                });
-            }
-
-            // Generate preview dengan data asli (mapping terisi)
-            var btn = document.getElementById('btnPreview');
-            var btnText = document.getElementById('previewBtnText');
-            var spinner = document.getElementById('previewSpinner');
-
-            if (btn) btn.disabled = true;
-            if (btnText) btnText.textContent = 'Memproses...';
-            if (spinner) spinner.classList.remove('d-none');
-
-            var formData = new FormData(document.getElementById('generateForm'));
-
-            fetch(GENERATE_URL, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(function(res) {
-                    var ct = res.headers.get('content-type') || '';
-                    if (ct.indexOf('application/json') !== -1) {
-                        return res.json().then(function(data) {
-                            var msg = data.message || 'Gagal membuat preview';
-                            if (data.errors) msg += '\n' + Object.values(data.errors).flat().join('\n');
-                            throw new Error(msg);
-                        });
-                    }
-                    if (!res.ok) throw new Error('Gagal membuat preview (status ' + res.status + ')');
-                    return res.arrayBuffer();
-                })
-                .then(showDocx)
-                .catch(function(err) {
-                    alert('Error: ' + err.message);
-                })
-                .finally(function() {
-                    if (btn) btn.disabled = false;
-                    if (btnText) btnText.textContent = 'Preview Dokumen';
-                    if (spinner) spinner.classList.add('d-none');
-                });
-        };
-
-        // ==========================================
-        // FUNGSI LOOP ROW (GLOBAL)
-        // ==========================================
         window.addLoopRow = function(btn, loopKey) {
-            var table = btn.closest('.mb-4').querySelector('table[data-loop-key="' + loopKey + '"]');
-            var tbody = table.querySelector('.loop-body');
-            var rows = tbody.querySelectorAll('tr');
-            var newIndex = rows.length;
+            const table = btn.closest('.mb-4').querySelector('table[data-loop-key="' + loopKey + '"]');
+            const tbody = table.querySelector('.loop-body');
+            const rows = tbody.querySelectorAll('tr');
+            const newIndex = rows.length;
 
-            var firstRow = rows[0];
-            var newRow = firstRow.cloneNode(true);
+            // Clone baris pertama
+            const firstRow = rows[0];
+            const newRow = firstRow.cloneNode(true);
 
+            // Update row index & nomor
             newRow.dataset.rowIndex = newIndex;
             newRow.querySelector('td:first-child').textContent = newIndex + 1;
 
-            newRow.querySelectorAll('input, select, textarea').forEach(function(input) {
-                if (input.name) {
-                    input.name = input.name.replace(/\[\d+\]/, '[' + newIndex + ']');
+            // Update name input
+            newRow.querySelectorAll('input, select, textarea').forEach(input => {
+                const name = input.name;
+                if (name) {
+                    input.name = name.replace(/\[\d+\]/, '[' + newIndex + ']');
                     input.value = '';
                 }
             });
@@ -692,9 +522,9 @@
         };
 
         window.removeLoopRow = function(btn) {
-            var row = btn.closest('tr');
-            var tbody = row.closest('tbody');
-            var rows = tbody.querySelectorAll('tr');
+            const row = btn.closest('tr');
+            const tbody = row.closest('tbody');
+            const rows = tbody.querySelectorAll('tr');
 
             if (rows.length <= 1) {
                 alert('Minimal harus ada 1 baris!');
@@ -703,50 +533,16 @@
 
             row.remove();
 
-            tbody.querySelectorAll('tr').forEach(function(r, idx) {
+            // Re-number rows
+            tbody.querySelectorAll('tr').forEach((r, idx) => {
                 r.dataset.rowIndex = idx;
                 r.querySelector('td:first-child').textContent = idx + 1;
-                r.querySelectorAll('input, select, textarea').forEach(function(input) {
-                    if (input.name) input.name = input.name.replace(/\[\d+\]/, '[' + idx + ']');
+                r.querySelectorAll('input, select, textarea').forEach(input => {
+                    if (input.name) {
+                        input.name = input.name.replace(/\[\d+\]/, '[' + idx + ']');
+                    }
                 });
             });
         };
-
-        // ==========================================
-        // INIT FORM (AMAN WALAU JQUERY GAGAL LOAD)
-        // ==========================================
-        document.addEventListener('DOMContentLoaded', function() {
-            // Select2 (kalau tersedia)
-            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
-                window.jQuery('.select2-ajax').select2({
-                    theme: 'bootstrap-5',
-                    placeholder: '-- Pilih Data --',
-                    dropdownParent: document.body
-                    
-                });
-            }
-
-            // Submit handler
-            var generateForm = document.getElementById('generateForm');
-            if (generateForm) {
-                generateForm.addEventListener('submit', function(e) {
-                    var sourceEl = document.querySelector('[name="source_id"]');
-                    var sourceId = sourceEl ? sourceEl.value : '';
-                    if (!sourceId) {
-                        e.preventDefault();
-                        alert('Silakan pilih data sumber terlebih dahulu!');
-                        return false;
-                    }
-                    var btn = document.getElementById('btnGenerate');
-                    if (btn) {
-                        btn.disabled = true;
-                        var t = btn.querySelector('.btn-text');
-                        var s = btn.querySelector('#loadingSpinner');
-                        if (t) t.classList.add('d-none');
-                        if (s) s.classList.remove('d-none');
-                    }
-                });
-            }
-        });
     </script>
 @endsection

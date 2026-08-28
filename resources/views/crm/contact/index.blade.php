@@ -298,37 +298,32 @@
             </div>
         </div>
     </div>
-@endsection
-@section('scripts')
-    <script>
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
-        });
 
-        $(document).ready(function() {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
             const formElement = document.getElementById('perusahaanForm');
 
-            // Inisialisasi DataTables (Server-Side)
             let table = $('#perusahaanTable').DataTable({
                 processing: true,
                 serverSide: true,
-                deferRender: true,
-                // stateSave: true,
-                order: [[0, 'desc']], // Instruksi eksplisit untuk mengurutkan berdasarkan ID secara menurun
+                order: [[0, 'desc']],
                 ajax: {
                     url: "{{ route('contact.data') }}",
                     type: "GET",
                     data: function(d) {
                         d.sales_key = $('#filterSales').val();
-                    },
-                    error: function(xhr, error, thrown) {
-                        alert('Gagal memuat data perusahaan: ' + thrown);
                     }
                 },
                 columns: [
-                    { data: null, className: "text-center", orderable: false, searchable: false }, // Kolom penomoran akan diatur ulang oleh bindNumbering
+                    {
+                        data: null,
+                        render: function (data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1; // ✅ Nomor urut
+                        },
+                        className: "text-center",
+                        orderable: false,
+                        searchable: false
+                    },
                     { data: 'nama_perusahaan', name: 'nama_perusahaan' },
                     { data: 'lokasi', name: 'lokasi' },
                     { data: 'status', name: 'status' },
@@ -336,56 +331,38 @@
                     {
                         data: 'kelas_terakhir',
                         name: 'kelas_terakhir',
-                        orderable: false,
-                        searchable: false,
                         render: function (data, type, row) {
-                            if (data === 'Belum ada kelas') return data;
+                            if (!data) return 'Belum ada kelas';
                             return `${data} ${row.kelas_terakhir_date ? '| <span style="color:red;">(' + row.kelas_terakhir_date + ')</span>' : ''}`;
                         }
                     },
-                    { data: 'aktivitas_terakhir_date', name: 'aktivitas_terakhir_date', orderable: false, searchable: false },
+                    { data: 'aktivitas_terakhir_date', name: 'aktivitas_terakhir_date' },
                     {
-                        data: 'id',
+                        data: null,
                         orderable: false,
                         searchable: false,
-                        render: function (id, type, row) {
+                        render: function (data, type, row) {
                             const contactData = JSON.stringify(row)
                                 .replace(/'/g, "&apos;")
                                 .replace(/"/g, "&quot;");
                             return `
                                 <div class="d-flex flex-column gap-2">
-                                    <a href="/crm/contact/${id}/detail" class="btn btn-sm btn-info w-100">Detail</a>
-                                    <button class="btn btn-sm btn-warning w-100"
+                                    <a href="/crm/contact/${row.id}/detail" class="btn btn-sm btn-info">Detail</a>
+                                    <button class="btn btn-sm btn-warning"
                                         data-contact="${contactData}"
                                         data-bs-toggle="modal"
                                         data-bs-target="#editContactModal"
                                         onclick="editContactFromButton(this)">Edit</button>
-                                    <form action="/crm/contact/delete/${id}" method="POST"
+                                    <form action="/crm/contact/delete/${row.id}" method="POST"
                                         onsubmit="return confirm('Yakin ingin menghapus?')" style="display:inline;">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger w-100">Hapus</button>
+                                        <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                                     </form>
                                 </div>`;
                         }
                     }
-                ]
-            });
-
-            // Callback Penomoran Asinkron yang Presisi untuk Server-Side Processing
-            function bindNumbering(tableInstance) {
-                tableInstance.on('draw.dt', function() {
-                    let info = tableInstance.page.info();
-                    tableInstance.column(0, { search: 'applied', order: 'applied' }).nodes().each(function(cell, i) {
-                        cell.innerHTML = info.start + i + 1;
-                    });
-                });
-            }
-            bindNumbering(table);
-
-            // Pemicu pembaruan tabel jika filter Sales diganti
-            $('#filterSales').on('change', function() {
-                table.ajax.reload();
+                ],
             });
 
             window.exportPdf = function() {
@@ -396,7 +373,13 @@
                 window.open(url, '_blank');
             };
 
-            // Fungsi parsing data dari tombol Edit
+
+            //  Trigger reload kalau filter diganti
+            $('#filterSales').on('change', function() {
+                table.ajax.reload();
+            });
+
+            // 🔹 Fungsi edit contact dari tombol
             window.editContactFromButton = function(button) {
                 let contactStr = button.getAttribute('data-contact');
                 let contactJson = contactStr.replace(/&quot;/g, '"').replace(/&apos;/g, "'");
@@ -404,7 +387,7 @@
                 editContact(contact);
             };
 
-            // Pemetaan data JSON ke input Form Modal
+            // 🔹 Fungsi editContact
             window.editContact = function(contact) {
                 document.getElementById('edit_nama_perusahaan').value = contact.nama_perusahaan || '';
                 document.getElementById('edit_email').value = contact.email || '';
@@ -427,4 +410,5 @@
             };
         });
     </script>
+
 @endsection

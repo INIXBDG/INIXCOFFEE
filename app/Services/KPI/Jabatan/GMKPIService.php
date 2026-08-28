@@ -8,7 +8,6 @@ use App\Models\AnalysisReport;
 use App\Models\LeadProject;
 use App\Models\karyawan;
 use App\Models\detailPersonKPI;
-use App\Models\IncomeTransaction;
 use App\Models\targetKPI;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
@@ -951,19 +950,18 @@ class GMKPIService
     public function calculateRasioBiayaOperasionalTerhadapRevenue($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-        
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            Log::warning("Data detail tidak valid untuk target ID: {$item->id}");
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
-        $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            Log::warning("Tahun atau nilai target tidak valid untuk target ID: {$item->id}");
-            return 0;
-        }
 
         $labaKotor = $this->calculatePemasukanKotor($item, $personId);
 
@@ -971,28 +969,20 @@ class GMKPIService
             return 0;
         }
 
-        if (is_null($detail->manual_value)) {
+        if (is_null($detail) || is_null($detail->manual_value)) {
             return 0;
         }
 
-        $incomeTransaksi = IncomeTransaction::where('year', $tahun)
-            ->whereIn('item_code', [
-                'FC_52', 'FC_53', 'FC_54', 'FC_55', 'FC_56', 'FC_57', 'FC_58', 'FC_59', 
-                'FC_60', 'FC_61', 'FC_65', 'FC_70', 'FC_71', 'FC_72', 'FC_105', 'FC_108',
-            ])
-            ->sum('amount');
-
         $progress = 0;
+        $manualValue = (float) $detail->manual_value;
 
-        if ($incomeTransaksi > 0 && $labaKotor > 0) {
-            $rasio = ($incomeTransaksi / $labaKotor) * 100;
-            
-            if ($rasio > 0) {
-                $progress = ($nilaiTarget / $rasio) * 100;
-            }
+        if ($manualValue > 0) {
+            $rasio = ($manualValue / $labaKotor) * 100;
+            $batas = $nilaiTarget;
+            $progress = ($batas / $rasio) * 100;
         }
 
-        return max(0, min(100, round($progress, 1)));
+        return round($progress, 1);
     }
 
     public function calculateRasioBiayaOperasionalTerhadapRevenueDetail($itemDetail, $personId = null)
@@ -1020,115 +1010,55 @@ class GMKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $incomeTransaksi = IncomeTransaction::where('year', $tahun)
-            ->whereIn('item_code', [
-                'FC_52', 'FC_53', 'FC_54', 'FC_55', 'FC_56', 'FC_57', 'FC_58', 'FC_59',
-                'FC_60', 'FC_61', 'FC_65', 'FC_70', 'FC_71', 'FC_72', 'FC_105', 'FC_108',
-            ])
-            ->sum('amount');
-
         $progress = 0;
-        $rasio = 0;
 
-        if ($incomeTransaksi > 0 && $labaKotor > 0) {
-            $rasio = ($incomeTransaksi / $labaKotor) * 100;
-            
-            if ($rasio > 0) {
-                $progress = ($nilaiTarget / $rasio) * 100;
+        if (!is_null($detail->manual_value)) {
+            $manualValue = (float) $detail->manual_value;
+
+            if ($labaKotor < $manualValue) {
+                return $this->getDefaultDetailResponse();
+            }
+
+            if ($manualValue > 0) {
+                $rasio = ($manualValue / $labaKotor) * 100;
+                $batas = $nilaiTarget;
+                $progress = ($batas / $rasio) * 100;
             }
         }
 
-        $progress = max(0, min(100, round($progress, 1)));
+        $progress = round($progress, 1);
 
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
-        $monthlyIncomes = IncomeTransaction::selectRaw('MONTH(month) as bulan, SUM(amount) as total')
-            ->where('year', $tahun)
-            ->groupByRaw('MONTH(month)')
-            ->pluck('total', 'bulan')
-            ->toArray();
-
-        $monthlyAverages = [];
-        $monthlyProgressAverages = [];
-        $dailyBreakdownPerMonth = [];
-        $dailyProgressPerMonth = [];
-        $aboveCount = 0;
-        $belowCount = 0;
-
-        for ($bulan = 1; $bulan <= 12; $bulan++) {
-            $monthKey = sprintf('%d-%02d', $tahun, $bulan);
-            $incomeBulan = $monthlyIncomes[$bulan] ?? 0;
-
-            if ($incomeBulan > 0 && $labaKotor > 0) {
-                $rasioBulan = ($incomeBulan / $labaKotor) * 100;
-                
-                if ($rasioBulan > 0) {
-                    $progressBulan = ($nilaiTarget / $rasioBulan) * 100;
-                } else {
-                    $progressBulan = 0;
-                }
-            } else {
-                $progressBulan = 0;
-            }
-
-            $progressBulan = max(0, min(100, round($progressBulan, 1)));
-
-            $monthlyAverages[$monthKey] = $progressBulan;
-            $monthlyProgressAverages[$monthKey] = $progressBulan;
-
-            $dayKey = sprintf('%d-%02d-01', $tahun, $bulan);
-            $dailyBreakdownPerMonth[$monthKey] = [$dayKey => $progressBulan];
-            $dailyProgressPerMonth[$monthKey] = [$dayKey => $progressBulan];
-
-            if ($progressBulan >= $nilaiTarget) {
-                $aboveCount++;
-            } else {
-                $belowCount++;
-            }
+        if ($progress < $nilaiTarget) {
+            $gapRaw = $progress - $nilaiTarget;
+            $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+        } else {
+            $gap = 0;
         }
 
-        ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAverages);
-        ksort($dailyProgressPerMonth);
-
-        return [
-            'progress'                  => $progress,
-            'gap'                       => $gap,
-            'pie_chart'                 => [
-                'above' => $aboveCount,
-                'below' => $belowCount,
-            ],
-            'monthly_data'              => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress'          => $monthlyProgressAverages,
-            'daily_progress_per_month'  => $dailyProgressPerMonth,
-            'dataManual'                => [
+        return array_merge($this->getDefaultDetailResponse(), [
+            'progress' => $progress,
+            'gap' => $gap,
+            'dataManual' => [
                 'manual_document' => $detail->manual_document,
-            ],
-        ];
+            ]
+        ]);
     }
 
     public function calculatePerformaKPIDepartemen($item, $personId)
     {
-        $routeCalculators = [
-            'pemasukan kotor' => fn($t, $p) => $this->calculatePemasukanKotor($t, $p),
-            'target penjualan project tahunan' => fn($t, $p) => $this->calculateTargetPenjualanProjectTahunan($t, $p),
-            'meningkatkan revenue perusahaan' => fn($t, $p) => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($t, $p),
-            'pendapatan penjualan project' => fn($t, $p) => app(ProjectAdminKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
-        ];
-
         $allTargets = targetKPI::with(['detailTargetKPI.dataTarget'])
             ->whereYear('created_at', now()->year)
             ->get();
 
         $targetsByDivisi = [];
+
         foreach ($allTargets as $target) {
             $details = $target->detailTargetKPI;
             if (!$details || $details->isEmpty()) continue;
 
-            foreach ($details->pluck('divisi')->unique()->filter() as $divisi) {
+            $divisions = $details->pluck('divisi')->unique()->filter();
+
+            foreach ($divisions as $divisi) {
                 $targetsByDivisi[$divisi][] = $target;
             }
         }
@@ -1139,94 +1069,116 @@ class GMKPIService
             $progresses = [];
 
             foreach ($items as $itemTarget) {
-                $detail = $itemTarget->detailTargetKPI->firstWhere('divisi', $divisi);
+                $detail = $itemTarget->detailTargetKPI->first();
                 if (!$detail) continue;
 
                 $route = strtolower($detail->dataTarget?->asistant_route ?? '');
+
                 if ($route === 'performa kpi departemen') continue;
 
-                $calculator = $routeCalculators[$route] ?? null;
-                if (!$calculator) continue;
+                // Memanggil method controller resolveProgress tidak mungkin dilakukan di dalam Service secara langsung
+                // Ini akan memerlukan refactoring lebih lanjut untuk mendapatkan nilai progress
+                // Untuk saat ini, kita mengasumsikan method ini akan diatur di level Controller atau menggunakan dependency injection
+                // $progress = $this->resolveProgress($itemTarget, $personId);
+                
+                // Placeholder
+                $progress = 0; 
 
-                $rawValue = $calculator($itemTarget, $personId);
-                $progress = $this->normalizeToPercent(
-                    $rawValue,
-                    $detail->tipe_target,
-                    $detail->nilai_target
-                );
+                if ($detail->tipe_target === 'rupiah') {
+                    $targetVal = $detail->nilai_target;
 
-                $progresses[] = $progress;
+                    if ($route === 'pemasukan kotor') {
+                        $data = $this->calculatePemasukanKotor($itemTarget, $personId);
+                        $progress = $targetVal > 0 ? max(0, min(100, round(($data / $targetVal) * 100, 2))) : 0;
+                    } elseif ($route === 'pendapatan penjualan project') {
+                        // $data = app(ProjectAdminKPIService::class)->calculatePendapatanPenjualanProject($itemTarget, $personId);
+                        // $progress = $targetVal > 0 ? max(0, min(100, round(($data / $targetVal) * 100, 2))) : 0;
+                    } elseif ($route === 'target penjualan project tahunan') {
+                        $data = $this->calculateTargetPenjualanProjectTahunan($itemTarget, $personId);
+                        $progress = $targetVal > 0 ? max(0, min(100, round(($data / $targetVal) * 100, 2))) : 0;
+                    }
+                }
+
+                if (is_numeric($progress)) {
+                    $progresses[] = $progress;
+                }
             }
 
             if (!empty($progresses)) {
-                $divisionAverages[] = round(array_sum($progresses) / count($progresses), 1);
+                $avg = array_sum($progresses) / count($progresses);
+                $divisionAverages[] = round($avg, 1);
             }
         }
 
-        if (empty($divisionAverages)) return 0;
-
-        return round(array_sum($divisionAverages) / count($divisionAverages), 1);
-    }
-
-    protected function normalizeToPercent($rawValue, $tipeTarget, $nilaiTarget): float
-    {
-        $raw = (float) $rawValue;
-        $target = (float) $nilaiTarget;
-        if (in_array($tipeTarget, ['rupiah', 'angka']) && $target > 0) {
-            $raw = ($raw / $target) * 100;
+        if (!empty($divisionAverages)) {
+            $progress = array_sum($divisionAverages) / count($divisionAverages);
+            return round($progress, 1);
         }
-        return max(0, min(100, $raw));
+
+        return 0;
     }
 
     public function calculatePerformaKPIDepartemenDetail($itemDetail, $personId = null)
     {
-        $routeCalculators = [
-            'pemasukan kotor' => fn($t, $p) => $this->calculatePemasukanKotor($t, $p),
-            'target penjualan project tahunan' => fn($t, $p) => $this->calculateTargetPenjualanProjectTahunan($t, $p),
-            'meningkatkan revenue perusahaan' => fn($t, $p) => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($t, $p),
-            'pendapatan penjualan project' => fn($t, $p) => app(ProjectAdminKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
-        ];
-
         $allTargets = targetKPI::with(['detailTargetKPI.dataTarget'])
             ->whereYear('created_at', now()->year)
             ->get();
 
         $targetsByDivisi = [];
+
         foreach ($allTargets as $target) {
             $details = $target->detailTargetKPI;
             if (!$details || $details->isEmpty()) continue;
 
-            foreach ($details->pluck('divisi')->unique()->filter() as $divisi) {
+            $divisions = $details->pluck('divisi')->unique()->filter();
+
+            foreach ($divisions as $divisi) {
                 $targetsByDivisi[$divisi][] = $target;
             }
         }
 
         $divisionAverages = [];
         $divisionBreakdown = [];
+        $targetValues = [];
         $allProgress = [];
 
         foreach ($targetsByDivisi as $divisi => $items) {
             $progresses = [];
 
-            foreach ($items as $itemTarget) {
-                $detail = $itemTarget->detailTargetKPI->firstWhere('divisi', $divisi);
+            foreach ($items as $item) {
+                $detail = $item->detailTargetKPI->first();
                 if (!$detail) continue;
 
                 $route = strtolower($detail->dataTarget?->asistant_route ?? '');
+
                 if ($route === 'performa kpi departemen') continue;
 
-                $calculator = $routeCalculators[$route] ?? null;
-                if (!$calculator) continue;
+                if (!is_null($detail->nilai_target)) {
+                    $targetValues[] = (float) $detail->nilai_target;
+                }
 
-                $rawValue = $calculator($itemTarget, $personId);
-                $progress = $this->normalizeToPercent(
-                    $rawValue,
-                    $detail->tipe_target,
-                    $detail->nilai_target
-                );
+                // Placeholder
+                $progress = 0; 
 
-                $progresses[] = $progress;
-                $allProgress[] = $progress;
+                if ($detail->tipe_target === 'rupiah') {
+                    $targetVal = $detail->nilai_target;
+
+                    if ($route === 'pemasukan kotor') {
+                        $data = $this->calculatePemasukanKotor($item, $personId);
+                        $progress = $targetVal > 0 ? max(0, min(100, round(($data / $targetVal) * 100, 1))) : 0;
+                    } elseif ($route === 'pendapatan penjualan project') {
+                        // $data = app(ProjectAdminKPIService::class)->calculatePendapatanPenjualanProject($item, $personId);
+                        // $progress = $targetVal > 0 ? max(0, min(100, round(($data / $targetVal) * 100, 2))) : 0;
+                    } elseif ($route === 'target penjualan project tahunan') {
+                        $data = $this->calculateTargetPenjualanProjectTahunan($item, $personId);
+                        $progress = $targetVal > 0 ? max(0, min(100, round(($data / $targetVal) * 100, 2))) : 0;
+                    }
+                }
+
+                if (is_numeric($progress)) {
+                    $progresses[] = $progress;
+                    $allProgress[] = $progress;
+                }
             }
 
             if (!empty($progresses)) {
@@ -1240,12 +1192,11 @@ class GMKPIService
             ? round(array_sum($divisionAverages) / count($divisionAverages), 1)
             : 0;
 
-        $nilaiTarget = (float) ($itemDetail->nilai_target ?? $itemDetail->dataTarget?->nilai_target ?? 100);
-        if ($nilaiTarget <= 0) {
-            $nilaiTarget = 100;
-        }
+        $averageTarget = !empty($targetValues)
+            ? array_sum($targetValues) / count($targetValues)
+            : 100;
 
-        $gapRaw = $progress - $nilaiTarget;
+        $gapRaw = $progress - $averageTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
         if ($gap === '-0') $gap = '0';
 
@@ -1272,7 +1223,7 @@ class GMKPIService
         $consistency = $stdDev < 10 ? 'stable' : 'fluctuating';
 
         $targetStatus = 'behind';
-        if ($progress >= $nilaiTarget) {
+        if ($progress >= $averageTarget) {
             $targetStatus = 'on_track';
         } elseif ($gapRaw >= -5) {
             $targetStatus = 'at_risk';

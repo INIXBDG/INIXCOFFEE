@@ -336,21 +336,17 @@
                                 Batal
                             </a>
 
-                            <input type="hidden" name="action" id="form_action" value="update">
-
-                            <button type="submit" class="btn btn-primary px-4"
-                                onclick="document.getElementById('form_action').value='update'">
+                            <button type="submit" name="action" value="update" class="btn btn-primary px-4">
                                 <i class="fas fa-save"></i> Simpan Perubahan
                             </button>
 
                             @if (!$perbaikan->pengajuanbarangs_id)
-                                <button type="submit" class="btn btn-success"
-                                    onclick="document.getElementById('form_action').value='kirim_pengajuan'">
+                                <button type="submit" name="action" value="kirim_pengajuan" class="btn btn-success">
                                     <i class="fas fa-paper-plane"></i> Kirim ke Pengajuan Barang
                                 </button>
                             @else
                                 <div class="alert alert-info mb-0">
-                                    <i class="fas fa-info-circle"></i>
+                                    <i class="fas fa-info-circle"></i> 
                                     Data ini sudah terhubung dengan <strong>Pengajuan Barang #{{ $perbaikan->pengajuanbarangs_id }}</strong>
                                 </div>
                             @endif

@@ -42,8 +42,6 @@ class PeluangController extends Controller
         $this->middleware('permission:UpdateTahap Peluang', ['only' => ['updateTahap']]);
         $this->middleware('permission:Restore Peluang', ['only' => ['restore']]);
         $this->middleware('permission:PA Peluang', ['only' => ['storePaymentAdvance']]);
-        $this->middleware('permission:ForceDelete Peluang', ['only' => ['forceDelete']]);
-
     }
 
     public function index()
@@ -393,19 +391,6 @@ class PeluangController extends Controller
             'authorize' => 'required|in:0,1',
         ]);
 
-        // Validasi duplikasi data
-        $isDuplicate = Peluang::where('id_contact', $request->id_contact)
-            ->where('materi', $request->materi)
-            ->where('periode_mulai', $request->periode_mulai)
-            ->where('periode_selesai', $request->periode_selesai)
-            ->exists();
-
-        if ($isDuplicate) {
-            return back()->with([
-                'error' => 'Data dengan perusahaan, materi, periode mulai, dan periode selesai yang sama sudah ada.',
-            ])->withInput();
-        }
-
         // LOGIKA PENENTUAN SALES PENANGGUNG JAWAB
         $finalIdSales = $user->id_sales ?? null;
         if (in_array($user->jabatan, $allowedJabatan) && $request->filled('id_sales')) {
@@ -588,75 +573,6 @@ class PeluangController extends Controller
         }
     }
 
-    public function forceDelete($id)
-    {
-        try {
-            if (!Auth::check()) {
-                return redirect()->route('index.peluang')->with([
-                    'error' => 'Gagal menghapus peluang: User belum login.',
-                ]);
-            }
-
-            $peluang = Peluang::with([
-                'rkm',
-                'rkm.perhitunganNetSales',
-                'rkm.eksam',
-                'rkm.outstanding',
-                'rkm.registrasi',
-                'rkm.analisisrkm'
-            ])->findOrFail($id);
-
-            DB::beginTransaction();
-
-            if ($peluang->rkm) {
-                $rkm = $peluang->rkm;
-
-                if ($rkm->perhitunganNetSales && $rkm->perhitunganNetSales->isNotEmpty()) {
-                    foreach ($rkm->perhitunganNetSales as $item) {
-                        $item->delete();
-                    }
-                }
-
-                if ($rkm->registrasi && $rkm->registrasi->isNotEmpty()) {
-                    foreach ($rkm->registrasi as $item) {
-                        $item->delete();
-                    }
-                }
-
-                if (!empty($rkm->eksam)) {
-                    $rkm->eksam->delete();
-                }
-
-                if (!empty($rkm->outstanding)) {
-                    $rkm->outstanding->delete();
-                }
-
-                if (!empty($rkm->analisisrkm)) {
-                    $rkm->analisisrkm->delete();
-                }
-
-                $rkm->delete();
-            }
-
-            Aktivitas::where('id_peluang', $id)->delete();
-
-            $peluang->delete();
-
-            DB::commit();
-
-            return redirect()->route('index.peluang')->with([
-                'success' => 'Data Peluang beserta seluruh relasi berhasil dihapus secara permanen.'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return redirect()->route('index.peluang')->with([
-                'error' => 'Gagal menghapus data secara permanen: ' . $e->getMessage()
-            ]);
-        }
-    }
-
     public function update(Request $request, $id)
     {
         try {
@@ -675,20 +591,6 @@ class PeluangController extends Controller
                 'id_aktivitas.*' => 'integer|exists:aktivitas,id',
                 'perusahaan_pendaftar' => 'nullable|string|max:255',
             ]);
-
-            // Validasi duplikasi data
-            $isDuplicate = Peluang::where('id_contact', $request->id_perusahaan)
-                ->where('materi', $request->materi)
-                ->where('periode_mulai', $request->periode_mulai)
-                ->where('periode_selesai', $request->periode_selesai)
-                ->where('id', '!=', $id)
-                ->exists();
-
-            if ($isDuplicate) {
-                return back()->with([
-                    'error' => 'Data dengan perusahaan, materi, periode mulai, dan periode selesai yang sama sudah ada.',
-                ])->withInput();
-            }
 
             // Start a database transaction
             DB::beginTransaction();

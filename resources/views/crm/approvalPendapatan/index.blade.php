@@ -307,55 +307,56 @@
             </div>
         </div>
     </div>
-@endsection
 
-<style>
-    #weekly-container { overflow-y: hidden; }
-    .cursor-pointer { cursor: pointer; }
-    .table th { font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; }
-    .table td { font-size: .8rem; }
-    @media (max-width:1400px) {
-        .table th, .table td { padding: .4rem .5rem; }
-    }
-    .table-info td { background-color: #cff4fc !important; color: #055160; border-top: 2px solid #9eeaf9; }
-    .table-dark td { background-color: #212529 !important; color: #fff; border-top: 3px double #495057; font-size: .85rem; }
+    <style>
+        #weekly-container { overflow-y: hidden; }
+        .cursor-pointer { cursor: pointer; }
+        .table th { font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; }
+        .table td { font-size: .8rem; }
+        @media (max-width:1400px) {
+            .table th, .table td { padding: .4rem .5rem; }
+        }
+        .table-info td { background-color: #cff4fc !important; color: #055160; border-top: 2px solid #9eeaf9; }
+        .table-dark td { background-color: #212529 !important; color: #fff; border-top: 3px double #495057; font-size: .85rem; }
 
-    .sync-scroll-wrapper { overflow-x: auto; }
+        .sync-scroll-wrapper { overflow-x: auto; }
 
-    .step-pill {
-        display: flex; align-items: center; gap: 6px;
-        padding: 6px 12px; border-radius: 20px;
-        font-size: .8rem; font-weight: 500;
-        color: #9ca3af; background: transparent;
-        transition: all .2s;
-    }
-    .step-pill.active { background: #e0ecff; color: #1e3a5f; }
-    .step-pill.done { color: #16a34a; }
-    .step-num {
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 22px; height: 22px; border-radius: 50%;
-        background: #e5e7eb; color: #6b7280; font-size: .75rem; font-weight: 700;
-    }
-    .step-pill.active .step-num { background: #1e3a5f; color: #fff; }
-    .step-pill.done .step-num { background: #16a34a; color: #fff; }
-    .step-line { flex: 1; height: 2px; background: #e5e7eb; min-width: 24px; margin: 0 4px; }
+        .step-pill {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 12px; border-radius: 20px;
+            font-size: .8rem; font-weight: 500;
+            color: #9ca3af; background: transparent;
+            transition: all .2s;
+        }
+        .step-pill.active { background: #e0ecff; color: #1e3a5f; }
+        .step-pill.done { color: #16a34a; }
+        .step-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; border-radius: 50%;
+            background: #e5e7eb; color: #6b7280; font-size: .75rem; font-weight: 700;
+        }
+        .step-pill.active .step-num { background: #1e3a5f; color: #fff; }
+        .step-pill.done .step-num { background: #16a34a; color: #fff; }
+        .step-line { flex: 1; height: 2px; background: #e5e7eb; min-width: 24px; margin: 0 4px; }
 
-    .section-label-bar {
-        display: flex; align-items: center;
-        font-size: .8rem; font-weight: 700;
-        text-transform: uppercase; letter-spacing: .6px;
-        color: #374151;
-        padding-bottom: 8px;
-        border-bottom: 2px solid #e5e7eb;
-        margin-bottom: 4px;
-    }
+        .section-label-bar {
+            display: flex; align-items: center;
+            font-size: .8rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .6px;
+            color: #374151;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 4px;
+        }
 
-    .bg-gradient { background: linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%); }
-    .badge { font-weight: 500; }
-    .form-label { margin-bottom: .35rem; }
-</style>
+        .bg-gradient { background: linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%); }
+        .badge { font-weight: 500; }
+        .form-label { margin-bottom: .35rem; }
+    </style>
 
-@section('scripts')
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
     <script>
         let manualTotalKotor = false;
         let manualTotalBersih = false;

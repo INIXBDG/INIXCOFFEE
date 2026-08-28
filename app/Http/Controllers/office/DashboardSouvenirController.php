@@ -21,7 +21,7 @@ class DashboardSouvenirController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        // $this->middleware('permission:View DashboardSouvenir', ['only' => ['index']]);
+        $this->middleware('permission::View DashboardSouvenir', ['only' => ['index']]);
     }
 
     public function index()

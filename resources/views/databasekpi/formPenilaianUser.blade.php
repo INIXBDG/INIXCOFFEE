@@ -430,6 +430,7 @@
     <input type="hidden" name="kode_form" value="{{ $data['kode_form_global'] }}">
     <input type="hidden" name="id_evaluated" value="{{ $data['id_karyawan'] }}">
     <input type="hidden" name="jenis_penilaian" value="{{ $data['jenis_penilaian'] }}">
+    <input type="hidden" name="quartal" value="{{ $data['quartal'] }}">
     <input type="hidden" name="tahun" value="{{ $data['tahun'] }}">
 
     {{-- Form Header --}}

@@ -4,18 +4,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\karyawan;
 use App\Models\jabatan;
-use App\Models\PengajuanBarang;
-use App\Models\detailPengajuanBarang;
 use App\Models\User;
 use App\Models\RKM;
 use App\Models\Materi;
 use App\Models\Lab;
+use App\Models\Subscription;
 use App\Models\PengajuanLabSubs;
 use App\Models\TrackingPengajuanLabSubs;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use App\Notifications\PengajuanLabdanSubsNotification;
 use App\Notifications\ApprovalLabSubsNotification;
-use App\Models\tracking_pengajuan_barang;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
@@ -75,7 +73,7 @@ class PengajuanLabdanSubsController extends Controller
     public function getPengajuanLabSubs($month, $year)
     {
         $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrFail($user);
+        $karyawan = Karyawan::findOrFail($user);
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
 
@@ -100,26 +98,6 @@ class PengajuanLabdanSubsController extends Controller
                 ->latest()
                 ->get();
         }
-
-        // Transformasi relasi tracking untuk entitas yang terhubung dengan Pengajuan Barang
-        $Pengajuan->transform(function ($item) {
-            $pengajuanBarang = PengajuanBarang::where('tipe', 'Lab')
-                ->where('id_kegiatan', $item->id)
-                ->first();
-
-            if ($pengajuanBarang) {
-                // Ambil data tracking pengajuan barang
-                $trackingBarang = tracking_pengajuan_barang::where('id_pengajuan_barang', $pengajuanBarang->id)->get();
-
-                // Gabungkan koleksi dan urutkan berdasarkan tanggal secara sekuensial
-                $mergedTracking = $item->tracking->concat($trackingBarang)->sortBy('tanggal')->values();
-
-                // Terapkan koleksi gabungan ke relasi
-                $item->setRelation('tracking', $mergedTracking);
-            }
-
-            return $item;
-        });
 
         return response()->json([
             'success' => true,
@@ -154,6 +132,7 @@ class PengajuanLabdanSubsController extends Controller
         return view('pengajuanlabs.edit', compact('data'));
     }
 
+
     public function create()
     {
         $user = auth()->user();
@@ -176,10 +155,10 @@ class PengajuanLabdanSubsController extends Controller
             return response()->json(['materi_nama' => '', 'labs' => []]);
         }
 
-        // Eksekusi kueri relasi pivot dengan parameter string yang diekspektasikan ('active')
-        // Filter 'is_active' dihapus untuk mencegah anomali data jika kolom tidak tersinkronisasi
+        // Ambil Lab yang SUDAH terhubung ke materi ini (via Pivot) DAN statusnya Active
         $labs = $rkm->materi->labs()
-                    ->where('labs.status', 'active')
+                    ->where('labs.status', 'Active')
+                    ->where('labs.is_active', true)
                     ->get();
 
         return response()->json([
@@ -197,7 +176,7 @@ class PengajuanLabdanSubsController extends Controller
             'sumber_lab' => 'required|in:existing,new',
         ]);
 
-        $karyawan = karyawan::where('kode_karyawan', $request->kode_karyawan)->firstOrFail();
+        $karyawan = \App\Models\karyawan::where('kode_karyawan', $request->kode_karyawan)->firstOrFail();
 
         $labId = null;
         $jenisTransaksi = 'existing';
@@ -297,24 +276,8 @@ class PengajuanLabdanSubsController extends Controller
 
     public function show($id)
     {
-        $data = PengajuanLabSubs::with(['karyawan', 'lab', 'tracking', 'rkm.perusahaan', 'rkm.materi'])
+        $data = PengajuanLabSubs::with(['karyawan', 'lab','tracking', 'rkm.perusahaan', 'rkm.materi'])
             ->findOrFail($id);
-
-        // Ambil relasi Pengajuan Barang berdasarkan id_kegiatan
-        $pengajuanBarang = PengajuanBarang::where('tipe', 'Lab')
-            ->where('id_kegiatan', $data->id)
-            ->first();
-
-        if ($pengajuanBarang) {
-            // Ambil data tracking pengajuan barang
-            $trackingBarang = tracking_pengajuan_barang::where('id_pengajuan_barang', $pengajuanBarang->id)->get();
-
-            // Gabungkan koleksi (Lab + Barang) dan urutkan berdasarkan tanggal kronologis
-            $mergedTracking = $data->tracking->concat($trackingBarang)->sortBy('tanggal')->values();
-
-            // Terapkan koleksi gabungan
-            $data->setRelation('tracking', $mergedTracking);
-        }
 
         return view('pengajuanlabs.show', compact('data'));
     }
@@ -397,7 +360,7 @@ class PengajuanLabdanSubsController extends Controller
                 case 'Education Manager':
                 case 'GM':
                     $status = "Telah disetujui oleh {$jabatan} dan sedang ditinjau oleh Koordinator ITSM";
-                    $nextUser = karyawan::where('jabatan', 'Koordinator ITSM')->first();
+                    $nextUser = Karyawan::where('jabatan', 'Koordinator ITSM')->first();
 
                     $e = TrackingPengajuanLabSubs::create([
                         'id_pengajuan_lab_subs' => $id,
@@ -410,13 +373,18 @@ class PengajuanLabdanSubsController extends Controller
                 case 'Koordinator ITSM':
                     // Logic Snapshot Data
                     if ($data->id_labs) {
-                        $labData = Lab::find($data->id_labs);
+                        $labData = \App\Models\Lab::find($data->id_labs);
                         if ($labData) $updatePayload['lab_snapshot'] = $labData->toArray();
+                    } elseif ($data->id_subs) {
+                        $subsData = \App\Models\Subscription::find($data->id_subs);
+                        if ($subsData) $updatePayload['subs_snapshot'] = $subsData->toArray();
                     }
 
+                    // PERBAIKAN: Pisahkan jalur untuk Existing Asset dan Pengadaan Baru
                     if ($data->jenis_transaksi === 'existing') {
+                        // Jalur Existing Asset -> Langsung Selesai tanpa ke Finance
                         $status = "Telah disetujui oleh Koordinator ITSM dan lihat akses nya di Detail";
-                        $nextUser = null;
+                        $nextUser = null; // Tidak perlu dinotifikasi ke pihak lain, cukup pengaju
 
                         $e = TrackingPengajuanLabSubs::create([
                             'id_pengajuan_lab_subs' => $id,
@@ -424,6 +392,7 @@ class PengajuanLabdanSubsController extends Controller
                             'tanggal'  => now()
                         ]);
 
+                        // Tambah tracking 'Selesai' agar otomatis pindah ke tabel Riwayat Selesai
                         $final = TrackingPengajuanLabSubs::create([
                             'id_pengajuan_lab_subs' => $id,
                             'tracking' => 'Selesai',
@@ -432,41 +401,13 @@ class PengajuanLabdanSubsController extends Controller
 
                         $updatePayload['id_tracking'] = $final->id;
                     } else {
-                        // Jalur Pengadaan Baru -> Masuk ke Pengajuan Barang dengan tipe 'Lab'
+                        // Jalur Pengadaan Baru -> Lanjut ke Finance
                         $status = "Telah disetujui oleh Koordinator ITSM dan sedang diproses oleh Finance";
-                        $nextUser = karyawan::where('jabatan', 'Finance & Accounting')->first();
+                        $nextUser = Karyawan::where('jabatan', 'Finance & Accounting')->first();
 
-                        // Eksekusi Entri Pengajuan Barang Utama
-                        $pengajuanBarang = PengajuanBarang::create([
-                            'id_karyawan' => $data->karyawan->id,
-                            'id_kegiatan' => $id, // Menggunakan id_kegiatan sebagai referensi ke ID PengajuanLabSubs
-                            'tipe'        => 'Lab',
-                        ]);
-
-                        // Eksekusi Entri Detail Pengajuan Barang
-                        if (isset($labData)) {
-                            detailPengajuanBarang::create([
-                                'id_pengajuan_barang' => $pengajuanBarang->id,
-                                'nama_barang'         => $labData->nama_labs,
-                                'qty'                 => 1,
-                                'harga'               => $labData->harga_rupiah ?? 0,
-                                'keterangan'          => 'Pengadaan ' . ucfirst($data->jenis_transaksi) . ' Lab'
-                            ]);
-                        }
-
-                        // Eksekusi Entri Tracking Pengajuan Barang
-                        $trackingBarang = tracking_pengajuan_barang::create([
-                            'id_pengajuan_barang' => $pengajuanBarang->id,
-                            'tracking'            => $status,
-                            'tanggal'             => now()
-                        ]);
-
-                        $pengajuanBarang->update(['id_tracking' => $trackingBarang->id]);
-
-                        // Modifikasi Tracking Internal Pengajuan Lab
                         $e = TrackingPengajuanLabSubs::create([
                             'id_pengajuan_lab_subs' => $id,
-                            'tracking' => 'Telah dialihkan ke Pengajuan Barang (Lab)',
+                            'tracking' => $status,
                             'tanggal'  => now()
                         ]);
                         $updatePayload['id_tracking'] = $e->id;

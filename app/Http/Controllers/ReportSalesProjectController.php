@@ -13,22 +13,7 @@ class ReportSalesProjectController extends Controller
 {
     public function index()
     {
-        $startYear = 2020; // Tahun awal yang ditentukan
-        $currentYear = (int) date('Y');
-        if ($currentYear < $startYear) {
-            $currentYear = $startYear;
-        }
-
-        $allYears = range($startYear, $currentYear);
-
-        // Jika opsi tahun melebihi 5 tahun, ambil 5 tahun terakhir secara otomatis
-        if (count($allYears) > 5) {
-            $dropdownYears = array_slice($allYears, -6);
-        } else {
-            $dropdownYears = $allYears;
-        }
-            $dropdownYears = array_reverse($dropdownYears); 
-        return view('report_project.index', compact('dropdownYears'));
+        return view('report_project.index');
     }
 
     public function getRecapData(Request $request): JsonResponse
@@ -49,65 +34,59 @@ class ReportSalesProjectController extends Controller
                 $query->where('tahun_periode', $year);
             })
             ->whereNotNull('nilai_proyek')
-            ->where('phase', '!=', 'gagal');
-
-        // 2. Agregasi Data Kuantitas (Leads & Prospek)
-        $leadsAwalQuery = LeadProject::whereIn('status', ['penawaran_awal', 'permintaan_klien', 'meeting_klien']);
-        $prospekAktifQuery = LeadProject::whereIn('status', ['dokumen_penawaran', 'mengirim_proposal_teknis', 'surat_penawaran']);
-        $closingWonQuery = LeadProject::where('status', 'won');
-        $closingLostQuery = LeadProject::withTrashed()->where('status', 'lost');
-
-        // Filter jika memilih tahun spesifik (bukan 'all' / 'Semua')
-        if ($year && $year !== 'all' && $year !== 'Semua') {
-            $projectsQuery->where(function ($q) use ($year) {
-                // 1. Jika proyek terikat ke Lead, wajib berpatokan pada tahun_periode dari lead
-                $q->whereHas('lead', function ($lq) use ($year) {
-                    $lq->where(function ($lsub) use ($year) {
-                        $lsub->where('tahun_periode', $year)
-                             ->orWhere(function ($lsub2) use ($year) {
-                                 $lsub2->whereNull('tahun_periode')
-                                       ->whereYear('created_at', $year);
-                             });
-                    });
-                })
-                // 2. Jika proyek TIDAK terikat ke Lead, baru berpatokan pada tanggal_awal atau created_at proyek
-                ->orWhere(function ($q2) use ($year) {
-                    $q2->whereDoesntHave('lead')
-                       ->where(function ($q3) use ($year) {
-                           $q3->whereYear('tanggal_awal', $year)
-                              ->orWhere(function ($q4) use ($year) {
-                                  $q4->whereNull('tanggal_awal')
-                                     ->whereYear('created_at', $year);
-                              });
-                       });
-                });
-            });
-
-            $filterLeadYear = function ($query) use ($year) {
-                $query->where(function ($q) use ($year) {
-                    $q->where('tahun_periode', $year)
-                      ->orWhere(function ($q2) use ($year) {
-                          $q2->whereNull('tahun_periode')->whereYear('created_at', $year);
-                      });
-                });
-            };
-
-            $filterLeadYear($leadsAwalQuery);
-            $filterLeadYear($prospekAktifQuery);
-            $filterLeadYear($closingWonQuery);
-            $filterLeadYear($closingLostQuery);
-        }
-
-        $projects = $projectsQuery->get();
+            ->where('phase', '!=', 'gagal')
+            ->get();
 
         $totalSales = $projects->sum('nilai_proyek');
-        $completedSales = $projects->where('phase', 'selesai')->sum('nilai_proyek');
-        $potentialSales = $projects->whereIn('phase', ['administrasi', 'teknis'])->sum('nilai_proyek');
 
-        $leadsAwal = $leadsAwalQuery->count();
-        $prospekAktif = $prospekAktifQuery->count();
-        $closingWon = $closingWonQuery->count();
-        $closingLost = $closingLostQuery->count();
+        $completedSales = $projects
+            ->where('phase', 'selesai')
+            ->sum('nilai_proyek');
+
+        $potentialSales = $projects
+            ->whereIn('phase', ['administrasi', 'teknis'])
+            ->sum('nilai_proyek');
+
+        // ==========================================
+        // 2. Leads Awal
+        // ==========================================
+
+        $leadsAwal = LeadProject::where('tahun_periode', $year)
+            ->whereIn('status', [
+                'penawaran_awal',
+                'permintaan_klien',
+                'meeting_klien',
+            ])
+            ->count();
+
+        // ==========================================
+        // 3. Prospek Aktif
+        // ==========================================
+
+        $prospekAktif = LeadProject::where('tahun_periode', $year)
+            ->whereIn('status', [
+                'dokumen_penawaran',
+                'mengirim_proposal_teknis',
+                'surat_penawaran',
+            ])
+            ->count();
+
+        // ==========================================
+        // 4. Closing Won
+        // ==========================================
+
+        $closingWon = LeadProject::where('tahun_periode', $year)
+            ->where('status', 'won')
+            ->count();
+
+        // ==========================================
+        // 5. Closing Lost
+        // ==========================================
+
+        $closingLost = LeadProject::withTrashed()
+            ->where('tahun_periode', $year)
+            ->where('status', 'lost')
+            ->count();
 
         return response()->json([
             'success' => true,

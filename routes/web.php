@@ -13,7 +13,7 @@ use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\Crm\AktivitasController;
 use App\Http\Controllers\Crm\ApprovalPendapatanSalesController;
 use App\Http\Controllers\Crm\CatatanSalesController;
-use App\Http\Controllers\Crm\checklistRKMController;
+use App\Http\Controllers\crm\checklistRKMController;
 use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CRMController;
 use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
@@ -767,7 +767,6 @@ Route::prefix('crm')->group(function () {
     Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
     Route::post('/peluang/paymentAdvance', [PeluangController::class, 'storePaymentAdvance'])->name('store.payment.advance');
     Route::post('/peluang/restore/{id}', [PeluangController::class, 'restore'])->name('restore.peluang');
-    Route::delete('/crm/peluang/force-delete/{id}', [PeluangController::class, 'forceDelete'])->name('forceDelete.peluang');
 
     // Aktivitas CRM
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('index.aktivitas');
@@ -1091,8 +1090,6 @@ Route::prefix('office')->group(function () {
         Route::post('/setup-lock', [ApprovalPendapatanController::class, 'setupLockPassword']);
         Route::post('/unlock', [ApprovalPendapatanController::class, 'unlock']);
         Route::post('/change-lock-password', [ApprovalPendapatanController::class, 'changeLockPassword']);
-        Route::post('/change-accounting-password', [ApprovalPendapatanController::class, 'changeAccountingPassword']);
-        Route::post('/setup-accounting-password', [ApprovalPendapatanController::class, 'setupAccountingPassword']);
     });
 
     Route::prefix('komisi-sales')->name('komisiSales.')->group(function () {
@@ -1103,8 +1100,6 @@ Route::prefix('office')->group(function () {
         Route::post('/unlock', [KomisiSalesController::class, 'unlock']);
         Route::post('/setup-lock', [KomisiSalesController::class, 'setupLockPassword']);
         Route::post('/change-lock-password', [KomisiSalesController::class, 'changeLockPassword']);
-        Route::post('/change-accounting-password', [KomisiSalesController::class, 'changeAccountingPassword']);
-        Route::post('/setup-accounting-password', [KomisiSalesController::class, 'setupAccountingPassword']);
     });
 
     route::prefix('exam')->name('office.exam.')->group(function () {
@@ -1622,13 +1617,6 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
         Route::post('reports/preview-formula', [ReportController::class, 'previewFormula'])->name('preview.formula');
         Route::post('reports/{template}/reset-counter/{counterKey}', [ReportController::class, 'resetCounter'])->name('reset.counter');
-
-        Route::put('/history/{generation}', [ReportController::class, 'updateHistory'])->name('history.update');
-        Route::delete('/history/{generation}', [ReportController::class, 'destroyHistory'])->name('history.destroy');
-
-        Route::post('/{template}/preview-generate', [ReportController::class, 'previewGenerate'])->name('preview.generate');
-
-
     });
 
     Route::prefix('hire')->name('hire.')->group(function() {
