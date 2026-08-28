@@ -182,9 +182,9 @@
                         </div>
                         <div class="row">
                             <div class="col-sm-3">
-                                @if ($data->approvalexam->sales && $sales->ttd)
+                                @if ($data->approvalexam->sales && $sales?->karyawan?->ttd)
                                     <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $sales->ttd) }}" alt="{{ $sales->name }}" style="width: 120px;height:auto;margin:4%">
+                                        <img src="{{ asset('storage/ttd/' . $sales?->karyawan?->ttd) }}" alt="{{ $sales?->karyawan?->nama_lengkap }}" style="width: 120px;height:auto;margin:4%">
                                     </div>
                                 @else
                                     <br><br><br>
@@ -228,7 +228,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-sm-3">{{ $sales->nama_lengkap ?? '-' }}</div>
+                            <div class="col-sm-3">{{ $sales?->karyawan?->nama_lengkap ?? '-' }}</div>
                             <div class="col-sm-3">{{ $spv_sales->nama_lengkap ?? '-' }}</div>
                             <div class="col-sm-3">{{ $technical_support->nama_lengkap ?? '-' }}</div>
                             <div class="col-sm-3">{{ $office_manager->nama_lengkap ?? '-' }}</div>
