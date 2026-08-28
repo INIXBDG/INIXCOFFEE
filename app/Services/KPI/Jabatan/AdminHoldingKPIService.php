@@ -4,6 +4,7 @@ namespace App\Services\KPI\Jabatan;
 
 use App\Models\DokumentasiExam;
 use App\Models\NomorModul;
+use App\Models\registexam;
 use App\Models\Registrasi;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
@@ -194,7 +195,7 @@ class AdminHoldingKPIService
             return 0;
         }
 
-        $registrasi = Registrasi::whereYear('created_at', $tahun)
+        $registrasi = registexam::whereYear('created_at', $tahun)
             ->count();
 
         if ($registrasi === 0) {
@@ -251,7 +252,7 @@ class AdminHoldingKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $registrasi = Registrasi::whereBetween('created_at', [$start, $end])->get();
+        $registrasi = registexam::whereBetween('created_at', [$start, $end])->get();
 
         if ($registrasi->isEmpty()) {
             return [
