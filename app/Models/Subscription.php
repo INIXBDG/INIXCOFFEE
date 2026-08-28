@@ -15,15 +15,23 @@ class Subscription extends Model
         'kode_karyawan',
         'nama_subs',
         'merk',
+        'tipe',
         'desc',
         'subs_url',
         'access_code',
+        'duration_minutes',
         'mata_uang',
         'harga',
+        'kurs',
+        'harga_rupiah',
         'start_date',
         'end_date',
         'status',
-        'kurs',
-        'harga_rupiah',
+        'is_active',
     ];
+
+    public function materis()
+    {
+        return $this->belongsToMany(Materi::class, 'subscription_materi', 'subscription_id', 'materi_id');
+    }
 }

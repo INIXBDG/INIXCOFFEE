@@ -8,6 +8,7 @@ use App\Models\Pelamar;
 use App\Models\ReportTemplate;
 use App\Models\TemplatePlaceholder;
 use App\Models\ReportGeneration;
+use App\Jobs\GenerateDocxReportJob;
 use App\Services\ReportGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -651,10 +652,7 @@ class ReportController extends Controller
 
             Log::info('generate: source data', ['keys' => array_keys($sourceData)]);
 
-            // Generate laporan
-            $outputPath = $this->generatorService->generateDocxReport($template, $sourceData, $manualInputs);
-
-            // Simpan riwayat generate
+            // Simpan riwayat sebelum dispatch agar job dapat memperbarui status dan file output.
             $generation = ReportGeneration::create([
                 'template_id' => $template->id,
                 'report_title' => $validated['report_title'],
@@ -662,12 +660,15 @@ class ReportController extends Controller
                 'source_id' => $validated['source_id'],
                 'manual_inputs' => $manualInputs,
                 'generated_data' => $sourceData,
-                'output_file_path' => $outputPath,
-                'status' => 'completed',
+                'output_file_path' => null,
+                'status' => 'processing',
                 'generated_by' => Auth::id(),
             ]);
 
-            return redirect()->route('HR.reports.download', $generation);
+            GenerateDocxReportJob::dispatch($generation->id);
+
+            return redirect()->route('HR.reports.index')
+                ->with('success', 'Generate laporan sedang diproses. Silakan cek riwayat laporan.');
         } catch (\Exception $e) {
             Log::error('Report generation failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->with('error', 'Gagal generate laporan: ' . $e->getMessage());

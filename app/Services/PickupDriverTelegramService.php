@@ -17,8 +17,8 @@ class PickupDriverTelegramService
 
     public function __construct()
     {
-        $this->botToken = config('services.telegram_pickup_driver.bot_token');
-        $this->chatId = config('services.telegram_pickup_driver.chat_id');
+        $this->botToken = config('services.telegram_pickup_driver.bot_token') ?? '';
+        $this->chatId = config('services.telegram_pickup_driver.chat_id') ?? '';
     }
 
     public function sendTelegramNotification(array $coordinationData): void

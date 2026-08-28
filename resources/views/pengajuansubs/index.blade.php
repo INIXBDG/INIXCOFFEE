@@ -6,11 +6,16 @@
 
             @php
                 $userJabatan = auth()->user()->karyawan->jabatan ?? '';
-                $isTeknis = in_array($userJabatan, ['Technical Support', 'Koordinator ITSM']);
-                $bolehMengajukan = in_array($userJabatan, ['Instruktur', 'Education Manager']);
+                $isKoordinatorItsm = ($userJabatan === 'Koordinator ITSM');
             @endphp
 
-            @if($isTeknis)
+            @if(!$isKoordinatorItsm)
+                <div class="alert alert-danger m-4 text-center">
+                    <h5><i class="bi bi-exclamation-triangle-fill me-2"></i> Akses Dibatasi</h5>
+                    Fitur Pengajuan & Kelola Subs hanya dapat diakses oleh peran <strong>Koordinator ITSM</strong>.
+                </div>
+            @else
+
             <ul class="nav nav-tabs mb-4" id="labTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active fw-bold" id="pengajuan-tab" data-bs-toggle="tab" data-bs-target="#pengajuan-pane" type="button" role="tab">
@@ -20,28 +25,25 @@
 
                 <li class="nav-item" role="presentation">
                     <button class="nav-link fw-bold text-primary" id="kelola-tab" data-bs-toggle="tab" data-bs-target="#kelola-pane" type="button" role="tab" onclick="loadMasterLabs()">
-                        Kelola Master Lab
+                        Kelola Subs
                     </button>
                 </li>
             </ul>
-            @endif
 
             <div class="tab-content" id="labTabsContent">
 
                 <div class="tab-pane fade show active" id="pengajuan-pane" role="tabpanel">
-                    @if($bolehMengajukan)
-                        <div class="d-flex justify-content-end">
-                            @if (isset($tracking) && $tracking == 'tutup')
-                                <button class="btn btn-md btn-secondary mx-4" disabled title="Selesaikan pengajuan sebelumnya terlebih dahulu">
-                                    <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Lab
-                                </button>
-                            @else
-                                <a href="{{ route('pengajuanlabsdansubs.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" title="Ajukan Lab">
-                                    <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Lab
-                                </a>
-                            @endif
-                        </div>
-                    @endif
+                    <div class="d-flex justify-content-end mb-2">
+                        @if (isset($tracking) && $tracking == 'tutup')
+                            <button class="btn btn-md btn-secondary mx-4" disabled title="Selesaikan pengajuan sebelumnya terlebih dahulu">
+                                <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Subs
+                            </button>
+                        @else
+                            <a href="{{ route('pengajuansubs.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" title="Ajukan Subs">
+                                <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Subs
+                            </a>
+                        @endif
+                    </div>
 
                     <div class="modal fade" id="approveRejectModal" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog">
@@ -62,20 +64,6 @@
                                         <div class="mb-3 d-none" id="reasonContainer">
                                             <label class="form-label">Alasan Penolakan <span class="text-danger">*</span></label>
                                             <textarea class="form-control" name="alasan" id="alasan" rows="3"></textarea>
-                                        </div>
-
-                                        <div class="mb-3 d-none" id="financeStatusContainer">
-                                            <label class="form-label">Update Status Pencairan</label>
-                                            <select class="form-select" id="finance_status" name="finance_status">
-                                                <option value="">-- Pilih Status --</option>
-                                                <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
-                                                <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
-                                                <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
-                                                <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
-                                                <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
-                                                <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
-                                                <option value="Selesai">Selesai</option>
-                                            </select>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
@@ -111,37 +99,35 @@
                         </div>
                     </div>
 
-                    @if (in_array($userJabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support','Education Manager']))
-                        <div class="card m-4">
-                            <div class="card-body d-flex justify-content-center">
-                                <div class="col-md-4 mx-1">
-                                    <label class="form-label">Tahun</label>
-                                    <select id="tahun" class="form-select">
-                                        @for ($y = 2023; $y <= now()->year + 1; $y++)
-                                            <option value="{{ $y }}" {{ $y == now()->year ? 'selected' : '' }}>{{ $y }}</option>
-                                        @endfor
-                                    </select>
-                                </div>
-                                <div class="col-md-4 mx-1">
-                                    <label class="form-label">Bulan</label>
-                                    <select id="bulan" class="form-select">
-                                        @foreach (range(1, 12) as $m)
-                                            <option value="{{ $m }}" {{ $m == now()->month ? 'selected' : '' }}>
-                                                {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-4 mx-1">
-                                    <button onclick="loadAllTables()" class="btn click-primary w-100" style="margin-top: 32px">Cari Data</button>
-                                </div>
+                    <div class="card m-4">
+                        <div class="card-body d-flex justify-content-center">
+                            <div class="col-md-4 mx-1">
+                                <label class="form-label">Tahun</label>
+                                <select id="tahun" class="form-select">
+                                    @for ($y = 2023; $y <= now()->year + 1; $y++)
+                                        <option value="{{ $y }}" {{ $y == now()->year ? 'selected' : '' }}>{{ $y }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <div class="col-md-4 mx-1">
+                                <label class="form-label">Bulan</label>
+                                <select id="bulan" class="form-select">
+                                    @foreach (range(1, 12) as $m)
+                                        <option value="{{ $m }}" {{ $m == now()->month ? 'selected' : '' }}>
+                                            {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4 mx-1">
+                                <button onclick="loadAllTables()" class="btn click-primary w-100" style="margin-top: 32px">Cari Data</button>
                             </div>
                         </div>
-                    @endif
+                    </div>
 
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1">Data Pengajuan Lab</h3>
+                            <h3 class="card-title text-center my-1">Data Pengajuan Subs</h3>
                             <table class="table table-striped" id="pengajuanLabSubsTable">
                                 <thead>
                                     <tr>
@@ -150,7 +136,7 @@
                                         <th>Divisi</th>
                                         <th>Jabatan</th>
                                         <th>Kategori</th>
-                                        <th>Nama Lab</th>
+                                        <th>Nama Subs</th>
                                         <th>Status Tracking</th>
                                         <th>RKM / Materi</th>
                                         <th>Aksi</th>
@@ -163,7 +149,7 @@
 
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1 text-primary">Data Permintaan Lab Existing</h3>
+                            <h3 class="card-title text-center my-1 text-primary">Data Permintaan Subs Existing</h3>
                             <table class="table table-striped" id="pengajuanExistingTable">
                                 <thead>
                                     <tr>
@@ -172,7 +158,7 @@
                                         <th>Divisi</th>
                                         <th>Jabatan</th>
                                         <th>Kategori</th>
-                                        <th>Nama Lab</th>
+                                        <th>Nama Subs</th>
                                         <th>Status Akhir</th>
                                         <th>RKM / Materi</th>
                                         <th>Aksi</th>
@@ -194,7 +180,7 @@
                                         <th>Divisi</th>
                                         <th>Jabatan</th>
                                         <th>Kategori</th>
-                                        <th>Nama Lab</th>
+                                        <th>Nama Subs</th>
                                         <th>Status Akhir</th>
                                         <th>RKM</th>
                                         <th>Aksi</th>
@@ -207,21 +193,23 @@
 
                 </div>
 
-                @if($isTeknis)
                 <div class="tab-pane fade" id="kelola-pane" role="tabpanel">
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1">Master Data Laboratorium</h3>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h3 class="card-title mb-0">Kelola Subs</h3>
+                                <button class="btn click-primary" onclick="openAddMasterSubsModal()">
+                                    <img src="{{ asset('icon/plus.svg') }}" width="20px" class="me-1"> Tambah Data Subs
+                                </button>
+                            </div>
                             <table class="table table-striped text-nowrap" id="masterLabTable" style="width:100%">
                                 <thead>
                                     <tr>
-                                        <th>Nama Lab</th>
+                                        <th>Nama Subs</th>
                                         <th>Vendor</th>
                                         <th>Tipe</th>
                                         <th>Status</th>
                                         <th>Deskripsi</th>
-                                        <th>URL Lab</th>
-                                        <th>Kode Akses</th>
                                         <th>Masa Aktif</th>
                                         <th>Mata Uang</th>
                                         <th>Harga Asli</th>
@@ -231,17 +219,153 @@
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                </tbody>
+                                <tbody></tbody>
                             </table>
                         </div>
                     </div>
 
+                    <!-- Modal Tambah Master Subs -->
+                    <div class="modal fade" id="addMasterSubsModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Tambah Data Subscription Baru</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form id="addMasterSubsForm">
+                                    @csrf
+                                    <div class="modal-body">
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Nama Subs / Software <span class="text-danger">*</span></label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="nama_subs" required placeholder="Contoh: AWS Skill Builder">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Vendor / Merk</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="merk" placeholder="Contoh: Amazon / Microsoft">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Tipe Aset</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="tipe" id="add_tipe">
+                                                    <option value="subscription" selected>Subscription (Berlangganan)</option>
+                                                    <option value="one-time">One-Time</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Status</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="status">
+                                                    <option value="active" selected>Active</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="expired">Expired</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Deskripsi</label>
+                                            <div class="col-sm-8">
+                                                <textarea class="form-control" name="desc" rows="3" placeholder="Keterangan singkat subscription..."></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">URL Subs</label>
+                                            <div class="col-sm-8">
+                                                <input type="url" class="form-control" name="subs_url" placeholder="https://...">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Kode Akses / Key</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="access_code" placeholder="Kode lisensi/akses">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Masa Aktif</label>
+                                            <div class="col-sm-4">
+                                                <input type="date" class="form-control" name="start_date">
+                                            </div>
+                                            <div class="col-sm-4">
+                                                <input type="date" class="form-control" name="end_date">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Mata Uang</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="mata_uang" id="add_mata_uang">
+                                                    <option value="Dollar">Dollar ($)</option>
+                                                    <option value="Rupiah" selected>Rupiah (Rp)</option>
+                                                    <option value="Euro">Euro (€)</option>
+                                                    <option value="Poundsterling">Poundsterling (£)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Nominal Harga Asli</label>
+                                            <div class="col-sm-8">
+                                                <input type="number" step="0.01" class="form-control add-calculate-harga" name="harga" id="add_nominal_harga_asli" value="0">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Kurs (Rate)</label>
+                                            <div class="col-sm-8">
+                                                <input type="number" step="0.01" class="form-control add-calculate-harga" name="kurs" id="add_kurs" value="1" readonly>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Estimasi Rupiah</label>
+                                            <div class="col-sm-8">
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light">Rp.</span>
+                                                    <input type="number" class="form-control bg-light" name="harga_rupiah" id="add_harga_rupiah" readonly value="0">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Terhubung ke Materi</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="materi_ids[]" id="add_materi" multiple="multiple" style="width: 100%;">
+                                                    @if(isset($materis))
+                                                        @foreach($materis as $m)
+                                                            <option value="{{ $m->id }}">{{ $m->nama_materi }}</option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                        <button type="submit" class="btn btn-primary">Simpan Subscription</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Edit Master Subs -->
                     <div class="modal fade" id="editMasterLabModal" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title fw-bold">Edit Data Teknis Lab</h5>
+                                    <h5 class="modal-title fw-bold">Edit Data Teknis Subs</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <form id="editMasterLabForm">
@@ -251,7 +375,7 @@
 
                                     <div class="modal-body">
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Nama Lab / Software <span class="text-danger">*</span></label>
+                                            <label class="col-sm-4 col-form-label">Nama Subs / Software <span class="text-danger">*</span></label>
                                             <div class="col-sm-8">
                                                 <input type="text" class="form-control" name="nama_labs" id="edit_nama_labs" required>
                                             </div>
@@ -274,13 +398,6 @@
                                             </div>
                                         </div>
 
-                                        <div class="mb-3 row" id="row_edit_duration" style="display: none;">
-                                            <label class="col-sm-4 col-form-label">Durasi Akses (Menit)</label>
-                                            <div class="col-sm-8">
-                                                <input type="number" class="form-control" name="duration_minutes" id="edit_duration_minutes">
-                                            </div>
-                                        </div>
-
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">Status</label>
                                             <div class="col-sm-8">
@@ -295,35 +412,31 @@
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">Deskripsi</label>
                                             <div class="col-sm-8">
-                                                <textarea class="form-control" name="deskripsi" id="edit_deskripsi" rows="3"></textarea>
+                                                <textarea class="form-control" name="desc" id="edit_deskripsi" rows="3"></textarea>
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">URL Lab</label>
+                                            <label class="col-sm-4 col-form-label">URL Subs</label>
                                             <div class="col-sm-8">
-                                                <input type="text" class="form-control" name="url_labs" id="edit_url_labs">
+                                                <input type="url" class="form-control" name="lab_url" id="edit_url_labs">
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">Kode Akses / Key</label>
                                             <div class="col-sm-8">
-                                                <input type="text" class="form-control" name="kode_akses" id="edit_kode_akses">
+                                                <input type="text" class="form-control" name="access_code" id="edit_kode_akses">
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Tanggal Mulai</label>
-                                            <div class="col-sm-8">
-                                                <input type="date" class="form-control" name="tanggal_mulai" id="edit_tanggal_mulai">
+                                            <label class="col-sm-4 col-form-label">Masa Aktif</label>
+                                            <div class="col-sm-4">
+                                                <input type="date" class="form-control" name="start_date" id="edit_tanggal_mulai">
                                             </div>
-                                        </div>
-
-                                        <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Tanggal Berakhir</label>
-                                            <div class="col-sm-8">
-                                                <input type="date" class="form-control" name="tanggal_berakhir" id="edit_tanggal_berakhir">
+                                            <div class="col-sm-4">
+                                                <input type="date" class="form-control" name="end_date" id="edit_tanggal_berakhir">
                                             </div>
                                         </div>
 
@@ -331,10 +444,10 @@
                                             <label class="col-sm-4 col-form-label">Mata Uang</label>
                                             <div class="col-sm-8">
                                                 <select class="form-select" name="mata_uang" id="edit_mata_uang">
-                                                    <option value="Dollar">Dollar</option>
-                                                    <option value="Rupiah">Rupiah</option>
-                                                    <option value="Euro">Euro</option>
-                                                    <option value="Poundsterling">Poundsterling</option>
+                                                    <option value="Dollar">Dollar ($)</option>
+                                                    <option value="Rupiah">Rupiah (Rp)</option>
+                                                    <option value="Euro">Euro (€)</option>
+                                                    <option value="Poundsterling">Poundsterling (£)</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -342,7 +455,7 @@
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">Nominal Harga Asli</label>
                                             <div class="col-sm-8">
-                                                <input type="number" step="0.01" class="form-control calculate-harga" name="nominal_harga_asli" id="edit_nominal_harga_asli">
+                                                <input type="number" step="0.01" class="form-control calculate-harga" name="harga" id="edit_nominal_harga_asli">
                                             </div>
                                         </div>
 
@@ -385,8 +498,9 @@
                         </div>
                     </div>
                 </div>
-                @endif
+
             </div>
+            @endif
         </div>
     </div>
 </div>
@@ -408,6 +522,9 @@
         $('.calculate-harga').on('input', calculateEstimasiRupiah);
         $('#edit_mata_uang').on('change', calculateEstimasiRupiah);
 
+        $('.add-calculate-harga').on('input', calculateAddEstimasiRupiah);
+        $('#add_mata_uang').on('change', calculateAddEstimasiRupiah);
+
         $('#edit_materi').select2({
             theme: 'bootstrap-5',
             placeholder: "Pilih Materi Terkait...",
@@ -415,13 +532,11 @@
             dropdownParent: $('#editMasterLabModal')
         });
 
-        $('#edit_tipe').on('change', function() {
-            if ($(this).val() === 'one-time') {
-                $('#row_edit_duration').slideDown();
-            } else {
-                $('#row_edit_duration').slideUp();
-                $('#edit_duration_minutes').val('');
-            }
+        $('#add_materi').select2({
+            theme: 'bootstrap-5',
+            placeholder: "Pilih Materi Terkait...",
+            allowClear: true,
+            dropdownParent: $('#addMasterSubsModal')
         });
     });
 
@@ -439,12 +554,26 @@
         }
     }
 
+    function calculateAddEstimasiRupiah() {
+        let mataUang = $('#add_mata_uang').val();
+        let nominal = parseFloat($('#add_nominal_harga_asli').val()) || 0;
+
+        if (mataUang === 'Rupiah') {
+            $('#add_kurs').val(1).prop('readonly', true);
+            $('#add_harga_rupiah').val(nominal);
+        } else {
+            $('#add_kurs').prop('readonly', false);
+            let kurs = parseFloat($('#add_kurs').val()) || 0;
+            $('#add_harga_rupiah').val(nominal * kurs);
+        }
+    }
+
     function loadAllTables() {
         let month = $('#bulan').length ? $('#bulan').val() : (new Date().getMonth() + 1);
         let year  = $('#tahun').length ? $('#tahun').val() : new Date().getFullYear();
 
         $.ajax({
-            url: `/getPengajuanLabSubs/${month}/${year}`,
+            url: `/getPengajuanSubs/${month}/${year}`,
             type: "GET",
             success: function(res) {
                 if (res.success && res.data) {
@@ -470,23 +599,20 @@
                         }
                     });
 
-                    // Render Tabel 1 (Aktif)
                     if ($.fn.DataTable.isDataTable('#pengajuanLabSubsTable')) $('#pengajuanLabSubsTable').DataTable().destroy();
                     $("#pengajuanLabSubsTable tbody").html(rowsAktif);
                     $('#pengajuanLabSubsTable').DataTable({
                         "order": [[ 0, "desc" ]],
-                        "language": { "emptyTable": "Tidak ada pengajuan aktif saat ini." }
+                        "language": { "emptyTable": "Tidak ada pengajuan subs aktif saat ini." }
                     });
 
-                    // Render Tabel 2 (Existing Disetujui)
                     if ($.fn.DataTable.isDataTable('#pengajuanExistingTable')) $('#pengajuanExistingTable').DataTable().destroy();
                     $("#pengajuanExistingTable tbody").html(rowsExisting);
                     $('#pengajuanExistingTable').DataTable({
                         "order": [[ 0, "desc" ]],
-                        "language": { "emptyTable": "Belum ada pengajuan existing yang disetujui." }
+                        "language": { "emptyTable": "Belum ada pengajuan subs existing yang disetujui." }
                     });
 
-                    // Render Tabel 3 (Selesai Baru)
                     if ($.fn.DataTable.isDataTable('#pengajuanSelesaiTable')) $('#pengajuanSelesaiTable').DataTable().destroy();
                     $("#pengajuanSelesaiTable tbody").html(rowsSelesai);
                     $('#pengajuanSelesaiTable').DataTable({
@@ -502,13 +628,12 @@
         });
     }
 
-    // --- RENDER ROW ---
     function renderRow(item, status) {
         let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-info">Pengadaan Baru</span>' :
                       (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
-                      '<span class="badge bg-success">Lab Existing</span>');
+                      '<span class="badge bg-success">Subs Existing</span>');
 
-        let labName = item.lab ? item.lab.nama_labs : '-';
+        let subsName = item.subs ? item.subs.nama_subs : '-';
         let rkmInfo = item.rkm ? `${item.rkm.materi?.nama_materi ?? '-'} <br><small class="text-muted">(${item.rkm.perusahaan?.nama_perusahaan ?? '-'})</small>` : '-';
         let btns = generateButtons(item, status);
 
@@ -519,7 +644,7 @@
                 <td>${item.karyawan?.divisi ?? '-'}</td>
                 <td>${item.karyawan?.jabatan ?? '-'}</td>
                 <td>${kategori}</td>
-                <td>${labName}</td>
+                <td>${subsName}</td>
                 <td>${formatStatus(status)}</td>
                 <td>${rkmInfo}</td>
                 <td>${btns}</td>
@@ -532,7 +657,7 @@
                       (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
                       '<span class="badge bg-success">Existing</span>');
 
-        let labName = item.lab ? item.lab.nama_labs : '-';
+        let subsName = item.subs ? item.subs.nama_subs : '-';
         let rkmInfo = item.rkm ? (item.rkm.materi?.nama_materi ?? '-') : '-';
 
         let invoiceBtn = (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') ? invoiceAction(item.id, item.invoice, item) : '';
@@ -553,7 +678,7 @@
                 <td>${item.karyawan?.divisi ?? '-'}</td>
                 <td>${item.karyawan?.jabatan ?? '-'}</td>
                 <td>${kategori}</td>
-                <td>${labName}</td>
+                <td>${subsName}</td>
                 <td>${formatStatus(status)}</td>
                 <td>${rkmInfo}</td>
                 <td>${btns}</td>
@@ -561,56 +686,21 @@
         `;
     }
 
-    // --- LOGIC GENERATE BUTTONS ---
     function generateButtons(item, status) {
-        let isOwner = (item.karyawan_id == userId);
+        let statusLower = status ? status.toLowerCase() : '';
+
         let btns = `<div class="dropdown">
             <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
             <ul class="dropdown-menu shadow">
                 <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Detail</button></li>`;
 
-        let statusLower = status ? status.toLowerCase() : '';
-
-        if (isOwner && statusLower.includes('diajukan') && !statusLower.includes('ditolak')) {
-            btns += `<li><button class="dropdown-item text-danger" onclick="deletePengajuan(${item.id})"><img src="{{ asset('icon/trash-danger.svg') }}" width="16" class="me-1"> Hapus</button></li>`;
-        }
-
-        let canApprove = false;
-
-        if (userRole === 'Education Manager' && statusLower.includes('ditinjau oleh education manager')) {
-            canApprove = true;
-        }
-        else if (userRole === 'Koordinator ITSM' && statusLower.includes('ditinjau oleh koordinator itsm')) {
-            canApprove = true;
-        }
-
-        if (canApprove) {
+        if (userRole === 'Koordinator ITSM' && !statusLower.includes('selesai')) {
             btns += `
                 <li><hr class="dropdown-divider"></li>
                 <li><button class="dropdown-item text-success" onclick="openApproveRejectModal(${item.id}, 'approve')"><img src="{{ asset('icon/check-circle.svg') }}" width="16" class="me-1"> Approve</button></li>
                 <li><button class="dropdown-item text-danger" onclick="openApproveRejectModal(${item.id}, 'reject')"><img src="{{ asset('icon/x-circle.svg') }}" width="16" class="me-1"> Reject</button></li>
+                <li><button class="dropdown-item" onclick="editPengajuan(${item.id})"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Edit Teknis</button></li>
             `;
-        }
-
-        if ((userRole === 'Technical Support' || userRole === 'Koordinator ITSM') && !statusLower.includes('selesai')) {
-             btns += `<li><button class="dropdown-item" onclick="editPengajuan(${item.id})"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Edit Teknis</button></li>`;
-        }
-
-        if ((userRole === 'Finance & Accounting' || userRole === 'Finance &amp; Accounting') && (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan')) {
-             const financeStatuses = [
-                'diproses oleh finance',
-                'sedang dikonfirmasi oleh bagian finance kepada general manager',
-                'sedang dikonfirmasi oleh bagian finance kepada direksi',
-                'finance menunggu approve direksi',
-                'membuat permintaan ke direktur utama',
-                'pengajuan sedang dalam proses pencairan',
-                'pencairan sudah selesai',
-                'selesai'
-            ];
-
-            if (financeStatuses.some(finStatus => statusLower.includes(finStatus))) {
-                 btns += `<li><button class="dropdown-item text-warning" onclick="openApproveRejectModal(${item.id}, 'finance-update')"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Update Pencairan</button></li>`;
-             }
         }
 
         if (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') {
@@ -622,7 +712,7 @@
     }
 
     function invoiceAction(id, invoice, item) {
-        let dataLengkap = item.lab && item.lab.harga;
+        let dataLengkap = item.subs && item.subs.harga;
         if (!dataLengkap) {
             return `<li><button class="dropdown-item text-muted" disabled><img src="{{ asset('icon/upload.svg') }}" width="16" class="me-1"> Upload Invoice (Tunggu Data Teknis)</button></li>`;
         }
@@ -643,7 +733,6 @@
         $('#modalApproval').val('');
         $('#alasan').val('');
         $('#reasonContainer').addClass('d-none');
-        $('#financeStatusContainer').addClass('d-none');
 
         if (type === 'approve') {
             $('#actionLabel').text('Anda yakin ingin MENYETUJUI pengajuan ini?');
@@ -652,9 +741,6 @@
             $('#actionLabel').text('Anda yakin ingin MENOLAK pengajuan ini?');
             $('#modalApproval').val('2');
             $('#reasonContainer').removeClass('d-none');
-        } else if (type === 'finance-update') {
-            $('#actionLabel').text('Pilih status proses pencairan:');
-            $('#financeStatusContainer').removeClass('d-none');
         }
         new bootstrap.Modal(document.getElementById('approveRejectModal')).show();
     }
@@ -669,12 +755,8 @@
         let id = $('#modalId').val();
         let formData = $(this).serialize();
 
-        if ($('#financeStatusContainer').is(':visible')) {
-             formData = formData.replace('approval=', '') + '&approval=' + $('#finance_status').val();
-        }
-
         $.ajax({
-            url: `/pengajuanlabsdansubs/${id}`,
+            url: `/pengajuansubs/${id}`,
             type: 'POST',
             data: formData,
             success: function(res) {
@@ -695,7 +777,7 @@
         let formData = new FormData(this);
 
         $.ajax({
-            url: `/pengajuanlabsdansubs/${id}/upload-invoice`,
+            url: `/pengajuansubs/${id}/upload-invoice`,
             type: 'POST',
             data: formData,
             processData: false,
@@ -709,23 +791,8 @@
         });
     });
 
-    function viewDetail(id) { window.location.href = `/pengajuanlabsdansubs/${id}`; }
-    function editPengajuan(id) { window.location.href = `/pengajuanlabsdansubs/${id}/edit`; }
-
-    function deletePengajuan(id) {
-        if(confirm('Yakin ingin menghapus pengajuan ini?')) {
-            $.ajax({
-                url: `/pengajuanlabsdansubs/${id}`,
-                type: 'DELETE',
-                data: { _token: '{{ csrf_token() }}' },
-                success: function() {
-                    Swal.fire('Terhapus', 'Data berhasil dihapus', 'success').then(() => {
-                        window.location.reload();
-                    });
-                }
-            });
-        }
-    }
+    function viewDetail(id) { window.location.href = `/pengajuansubs/${id}`; }
+    function editPengajuan(id) { window.location.href = `/pengajuansubs/${id}/edit`; }
 
     let masterLabTableInit = false;
 
@@ -739,11 +806,11 @@
             processing: true,
             serverSide: false,
             ajax: {
-                url: "{{ route('api.master-labs') }}",
+                url: "{{ route('api.master-subs') }}",
                 type: 'GET'
             },
             columns: [
-                { data: 'nama_labs' },
+                { data: 'nama_subs' },
                 { data: 'merk', render: data => data || '-' },
                 {
                     data: 'tipe',
@@ -768,14 +835,6 @@
                         return data.length > 20 ? data.substr(0, 20) + '...' : data;
                     }
                 },
-                {
-                    data: 'lab_url',
-                    render: function(data) {
-                        if(!data) return '-';
-                        return `<a href="${data}" target="_blank" class="text-primary">Link</a>`;
-                    }
-                },
-                { data: 'access_code', render: data => data || '-' },
                 {
                     data: null,
                     render: function(data, type, row) {
@@ -819,7 +878,7 @@
                                 <button class="btn btn-sm btn-primary me-1" onclick='openEditMasterLabModal(${JSON.stringify(row).replace(/'/g, "&#39;")})'>
                                     Edit
                                 </button>
-                                <button class="btn btn-sm btn-success" onclick="renewLab(${row.id}, '${row.nama_labs}')" title="Perbarui/Perpanjang Lab">
+                                <button class="btn btn-sm btn-success" onclick="renewLab(${row.id}, '${row.nama_subs}')" title="Perbarui/Perpanjang Subs">
                                     Perbarui
                                 </button>
                             </div>
@@ -833,31 +892,66 @@
         masterLabTableInit = true;
     }
 
-    function openEditMasterLabModal(lab) {
-        $('#edit_lab_id').val(lab.id);
-        $('#edit_nama_labs').val(lab.nama_labs);
-        $('#edit_merk').val(lab.merk);
-        $('#edit_tipe').val(lab.tipe).trigger('change');
-        $('#edit_duration_minutes').val(lab.duration_minutes);
-        $('#edit_status').val(lab.status);
-        $('#edit_deskripsi').val(lab.desc);
-        $('#edit_url_labs').val(lab.lab_url);
-        $('#edit_kode_akses').val(lab.access_code);
+    function openAddMasterSubsModal() {
+        $('#addMasterSubsForm')[0].reset();
+        $('#add_materi').val(null).trigger('change');
+        calculateAddEstimasiRupiah();
+        new bootstrap.Modal(document.getElementById('addMasterSubsModal')).show();
+    }
 
-        let startDate = lab.start_date ? lab.start_date.split(' ')[0] : '';
-        let endDate = lab.end_date ? lab.end_date.split(' ')[0] : '';
+    $('#addMasterSubsForm').on('submit', function(e) {
+        e.preventDefault();
+        let formData = $(this).serialize();
+
+        $.ajax({
+            url: "{{ route('api.master-subs.store') }}",
+            type: 'POST',
+            data: formData,
+            success: function(res) {
+                bootstrap.Modal.getInstance(document.getElementById('addMasterSubsModal')).hide();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: res.message || 'Data subscription berhasil ditambahkan',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                if ($('#masterLabTable').length && $.fn.DataTable.isDataTable('#masterLabTable')) {
+                    $('#masterLabTable').DataTable().ajax.reload(null, false);
+                } else {
+                    loadMasterLabs();
+                }
+            },
+            error: function(err) {
+                Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan saat menyimpan data', 'error');
+            }
+        });
+    });
+
+    function openEditMasterLabModal(subs) {
+        $('#edit_lab_id').val(subs.id);
+        $('#edit_nama_labs').val(subs.nama_subs);
+        $('#edit_merk').val(subs.merk);
+        $('#edit_tipe').val(subs.tipe).trigger('change');
+        $('#edit_status').val(subs.status);
+        $('#edit_deskripsi').val(subs.desc);
+        $('#edit_url_labs').val(subs.subs_url);
+        $('#edit_kode_akses').val(subs.access_code);
+
+        let startDate = subs.start_date ? subs.start_date.split(' ')[0] : '';
+        let endDate = subs.end_date ? subs.end_date.split(' ')[0] : '';
 
         $('#edit_tanggal_mulai').val(startDate);
         $('#edit_tanggal_berakhir').val(endDate);
-        $('#edit_mata_uang').val(lab.mata_uang || 'Dollar');
-        $('#edit_nominal_harga_asli').val(lab.harga);
-        $('#edit_kurs').val(lab.kurs);
+        $('#edit_mata_uang').val(subs.mata_uang || 'Rupiah');
+        $('#edit_nominal_harga_asli').val(subs.harga);
+        $('#edit_kurs').val(subs.kurs);
 
         calculateEstimasiRupiah();
 
         let selectedMateriIds = [];
-        if (lab.materis && lab.materis.length > 0) {
-            selectedMateriIds = lab.materis.map(m => m.id);
+        if (subs.materis && subs.materis.length > 0) {
+            selectedMateriIds = subs.materis.map(m => m.id);
         }
         $('#edit_materi').val(selectedMateriIds).trigger('change');
 
@@ -870,7 +964,7 @@
         let formData = $(this).serialize();
 
         $.ajax({
-            url: `/api/master-labs/${id}`,
+            url: `/api/master-subs/${id}`,
             type: 'PUT',
             data: formData,
             success: function(res) {
@@ -878,7 +972,7 @@
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil',
-                    text: 'Data lab berhasil diperbarui',
+                    text: 'Data subs berhasil diperbarui',
                     timer: 1500,
                     showConfirmButton: false
                 });
@@ -890,11 +984,10 @@
         });
     });
 
-    // FUNGSI PEMBAHARUAN LAB OTOMATIS
-    function renewLab(id, namaLab) {
+    function renewLab(id, namaSubs) {
         Swal.fire({
-            title: 'Perbarui Lab?',
-            text: `Buat pengajuan perpanjangan otomatis untuk lab: ${namaLab}`,
+            title: 'Perbarui Subs?',
+            text: `Buat pengajuan perpanjangan otomatis untuk subs: ${namaSubs}`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Ya, Buat Pengajuan',
@@ -902,7 +995,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: `/api/master-labs/${id}/renew`,
+                    url: `/api/master-subs/${id}/renew`,
                     type: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}'
