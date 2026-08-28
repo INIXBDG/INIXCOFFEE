@@ -54,44 +54,60 @@ class DatabaseKPIController extends Controller
     {
         $id_karyawan = Auth::user()->id;
 
-        $dataAuth = activityLog::with('karyawan')
-            ->where('user_id', $id_karyawan)
-            ->whereIn('status', ['Login', 'Logout'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataAuth = \Illuminate\Support\Facades\Cache::remember("activity_log_auth_{$id_karyawan}", 3600, function() use ($id_karyawan) {
+            return activityLog::with('karyawan')
+                ->where('user_id', $id_karyawan)
+                ->whereIn('status', ['Login', 'Logout'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
-        $dataVisit = activityLog::with('karyawan')
-            ->where('user_id', $id_karyawan)
-            ->whereNotIn('status', ['Login', 'Logout'])
-            ->whereNotIn('status', ['Absen Masuk', 'Absen Keluar'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataVisit = \Illuminate\Support\Facades\Cache::remember("activity_log_visit_{$id_karyawan}", 3600, function() use ($id_karyawan) {
+            return activityLog::with('karyawan')
+                ->where('user_id', $id_karyawan)
+                ->whereNotIn('status', ['Login', 'Logout'])
+                ->whereNotIn('status', ['Absen Masuk', 'Absen Keluar'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
-        $dataAbsen = activityLog::with('karyawan')
-            ->where('user_id', $id_karyawan)
-            ->whereIn('status', ['Absen Masuk', 'Absen Keluar'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataAbsen = \Illuminate\Support\Facades\Cache::remember("activity_log_absen_{$id_karyawan}", 3600, function() use ($id_karyawan) {
+            return activityLog::with('karyawan')
+                ->where('user_id', $id_karyawan)
+                ->whereIn('status', ['Absen Masuk', 'Absen Keluar'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
-        $dataUptimeInformasional = activityLog::whereBetween('status', [100, 199])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataUptimeInformasional = \Illuminate\Support\Facades\Cache::remember("uptime_log_informasional", 3600, function() {
+            return activityLog::whereBetween('status', [100, 199])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
-        $dataUptimeSuccess = activityLog::whereBetween('status', [200, 299])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataUptimeSuccess = \Illuminate\Support\Facades\Cache::remember("uptime_log_success", 3600, function() {
+            return activityLog::whereBetween('status', [200, 299])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
-        $dataUptimeRedirect = activityLog::whereBetween('status', [300, 399])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataUptimeRedirect = \Illuminate\Support\Facades\Cache::remember("uptime_log_redirect", 3600, function() {
+            return activityLog::whereBetween('status', [300, 399])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
-        $dataUptimeClientError = activityLog::whereBetween('status', [400, 499])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataUptimeClientError = \Illuminate\Support\Facades\Cache::remember("uptime_log_client_error", 3600, function() {
+            return activityLog::whereBetween('status', [400, 499])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
-        $dataUptimeServerError = activityLog::whereBetween('status', [500, 599])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataUptimeServerError = \Illuminate\Support\Facades\Cache::remember("uptime_log_server_error", 3600, function() {
+            return activityLog::whereBetween('status', [500, 599])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
         return view('databasekpi.activityLog', compact(
             'dataAuth',
