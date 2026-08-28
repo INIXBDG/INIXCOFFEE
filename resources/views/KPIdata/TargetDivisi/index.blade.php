@@ -804,7 +804,6 @@
             const allowedAssistantRoutes = [
                 'dorong inovasi pelayanan',
                 'inisiatif efisiensi keuangan',
-                'rasio biaya operasional terhadap revenue',
                 'mengurangi manual work dan error',
             ];
 

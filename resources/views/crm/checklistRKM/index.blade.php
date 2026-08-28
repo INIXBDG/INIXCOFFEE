@@ -13,7 +13,6 @@
             </div>
 
             <div class="card shadow-sm border-0 h-100">
-
                 <div class="card-body bg-light-subtle p-4">
                     <form id="filterForm" class="mb-4 m-4">
                         <div class="row g-2 align-items-end">
@@ -28,12 +27,26 @@
                                 </div>
                             </div>
 
+                            @php
+                                $currentMonth = date('n');
+                                $currentYear = date('Y');
+                                $selectedBulan = request('bulan', $currentMonth);
+                                $selectedTahun = request('tahun', $currentYear);
+
+                                if (empty($selectedBulan)) {
+                                    $selectedBulan = $currentMonth;
+                                }
+                                if (empty($selectedTahun)) {
+                                    $selectedTahun = $currentYear;
+                                }
+                            @endphp
+
                             <div class="col-md-2">
                                 <label class="form-label small text-muted mb-1">Bulan</label>
                                 <select name="bulan" id="bulanSelect" class="form-select">
                                     @foreach (range(1, 12) as $bulan)
                                         <option value="{{ $bulan }}"
-                                            {{ (request('bulan') ?? date('n')) == $bulan ? 'selected' : '' }}>
+                                            {{ $selectedBulan == $bulan ? 'selected' : '' }}>
                                             {{ Carbon\Carbon::create()->month($bulan)->translatedFormat('F') }}
                                         </option>
                                     @endforeach
@@ -45,7 +58,7 @@
                                 <select name="tahun" id="tahunSelect" class="form-select">
                                     @foreach (range(date('Y') - 3, date('Y') + 1) as $tahun)
                                         <option value="{{ $tahun }}"
-                                            {{ (request('tahun') ?? date('Y')) == $tahun ? 'selected' : '' }}>
+                                            {{ $selectedTahun == $tahun ? 'selected' : '' }}>
                                             {{ $tahun }}
                                         </option>
                                     @endforeach
@@ -108,7 +121,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -122,67 +134,55 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
-
                 <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-12">
                             <div class="card bg-light-subtle border-0">
                                 <div class="card-body py-3">
-                                    <small class="text-muted d-block mb-1">
-                                        <span class="iconify me-1" data-icon="tabler:calendar-event"></span>Tanggal
-                                        Training
-                                    </small>
+                                    <small class="text-muted d-block mb-1"><span class="iconify me-1"
+                                            data-icon="tabler:calendar-event"></span>Tanggal Training</small>
                                     <span id="detailTanggal" class="fw-semibold text-dark"></span>
                                 </div>
                             </div>
                         </div>
-
                         <div class="col-12">
                             <div class="card bg-light-subtle border-0">
                                 <div class="card-body py-3">
-                                    <small class="text-muted d-block mb-1">
-                                        <span class="iconify me-1" data-icon="tabler:book"></span>Materi
-                                    </small>
+                                    <small class="text-muted d-block mb-1"><span class="iconify me-1"
+                                            data-icon="tabler:book"></span>Materi</small>
                                     <span id="detailMateri" class="fw-semibold text-dark"></span>
                                 </div>
                             </div>
                         </div>
-
                         <div class="col-12">
                             <div class="card bg-light-subtle border-0">
                                 <div class="card-body py-3">
-                                    <small class="text-muted d-block mb-1">
-                                        <span class="iconify me-1" data-icon="tabler:user"></span>Instruktur
-                                    </small>
+                                    <small class="text-muted d-block mb-1"><span class="iconify me-1"
+                                            data-icon="tabler:user"></span>Instruktur</small>
                                     <span id="detailInstruktur" class="fw-semibold text-dark"></span>
                                 </div>
                             </div>
                         </div>
-
                         <div class="col-md-6">
                             <div class="card bg-light-subtle border-0 h-100">
                                 <div class="card-body py-3">
-                                    <small class="text-muted d-block mb-1">
-                                        <span class="iconify me-1" data-icon="tabler:building"></span>Perusahaan
-                                    </small>
+                                    <small class="text-muted d-block mb-1"><span class="iconify me-1"
+                                            data-icon="tabler:building"></span>Perusahaan</small>
                                     <div id="detailPerusahaan" class="fw-semibold text-dark"></div>
                                 </div>
                             </div>
                         </div>
-
                         <div class="col-md-6">
                             <div class="card bg-light-subtle border-0 h-100">
                                 <div class="card-body py-3">
-                                    <small class="text-muted d-block mb-1">
-                                        <span class="iconify me-1" data-icon="tabler:user-check"></span>Sales
-                                    </small>
+                                    <small class="text-muted d-block mb-1"><span class="iconify me-1"
+                                            data-icon="tabler:user-check"></span>Sales</small>
                                     <div id="detailSales" class="fw-semibold text-dark"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <div class="modal-footer border-0 pt-0 pb-4">
                     <button class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
                         <span class="iconify me-1" data-icon="tabler:x-circle"></span>Tutup
@@ -212,11 +212,24 @@
             const recordCount = document.getElementById('recordCount');
             const periodLabel = document.getElementById('periodLabel');
             const rkmTable = document.getElementById('rkmTable');
+            const bulanSelect = document.getElementById('bulanSelect');
+            const tahunSelect = document.getElementById('tahunSelect');
 
             let currentPage = 1;
+
+            const bulanEl = document.getElementById('bulanSelect');
+            const tahunEl = document.getElementById('tahunSelect');
+            const mingguEl = document.getElementById('mingguSelect');
+
+            if (bulanEl && !bulanEl.value) bulanEl.value = new Date().getMonth() + 1;
+            if (tahunEl && !tahunEl.value) tahunEl.value = new Date().getFullYear();
+            if (mingguEl && !mingguEl.value) mingguEl.value = '1';
+
             let filters = {
-                bulan: document.getElementById('bulanSelect')?.value || '',
-                tahun: document.getElementById('tahunSelect')?.value || ''
+                search: '',
+                bulan: bulanEl?.value,
+                tahun: tahunEl?.value,
+                minggu: mingguEl?.value
             };
             let searchTimeout;
 
@@ -226,8 +239,8 @@
                 e.preventDefault();
                 filters = {
                     search: document.getElementById('searchInput')?.value || '',
-                    bulan: document.getElementById('bulanSelect')?.value || '',
-                    tahun: document.getElementById('tahunSelect')?.value || '',
+                    bulan: bulanSelect.value || '',
+                    tahun: tahunSelect.value || '',
                     minggu: document.getElementById('mingguSelect')?.value || '',
                 };
                 currentPage = 1;
@@ -237,10 +250,18 @@
 
             document.getElementById('resetFilter')?.addEventListener('click', function() {
                 document.getElementById('searchInput').value = '';
-                document.getElementById('bulanSelect').value = '';
-                document.getElementById('tahunSelect').value = '';
                 document.getElementById('mingguSelect').value = '';
-                filters = {};
+
+                const defaultMonth = new Date().getMonth() + 1;
+                const defaultYear = new Date().getFullYear();
+
+                bulanSelect.value = defaultMonth;
+                tahunSelect.value = defaultYear;
+
+                filters = {
+                    bulan: defaultMonth,
+                    tahun: defaultYear
+                };
                 currentPage = 1;
                 updatePeriodLabel();
                 loadData();
@@ -306,19 +327,18 @@
             });
 
             tableBody?.addEventListener('click', function(e) {
-                const detailBtn = e.target.closest('.show-detail');
-                if (detailBtn && !e.target.closest('.form-check-input')) {
+                const detailCell = e.target.closest('.detail-cell');
+                if (detailCell) {
                     e.preventDefault();
-                    document.getElementById('detailTanggal').textContent = detailBtn.dataset
-                    .tanggaltraining;
-                    document.getElementById('detailMateri').textContent = detailBtn.dataset.materi;
-                    document.getElementById('detailInstruktur').textContent = detailBtn.dataset.instruktur;
+                    const row = detailCell.closest('tr');
+                    if (!row) return;
 
-                    const perusahaan = detailBtn.dataset.perusahaan || '-';
-                    const sales = detailBtn.dataset.sales || '-';
-
-                    document.getElementById('detailPerusahaan').textContent = perusahaan;
-                    document.getElementById('detailSales').textContent = sales;
+                    document.getElementById('detailTanggal').textContent = row.dataset.tanggaltraining ||
+                        '-';
+                    document.getElementById('detailMateri').textContent = row.dataset.materi || '-';
+                    document.getElementById('detailInstruktur').textContent = row.dataset.instruktur || '-';
+                    document.getElementById('detailPerusahaan').textContent = row.dataset.perusahaan || '-';
+                    document.getElementById('detailSales').textContent = row.dataset.sales || '-';
 
                     new bootstrap.Modal(document.getElementById('modalDetail')).show();
                 }
@@ -353,10 +373,7 @@
                         month: 'long'
                     });
                     const startDay = (minggu - 1) * 7 + 1;
-                    const endDay = Math.min(
-                        minggu * 7,
-                        new Date(tahun, bulan, 0).getDate()
-                    );
+                    const endDay = Math.min(minggu * 7, new Date(tahun, bulan, 0).getDate());
 
                     let firstBusinessDay = null;
                     let lastBusinessDay = null;
@@ -364,11 +381,8 @@
                     for (let day = startDay; day <= endDay; day++) {
                         const date = new Date(tahun, bulan - 1, day);
                         const dayOfWeek = date.getDay();
-
                         if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                            if (!firstBusinessDay) {
-                                firstBusinessDay = day;
-                            }
+                            if (!firstBusinessDay) firstBusinessDay = day;
                             lastBusinessDay = day;
                         }
                     }
@@ -401,10 +415,17 @@
                 const params = new URLSearchParams({
                     ...filters,
                     page: currentPage,
-                    per_page: 20
+                    per_page: 20,
+                    _t: Date.now()
                 });
 
-                fetch(`/crm/checklist-rkm/data?${params}`)
+                fetch(`/crm/checklist-rkm/data?${params}`, {
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    })
                     .then(res => res.json())
                     .then(response => {
                         if (response.data && response.data.length > 0) {
@@ -425,13 +446,13 @@
 
             function showLoading() {
                 tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center py-5">
-                            <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;"></div>
-                            <p class="mt-2 mb-0 text-muted small">Memuat data...</p>
-                        </td>
-                    </tr>
-                `;
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;"></div>
+                        <p class="mt-2 mb-0 text-muted small">Memuat data...</p>
+                    </td>
+                </tr>
+            `;
                 emptyState.classList.add('d-none');
                 rkmTable.classList.remove('d-none');
                 paginationContainer.innerHTML = '';
@@ -447,19 +468,32 @@
 
             function showErrorState() {
                 tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center py-5 text-danger">
-                            <span class="iconify fs-4" data-icon="tabler:alert-triangle"></span>
-                            <p class="mt-2 mb-0">Gagal memuat data. Silakan coba lagi.</p>
-                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadData()">
-                                <span class="iconify me-1" data-icon="tabler:refresh"></span>Retry
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-danger">
+                        <span class="iconify fs-4" data-icon="tabler:alert-triangle"></span>
+                        <p class="mt-2 mb-0">Gagal memuat data. Silakan coba lagi.</p>
+                        <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadData()">
+                            <span class="iconify me-1" data-icon="tabler:refresh"></span>Retry
+                        </button>
+                    </td>
+                </tr>
+            `;
                 emptyState.classList.add('d-none');
                 rkmTable.classList.remove('d-none');
                 paginationContainer.innerHTML = '';
+            }
+
+            function getStatusStyle(status) {
+                switch (String(status)) {
+                    case '0':
+                        return 'background-color: rgba(255, 0, 0, 0.5);';
+                    case '1':
+                        return 'background-color: rgba(0, 0, 255, 0.5);';
+                    case '3':
+                        return 'background-color: rgba(0, 190, 0, 0.5);';
+                    default:
+                        return 'background-color: rgba(0, 0, 0, 0.5);';
+                }
             }
 
             function renderTable(data) {
@@ -471,57 +505,31 @@
                 let globalNo = (currentPage - 1) * 20;
 
                 tableBody.innerHTML = data.map(item => {
-
                     const checkboxes = Object.entries(item.checkboxes)
                         .map(([field, config]) => `
-                            <td class="text-center">
-                                <div class="form-check form-switch d-flex justify-content-center">
-                                    <input type="checkbox"
-                                        class="form-check-input checklist-checkbox"
-                                        data-rkm="${item.id}"
-                                        data-field="${field}"
-                                        ${config.checked ? 'checked' : ''}>
-                                </div>
-                            </td>
-                        `)
-                        .join('');
-
-                    const showDetailBtn = `
-                        <button class="btn btn-link text-decoration-none show-detail p-0"
-                            data-materi="${escapeHtml(item.materi)}"
-                            data-perusahaan="${escapeHtml(item.perusahaan)}"
-                            data-sales="${escapeHtml(item.sales)}"
-                            data-instruktur="${escapeHtml(item.instruktur)}"
-                            data-tanggaltraining="${escapeHtml(item.tanggal_training)}">
-                            <small class="text-muted">
-                                ${escapeHtml(item.materi)}
-                            </small>
-                        </button>
-                    `;
+                        <td class="text-center">
+                            <div class="form-check form-switch d-flex justify-content-center">
+                                <input type="checkbox" class="form-check-input checklist-checkbox"
+                                    data-rkm="${item.id_all ?? item.id}" data-field="${field}" ${config.checked ? 'checked' : ''}>
+                            </div>
+                        </td>
+                    `).join('');
 
                     globalNo++;
+                    const rowStyle = getStatusStyle(item.status);
 
                     return `
-                        <tr class="table-row-hover">
-                            <td class="text-center fw-medium text-muted">
-                                ${globalNo}
-                            </td>
-
-                            <td>
-                                ${showDetailBtn}
-                            </td>
-
-                            <td>
-                                <small>${escapeHtml(item.perusahaan)}</small>
-                            </td>
-
-                            <td>
-                                <small>${escapeHtml(item.sales)}</small>
-                            </td>
-
-                            ${checkboxes}
-                        </tr>
-                    `;
+                    <tr class="table-row-hover" style="${rowStyle}"
+                        data-materi="${escapeHtml(item.materi)}" data-perusahaan="${escapeHtml(item.perusahaan)}"
+                        data-sales="${escapeHtml(item.sales)}" data-instruktur="${escapeHtml(item.instruktur)}"
+                        data-tanggaltraining="${escapeHtml(item.tanggal_training)}">
+                        <td class="text-center fw-medium text-white detail-cell" role="button">${globalNo}</td>
+                        <td class="text-white detail-cell" role="button"><small>${escapeHtml(item.materi)}</small></td>
+                        <td class="text-white detail-cell" role="button"><small>${escapeHtml(item.perusahaan)}</small></td>
+                        <td class="text-white detail-cell" role="button"><small>${escapeHtml(item.sales)}</small></td>
+                        ${checkboxes}
+                    </tr>
+                `;
                 }).join('');
             }
 
@@ -532,11 +540,10 @@
                 }
 
                 let html = '<nav><ul class="pagination pagination-sm mb-0">';
-
                 html += `<li class="page-item ${pagination.current_page === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" data-page="${pagination.current_page - 1}" aria-label="Previous">
-                        <span class="iconify" data-icon="tabler:chevron-left"></span>
-                    </a></li>`;
+                <a class="page-link" href="#" data-page="${pagination.current_page - 1}" aria-label="Previous">
+                    <span class="iconify" data-icon="tabler:chevron-left"></span>
+                </a></li>`;
 
                 const maxVisible = 5;
                 let startPage = Math.max(1, pagination.current_page - Math.floor(maxVisible / 2));
@@ -548,41 +555,36 @@
 
                 if (startPage > 1) {
                     html += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
-                    if (startPage > 2) {
-                        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                    }
+                    if (startPage > 2) html +=
+                        `<li class="page-item disabled"><span class="page-link">...</span></li>`;
                 }
 
                 for (let i = startPage; i <= endPage; i++) {
                     html += `<li class="page-item ${i === pagination.current_page ? 'active' : ''}">
-                        <a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                    <a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
                 }
 
                 if (endPage < pagination.last_page) {
-                    if (endPage < pagination.last_page - 1) {
-                        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                    }
+                    if (endPage < pagination.last_page - 1) html +=
+                        `<li class="page-item disabled"><span class="page-link">...</span></li>`;
                     html +=
                         `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.last_page}">${pagination.last_page}</a></li>`;
                 }
 
                 html += `<li class="page-item ${pagination.current_page === pagination.last_page ? 'disabled' : ''}">
-                    <a class="page-link" href="#" data-page="${pagination.current_page + 1}" aria-label="Next">
-                        <span class="iconify" data-icon="tabler:chevron-right"></span>
-                    </a></li>`;
+                <a class="page-link" href="#" data-page="${pagination.current_page + 1}" aria-label="Next">
+                    <span class="iconify" data-icon="tabler:chevron-right"></span>
+                </a></li></ul></nav>`;
 
-                html += '</ul></nav>';
                 paginationContainer.innerHTML = html;
             }
 
             function showToast(message, type = 'success') {
                 const toast = document.getElementById('liveToast');
                 const toastMessage = document.getElementById('toastMessage');
-
                 toast.className =
                     `toast align-items-center border-0 ${type === 'success' ? 'text-bg-success' : 'text-bg-danger'}`;
                 toastMessage.textContent = message;
-
                 const bsToast = new bootstrap.Toast(toast, {
                     delay: 3000,
                     autohide: true
@@ -605,8 +607,12 @@
         }
 
         .table-row-hover:hover {
-            background-color: #f8f9fa !important;
-            transition: background-color 0.15s ease-in-out;
+            filter: brightness(0.95);
+            transition: filter 0.15s ease-in-out;
+        }
+
+        .detail-cell {
+            cursor: pointer;
         }
 
         .form-check-input:checked {
@@ -705,10 +711,8 @@
         }
 
         @media (max-width: 768px) {
-            .card-header {
-                padding: 1rem !important;
-            }
 
+            .card-header,
             .card-body {
                 padding: 1rem !important;
             }

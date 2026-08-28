@@ -72,8 +72,8 @@
             @endif
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@endsection
+@section('scripts')
     <script>
         const dataRingkasan = @json($dataRingkasan);
         const pengguna = @json($pengguna);

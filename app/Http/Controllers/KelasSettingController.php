@@ -417,33 +417,34 @@ class KelasSettingController extends Controller
             $table = (new KelasSetting)->getTable();
             $hasRkmCol = Schema::hasColumn($table, 'id_rkm');
 
+            // Ambil semua id_rkm yang sudah ada (termasuk soft-deleted biar tidak double)
             $existingRkmIds = [];
-            $existingKeys = [];
             if ($hasRkmCol) {
-                $existingRkmIds = KelasSetting::whereNotNull('id_rkm')
+                $existingRkmIds = KelasSetting::withTrashed()
+                    ->whereNotNull('id_rkm')
                     ->pluck('id_rkm')
-                    ->map(function ($v) { return (int) $v; })
-                    ->toArray();
-            } else {
-                $existingKeys = KelasSetting::whereNotNull('dari')
-                    ->get(['kelas', 'dari'])
-                    ->map(function ($r) {
-                        return ($r->kelas ?? '') . '|' . Carbon::parse($r->dari)->format('Y-m-d');
-                    })
+                    ->map(fn ($v) => (int) $v)
                     ->toArray();
             }
 
-            $startDate = Carbon::now()->subMonths(6)->format('Y-m-d');
-            $endDate = Carbon::now()->addMonths(12)->format('Y-m-d');
+            // Perluas rentang tanggal (misalnya 1 tahun ke belakang + 2 tahun ke depan)
+            $startDate = Carbon::now()->subYear()->format('Y-m-d');
+            $endDate   = Carbon::now()->addYears(2)->format('Y-m-d');
 
-            $rkmQuery = RKM::whereNotNull('tanggal_awal')
+            $rkmQuery = RKM::query()
+                ->whereNotNull('tanggal_awal')
                 ->whereBetween('tanggal_awal', [$startDate, $endDate]);
 
+            // Kalau ada kolom id_rkm, skip yang sudah pernah masuk
             if ($hasRkmCol && !empty($existingRkmIds)) {
                 $rkmQuery->whereNotIn('id', $existingRkmIds);
             }
 
-            $rkms = $rkmQuery->with(['materi', 'instruktur', 'sales'])->limit(500)->get();
+            // HAPUS limit(500) atau naikkan jadi lebih besar
+            $rkms = $rkmQuery
+                ->with(['materi', 'instruktur', 'sales'])
+                ->orderBy('tanggal_awal')
+                ->get();   // ← ambil semua
 
             $newRecords = [];
             foreach ($rkms as $rkm) {
@@ -453,36 +454,39 @@ class KelasSettingController extends Controller
                     continue;
                 }
 
-                $kelas = $rkm->materi ? ($rkm->materi->nama_materi ?? '') : '';
-                $dariKey = $kelas . '|' . $tglAwal->format('Y-m-d');
+                $kelas = $rkm->materi?->nama_materi ?? '';
+                $tglAkhir = $rkm->tanggal_akhir
+                    ? Carbon::parse($rkm->tanggal_akhir)
+                    : $tglAwal->copy();
 
-                if (!$hasRkmCol && in_array($dariKey, $existingKeys)) continue;
-
-                $tglAkhir = $rkm->tanggal_akhir ? Carbon::parse($rkm->tanggal_akhir) : $tglAwal->copy();
-                $instrukturKode = $rkm->instruktur ? ($rkm->instruktur->kode_karyawan ?? $rkm->instruktur->nama_lengkap ?? '') : '';
+                $instrukturKode = $rkm->instruktur
+                    ? ($rkm->instruktur->kode_karyawan ?? $rkm->instruktur->nama_lengkap ?? '')
+                    : '';
 
                 $record = [
-                    'kelas' => $kelas,
-                    'dari' => $tglAwal->format('Y-m-d'),
-                    'sampai' => $tglAkhir->format('Y-m-d'),
-                    'week_start' => $tglAwal->copy()->startOfWeek()->format('Y-m-d'),
-                    'week_end' => $tglAwal->copy()->endOfWeek()->format('Y-m-d'),
-                    'instruktur' => $instrukturKode,
-                    'pax' => (int) ($rkm->pax ?? 0),
-                    'ruangan' => null,
-                    'device' => 'Laptop',
+                    'kelas'             => $kelas,
+                    'dari'              => $tglAwal->format('Y-m-d'),
+                    'sampai'            => $tglAkhir->format('Y-m-d'),
+                    'week_start'        => $tglAwal->copy()->startOfWeek(Carbon::MONDAY)->format('Y-m-d'),
+                    'week_end'          => $tglAwal->copy()->endOfWeek(Carbon::SUNDAY)->format('Y-m-d'),
+                    'instruktur'        => $instrukturKode,
+                    'pax'               => (int) ($rkm->pax ?? 0),
+                    'ruangan'           => $rkm->ruang ?? null,   // ambil dari RKM kalau ada
+                    'device'            => 'Laptop',
                     'device_instruktur' => null,
-                    'pc_its' => null,
-                    'asset' => null,
-                    'software' => null,
-                    'keterangan' => null,
-                    'status' => 'Biru',
-                    'comments' => '{}',
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'pc_its'            => null,
+                    'asset'             => null,
+                    'software'          => null,
+                    'keterangan'        => null,
+                    'status'            => 'Biru',
+                    'comments'          => '{}',
+                    'created_at'        => now(),
+                    'updated_at'        => now(),
                 ];
 
-                if ($hasRkmCol) $record['id_rkm'] = $rkm->id;
+                if ($hasRkmCol) {
+                    $record['id_rkm'] = $rkm->id;
+                }
 
                 $newRecords[] = $record;
             }
