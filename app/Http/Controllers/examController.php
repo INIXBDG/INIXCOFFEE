@@ -563,7 +563,7 @@ class examController extends Controller
 
         try {
             $rkm = RKM::where('id', $request->id_rkm)->first();
-            dd($rkm);
+            // dd($rkm);
             if ($rkm->metode_kelas != 'Exam Only') {
                 if ($request->pax > $rkm->pax) {
                     return redirect()->back()->with('error', 'Pax tidak boleh lebih dari '.$rkm->pax);

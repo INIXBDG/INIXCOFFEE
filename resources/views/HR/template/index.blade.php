@@ -20,9 +20,71 @@
                         </a>
                         <a href="{{ route('HR.reports.history') }}" class="btn btn-primary">
                             <span class="iconify me-2" data-icon="mdi:folders"></span>History
-                        </a>                        
+                        </a>
                     </div>
+                    <!-- Modal Edit Template -->
+                    <div class="modal fade" id="editTemplateModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <span class="iconify me-2" data-icon="mdi:pencil-box-outline"></span>
+                                        Edit Template
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="formEditTemplate">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" id="edit_template_id" name="id">
 
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Nama Template <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="text" id="edit_name" name="name" class="form-control"
+                                                required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Kode Template <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="text" id="edit_code" name="code" class="form-control"
+                                                required>
+                                            <small class="text-muted">Kode harus unik (tidak boleh sama dengan template
+                                                lain).</small>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Kategori</label>
+                                            <select id="edit_category" name="category" class="form-select">
+                                                <option value="karyawan">Karyawan</option>
+                                                <option value="pelamar">Rekrutan</option>
+                                                <option value="management">Management</option>
+                                                <option value="administrasi">Administrasi</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="alert alert-info small mb-0">
+                                            <strong>Info:</strong> Mengedit di sini hanya mengubah metadata template. Untuk
+                                            mengubah struktur dokumen/mapping field, silakan gunakan fitur "Generate" lalu
+                                            edit ulang dokumennya.
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <span class="iconify me-1" data-icon="mdi:close"></span>Batal
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="btnSaveEdit"
+                                        onclick="executeEditTemplate()">
+                                        <span class="iconify me-1" data-icon="mdi:content-save"></span>Simpan Perubahan
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 @if ($templates->isNotEmpty())
@@ -40,16 +102,20 @@
                                             <h6 class="card-title fw-bold mb-1">{{ $tpl->name }}</h6>
                                             <p class="text-muted small mb-3">
                                                 {{ Str::limit($tpl->description ?? 'Tidak ada deskripsi', 50) }}</p>
-
                                             <div class="d-flex gap-2 mt-auto">
                                                 <a href="{{ route('HR.reports.generate.form', $tpl) }}"
                                                     class="btn btn-sm btn-primary flex-grow-1">
                                                     <span class="iconify me-1" data-icon="mdi:file-pdf-box"></span> Generate
                                                 </a>
-                                                <button type="button" 
-                                                        class="btn btn-sm btn-outline-danger" 
-                                                        onclick="confirmDeleteTemplate({{ $tpl->id }}, '{{ $tpl->name }}')"
-                                                        title="Hapus">
+
+                                                <a href="{{ route('HR.reports.edit', $tpl->id) }}"
+                                                    class="btn btn-sm btn-outline-warning" title="Edit">
+                                                    <span class="iconify" data-icon="mdi:pencil"></span>
+                                                </a>
+
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    onclick="confirmDeleteTemplate({{ $tpl->id }}, '{{ addslashes($tpl->name) }}')"
+                                                    title="Hapus">
                                                     <span class="iconify" data-icon="mdi:delete"></span>
                                                 </button>
                                             </div>
@@ -106,20 +172,20 @@
                     </div>
                 </div>
             `;
-            
+
             // Hapus modal lama jika ada
             const oldModal = document.getElementById('deleteConfirmModal');
             if (oldModal) {
                 oldModal.remove();
             }
-            
+
             // Tambahkan modal baru
             document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
+
             // Tampilkan modal
             const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
             modal.show();
-            
+
             // Hapus modal dari DOM setelah ditutup
             document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', function() {
                 this.remove();
@@ -129,53 +195,53 @@
         function executeDeleteTemplate(templateId) {
             const btn = document.getElementById('btnConfirmDelete');
             const originalText = btn.innerHTML;
-            
+
             // Disable button dan tampilkan loading
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
-            
+
             fetch(`/HR-dashboard/reports/delete/${templateId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Tutup modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
-                    modal.hide();
-                    
-                    // Tampilkan pesan sukses
-                    showToast(data.message, 'success');
-                    
-                    // Reload halaman setelah 1 detik
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    // Tampilkan pesan error
-                    showToast(data.message || 'Gagal menghapus template', 'error');
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Tutup modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+                        modal.hide();
+
+                        // Tampilkan pesan sukses
+                        showToast(data.message, 'success');
+
+                        // Reload halaman setelah 1 detik
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        // Tampilkan pesan error
+                        showToast(data.message || 'Gagal menghapus template', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Terjadi kesalahan koneksi', 'error');
                     btn.disabled = false;
                     btn.innerHTML = originalText;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Terjadi kesalahan koneksi', 'error');
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            });
+                });
         }
 
         function showToast(message, type = 'success') {
             const toastContainer = document.getElementById('toastContainer') || createToastContainer();
             const bgClass = type === 'error' ? 'bg-danger' : 'bg-success';
             const icon = type === 'error' ? 'mdi:alert-circle' : 'mdi:check-circle';
-            
+
             const toastHtml = `
                 <div class="toast align-items-center text-white border-0 ${bgClass}" role="alert">
                     <div class="d-flex">
@@ -187,12 +253,14 @@
                     </div>
                 </div>
             `;
-            
+
             toastContainer.insertAdjacentHTML('beforeend', toastHtml);
             const toastElement = toastContainer.lastElementChild;
-            const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
+            const toast = new bootstrap.Toast(toastElement, {
+                delay: 4000
+            });
             toast.show();
-            
+
             toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
         }
 

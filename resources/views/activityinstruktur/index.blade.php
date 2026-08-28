@@ -26,12 +26,12 @@
             </div>
         </div>
     </div>
-    
+
     <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form id="activityFormDetail" method="POST" enctype="multipart/form-data">
-                    @csrf 
+                    @csrf
                     <div class="modal-header">
                         <div>
                             <h5 class="modal-title" id="activityModalLabel">Aktivitas <span id="modalDate"></span></h5>
@@ -42,10 +42,10 @@
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    
+
                     <div class="modal-body">
                         <div id="lockAlert" class="alert alert-danger d-none"></div>
-                        
+
                         <input type="hidden" name="activity_date" id="formActivityDate">
                         <input type="hidden" name="activity_id" id="formActivityId">
                         <input type="hidden" value="manual" name="activity_subtype" id="activity_subtype">
@@ -65,12 +65,12 @@
                                 <option value="Exam">Exam</option>
                             </select>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="formActivity" class="form-label">Judul Aktivitas</label>
                             <input type="text" class="form-control editable-field" id="formActivity" name="activity" required>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="formDesc" class="form-label">Deskripsi / Detail</label>
                             <textarea class="form-control editable-field" id="formDesc" name="desc" rows="3"></textarea>
@@ -90,13 +90,13 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                         <button type="submit" class="btn btn-primary" id="saveActivityDetailBtn">Simpan</button>
                     </div>
                 </form>
-                
+
                 <div id="rkmDetailSection" class="rounded p-3 mb-3 d-none">
                     </div>
             </div>
@@ -164,7 +164,7 @@
                 showActivityModal('show', info.event.startStr, info.event.id, info.event.extendedProps, info.event.title);
             }
         });
-       
+
         calendar.render();
 
         function loadSummary(start, end) {
@@ -232,7 +232,7 @@
 
             if (Object.keys(data.manual_summary.details).length > 0) {
                 $.each(data.manual_summary.details, function(type, stats) {
-                    
+
                     // List Nama Instruktur
                     let usersHtml = '<div class="mt-2 ps-3 border-start">';
                     if (stats.users) {
@@ -266,7 +266,7 @@
             } else {
                 html += `<li class="list-group-item text-muted px-0 fst-italic">Tidak ada aktivitas.</li>`;
             }
-            
+
             html += `</ul></div>`;
              // --- BAGIAN 2: IZIN 3 JAM (BARU) ---
             if (data.izin_summary && data.izin_summary.total_all > 0) {
@@ -364,7 +364,7 @@
             $('.form-control, .form-select, button').prop('disabled', false);
         }
 
-        
+
         // Variable global untuk menyimpan state form
         let isEditMode = false;
 
@@ -383,17 +383,17 @@
                 // --- MODE EDIT AKTIF ---
                 // 1. Enable semua input field
                 $('.editable-field').prop('disabled', false).removeClass('bg-light');
-                
+
                 // 2. Ubah Teks Tombol & Enable Tombol
                 $('#saveActivityDetailBtn')
                     .text('Simpan Perubahan')
                     .prop('disabled', false); // Pastikan tombol bisa diklik
-                    
+
             } else {
                 // --- MODE VIEW (MATI) ---
                 // 1. Disable input field & beri warna abu
                 $('.editable-field').prop('disabled', true).addClass('bg-light');
-                
+
                 // 2. Ubah Teks Tombol (Untuk sekadar update bukti)
                 $('#saveActivityDetailBtn')
                     .text('Update Bukti')
@@ -408,14 +408,14 @@
 
             $('#rkmDetailSection').addClass('d-none');
             $('#activityFormDetail').removeClass('d-none');
-            
+
             // Set Value
             $('#modalDate').text(moment(date).format('DD MMMM YYYY'));
             $('#formActivityDate').val(date);
             $('#formActivityId').val(activityId);
 
             // Cek Locking
-            var isLocked = false; 
+            var isLocked = false;
             var dateCarbon = moment(date);
             const startOfThisWeek = moment().startOf('isoWeek');
             if (dateCarbon.isBefore(startOfThisWeek)) {
@@ -424,33 +424,76 @@
 
             // -- LOGIKA UTAMA --
             if (activityData) { // DATA SUDAH ADA (Edit / View)
-                
-                // Isi Form
-                $('#formActivity').val(title);
-                $('#formDesc').val(activityData.desc);
-                $('#formActivityType').val(activityData.activity_type || 'pilih');
-                $('#formDoc').val(activityData.doc);
 
-                // Setup Edit Mode Switch
-                $('#editModeContainer').removeClass('d-none'); // Tampilkan switch
-                $('#enableEditMode').prop('checked', false);   // Default off
-                toggleFormInputs(false);                       // Default disabled
-                
-                // Setup Form Action ke UPDATE
-                $('#activityFormDetail').attr('action', API_PROOF_UPDATE_URL);
+                // Pengecekan tipe data: rkm, cuti, atau izin_3jam (Read-Only)
+                if (activityData.type === 'rkm' || activityData.type === 'cuti' || activityData.type === 'izin_3jam') {
 
-                // Setup Bagian Bukti
-                $('#proofUploadSection').removeClass('d-none');
-                
-                if(activityData.doc) {
-                    $('#btnViewDoc').removeClass('d-none').attr('href', activityData.doc);
+                    $('#activityFormDetail').addClass('d-none');
+                    $('#rkmDetailSection').removeClass('d-none').empty();
+                    $('#editModeContainer').addClass('d-none');
+                    $('#saveActivityDetailBtn').addClass('d-none'); // Sembunyikan tombol simpan
+
+                    let detailHtml = `
+                        <h6 class="border-bottom pb-2">Detail ${activityData.type.toUpperCase()}</h6>
+                        <table class="table table-borderless table-sm mt-3">
+                            <tr><td width="30%" class="text-muted">Judul</td><td>: ${title}</td></tr>
+                    `;
+
+                    if (activityData.type === 'rkm') {
+                        // Inisialisasi dan pemformatan tanggal menggunakan Moment.js
+                        let tglAwal = moment(activityData.tanggal_awal).format('DD MMMM YYYY');
+                        let tglAkhir = moment(activityData.tanggal_akhir).format('DD MMMM YYYY');
+
+                        detailHtml += `
+                            <tr><td class="text-muted">Materi</td><td>: ${activityData.materi || '-'}</td></tr>
+                            <tr><td class="text-muted">Metode Kelas</td><td>: ${activityData.metode_kelas || '-'}</td></tr>
+                            <tr><td class="text-muted">Periode</td><td>: ${tglAwal} s/d ${tglAkhir}</td></tr>
+                        `;
+                    } else if (activityData.type === 'cuti' || activityData.type === 'izin_3jam') {
+                        detailHtml += `
+                            <tr><td class="text-muted">Alasan</td><td>: ${activityData.alasan || '-'}</td></tr>
+                        `;
+                        if (activityData.type === 'izin_3jam') {
+                            detailHtml += `<tr><td class="text-muted">Waktu</td><td>: ${activityData.jam_mulai} - ${activityData.jam_selesai}</td></tr>`;
+                        }
+                    }
+
+                    detailHtml += `</table>`;
+                    $('#rkmDetailSection').html(detailHtml);
+
+                } else {
+                    // Logika Form Manual (activityData.type === 'manual')
+
+                    $('#activityFormDetail').removeClass('d-none');
+                    $('#rkmDetailSection').addClass('d-none');
+
+                    // Isi Form
+                    $('#formActivity').val(title);
+                    $('#formDesc').val(activityData.desc);
+                    $('#formActivityType').val(activityData.activity_type || 'pilih');
+                    $('#formDoc').val(activityData.doc);
+
+                    // Setup Edit Mode Switch
+                    $('#editModeContainer').removeClass('d-none'); // Tampilkan switch
+                    $('#enableEditMode').prop('checked', false);   // Default off
+                    toggleFormInputs(false);                       // Default disabled
+
+                    // Setup Form Action ke UPDATE
+                    $('#activityFormDetail').attr('action', API_PROOF_UPDATE_URL);
+
+                    // Setup Bagian Bukti
+                    $('#proofUploadSection').removeClass('d-none');
+
+                    if(activityData.doc) {
+                        $('#btnViewDoc').removeClass('d-none').attr('href', activityData.doc);
+                    }
                 }
 
             } else { // DATA BARU (Create)
-                
+
                 // Setup Form Action ke STORE
                 $('#activityFormDetail').attr('action', API_STORE_URL);
-                
+
                 $('#editModeContainer').addClass('d-none'); // Sembunyikan switch edit mode
                 toggleFormInputs(true); // Input harus aktif untuk data baru
                 $('#proofUploadSection').addClass('d-none'); // Sembunyikan upload bukti dulu

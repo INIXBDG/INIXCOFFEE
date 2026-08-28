@@ -411,32 +411,23 @@
         <div class="content-card">
             <div class="filter-card">
                 <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">
-                            <i class="fa-solid fa-building text-primary me-2"></i>Pilih Divisi
-                        </label>
-                        <select name="divisiSelectUtama" id="divisiSelectUtama" class="form-select">
-                            <option value="" selected>Semua Divisi</option>
-                            @foreach ($divisi as $item)
-                                <option value="{{ $item }}">{{ $item }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">
-                            <i class="fa-solid fa-calendar-alt text-primary me-2"></i>Pilih Semester
-                        </label>
-                        <select name="quartalSelectUtama" id="quartalSelectUtama" class="form-select">
-                            <option value="S1">Semester 1 (Jan - Jun)</option>
-                            <option value="S2">Semester 2 (Jul - Des)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">
-                            <i class="fa-solid fa-calendar text-primary me-2"></i>Pilih Tahun
-                        </label>
-                        <select name="tahunSelectUtama" id="tahunSelectUtama" class="form-select"></select>
-                    </div>
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fa-solid fa-building text-primary me-2"></i>Pilih Divisi
+                    </label>
+                    <select name="divisiSelectUtama" id="divisiSelectUtama" class="form-select">
+                        <option value="" selected>Semua Divisi</option>
+                        @foreach ($divisi as $item)
+                            <option value="{{ $item }}">{{ $item }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fa-solid fa-calendar text-primary me-2"></i>Pilih Tahun
+                    </label>
+                    <select name="tahunSelectUtama" id="tahunSelectUtama" class="form-select"></select>
+                </div>
                     <input type="hidden" name="jenis_form" id="jenis_form" value="{{ $tipe }}">
                 </div>
             </div>
@@ -451,7 +442,6 @@
                                 <th>Divisi</th>
                                 <th>Tanggal</th>
                                 <th>Kode Form</th>
-                                <th>Semester</th>
                                 <th>Tahun</th>
                                 <th width="20%">Aksi</th>
                             </tr>
@@ -555,10 +545,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
-            const month = new Date().getMonth() + 1;
-            let selectedQuarter = month <= 6 ? 'S1' : 'S2';
-            $('#quartalSelectUtama').val(selectedQuarter);
-
             const tahunSelect = document.getElementById('tahunSelectUtama');
             const tahunSekarang = new Date().getFullYear();
             for (let tahun = 2020; tahun <= tahunSekarang; tahun++) {
@@ -569,7 +555,7 @@
                 tahunSelect.appendChild(option);
             }
 
-            $('#quartalSelectUtama, #tahunSelectUtama, #divisiSelectUtama, #jenis_form').on('change', function() {
+            $('#tahunSelectUtama, #divisiSelectUtama, #jenis_form').on('change', function() {
                 loadData();
             });
 
@@ -577,7 +563,6 @@
         });
 
         function loadData() {
-            const selectedQuartal = $('#quartalSelectUtama').val();
             const selectedTahun = $('#tahunSelectUtama').val();
             const selectedDivisi = $('#divisiSelectUtama').val();
             const jenis_form = $('#jenis_form').val();
@@ -586,7 +571,6 @@
                 url: "{{ route('penilaian.get.data') }}",
                 type: 'get',
                 data: {
-                    quartal: selectedQuartal,
                     tahun: selectedTahun,
                     divisi: selectedDivisi,
                     jenis_form: jenis_form
@@ -630,7 +614,6 @@
                                 `<span class="badge badge-modern badge-jangka">${item.evaluatedDivisi || '-'}</span>`,
                                 item.tanggal,
                                 `<span class="badge badge-modern badge-kode">${item.kode_form_label}</span>`,
-                                `<span class="badge badge-modern badge-semester">${item.quartal}</span>`,
                                 item.tahun,
                                 `<div class="d-flex gap-2">
                                     <button type="button" class="btn-table-action share" onclick="shareForm(this)" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-bs-toggle="modal" data-bs-target="#shareEvaluatorModal" title="Share">
@@ -639,10 +622,10 @@
                                     <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}/{{ $tipe }}" class="btn-table-action edit" title="Detail">
                                         <i class="fa-solid fa-magnifying-glass"></i>
                                     </a>
-                                    <button type="button" class="btn-table-action clean btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}" data-jenis_penilaian="${jenis}" data-quartal="${item.quartal}" data-tahun="${item.tahun}" data-jenis_form="{{ $tipe }}" title="Bersihkan">
+                                    <button type="button" class="btn-table-action clean btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}" data-jenis_penilaian="${jenis}" data-tahun="${item.tahun}" data-jenis_form="{{ $tipe }}" title="Bersihkan">
                                         <i class="fa-solid fa-brush"></i>
                                     </button>
-                                    <button type="button" class="btn-table-action delete btn-hapus" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${item.quartal}" data-tahun="${item.tahun}" data-jenis_form="{{ $tipe }}" title="Hapus">
+                                    <button type="button" class="btn-table-action delete btn-hapus" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" data-tahun="${item.tahun}" data-jenis_form="{{ $tipe }}" title="Hapus">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </div>`
