@@ -752,10 +752,11 @@ Route::prefix('crm')->group(function () {
     Route::prefix('checklist-rkm')->name('crm.checklist-rkm.')->group(function () {
         Route::get('/', [checklistRKMController::class, 'index'])->name('index');
         Route::get('/data', [checklistRKMController::class, 'getData'])->name('data');
+        Route::get('/{id}/detail', [checklistRKMController::class, 'getDetailData'])->name('detail');
         Route::patch('/{id}/checklist', [checklistRKMController::class, 'updateChecklist'])->name('checklist.update');
+        Route::patch('/detail/{id}', [checklistRKMController::class, 'updateDetailChecklist'])->name('detail.update');
         Route::patch('/{id}/checklists', [checklistRKMController::class, 'updateMultiple'])->name('checklist.update-multiple');
     });
-
     // Peluang CRM
     Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
     Route::get('/index/peluang', [PeluangController::class, 'indexJson'])->name('index.peluang.json');
@@ -1872,13 +1873,12 @@ Route::middleware(['auth'])->group(function () {
 
 Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
     Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
-    Route::get('/',               [KelasSettingController::class, 'getData'])->name('data');
-    Route::post('/store',              [KelasSettingController::class, 'store'])->name('store');
-    Route::patch('/{id}',         [KelasSettingController::class, 'update'])->name('update');
-    Route::delete('/{id}',        [KelasSettingController::class, 'destroy'])->name('destroy');
-    Route::post('/{id}/restore',  [KelasSettingController::class, 'restore'])->name('restore');
+    Route::get('/', [KelasSettingController::class, 'getData'])->name('data');
+    Route::post('/store', [KelasSettingController::class, 'store'])->name('store');
+    
+    Route::patch('/update/{id}', [KelasSettingController::class, 'update'])->name('update');
+    Route::delete('/destroy/{id}', [KelasSettingController::class, 'destroy'])->name('destroy');
+    Route::post('/restore/{id}', [KelasSettingController::class, 'restore'])->name('restore');
 
-    // Komentar
-    Route::post('/{id}/comment',           [KelasSettingController::class, 'addComment'])->name('comment.add');
-    Route::delete('/{id}/comment/{cmtId}', [KelasSettingController::class, 'removeComment'])->name('comment.remove');
+    Route::post('/clear-all', [KelasSettingController::class, 'clearAll'])->name('clear-all');
 });

@@ -59,10 +59,10 @@ class checklistRKMController extends Controller
                 'r_k_m_s.tanggal_awal',
                 DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir'),
                 DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
-                DB::raw('MIN(COALESCE(checklist_r_k_m_s.registrasi_form, 0)) AS registrasi_form'),
-                DB::raw('MIN(COALESCE(checklist_r_k_m_s.surat_kontrak, 0)) AS surat_kontrak'),
-                DB::raw('MIN(COALESCE(checklist_r_k_m_s.PA, 0)) AS PA'),
-                DB::raw('MIN(COALESCE(checklist_r_k_m_s.PO, 0)) AS PO')
+                DB::raw('SUM(COALESCE(checklist_r_k_m_s.registrasi_form, 0)) AS registrasi_form'),
+                DB::raw('SUM(COALESCE(checklist_r_k_m_s.surat_kontrak, 0)) AS surat_kontrak'),
+                DB::raw('SUM(COALESCE(checklist_r_k_m_s.PA, 0)) AS PA'),
+                DB::raw('SUM(COALESCE(checklist_r_k_m_s.PO, 0)) AS PO')
             )
             ->groupBy(
                 'r_k_m_s.materi_key',
@@ -160,10 +160,16 @@ class checklistRKMController extends Controller
 
         $transformed = $dataRKM->map(function ($item) use ($taskMap, $karyawanMap, $perusahaanMap) {
             $checkboxes = [];
+            
+            $totalPerusahaan = count(array_filter(explode(',', $item->perusahaan_all ?? '')));
+            
             foreach ($taskMap as $label => $field) {
                 $checkboxes[$field] = [
                     'checked' => (bool) $item->$field,
                     'label' => $label,
+                    'completed' => (int) $item->$field,
+                    'total' => $totalPerusahaan,
+                    'progress' => $totalPerusahaan > 0 ? round((($item->$field ?? 0) / $totalPerusahaan) * 100) : 0,
                 ];
             }
 
@@ -188,6 +194,7 @@ class checklistRKMController extends Controller
                     ? Carbon::parse($item->tanggal_awal)->translatedFormat('d F Y') . ' s/d ' . Carbon::parse($item->tanggal_akhir)->translatedFormat('d F Y')
                     : '-',
                 'checkboxes' => $checkboxes,
+                'total_perusahaan' => $totalPerusahaan,
             ];
         });
 
@@ -248,6 +255,95 @@ class checklistRKMController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Gagal update: ' . $e->getMessage(),
+                ],
+                500,
+            );
+        }
+    }
+
+    public function getDetailData($id): JsonResponse
+    {
+        try {
+            $baseRkm = RKM::select('materi_key', 'tanggal_awal')->findOrFail($id);
+
+            $rkmItems = RKM::where('materi_key', $baseRkm->materi_key)
+                ->where('tanggal_awal', $baseRkm->tanggal_awal)
+                ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                ->leftJoin('checklist_r_k_m_s', 'checklist_r_k_m_s.id_rkm', '=', 'r_k_m_s.id')
+                ->leftJoin('karyawans as sales', 'r_k_m_s.sales_key', '=', 'sales.kode_karyawan')
+                ->leftJoin('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
+                ->select(
+                    'r_k_m_s.id',
+                    'materis.nama_materi',
+                    'r_k_m_s.perusahaan_key',
+                    'perusahaans.nama_perusahaan',
+                    'r_k_m_s.sales_key',
+                    'sales.nama_lengkap as sales_name',
+                    'checklist_r_k_m_s.registrasi_form',
+                    'checklist_r_k_m_s.surat_kontrak',
+                    'checklist_r_k_m_s.PA',
+                    'checklist_r_k_m_s.PO'
+                )
+                ->orderBy('perusahaans.nama_perusahaan', 'asc')
+                ->orderBy('sales.nama_lengkap', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $rkmItems
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data detail: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateDetailChecklist(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'rkm_id' => 'required|exists:r_k_m_s,id',
+            'field' => 'required|in:registrasi_form,surat_kontrak,PA,PO',
+            'checked' => 'required|boolean',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $field = $request->field;
+            $checked = (bool) $request->checked;
+
+            $checklist = ChecklistRKM::firstOrCreate(
+                ['id_rkm' => $request->rkm_id],
+                [
+                    'registrasi_form' => false,
+                    'surat_kontrak' => false,
+                    'PA' => false,
+                    'PO' => false,
+                ]
+            );
+
+            $checklist->update([$field => $checked]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Checklist berhasil diupdate',
+                'data' => [
+                    'rkm_id' => $request->rkm_id,
+                    'field' => $field,
+                    'checked' => $checked,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
 
             return response()->json(
                 [
