@@ -387,6 +387,7 @@ class DatabaseKPIController extends Controller
     }
     public function downloadPDF(Request $request)
     {
+
         $request->validate([
             'id_karyawan' => 'required',
             'kodeForm'    => 'required|string',
@@ -2698,7 +2699,7 @@ class DatabaseKPIController extends Controller
         $AbsenCuti = $applyUserFilter(
             pengajuancuti::with('karyawan')
                 ->where('tipe', 'Cuti')
-                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereYear('created_at', $year)
                 ->where('approval_manager', '1')
         )->get();
 
@@ -2720,7 +2721,7 @@ class DatabaseKPIController extends Controller
         $AbsenSakit = $applyUserFilter(
             pengajuancuti::with('karyawan')
                 ->where('tipe', 'Sakit')
-                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereBetween('created_at', $year)
                 ->where('approval_manager', '1')
         )->get();
 
