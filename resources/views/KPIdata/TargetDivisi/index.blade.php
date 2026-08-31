@@ -993,36 +993,6 @@
                     });
                 });
 
-                $('#targetForm').off('submit').on('submit', function(e) {
-                    e.preventDefault();
-                    const form = $(this);
-                    const formData = new FormData(this);
-                    $.ajax({
-                        url: form.attr('action'),
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function(response) {
-                            $('#modalBuatTarget').modal('hide');
-                            form[0].reset();
-                            $('.select2').val(null).trigger('change');
-                            Swal.fire('Berhasil', response.message, 'success');
-                            loadContentForm();
-                        },
-                        error: function(xhr) {
-                            const errors = xhr.responseJSON?.errors;
-                            let message = 'Terjadi kesalahan.';
-                            if (errors) message = Object.values(errors).flat().join('<br>');
-                            else if (xhr.responseJSON?.message) message = xhr.responseJSON.message;
-                            Swal.fire('Error', message, 'error');
-                        },
-                        complete: function() {
-                            isSubmitting = false;
-                        }
-                    });
-                });
-
                 loadContentForm();
 
                 $('#searchTarget').on('input', function() {
@@ -1467,7 +1437,7 @@
                                 return `<div class="d-flex align-items-center py-2 participant-item"><div class="avatar me-3">${no++}</div><div class="flex-grow-1"><div class="fw-semibold text-dark small">${item.nama_lengkap || '-'}</div><div class="text-muted small">${item.jabatan || '-'}</div></div></div>`;
                             }).join('') || '<div class="text-muted small">Tidak ada karyawan</div>';
 
-                            const allowedAssistantRoutesForRupiah = ['pemasukan kotor', 'meningkatkan revenue perusahaan', 'target penjualan tahunan', 'target penjualan project tahunan'];
+                            const allowedAssistantRoutesForRupiah = ['pemasukan kotor', 'meningkatkan revenue perusahaan', 'target penjualan tahunan', 'target penjualan project tahunan', 'pendapatan penjualan project'];
                             const allowedAssistantRoutesForPresentaseGapKompetensi = ['persentase gap kompetensi tim terhadap standar skill'];
                             const allowedAssistantRoutesForTargetPenjualanTahunan = ['target penjualan tahunan', 'pemasukan kotor'];
                             const allowedAssistantRoutesForPeningkatanKontribusiPelatihan = ['peningkatan kontribusi pelatihan'];
@@ -1966,35 +1936,61 @@
                 });
             });
 
-            $('#targetForm').on('submit', function(e) {
+            $('#targetForm').off('submit').on('submit', function(e) {
                 e.preventDefault();
+
                 const judul = $('#judul_kpi').val().trim();
                 if (!judul) {
                     Swal.fire('Peringatan', 'Judul KPI wajib diisi.', 'warning');
                     return;
                 }
+
                 const form = $(this);
-                const url = form.attr('action');
                 const formData = new FormData(this);
-                const rawNilai = $('#nilaiTarget').val() ? $('#nilaiTarget').val().replace(/\D/g, '') : '';
-                formData.set('nilai_target', rawNilai);
+
+                const submitBtn = form.find('button[type="submit"]');
+                const originalBtnText = submitBtn.html();
+                submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Menyimpan...');
+
                 $.ajax({
-                    url: url,
+                    url: form.attr('action'),
                     type: 'POST',
                     data: formData,
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Target berhasil dibuat.', timer: 2000, showConfirmButton: false }).then(() => {
-                            $('#modalBuatTarget').modal('hide');
+                        $('#modalBuatTarget').modal('hide');
+                        form[0].reset();
+                        
+                        $('.select2').val(null).trigger('change');
+                        
+                        $('#detail_jangka_container').empty();
+                        $('#jangka_target_display, #tipe_target_display, #nilai_target_display').val('');
+                        $('#jangka_target_hidden, #tipe_target_hidden, #nilai_target_hidden').val('');
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: response.message || 'Target berhasil dibuat.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            if (typeof loadContentForm === 'function') {
+                                loadContentForm();
+                            }
                         });
-                        loadContentForm();
                     },
                     error: function(xhr) {
                         let msg = 'Terjadi kesalahan. Silakan coba lagi.';
-                        if (xhr.responseJSON?.errors) msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
-                        else if (xhr.responseJSON?.message) msg = xhr.responseJSON.message;
+                        if (xhr.responseJSON?.errors) {
+                            msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                        } else if (xhr.responseJSON?.message) {
+                            msg = xhr.responseJSON.message;
+                        }
                         Swal.fire({ icon: 'error', title: 'Gagal!', html: msg });
+                    },
+                    complete: function() {
+                        submitBtn.prop('disabled', false).html(originalBtnText);
                     }
                 });
             });
@@ -2037,7 +2033,6 @@
 
                 const processed = [];
                 const nowDate = new Date();
-
                 const routesTargetPerPeserta = [
                     'sertifikasi kompetensi internal',
                     'pelatihan kompetensi eksternal'
@@ -2045,16 +2040,16 @@
 
                 Object.entries(groupedByPembuat).forEach(([idPembuat, group]) => {
                     group.targets.forEach(function(item) {
-                        
                         const isPerPesertaRoute = routesTargetPerPeserta.includes(item.asistant_route);
                         const totalPeserta = item.total_peserta 
                             || (Array.isArray(item.karyawan) ? item.karyawan.length : 0) 
                             || 0;
-     
+            
                         const actualTarget = (isPerPesertaRoute && totalPeserta > 0) 
                             ? totalPeserta * (parseFloat(item.nilai_target) || 0)
                             : (parseFloat(item.nilai_target) || 0);
 
+                        // 1. Format Target terlebih dahulu
                         let formattedTarget = item.nilai_target;
                         if (item.tipe_target === 'persen') {
                             formattedTarget = `${item.nilai_target}%`;
@@ -2068,6 +2063,7 @@
                                 : `${item.nilai_target}`;
                         }
 
+                        // 2. Format Jabatan
                         let jabatanDisplay = '-';
                         if (item.jabatan) {
                             const jabatanList = Array.isArray(item.jabatan) ? item.jabatan : [item.jabatan];
@@ -2078,49 +2074,40 @@
                             }
                         }
 
+                        // 3. DEKLARASI VARIABEL PROGRESS (Wajib di atas sebelum dipakai)
                         let statusText = '';
                         let badgeClass = 'bg-secondary';
                         let progressNumeric = parseFloat(item.progress) || 0;
                         let progressValueDisplay = progressNumeric;
-
                         const progress = parseFloat(item.progress) || 0;
 
+                        // 4. LOGIKA PERHITUNGAN PROGRESS (Setelah variabel dideklarasikan)
                         if (item.tipe_target === 'rupiah') {
-                            progressNumeric = actualTarget > 0
-                                ? Math.min(Math.round((progress / actualTarget) * 100), 100)
+                            const percentProgress = actualTarget > 0
+                                ? Math.min(((progress / actualTarget) * 100).toFixed(1), 100)
                                 : 0;
-
-                            progressValueDisplay = new Intl.NumberFormat('id-ID', {
-                                style: 'currency',
-                                currency: 'IDR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
-                            }).format(progress);
-
+                            progressNumeric = parseFloat(percentProgress);
+                            progressValueDisplay = `${percentProgress}%`;
                         } else if (item.tipe_target === 'angka') {
                             const percentProgress = actualTarget > 0
                                 ? Math.min(((progress / actualTarget) * 100).toFixed(1), 100)
                                 : 0;
-
                             progressNumeric = percentProgress;
-
                             const progressRounded = new Intl.NumberFormat('id-ID', {
                                 maximumFractionDigits: 0
                             }).format(progress);
-
                             const targetRounded = new Intl.NumberFormat('id-ID', {
                                 maximumFractionDigits: 0
                             }).format(actualTarget);
-
                             progressValueDisplay = isPerPesertaRoute
                                 ? `${progressRounded} / ${targetRounded}`
                                 : progressRounded;
-
                             progressValueDisplay = `${percentProgress}%`;
                         } else {
                             progressValueDisplay = Math.round(progressNumeric) + '%';
                         }
 
+                        // 5. Sisa logika (lengthProgress, isTargetReached, deadline, dll)
                         const lengthProgress = actualTarget > 0
                             ? Math.min(Math.round((progress / actualTarget) * 100), 100)
                             : 0;

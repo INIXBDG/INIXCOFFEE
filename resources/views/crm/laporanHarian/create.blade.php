@@ -178,7 +178,6 @@
         </div>
 
     </div>
-@endsection
 <style>
     /* samakan dengan form-control bootstrap */
     .select2-container--default .select2-selection--single {
