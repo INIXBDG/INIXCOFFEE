@@ -435,7 +435,8 @@
                             actions += '<a class="dropdown-item disabled" href="#">Menunggu Approval</a>';
                         }
 
-                        // Hapus bisa dilakukan kapan saja oleh HRD
+                        // Hapus dan Edit Data bisa dilakukan kapan saja oleh HRD
+                        actions += '<a class="dropdown-item" href="{{ url("/suratperjalanan") }}/' + row.id + '/editspj">Edit Data</a>';
                         actions += '<form onsubmit="return confirm(\'Yakin ingin menghapus?\');" action="{{ url("/suratperjalanan") }}/' + row.id + '" method="POST">@csrf @method("DELETE")<button type="submit" class="dropdown-item text-danger">Hapus</button></form>';
 
                         actions += '</div></div>';
