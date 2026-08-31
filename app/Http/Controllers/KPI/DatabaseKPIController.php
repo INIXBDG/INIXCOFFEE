@@ -2737,7 +2737,7 @@ class DatabaseKPIController extends Controller
         $AbsenSakit = $applyUserFilter(
             pengajuancuti::with('karyawan')
                 ->where('tipe', 'Sakit')
-                ->whereBetween('created_at', $year)
+                ->whereYear('created_at', $year)
                 ->where('approval_manager', '1')
         )->get();
 
@@ -2758,7 +2758,7 @@ class DatabaseKPIController extends Controller
 
         $AbsenIzin = $applyUserFilter(
             izinTigaJam::with('karyawan')
-                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereYear('created_at', $year)
         )->get();
 
         $totalAbsenIzin = $AbsenIzin->pluck('id_karyawan')->unique()->count();
