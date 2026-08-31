@@ -26,6 +26,7 @@ class RKMController extends Controller
 
     public function showMonth($year, $month)
     {
+        DB::statement("SET SESSION group_concat_max_len = 10000");
         $bulan = $month + 1;
         $startDate = CarbonImmutable::create($year, $month, 1);
         $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
@@ -188,6 +189,7 @@ class RKMController extends Controller
 
     public function RKMAPIabsensi($year, $month)
     {
+        DB::statement("SET SESSION group_concat_max_len = 10000");
         $bulan = $month + 1;
         $startDate = CarbonImmutable::create($year, $month, 1);
         $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
