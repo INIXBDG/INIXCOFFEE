@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\karyawan;
-use App\Models\jabatan;
 use App\Models\User;
 use App\Models\RKM;
 use App\Models\Materi;
@@ -19,17 +18,6 @@ use Illuminate\Support\Facades\Storage;
 
 class PengajuanSubsController extends Controller
 {
-    private function checkKoordinatorItsmAccess()
-    {
-        $user = auth()->user();
-        if (!$user || !$user->karyawan) {
-            return false;
-        }
-
-        $jabatan = $user->karyawan->jabatan ?? '';
-        return $jabatan === 'Koordinator ITSM';
-    }
-
     public function index()
     {
         $user = auth()->user();
@@ -38,43 +26,67 @@ class PengajuanSubsController extends Controller
             return view('auth.login');
         }
 
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return redirect()->route('home')->with('error', 'Hanya Koordinator ITSM yang dapat mengakses fitur Pengajuan Subs.');
+        $jabatan = $user->karyawan->jabatan;
+
+        $jabatanBuka = ['Finance & Accounting', 'GM', 'SPV Sales', 'Koordinator ITSM', 'Technical Support', 'Instruktur'];
+
+        if (in_array($jabatan, $jabatanBuka)) {
+            $tracking = 'buka';
+        } else {
+            $karyawan = $user->karyawan->nama_lengkap;
+
+            $trackingRecord = TrackingPengajuanSubs::whereHas('pengajuan.karyawan', function ($query) use ($karyawan) {
+                    $query->where('nama_lengkap', $karyawan);
+                })
+                ->latest()
+                ->first();
+
+            $tracking = 'buka';
         }
 
-        $tracking = 'buka';
         $materis = Materi::all();
 
         return view('pengajuansubs.index', compact('tracking', 'materis'));
     }
 
-    public function getPengajuanLabSubs($month, $year)
+    public function getPengajuanSubs($month, $year)
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak'], 403);
-        }
+        $user = auth()->user()->karyawan_id;
+        $karyawan = Karyawan::findOrFail($user);
+        $jabatan = $karyawan->jabatan;
+        $divisi = $karyawan->divisi;
 
         $relations = ['karyawan', 'tracking', 'subs', 'rkm.perusahaan', 'rkm.materi'];
 
-        $Pengajuan = PengajuanSubs::with($relations)
-            ->whereMonth('created_at', $month)
-            ->whereYear('created_at', $year)
-            ->latest()
-            ->get();
+        if (in_array($jabatan, ['Finance & Accounting', 'Koordinator ITSM', 'GM', 'Technical Support', 'Education Manager'])) {
+            $Pengajuan = PengajuanSubs::with($relations)
+                ->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year)
+                ->latest()
+                ->get();
+        } elseif (in_array($jabatan, ['Office Manager', 'SPV Sales'])) {
+            $Pengajuan = PengajuanSubs::with($relations)
+                ->whereHas('karyawan', function ($q) use ($divisi) {
+                    $q->where('divisi', $divisi);
+                })
+                ->latest()
+                ->get();
+        } else {
+            $Pengajuan = PengajuanSubs::with($relations)
+                ->where('kode_karyawan', $karyawan->kode_karyawan)
+                ->latest()
+                ->get();
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'List Pengajuan Subs',
+            'message' => 'List Pengajuan Subscription',
             'data'    => $Pengajuan,
         ]);
     }
 
-    public function getMasterLabs()
+    public function getMasterSubs()
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak'], 403);
-        }
-
         $subs = Subscription::with('materis')->orderBy('created_at', 'desc')->get();
 
         return response()->json([
@@ -85,40 +97,51 @@ class PengajuanSubsController extends Controller
 
     public function storeMasterSubs(Request $request)
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak'], 403);
-        }
-
         $request->validate([
             'nama_subs' => 'required|string|max:255',
             'merk' => 'nullable|string|max:255',
-            'tipe' => 'required|in:subscription,one-time',
-            'status' => 'required|in:active,pending,expired',
+            'tipe' => 'required|string|in:subscription,one-time',
+            'status' => 'required|string|in:active,pending,expired',
             'desc' => 'nullable|string',
             'subs_url' => 'nullable|url',
             'access_code' => 'nullable|string|max:255',
-            'duration_minutes' => 'nullable|numeric',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
             'mata_uang' => 'required|string|max:50',
             'harga' => 'required|numeric',
             'kurs' => 'nullable|numeric',
-            'harga_rupiah' => 'nullable|numeric',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
             'materi_ids' => 'nullable|array',
             'materi_ids.*' => 'exists:materis,id',
         ]);
 
         $user = auth()->user();
+        $karyawan = $user->karyawan;
 
-        $data = $request->except('materi_ids');
-        $data['kode_karyawan'] = $user->karyawan->kode_karyawan ?? null;
-
-        if (empty($data['harga_rupiah'])) {
-            $kurs = $data['kurs'] ?? 1;
-            $data['harga_rupiah'] = $data['harga'] * $kurs;
+        $hargaRupiah = $request->harga;
+        $kurs = $request->kurs ?? 1;
+        if ($request->mata_uang !== 'Rupiah') {
+            $hargaRupiah = $request->harga * $kurs;
+        } else {
+            $kurs = 1;
         }
 
-        $subs = Subscription::create($data);
+        $subs = Subscription::create([
+            'kode_karyawan' => $karyawan->kode_karyawan,
+            'nama_subs' => $request->nama_subs,
+            'merk' => $request->merk,
+            'tipe' => $request->tipe,
+            'desc' => $request->desc,
+            'subs_url' => $request->subs_url,
+            'access_code' => $request->access_code,
+            'status' => $request->status,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'mata_uang' => $request->mata_uang,
+            'harga' => $request->harga,
+            'kurs' => $kurs,
+            'harga_rupiah' => $hargaRupiah,
+            'is_active' => true,
+        ]);
 
         if ($request->has('materi_ids')) {
             $subs->materis()->sync($request->materi_ids);
@@ -126,40 +149,39 @@ class PengajuanSubsController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Data Subscription berhasil ditambahkan!',
+            'message' => 'Subscription master berhasil ditambahkan!',
             'data' => $subs
         ]);
     }
 
-    public function updateMasterLab(Request $request, $id)
+    public function updateMasterSubs(Request $request, $id)
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak'], 403);
-        }
-
         $request->validate([
-            'nama_labs' => 'required|string|max:255',
+            'nama_subs' => 'required|string|max:255',
             'merk' => 'nullable|string|max:255',
             'tipe' => 'nullable|in:subscription,one-time',
             'status' => 'nullable|in:active,pending,expired',
-            'harga_rupiah' => 'nullable|numeric',
+            'mata_uang' => 'nullable|string',
+            'harga' => 'nullable|numeric',
+            'kurs' => 'nullable|numeric',
             'materi_ids' => 'nullable|array',
             'materi_ids.*' => 'exists:materis,id'
         ]);
 
         $subs = Subscription::findOrFail($id);
 
-        $updateData = $request->except('materi_ids');
-        if (isset($updateData['nama_labs'])) {
-            $updateData['nama_subs'] = $updateData['nama_labs'];
-            unset($updateData['nama_labs']);
-        }
-        if (isset($updateData['lab_url'])) {
-            $updateData['subs_url'] = $updateData['lab_url'];
-            unset($updateData['lab_url']);
+        $data = $request->except('materi_ids');
+        if ($request->has('harga')) {
+            $kurs = $request->kurs ?? 1;
+            if ($request->mata_uang !== 'Rupiah') {
+                $data['harga_rupiah'] = $request->harga * $kurs;
+            } else {
+                $data['kurs'] = 1;
+                $data['harga_rupiah'] = $request->harga;
+            }
         }
 
-        $subs->update($updateData);
+        $subs->update($data);
 
         if ($request->has('materi_ids')) {
             $subs->materis()->sync($request->materi_ids);
@@ -169,14 +191,17 @@ class PengajuanSubsController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Data subscription berhasil diperbarui',
+            'message' => 'Data subscription dan materi berhasil diperbarui',
             'data' => $subs
         ]);
     }
 
     public function edit($id)
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
+        $user = auth()->user();
+        $jabatan = $user->karyawan->jabatan;
+
+        if (!in_array($jabatan, ['Technical Support', 'Koordinator ITSM'])) {
             return redirect()->route('pengajuansubs.index')
                 ->with('error', 'Anda tidak memiliki akses untuk mengedit data teknis.');
         }
@@ -188,11 +213,6 @@ class PengajuanSubsController extends Controller
 
     public function create()
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return redirect()->route('pengajuansubs.index')
-                ->with('error', 'Hanya Koordinator ITSM yang dapat membuat pengajuan.');
-        }
-
         $user = auth()->user();
         $karyawan = $user->karyawan;
 
@@ -204,34 +224,30 @@ class PengajuanSubsController extends Controller
         return view('pengajuansubs.create', compact('karyawan', 'rkms'));
     }
 
-    public function getLabsByRkm($rkmId)
+    public function getSubsByRkm($rkmId)
     {
         $rkm = RKM::with('materi')->find($rkmId);
 
         if (!$rkm || !$rkm->materi) {
-            return response()->json(['materi_nama' => '', 'labs' => []]);
+            return response()->json(['materi_nama' => '', 'subs' => []]);
         }
 
         $subs = $rkm->materi->subscriptions()
-                    ->where('subscriptions.status', 'active')
+                    ->where('subscriptions.status', 'Active')
                     ->where('subscriptions.is_active', true)
                     ->get();
 
         return response()->json([
             'materi_nama' => $rkm->materi->nama_materi,
-            'labs' => $subs
+            'subs' => $subs
         ]);
     }
 
     public function store(Request $request)
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return redirect()->route('pengajuansubs.index')->with('error', 'Akses ditolak');
-        }
-
         $request->validate([
             'id_rkm' => 'required|exists:r_k_m_s,id',
-            'sumber_lab' => 'required|in:existing,new',
+            'sumber_subs' => 'required|in:existing,new',
         ]);
 
         $karyawan = \App\Models\karyawan::where('kode_karyawan', $request->kode_karyawan)->firstOrFail();
@@ -241,29 +257,29 @@ class PengajuanSubsController extends Controller
         $namaSubsNotification = '';
         $descSubsNotification = '';
 
-        $trackingText = 'Diajukan dan Sedang Ditinjau oleh Koordinator ITSM';
+        $trackingText = 'Diajukan dan Sedang Ditinjau oleh Education Manager';
 
-        if ($request->sumber_lab === 'existing') {
-            $request->validate(['id_existing_lab' => 'required|exists:subscriptions,id']);
+        if ($request->sumber_subs === 'existing') {
+            $request->validate(['id_existing_subs' => 'required|exists:subscriptions,id']);
 
-            $subsId = $request->id_existing_lab;
+            $subsId = $request->id_existing_subs;
             $jenisTransaksi = 'existing';
 
             $existingSubs = Subscription::find($subsId);
-            $namaSubsNotification = $existingSubs->nama_subs ?? '';
-            $descSubsNotification = $existingSubs->desc ?? '';
+            $namaSubsNotification = $existingSubs->nama_subs;
+            $descSubsNotification = $existingSubs->desc;
         } else {
             $request->validate([
-                'new_nama_labs' => 'required|string|max:255',
+                'new_nama_subs' => 'required|string|max:255',
                 'new_merk'      => 'required|string|max:255',
             ]);
 
             $newSubs = Subscription::create([
                 'kode_karyawan' => $karyawan->kode_karyawan,
-                'nama_subs'     => $request->new_nama_labs,
+                'nama_subs'     => $request->new_nama_subs,
                 'merk'          => $request->new_merk,
                 'tipe'          => 'subscription',
-                'desc'          => 'Request Baru oleh Koordinator ITSM',
+                'desc'          => 'Request Baru oleh Divisi Education',
                 'subs_url'      => null,
                 'status'        => 'pending',
                 'is_active'     => false,
@@ -272,8 +288,8 @@ class PengajuanSubsController extends Controller
             $subsId = $newSubs->id;
             $jenisTransaksi = 'baru';
 
-            $namaSubsNotification = $request->new_nama_labs;
-            $descSubsNotification = 'Request Subs Baru';
+            $namaSubsNotification = $request->new_nama_subs;
+            $descSubsNotification = 'Request Subscription Baru';
         }
 
         $pengajuan = PengajuanSubs::create([
@@ -291,17 +307,40 @@ class PengajuanSubsController extends Controller
 
         $pengajuan->update(['id_tracking' => $trackingModel->id]);
 
+        $eduman = User::whereHas('karyawan', function($q) {
+            $q->where('jabatan', 'Education Manager');
+        })->first();
+
+        if ($eduman) {
+            $rkm = RKM::with(['materi', 'perusahaan'])->find($request->id_rkm);
+
+            $notifData = [
+                'id_karyawan'       => $karyawan->id,
+                'tanggal_pengajuan' => now(),
+                'jenis_pengajuan'   => 'subscription',
+                'nama'              => $namaSubsNotification,
+                'deskripsi'         => $descSubsNotification,
+                'rkm'               => [
+                    'nama_materi'     => $rkm->materi->nama_materi ?? '-',
+                    'nama_perusahaan' => $rkm->perusahaan->nama_perusahaan ?? '-',
+                    'tanggal_mulai'   => $rkm->tanggal_awal,
+                    'tanggal_selesai' => $rkm->tanggal_akhir,
+                ]
+            ];
+
+            $path = "/pengajuansubs";
+            $type = "Mengajukan Subscription";
+
+            NotificationFacade::send($eduman, new PengajuanLabdanSubsNotification($notifData, $path, $type, $eduman->id));
+        }
+
         return redirect()->route('pengajuansubs.index')
-            ->with('success', 'Pengajuan Subs berhasil dikirim.');
+            ->with('success', 'Pengajuan berhasil dikirim dan menunggu persetujuan Education Manager.');
     }
 
     public function show($id)
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return redirect()->route('home')->with('error', 'Akses ditolak');
-        }
-
-        $data = PengajuanSubs::with(['karyawan', 'subs','tracking', 'rkm.perusahaan', 'rkm.materi'])
+        $data = PengajuanSubs::with(['karyawan', 'subs', 'tracking', 'rkm.perusahaan', 'rkm.materi'])
             ->findOrFail($id);
 
         return view('pengajuansubs.show', compact('data'));
@@ -309,40 +348,166 @@ class PengajuanSubsController extends Controller
 
     public function update(Request $request, $id)
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak'], 403);
-        }
-
         $request->validate([
             'approval' => 'required|string',
             'alasan' => 'nullable|string|max:500',
+            'finance_status' => 'nullable',
         ]);
 
         $data = PengajuanSubs::with('karyawan')->findOrFail($id);
+        $jabatan = auth()->user()->karyawan->jabatan;
 
-        if ($request->approval == '1') {
-            $status = "Telah disetujui oleh Koordinator ITSM dan lihat akses nya di Detail";
+        if ($jabatan === 'Finance & Accounting' && !in_array($request->approval, ['1', '2'])) {
+            $status = $request->approval;
 
-            if ($data->id_subs) {
-                $subsData = Subscription::find($data->id_subs);
-                if ($subsData) {
-                    $data->update(['subs_snapshot' => $subsData->toArray()]);
-                }
+            if (!$status) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status pencairan wajib dipilih.'
+                ], 400);
             }
 
             $e = TrackingPengajuanSubs::create([
                 'id_pengajuan_subs' => $id,
-                'tracking'          => $status,
-                'tanggal'           => now()
+                'tracking' => $status,
+                'tanggal' => now()
             ]);
 
-            $final = TrackingPengajuanSubs::create([
+            $data->update(['id_tracking' => $e->id]);
+
+            if ($status === 'Pencairan Sudah Selesai') {
+                $final = TrackingPengajuanSubs::create([
+                    'id_pengajuan_subs' => $id,
+                    'tracking' => 'Selesai',
+                    'tanggal' => now()->addSeconds(1)
+                ]);
+
+                $data->update(['id_tracking' => $final->id]);
+            }
+
+            $userObjs = User::whereHas('karyawan', function ($q) use ($data) {
+                $q->where('kode_karyawan', $data->karyawan->kode_karyawan);
+            })->get();
+
+            $notifData = [
+                'tanggal' => now(),
+                'status' => $status,
+            ];
+
+            foreach ($userObjs as $user) {
+                NotificationFacade::send(
+                    $user,
+                    new ApprovalLabSubsNotification(
+                        $notifData,
+                        '/pengajuansubs',
+                        $data->karyawan->nama_lengkap,
+                        'Update Status Pencairan oleh Finance',
+                        $user->id
+                    )
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status pencairan berhasil diperbarui!',
+                'redirect' => route('pengajuansubs.index')
+            ]);
+        }
+
+        if ($request->approval == '1') {
+            $status = '';
+            $nextUser = null;
+            $updatePayload = [];
+
+            switch ($jabatan) {
+                case 'SPV Sales':
+                case 'Education Manager':
+                case 'GM':
+                    $status = "Telah disetujui oleh {$jabatan} dan sedang ditinjau oleh Koordinator ITSM";
+                    $nextUser = Karyawan::where('jabatan', 'Koordinator ITSM')->first();
+
+                    $e = TrackingPengajuanSubs::create([
+                        'id_pengajuan_subs' => $id,
+                        'tracking' => $status,
+                        'tanggal'  => now()
+                    ]);
+                    $updatePayload['id_tracking'] = $e->id;
+                    break;
+
+                case 'Koordinator ITSM':
+                    if ($data->id_subs) {
+                        $subsData = Subscription::find($data->id_subs);
+                        if ($subsData) $updatePayload['subs_snapshot'] = $subsData->toArray();
+                    }
+
+                    if ($data->jenis_transaksi === 'existing') {
+                        $status = "Telah disetujui oleh Koordinator ITSM dan lihat akses nya di Detail";
+                        $nextUser = null;
+
+                        $e = TrackingPengajuanSubs::create([
+                            'id_pengajuan_subs' => $id,
+                            'tracking' => $status,
+                            'tanggal'  => now()
+                        ]);
+
+                        $final = TrackingPengajuanSubs::create([
+                            'id_pengajuan_subs' => $id,
+                            'tracking' => 'Selesai',
+                            'tanggal'  => now()->addSeconds(1)
+                        ]);
+
+                        $updatePayload['id_tracking'] = $final->id;
+                    } else {
+                        $status = "Telah disetujui oleh Koordinator ITSM dan sedang diproses oleh Finance";
+                        $nextUser = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+
+                        $e = TrackingPengajuanSubs::create([
+                            'id_pengajuan_subs' => $id,
+                            'tracking' => $status,
+                            'tanggal'  => now()
+                        ]);
+                        $updatePayload['id_tracking'] = $e->id;
+                    }
+                    break;
+
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Role Anda tidak memiliki hak approval!'
+                    ], 403);
+            }
+
+            $e = TrackingPengajuanSubs::create([
                 'id_pengajuan_subs' => $id,
-                'tracking'          => 'Selesai',
-                'tanggal'           => now()->addSeconds(1)
+                'tracking' => $status,
+                'tanggal'  => now()
             ]);
 
-            $data->update(['id_tracking' => $final->id]);
+            $updatePayload['id_tracking'] = $e->id;
+            $data->update($updatePayload);
+
+            $usersCodes = [$data->karyawan->kode_karyawan];
+            if ($nextUser) $usersCodes[] = $nextUser->kode_karyawan;
+
+            $userObjs = User::whereHas('karyawan', fn($q) => $q->whereIn('kode_karyawan', $usersCodes))->get();
+
+            $notifData = [
+                'tanggal' => now(),
+                'status'  => $status,
+            ];
+
+            foreach ($userObjs as $user) {
+                NotificationFacade::send(
+                    $user,
+                    new ApprovalLabSubsNotification(
+                        $notifData,
+                        '/pengajuansubs',
+                        $data->karyawan->nama_lengkap,
+                        'Menyetujui Pengajuan Lab/Subscription',
+                        $user->id
+                    )
+                );
+            }
 
             return response()->json([
                 'success'  => true,
@@ -353,15 +518,35 @@ class PengajuanSubsController extends Controller
 
         if ($request->approval == '2') {
             $alasan = $request->alasan ?? 'Tidak disebutkan';
-            $status = "Pengajuan ditolak oleh Koordinator ITSM karena {$alasan}";
+            $status = "Pengajuan ditolak oleh {$jabatan} karena {$alasan}";
 
             $e = TrackingPengajuanSubs::create([
                 'id_pengajuan_subs' => $id,
-                'tracking'          => $status,
-                'tanggal'           => now()
+                'tracking' => $status,
+                'tanggal' => now()
             ]);
 
             $data->update(['id_tracking' => $e->id]);
+
+            $userObjs = User::whereHas('karyawan', fn($q) => $q->where('kode_karyawan', $data->karyawan->kode_karyawan))->get();
+
+            $notifData = [
+                'tanggal' => now(),
+                'status' => $status,
+            ];
+
+            foreach ($userObjs as $user) {
+                NotificationFacade::send(
+                    $user,
+                    new ApprovalLabSubsNotification(
+                        $notifData,
+                        '/pengajuansubs',
+                        $data->karyawan->nama_lengkap,
+                        'Menolak Pengajuan Lab/Subscription',
+                        $user->id
+                    )
+                );
+            }
 
             return response()->json([
                 'success' => true,
@@ -376,22 +561,17 @@ class PengajuanSubsController extends Controller
         ], 400);
     }
 
-    public function updateLabSubs(Request $request, $id)
+    public function updateSubsSubs(Request $request, $id)
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return redirect()->route('pengajuansubs.index')->with('error', 'Akses ditolak');
-        }
-
         $data = PengajuanSubs::with('subs')->findOrFail($id);
 
         $validated = $request->validate([
-            'nama_labs'    => 'required|string|max:255',
+            'nama_subs'    => 'required|string|max:255',
             'merk'         => 'nullable|string|max:255',
             'tipe'         => 'required|in:one-time,subscription',
             'desc'         => 'nullable|string',
-            'lab_url'      => 'nullable|url',
+            'subs_url'     => 'nullable|url',
             'access_code'  => 'nullable|string|max:255',
-            'duration_minutes' => 'nullable|numeric',
             'mata_uang'    => 'required|string|max:50',
             'harga'        => 'required|numeric',
             'kurs'         => 'nullable|numeric',
@@ -401,71 +581,52 @@ class PengajuanSubsController extends Controller
             'status'       => 'required|string|in:active,pending,expired',
         ]);
 
-        $updateData = [
-            'nama_subs'        => $validated['nama_labs'],
-            'merk'             => $validated['merk'],
-            'tipe'             => $validated['tipe'],
-            'desc'             => $validated['desc'],
-            'subs_url'         => $validated['lab_url'],
-            'access_code'      => $validated['access_code'],
-            'duration_minutes' => $validated['duration_minutes'],
-            'mata_uang'        => $validated['mata_uang'],
-            'harga'            => $validated['harga'],
-            'kurs'             => $validated['kurs'] ?? 1,
-            'start_date'       => $validated['start_date'],
-            'end_date'         => $validated['end_date'],
-            'status'           => $validated['status'],
-        ];
-
         if (!empty($validated['harga_rupiah'])) {
-            $updateData['harga_rupiah'] = (int) preg_replace('/[^\d]/', '', $validated['harga_rupiah']);
+            $validated['harga_rupiah'] = (int) preg_replace('/[^\d]/', '', $validated['harga_rupiah']);
         } else {
-            $updateData['harga_rupiah'] = $updateData['harga'] * $updateData['kurs'];
+            $kurs = $validated['kurs'] ?? 1;
+            $validated['harga_rupiah'] = $validated['harga'] * $kurs;
+        }
+        if ($validated['mata_uang'] === 'Rupiah') {
+            $validated['kurs'] = 1;
+            $validated['harga_rupiah'] = $validated['harga'];
         }
 
         if ($data->subs) {
-            $data->subs->update($updateData);
+            $data->subs->update($validated);
         }
 
         return redirect()
             ->route('pengajuansubs.index')
-            ->with('success', 'Data Teknis Subs berhasil diperbarui!');
+            ->with('success', 'Data Teknis Subscription berhasil diperbarui!');
     }
 
     public function uploadInvoice(Request $request, $id)
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak'], 403);
-        }
-
         $request->validate([
             'invoice' => 'required|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         $data = PengajuanSubs::findOrFail($id);
 
-        if ($data->invoice && Storage::exists('public/pengajuanlabsubs/' . $data->invoice)) {
-            Storage::delete('public/pengajuanlabsubs/' . $data->invoice);
+        if ($data->invoice && Storage::exists('public/pengajuansubs/' . $data->invoice)) {
+            Storage::delete('public/pengajuansubs/' . $data->invoice);
         }
 
         $filename = 'invoice_subs_' . $id . '_' . time() . '.' . $request->file('invoice')->getClientOriginalExtension();
-        $request->file('invoice')->storeAs('public/pengajuanlabsubs', $filename);
+        $request->file('invoice')->storeAs('public/pengajuansubs', $filename);
 
         $data->update(['invoice' => $filename]);
 
         return response()->json([
             'success' => true,
             'message' => 'Invoice berhasil diunggah!',
-            'file' => asset('storage/pengajuanlabsubs/' . $filename),
+            'file' => asset('storage/pengajuansubs/' . $filename),
         ]);
     }
 
     public function exportPDF($id)
     {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return redirect()->route('home')->with('error', 'Akses ditolak');
-        }
-
         $data = PengajuanSubs::with(['subs', 'karyawan', 'tracking'])->findOrFail($id);
 
         $subsSnapshot = null;
@@ -475,19 +636,25 @@ class PengajuanSubsController extends Controller
             $subsSnapshot = (object) $data->subs->toArray();
         }
 
-        $labSnapshot = null;
-        $finance = Karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
-        $gm = Karyawan::where('jabatan', 'GM')->latest()->first();
-
-        return view('exports.pengajuan_labsubs-pdf', compact('data', 'finance', 'gm', 'labSnapshot', 'subsSnapshot'));
-    }
-
-    public function renewLab($id)
-    {
-        if (!$this->checkKoordinatorItsmAccess()) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak'], 403);
+        if ($data->karyawan->divisi == 'Education') {
+            $finance = Karyawan::where('jabatan', 'Education Manager')->latest()->first();
+        } elseif ($data->karyawan->divisi == 'Sales & Marketing') {
+            $finance = Karyawan::where('jabatan', 'SPV Sales')->latest()->first();
+        } elseif ($data->karyawan->divisi == 'Office') {
+            $finance = Karyawan::where('jabatan', 'GM')->latest()->first();
+        } elseif ($data->karyawan->divisi == 'IT Service Management') {
+            $finance = Karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
+        } else {
+            $finance = null;
         }
 
+        $gm = Karyawan::where('jabatan', 'GM')->latest()->first();
+
+        return view('exports.pengajuan_subs-pdf', compact('data', 'finance', 'gm', 'subsSnapshot'));
+    }
+
+    public function renewSubs($id)
+    {
         $user = auth()->user();
         $karyawan = $user->karyawan;
 
@@ -500,7 +667,7 @@ class PengajuanSubsController extends Controller
             'jenis_transaksi' => 'pembaharuan',
         ]);
 
-        $trackingText = 'Pengajuan Pembaharuan Subs Diajukan dan Sedang Ditinjau oleh Koordinator ITSM';
+        $trackingText = 'Pengajuan Pembaharuan Subscription Diajukan dan Sedang Ditinjau oleh Koordinator ITSM';
 
         $trackingModel = TrackingPengajuanSubs::create([
             'id_pengajuan_subs' => $pengajuan->id,
@@ -510,9 +677,57 @@ class PengajuanSubsController extends Controller
 
         $pengajuan->update(['id_tracking' => $trackingModel->id]);
 
+        $koor = User::whereHas('karyawan', function($q) {
+            $q->where('jabatan', 'Koordinator ITSM');
+        })->first();
+
+        if ($koor) {
+            $notifData = [
+                'tanggal' => now(),
+                'status'  => $trackingText,
+            ];
+            NotificationFacade::send(
+                $koor,
+                new ApprovalLabSubsNotification(
+                    $notifData,
+                    '/pengajuansubs',
+                    $karyawan->nama_lengkap,
+                    'Pengajuan Pembaharuan Lab: ' . $subs->nama_subs,
+                    $koor->id
+                )
+            );
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Pengajuan pembaharuan untuk subs ' . $subs->nama_subs . ' berhasil dibuat!'
+            'message' => 'Pengajuan pembaharuan untuk subscription ' . $subs->nama_subs . ' berhasil dibuat!'
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $pengajuan = PengajuanSubs::findOrFail($id);
+
+        $pengajuan->tracking()->delete();
+
+        // Jika transaksi baru, hapus juga record subscription pending dari master data
+        if ($pengajuan->jenis_transaksi === 'baru' && $pengajuan->id_subs) {
+            $subs = Subscription::find($pengajuan->id_subs);
+            if ($subs) {
+                $subs->materis()->detach();
+                $subs->delete();
+            }
+        }
+
+        if ($pengajuan->invoice && Storage::exists('public/pengajuansubs/' . $pengajuan->invoice)) {
+            Storage::delete('public/pengajuansubs/' . $pengajuan->invoice);
+        }
+
+        $pengajuan->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengajuan berhasil dibatalkan!'
         ]);
     }
 }

@@ -355,6 +355,15 @@
             </li>
         @endcan
 
+        @can('View Income Statement')
+            <li class="menu-item {{ request()->routeIs('income-statement.index') ? 'active open' : '' }}">
+                <a href="{{ route('income-statement.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-check-square"></i>
+                    <div class="text-truncate" data-i18n="contact">Income Statement</div>
+                </a>
+            </li>
+        @endcan
+
         <li class="menu-header mt-4 pb-3" style="padding-left: 12px; padding-right: 12px;">
             <a href="{{ route('home') }}"
                 class="btn btn-primary d-flex align-items-center justify-content-center w-100">

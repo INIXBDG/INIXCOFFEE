@@ -20,13 +20,23 @@ use App\Services\KPI\Jabatan\SalesKPIService;
 use App\Services\KPI\Jabatan\SPVSalesKPIService;
 use App\Services\KPI\Jabatan\ADMSalesKPIService;
 use App\Services\KPI\Jabatan\AdminHoldingKPIService;
+use Illuminate\Support\Facades\Log;
 
 trait KPIResolverTrait
 {
     protected function resolveProgress($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
-        $asistantRoute = strtolower($detail->dataTarget->asistant_route ?? '');
+
+        if (!$detail) {
+            return 0.0;
+        }
+        $asistantRoute = trim(strtolower($detail->dataTarget?->asistant_route ?? ''));
+
+        if ($asistantRoute === '') {
+            Log::warning("resolveProgress: asistant_route kosong untuk target ID: {$item->id}");
+            return 0.0;
+        }
 
         $progress = match ($asistantRoute) {
             // GM
@@ -40,7 +50,7 @@ trait KPIResolverTrait
             // Customer Care
             'peserta puas dengan pelayanan dan fasilitas training' => app(CustomerCareKPIService::class)->calculatePesertaPuasDenganPelayananDanFasilitasTraining($item, $personId),
             'dorong inovasi pelayanan' => app(CustomerCareKPIService::class)->calculateDorongInovasiPelayanan($item, $personId),
-            'penanganan komplain perseta', 'penanganan komplain peserta' => app(CustomerCareKPIService::class)->calculatePenangananKomplainPerseta($item, $personId),
+            'penanganan komplain peserta', 'penanganan komplain perseta' => app(CustomerCareKPIService::class)->calculatePenangananKomplainPerseta($item, $personId),
             'report persiapan kelas' => app(CustomerCareKPIService::class)->calculateReportPersiapanKelas($item, $personId),
 
             // Finance & Accounting
@@ -61,7 +71,7 @@ trait KPIResolverTrait
             'perbaikan kendaraan' => app(DriverKPIService::class)->calculatePerbaikanKendaraan($item, $personId),
             'kontrol pengeluaran transportasi' => app(DriverKPIService::class)->calculateKontrolPengeluaranTransportasi($item, $personId),
             'report kondisi kendaraan' => app(DriverKPIService::class)->calculateReportKondisiKendaraan($item, $personId),
-            'feedback kenyamanan berkendaran', 'feedback kenyamanan berkendara' => app(DriverKPIService::class)->calculateFeedbackKenyamananBerkendara($item, $personId),
+            'feedback kenyamanan berkendara', 'feedback kenyamanan berkendaran' => app(DriverKPIService::class)->calculateFeedbackKenyamananBerkendara($item, $personId),
 
             // Admin Holding
             'ketepatan waktu po' => app(AdminHoldingKPIService::class)->calculateKetepatanWaktuPo($item, $personId),
@@ -71,7 +81,7 @@ trait KPIResolverTrait
             'feedback kebersihan dan kenyamanan' => app(OfficeBoyKPIService::class)->calculateFeedbackKebersihanDanKenyamanan($item, $personId),
             'penyelesaian tugas harian' => app(OfficeBoyKPIService::class)->calculatePenyelesaianTugasHarian($item, $personId),
 
-            // Tim ITSM (Kombinasi 3 Role)
+            // Tim ITSM
             'kepuasan client itsm' => app(DivisiITSMKPIService::class)->calculateProgressKepuasanClientITSM($item, $personId),
             'inovation adaption rate' => app(DivisiITSMKPIService::class)->calculateInovationAdaptionRate($item, $personId),
 
@@ -85,12 +95,10 @@ trait KPIResolverTrait
             'mengukur kualitas aplikasi agar minim bug' => app(ProgrammerKPIService::class)->calculateMengukurKualitasAplikasiAgarMinimBug($item, $personId),
 
             // Tim Digital
-            'konsistensi campaign digital' => app(TimDigitalKPIService::class)->calculateKonsistensiCampaignDigital($item, $personId),
-            'efektifitas digital marketing' => app(TimDigitalKPIService::class)->calculateEfektifitasDiitalMarketing($item, $personId),
+            'konsistensi campaign diital', 'konsistensi campaign digital' => app(TimDigitalKPIService::class)->calculateKonsistensiCampaignDigital($item, $personId),
 
             // Project Administrator & Business Support
-            'pendapatan penjualan project' => app(ProjectAdminKPIService::class)->calculatePendapatanPenjualanProject($item, $personId),
-            'leads project' => app(ProjectAdminKPIService::class)->calculateLeadsProject($item, $personId),
+            'efektifitas digital marketing' => app(ProjectAdminKPIService::class)->calculateEfektifitasDiitalMarketing($item, $personId),
 
             // Technical Support
             'keberhasilan support memenuhi sla' => app(TechnicalSupportKPIService::class)->calculateTingkatKeberhasilanSupportMemenuhiSLA($item, $personId),
@@ -119,13 +127,17 @@ trait KPIResolverTrait
             'meningkatkan revenue perusahaan' => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($item, $personId),
             'evaluasi kinerja sales' => app(SPVSalesKPIService::class)->calculateEvaluasiKinerjaSales($item, $personId),
             'customer acquisition cost' => app(SPVSalesKPIService::class)->calculateCustomerAcquisitionCost($item, $personId),
+            'pendapatan penjualan project' => app(SPVSalesKPIService::class)->calculatePendapatanPenjualanProject($item, $personId),
+            'leads project' => app(SPVSalesKPIService::class)->calculateLeadsProject($item, $personId),
 
             // ADM Sales
             'laporan mom' => app(ADMSalesKPIService::class)->calculateLaporanMOM($item, $personId),
             'akurasi kelengkapan data penjualan' => app(ADMSalesKPIService::class)->calculateAkurasiKelengkapanDataPenjualan($item, $personId),
             'todo administrasi' => app(ADMSalesKPIService::class)->calculateTodoAdministrasi($item, $personId),
 
-            default => 0
+            default => (function () use ($asistantRoute, $item) {
+                return 0.0;
+            })(),
         };
 
         $routesPerPeserta = [
@@ -134,11 +146,20 @@ trait KPIResolverTrait
         ];
 
         if (in_array($asistantRoute, $routesPerPeserta)) {
-            return $progress; 
+            return $progress;
         }
 
-        $nilaiTarget = (float) ($detail->dataTarget->nilai_target ?? $detail->nilai_target ?? 0);
-        return $nilaiTarget > 0 ? min($progress, $nilaiTarget) : $progress;
+        $tipeTarget = $detail->dataTarget?->tipe_target ?? $detail->tipe_target ?? 'angka';
+        $nilaiTarget = (float) ($detail->dataTarget?->nilai_target ?? $detail->nilai_target ?? 0);
+
+        if (is_numeric($progress)) {
+            if ($tipeTarget === 'persen') {
+                return min(100.0, (float) $progress);
+            }
+            return (float) $progress;
+        }
+
+        return 0.0;
     }
 
     protected function getCalculationByRoute($itemDetail, $personId)
@@ -204,11 +225,9 @@ trait KPIResolverTrait
 
             // Tim Digital
             'konsistensi campaign digital' => app(TimDigitalKPIService::class)->calculateKonsistensiCampaignDigitalDetail($itemDetail, $personId),
-            'efektifitas digital marketing' => app(TimDigitalKPIService::class)->calculateEfektifitasDiitalMarketingDetail($itemDetail, $personId),
 
             // Project Administrator & Business Support
-            'pendapatan penjualan project' => app(ProjectAdminKPIService::class)->calculatePendapatanPenjualanProjectDetail($itemDetail, $personId),
-            'leads project' => app(ProjectAdminKPIService::class)->calculateLeadsProjectDetail($itemDetail, $personId),
+            'efektifitas digital marketing' => app(ProjectAdminKPIService::class)->calculateEfektifitasDiitalMarketingDetail($itemDetail, $personId),
 
             // Technical Support
             'keberhasilan support memenuhi sla' => app(TechnicalSupportKPIService::class)->calculateTingkatKeberhasilanSupportMemenuhiSLADetail($itemDetail, $personId),
@@ -236,7 +255,9 @@ trait KPIResolverTrait
             // SPV Sales
             'meningkatkan revenue perusahaan' => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaanDetail($itemDetail, $personId),
             'evaluasi kinerja sales' => app(SPVSalesKPIService::class)->calculateEvaluasiKinerjaSalesDetail($itemDetail, $personId),
-            'customer acquisition cost' => app(SPVSalesKPIService::class)->calculateCustomerAcquisitionCostDetail($itemDetail, $personId), // DIPERBAIKI
+            'customer acquisition cost' => app(SPVSalesKPIService::class)->calculateCustomerAcquisitionCostDetail($itemDetail, $personId),
+            'pendapatan penjualan project' => app(SPVSalesKPIService::class)->calculatePendapatanPenjualanProjectDetail($itemDetail, $personId),
+            'leads project' => app(SPVSalesKPIService::class)->calculateLeadsProjectDetail($itemDetail, $personId),
 
             // ADM Sales
             'laporan mom' => app(ADMSalesKPIService::class)->calculateLaporanMOMDetail($itemDetail, $personId),

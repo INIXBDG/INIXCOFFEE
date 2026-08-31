@@ -17,6 +17,10 @@ class TrackingPengajuanSubs extends Model
         'tanggal',
     ];
 
+    protected $casts = [
+        'tanggal' => 'datetime',
+    ];
+
     public function pengajuan()
     {
         return $this->belongsTo(PengajuanSubs::class, 'id_pengajuan_subs');

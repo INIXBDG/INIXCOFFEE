@@ -134,24 +134,30 @@ class UserController extends Controller
 
         $id_karyawan = Auth::user()->id;
 
-        $dataAuth = activityLog::with('karyawan')
-            ->where('user_id', $id_karyawan)
-            ->whereIn('status', ['Login', 'Logout'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataAuth = \Illuminate\Support\Facades\Cache::remember("activity_log_auth_{$id_karyawan}", 3600, function() use ($id_karyawan) {
+            return activityLog::with('karyawan')
+                ->where('user_id', $id_karyawan)
+                ->whereIn('status', ['Login', 'Logout'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
-        $dataVisit = activityLog::with('karyawan')
-            ->where('user_id', $id_karyawan)
-            ->whereNotIn('status', ['Login', 'Logout'])
-            ->whereNotIn('status', ['Absen Masuk', 'Absen keluar'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataVisit = \Illuminate\Support\Facades\Cache::remember("activity_log_visit_{$id_karyawan}", 3600, function() use ($id_karyawan) {
+            return activityLog::with('karyawan')
+                ->where('user_id', $id_karyawan)
+                ->whereNotIn('status', ['Login', 'Logout'])
+                ->whereNotIn('status', ['Absen Masuk', 'Absen keluar'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
-        $dataAbsen = activityLog::with('karyawan')
-            ->where('user_id', $id_karyawan)
-            ->whereIn('status', ['Absen Masuk', 'Absen Keluar'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $dataAbsen = \Illuminate\Support\Facades\Cache::remember("activity_log_absen_{$id_karyawan}", 3600, function() use ($id_karyawan) {
+            return activityLog::with('karyawan')
+                ->where('user_id', $id_karyawan)
+                ->whereIn('status', ['Absen Masuk', 'Absen Keluar'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
         // Jangan lupa tambahkan variabel baru ke compact
         return view('user.show', compact([

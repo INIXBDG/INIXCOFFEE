@@ -8,7 +8,6 @@ use App\Models\Pelamar;
 use App\Models\ReportTemplate;
 use App\Models\TemplatePlaceholder;
 use App\Models\ReportGeneration;
-use App\Jobs\GenerateDocxReportJob;
 use App\Services\ReportGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -652,7 +651,7 @@ class ReportController extends Controller
 
             Log::info('generate: source data', ['keys' => array_keys($sourceData)]);
 
-            // Simpan riwayat sebelum dispatch agar job dapat memperbarui status dan file output.
+            // Simpan riwayat generate dengan status pending
             $generation = ReportGeneration::create([
                 'template_id' => $template->id,
                 'report_title' => $validated['report_title'],
@@ -660,15 +659,15 @@ class ReportController extends Controller
                 'source_id' => $validated['source_id'],
                 'manual_inputs' => $manualInputs,
                 'generated_data' => $sourceData,
-                'output_file_path' => null,
-                'status' => 'processing',
+                'output_file_path' => '',
+                'status' => 'pending',
                 'generated_by' => Auth::id(),
             ]);
 
-            GenerateDocxReportJob::dispatch($generation->id);
+            // Dispatch job ke queue background
+            \App\Jobs\GenerateReportJob::dispatch($generation);
 
-            return redirect()->route('HR.reports.index')
-                ->with('success', 'Generate laporan sedang diproses. Silakan cek riwayat laporan.');
+            return redirect()->route('HR.reports.download', $generation);
         } catch (\Exception $e) {
             Log::error('Report generation failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->with('error', 'Gagal generate laporan: ' . $e->getMessage());
@@ -775,6 +774,57 @@ class ReportController extends Controller
     {
         if ($generation->generated_by !== Auth::id() && !Auth::user()->hasRole('admin')) {
             abort(403, 'Unauthorized');
+        }
+
+        if ($generation->status === 'pending') {
+            // Render a clean loading HTML that polls the status
+            return response()->make('
+                <html>
+                <head>
+                    <title>Generating Report...</title>
+                    <meta http-equiv="refresh" content="2">
+                    <style>
+                        body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #f3f4f6; color: #374151; margin: 0; }
+                        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 100%; }
+                        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #3b82f6; animation: spin 1s linear infinite; margin: 0 auto 1rem auto; }
+                        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                        p { color: #6b7280; font-size: 0.875rem; }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <div class="spinner"></div>
+                        <h2 style="margin: 0 0 0.5rem 0; font-size: 1.25rem;">Sedang memproses laporan...</h2>
+                        <p style="margin: 0;">Halaman ini akan otomatis mengunduh laporan saat file siap.</p>
+                    </div>
+                </body>
+                </html>
+            ');
+        }
+
+        if ($generation->status === 'failed') {
+            return response()->make('
+                <html>
+                <head>
+                    <title>Generation Failed</title>
+                    <style>
+                        body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #f3f4f6; color: #374151; margin: 0; }
+                        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 100%; }
+                        .error-icon { color: #ef4444; font-size: 3rem; margin-bottom: 1rem; }
+                        p { color: #6b7280; font-size: 0.875rem; }
+                        .btn { display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 4px; font-size: 0.875rem; }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <div class="error-icon">❌</div>
+                        <h2 style="margin: 0 0 0.5rem 0; font-size: 1.25rem;">Gagal membuat laporan</h2>
+                        <p style="margin: 0;">Terjadi kesalahan saat memproses laporan Anda. Silakan coba lagi nanti atau hubungi administrator.</p>
+                        <a href="' . route('HR.reports.history') . '" class="btn">Kembali ke Riwayat</a>
+                    </div>
+                </body>
+                </html>
+            ');
         }
 
         $storagePath = storage_path('app/public/' . $generation->output_file_path);

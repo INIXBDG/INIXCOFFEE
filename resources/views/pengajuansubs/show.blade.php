@@ -10,8 +10,8 @@
                         <img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back
                     </a>
 
-                    <h5 class="card-title">
-                        Detail Pengajuan {{ $data->id_labs ? 'Lab' : ($data->id_subs ? 'Subscription' : '-') }}
+                   <h5 class="card-title">
+                        Detail Pengajuan Subscription
                     </h5>
 
                     <div class="row">
@@ -32,14 +32,14 @@
                                 <div class="col-md-4"><p>Tipe Pengajuan</p></div>
                                 <div class="col-md-1"><p>:</p></div>
                                 <div class="col-md-7">
-                                    <p>{{ $data->id_labs ? 'Lab' : 'Subscription' }}</p>
+                                    <p>Subscription</p>
                                 </div>
 
                                 <div class="col-md-4"><p>Invoice</p></div>
                                 <div class="col-md-1"><p>:</p></div>
                                 <div class="col-md-7">
                                     @if ($data->invoice)
-                                        <a href="{{ asset('storage/pengajuanlabsubs/'.$data->invoice) }}" class="btn btn-sm btn-primary" target="_blank">Lihat Invoice</a>
+                                        <a href="{{ asset('storage/pengajuansubs/'.$data->invoice) }}" class="btn btn-sm btn-primary" target="_blank">Lihat Invoice</a>
                                     @else
                                         <p>-</p>
                                     @endif
@@ -68,23 +68,11 @@
                             <div class="card">
                                 <div class="card-body">
                                     @php
-                                        $displayData = null;
-                                        $type = '';
-
-                                        if ($data->id_labs) {
-                                            $type = 'Lab';
-                                            $displayData = $data->lab_snapshot;
-                                        } elseif ($data->id_subs) {
-                                            $type = 'Subscription';
-                                            $displayData = $data->subs_snapshot;
-                                        }
-
+                                        $displayData = $data->subs_snapshot;
                                         $isComplete = false;
 
                                         if (!empty($displayData) && is_array($displayData)) {
-                                            $nameKey = ($type == 'Lab') ? 'nama_labs' : 'nama_subs';
-
-                                            $isComplete = !empty($displayData[$nameKey])
+                                            $isComplete = !empty($displayData['nama_subs'])
                                                 && !empty($displayData['harga'])
                                                 && !empty($displayData['mata_uang'])
                                                 && !empty($displayData['start_date'])
@@ -93,7 +81,7 @@
                                     @endphp
 
                                     <div class="col-md-12 d-flex justify-content-between">
-                                        <h5 class="card-title">Detail {{ $type }}</h5>
+                                        <h5 class="card-title">Detail Subscription</h5>
                                         <div>
                                             <a href="{{ $isComplete ? route('pengajuansubs.exportpdf', $data->id) : '#' }}"
                                                target="{{ $isComplete ? '_blank' : '' }}"
@@ -108,30 +96,16 @@
                                         <table class="table table-striped">
                                             <tbody>
                                                 @if (!empty($displayData) && is_array($displayData))
-                                                    @if ($type == 'Lab')
-                                                        <tr><td>Nama Lab</td><td>{{ $displayData['nama_labs'] ?? '-' }}</td></tr>
-                                                        <tr><td>Deskripsi</td><td>{{ $displayData['desc'] ?? '-' }}</td></tr>
-                                                        <tr><td>URL Lab</td>
-                                                            <td>
-                                                                @if (!empty($displayData['lab_url']))
-                                                                    <a href="{{ $displayData['lab_url'] }}" target="_blank">Lihat URL Lab</a>
-                                                                @else - @endif
-                                                            </td>
-                                                        </tr>
-                                                        <tr><td>Durasi (menit)</td><td>{{ $displayData['duration_minutes'] ?? '-' }}</td></tr>
-                                                    @else
-                                                        <tr><td>Nama Subscription</td><td>{{ $displayData['nama_subs'] ?? '-' }}</td></tr>
-                                                        <tr><td>Merk</td><td>{{ $displayData['merk'] ?? '-' }}</td></tr>
-                                                        <tr><td>Deskripsi</td><td>{{ $displayData['desc'] ?? '-' }}</td></tr>
-                                                        <tr><td>URL</td>
-                                                            <td>
-                                                                @if (!empty($displayData['subs_url']))
-                                                                    <a href="{{ $displayData['subs_url'] }}" target="_blank">Lihat URL</a>
-                                                                @else - @endif
-                                                            </td>
-                                                        </tr>
-                                                    @endif
-
+                                                    <tr><td>Nama Subscription</td><td>{{ $displayData['nama_subs'] ?? '-' }}</td></tr>
+                                                    <tr><td>Merk</td><td>{{ $displayData['merk'] ?? '-' }}</td></tr>
+                                                    <tr><td>Deskripsi</td><td>{{ $displayData['desc'] ?? '-' }}</td></tr>
+                                                    <tr><td>URL</td>
+                                                        <td>
+                                                            @if (!empty($displayData['subs_url']))
+                                                                <a href="{{ $displayData['subs_url'] }}" target="_blank">Lihat URL</a>
+                                                            @else - @endif
+                                                        </td>
+                                                    </tr>
                                                     <tr><td>Kode Akses</td><td>{{ $displayData['access_code'] ?? '-' }}</td></tr>
                                                     <tr><td>Mata Uang</td><td>{{ $displayData['mata_uang'] ?? '-' }}</td></tr>
                                                     <tr><td>Harga</td><td>{{ number_format((float)($displayData['harga'] ?? 0), 2, ',', '.') }}</td></tr>
@@ -143,7 +117,7 @@
                                                 @else
                                                     <tr>
                                                         <td colspan="2" class="text-center text-muted">
-                                                            <em>Belum ada detail data tersimpan (Menunggu Approval Koordinator ITSM).</em>
+                                                             <em>Belum ada detail data tersimpan (Menunggu Approval Koordinator ITSM).</em>
                                                         </td>
                                                     </tr>
                                                 @endif

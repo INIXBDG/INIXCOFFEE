@@ -15,8 +15,8 @@ class PengajuanSubs extends Model
         'kode_karyawan',
         'id_subs',
         'id_rkm',
-        'jenis_transaksi',
         'id_tracking',
+        'jenis_transaksi',
         'invoice',
         'subs_snapshot',
     ];
@@ -24,11 +24,6 @@ class PengajuanSubs extends Model
     protected $casts = [
         'subs_snapshot' => 'array',
     ];
-
-    public function karyawan()
-    {
-        return $this->belongsTo(karyawan::class, 'kode_karyawan', 'kode_karyawan');
-    }
 
     public function subs()
     {
@@ -43,5 +38,10 @@ class PengajuanSubs extends Model
     public function rkm()
     {
         return $this->belongsTo(RKM::class, 'id_rkm');
+    }
+
+    public function karyawan()
+    {
+        return $this->belongsTo(karyawan::class, 'kode_karyawan', 'kode_karyawan');
     }
 }

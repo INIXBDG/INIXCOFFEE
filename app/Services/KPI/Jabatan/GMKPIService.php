@@ -1116,7 +1116,7 @@ class GMKPIService
             'pemasukan kotor' => fn($t, $p) => $this->calculatePemasukanKotor($t, $p),
             'target penjualan project tahunan' => fn($t, $p) => $this->calculateTargetPenjualanProjectTahunan($t, $p),
             'meningkatkan revenue perusahaan' => fn($t, $p) => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($t, $p),
-            'pendapatan penjualan project' => fn($t, $p) => app(ProjectAdminKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
+            'pendapatan penjualan project' => fn($t, $p) => app(SPVSalesKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
         ];
 
         $allTargets = targetKPI::with(['detailTargetKPI.dataTarget'])
@@ -1184,7 +1184,7 @@ class GMKPIService
             'pemasukan kotor' => fn($t, $p) => $this->calculatePemasukanKotor($t, $p),
             'target penjualan project tahunan' => fn($t, $p) => $this->calculateTargetPenjualanProjectTahunan($t, $p),
             'meningkatkan revenue perusahaan' => fn($t, $p) => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($t, $p),
-            'pendapatan penjualan project' => fn($t, $p) => app(ProjectAdminKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
+            'pendapatan penjualan project' => fn($t, $p) => app(SPVSalesKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
         ];
 
         $allTargets = targetKPI::with(['detailTargetKPI.dataTarget'])

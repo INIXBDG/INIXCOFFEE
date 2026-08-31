@@ -19,14 +19,13 @@ class Subscription extends Model
         'desc',
         'subs_url',
         'access_code',
-        'duration_minutes',
         'mata_uang',
         'harga',
-        'kurs',
-        'harga_rupiah',
         'start_date',
         'end_date',
         'status',
+        'kurs',
+        'harga_rupiah',
         'is_active',
     ];
 

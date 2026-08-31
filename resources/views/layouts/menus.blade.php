@@ -1852,6 +1852,25 @@
                                                     </div>
                                                 </div>
                                             @endif
+                                            @if ((Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT Service Management'))
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa-solid fa-book-open-reader"
+                                                                    style="font-size: 30px;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="{{ route('colaborator.index') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Kolaborasi</h5>
+                                                                </a>
+                                                                <p class="card-text">Kolaborasi dengan Partner.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
 
                                         </div>
                                     </div>
@@ -2408,6 +2427,25 @@
                                                                 </div>
                                                             @endif
                                                         @endcan
+                                                        @if(auth()->user() && auth()->user()->karyawan && auth()->user()->karyawan->jabatan == 'Koordinator ITSM')
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <i class="fa-solid fa-receipt"
+                                                                                style="font-size: 30px;"></i>
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="{{ route('pengajuansubs.index') }}"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Pengajuan Subs</h5>
+                                                                            </a>
+                                                                            <p class="card-text">pengajuan dan manajemen subscriptions</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endif
                                                         @can('Fitur cv instruktur')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">

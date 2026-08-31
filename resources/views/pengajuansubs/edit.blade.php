@@ -9,19 +9,19 @@
                     <a href="{{ url()->previous() }}" class="btn click-primary my-2">
                         <img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back
                     </a>
-                    <h5 class="card-title text-center mb-4">{{ __('Edit Data Teknis Subs') }}</h5>
+                    <h5 class="card-title text-center mb-4">{{ __('Edit Data Teknis Subscription') }}</h5>
 
-                    <form id="labForm" method="POST" action="{{ route('pengajuansubs.updatesubs', $data->id) }}" enctype="multipart/form-data">
+                    <form id="subsForm" method="POST" action="{{ route('pengajuansubs.updatesubssubs', $data->id) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
                         {{-- 1. INFORMASI UMUM --}}
                         <div class="row mb-3">
-                            <label for="nama_labs" class="col-md-4 col-form-label text-md-start">{{ __('Nama Subs / Software') }}</label>
+                            <label for="nama_subs" class="col-md-4 col-form-label text-md-start">{{ __('Nama Subscription / Software') }}</label>
                             <div class="col-md-6">
-                                <input type="text" class="form-control @error('nama_labs') is-invalid @enderror"
-                                       name="nama_labs" id="nama_labs" value="{{ old('nama_labs', $data->lab->nama_labs) }}" required>
-                                @error('nama_labs')
+                                <input type="text" class="form-control @error('nama_subs') is-invalid @enderror"
+                                       name="nama_subs" id="nama_subs" value="{{ old('nama_subs', $data->subs->nama_subs) }}" required>
+                                @error('nama_subs')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
                             </div>
@@ -31,7 +31,7 @@
                             <label for="merk" class="col-md-4 col-form-label text-md-start">{{ __('Vendor / Merk') }}</label>
                             <div class="col-md-6">
                                 <input type="text" class="form-control @error('merk') is-invalid @enderror"
-                                       name="merk" id="merk" value="{{ old('merk', $data->lab->merk) }}" placeholder="Contoh: Adobe, AWS">
+                                       name="merk" id="merk" value="{{ old('merk', $data->subs->merk) }}" placeholder="Contoh: Adobe, AWS">
                                 @error('merk')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
@@ -42,21 +42,10 @@
                             <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Tipe Aset') }}</label>
                             <div class="col-md-6">
                                 <select name="tipe" id="tipe" class="form-select @error('tipe') is-invalid @enderror" required>
-                                    <option value="subscription" {{ $data->lab->tipe == 'subscription' ? 'selected' : '' }}>Subscription (Berlangganan)</option>
-                                    <option value="one-time" {{ $data->lab->tipe == 'one-time' ? 'selected' : '' }}>One-Time (Sekali Beli)</option>
+                                    <option value="subscription" {{ $data->subs->tipe == 'subscription' ? 'selected' : '' }}>Subscription (Berlangganan)</option>
+                                    <option value="one-time" {{ $data->subs->tipe == 'one-time' ? 'selected' : '' }}>One-Time (Sekali Beli)</option>
                                 </select>
                                 @error('tipe')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-3" id="row_duration" style="display: none;">
-                            <label for="duration_minutes" class="col-md-4 col-form-label text-md-start">{{ __('Durasi (Menit)') }}</label>
-                            <div class="col-md-6">
-                                <input type="number" class="form-control @error('duration_minutes') is-invalid @enderror"
-                                       name="duration_minutes" id="duration_minutes" value="{{ old('duration_minutes', $data->lab->duration_minutes) }}">
-                                @error('duration_minutes')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
                             </div>
@@ -66,9 +55,9 @@
                             <label for="status" class="col-md-4 col-form-label text-md-start">{{ __('Status') }}</label>
                             <div class="col-md-6">
                                 <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
-                                    <option value="pending" {{ $data->lab->status == 'pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="active" {{ $data->lab->status == 'active' ? 'selected' : '' }}>Active</option>
-                                    <option value="expired" {{ $data->lab->status == 'expired' ? 'selected' : '' }}>Expired</option>
+                                    <option value="pending" {{ $data->subs->status == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="active" {{ $data->subs->status == 'active' ? 'selected' : '' }}>Active</option>
+                                    <option value="expired" {{ $data->subs->status == 'expired' ? 'selected' : '' }}>Expired</option>
                                 </select>
                                 @error('status')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -79,22 +68,22 @@
                         <div class="row mb-3">
                             <label for="desc" class="col-md-4 col-form-label text-md-start">{{ __('Deskripsi') }}</label>
                             <div class="col-md-6">
-                                <textarea name="desc" id="desc" class="form-control" rows="2">{{ old('desc', $data->lab->desc) }}</textarea>
+                                <textarea name="desc" id="desc" class="form-control" rows="2">{{ old('desc', $data->subs->desc) }}</textarea>
                             </div>
                         </div>
 
                         {{-- 2. DETAIL AKSES --}}
                         <div class="row mb-3">
-                            <label for="lab_url" class="col-md-4 col-form-label text-md-start">{{ __('URL Subs') }}</label>
+                            <label for="subs_url" class="col-md-4 col-form-label text-md-start">{{ __('URL Subs') }}</label>
                             <div class="col-md-6">
-                                <input type="url" class="form-control" name="lab_url" id="lab_url" value="{{ old('lab_url', $data->lab->lab_url) }}">
+                                <input type="url" class="form-control" name="subs_url" id="subs_url" value="{{ old('subs_url', $data->subs->subs_url) }}">
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <label for="access_code" class="col-md-4 col-form-label text-md-start">{{ __('Kode Akses / Key') }}</label>
                             <div class="col-md-6">
-                                <input type="text" class="form-control" name="access_code" id="access_code" value="{{ old('access_code', $data->lab->access_code) }}">
+                                <input type="text" class="form-control" name="access_code" id="access_code" value="{{ old('access_code', $data->subs->access_code) }}">
                             </div>
                         </div>
 
@@ -102,7 +91,7 @@
                             <label for="start_date" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Mulai') }}</label>
                             <div class="col-md-6">
                                 <input type="date" class="form-control" name="start_date" id="start_date"
-                                       value="{{ $data->lab->start_date ? \Carbon\Carbon::parse($data->lab->start_date)->format('Y-m-d') : '' }}">
+                                       value="{{ $data->subs->start_date ? \Carbon\Carbon::parse($data->subs->start_date)->format('Y-m-d') : '' }}">
                             </div>
                         </div>
 
@@ -110,7 +99,7 @@
                             <label for="end_date" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Berakhir') }}</label>
                             <div class="col-md-6">
                                 <input type="date" class="form-control" name="end_date" id="end_date"
-                                       value="{{ $data->lab->end_date ? \Carbon\Carbon::parse($data->lab->end_date)->format('Y-m-d') : '' }}">
+                                       value="{{ $data->subs->end_date ? \Carbon\Carbon::parse($data->subs->end_date)->format('Y-m-d') : '' }}">
                             </div>
                         </div>
 
@@ -120,7 +109,7 @@
                             <div class="col-md-6">
                                 <select name="mata_uang" id="mata_uang" class="form-select" required>
                                     @foreach (['Rupiah', 'Dollar', 'Euro', 'Poundsterling'] as $currency)
-                                        <option value="{{ $currency }}" {{ $data->lab->mata_uang == $currency ? 'selected' : '' }}>
+                                        <option value="{{ $currency }}" {{ $data->subs->mata_uang == $currency ? 'selected' : '' }}>
                                             {{ $currency }}
                                         </option>
                                     @endforeach
@@ -132,7 +121,7 @@
                             <label for="harga" class="col-md-4 col-form-label text-md-start">{{ __('Nominal Harga Asli') }}</label>
                             <div class="col-md-6">
                                 <input type="number" step="0.01" class="form-control" name="harga" id="harga"
-                                       value="{{ old('harga', $data->lab->harga) }}" required>
+                                       value="{{ old('harga', $data->subs->harga) }}" required>
                             </div>
                         </div>
 
@@ -140,7 +129,7 @@
                             <label for="kurs" class="col-md-4 col-form-label text-md-start">{{ __('Kurs (Rate)') }}</label>
                             <div class="col-md-6">
                                 <input type="number" step="0.01" class="form-control" name="kurs" id="kurs"
-                                       value="{{ old('kurs', $data->lab->kurs ?? 1) }}">
+                                       value="{{ old('kurs', $data->subs->kurs ?? 1) }}">
                             </div>
                         </div>
 
@@ -150,7 +139,7 @@
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
                                     <input type="text" class="form-control" name="harga_rupiah" id="harga_rupiah"
-                                           value="{{ old('harga_rupiah', $data->lab->harga_rupiah ? number_format($data->lab->harga_rupiah, 0, ',', '.') : '') }}" readonly>
+                                           value="{{ old('harga_rupiah', $data->subs->harga_rupiah ? number_format($data->subs->harga_rupiah, 0, ',', '.') : '') }}" readonly>
                                 </div>
                             </div>
                         </div>
@@ -200,29 +189,19 @@
             } else {
                 $('#kurs').prop('readonly', false);
             }
-
-            var totalRupiah = Math.round(harga * kurs);
-            $('#harga_rupiah').val(formatRupiah(totalRupiah.toString()));
+            var total = harga * kurs;
+            $('#harga_rupiah').val(formatRupiah(Math.floor(total).toString()));
         }
 
-        function toggleDurationField() {
-            var selectedType = $('#tipe').val();
-            if (selectedType === 'one-time') {
-                $('#row_duration').slideDown();
-            } else {
-                $('#row_duration').slideUp();
-            }
-        }
+        // Listener
+        $('#mata_uang').on('change', calculateTotal);
+        $('#harga, #kurs').on('input', calculateTotal);
 
-        toggleDurationField();
+        // Initialization on Load
         calculateTotal();
 
-        $('#tipe').change(function() {
-            toggleDurationField();
-        });
-
-        $('#mata_uang, #harga, #kurs').on('input change', function () {
-            calculateTotal();
+        $('#subsForm').on('submit', function () {
+            $('#harga_rupiah').val($('#harga_rupiah').val().replace(/\./g, ''));
         });
     });
 </script>
