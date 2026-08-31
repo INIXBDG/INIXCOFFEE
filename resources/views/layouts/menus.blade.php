@@ -2407,6 +2407,25 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
+                                                            @if(auth()->user()->karyawan && auth()->user()->karyawan->jabatan === 'Koordinator ITSM')
+                                                                <div class="col-sm-6 mt-2">
+                                                                    <div class="card" id="card-hover">
+                                                                        <div class="card-body d-flex">
+                                                                            <div class="col-md-2">
+                                                                                <i class="fa-solid fa-timeline"
+                                                                                    style="font-size: 30px;"></i>
+                                                                            </div>
+                                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                                <a href="{{ route('pengajuansubs.index') }}"
+                                                                                    class="link stretched-link text-decoration-none">
+                                                                                    <h5 class="card-title">Pengajuan Subs</h5>
+                                                                                </a>
+                                                                                <p class="card-text">pengajuan dan manajemen subs</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            @endif
                                                         @endcan
                                                         @if(auth()->user() && auth()->user()->karyawan && auth()->user()->karyawan->jabatan == 'Koordinator ITSM')
                                                             <div class="col-sm-6 mt-2">
