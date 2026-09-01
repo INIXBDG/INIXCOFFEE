@@ -325,7 +325,7 @@ class JurnalAkuntansiController extends Controller
             ]);
         }
 
-        $tanggal_transaksi = now();
+        $tanggal_transaksi = $suratPerjalanan->tanggal_berangkat ?? now();
         $namaKaryawan = $suratPerjalanan->karyawan->nama_lengkap ?? '-';
         $tujuan = $suratPerjalanan->tujuan ?? '-';
 
@@ -941,7 +941,7 @@ class JurnalAkuntansiController extends Controller
             ];
         }
 
-        $tanggal_transaksi = now();
+        $tanggal_transaksi = $suratPerjalanan->tanggal_berangkat ?? now();
         $namaKaryawan = $suratPerjalanan->karyawan->nama_lengkap ?? '-';
         $tujuan = $suratPerjalanan->tujuan ?? '-';
 
