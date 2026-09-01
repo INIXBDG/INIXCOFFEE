@@ -93,6 +93,7 @@
                                     <option value="Mikrotik">Mikrotik</option>
                                     <option value="CompTIA">CompTIA</option>
                                     <option value="RedHat">RedHat</option>
+                                    <option value="Certiprof">Certiprof</option>
                                     <option value="Regular">Regular</option>
                                 </select>
                                 @error('vendor')

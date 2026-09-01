@@ -247,7 +247,7 @@
                     let project = parseFloat($(`.project.month-${m}`).val()) || 0;
                     let webinar = parseFloat($(`.webinar.month-${m}`).val()) || 0;
 
-                    let netSales = training - (discount - advance - exam);
+                    let netSales = training - (discount + advance + exam);
                     let totalSales = netSales + project + webinar;
 
                     monthlyTotalSalesArray[m] = totalSales;

@@ -39,4 +39,9 @@ class Materi extends Model
     {
         return $this->belongsToMany(Lab::class, 'lab_materi', 'materi_id', 'lab_id');
     }
+
+    public function subscriptions()
+    {
+        return $this->belongsToMany(Subscription::class, 'subscription_materi', 'materi_id', 'subscription_id');
+    }
 }

@@ -26,6 +26,7 @@ class RKMController extends Controller
 
     public function showMonth($year, $month)
     {
+        DB::statement("SET SESSION group_concat_max_len = 10000");
         $bulan = $month + 1;
         $startDate = CarbonImmutable::create($year, $month, 1);
         $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
@@ -50,10 +51,10 @@ class RKMController extends Controller
                 // Eksekusi Query Utama RKM
                 $rows = RKM::with(['materi', 'peluang'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                    ->whereMonth('r_k_m_s.tanggal_awal', $date->month)
+                    // ->whereMonth('r_k_m_s.tanggal_awal', $date->month)
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1)->where('tahap', '!=', 'lost');
+                        $query->where('tentatif', 1)->orWhere('tahap', 'lost');
                     })
                     ->select(
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
@@ -188,6 +189,7 @@ class RKMController extends Controller
 
     public function RKMAPIabsensi($year, $month)
     {
+        DB::statement("SET SESSION group_concat_max_len = 10000");
         $bulan = $month + 1;
         $startDate = CarbonImmutable::create($year, $month, 1);
         $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();

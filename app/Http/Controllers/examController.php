@@ -832,7 +832,7 @@ class examController extends Controller
     public function invoice($id)
     {
         $data = eksam::with('rkm', 'kodeeksam', 'registexam', 'approvalexam')->findOrFail($id);
-        $sales = karyawan::where('kode_karyawan', $data->approvalexam->sales)->first() ?? '-';
+        $sales = User::with('karyawan')->where('id_sales', $data->approvalexam->sales)->first();
         if (!$data->approvalexam->ttd_sales) {
             $spv_sales = karyawan::where('jabatan', 'SPV Sales')->first();
         } else {

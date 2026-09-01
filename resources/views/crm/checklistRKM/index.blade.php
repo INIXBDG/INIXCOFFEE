@@ -125,65 +125,66 @@
     </div>
 
     <div class="modal fade" id="modalDetail" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content border-0 shadow-lg rounded-4">
                 <div class="modal-header bg-gradient-primary text-white border-0 rounded-top-4">
                     <h5 class="modal-title fw-semibold">
-                        <span class="iconify me-2" data-icon="tabler:eye"></span>Detail RKM
+                        <span class="iconify me-2" data-icon="tabler:clipboard-list"></span>Detail Checklist per Perusahaan
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <div class="card bg-light-subtle border-0">
-                                <div class="card-body py-3">
-                                    <small class="text-muted d-block mb-1"><span class="iconify me-1"
-                                            data-icon="tabler:calendar-event"></span>Tanggal Training</small>
-                                    <span id="detailTanggal" class="fw-semibold text-dark"></span>
+                    <div id="detailLoading" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Memuat data detail...</p>
+                    </div>
+                    <div id="detailContent" class="d-none">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light-subtle border-0">
+                                    <div class="card-body py-3">
+                                        <small class="text-muted d-block mb-1">
+                                            <span class="iconify me-1" data-icon="tabler:book"></span>Materi
+                                        </small>
+                                        <span id="detailMateri" class="fw-semibold text-dark"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light-subtle border-0">
+                                    <div class="card-body py-3">
+                                        <small class="text-muted d-block mb-1">
+                                            <span class="iconify me-1" data-icon="tabler:calendar-event"></span>Tanggal Training
+                                        </small>
+                                        <span id="detailTanggal" class="fw-semibold text-dark"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12">
-                            <div class="card bg-light-subtle border-0">
-                                <div class="card-body py-3">
-                                    <small class="text-muted d-block mb-1"><span class="iconify me-1"
-                                            data-icon="tabler:book"></span>Materi</small>
-                                    <span id="detailMateri" class="fw-semibold text-dark"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="card bg-light-subtle border-0">
-                                <div class="card-body py-3">
-                                    <small class="text-muted d-block mb-1"><span class="iconify me-1"
-                                            data-icon="tabler:user"></span>Instruktur</small>
-                                    <span id="detailInstruktur" class="fw-semibold text-dark"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-light-subtle border-0 h-100">
-                                <div class="card-body py-3">
-                                    <small class="text-muted d-block mb-1"><span class="iconify me-1"
-                                            data-icon="tabler:building"></span>Perusahaan</small>
-                                    <div id="detailPerusahaan" class="fw-semibold text-dark"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-light-subtle border-0 h-100">
-                                <div class="card-body py-3">
-                                    <small class="text-muted d-block mb-1"><span class="iconify me-1"
-                                            data-icon="tabler:user-check"></span>Sales</small>
-                                    <div id="detailSales" class="fw-semibold text-dark"></div>
-                                </div>
-                            </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%" class="text-center">No</th>
+                                        <th width="25%">Perusahaan</th>
+                                        <th width="20%">Sales</th>
+                                        <th width="10%" class="text-center">Reg. Form</th>
+                                        <th width="10%" class="text-center">Kontrak</th>
+                                        <th width="10%" class="text-center">PA</th>
+                                        <th width="10%" class="text-center">PO</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detailTableBody">
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0 pb-4">
+                    <button type="button" class="btn btn-outline-primary rounded-pill px-4 me-auto" onclick="refreshDetailData()">
+                        <span class="iconify me-1" data-icon="tabler:refresh"></span>Refresh
+                    </button>
                     <button class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
                         <span class="iconify me-1" data-icon="tabler:x-circle"></span>Tutup
                     </button>
@@ -216,6 +217,8 @@
             const tahunSelect = document.getElementById('tahunSelect');
 
             let currentPage = 1;
+            let currentRKMId = null;
+            let detailData = [];
 
             const bulanEl = document.getElementById('bulanSelect');
             const tahunEl = document.getElementById('tahunSelect');
@@ -276,69 +279,22 @@
                 }, 300);
             });
 
-            tableBody?.addEventListener('change', function(e) {
-                if (e.target.classList.contains('checklist-checkbox')) {
-                    const checkbox = e.target;
-                    const rkmIds = checkbox.dataset.rkm.split(',');
-                    const field = checkbox.dataset.field;
-                    const checked = checkbox.checked;
-                    const originalState = checked;
-
-                    checkbox.disabled = true;
-                    checkbox.classList.add('opacity-50');
-
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-
-                    const promises = rkmIds.map(id =>
-                        fetch(`/crm/checklist-rkm/${id}/checklist`, {
-                            method: 'PATCH',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrfToken
-                            },
-                            body: JSON.stringify({
-                                field,
-                                checked
-                            })
-                        }).then(res => res.json())
-                    );
-
-                    Promise.all(promises)
-                        .then(results => {
-                            const allSuccess = results.every(r => r.success);
-                            if (allSuccess) {
-                                showToast('Checklist berhasil diupdate', 'success');
-                            } else {
-                                checkbox.checked = !originalState;
-                                showToast(results.find(r => !r.success)?.message ||
-                                    'Gagal update checklist', 'error');
-                            }
-                        })
-                        .catch(err => {
-                            checkbox.checked = !originalState;
-                            showToast('Terjadi kesalahan koneksi', 'error');
-                            console.error(err);
-                        })
-                        .finally(() => {
-                            checkbox.disabled = false;
-                            checkbox.classList.remove('opacity-50');
-                        });
-                }
-            });
-
             tableBody?.addEventListener('click', function(e) {
                 const detailCell = e.target.closest('.detail-cell');
+                const checkboxCell = e.target.closest('.checklist-cell');
+                
+                if (checkboxCell) return;
+                
                 if (detailCell) {
                     e.preventDefault();
                     const row = detailCell.closest('tr');
                     if (!row) return;
 
-                    document.getElementById('detailTanggal').textContent = row.dataset.tanggaltraining ||
-                        '-';
+                    currentRKMId = row.dataset.id;
+                    loadDetailData(currentRKMId);
+                    
+                    document.getElementById('detailTanggal').textContent = row.dataset.tanggaltraining || '-';
                     document.getElementById('detailMateri').textContent = row.dataset.materi || '-';
-                    document.getElementById('detailInstruktur').textContent = row.dataset.instruktur || '-';
-                    document.getElementById('detailPerusahaan').textContent = row.dataset.perusahaan || '-';
-                    document.getElementById('detailSales').textContent = row.dataset.sales || '-';
 
                     new bootstrap.Modal(document.getElementById('modalDetail')).show();
                 }
@@ -361,17 +317,11 @@
             });
 
             function updatePeriodLabel() {
-                const {
-                    bulan,
-                    tahun,
-                    minggu
-                } = filters;
+                const { bulan, tahun, minggu } = filters;
                 let label = 'Semua Periode';
 
                 if (tahun && bulan && minggu) {
-                    const monthName = new Date(tahun, bulan - 1, 1).toLocaleString('id-ID', {
-                        month: 'long'
-                    });
+                    const monthName = new Date(tahun, bulan - 1, 1).toLocaleString('id-ID', { month: 'long' });
                     const startDay = (minggu - 1) * 7 + 1;
                     const endDay = Math.min(minggu * 7, new Date(tahun, bulan, 0).getDate());
 
@@ -391,17 +341,13 @@
                         label = `${firstBusinessDay}-${lastBusinessDay} ${monthName} ${tahun}`;
                     }
                 } else if (tahun && bulan) {
-                    const monthName = new Date(tahun, bulan - 1, 1).toLocaleString('id-ID', {
-                        month: 'long'
-                    });
+                    const monthName = new Date(tahun, bulan - 1, 1).toLocaleString('id-ID', { month: 'long' });
                     label = `${monthName} ${tahun}`;
                 } else if (tahun) {
                     label = `Tahun ${tahun}`;
                 } else if (bulan) {
                     const currentYear = new Date().getFullYear();
-                    const monthName = new Date(currentYear, bulan - 1, 1).toLocaleString('id-ID', {
-                        month: 'long'
-                    });
+                    const monthName = new Date(currentYear, bulan - 1, 1).toLocaleString('id-ID', { month: 'long' });
                     label = `${monthName} ${currentYear}`;
                 }
 
@@ -446,13 +392,13 @@
 
             function showLoading() {
                 tableBody.innerHTML = `
-                <tr>
-                    <td colspan="8" class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;"></div>
-                        <p class="mt-2 mb-0 text-muted small">Memuat data...</p>
-                    </td>
-                </tr>
-            `;
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;"></div>
+                            <p class="mt-2 mb-0 text-muted small">Memuat data...</p>
+                        </td>
+                    </tr>
+                `;
                 emptyState.classList.add('d-none');
                 rkmTable.classList.remove('d-none');
                 paginationContainer.innerHTML = '';
@@ -468,16 +414,16 @@
 
             function showErrorState() {
                 tableBody.innerHTML = `
-                <tr>
-                    <td colspan="8" class="text-center py-5 text-danger">
-                        <span class="iconify fs-4" data-icon="tabler:alert-triangle"></span>
-                        <p class="mt-2 mb-0">Gagal memuat data. Silakan coba lagi.</p>
-                        <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadData()">
-                            <span class="iconify me-1" data-icon="tabler:refresh"></span>Retry
-                        </button>
-                    </td>
-                </tr>
-            `;
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-danger">
+                            <span class="iconify fs-4" data-icon="tabler:alert-triangle"></span>
+                            <p class="mt-2 mb-0">Gagal memuat data. Silakan coba lagi.</p>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadData()">
+                                <span class="iconify me-1" data-icon="tabler:refresh"></span>Retry
+                            </button>
+                        </td>
+                    </tr>
+                `;
                 emptyState.classList.add('d-none');
                 rkmTable.classList.remove('d-none');
                 paginationContainer.innerHTML = '';
@@ -485,14 +431,10 @@
 
             function getStatusStyle(status) {
                 switch (String(status)) {
-                    case '0':
-                        return 'background-color: rgba(255, 0, 0, 0.5);';
-                    case '1':
-                        return 'background-color: rgba(0, 0, 255, 0.5);';
-                    case '3':
-                        return 'background-color: rgba(0, 190, 0, 0.5);';
-                    default:
-                        return 'background-color: rgba(0, 0, 0, 0.5);';
+                    case '0': return 'background-color: rgba(255, 0, 0, 0.5);';
+                    case '1': return 'background-color: rgba(0, 0, 255, 0.5);';
+                    case '3': return 'background-color: rgba(0, 190, 0, 0.5);';
+                    default: return 'background-color: rgba(0, 0, 0, 0.5);';
                 }
             }
 
@@ -506,30 +448,49 @@
 
                 tableBody.innerHTML = data.map(item => {
                     const checkboxes = Object.entries(item.checkboxes)
-                        .map(([field, config]) => `
-                        <td class="text-center">
-                            <div class="form-check form-switch d-flex justify-content-center">
-                                <input type="checkbox" class="form-check-input checklist-checkbox"
-                                    data-rkm="${item.id_all ?? item.id}" data-field="${field}" ${config.checked ? 'checked' : ''}>
-                            </div>
-                        </td>
-                    `).join('');
+                        .map(([field, config]) => {
+                            const isAllChecked = config.completed >= config.total && config.total > 0;
+                            const progressText = `${config.completed}/${config.total}`;
+                            
+                            return `
+                                <td class="text-center checklist-cell">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <div class="form-check form-switch d-flex justify-content-center mb-1">
+                                            <input type="checkbox" 
+                                                class="form-check-input checklist-checkbox-auto"
+                                                data-field="${field}"
+                                                ${isAllChecked ? 'checked' : ''}
+                                                disabled>
+                                        </div>
+                                        <small class="text-white fw-semibold" style="font-size: 0.75rem;">${progressText}</small>
+                                    </div>
+                                </td>
+                            `;
+                        }).join('');
 
                     globalNo++;
                     const rowStyle = getStatusStyle(item.status);
 
                     return `
-                    <tr class="table-row-hover" style="${rowStyle}"
-                        data-materi="${escapeHtml(item.materi)}" data-perusahaan="${escapeHtml(item.perusahaan)}"
-                        data-sales="${escapeHtml(item.sales)}" data-instruktur="${escapeHtml(item.instruktur)}"
-                        data-tanggaltraining="${escapeHtml(item.tanggal_training)}">
-                        <td class="text-center fw-medium text-white detail-cell" role="button">${globalNo}</td>
-                        <td class="text-white detail-cell" role="button"><small>${escapeHtml(item.materi)}</small></td>
-                        <td class="text-white detail-cell" role="button"><small>${escapeHtml(item.perusahaan)}</small></td>
-                        <td class="text-white detail-cell" role="button"><small>${escapeHtml(item.sales)}</small></td>
-                        ${checkboxes}
-                    </tr>
-                `;
+                        <tr class="table-row-hover" style="${rowStyle}"
+                            data-id="${item.id}"
+                            data-materi="${escapeHtml(item.materi)}" 
+                            data-perusahaan="${escapeHtml(item.perusahaan)}"
+                            data-sales="${escapeHtml(item.sales)}" 
+                            data-instruktur="${escapeHtml(item.instruktur)}"
+                            data-tanggaltraining="${escapeHtml(item.tanggal_training)}">
+                            <td class="text-center fw-medium text-white detail-cell" role="button">${globalNo}</td>
+                            <td class="text-white detail-cell" role="button">
+                                <div class="d-flex align-items-center">
+                                    <span class="iconify me-2 text-white-50" data-icon="tabler:chevron-right"></span>
+                                    <small>${escapeHtml(item.materi)}</small>
+                                </div>
+                            </td>
+                            <td class="text-white detail-cell" role="button"><small>${escapeHtml(item.perusahaan)}</small></td>
+                            <td class="text-white detail-cell" role="button"><small>${escapeHtml(item.sales)}</small></td>
+                            ${checkboxes}
+                        </tr>
+                    `;
                 }).join('');
             }
 
@@ -541,9 +502,9 @@
 
                 let html = '<nav><ul class="pagination pagination-sm mb-0">';
                 html += `<li class="page-item ${pagination.current_page === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${pagination.current_page - 1}" aria-label="Previous">
-                    <span class="iconify" data-icon="tabler:chevron-left"></span>
-                </a></li>`;
+                    <a class="page-link" href="#" data-page="${pagination.current_page - 1}" aria-label="Previous">
+                        <span class="iconify" data-icon="tabler:chevron-left"></span>
+                    </a></li>`;
 
                 const maxVisible = 5;
                 let startPage = Math.max(1, pagination.current_page - Math.floor(maxVisible / 2));
@@ -555,26 +516,23 @@
 
                 if (startPage > 1) {
                     html += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
-                    if (startPage > 2) html +=
-                        `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    if (startPage > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
                 }
 
                 for (let i = startPage; i <= endPage; i++) {
                     html += `<li class="page-item ${i === pagination.current_page ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                        <a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
                 }
 
                 if (endPage < pagination.last_page) {
-                    if (endPage < pagination.last_page - 1) html +=
-                        `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                    html +=
-                        `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.last_page}">${pagination.last_page}</a></li>`;
+                    if (endPage < pagination.last_page - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    html += `<li class="page-item"><a class="page-link" href="#" data-page="${pagination.last_page}">${pagination.last_page}</a></li>`;
                 }
 
                 html += `<li class="page-item ${pagination.current_page === pagination.last_page ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${pagination.current_page + 1}" aria-label="Next">
-                    <span class="iconify" data-icon="tabler:chevron-right"></span>
-                </a></li></ul></nav>`;
+                    <a class="page-link" href="#" data-page="${pagination.current_page + 1}" aria-label="Next">
+                        <span class="iconify" data-icon="tabler:chevron-right"></span>
+                    </a></li></ul></nav>`;
 
                 paginationContainer.innerHTML = html;
             }
@@ -582,13 +540,9 @@
             function showToast(message, type = 'success') {
                 const toast = document.getElementById('liveToast');
                 const toastMessage = document.getElementById('toastMessage');
-                toast.className =
-                    `toast align-items-center border-0 ${type === 'success' ? 'text-bg-success' : 'text-bg-danger'}`;
+                toast.className = `toast align-items-center border-0 ${type === 'success' ? 'text-bg-success' : 'text-bg-danger'}`;
                 toastMessage.textContent = message;
-                const bsToast = new bootstrap.Toast(toast, {
-                    delay: 3000,
-                    autohide: true
-                });
+                const bsToast = new bootstrap.Toast(toast, { delay: 3000, autohide: true });
                 bsToast.show();
             }
 
@@ -597,6 +551,186 @@
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
+            }
+
+            function loadDetailData(rkmId) {
+                document.getElementById('detailLoading').classList.remove('d-none');
+                document.getElementById('detailContent').classList.add('d-none');
+                
+                fetch(`/crm/checklist-rkm/${rkmId}/detail`)
+                    .then(res => res.json())
+                    .then(response => {
+                        if (response.success) {
+                            detailData = response.data;
+                            renderDetailTable(detailData);
+                            document.getElementById('detailLoading').classList.add('d-none');
+                            document.getElementById('detailContent').classList.remove('d-none');
+                        } else {
+                            showToast('Gagal memuat data detail', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showToast('Terjadi kesalahan koneksi', 'error');
+                    });
+            }
+
+            function renderDetailTable(data) {
+                const tbody = document.getElementById('detailTableBody');
+                
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                Tidak ada data detail
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = data.map((item, index) => `
+                    <tr data-rkm-id="${item.id}">
+                        <td class="text-center">${index + 1}</td>
+                        <td><small class="fw-semibold">${escapeHtml(item.nama_perusahaan || '-')}</small></td>
+                        <td><small>${escapeHtml(item.sales_name || '-')}</small></td>
+                        <td class="text-center">
+                            <div class="form-check form-switch d-flex justify-content-center">
+                                <input type="checkbox" 
+                                    class="form-check-input detail-checkbox" 
+                                    data-field="registrasi_form"
+                                    data-rkm-id="${item.id}"
+                                    ${item.registrasi_form ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="form-check form-switch d-flex justify-content-center">
+                                <input type="checkbox" 
+                                    class="form-check-input detail-checkbox" 
+                                    data-field="surat_kontrak"
+                                    data-rkm-id="${item.id}"
+                                    ${item.surat_kontrak ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="form-check form-switch d-flex justify-content-center">
+                                <input type="checkbox" 
+                                    class="form-check-input detail-checkbox" 
+                                    data-field="PA"
+                                    data-rkm-id="${item.id}"
+                                    ${item.PA ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="form-check form-switch d-flex justify-content-center">
+                                <input type="checkbox" 
+                                    class="form-check-input detail-checkbox" 
+                                    data-field="PO"
+                                    data-rkm-id="${item.id}"
+                                    ${item.PO ? 'checked' : ''}>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            function refreshDetailData() {
+                if (currentRKMId) {
+                    loadDetailData(currentRKMId);
+                    loadData();
+                }
+            }
+
+            document.getElementById('detailTableBody')?.addEventListener('change', function(e) {
+                if (e.target.classList.contains('detail-checkbox')) {
+                    const checkbox = e.target;
+                    const rkmId = checkbox.dataset.rkmId;
+                    const field = checkbox.dataset.field;
+                    const checked = checkbox.checked;
+                    
+                    const originalState = checked;
+                    
+                    checkbox.disabled = true;
+                    checkbox.classList.add('opacity-50');
+                    
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                    
+                    fetch(`/crm/checklist-rkm/detail/${rkmId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({
+                            rkm_id: rkmId,
+                            field: field,
+                            checked: checked
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(response => {
+                        if (response.success) {
+                            const item = detailData.find(d => d.id == rkmId);
+                            if (item) {
+                                item[field] = checked;
+                            }
+                            
+                            updateMainTableProgress();
+                            showToast('Checklist berhasil diupdate', 'success');
+                        } else {
+                            checkbox.checked = !originalState;
+                            showToast(response.message || 'Gagal update checklist', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        checkbox.checked = !originalState;
+                        showToast('Terjadi kesalahan koneksi', 'error');
+                        console.error(err);
+                    })
+                    .finally(() => {
+                        checkbox.disabled = false;
+                        checkbox.classList.remove('opacity-50');
+                    });
+                }
+            });
+
+            function updateMainTableProgress() {
+                if (!currentRKMId || !detailData.length) return;
+                
+                const progress = {
+                    registrasi_form: { completed: 0, total: detailData.length },
+                    surat_kontrak: { completed: 0, total: detailData.length },
+                    PA: { completed: 0, total: detailData.length },
+                    PO: { completed: 0, total: detailData.length }
+                };
+                
+                detailData.forEach(item => {
+                    if (item.registrasi_form) progress.registrasi_form.completed++;
+                    if (item.surat_kontrak) progress.surat_kontrak.completed++;
+                    if (item.PA) progress.PA.completed++;
+                    if (item.PO) progress.PO.completed++;
+                });
+                
+                const mainRow = document.querySelector(`tr[data-id="${currentRKMId}"]`);
+                if (mainRow) {
+                    const cells = mainRow.querySelectorAll('.checklist-cell');
+                    
+                    const fields = ['registrasi_form', 'surat_kontrak', 'PA', 'PO'];
+                    cells.forEach((cell, index) => {
+                        const field = fields[index];
+                        const count = `${progress[field].completed}/${progress[field].total}`;
+                        const small = cell.querySelector('small');
+                        if (small) {
+                            small.textContent = count;
+                        }
+                        
+                        const checkbox = cell.querySelector('.checklist-checkbox-auto');
+                        if (checkbox) {
+                            const isAllChecked = progress[field].completed >= progress[field].total;
+                            checkbox.checked = isAllChecked;
+                        }
+                    });
+                }
             }
         });
     </script>
@@ -711,7 +845,6 @@
         }
 
         @media (max-width: 768px) {
-
             .card-header,
             .card-body {
                 padding: 1rem !important;
@@ -725,6 +858,15 @@
                 flex-wrap: wrap;
                 gap: 2px;
             }
+        }
+
+        .checklist-cell {
+            min-width: 100px;
+        }
+
+        .detail-checkbox {
+            width: 2rem;
+            height: 1rem;
         }
     </style>
 @endsection

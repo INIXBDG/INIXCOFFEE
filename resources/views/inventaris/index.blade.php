@@ -65,8 +65,8 @@
                                 <label for="kodebarang" class="form-label">Kode Barang</label>
                                 <select class="form-control" id="kodebarang" name="kodebarang">
                                     <option value="">-- Pilih Kode Barang --</option>
-                                    @foreach ($kodeBarang as $kodeBarang)
-                                        <option value="{{ $kodeBarang }}">{{ $kodeBarang }}</option>
+                                    @foreach ($kodeBarang as $item)
+                                        <option value="{{ $item->kode_barang }}">{{ $item->kode_barang }} ({{ $item->nama_barang }})</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -201,11 +201,16 @@
                                     {{ __('Tipe Non-Elektronik') }}
                                 </button>
                             </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="kodeBarang-tab" data-bs-toggle="tab" data-bs-target="#kodeBarangTab" type="button" role="tab">
+                                    {{ __('Kode Barang') }}
+                                </button>
+                            </li>
                         </ul>
                         <div class="tab-content mt-2" id="myTabContent">
                             <div class="tab-pane fade show active" id="elektronik" role="tabpanel">
                                 <h4 class="card-title text-center my-1">{{ __('Barang Elektronik') }}</h4>
-                                <table class="table table-striped" id="inventaristableElektronik">
+                                <table class="table table-striped" id="inventaristableElektronik" style="width:100%">
                                     <thead>
                                     <tr>
                                         <th scope="col">No</th>
@@ -226,7 +231,7 @@
                             
                             <div class="tab-pane fade show active" id="nonElektronik" role="tabpanel">
                                 <h4 class="card-title text-center my-1">{{ __('Barang Non-Elektronik') }}</h4>
-                                <table class="table table-striped" id="inventaristableNonElektronik">
+                                <table class="table table-striped" id="inventaristableNonElektronik" style="width:100%">
                                     <thead>
                                     <tr>
                                         <th scope="col">No</th>
@@ -242,6 +247,28 @@
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
+                                </table>
+                            </div>
+
+                            <div class="tab-pane fade" id="kodeBarangTab" role="tabpanel">
+                                <h4 class="card-title text-center my-1">{{ __('Data Kode Barang') }}</h4>
+                                <table class="table table-striped" id="tableKodeBarang" style="width:100%">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">No</th>
+                                        <th scope="col">Kode Barang</th>
+                                        <th scope="col">Nama Barang</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($kodeBarang as $index => $item)
+                                        <tr>
+                                            <td>{{ $index + 1 }}</td>
+                                            <td>{{ $item->kode_barang }}</td>
+                                            <td>{{ $item->nama_barang }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
                                 </table>
                             </div>
 
@@ -374,8 +401,8 @@
                     },
                     columns: [{
                             data: null,
-                            render: function() {
-                                return tableIndex++;
+                            render: function(data, type, row, meta) {
+                                return meta.row + 1;
                             }
                         },
                         {
@@ -483,8 +510,8 @@
                     },
                     columns: [{
                             data: null,
-                            render: function() {
-                                return tableIndex++;
+                            render: function(data, type, row, meta) {
+                                return meta.row + 1;
                             }
                         },
                         {
@@ -561,6 +588,8 @@
                         orderDataType: 'custom-kondisi'
                     }]
                 });
+
+                $('#tableKodeBarang').DataTable();
 
                 // Handle Simpan Data
                 $('#saveInventaris').on('click', function(e) {

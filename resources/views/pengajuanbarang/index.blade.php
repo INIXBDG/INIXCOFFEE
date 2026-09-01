@@ -88,83 +88,111 @@
 
     <div class="row justify-content-center">
         <div class="col-md-12">
-            <div class="d-flex justify-content-end">
+            <div class="d-flex justify-content-end gap-2 mx-4 my-3">
             @if ($tracking == 'tutup')
-                <button class="btn btn-md btn-secondary mx-4" disabled title="Tidak bisa mengajukan barang karena status tidak 'Selesai'">
+                <button class="btn btn-md btn-secondary" disabled title="Tidak bisa mengajukan barang karena status tidak 'Selesai'">
                     <img src="{{ asset('icon/plus.svg') }}" width="30px"> Ajukan Barang
                 </button>
             @else
-                <a href="pengajuanbarang/create" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Barang">
+                <a href="pengajuanbarang/create" class="btn btn-md click-primary" data-toggle="tooltip" data-placement="top" title="Ajukan Barang">
                     <img src="{{ asset('icon/plus.svg') }}" width="30px"> Ajukan Barang
                 </a>
             @endif
 			@if ($jabatan == 'Finance & Accounting')
-                <a href="/jurnalakuntansi" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Barang">
-                    <img src="{{ asset('icon/archive-white.svg') }}" width="30px"> Jurnal Akutansi
+                <a href="/jurnalakuntansi" class="btn btn-md click-primary" data-toggle="tooltip" data-placement="top" title="Jurnal Akuntansi">
+                    <img src="{{ asset('icon/archive-white.svg') }}" width="30px"> Jurnal Akuntansi
                 </a>
 			@endif
             </div>
             @php
                 $jabatan = auth()->user()->jabatan;
             @endphp
-            <div class="card" style="width: 100%">
-                <div class="card-body d-flex flex-wrap justify-content-center align-items-end">
-                    <div class="col-md-3 mx-1 mb-2">
-                        <label for="tahun" class="form-label">Tahun</label>
-                        <select id="tahun" class="form-select" aria-label="tahun">
-                            <option disabled>Pilih Tahun</option>
-                            @php
-                            $tahun_sekarang = now()->year;
-                            for ($tahun = 2020; $tahun <= $tahun_sekarang   + 2; $tahun++) {
-                                $selected = $tahun == $tahun_sekarang ? 'selected' : '';
-                                echo "<option value=\"$tahun\" $selected>$tahun</option>";
-                            }
-                            @endphp
-                        </select>
-
-                    </div>
-                    <div class="col-md-3 mx-1 mb-2">
-                        <label for="bulan" class="form-label">Bulan</label>
-                        <select id="bulan" class="form-select" aria-label="bulan">
-                            <option disabled>Pilih Bulan</option>
-                            @php
-                            $bulan_sekarang = now()->month;
-                            $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                            for ($bulan = 1; $bulan <= 12; $bulan++) {
-                                $bulan_awal = $nama_bulan[$bulan - 1]; // Accessing the array with $bulan - 1
-                                $selected = $bulan == $bulan_sekarang ? 'selected' : '';
-                                echo "<option value=\"$bulan\" $selected>$bulan_awal</option>";
-                            }
-                            @endphp
-                        </select>
-                    </div>
-
-                    @if ($jabatan == 'Finance & Accounting')
-                        <div class="col-md-3 mx-1 mb-2">
-                            <label for="mode_tampilan" class="form-label">Tampilan</label>
-                            <select id="mode_tampilan" class="form-select" onchange="toggleMingguSelector()">
-                                <option value="">Per Bulan</option>
-                                <option value="minggu">Per Minggu</option>
-                                <option value="bulanminggu">Per Bulan &amp; Minggu</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mx-1 mb-2" id="minggu_wrapper" style="display:none;">
-                            <label for="minggu_pilihan" class="form-label">Pilih Minggu</label>
-                            <select id="minggu_pilihan" class="form-select"></select>
-                        </div>
-                    @endif
-
-                    <div class="col-md-3 mx-1 mb-2">
+            <div class="card m-4">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-center align-items-center gap-3">
                         @if ($jabatan == 'Finance & Accounting')
-                            <button type="submit" onclick="tableFinance()" class="btn btn-primary" style="margin-top: 4px">Cari Data</button>
-                            <button type="button" onclick="exportAllToExcel()" class="btn btn-success" style="margin-top: 4px">
-                                <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export All to Excel
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="tahun" class="form-label mb-0">Tahun</label>
+                                <select id="tahun" class="form-select" style="width:130px" aria-label="tahun">
+                                    <option disabled>Pilih Tahun</option>
+                                    @php
+                                    $tahun_sekarang = now()->year;
+                                    for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                        $selected = $tahun == $tahun_sekarang ? 'selected' : '';
+                                        echo "<option value=\"$tahun\" $selected>$tahun</option>";
+                                    }
+                                    @endphp
+                                </select>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="bulan" class="form-label mb-0">Bulan</label>
+                                <select id="bulan" class="form-select" style="width:140px" aria-label="bulan">
+                                    <option disabled>Pilih Bulan</option>
+                                    @php
+                                    $bulan_sekarang = now()->month;
+                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                    for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                        $bulan_awal = $nama_bulan[$bulan - 1];
+                                        $selected = $bulan == $bulan_sekarang ? 'selected' : '';
+                                        echo "<option value=\"$bulan\" $selected>$bulan_awal</option>";
+                                    }
+                                    @endphp
+                                </select>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="mode_tampilan" class="form-label mb-0">Tampilan</label>
+                                <select id="mode_tampilan" class="form-select" style="width:160px" onchange="toggleMingguSelector()">
+                                    <option value="">Per Bulan</option>
+                                    <option value="minggu">Per Minggu</option>
+                                    <option value="bulanminggu">Per Bulan &amp; Minggu</option>
+                                </select>
+                            </div>
+                            <div class="d-flex align-items-center gap-2" id="minggu_wrapper" style="display:none;">
+                                <label for="minggu_pilihan" class="form-label mb-0">Pilih Minggu</label>
+                                <select id="minggu_pilihan" class="form-select" style="width:160px"></select>
+                            </div>
+                            <button type="submit" onclick="tableFinance()" class="btn click-primary" style="height:38px">Cari Data</button>
+                            <button type="button" onclick="exportAllToExcel()" class="btn btn-success" style="height:38px">
+                                <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export Excel
                             </button>
                         @else
-                        <button type="submit" onclick="tableKaryawan()" class="btn click-primary" style="margin-top: 4px">Cari Data</button>
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="tahun" class="form-label mb-0">Tahun</label>
+                                <select id="tahun" class="form-select" style="width:130px" aria-label="tahun">
+                                    <option disabled>Pilih Tahun</option>
+                                    @php
+                                    $tahun_sekarang = now()->year;
+                                    for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                        $selected = $tahun == $tahun_sekarang ? 'selected' : '';
+                                        echo "<option value=\"$tahun\" $selected>$tahun</option>";
+                                    }
+                                    @endphp
+                                </select>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="bulan" class="form-label mb-0">Bulan</label>
+                                <select id="bulan" class="form-select" style="width:140px" aria-label="bulan">
+                                    <option disabled>Pilih Bulan</option>
+                                    @php
+                                    $bulan_sekarang = now()->month;
+                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                    for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                        $bulan_awal = $nama_bulan[$bulan - 1];
+                                        $selected = $bulan == $bulan_sekarang ? 'selected' : '';
+                                        echo "<option value=\"$bulan\" $selected>$bulan_awal</option>";
+                                    }
+                                    @endphp
+                                </select>
+                            </div>
+                            <button type="submit" onclick="tableKaryawan()" class="btn click-primary" style="height:38px">Cari Data</button>
                         @endif
                     </div>
                 </div>
+            </div>
+            <!-- Keterangan Warna -->
+            <div class="mx-4 mb-2 d-flex align-items-center gap-2">
+                <div style="width:18px;height:18px;background-color:rgba(255,0,0,0.5);border-radius:4px;flex-shrink:0;"></div>
+                <small class="text-muted">Baris merah = pengajuan belum disertai invoice</small>
             </div>
             @if ($jabatan == 'Finance & Accounting')
                 <div class="card m-4">
@@ -596,7 +624,7 @@ function tableKaryawan() {
                 data: "created_at",
                 visible: false,
                 render: function (data) {
-                    return moment(data).format('YYYY-MM-DD');
+                    return moment(data).format('YYYY-MM-DD HH:mm:ss');
                 }
             },
             {
@@ -728,7 +756,7 @@ function tableKaryawan() {
                             action="{{ url('/pengajuanbarang') }}/${row.id}" method="POST">
                             <input type="hidden" name="_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="_method" value="DELETE">
-                            <button type="submit" class="dropdown-item">
+                            <button type="submit" class="dropdown-item text-danger">
                                 <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus</button>
                         </form>`;
                     }
@@ -739,7 +767,12 @@ function tableKaryawan() {
             }
         ],
         order: [[0, 'desc']],
-        columnDefs: [{ targets: [0], type: "date" }]
+        columnDefs: [{ targets: [0], type: "date" }],
+        createdRow: function (row, data, dataIndex) {
+            if (!data.invoice) {
+                $(row).attr('style', 'background-color: rgba(255, 0, 0, 0.5); color: #fff');
+            }
+        }
     });
 }
 
@@ -940,6 +973,9 @@ function tableFinance(){
                     {
                         "data": "created_at",
                         "render": function(data, type, row) {
+                                if (type === 'sort' || type === 'type') {
+                                    return data;
+                                }
                                 moment.locale('id');
                                 var tanggalAwal = moment(data).format('dddd, DD MMMM YYYY');
                                 return tanggalAwal;
@@ -1080,6 +1116,11 @@ function tableFinance(){
                         </tr>
                     `;
                     $('#datasudah tfoot').html(footerHtml);
+                },
+                "createdRow": function (row, data, dataIndex) {
+                    if (!data.invoice) {
+                        $(row).attr('style', 'background-color: rgba(255, 0, 0, 0.5); color: #fff');
+                    }
                 }
             };
             if (mode === 'bulanminggu') {
@@ -1111,6 +1152,9 @@ function tableFinance(){
                     {
                         "data": "created_at",
                         "render": function(data, type, row) {
+                                if (type === 'sort' || type === 'type') {
+                                    return data;
+                                }
                                 moment.locale('id');
                                 var tanggalAwal = moment(data).format('dddd, DD MMMM YYYY');
                                 return tanggalAwal;
@@ -1207,7 +1251,7 @@ function tableFinance(){
                             actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">';
                             actions += '@csrf';
                             actions += '@method('DELETE')';
-                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                            actions += '<button type="submit" class="dropdown-item text-danger"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
                             actions += '</form>';
                             actions += '</div>';
                             actions += '</div>';
@@ -1235,6 +1279,11 @@ function tableFinance(){
                         </tr>
                     `;
                     $('#databelum tfoot').html(footerHtml);
+                },
+                "createdRow": function (row, data, dataIndex) {
+                    if (!data.invoice) {
+                        $(row).attr('style', 'background-color: rgba(255, 0, 0, 0.5); color: #fff');
+                    }
                 }
             };
             if (mode === 'bulanminggu') {
@@ -1260,7 +1309,10 @@ function tableFinance(){
                 columns: [
                     {
                         "data": "created_at",
-                        "render": function(data) {
+                        "render": function(data, type, row) {
+                            if (type === 'sort' || type === 'type') {
+                                return data;
+                            }
                             moment.locale('id');
                             return moment(data).format('dddd, DD MMMM YYYY');
                         }
@@ -1355,7 +1407,12 @@ function tableFinance(){
 
                     }
                 ],
-                order: [[0, 'desc']]
+                order: [[0, 'desc']],
+                "createdRow": function (row, data, dataIndex) {
+                    if (!data.invoice) {
+                        $(row).attr('style', 'background-color: rgba(255, 0, 0, 0.5); color: #fff');
+                    }
+                }
             };
             if (mode === 'bulanminggu') {
                 datasudahinvConfig.rowGroup = buildRowGroupConfig(weeks);
