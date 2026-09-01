@@ -1,656 +1,18 @@
 @extends('layouts_crm.app')
 
 @section('crm_contents')
-    <div class="container-xxl flex-grow-1 container-p-y">
-        <div class="row g-4 mb-4">
-            <div class="col-xl-8 col-lg-7">
-                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
-                    <div class="card-header bg-primary py-3 px-4 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0 text-white fw-bold">
-                            Target Aktivitas Sales
-                        </h5>
-                        <span class="badge bg-white text-primary rounded-pill">{{ $tanggalRange }}</span>
-                    </div>
-                    <div class="card-body p-4">
 
-                        <form method="GET" action="{{ url()->current() }}" class="row g-2 mb-4 align-items-end pb-3 border-bottom">
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-muted mb-1">Tanggal Mulai</label>
-                                <input type="date" name="start_date" class="form-control form-control-sm border-light-subtle"
-                                    value="{{ request('start_date') }}" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-muted mb-1">Tanggal Selesai</label>
-                                <input type="date" name="end_date" class="form-control form-control-sm border-light-subtle"
-                                    value="{{ request('end_date') }}" required>
-                            </div>
-                            <div class="col-md-4">
-                                <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">
-                                    Terapkan Filter
-                                </button>
-                            </div>
-                        </form>
-
-                        <div class="mb-4 overflow-auto">
-                            <div class="btn-group btn-group-sm mb-1" role="group">
-                                <button type="button" class="btn btn-outline-primary filter-btn active"
-                                    data-filter="all">Semua Sales</button>
-                                @foreach ($activitysales as $sales)
-                                    <button type="button" class="btn btn-outline-primary filter-btn"
-                                        data-filter="{{ $sales['id_sales'] }}">{{ $sales['id_sales'] }}</button>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <div class="activity-container pe-2" style="max-height: 400px; overflow-y: auto;">
-                            @forelse ($activitysales as $sales)
-                                <div class="sales-block mb-4 p-3 rounded-3 sales-item"
-                                    data-sales-id="{{ $sales['id_sales'] }}">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="avatar me-2">
-                                            <span class="avatar-initial rounded-circle bg-label-primary p-2"><i
-                                                    class="bx bx-user"></i></span>
-                                        </div>
-                                        <strong class="text-dark fs-6">{{ $sales['id_sales'] }}</strong>
-                                    </div>
-
-                                    <div class="row g-3">
-                                        @php
-                                            $aktivitas = [
-                                                'DB' => [
-                                                    'jumlah' => $sales['DB'],
-                                                    'target' => $sales['target_DB'],
-                                                    'warna' => 'info',
-                                                    'icon' => 'bx-data',
-                                                ],
-                                                'Contact' => [
-                                                    'jumlah' => $sales['contact'],
-                                                    'target' => $sales['target_contact'],
-                                                    'warna' => 'info',
-                                                    'icon' => 'bx-phone-call',
-                                                ],
-                                                'Call' => [
-                                                    'jumlah' => $sales['call'],
-                                                    'target' => $sales['target_call'],
-                                                    'warna' => 'info',
-                                                    'icon' => 'bx-phone-incoming',
-                                                ],
-                                                'Email' => [
-                                                    'jumlah' => $sales['email'],
-                                                    'target' => $sales['target_email'],
-                                                    'warna' => 'warning',
-                                                    'icon' => 'bx-envelope',
-                                                ],
-                                                'Visit' => [
-                                                    'jumlah' => $sales['visit'],
-                                                    'target' => $sales['target_visit'],
-                                                    'warna' => 'warning',
-                                                    'icon' => 'bx-map-pin',
-                                                ],
-                                                'Meet' => [
-                                                    'jumlah' => $sales['meet'],
-                                                    'target' => $sales['target_meet'],
-                                                    'warna' => 'warning',
-                                                    'icon' => 'bx-group',
-                                                ],
-                                                'Incharge' => [
-                                                    'jumlah' => $sales['incharge'],
-                                                    'target' => $sales['target_incharge'],
-                                                    'warna' => 'success',
-                                                    'icon' => 'bx-user-check',
-                                                ],
-                                                'Penawaran Awal' => [
-                                                    'jumlah' => $sales['PA'],
-                                                    'target' => $sales['target_PA'],
-                                                    'warna' => 'success',
-                                                    'icon' => 'bx-file',
-                                                ],
-                                                'Leads' => [
-                                                    'jumlah' => $sales['Leads'],
-                                                    'target' => $sales['target_PI'],
-                                                    'warna' => 'success',
-                                                    'icon' => 'bx-detail',
-                                                ],
-                                                'Regis Form' => [
-                                                    'jumlah' => $sales['Regis_Form'],
-                                                    'target' => $sales['target_Form_Masuk'],
-                                                    'warna' => 'danger',
-                                                    'icon' => 'bx-log-in-circle',
-                                                ]
-                                            ];
-                                        @endphp
-
-                                        @foreach ($aktivitas as $label => $data)
-                                            @php
-                                                $persen =
-                                                    $data['target'] > 0
-                                                        ? min(round(($data['jumlah'] / $data['target']) * 100), 100)
-                                                        : 0;
-                                            @endphp
-                                            <div class="col-md-6 col-lg-4 activity-item"
-                                                data-activity="{{ $label }}">
-                                                <div class="p-2 border rounded-2 bg-white h-100">
-                                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                                        <small class="text-muted fw-bold"
-                                                            style="font-size: 0.75rem;">{{ $label }}</small>
-                                                        <span
-                                                            class="badge bg-{{ $data['warna'] }}-subtle text-{{ $data['warna'] }} rounded-pill"
-                                                            style="font-size: 0.65rem; cursor: pointer;"
-                                                            data-sales-id="{{ $sales['id_sales'] }}"
-                                                            data-activity="{{ $label }}">{{ $persen }}%</span>
-                                                    </div>
-                                                    <div class="d-flex align-items-baseline">
-                                                        <h6 class="mb-1 me-1">{{ $data['jumlah'] }}</h6>
-                                                        <small class="text-muted">/{{ $data['target'] }}</small>
-                                                    </div>
-                                                    <div class="progress rounded-pill" style="height: 4px;">
-                                                        <div class="progress-bar bg-{{ $data['warna'] }} rounded-pill"
-                                                            role="progressbar" style="width: {{ $persen }}%"></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @empty
-                                @endforelse
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-4 col-lg-5">
-                <div class="row g-4 h-100">
-                    <div class="col-12">
-                        <div class="card shadow-sm border-0 h-100">
-                            <div
-                                class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
-                                <h5 class="card-title mb-0 text-primary">Data Perusahaan</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="chart-container" style="height: 250px;">
-                                    <canvas id="kategoriChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="card shadow-sm border-0 h-100">
-                            <div
-                                class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
-                                <h5 class="card-title mb-0 text-primary">Pembelian per Segmen</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="chart-container" style="height: 250px;">
-                                    <canvas id="spendChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-transparent border-0">
-                        <h5 class="card-title mb-0 text-primary">Top Vendor</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container" style="height: 280px;">
-                            <canvas id="vendorChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-transparent border-0">
-                        <h5 class="card-title mb-0 text-primary">Top Tipe Materi</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container" style="height: 280px;">
-                            <canvas id="materiChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0 text-success fw-bold">Total Win</h5>
-                        <select class="form-select form-select-sm win-year-filter border-0 bg-light" style="width: auto;"
-                            hidden id="filterTahunLaporan">
-                            @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
-                                <option value="{{ $year }}" {{ $tahunDipilih == $year ? 'selected' : '' }}>
-                                    {{ $year }}</option>
-                            @endfor
-                        </select>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container" style="height: 280px;">
-                            <canvas id="totalWinChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0 text-danger fw-bold">Total Lost</h5>
-                        <select class="form-select form-select-sm lost-year-filter border-0 bg-light"
-                            style="width: auto;">
-                            @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
-                                <option value="{{ $year }}" {{ $tahunDipilih == $year ? 'selected' : '' }}>
-                                    {{ $year }}</option>
-                            @endfor
-                        </select>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container" style="height: 280px;">
-                            <canvas id="totalLostChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-lg-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header border-bottom bg-transparent py-3">
-                        <h5 class="card-title mb-0 text-primary fw-bold">Top 5 Produk</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <ul class="nav nav-tabs nav-fill border-0 bg-light" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link active small py-2" data-bs-toggle="tab" href="#tab-terjual">Terjual
-                                    (Pax)</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link small py-2" data-bs-toggle="tab" href="#tab-profit">Profit
-                                    (Revenue)</a>
-                            </li>
-                        </ul>
-                        <div class="tab-content p-3">
-                            <div id="tab-terjual" class="tab-pane fade show active">
-                                @forelse ($best as $item)
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div class="text-truncate" style="max-width: 70%;">
-                                            <small
-                                                class="text-dark fw-medium d-block">{{ $item->materi->nama_materi ?? $item->materi_key }}</small>
-                                        </div>
-                                        <span
-                                            class="badge bg-success-subtle text-success border border-success-subtle">{{ number_format($item->total_pax, 0, ',', '.') }}
-                                            Pax</span>
-                                    </div>
-                                @empty
-                                    <p class="text-center text-muted my-4 small">Tidak ada data.</p>
-                                @endforelse
-                            </div>
-                            <div id="tab-profit" class="tab-pane fade">
-                                @forelse ($profit as $item)
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div class="text-truncate" style="max-width: 60%;">
-                                            <small
-                                                class="text-dark fw-medium d-block">{{ $item->materi->nama_materi ?? $item->materi_key }}</small>
-                                        </div>
-                                        <span class="text-primary fw-bold small">Rp
-                                            {{ number_format($item->total_revenue, 0, ',', '.') }}</span>
-                                    </div>
-                                @empty
-                                    <p class="text-center text-muted my-4 small">Tidak ada data.</p>
-                                @endforelse
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-8">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-transparent border-bottom py-3">
-                        <h5 class="card-title mb-0 text-primary fw-bold">Prospek Terbuat Minggu Ini</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive" style="max-height: 350px;">
-                            <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
-                                <thead class="bg-light text-muted">
-                                    <tr>
-                                        <th class="ps-4">Sales & Materi</th>
-                                        <th>Harga</th>
-                                        <th>Periode</th>
-                                        <th>Pax</th>
-                                        <th class="pe-4">Tahap</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($prospek as $item)
-                                        <tr>
-                                            <td class="ps-4">
-                                                <span class="fw-bold text-dark d-block">{{ $item->id_sales }}</span>
-                                                <small class="text-muted">{{ $item->materiRelation->nama_materi }}</small>
-                                            </td>
-                                            <td><span class="fw-medium">Rp
-                                                    {{ number_format($item->harga, 0, ',', '.') }}</span></td>
-                                            <td>
-                                                @if ($item->tentatif == 1)
-                                                    <span class="badge bg-warning-subtle text-warning">Tentatif</span>
-                                                @else
-                                                    <small>
-                                                        {{ \Carbon\Carbon::parse($item->periode_mulai)->translatedFormat('d M Y') }}
-                                                        -
-                                                        {{ \Carbon\Carbon::parse($item->periode_selesai)->translatedFormat('d M Y') }}
-                                                    </small>
-                                                @endif
-                                            </td>
-                                            <td>{{ number_format($item->pax, 0, ',', '.') }}</td>
-                                            <td class="pe-4">
-                                                <span
-                                                    class="badge bg-info-subtle text-info border border-info-subtle w-100">{{ strtoupper($item->tahap) }}</span>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="text-center py-4 text-muted">Belum ada prospek baru.
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    <div class="row g-4 mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Incomplete Payments Advance</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped align-middle mb-0" style="font-size: 0.85rem;">
-                            <thead class="bg-primary text-white">
-                                <tr>
-                                    <th>No</th>
-                                    <th>Perusahaan</th>
-                                    <th>Materi</th>
-                                    <th>Waktu</th>
-                                    <th>Total PA</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($PA as $item)
-                                    <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $item->rkm?->perusahaan?->nama_perusahaan ?? '-' }}</td>
-                                        <td>{{ $item->rkm?->materi?->nama_materi ?? '-' }}</td>
-                                        <td>
-                                            {{ \Carbon\Carbon::parse($item->rkm?->tanggal_awal)->translatedFormat('d M Y') ?? '-' }}
-                                            -
-                                            {{ \Carbon\Carbon::parse($item->rkm?->tanggal_akhir)->translatedFormat('d M Y') ?? '-' }}
-                                        </td>
-                                        <td>
-                                            {{ number_format(
-                                                $item->transportasi +
-                                                $item->akomodasi_peserta +
-                                                $item->akomodasi_tim +
-                                                $item->fresh_money +
-                                                $item->entertaint +
-                                                $item->souvenir +
-                                                $item->cashback +
-                                                $item->sewa_laptop,
-                                            0, ',', '.') }}
-                                        </td>
-                                        <td>{{ $item->trackingNetSales->tracking ?? '-' }}</td>
-                                        <td>
-											@php
-												$peluangId = optional(optional($item->rkm)->peluang)->id;
-											@endphp
-
-											@if($peluangId)
-												<a class="btn btn-sm btn-outline-primary"
-												   href="{{ route('detail.peluang', $peluangId) }}"
-												   target="_blank">View</a>
-											@else
-												-
-											@endif
-										</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-
-                        <div class="p-3">
-                            {{ $PA->links() }}
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-12">
-                <div class="card shadow-sm border-0">
-                    <div
-                        class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0 text-primary fw-bold">Total Status Perusahaan per Sales</h5>
-                        <div class="badge bg-label-secondary text-muted">Pivot Table View</div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped align-middle mb-0" style="font-size: 0.85rem;">
-                                <thead class="bg-primary text-white">
-                                    <tr>
-                                        <th class="ps-4 border-0">Sales Executive</th>
-                                        @php $statuses = $totalStatus->pluck('status')->unique()->sort(); @endphp
-                                        @foreach ($statuses as $status)
-                                            <th class="text-center border-0">{{ $status }}</th>
-                                        @endforeach
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php
-                                        $pivotData = [];
-                                        foreach ($totalStatus as $item) {
-                                            $pivotData[$item->sales_key][$item->status] = $item->total;
-                                        }
-                                    @endphp
-                                    @forelse ($pivotData as $salesKey => $statusData)
-                                        <tr>
-                                            <td class="ps-4 fw-bold">{{ $salesKey }}</td>
-                                            @foreach ($statuses as $status)
-                                                <td class="text-center fw-medium">
-                                                    @if (isset($statusData[$status]))
-                                                        {{ number_format($statusData[$status], 0, ',', '.') }}
-                                                    @else
-                                                        <span class="text-light-emphasis">0</span>
-                                                    @endif
-                                                </td>
-                                            @endforeach
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="{{ $statuses->count() + 1 }}" class="text-center py-4">Data
-                                                tidak tersedia.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-12">
-                <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white py-3 px-4 border-0">
-                        <h5 class="card-title mb-0 text-primary fw-bold">Distribusi Perusahaan per Lokasi</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div id="map" style="height: 450px; background-color: #f8f9fa;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="detailAktivitas" class="w3-modal" tabindex="-1" aria-hidden="true">
-        <div class="w3-modal-content w3-animate-top shadow-lg"
-            style="max-width: 800px; border-radius: 12px; overflow: hidden;">
-            <div class="card border-0">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Detail Aktivitas Sales</h5>
-                    <button type="button" class="btn-close btn-close-white"
-                        onclick="document.getElementById('detailAktivitas').style.display='none'"></button>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row g-4 mb-4">
-                        <div class="col-md-6 border-end">
-                            <div class="mb-2"><small class="text-muted d-block">Sales Executive</small><strong
-                                    id="modalSalesId" class="fs-5"></strong></div>
-                            <div><small class="text-muted d-block">Aktivitas</small><strong id="modalActivity"
-                                    class="text-primary fs-5"></strong></div>
-                        </div>
-                        <div class="col-md-6 text-md-end">
-                            <div class="mb-2"><small class="text-muted d-block">Progress Capaian</small><span
-                                    id="modalPersen" class="badge bg-info p-2 fs-6"></span></div>
-                            <div><small class="text-muted d-block">Realisasi / Target</small><strong><span
-                                        id="modalJumlah"></span> / <span id="modalTarget"></span></strong></div>
-                            <div id="modalTotalContainer" style="display: none; margin-top: 8px;">
-                                <small class="text-muted d-block">Total Nilai</small>
-                                <strong id="modalTotalValue" class="text-success fs-6"></strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="progress mb-4" style="height: 12px; border-radius: 10px;">
-                        <div id="modalProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
-                            style="width: 0%;"></div>
-                    </div>
-
-                    <div class="table-responsive rounded-3 border">
-                        <table class="table table-hover align-middle mb-0 shadow-none">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th class="small border-0">Client</th>
-                                    <th class="small border-0">Tipe</th>
-                                    <th class="small border-0">Deskripsi</th>
-                                    <th class="small border-0">Foto</th>
-                                    <th class="small border-0">Lokasi</th>
-                                    <th class="small border-0 text-center">Waktu</th>
-                                </tr>
-                            </thead>
-                            <tbody class="small">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card-footer border-0 text-end py-3">
-                    <button type="button" class="btn btn-secondary px-4"
-                        onclick="document.getElementById('detailAktivitas').style.display='none'">Tutup</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="chartRKM" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Detail Data</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover" id="tableChartRkm">
-                            <thead>
-                                <tr>
-                                    <th>Nama Materi</th>
-                                    <th>Perusahaan</th>
-                                    <th>Sales</th>
-                                    <th>Harga Jual</th>
-                                    <th>Tanggal</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bodyChartRkm">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="chartPerusahaan" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitles">Detail Data</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover" id="tableChartPerusahaan">
-                            <thead>
-                                <tr>
-                                    <th>Perusahaan</th>
-                                    <th>Sales</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bodyChartPerusahaan">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="chartLaporanPenjualan" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitlesLaporan">Detail Data</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover" id="tableChartLaporanPenjualan">
-                            <thead>
-                                <tr>
-                                    <th>Perusahaan</th>
-                                    <th>Materi</th>
-                                    <th>Netsales</th>
-                                    <th>Pax</th>
-                                    <th>Total</th>
-                                    <th>Waktu</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bodyChartLaporanPenjualan">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Pemuatan CSS secara asinkron (Letakkan di bagian <head> atau sebelum script) -->
+    <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"></noscript>
 
     <style>
+
+        /* Cegah pemblokiran render teks (FOIT) */
+        h1, h2, h3, h4, h5, h6, span, p, div {
+            font-display: swap !important;
+        }
+
         /* Map container styling */
         #map {
             height: 400px;
@@ -845,14 +207,448 @@
         }
     </style>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="{{ asset('assets/vendor/libs/leaflet/leaflet.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/chartjs/chart.umd.min.js') }}"></script>
+    <div class="container-xxl flex-grow-1 container-p-y">
+        <div class="row g-4 mb-4">
+            <div class="col-xl-8 col-lg-7">
+                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-primary py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-white fw-bold">Target Aktivitas Sales</h5>
+                        <!-- ID ditambahkan di sini, PHP Variabel dihapus -->
+                        <span class="badge bg-white text-primary rounded-pill" id="badgeTanggalRange">Memuat...</span>
+                    </div>
+                    <div class="card-body p-4">
+
+                        <!-- Action dan Method bawaan dihapus, diganti menjadi ID AJAX -->
+                        <form id="formFilterAktivitas" class="row g-2 mb-4 align-items-end pb-3 border-bottom">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted mb-1">Tanggal Mulai</label>
+                                <input type="date" id="inputStartDate" class="form-control form-control-sm border-light-subtle" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted mb-1">Tanggal Selesai</label>
+                                <input type="date" id="inputEndDate" class="form-control form-control-sm border-light-subtle" required>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" id="btnFilterAktivitas" class="btn btn-sm btn-primary w-100 shadow-sm">
+                                    Terapkan Filter
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="mb-4 overflow-auto">
+                            <!-- ID ditambahkan pada wadah tombol filter dinamis -->
+                            <div class="btn-group btn-group-sm mb-1" role="group" id="filterButtonsContainer">
+                                <button type="button" class="btn btn-outline-primary filter-btn active" data-filter="all">Semua Sales</button>
+                            </div>
+                        </div>
+
+                        <!-- ID ditambahkan pada wadah kotak aktivitas dinamis -->
+                        <div class="activity-container pe-2" id="activityCardsContainer" style="max-height: 400px; overflow-y: auto;">
+                            <div class="text-center py-5 text-muted">Memuat data aktivitas...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4 col-lg-5">
+                <div class="row g-4 h-100">
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div
+                                class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
+                                <h5 class="card-title mb-0 text-primary">Data Perusahaan</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="kategoriChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div
+                                class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
+                                <h5 class="card-title mb-0 text-primary">Pembelian per Segmen</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="spendChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0 text-primary">Top Vendor</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="vendorChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0 text-primary">Top Tipe Materi</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="materiChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-success fw-bold">Total Win</h5>
+                        {{-- <select class="form-select form-select-sm win-year-filter border-0 bg-light" style="width: auto;" id="filterTahunLaporan">
+                            @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
+                                <option value="{{ $year }}" {{ request('tahun', now()->year) == $year ? 'selected' : '' }}>
+                                    {{ $year }}</option>
+                            @endfor
+                        </select> --}}
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="totalWinChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-danger fw-bold">Total Lost</h5>
+                        <select class="form-select form-select-sm lost-year-filter border-0 bg-light"
+                            style="width: auto;">
+                            @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
+                                <option value="{{ $year }}" {{ request('tahun', now()->year) == $year ? 'selected' : '' }}>
+                                    {{ $year }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="totalLostChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header border-bottom bg-transparent py-3">
+                        <h5 class="card-title mb-0 text-primary fw-bold">Top 5 Produk</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="nav nav-tabs nav-fill border-0 bg-light" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active small py-2" data-bs-toggle="tab" href="#tab-terjual">Terjual
+                                    (Pax)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link small py-2" data-bs-toggle="tab" href="#tab-profit">Profit
+                                    (Revenue)</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content p-3">
+                            <div id="tab-terjual" class="tab-pane fade show active">
+                                @forelse ($best as $item)
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="text-truncate" style="max-width: 70%;">
+                                            <small
+                                                class="text-dark fw-medium d-block">{{ $item->materi->nama_materi ?? $item->materi_key }}</small>
+                                        </div>
+                                        <span
+                                            class="badge bg-success-subtle text-success border border-success-subtle">{{ number_format($item->total_pax, 0, ',', '.') }}
+                                            Pax</span>
+                                    </div>
+                                @empty
+                                    <p class="text-center text-muted my-4 small">Tidak ada data.</p>
+                                @endforelse
+                            </div>
+                            <div id="tab-profit" class="tab-pane fade">
+                                @forelse ($profit as $item)
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="text-truncate" style="max-width: 60%;">
+                                            <small
+                                                class="text-dark fw-medium d-block">{{ $item->materi->nama_materi ?? $item->materi_key }}</small>
+                                        </div>
+                                        <span class="text-primary fw-bold small">Rp
+                                            {{ number_format($item->total_revenue, 0, ',', '.') }}</span>
+                                    </div>
+                                @empty
+                                    <p class="text-center text-muted my-4 small">Tidak ada data.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h5 class="card-title mb-0 text-primary fw-bold">Prospek Terbuat Minggu Ini</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 350px;">
+                            <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                                <thead class="bg-light text-muted">
+                                    <tr>
+                                        <th class="ps-4">Sales & Materi</th>
+                                        <th>Harga</th>
+                                        <th>Periode</th>
+                                        <th>Pax</th>
+                                        <th class="pe-4">Tahap</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bodyProspek">
+                                    <tr><td colspan="5" class="text-center py-4 text-muted">Memuat data asinkron...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-primary fw-bold">Incomplete Payments Advance</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle mb-0" style="font-size: 0.85rem;">
+                                <thead class="bg-primary text-white">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Perusahaan</th>
+                                        <th>Materi</th>
+                                        <th>Waktu</th>
+                                        <th>Total PA</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bodyIncompletePA">
+                                    <tr><td colspan="7" class="text-center py-4 text-muted">Memuat data asinkron...</td></tr>
+                                </tbody>
+                            </table>
+                            <div class="p-3 d-flex justify-content-between" id="paginationPA"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div
+                        class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-primary fw-bold">Total Status Perusahaan per Sales</h5>
+                        <div class="badge bg-label-secondary text-muted">Pivot Table View</div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle mb-0" style="font-size: 0.85rem;" id="tablePivotStatus">
+                                <thead class="bg-primary text-white" id="headPivotStatus">
+                                    <tr>
+                                        <th class="ps-4 border-0">Sales Executive</th>
+                                        <th class="text-center border-0">Memuat Status...</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bodyPivotStatus">
+                                    <tr><td colspan="2" class="text-center py-4">Memuat data asinkron...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-white py-3 px-4 border-0">
+                        <h5 class="card-title mb-0 text-primary fw-bold">Distribusi Perusahaan per Lokasi</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="map" style="height: 450px; background-color: #f8f9fa;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailAktivitas" class="w3-modal" tabindex="-1" aria-hidden="true">
+        <div class="w3-modal-content w3-animate-top shadow-lg"
+            style="max-width: 800px; border-radius: 12px; overflow: hidden;">
+            <div class="card border-0">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Detail Aktivitas Sales</h5>
+                    <button type="button" class="btn-close btn-close-white"
+                        onclick="document.getElementById('detailAktivitas').style.display='none'"></button>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6 border-end">
+                            <div class="mb-2"><small class="text-muted d-block">Sales Executive</small><strong
+                                    id="modalSalesId" class="fs-5"></strong></div>
+                            <div><small class="text-muted d-block">Aktivitas</small><strong id="modalActivity"
+                                    class="text-primary fs-5"></strong></div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <div class="mb-2"><small class="text-muted d-block">Progress Capaian</small><span
+                                    id="modalPersen" class="badge bg-info p-2 fs-6"></span></div>
+                            <div><small class="text-muted d-block">Realisasi / Target</small><strong><span
+                                        id="modalJumlah"></span> / <span id="modalTarget"></span></strong></div>
+                            <div id="modalTotalContainer" style="display: none; margin-top: 8px;">
+                                <small class="text-muted d-block">Total Nilai</small>
+                                <strong id="modalTotalValue" class="text-success fs-6"></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="progress mb-4" style="height: 12px; border-radius: 10px;">
+                        <div id="modalProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                            style="width: 0%;"></div>
+                    </div>
+
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover align-middle mb-0 shadow-none">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="small border-0">Client</th>
+                                    <th class="small border-0">Tipe</th>
+                                    <th class="small border-0">Deskripsi</th>
+                                    <th class="small border-0">Foto</th>
+                                    <th class="small border-0">Lokasi</th>
+                                    <th class="small border-0 text-center">Waktu</th>
+                                </tr>
+                            </thead>
+                            <tbody class="small">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer border-0 text-end py-3">
+                    <button type="button" class="btn btn-secondary px-4"
+                        onclick="document.getElementById('detailAktivitas').style.display='none'">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="chartRKM" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Detail Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tableChartRkm">
+                            <thead>
+                                <tr>
+                                    <th>Nama Materi</th>
+                                    <th>Perusahaan</th>
+                                    <th>Sales</th>
+                                    <th>Harga Jual</th>
+                                    <th>Tanggal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyChartRkm">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="chartPerusahaan" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitles">Detail Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tableChartPerusahaan">
+                            <thead>
+                                <tr>
+                                    <th>Perusahaan</th>
+                                    <th>Sales</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyChartPerusahaan">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="chartLaporanPenjualan" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitlesLaporan">Detail Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tableChartLaporanPenjualan">
+                            <thead>
+                                <tr>
+                                    <th>Perusahaan</th>
+                                    <th>Materi</th>
+                                    <th>Netsales</th>
+                                    <th>Pax</th>
+                                    <th>Total</th>
+                                    <th>Waktu</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyChartLaporanPenjualan">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pemuatan Skrip tanpa memblokir DOM Parsing -->
+    <script src="{{ asset('assets/vendor/libs/leaflet/leaflet.js') }}" defer></script>
+    <script src="{{ asset('assets/vendor/libs/chartjs/chart.umd.min.js') }}" defer></script>
 
     <script>
         document.querySelectorAll('.show-detail').forEach(btn => {
             btn.addEventListener('click', function () {
-
                 document.getElementById('detailMateri').innerText = this.dataset.materi;
                 document.getElementById('detailPerusahaan').innerText = this.dataset.perusahaan;
                 document.getElementById('detailInstruktur').innerText = this.dataset.instruktur;
@@ -866,7 +662,6 @@
 
         document.querySelectorAll('.checklist-checkbox').forEach(cb => {
             cb.addEventListener('change', function() {
-
                 fetch("{{ route('checklist.update') }}", {
                     method: "POST",
                     headers: {
@@ -879,12 +674,11 @@
                         value: this.checked ? 1 : 0
                     })
                 });
-
             });
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize all charts with responsive container
+            // Fungsi inisialisasi chart universal
             const initChart = (id, config) => {
                 const ctx = document.getElementById(id).getContext('2d');
                 return new Chart(ctx, {
@@ -898,9 +692,7 @@
                             legend: {
                                 position: 'bottom',
                                 labels: {
-                                    font: {
-                                        size: 12
-                                    },
+                                    font: { size: 12 },
                                     padding: 10,
                                     boxWidth: 12
                                 }
@@ -910,167 +702,9 @@
                 });
             };
 
-            // Kategori Chart
-            const chartData = @json($chartData);
-            initChart('kategoriChart', {
-                type: 'doughnut',
-                data: {
-                    labels: chartData.map(item => item.kategori),
-                    datasets: [{
-                        label: 'Persentase Kategori',
-                        data: chartData.map(item => item.persen),
-                        backgroundColor: [
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 206, 86, 0.8)',
-                            'rgba(153, 102, 255, 0.8)',
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    onClick: (event, elements, chart) => {
-                        if (elements.length > 0) {
-                            const index = elements[0].index;
-                            const label = chart.data.labels[index];
-                            openModalPerusahaan(label);
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: context => `${context.label}: ${context.raw}%`
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Vendor Chart
-            const vendorData = @json($topVendors);
-            initChart('vendorChart', {
-                type: 'doughnut',
-                data: {
-                    labels: vendorData.map(item => item.vendor),
-                    datasets: [{
-                        label: 'Data Vendor',
-                        data: vendorData.map(item => item.total),
-                        backgroundColor: [
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 206, 86, 0.8)',
-                            'rgba(153, 102, 255, 0.8)',
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    onClick: (event, elements, chart) => {
-                        if (elements.length > 0) {
-                            const index = elements[0].index;
-                            const label = chart.data.labels[index];
-                            openModalRKM(label, 'vendor');
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: context => `${context.label}: ${context.raw}`
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Materi Chart
-            const materiData = @json($topKategoriMateri);
-            initChart('materiChart', {
-                type: 'bar',
-                data: {
-                    labels: materiData.map(item => item.kategori_materi),
-                    datasets: [{
-                        label: 'Top Tipe Materi',
-                        data: materiData.map(item => item.total),
-                        backgroundColor: [
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 206, 86, 0.8)',
-                            'rgba(153, 102, 255, 0.8)',
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    onClick: (event, elements, chart) => {
-                        if (elements.length > 0) {
-                            const index = elements[0].index;
-                            const label = chart.data.labels[index];
-                            openModalRKM(label, 'materi');
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: context => `${context.label}: ${context.raw}`
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Spend Chart
-            const spendData = @json($topSpendSeg);
-            initChart('spendChart', {
-                type: 'bar',
-                data: {
-                    labels: spendData.map(item => item.kategori_perusahaan),
-                    datasets: [{
-                        label: 'Pembelian berdasarkan segmen',
-                        data: spendData.map(item => item.spend),
-                        backgroundColor: [
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 206, 86, 0.8)',
-                            'rgba(153, 102, 255, 0.8)',
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    onClick: (event, elements, chart) => {
-                        if (elements.length > 0) {
-                            const index = elements[0].index;
-                            const label = chart.data.labels[index];
-                            openModalRKM(label, 'spend');
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-
-                                    const index = context.dataIndex;
-
-                                    const spend = spendData[index].spend;
-                                    const total = spendData[index].total;
-
-                                    const formatRupiah = number =>
-                                        new Intl.NumberFormat('id-ID', {
-                                            style: 'currency',
-                                            currency: 'IDR'
-                                        }).format(number);
-
-                                    return `${context.label}: ${formatRupiah(spend)} || ${total}`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+            function formatRupiah(angka) {
+                return new Intl.NumberFormat('id-ID').format(angka);
+            }
 
             function openModalRKM(label, type) {
                 const modalTitle = document.getElementById('modalTitle');
@@ -1086,13 +720,10 @@
                     .then(response => response.json())
                     .then(data => {
                         tableBody.innerHTML = '';
-
                         if (data.length === 0) {
-                            tableBody.innerHTML =
-                                '<tr><td colspan="4" class="text-center">Tidak ada data ditemukan.</td></tr>';
+                            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">Tidak ada data ditemukan.</td></tr>';
                             return;
                         }
-
                         data.forEach(item => {
                             const row = `
                                 <tr>
@@ -1108,8 +739,7 @@
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        tableBody.innerHTML =
-                            '<tr><td colspan="4" class="text-center text-danger">Gagal memuat data.</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Gagal memuat data.</td></tr>';
                     });
             }
 
@@ -1127,13 +757,10 @@
                     .then(response => response.json())
                     .then(data => {
                         tableBody.innerHTML = '';
-
                         if (data.length === 0) {
-                            tableBody.innerHTML =
-                                '<tr><td colspan="3" class="text-center">Tidak ada data.</td></tr>';
+                            tableBody.innerHTML = '<tr><td colspan="3" class="text-center">Tidak ada data.</td></tr>';
                             return;
                         }
-
                         data.forEach(item => {
                             tableBody.innerHTML += `
                                 <tr>
@@ -1146,54 +773,34 @@
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        tableBody.innerHTML =
-                            '<tr><td colspan="3" class="text-center text-danger">Gagal mengambil data.</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Gagal mengambil data.</td></tr>';
                     });
             }
 
             function openModalChartLaporan(id_sales, triwulan, tahun, status) {
-
                 const tableBody = document.getElementById('bodyChartLaporanPenjualan');
                 const modalTitle = document.getElementById('modalTitlesLaporan');
 
-                modalTitle.innerText =
-                    `Detail ${status.toUpperCase()} ${id_sales.toUpperCase()}- ${triwulan} (${tahun})`;
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="text-center">Sabar bro...</td>
-                    </tr>
-                `;
+                modalTitle.innerText = `Detail ${status.toUpperCase()} ${id_sales.toUpperCase()}- ${triwulan} (${tahun})`;
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center">Sabar bro...</td></tr>`;
 
-                const modal = new bootstrap.Modal(
-                    document.getElementById('chartLaporanPenjualan')
-                );
+                const modal = new bootstrap.Modal(document.getElementById('chartLaporanPenjualan'));
                 modal.show();
 
-                const url =
-                    `/crm/chartClosed?id_sales=${encodeURIComponent(id_sales)}&triwulan=${encodeURIComponent(triwulan)}&tahun=${encodeURIComponent(tahun)}&status=${encodeURIComponent(status)}`;
+                const url = `/crm/chartClosed?id_sales=${encodeURIComponent(id_sales)}&triwulan=${encodeURIComponent(triwulan)}&tahun=${encodeURIComponent(tahun)}&status=${encodeURIComponent(status)}`;
 
                 fetch(url)
                     .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
+                        if (!response.ok) throw new Error('Network response was not ok');
                         return response.json();
                     })
                     .then(data => {
-
                         tableBody.innerHTML = '';
-
                         if (data.length === 0) {
-                            tableBody.innerHTML = `
-                                <tr>
-                                    <td colspan="6" class="text-center">Tidak ada data</td>
-                                </tr>
-                            `;
+                            tableBody.innerHTML = `<tr><td colspan="6" class="text-center">Tidak ada data</td></tr>`;
                             return;
                         }
-
                         data.forEach(item => {
-
                             const namaPerusahaan = item.perusahaan?.nama_perusahaan ?? '-';
                             const namaMateri = item.materi_relation?.nama_materi ?? '-';
                             const netsales = formatRupiah(item.netsales ?? 0);
@@ -1215,494 +822,628 @@
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        tableBody.innerHTML = `
-                            <tr>
-                                <td colspan="6" class="text-center text-danger">
-                                    Gagal mengambil data.
-                                </td>
-                            </tr>
-                        `;
+                        tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Gagal mengambil data.</td></tr>`;
                     });
             }
 
-
-            function formatRupiah(angka) {
-                return new Intl.NumberFormat('id-ID').format(angka);
-            }
-
-
-            // Total Win Chart
-            const totalWinData = @json($totalWin);
-            const winLabels = ['TR1', 'TR2', 'TR3', 'TR4'];
-            const winDatasets = Object.keys(totalWinData).map((id_sales, index) => {
-                const sales = totalWinData[id_sales];
-                const colors = [
-                    'rgba(75, 192, 192, 0.8)',
-                    'rgba(255, 99, 132, 0.8)',
-                    'rgba(54, 162, 235, 0.8)',
-                    'rgba(255, 206, 86, 0.8)',
-                    'rgba(153, 102, 255, 0.8)',
-                ];
-                return {
-                    label: sales.username.toUpperCase(),
-                    data: [sales.TR1, sales.TR2, sales.TR3, sales.TR4],
-                    backgroundColor: colors[index % colors.length],
-                    borderWidth: 1
-                };
-            });
-
-            initChart('totalWinChart', {
-                type: 'bar',
-                data: {
-                    labels: winLabels,
-                    datasets: winDatasets
-                },
-                options: {
-                    scales: {
-                        x: {
-                            stacked: false
+            // Eksekusi Grafik Bertahap ke dalam Macro-Task Queue
+            setTimeout(() => {
+                // 1. Kategori Chart
+                const chartData = @json($chartData);
+                initChart('kategoriChart', {
+                    type: 'doughnut',
+                    data: {
+                        labels: chartData.map(item => item.kategori),
+                        datasets: [{
+                            label: 'Persentase Kategori',
+                            data: chartData.map(item => item.persen),
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(153, 102, 255, 0.8)',
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        onClick: (event, elements, chart) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const label = chart.data.labels[index];
+                                openModalPerusahaan(label);
+                            }
                         },
-                        y: {
-                            stacked: false,
-                            ticks: {
-                                callback: function(value) {
-                                    return new Intl.NumberFormat('id-ID').format(value);
+                        plugins: { tooltip: { callbacks: { label: context => `${context.label}: ${context.raw}%` } } }
+                    }
+                });
+
+                // 2. Vendor Chart
+                const vendorData = @json($topVendors);
+                initChart('vendorChart', {
+                    type: 'doughnut',
+                    data: {
+                        labels: vendorData.map(item => item.vendor),
+                        datasets: [{
+                            label: 'Data Vendor',
+                            data: vendorData.map(item => item.total),
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(153, 102, 255, 0.8)',
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        onClick: (event, elements, chart) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const label = chart.data.labels[index];
+                                openModalRKM(label, 'vendor');
+                            }
+                        },
+                        plugins: { tooltip: { callbacks: { label: context => `${context.label}: ${context.raw}` } } }
+                    }
+                });
+
+                // 3. Materi Chart
+                const materiData = @json($topKategoriMateri);
+                initChart('materiChart', {
+                    type: 'bar',
+                    data: {
+                        labels: materiData.map(item => item.kategori_materi),
+                        datasets: [{
+                            label: 'Top Tipe Materi',
+                            data: materiData.map(item => item.total),
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(153, 102, 255, 0.8)',
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        onClick: (event, elements, chart) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const label = chart.data.labels[index];
+                                openModalRKM(label, 'materi');
+                            }
+                        },
+                        plugins: { tooltip: { callbacks: { label: context => `${context.label}: ${context.raw}` } } }
+                    }
+                });
+
+                // 4. Spend Chart
+                const spendData = @json($topSpendSeg);
+                initChart('spendChart', {
+                    type: 'bar',
+                    data: {
+                        labels: spendData.map(item => item.kategori_perusahaan),
+                        datasets: [{
+                            label: 'Pembelian berdasarkan segmen',
+                            data: spendData.map(item => item.spend),
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(153, 102, 255, 0.8)',
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        onClick: (event, elements, chart) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const label = chart.data.labels[index];
+                                openModalRKM(label, 'spend');
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const index = context.dataIndex;
+                                        const spend = spendData[index].spend;
+                                        const total = spendData[index].total;
+                                        return `${context.label}: ${formatRupiah(spend)} || ${total}`;
+                                    }
                                 }
                             }
                         }
-                    },
-                    onClick: function(evt, elements) {
-                        if (elements.length > 0) {
-                            const element = elements[0];
-
-                            const datasetIndex = element.datasetIndex;
-                            const index = element.index;
-
-                            const id_sales = Object.keys(totalWinData)[datasetIndex];
-                            const triwulan = winLabels[index];
-                            const tahun = $('#filterTahun').val() ?? new Date().getFullYear();
-
-                            openModalChartLaporan(id_sales, triwulan, tahun, 'win');
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: context =>
-                                    `${context.dataset.label}: ${new Intl.NumberFormat('id-ID').format(context.raw)}`
-                            }
-                        }
                     }
-                }
-            });
+                });
 
-            // Total Lost Chart
-            const totalLostData = @json($totalLost);
-            const lostDatasets = Object.keys(totalLostData).map((id_sales, index) => {
-                const sales = totalLostData[id_sales];
-                const colors = [
-                    'rgba(255, 99, 132, 0.8)',
-                    'rgba(75, 192, 192, 0.8)',
-                    'rgba(54, 162, 235, 0.8)',
-                    'rgba(255, 206, 86, 0.8)',
-                    'rgba(153, 102, 255, 0.8)',
-                ];
-                return {
-                    label: sales.username.toUpperCase(),
-                    data: [sales.TR1, sales.TR2, sales.TR3, sales.TR4],
-                    backgroundColor: colors[index % colors.length],
-                    borderWidth: 1
-                };
-            });
+                // 5 & 6. Penarikan Data Asinkron Total Win & Los
+                let chartWinInstance = null;
+                let chartLostInstance = null;
 
-            initChart('totalLostChart', {
-                type: 'bar',
-                data: {
-                    labels: winLabels,
-                    datasets: lostDatasets
-                },
-                options: {
-                    scales: {
-                        x: {
-                            stacked: false
-                        },
-                        y: {
-                            stacked: false,
-                            ticks: {
-                                callback: function(value) {
-                                    return new Intl.NumberFormat('id-ID').format(value);
+                // Fungsi mandiri untuk menarik data dan merender grafik Win/Lost
+                window.loadWinLostCharts = function(tahun) {
+                    fetch(`/crm/total-win-lost?tahun=${tahun}`)
+                        .then(res => res.json())
+                        .then(dataApi => {
+                            const winLabels = ['TR1', 'TR2', 'TR3', 'TR4'];
+                            const colors = ['rgba(75, 192, 192, 0.8)', 'rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 206, 86, 0.8)', 'rgba(153, 102, 255, 0.8)'];
+
+                            // 1. Pemrosesan Data Total Win
+                            const winDatasets = Object.keys(dataApi.win).map((id_sales, index) => {
+                                const sales = dataApi.win[id_sales];
+                                return {
+                                    label: sales.username.toUpperCase(),
+                                    data: [sales.TR1, sales.TR2, sales.TR3, sales.TR4],
+                                    backgroundColor: colors[index % colors.length],
+                                    borderWidth: 1
+                                };
+                            });
+
+                            if (chartWinInstance) {
+                                chartWinInstance.destroy(); // Hancurkan kanvas grafik lama
+                            }
+
+                            chartWinInstance = initChart('totalWinChart', {
+                                type: 'bar',
+                                data: { labels: winLabels, datasets: winDatasets },
+                                options: {
+                                    scales: { x: { stacked: false }, y: { stacked: false, ticks: { callback: function(value) { return new Intl.NumberFormat('id-ID').format(value); } } } },
+                                    onClick: function(evt, elements) {
+                                        if (elements.length > 0) {
+                                            const element = elements[0];
+                                            const id_sales = Object.keys(dataApi.win)[element.datasetIndex];
+                                            const triwulan = winLabels[element.index];
+                                            openModalChartLaporan(id_sales, triwulan, tahun, 'win');
+                                        }
+                                    },
+                                    plugins: { tooltip: { callbacks: { label: context => `${context.dataset.label}: ${new Intl.NumberFormat('id-ID').format(context.raw)}` } } }
                                 }
+                            });
+
+                            // 2. Pemrosesan Data Total Lost
+                            const lostDatasets = Object.keys(dataApi.lost).map((id_sales, index) => {
+                                const sales = dataApi.lost[id_sales];
+                                return {
+                                    label: sales.username.toUpperCase(),
+                                    data: [sales.TR1, sales.TR2, sales.TR3, sales.TR4],
+                                    backgroundColor: colors[index % colors.length],
+                                    borderWidth: 1
+                                };
+                            });
+
+                            if (chartLostInstance) {
+                                chartLostInstance.destroy(); // Hancurkan kanvas grafik lama
                             }
-                        }
-                    },
-                    onClick: function(evt, elements) {
-                        if (elements.length > 0) {
-                            const element = elements[0];
 
-                            const datasetIndex = element.datasetIndex;
-                            const index = element.index;
+                            chartLostInstance = initChart('totalLostChart', {
+                                type: 'bar',
+                                data: { labels: winLabels, datasets: lostDatasets },
+                                options: {
+                                    scales: { x: { stacked: false }, y: { stacked: false, ticks: { callback: function(value) { return new Intl.NumberFormat('id-ID').format(value); } } } },
+                                    onClick: function(evt, elements) {
+                                        if (elements.length > 0) {
+                                            const element = elements[0];
+                                            const id_sales = Object.keys(dataApi.lost)[element.datasetIndex];
+                                            const triwulan = winLabels[element.index];
+                                            openModalChartLaporan(id_sales, triwulan, tahun, 'lost');
+                                        }
+                                    },
+                                    plugins: { tooltip: { callbacks: { label: context => `${context.dataset.label}: ${new Intl.NumberFormat('id-ID').format(context.raw)}` } } }
+                                }
+                            });
+                        });
+                };
 
-                            const id_sales = Object.keys(totalLostData)[datasetIndex];
-                            const triwulan = winLabels[index];
-                            const tahun = $('#filterTahun').val() ?? new Date().getFullYear();
+                // Eksekusi fungsi saat halaman pertama kali dimuat
+                const tahunAwal = document.getElementById('filterTahunLaporan') ? document.getElementById('filterTahunLaporan').value : new Date().getFullYear();
+                window.loadWinLostCharts(tahunAwal);
 
-                            openModalChartLaporan(id_sales, triwulan, tahun, 'lost');
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: context =>
-                                    `${context.dataset.label}: ${new Intl.NumberFormat('id-ID').format(context.raw)}`
-                            }
-                        }
+                // --- 1. Load Data Prospek Asinkron ---
+
+                // === FILTER TAHUN WIN & LOST ASINKRON ===
+                const winYearFilter = document.querySelector('.win-year-filter');
+                const lostYearFilter = document.querySelector('.lost-year-filter');
+
+                function handleYearChange() {
+                    const selectedYear = this.value;
+                    
+                    // Sinkronisasi nilai kedua dropdown secara visual
+                    if (winYearFilter) winYearFilter.value = selectedYear;
+                    if (lostYearFilter) lostYearFilter.value = selectedYear;
+                    
+                    // Panggil fungsi AJAX untuk menarik data dan melukis ulang grafik tanpa refresh
+                    if (typeof window.loadWinLostCharts === 'function') {
+                        window.loadWinLostCharts(selectedYear);
                     }
                 }
-            });
 
-            // Initialize the map
-            var map = L.map('map').setView([-2.548926, 118.0148634], 5); // Centered on Indonesia
+                // Pasang event listener pada dropdown jika elemen ditemukan
+                if (winYearFilter) winYearFilter.addEventListener('change', handleYearChange);
+                if (lostYearFilter) lostYearFilter.addEventListener('change', handleYearChange);
 
-            // Add OpenStreetMap tile layer
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
+                fetch('/crm/prospek-minggu-ini')
+                    .then(res => res.json())
+                    .then(data => {
+                        const tbody = document.getElementById('bodyProspek');
+                        tbody.innerHTML = '';
+                        
+                        if (data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Belum ada prospek baru.</td></tr>';
+                            return;
+                        }
 
-            // Layer group to manage markers
-            var markerLayer = L.layerGroup().addTo(map);
+                        data.forEach(item => {
+                            const formatRupiah = new Intl.NumberFormat('id-ID').format(item.harga || 0);
+                            const namaMateri = item.materi_relation?.nama_materi || '-';
+                            const pax = new Intl.NumberFormat('id-ID').format(item.pax || 0);
+                            const tahap = (item.tahap || '').toUpperCase();
+                            
+                            let periode = '';
+                            if (item.tentatif == 1) {
+                                periode = '<span class="badge bg-warning-subtle text-warning">Tentatif</span>';
+                            } else if (item.periode_mulai && item.periode_selesai) {
+                                const opt = { day: '2-digit', month: 'short', year: 'numeric' };
+                                const pMulai = new Date(item.periode_mulai).toLocaleDateString('id-ID', opt);
+                                const pSelesai = new Date(item.periode_selesai).toLocaleDateString('id-ID', opt);
+                                periode = `<small>${pMulai} - ${pSelesai}</small>`;
+                            }
 
-            // Function to update map markers
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="fw-bold text-dark d-block">${item.id_sales}</span>
+                                        <small class="text-muted">${namaMateri}</small>
+                                    </td>
+                                    <td><span class="fw-medium">Rp ${formatRupiah}</span></td>
+                                    <td>${periode}</td>
+                                    <td>${pax}</td>
+                                    <td class="pe-4">
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle w-100">${tahap}</span>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    });
+
+                // --- 2. Load Data Incomplete PA Asinkron ---
+                function loadIncompletePA(url = '/crm/incomplete-pa') {
+                    fetch(url)
+                        .then(res => res.json())
+                        .then(resData => {
+                            const data = resData.data;
+                            const tbody = document.getElementById('bodyIncompletePA');
+                            const pagination = document.getElementById('paginationPA');
+                            tbody.innerHTML = '';
+                            pagination.innerHTML = '';
+
+                            if (data.length === 0) {
+                                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Tidak ada data PA.</td></tr>';
+                                return;
+                            }
+
+                            const opt = { day: '2-digit', month: 'short', year: 'numeric' };
+
+                            data.forEach((item, index) => {
+                                const namaPerusahaan = item.rkm?.perusahaan?.nama_perusahaan || '-';
+                                const namaMateri = item.rkm?.materi?.nama_materi || '-';
+                                const tracking = item.tracking_net_sales?.tracking || '-';
+                                const peluangId = item.rkm?.peluang?.id || null;
+                                
+                                let waktu = '-';
+                                if (item.rkm?.tanggal_awal && item.rkm?.tanggal_akhir) {
+                                    const tAwal = new Date(item.rkm.tanggal_awal).toLocaleDateString('id-ID', opt);
+                                    const tAkhir = new Date(item.rkm.tanggal_akhir).toLocaleDateString('id-ID', opt);
+                                    waktu = `${tAwal} - ${tAkhir}`;
+                                }
+
+                                const totalPA = Number(item.transportasi || 0) + Number(item.akomodasi_peserta || 0) + 
+                                              Number(item.akomodasi_tim || 0) + Number(item.fresh_money || 0) + 
+                                              Number(item.entertaint || 0) + Number(item.souvenir || 0) + 
+                                              Number(item.cashback || 0) + Number(item.sewa_laptop || 0);
+
+                                const actionBtn = peluangId ? `<a class="btn btn-sm btn-outline-primary" href="/crm/peluang/${peluangId}" target="_blank">View</a>` : '-';
+                                const rowIndex = resData.from + index;
+
+                                tbody.innerHTML += `
+                                    <tr>
+                                        <td>${rowIndex}</td>
+                                        <td>${namaPerusahaan}</td>
+                                        <td>${namaMateri}</td>
+                                        <td>${waktu}</td>
+                                        <td>${new Intl.NumberFormat('id-ID').format(totalPA)}</td>
+                                        <td>${tracking}</td>
+                                        <td>${actionBtn}</td>
+                                    </tr>
+                                `;
+                            });
+
+                            if (resData.prev_page_url) {
+                                pagination.innerHTML += `<button class="btn btn-sm btn-outline-secondary" onclick="loadIncompletePA('${resData.prev_page_url}')">&laquo; Prev</button>`;
+                            } else {
+                                pagination.innerHTML += `<div></div>`;
+                            }
+
+                            if (resData.next_page_url) {
+                                pagination.innerHTML += `<button class="btn btn-sm btn-outline-secondary" onclick="loadIncompletePA('${resData.next_page_url}')">Next &raquo;</button>`;
+                            }
+                        });
+                }
+                loadIncompletePA();
+
+                // --- 3. Load Pivot Status Asinkron ---
+                fetch('/crm/pivot-status')
+                    .then(res => res.json())
+                    .then(response => {
+                        const statuses = response.statuses;
+                        const data = response.data;
+                        const thead = document.getElementById('headPivotStatus');
+                        const tbody = document.getElementById('bodyPivotStatus');
+                        
+                        let headHtml = '<tr><th class="ps-4 border-0">Sales Executive</th>';
+                        statuses.forEach(status => {
+                            headHtml += `<th class="text-center border-0">${status}</th>`;
+                        });
+                        headHtml += '</tr>';
+                        thead.innerHTML = headHtml;
+
+                        tbody.innerHTML = '';
+                        const salesKeys = Object.keys(data);
+                        
+                        if (salesKeys.length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="${statuses.length + 1}" class="text-center py-4">Data tidak tersedia.</td></tr>`;
+                            return;
+                        }
+
+                        salesKeys.forEach(salesKey => {
+                            let rowHtml = `<tr><td class="ps-4 fw-bold">${salesKey}</td>`;
+                            statuses.forEach(status => {
+                                const total = data[salesKey][status] || 0;
+                                if (total > 0) {
+                                    rowHtml += `<td class="text-center fw-medium">${new Intl.NumberFormat('id-ID').format(total)}</td>`;
+                                } else {
+                                    rowHtml += `<td class="text-center fw-medium"><span class="text-light-emphasis">0</span></td>`;
+                                }
+                            });
+                            rowHtml += '</tr>';
+                            tbody.innerHTML += rowHtml;
+                        });
+                    });
+
+            }, 150);
+
+            // Inisialisasi variabel global untuk peta
+            let map = null;
+            let markerLayer = null;
+            let mapInitialized = false;
+            const mapContainer = document.getElementById('map');
+
             function updateMapMarkers(salesKey) {
-                // Clear existing markers
+                if (!mapInitialized || !map || !markerLayer) return;
+
                 markerLayer.clearLayers();
 
-                // Filter locations based on sales key
                 let filteredLocations = [];
                 if (salesKey === 'all') {
-                    filteredLocations = @json($map); // All locations
+                    filteredLocations = @json($map);
                 } else {
                     filteredLocations = @json($map).filter(loc => loc.sales_key === salesKey);
                 }
 
-                // Filter out locations with no companies
                 filteredLocations = filteredLocations.filter(loc => loc.company_count > 0);
-
-                // Total number of companies for percentage calculation
                 var totalCompanies = filteredLocations.reduce((sum, loc) => sum + (loc.company_count || 0), 0);
 
-                // Add markers for each location with valid data
                 filteredLocations.forEach(function(loc) {
                     if (loc.latitude && loc.longitude && loc.company_count > 0) {
-                        // Calculate percentage
-                        var percentage = totalCompanies > 0 ? ((loc.company_count / totalCompanies) * 100)
-                            .toFixed(2) : 0;
-
-                        // Create marker
+                        var percentage = totalCompanies > 0 ? ((loc.company_count / totalCompanies) * 100).toFixed(2) : 0;
                         var marker = L.marker([loc.latitude, loc.longitude]);
 
-                        // Popup content
                         var popupContent = `
                             <b>Location:</b> ${loc.lokasi}<br>
                             <b>Companies:</b> ${loc.company_count}<br>
                             <b>Percentage:</b> ${percentage}% | ${loc.company_count}
                         `;
                         marker.bindPopup(popupContent);
+                        marker.bindTooltip(`${loc.lokasi}: ${percentage}%`, { permanent: false });
 
-                        // Tooltip for quick view
-                        marker.bindTooltip(`${loc.lokasi}: ${percentage}%`, {
-                            permanent: false
-                        });
-
-                        // Add marker to layer
                         markerLayer.addLayer(marker);
                     }
                 });
 
-                // Display message if no markers are present
-                const mapContainer = document.getElementById('map');
-                if (filteredLocations.length === 0) {
-                    mapContainer.innerHTML =
-                        '<div class="text-center text-muted p-3">Tidak ada data lokasi tersedia</div>';
-                } else {
-                    // Reinitialize map if it was cleared
-                    if (!map._container) {
-                        map = L.map('map').setView([-2.548926, 118.0148634], 5);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        }).addTo(map);
-                        markerLayer = L.layerGroup().addTo(map);
-                        filteredLocations.forEach(function(loc) {
-                            if (loc.latitude && loc.longitude && loc.company_count > 0) {
-                                var marker = L.marker([loc.latitude, loc.longitude]);
-                                var percentage = totalCompanies > 0 ? ((loc.company_count /
-                                    totalCompanies) * 100).toFixed(2) : 0;
-                                var popupContent = `
-                                    <b>Location:</b> ${loc.lokasi}<br>
-                                    <b>Companies:</b> ${loc.company_count}<br>
-                                    <b>Percentage:</b> ${percentage}%
-                                `;
-                                marker.bindPopup(popupContent);
-                                marker.bindTooltip(`${loc.lokasi}: ${percentage}% | ${loc.company_count}`, {
-                                    permanent: false
-                                });
-                                markerLayer.addLayer(marker);
-                            }
+                if (filteredLocations.length === 0 && mapContainer) {
+                    mapContainer.innerHTML = '<div class="text-center text-muted p-3">Tidak ada data lokasi tersedia</div>';
+                }
+            }
+
+            function initializeMap() {
+                if (!mapContainer) return;
+
+                map = L.map('map').setView([-2.548926, 118.0148634], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                markerLayer = L.layerGroup().addTo(map);
+                updateMapMarkers('all');
+            }
+
+            const mapObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !mapInitialized) {
+                        mapInitialized = true;
+                        initializeMap();
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { rootMargin: "200px 0px" });
+
+            if (mapContainer) {
+                mapObserver.observe(mapContainer);
+            }
+
+            // Mengganti const konstan menjadi let agar bisa di-update oleh fungsi AJAX
+            let activityData = [];
+
+            function loadTargetAktivitas(startDate = '', endDate = '') {
+                const container = document.getElementById('activityCardsContainer');
+                const badgeTanggal = document.getElementById('badgeTanggalRange');
+                const filterBtns = document.getElementById('filterButtonsContainer');
+                const btnFilter = document.getElementById('btnFilterAktivitas');
+
+                btnFilter.disabled = true;
+                btnFilter.innerHTML = 'Memproses...';
+
+                let url = `/crm/target-filter-aktivitas`;
+                if (startDate && endDate) {
+                    url += `?start_date=${startDate}&end_date=${endDate}`;
+                }
+
+                fetch(url)
+                    .then(res => res.json())
+                    .then(resData => {
+                        activityData = resData.activitysales;
+                        badgeTanggal.innerText = resData.tanggalRange;
+
+                        // 1. Render Tombol Filter
+                        let btnsHtml = `<button type="button" class="btn btn-outline-primary filter-btn active" data-filter="all">Semua Sales</button>`;
+                        activityData.forEach(sales => {
+                            btnsHtml += `<button type="button" class="btn btn-outline-primary filter-btn" data-filter="${sales.id_sales}">${sales.id_sales}</button>`;
                         });
-                    }
-                }
-            }
+                        filterBtns.innerHTML = btnsHtml;
 
-            // Initial map render
-            updateMapMarkers('all');
-
-            // Activity data from PHP
-            const activityData = @json($activitysales);
-
-            async function showActivityDetails(salesId, activityLabel) {
-                const sales = activityData.find(s => s.id_sales === salesId);
-
-                if (!sales) {
-                    console.error("Sales tidak ditemukan untuk ID:", salesId);
-                    alert("Data sales tidak ditemukan");
-                    return;
-                }
-
-                const activityMap = {
-                    'DB': { jumlah: sales.DB, target: sales.target_DB, warna: 'info' },
-                    'Contact': { jumlah: sales.contact, target: sales.target_contact, warna: 'info' },
-                    'Call': { jumlah: sales.call, target: sales.target_call, warna: 'info' },
-                    'Email': { jumlah: sales.email, target: sales.target_email, warna: 'warning' },
-                    'Visit': { jumlah: sales.visit, target: sales.target_visit, warna: 'warning' },
-                    'Meet': { jumlah: sales.meet, target: sales.target_meet, warna: 'warning' },
-                    'Incharge': { jumlah: sales.incharge, target: sales.target_incharge, warna: 'success' },
-                    'Penawaran Awal': { jumlah: sales.PA, target: sales.target_PA, warna: 'success', total: sales.total_PA ?? 0 },
-                    'Leads': { jumlah: sales.Leads, target: sales.target_PI, warna: 'success' },
-                    'Regis Form': { jumlah: sales.Regis_Form, target: sales.target_Form_Masuk, warna: 'danger', total: sales.total_Regis_Form ?? 0 }
-                };
-
-                const activity = activityMap[activityLabel];
-                if (!activity) return;
-
-                const persen = activity.target > 0 ?
-                    Math.min(Math.round((activity.jumlah / activity.target) * 100), 100) :
-                    0;
-
-                document.getElementById('modalSalesId').textContent = salesId;
-                document.getElementById('modalActivity').textContent = activityLabel;
-                document.getElementById('modalJumlah').textContent = activity.jumlah;
-                document.getElementById('modalTarget').textContent = activity.target;
-                document.getElementById('modalPersen').textContent = `${persen}%`;
-                document.getElementById('modalProgressBar').style.width = `${persen}%`;
-                document.getElementById('modalProgressBar').className = `progress-bar bg-${activity.warna}`;
-
-                const totalContainer = document.getElementById('modalTotalContainer');
-                const totalValue = document.getElementById('modalTotalValue');
-
-                const hasFinancialData = activity.total !== undefined;
-
-                if (totalContainer && totalValue) {
-                    if (hasFinancialData && activity.total > 0) {
-                        const formattedTotal = new Intl.NumberFormat('id-ID', {
-                            style: 'currency',
-                            currency: 'IDR',
-                            minimumFractionDigits: 0
-                        }).format(activity.total);
-
-                        totalValue.textContent = formattedTotal;
-                        totalContainer.style.display = 'block';
-                    } else {
-                        totalContainer.style.display = 'none';
-                    }
-                }
-
-                const theadTr = document.querySelector('#detailAktivitas thead tr');
-                if (hasFinancialData) {
-                    theadTr.innerHTML = `
-                        <th class="small border-0">Client</th>
-                        <th class="small border-0">Tipe</th>
-                        <th class="small border-0">Deskripsi</th>
-                        <th class="small border-0 text-end">Harga</th>
-                        <th class="small border-0 text-center">Pax</th>
-                        <th class="small border-0 text-end">Total</th>
-                        <th class="small border-0 text-center">Foto</th>
-                        <th class="small border-0">Lokasi</th>
-                        <th class="small border-0 text-center">Waktu</th>
-                    `;
-                } else {
-                    theadTr.innerHTML = `
-                        <th class="small border-0">Client</th>
-                        <th class="small border-0">Tipe</th>
-                        <th class="small border-0">Deskripsi</th>
-                        <th class="small border-0 text-center">Foto</th>
-                        <th class="small border-0">Lokasi</th>
-                        <th class="small border-0 text-center">Waktu</th>
-                    `;
-                }
-
-                let activityKey = '';
-
-                switch (activityLabel) {
-                    case 'Contact': activityKey = 'data_contact'; break;
-                    case 'Call': activityKey = 'data_call'; break;
-                    case 'Email': activityKey = 'data_email'; break;
-                    case 'Visit': activityKey = 'data_visit'; break;
-                    case 'Meet': activityKey = 'data_meet'; break;
-                    case 'Incharge': activityKey = 'data_incharge'; break;
-                    case 'Penawaran Awal': activityKey = 'data_PA'; break;
-                    case 'Leads': activityKey = 'data_Leads'; break;
-                    case 'Regis Form': activityKey = 'data_Regis_Form'; break;
-                    case 'DB': activityKey = 'data_DB'; break;
-                    default: activityKey = '';
-                }
-
-                const tableBody = document.querySelector('#detailAktivitas tbody');
-                tableBody.innerHTML = '';
-
-                if (activityKey && Array.isArray(sales[activityKey])) {
-
-                    for (const item of sales[activityKey]) {
-                        let lokasi = '-';
-
-                        try {
-                            if (item.latitude && item.longitude) {
-                                const response = await fetch(
-                                    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${item.latitude}&lon=${item.longitude}&zoom=18`
-                                );
-                                const data = await response.json();
-                                const address = data.display_name || '-';
-                                const shortAddress = address.split(',').slice(0, 2).join(',');
-                                const city = data.address?.city || data.address?.town || data.address?.village || '';
-
-                                lokasi = `
-                                    <span title="${address}">
-                                        <strong>${shortAddress}</strong>
-                                    </span><br>
-                                    <a href="https://www.google.com/maps?q=${item.latitude},${item.longitude}"
-                                    target="_blank"
-                                    class="ms-1 text-primary">
-                                        <small class="text-muted">${city}</small>
-                                    </a>
+                        // 2. Render Kartu Aktivitas Sales
+                        let cardsHtml = '';
+                        if (activityData.length === 0) {
+                            cardsHtml = `<div class="text-center text-muted py-4">Tidak ada data sales.</div>`;
+                        } else {
+                            activityData.forEach(sales => {
+                                cardsHtml += `
+                                    <div class="sales-block mb-4 p-3 rounded-3 sales-item" data-sales-id="${sales.id_sales}">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="avatar me-2"><span class="avatar-initial rounded-circle bg-label-primary p-2"><i class="bx bx-user"></i></span></div>
+                                            <strong class="text-dark fs-6">${sales.id_sales}</strong>
+                                        </div>
+                                        <div class="row g-3">
                                 `;
-                            }
-                        } catch (error) {
-                            console.error('Reverse geocoding error:', error);
+
+                                const mapAktivitas = [
+                                    { label: 'DB', key: 'DB', tgt: 'target_DB', color: 'info' },
+                                    { label: 'Contact', key: 'contact', tgt: 'target_contact', color: 'info' },
+                                    { label: 'Call', key: 'call', tgt: 'target_call', color: 'info' },
+                                    { label: 'Email', key: 'email', tgt: 'target_email', color: 'warning' },
+                                    { label: 'Visit', key: 'visit', tgt: 'target_visit', color: 'warning' },
+                                    { label: 'Meet', key: 'meet', tgt: 'target_meet', color: 'warning' },
+                                    { label: 'Incharge', key: 'incharge', tgt: 'target_incharge', color: 'success' },
+                                    { label: 'Penawaran Awal', key: 'PA', tgt: 'target_PA', color: 'success' },
+                                    { label: 'Leads', key: 'Leads', tgt: 'target_PI', color: 'success' },
+                                    { label: 'Regis Form', key: 'Regis_Form', tgt: 'target_Form_Masuk', color: 'danger' }
+                                ];
+
+                                mapAktivitas.forEach(act => {
+                                    const jumlah = sales[act.key] || 0;
+                                    const target = sales[act.tgt] || 0;
+                                    const persen = target > 0 ? Math.min(Math.round((jumlah / target) * 100), 100) : 0;
+
+                                    cardsHtml += `
+                                        <div class="col-md-6 col-lg-4 activity-item" data-activity="${act.label}">
+                                            <div class="p-2 border rounded-2 bg-white h-100">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <small class="text-muted fw-bold" style="font-size: 0.75rem;">${act.label}</small>
+                                                    <span class="badge bg-${act.color}-subtle text-${act.color} rounded-pill" style="font-size: 0.65rem; cursor: pointer;" data-sales-id="${sales.id_sales}" data-activity="${act.label}">${persen}%</span>
+                                                </div>
+                                                <div class="d-flex align-items-baseline"><h6 class="mb-1 me-1">${jumlah}</h6><small class="text-muted">/${target}</small></div>
+                                                <div class="progress rounded-pill" style="height: 4px;"><div class="progress-bar bg-${act.color} rounded-pill" style="width: ${persen}%"></div></div>
+                                            </div>
+                                        </div>
+                                    `;
+                                });
+                                cardsHtml += `</div></div>`;
+                            });
                         }
+                        container.innerHTML = cardsHtml;
 
-                        let financialCells = '';
-                        if (hasFinancialData) {
-                            const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
+                        // 3. Pasang ulang fungsi event listener pada elemen DOM yang baru dilukis
+                        bindActivityDOMEvents();
 
-                            financialCells = `
-                                <td class="text-end">${item.harga ? formatRupiah(item.harga) : '-'}</td>
-                                <td class="text-center">${item.pax ?? '-'}</td>
-                                <td class="text-end fw-bold text-success">${item.total ? formatRupiah(item.total) : '-'}</td>
-                            `;
-                        }
+                        btnFilter.disabled = false;
+                        btnFilter.innerHTML = 'Terapkan Filter';
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        container.innerHTML = `<div class="text-center text-danger py-4">Gagal terhubung ke peladen.</div>`;
+                        btnFilter.disabled = false;
+                        btnFilter.innerHTML = 'Terapkan Filter';
+                    });
+            }
 
-                        let labelTipe = item.aktivitas ?? '-';
-                        if (labelTipe === 'PI') {
-                            labelTipe = 'Leads';
-                        } else if (labelTipe === 'Form_Masuk') {
-                            labelTipe = 'Regis Form';
-                        }
+            // Fungsi membidik event DOM setelah proses HTML injeksi
+            function bindActivityDOMEvents() {
+                // Event popup modal detail aktivitas (Klik presentase)
+                document.querySelectorAll('.badge[data-sales-id][data-activity]').forEach(badge => {
+                    badge.addEventListener('click', () => {
+                        const salesId = badge.getAttribute('data-sales-id');
+                        const activityLabel = badge.getAttribute('data-activity');
+                        showActivityDetails(salesId, activityLabel);
+                    });
+                });
 
-                        const row = `
-                            <tr>
-                                <td>
-                                    ${
-                                        (item.aktivitas === 'PA' || item.aktivitas === 'Form_Masuk' || item.aktivitas === 'Regis Form') && item.perusahaan_langsung
-                                        ? `${item.perusahaan_langsung.nama_perusahaan ?? '-'} (Perusahaan)`
-                                        : item.contact?.perusahaan
-                                        ? `${item.contact.nama ?? '-'} (${item.contact.perusahaan.nama_perusahaan})`
-                                        : item.contact
-                                        ? `${item.contact.nama ?? '-'}`
-                                        : item.peserta
-                                        ? `${item.peserta.nama ?? '-'} (Peserta)`
-                                        : '-'
-                                    }
-                                </td>
-                                <td>${labelTipe}</td>
-                                <td>${item.deskripsi ?? '-'}</td>
-                                ${financialCells}
-                                <td class="text-center">
-                                    <img src="/${item.foto_lokasi}"
-                                        style="width:50px;border-radius:5px;cursor:pointer"
-                                        onclick="window.open(this.src)" alt="Foto">
-                                </td>
-                                <td>${lokasi}</td>
-                                <td class="text-center text-nowrap">
-                                    ${item.waktu_aktivitas
-                                        ? new Date(item.waktu_aktivitas).toLocaleDateString('id-ID')
-                                        : '-'}
-                                </td>
-                            </tr>
-                        `;
+                // Event tombol filter nama sales
+                document.querySelectorAll('.filter-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        
+                        const selectedSalesId = button.getAttribute('data-filter');
+                        document.querySelectorAll('.sales-item').forEach(item => {
+                            item.style.display = (selectedSalesId === 'all' || item.getAttribute('data-sales-id') === selectedSalesId) ? 'block' : 'none';
+                        });
+                    });
+                });
+            }
 
-                        tableBody.insertAdjacentHTML('beforeend', row);
+            // Logika Submit Form Tanpa Refresh secara Aman
+            const formFilter = document.getElementById('formFilterAktivitas');
+            if (formFilter) {
+                formFilter.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Menghentikan perilaku default form agar tidak refresh halaman
+                    
+                    const start = document.getElementById('inputStartDate').value;
+                    const end = document.getElementById('inputEndDate').value;
+                    
+                    // Panggil fungsi AJAX pemuatan data target aktivitas
+                    loadTargetAktivitas(start, end);
+                    
+                    // Perbarui URL history peramban secara senyap (tanpa reload)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (start && end) {
+                        urlParams.set('start_date', start);
+                        urlParams.set('end_date', end);
+                    } else {
+                        urlParams.delete('start_date');
+                        urlParams.delete('end_date');
                     }
-
-                } else {
-                    const colspan = hasFinancialData ? 9 : 6;
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="${colspan}" class="text-center text-muted py-3">
-                                Tidak ada data aktivitas untuk jenis ini.
-                            </td>
-                        </tr>
-                    `;
-                }
-
-                document.getElementById('detailAktivitas').style.display = 'block';
-            }
-
-            // Attach click event to percentage badges
-            document.querySelectorAll('.badge[data-sales-id][data-activity]').forEach(badge => {
-                badge.addEventListener('click', () => {
-                    const salesId = badge.closest('.sales-item').dataset.salesId;
-                    const activityLabel = badge.closest('.activity-item').dataset.activity;
-                    showActivityDetails(salesId, activityLabel);
-                });
-            });
-
-            const filterButtons = document.querySelectorAll('.filter-btn');
-            filterButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    filterButtons.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-                    applySalesFilter();
-                });
-            });
-
-            function applySalesFilter() {
-                const selectedSalesId = document.querySelector('.filter-btn.active')?.dataset.filter;
-                if (!selectedSalesId) return;
-
-                const salesItems = document.querySelectorAll('.sales-item');
-                salesItems.forEach(item => {
-                    item.style.display = (selectedSalesId === 'all' || item.dataset.salesId ===
-                        selectedSalesId) ? 'block' : 'none';
+                    window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
                 });
             }
 
-            // Handle year filters
-            const winYearFilter = document.querySelector('.win-year-filter');
-            const lostYearFilter = document.querySelector('.lost-year-filter');
+            // 1. Baca parameter URL jika pengguna memuat ulang halaman dengan filter yang sudah aktif
+            const urlParamsActivity = new URLSearchParams(window.location.search);
+            const initStart = urlParamsActivity.get('start_date') || '';
+            const initEnd = urlParamsActivity.get('end_date') || '';
+            
+            // 2. Isi nilai input form tanggal dengan data dari URL (jika ada)
+            if(initStart) document.getElementById('inputStartDate').value = initStart;
+            if(initEnd) document.getElementById('inputEndDate').value = initEnd;
 
-            function handleYearChange() {
-                const selectedYear = this.value;
-                if (this === winYearFilter) {
-                    lostYearFilter.value = selectedYear;
-                } else {
-                    winYearFilter.value = selectedYear;
-                }
-                window.location.href = `?tahun=${selectedYear}`;
-            }
+            // 3. Tarik data pertama kali secara latar belakang saat halaman dimuat
+            loadTargetAktivitas(initStart, initEnd);
 
-            if (winYearFilter) winYearFilter.addEventListener('change', handleYearChange);
-            if (lostYearFilter) lostYearFilter.addEventListener('change', handleYearChange);
-
-            // Initialize filters
-            applySalesFilter();
         });
     </script>
 

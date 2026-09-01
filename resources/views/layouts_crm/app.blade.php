@@ -42,8 +42,8 @@
     <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
 
     <!-- Helpers -->
-    <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
-    <script src="{{ asset('assets/js/config.js') }}"></script>
+    <link rel="preload" href="{{ asset('assets/vendor/libs/jquery/jquery.js') }}" as="script">
+    <link rel="preload" href="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}" as="script">
     <style>
         .avatar {
             width: 40px;
@@ -157,43 +157,41 @@
 
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
 
-    <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}" defer></script>
 
     {{-- Global Validator JS --}}
-    <script src="{{ asset('js/global-validator.js') }}"></script>
+    <script src="{{ asset('js/global-validator.js') }}" defer></script>
 
     {{-- Select2 JS --}}
-    <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}" defer></script>
 
     {{-- Moment JS --}}
-    {{-- <script src="{{ asset('assets/vendor/libs/moment/moment.min.js') }}"></script> --}} 
-    <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}" defer></script>
 
-
-    {{-- DataTables JS --}}
+    {{-- Hapus atribut defer pada DataTables JS --}}
     <script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/dataTables/dataTables.bootstrap5.min.js') }}"></script>
 
     <!-- Bootstrap JS -->
-    <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
-    <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}" defer></script>
+    <script src="{{ asset('assets/vendor/js/bootstrap.js') }}" defer></script>
 
     <!-- Vendors JS -->
-    <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
-    <script src="{{ asset('assets/vendor/js/menu.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}" defer></script>
+    <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}" defer></script>
+    <script src="{{ asset('assets/vendor/js/menu.js') }}" defer></script>
 
     <!-- Custom JS -->
-    <script src="{{ asset('assets/js/main.js') }}"></script>
-    <script src="{{ asset('assets/js/dashboards-analytics.js') }}"></script>
+    <script src="{{ asset('assets/js/main.js') }}" defer></script>
+    <script src="{{ asset('assets/js/dashboards-analytics.js') }}" defer></script>
 
     <!-- Iconify JS -->
-    <script src="{{ asset('assets/vendor/libs/iconify/iconify.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/iconify/iconify.min.js') }}" defer></script>
 
     <!-- GitHub button -->
-    <script async defer src="{{ asset('assets/vendor/libs/buttongithub/buttons.js') }}"></script>
+    <script async defer src="{{ asset('assets/vendor/libs/buttongithub/buttons.js') }}" defer></script>
 
-    <script src="{{ asset('assets/vendor/libs/chartjs/chart.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/chartjs/chart.js') }}" defer></script>
 
     <!-- User Profile Ajax -->
     <script>
