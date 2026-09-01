@@ -183,25 +183,17 @@
                                 Overview Personal: {{ auth()->user()->karyawan->nama_lengkap ?? 'Anda' }}
                                 <span class="text-muted fw-normal">| {{ $divisi }}</span>
                             @else
-                                Overview Divisi {{ $divisi ?? auth()->user()->karyawan->divisi }}
+                                Overview Divisi {{ $divisi ?? 'Pilih Departemen' }}
                             @endif
                             {{ request('tahun', now()->year) }}
                         </h5>
                     </div>
                     <div class="col-md-3">
-                       <select class="form-select" name="divisi" id="selectDivisi" required>
-                            @php
-                                $selectedDivisi = $divisi ?? auth()->user()->karyawan?->divisi;
-                            @endphp
-                            
-                            @if(!$selectedDivisi)
-                                <option value="" disabled selected>Pilih Divisi</option>
-                            @endif
-                            
+                        <select class="form-select" name="divisi" id="selectDivisi">
+                            <option disabled>Pilih Departement</option>
                             @foreach ($departments as $data)
-                                <option value="{{ $data }}" {{ $selectedDivisi === $data ? 'selected' : '' }}>
-                                    {{ $data }}
-                                </option>
+                                <option value="{{ $data }}" {{ $divisi === $data ? 'selected' : '' }}>
+                                    {{ $data }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -910,15 +902,7 @@
         }
 
         @if (auth()->check() && auth()->user()->karyawan && auth()->user()->karyawan->divisi)
-            const userDivisi = {!! json_encode(auth()->user()->karyawan->divisi ?? '') !!};
-            const selectDivisi = document.getElementById('selectDivisi');
-            
-            const optionExists = Array.from(selectDivisi.options).some(opt => opt.value === userDivisi);
-            if (optionExists) {
-                selectDivisi.value = userDivisi;
-            } else {
-                selectDivisi.selectedIndex = 0;
-            }
+            document.getElementById('selectDivisi').value = '{{ auth()->user()->karyawan->divisi }}';
         @endif
 
         document.getElementById('FormFilter').addEventListener('submit', function(e) {

@@ -412,14 +412,8 @@ class TargetKPIController extends Controller
 
     public function getDataOverviewPersonal(Request $request, OverviewDashboardService $overviewService)
     {
-        $karyawanId = (int) ($request->id_karyawan ?? auth()->id());
+        $karyawanId = auth()->id();
         $tahunFilter = (int) ($request->tahun ?? now()->year);
-
-        $user = auth()->user();
-        $superRoles = ['GM', 'HRD', 'Direktur Utama'];
-        if ($karyawanId !== auth()->id() && !in_array($user->jabatan, $superRoles)) {
-            abort(403, 'Anda tidak memiliki akses ke data karyawan ini.');
-        }
 
         $data = $overviewService->getPersonalOverviewData($karyawanId, $tahunFilter);
 
@@ -430,56 +424,27 @@ class TargetKPIController extends Controller
 
     public function kpiOverview()
     {
-        $userKaryawan = Auth::user()->karyawan;
-        $superRoles = ['GM', 'HRD', 'Direktur Utama', 'Direktur'];
-
-        $departments = in_array(auth()->user()->jabatan, $superRoles) ? karyawan::where('divisi', '!=', 'Direksi')->whereNotNull('divisi')->distinct()->pluck('divisi')->values() : collect([$userKaryawan->divisi ?? null])->filter()->values();
-
+        $userKaryawan = karyawan::where('id', Auth::id())->first();
+        $departments = karyawan::where('divisi', '!=', 'Direksi')->whereNotNull('divisi')->distinct()->pluck('divisi')->values();
+        
         return view('KPIdata.TargetDivisi.overview', [
             'departments' => $departments,
-            'divisi'      => $userKaryawan->divisi ?? null,
-            'jabatan'     => $userKaryawan->jabatan ?? null,
-            'user_id'     => Auth::id(),
+            'divisi' => $userKaryawan->divisi ?? null,
+            'jabatan' => $userKaryawan->jabatan ?? null,
+            'user_id' => Auth::id()
         ]);
     }
-    
+
     public function getDataOverview(Request $request, OverviewDashboardService $overviewService)
     {
-        $user = auth()->user();
-        $userDivisi = $user->karyawan->divisi ?? null;
-        $superRoles = ['GM', 'HRD', 'Direktur Utama', 'Direktur'];
-
-        $divisi = $request->divisi ?? $userDivisi;
-
-        if (!in_array($user->jabatan, $superRoles) && $divisi !== $userDivisi) {
-            return response()->json([
-                'message' => 'Anda tidak memiliki akses untuk melihat data divisi lain.'
-            ], 403);
-        }
-
-        $tahun = $request->tahun ?? now()->year;
-
-        if (!$divisi) {
-            return response()->json([
-                'message' => 'Divisi tidak ditemukan. Pastikan karyawan memiliki divisi.',
-                'divisi_user' => $userDivisi
-            ], 400);
-        }
-
-        if (!$tahun) {
-            return response()->json(['message' => 'Tahun harus diisi'], 400);
+        if (!$request->divisi || !$request->tahun) {
+            return response()->json(['message' => 'Divisi dan tahun harus diisi'], 400);
         }
 
         $personId = $request->id_karyawan ?? auth()->id();
-        if (!in_array($user->jabatan, $superRoles)) {
-            $targetKaryawan = karyawan::find($personId);
-            if (!$targetKaryawan || $targetKaryawan->divisi !== $userDivisi) {
-                return response()->json(['message' => 'Akses ditolak.'], 403);
-            }
-        }
 
-        $data = $overviewService->getDepartmentOverviewData($divisi, $tahun, $personId);
-
+        $data = $overviewService->getDepartmentOverviewData($request->divisi, $request->tahun, $personId);
+        
         return response()->json($data);
     }
 
