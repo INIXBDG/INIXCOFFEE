@@ -190,10 +190,12 @@
                 </div>
             </div>
             <!-- Keterangan Warna -->
+            @if ($jabatan != 'Finance & Accounting')
             <div class="mx-4 mb-2 d-flex align-items-center gap-2">
                 <div style="width:18px;height:18px;background-color:rgba(255,0,0,0.5);border-radius:4px;flex-shrink:0;"></div>
                 <small class="text-muted">Baris merah = pengajuan belum disertai invoice</small>
             </div>
+            @endif
             @if ($jabatan == 'Finance & Accounting')
                 <div class="card m-4">
                     <div class="card-body table-responsive">
@@ -769,9 +771,11 @@ function tableKaryawan() {
         order: [[0, 'desc']],
         columnDefs: [{ targets: [0], type: "date" }],
         createdRow: function (row, data, dataIndex) {
+            @if ($jabatan != 'Finance & Accounting')
             if (!data.invoice) {
                 $(row).attr('style', 'background-color: rgba(255, 0, 0, 0.5); color: #fff');
             }
+            @endif
         }
     });
 }
@@ -1118,9 +1122,11 @@ function tableFinance(){
                     $('#datasudah tfoot').html(footerHtml);
                 },
                 "createdRow": function (row, data, dataIndex) {
+                    @if ($jabatan != 'Finance & Accounting')
                     if (!data.invoice) {
                         $(row).attr('style', 'background-color: rgba(255, 0, 0, 0.5); color: #fff');
                     }
+                    @endif
                 }
             };
             if (mode === 'bulanminggu') {
@@ -1281,9 +1287,11 @@ function tableFinance(){
                     $('#databelum tfoot').html(footerHtml);
                 },
                 "createdRow": function (row, data, dataIndex) {
+                    @if ($jabatan != 'Finance & Accounting')
                     if (!data.invoice) {
                         $(row).attr('style', 'background-color: rgba(255, 0, 0, 0.5); color: #fff');
                     }
+                    @endif
                 }
             };
             if (mode === 'bulanminggu') {
@@ -1409,9 +1417,11 @@ function tableFinance(){
                 ],
                 order: [[0, 'desc']],
                 "createdRow": function (row, data, dataIndex) {
+                    @if ($jabatan != 'Finance & Accounting')
                     if (!data.invoice) {
                         $(row).attr('style', 'background-color: rgba(255, 0, 0, 0.5); color: #fff');
                     }
+                    @endif
                 }
             };
             if (mode === 'bulanminggu') {
