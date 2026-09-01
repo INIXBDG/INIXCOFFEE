@@ -1263,6 +1263,9 @@ Route::prefix('office')
             Route::put('/download/pdf/{id}', [ModulController::class, 'pdfModul'])->name('modul.download.pdf');
             Route::put('/download/pdf/{id}/peserta', [ModulController::class, 'pdfPeserta'])->name('modul.download.pdf.peserta');
             Route::put('/download/excel/{id}/peserta', [ModulController::class, 'excelPeserta'])->name('modul.download.excel.peserta');
+
+            Route::get('/rekap/json', [ModulController::class, 'rekapJson'])->name('modul.rekap.json');
+            Route::get('/rekap', [ModulController::class, 'rekapIndex'])->name('modul.rekap');
         });
 
         Route::prefix('kegiatan')->group(function () {

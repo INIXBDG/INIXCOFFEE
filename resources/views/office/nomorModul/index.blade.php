@@ -18,12 +18,20 @@
             </div>
         @endif
 
-        <div
-            class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
             <h4 class="mb-0 fw-bold text-dark">Data Nomor Modul</h4>
-            <button class="btn btn-primary px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#createModal">
-                Tambah Nomor Modul
-            </button>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary px-4 shadow-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createModal">
+                    Tambah Nomor Modul
+                </button>
+
+                <a href="{{ route('office.modul.rekap') }}" class="btn btn-primary px-4 shadow-sm">
+                    Rekap
+                </a>
+            </div>
         </div>
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden glass-force">

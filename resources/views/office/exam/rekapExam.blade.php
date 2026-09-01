@@ -23,30 +23,40 @@
 
   {{-- Cards --}}
   <div class="row g-2 mb-4">
-    <div class="col-6 col-md-3">
-      <div class="card border-0 p-3">
-        <div class="text-muted small">Total exam</div>
-        <div class="fs-4 fw-medium" id="v-exam">—</div>
+      <div class="col">
+          <div class="card border-0 p-3 h-100">
+              <div class="text-muted small">Total exam</div>
+              <div class="fs-4 fw-medium" id="v-exam">—</div>
+          </div>
       </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card border-0 p-3">
-        <div class="text-muted small">Total peserta</div>
-        <div class="fs-4 fw-medium" id="v-peserta">—</div>
+
+      <div class="col">
+          <div class="card border-0 p-3 h-100">
+              <div class="text-muted small">Total peserta</div>
+              <div class="fs-4 fw-medium" id="v-peserta">—</div>
+          </div>
       </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card border-0 p-3">
-        <div class="text-muted small">Peserta lulus</div>
-        <div class="fs-4 fw-medium text-success" id="v-lulus">—</div>
+
+      <div class="col">
+          <div class="card border-0 p-3 h-100">
+              <div class="text-muted small">Peserta lulus</div>
+              <div class="fs-4 fw-medium text-success" id="v-lulus">—</div>
+          </div>
       </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card border-0 p-3">
-        <div class="text-muted small">Tidak lulus</div>
-        <div class="fs-4 fw-medium text-danger" id="v-tidak">—</div>
+
+      <div class="col">
+          <div class="card border-0 p-3 h-100">
+              <div class="text-muted small">Tidak lulus</div>
+              <div class="fs-4 fw-medium text-danger" id="v-tidak">—</div>
+          </div>
       </div>
-    </div>
+
+      <div class="col">
+          <div class="card border-0 p-3 h-100">
+              <div class="text-muted small">Tidak Exam</div>
+              <div class="fs-4 fw-medium text-danger" id="v-tidak-exam">—</div>
+          </div>
+      </div>
   </div>
 
   {{-- Tabs + Chart --}}
@@ -54,6 +64,7 @@
     <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'materi_exam')" href="#">Per materi</a></li>
     <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'instansi')" href="#">Per instansi</a></li>
     <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'instruktur')" href="#">Per instruktur</a></li>
+    <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'kategori')" href="#">Per kategori</a></li>
   </ul>
 
   {{-- Legend + info jumlah item --}}
@@ -128,17 +139,26 @@ const ROW_H      = 44;    // tinggi per baris chart
 const MAX_VISIBLE = 10;   // batas sebelum scroll aktif
 const MAX_H      = MAX_VISIBLE * ROW_H + 60; // ~520px
 
-let chartInst  = null;
-let currentTab = 'materi_exam';
-let lastData   = null;
-let mouseX     = 0;
-let mouseY     = 0;
+let chartInst        = null;
+let currentTab        = 'materi_exam';
+let lastData          = null;
+let mouseX            = 0;
+let mouseY            = 0;
+let currentActiveSeries = null; // series yg sedang dipakai chart aktif (SERIES atau SIMPLE_SERIES)
 
+// Series lengkap: dipakai untuk tab yang datanya berupa objek
+// {total_exam, total_peserta, total_lulus, total_tidak_lulus, total_tidak_exam}
 const SERIES = [
   { label: 'Jumlah exam',  key: 'total_exam',        color: '#2a78d6' },
   { label: 'Peserta',      key: 'total_peserta',      color: '#1baf7a' },
   { label: 'Lulus',        key: 'total_lulus',        color: '#008300' },
   { label: 'Tidak lulus',  key: 'total_tidak_lulus',  color: '#e34948' },
+  { label: 'Tidak Exam',   key: 'total_tidak_exam',   color: '#ffc107' },
+];
+
+// Series simpel: dipakai untuk tab yang datanya cuma angka polos (mis. kategori)
+const SIMPLE_SERIES = [
+  { label: 'Jumlah exam', key: null, color: '#2a78d6' },
 ];
 
 // ── Track mouse ───────────────────────────────────────────────
@@ -189,10 +209,11 @@ function loadData() {
     .then(r => r.json())
     .then(data => {
       lastData = data;
-      document.getElementById('v-exam').textContent    = data.total_exam;
-      document.getElementById('v-peserta').textContent = data.total_peserta;
-      document.getElementById('v-lulus').textContent   = data.total_lulus;
-      document.getElementById('v-tidak').textContent   = data.total_tidak_lulus;
+      document.getElementById('v-exam').textContent       = data.total_exam;
+      document.getElementById('v-peserta').textContent    = data.total_peserta;
+      document.getElementById('v-lulus').textContent      = data.total_lulus;
+      document.getElementById('v-tidak').textContent      = data.total_tidak_lulus;
+      document.getElementById('v-tidak-exam').textContent = data.total_tidak_exam;
       renderChart(currentTab, data);
     });
 }
@@ -246,6 +267,12 @@ function renderChart(tab, data) {
 
   emptyEl.style.display = 'none';
 
+  // Deteksi bentuk data: kalau value-nya bukan objek (mis. tab "kategori"
+  // yang cuma berisi angka per label), pakai SIMPLE_SERIES (1 series saja).
+  const isSimple = typeof src[labels[0]] !== 'object' || src[labels[0]] === null;
+  const activeSeries = isSimple ? SIMPLE_SERIES : SERIES;
+  currentActiveSeries = activeSeries; // simpan referensi utk dipakai toggleSeries()
+
   const needsScroll = labels.length > MAX_VISIBLE;
   const fullH       = labels.length * ROW_H + 60;
 
@@ -270,9 +297,9 @@ function renderChart(tab, data) {
     type: 'bar',
     data: {
       labels,
-      datasets: SERIES.map(s => ({
+      datasets: activeSeries.map(s => ({
         label:           s.label,
-        data:            labels.map(k => src[k][s.key]),
+        data:            labels.map(k => isSimple ? src[k] : src[k][s.key]),
         backgroundColor: s.color,
         borderRadius:    4,
       })),
@@ -290,19 +317,20 @@ function renderChart(tab, data) {
             if (t.opacity === 0) { tooltip.style.display = 'none'; return; }
 
             const label   = t.title?.[0] ?? '';
-            const rowData = src[label] ?? {};
+            const rowData = src[label];
 
             tooltip.innerHTML =
               `<div style="font-weight:500;font-size:13px;margin-bottom:8px;color:#111;border-bottom:1px solid #eee;padding-bottom:6px;">${label}</div>` +
-              SERIES.map(s =>
-                `<div style="display:flex;justify-content:space-between;gap:24px;padding:2px 0;">
+              activeSeries.map(s => {
+                const val = isSimple ? (rowData ?? 0) : (rowData?.[s.key] ?? 0);
+                return `<div style="display:flex;justify-content:space-between;gap:24px;padding:2px 0;">
                   <span style="display:flex;align-items:center;gap:6px;">
                     <span style="width:10px;height:10px;border-radius:2px;background:${s.color};flex-shrink:0;display:inline-block;"></span>
                     <span style="color:#555;">${s.label}</span>
                   </span>
-                  <span style="font-weight:500;color:#111;">${rowData[s.key] ?? 0}</span>
-                </div>`
-              ).join('');
+                  <span style="font-weight:500;color:#111;">${val}</span>
+                </div>`;
+              }).join('');
 
             tooltip.style.display = 'block';
             requestAnimationFrame(() => positionTooltip(tooltip));
@@ -326,7 +354,7 @@ function renderChart(tab, data) {
   });
 
   // ── Legend clickable ──────────────────────────────────────
-  legendEl.innerHTML = SERIES.map((s, i) =>
+  legendEl.innerHTML = activeSeries.map((s, i) =>
     `<span class="legend-item" data-idx="${i}" onclick="toggleSeries(this,${i})"
       style="display:flex;align-items:center;gap:6px;cursor:pointer;
              background:#f5f5f5;border-radius:6px;padding:4px 10px;
@@ -344,12 +372,13 @@ function toggleSeries(el, idx) {
   meta.hidden = !meta.hidden;
   chartInst.update();
   const dot = el.querySelector('.legend-dot');
+  const series = currentActiveSeries || SERIES;
   if (meta.hidden) {
     el.style.opacity     = '0.4';
     dot.style.background = '#ccc';
   } else {
     el.style.opacity     = '1';
-    dot.style.background = SERIES[idx].color;
+    dot.style.background = series[idx].color;
   }
 }
 

@@ -77,12 +77,12 @@ class AdminHoldingKPIService
         foreach ($pos as $po) {
             if (!$po->uploaded) continue;
 
-            foreach ($po->moduls as $modul) {
-                if (!$modul->awal_training) continue;
+            $tenggatEfektif = $po->moduls->min('awal_training');
+            if (!$tenggatEfektif) continue;
 
-                $totalPercent += $this->hitungSkorKetepatan($po, $modul);
-                $count++;
-            }
+            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif); // 1x per po
+            $totalPercent += $percent;
+            $count++;   // ← ini dihitung PER PO, bukan per modul
         }
 
         if ($count === 0) return 0.0;
