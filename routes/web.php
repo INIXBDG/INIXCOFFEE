@@ -749,10 +749,16 @@ Route::prefix('crm')->group(function () {
     Route::get('/profile', [CRMController::class, 'getProfile'])
         ->middleware('auth')
         ->name('crm.profile');
+    // Dashboard Global    
     Route::get('/chartRKM', [CRMController::class, 'chartRKM'])->name('chartRKM');
     Route::get('/chartPerusahaan', [CRMController::class, 'chartPerusahaan'])->name('chartPerusahaan');
     Route::get('/chartClosed', [CRMController::class, 'chartClosed'])->name('chartClosed');
-
+    Route::get('/detail-aktivitas-api', [CRMController::class, 'detailAktivitasApi'])->name('crm.detail.aktivitas.api');
+    Route::get('/prospek-minggu-ini', [CRMController::class, 'apiProspekMingguan'])->name('crm.api.prospek');
+    Route::get('/incomplete-pa', [CRMController::class, 'apiIncompletePA'])->name('crm.api.pa');
+    Route::get('/pivot-status', [CRMController::class, 'apiPivotStatus'])->name('crm.api.pivot');
+    Route::get('/total-win-lost', [CRMController::class, 'apiTotalWinLost'])->name('crm.api.winlost');
+    Route::get('/target-filter-aktivitas', [CRMController::class, 'apiTargetAktivitas'])->name('crm.api.aktivitas');
     Route::post('/checklist/update', [CRMController::class, 'updateChecklist'])->name('checklist.update');
 
     //Koordinasi Driver
@@ -769,6 +775,7 @@ Route::prefix('crm')->group(function () {
     Route::put('/update/pic', [PicController::class, 'updatePIC'])->name('pic.update');
     Route::delete('/delete/pic/{id}', [PicController::class, 'deletePIC'])->name('pic.delete');
     Route::get('/contact/history-status/all', [ContactController::class, 'allHistoryStatus'])->name('crm.contact.all_history_status');
+    Route::get('/contact/history-analytics-api', [ContactController::class, 'apiHistoryAnalytics'])->name('crm.contact.history_analytics_api');
     Route::get('/contact/history-status/data', [ContactController::class, 'allHistoryStatusData'])->name('crm.contact.all_history_status_data');
 
     //cheklist RKM admin sales

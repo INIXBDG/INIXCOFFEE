@@ -217,23 +217,24 @@ class PeluangController extends Controller
 
     public function detail($id)
     {
-        // Ambil peluang dan relasi terkait
+        // 1. Ambil peluang dan relasi terkait
         $peluang = Peluang::with([
             'materiRelation',
             'rkm' => function($query) { $query->withTrashed(); },
-            'aktivitas'
-        ])
-            ->where('id', $id)
-            ->firstOrFail();
+            'aktivitas',
+            'perusahaan.contacts',
+            'perusahaan.peserta'
+        ])->findOrFail($id);
 
-        // Normalisasi data RKM
-        if ($peluang->rkm) {
-            $peluang->rkm->tanggal_awal_day = $peluang->rkm->tanggal_awal ? date('d', strtotime($peluang->rkm->tanggal_awal)) : null;
-            $peluang->rkm->tanggal_awal_month = $peluang->rkm->tanggal_awal ? date('n', strtotime($peluang->rkm->tanggal_awal)) : null;
-            $peluang->rkm->tanggal_awal_year = $peluang->rkm->tanggal_awal ? date('Y', strtotime($peluang->rkm->tanggal_awal)) : null;
+        // 2. Normalisasi data RKM
+        if ($peluang->rkm && $peluang->rkm->tanggal_awal) {
+            $timestamp = strtotime($peluang->rkm->tanggal_awal);
+            $peluang->rkm->tanggal_awal_day = date('d', $timestamp);
+            $peluang->rkm->tanggal_awal_month = date('n', $timestamp);
+            $peluang->rkm->tanggal_awal_year = date('Y', $timestamp);
         }
 
-        $materi = Materi::where('status', '!=', 'Nonaktif')->get();
+        $materi = Materi::where('status', '!=', 'Nonaktif')->select('id', 'nama_materi')->get();
 
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')
             ->where('id_rkm', $peluang->id_rkm)
@@ -241,16 +242,22 @@ class PeluangController extends Controller
 
         $regis = Regisform::where('id_peluang', $id)->first();
 
-        // 🔹 Ambil semua aktivitas seperti $aktivitass
         $perusahaan = $peluang->perusahaan;
 
-        $perusahaanAll = Perusahaan::orderBy('nama_perusahaan', 'asc')->get();
+        // HAPUS KODE INI: $perusahaanAll = Perusahaan::orderBy('nama_perusahaan', 'asc')->get();
+
+        $contactIds = $perusahaan->contacts->pluck('id');
+        $pesertaIds = $perusahaan->peserta->pluck('id');
 
         $aktivitass = Aktivitas::with(['contact', 'peserta'])
             ->where('id_peluang', $id)
-            ->where(function ($query) use ($perusahaan) {
-                $query->whereIn('id_contact', $perusahaan->contacts->pluck('id'))
-                    ->orWhereIn('id_peserta', $perusahaan->peserta->pluck('id'));
+            ->where(function ($query) use ($contactIds, $pesertaIds, $perusahaan) {
+                $query->whereIn('id_contact', $contactIds)
+                    ->orWhereIn('id_peserta', $pesertaIds)
+                    ->orWhere(function ($subQuery) use ($perusahaan) {
+                        $subQuery->where('aktivitas', 'PA')
+                                 ->where('id_contact', $perusahaan->id);
+                    });
             })
             ->orderByDesc('created_at')
             ->get();
@@ -258,34 +265,34 @@ class PeluangController extends Controller
         $user = Auth::user();
         $aktivitasTambahan = Aktivitas::where('id_sales', $user->id_sales)->whereNull('id_peluang')->get();
 
-        $data = Perusahaan::with(['contacts', 'peserta'])->where('id', $perusahaan->id)->firstOrFail();
-        $items = [];
-        foreach ($data->contacts as $contact) {
-            $items[] = [
+        $contactsItem = $perusahaan->contacts->map(function ($contact) {
+            return [
                 'id' => $contact->id,
                 'nama' => $contact->nama,
                 'type' => 'contact',
-                'label' => "[Contact] " . $contact->nama . " (" . ($contact->email ?? 'Tidak ada email') . ")"
+                'label' => "[Contact] {$contact->nama} (" . ($contact->email ?? 'Tidak ada email') . ")"
             ];
-        }
-        foreach ($data->peserta as $peserta) {
-            $items[] = [
+        });
+
+        $pesertaItem = $perusahaan->peserta->map(function ($peserta) {
+            return [
                 'id' => $peserta->id,
                 'nama' => $peserta->nama,
                 'type' => 'peserta',
-                'label' => "[Peserta] " . $peserta->nama . " (" . ($peserta->email ?? 'Tidak ada email') . ")"
+                'label' => "[Peserta] {$peserta->nama} (" . ($peserta->email ?? 'Tidak ada email') . ")"
             ];
-        }
-        usort($items, function ($a, $b) {
-            return strcasecmp($a['label'], $b['label']);
         });
 
-        // 🔹 Ambil Histori Pemulihan (Restore)
-        $histories = \Illuminate\Support\Facades\DB::table('peluang_histories')
+        $items = $contactsItem->concat($pesertaItem)->sortBy(function ($item) {
+            return strtolower($item['label']);
+        })->values()->all();
+
+        $histories = DB::table('peluang_histories')
             ->where('id_peluang', $id)
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->get();
 
+        // HAPUS 'perusahaanAll' DARI ARRAY COMPACT
         return view('crm.peluang.detail', compact(
             'peluang',
             'aktivitass',
@@ -294,13 +301,17 @@ class PeluangController extends Controller
             'regis',
             'items',
             'aktivitasTambahan',
-            'perusahaanAll',
-            'histories' // 🔹 Teruskan variabel ini ke view
+            'histories'
         ));
     }
 
+    // Pada method AmbilAktivitas($id)
     public function AmbilAktivitas($id)
     {
+        // Ambil data perusahaan untuk referensi nama
+        $perusahaanData = \App\Models\Perusahaan::select('id', 'nama_perusahaan')->find($id);
+        $namaPerusahaan = $perusahaanData ? $perusahaanData->nama_perusahaan : '-';
+
         $contacts = Contact::where('id_perusahaan', $id)
             ->select('id', 'nama', 'email', 'divisi')
             ->get()
@@ -314,7 +325,6 @@ class PeluangController extends Controller
                 ];
             });
 
-        // Ambil semua peserta berdasarkan perusahaan
         $peserta = Peserta::where('perusahaan_key', $id)
             ->select('id', 'nama', 'email')
             ->get()
@@ -332,22 +342,28 @@ class PeluangController extends Controller
         $pesertaIds = $peserta->pluck('id')->toArray();
 
         $aktivitas = Aktivitas::with(['contact', 'peserta'])
-            ->where(function ($query) use ($contactIds, $pesertaIds) {
+            ->where(function ($query) use ($contactIds, $pesertaIds, $id) {
                 if (!empty($contactIds)) {
                     $query->whereIn('id_contact', $contactIds);
                 }
                 if (!empty($pesertaIds)) {
                     $query->orWhereIn('id_peserta', $pesertaIds);
                 }
+                // Penyesuaian kueri untuk aktivitas PA
+                $query->orWhere(function ($subQuery) use ($id) {
+                    $subQuery->where('aktivitas', 'PA')
+                            ->where('id_contact', $id);
+                });
             })
             ->whereNull('id_peluang')
             ->orderByDesc('created_at')
             ->get();
 
-        $result = $aktivitas->map(function ($a) {
+        $result = $aktivitas->map(function ($a) use ($namaPerusahaan) {
             return [
                 'id' => $a->id,
-                'kontak' => $a->contact->nama ?? ($a->peserta->nama ?? '-'),
+                // Modifikasi kondisi label kontak jika aktivitas = PA
+                'kontak' => $a->aktivitas === 'PA' ? $namaPerusahaan : ($a->contact->nama ?? ($a->peserta->nama ?? '-')),
                 'aktivitas' => ucfirst($a->aktivitas),
                 'subject' => $a->subject,
                 'deskripsi' => $a->deskripsi ?? '-',

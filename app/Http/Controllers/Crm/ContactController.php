@@ -16,6 +16,11 @@ use Illuminate\Auth\Events\Validated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\RiwayatStatusPerusahaan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
@@ -44,53 +49,102 @@ class ContactController extends Controller
 
     public function getPerusahaan(Request $request)
     {
+        DB::listen(function ($query) {
+            Log::info('SQL PERFORMANCE', [
+                'sql' => $query->sql,
+                'bindings' => $query->bindings,
+                'time_ms' => $query->time,
+            ]);
+        });
+
+        // Mulai total timer SEBELUM proses apapun
+        $totalStart = microtime(true);
+
+        // =========================
+        // 1. AUTHORIZATION
+        // =========================
+        $gateStart = microtime(true);
+
+        if (Gate::denies('akses-crm-perusahaan')) {
+            return response()->json([
+                'error' => 'Anda tidak memiliki akses ke data ini.'
+            ], 403);
+        }
+
+        $gateTime = microtime(true) - $gateStart;
+
         try {
-            $user = Auth::user();
-            $allowedJabatan = [
-                'Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting',
-                'GM', 'Sales', 'Direktur Utama', 'Direktur'
+            $user = auth()->user();
+
+            // =========================
+            // 2. PARAMETER DATATABLES
+            // =========================
+            $parameterStart = microtime(true);
+
+            $draw = intval($request->input('draw', 1));
+            $startLimit = intval($request->input('start', 0));
+            $length = intval($request->input('length', 10));
+            $searchValue = $request->input('search.value');
+
+            $columns = [
+                'id',
+                'nama_perusahaan',
+                'lokasi',
+                'status',
+                'sales_key',
+                'id',
+                'id'
             ];
 
-            if (!in_array($user->jabatan, $allowedJabatan)) {
-                return response()->json(['error' => 'Anda tidak memiliki akses ke data ini.'], 403);
-            }
-
-            // 1. Parameter Utama DataTables Server-Side
-            $draw = $request->input('draw');
-            $start = $request->input('start', 0);
-            $length = $request->input('length', 10);
-            $searchValue = $request->input('search.value');
-            $orderColumnIndex = $request->input('order.0.column', 0);
+            $orderColumn = $columns[$request->input('order.0.column', 0)] ?? 'id';
             $orderDir = $request->input('order.0.dir', 'desc');
 
-            // 2. Pemetaan Indeks Kolom DataTables
-            $columns = [
-                0 => 'id',
-                1 => 'nama_perusahaan',
-                2 => 'lokasi',
-                3 => 'status',
-                4 => 'sales_key',
-                5 => 'id', // Pengganti semu untuk relasi
-                6 => 'id', // Pengganti semu untuk relasi
-            ];
-            $orderColumn = $columns[$orderColumnIndex] ?? 'id';
+            $parameterTime = microtime(true) - $parameterStart;
 
-            // 3. Kueri Dasar dan Filter Otorisasi (Hanya mengambil kolom yang dibutuhkan)
-            $query = Perusahaan::select('id', 'nama_perusahaan', 'npwp', 'alamat', 'kategori_perusahaan', 'lokasi', 'email', 'status', 'sales_key');
+
+            // =========================
+            // 3. BUILD QUERY
+            // =========================
+            $buildQueryStart = microtime(true);
+
+            $query = Perusahaan::select(
+                'id',
+                'nama_perusahaan',
+                'npwp',
+                'alamat',
+                'kategori_perusahaan',
+                'lokasi',
+                'email',
+                'status',
+                'sales_key'
+            );
 
             if ($user->jabatan === 'Sales') {
                 $query->where('sales_key', $user->id_sales);
             }
 
-            // Filter Kustom Sales
             if ($request->filled('sales_key')) {
-                $query->where('sales_key', $request->sales_key);
+                $query->where('sales_key', $request->input('sales_key'));
             }
 
-            // 4. Eksekusi Perhitungan Total Rekaman (Sebelum Pencarian)
+            $buildQueryTime = microtime(true) - $buildQueryStart;
+
+
+            // =========================
+            // 4. COUNT TOTAL
+            // =========================
+            $countTotalStart = microtime(true);
+
             $recordsTotal = $query->count();
 
-            // 5. Implementasi Pencarian Global
+            $countTotalTime = microtime(true) - $countTotalStart;
+
+
+            // =========================
+            // 5. FILTER SEARCH
+            // =========================
+            $filterStart = microtime(true);
+
             if (!empty($searchValue)) {
                 $query->where(function ($q) use ($searchValue) {
                     $q->where('nama_perusahaan', 'like', "%{$searchValue}%")
@@ -98,56 +152,73 @@ class ContactController extends Controller
                       ->orWhere('sales_key', 'like', "%{$searchValue}%")
                       ->orWhere('status', 'like', "%{$searchValue}%");
                 });
+
+                // COUNT setelah filter
+                $countFilteredStart = microtime(true);
+                $recordsFiltered = $query->count();
+                $countFilteredTime = microtime(true) - $countFilteredStart;
+
+            } else {
+                $recordsFiltered = $recordsTotal;
+                $countFilteredTime = 0;
             }
 
-            // 6. Eksekusi Perhitungan Total Rekaman (Setelah Pencarian)
-            $recordsFiltered = $query->count();
+            $filterTime = microtime(true) - $filterStart;
 
-            // 7. Pengurutan dan Paginasi
+
+            // =========================
+            // 6. ORDER + LIMIT
+            // =========================
+            $paginationStart = microtime(true);
+
             $query->orderBy($orderColumn, $orderDir);
-            if ($length != -1) {
-                $query->offset($start)->limit($length);
+
+            if ($length > 0) {
+                $query->offset($startLimit)->limit($length);
             }
 
-            // 8. Eksekusi Kueri Utama
+            $paginationTime = microtime(true) - $paginationStart;
+
+
+            // =========================
+            // 7. RELATION + SUBQUERY
+            // =========================
+            $relationStart = microtime(true);
+
+            // MENGAKTIFKAN KEMBALI SUBQUERY AKTIVITAS TERAKHIR
+            $query->with('kelasTerakhir.materi:id,nama_materi')
+                ->addSelect([
+                    'aktivitas_terakhir_date' =>
+                        Aktivitas::select('created_at')
+                            ->whereIn('id_contact', function ($q) {
+                                $q->select('id')
+                                    ->from('contacts')
+                                    ->whereColumn('id_perusahaan', 'perusahaans.id');
+                            })
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1)
+                ]);
+
+            $relationBuildTime = microtime(true) - $relationStart;
+
+
+            // =========================
+            // 8. EXECUTE DATABASE
+            // =========================
+            $queryStart = microtime(true);
+
             $data = $query->get();
 
-            // 9. Optimasi N+1 Query: Pengambilan Relasi Masal (Bulk Eager Loading Terarah)
-            $perusahaanIds = $data->pluck('id')->toArray();
+            $queryTime = microtime(true) - $queryStart;
 
-            // Memuat RKM dan materi terkait
-            $rkmTerkait = RKM::whereIn('perusahaan_key', $perusahaanIds)
-                ->with('materi:id,nama_materi')
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->groupBy('perusahaan_key');
 
-            // Memuat Contact dan Aktivitas terkait
-            $data->load('contacts:id,id_perusahaan'); // Pastikan 'id_perusahaan' adalah foreign key yang benar di tabel Contact
-            $contactIds = $data->pluck('contacts')->flatten()->pluck('id')->toArray();
+            // =========================
+            // 9. PROCESSING / MAPPING
+            // =========================
+            $processStart = microtime(true);
 
-            $aktivitasTerkait = Aktivitas::whereIn('id_contact', $contactIds)
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->groupBy('id_contact');
-
-            // 10. Pemetaan JSON (Mapping)
-            $responseData = $data->map(function ($contact) use ($rkmTerkait, $aktivitasTerkait) {
-                // Ekstraksi RKM Terbaru
-                $rkm = $rkmTerkait->get($contact->id)?->first();
-
-                // Ekstraksi Aktivitas Terbaru dari seluruh entitas Contact
-                $aktivitasTerbaru = null;
-                if ($contact->contacts) {
-                    foreach ($contact->contacts as $c) {
-                        $aktivitas = $aktivitasTerkait->get($c->id)?->first();
-                        if ($aktivitas) {
-                            if (!$aktivitasTerbaru || $aktivitas->created_at > $aktivitasTerbaru->created_at) {
-                                $aktivitasTerbaru = $aktivitas;
-                            }
-                        }
-                    }
-                }
+            $responseData = $data->map(function ($contact) {
+                $rkm = $contact->kelasTerakhir;
 
                 return [
                     'id' => $contact->id,
@@ -155,28 +226,91 @@ class ContactController extends Controller
                     'lokasi' => $contact->lokasi,
                     'status' => $contact->status,
                     'sales_key' => $contact->sales_key,
+
+                    'kelas_terakhir' => $rkm?->materi?->nama_materi ?? 'Belum ada kelas',
+
+                    'kelas_terakhir_date' => $rkm
+                        ? \Carbon\Carbon::parse($rkm->created_at)->translatedFormat('d F Y')
+                        : null,
+
+                    'aktivitas_terakhir_date' => $contact->aktivitas_terakhir_date
+                        ? \Carbon\Carbon::parse($contact->aktivitas_terakhir_date)->format('d-m-Y')
+                        : 'Belum ada aktivitas',
+
                     'npwp' => $contact->npwp,
                     'alamat' => $contact->alamat,
                     'kategori_perusahaan' => $contact->kategori_perusahaan,
                     'email' => $contact->email,
-                    'kelas_terakhir' => $rkm ? $rkm->materi->nama_materi : 'Belum ada kelas',
-                    'kelas_terakhir_date' => $rkm ? $rkm->created_at->translatedFormat('d F Y') : null,
-                    'aktivitas_terakhir_date' => $aktivitasTerbaru ? $aktivitasTerbaru->created_at->format('d-m-Y') : 'Belum ada aktivitas',
                 ];
             });
 
-            // 11. Pengembalian Struktur JSON Standar DataTables
+            $processTime = microtime(true) - $processStart;
+
+
+            // =========================
+            // 10. TOTAL
+            // =========================
+            $totalTime = microtime(true) - $totalStart;
+
+
+            // =========================
+            // LOG PERFORMANCE
+            // =========================
+            Log::info('DataTables Performance - Perusahaan', [
+                // Request
+                'draw' => $draw,
+                'start' => $startLimit,
+                'length' => $length,
+                'search' => $searchValue,
+
+                // Timing
+                'gate_ms' => round($gateTime * 1000, 2),
+                'parameter_ms' => round($parameterTime * 1000, 2),
+                'build_query_ms' => round($buildQueryTime * 1000, 2),
+
+                // COUNT
+                'count_total_ms' => round($countTotalTime * 1000, 2),
+                'count_filtered_ms' => round($countFilteredTime * 1000, 2),
+
+                // Query
+                'filter_ms' => round($filterTime * 1000, 2),
+                'pagination_ms' => round($paginationTime * 1000, 2),
+                'relation_build_ms' => round($relationBuildTime * 1000, 2),
+                'get_query_ms' => round($queryTime * 1000, 2),
+
+                // PHP
+                'process_ms' => round($processTime * 1000, 2),
+
+                // Result
+                'records_total' => $recordsTotal,
+                'records_filtered' => $recordsFiltered,
+                'records_returned' => $data->count(),
+
+                // Total
+                'total_ms' => round($totalTime * 1000, 2),
+            ]);
+
+
+            // =========================
+            // RESPONSE
+            // =========================
             return response()->json([
-                'draw' => intval($draw),
+                'draw' => $draw,
                 'recordsTotal' => $recordsTotal,
                 'recordsFiltered' => $recordsFiltered,
                 'data' => $responseData,
             ]);
 
         } catch (\Exception $e) {
+            Log::error('DataTables Error - Perusahaan', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+            ]);
+
             return response()->json([
-                'error' => 'Terjadi kesalahan pada server.',
-                'message' => $e->getMessage()
+                'error' => 'Kesalahan server',
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
             ], 500);
         }
     }
@@ -318,17 +452,14 @@ class ContactController extends Controller
 
         $contact = Perusahaan::findOrFail($id);
 
+        // Pencatatan riwayat menggunakan relasi tabel baru
         if (!empty($contact->status) && $contact->status !== $validated['status']) {
-            $historyStatus = $contact->history_status_array;
-
-            $historyStatus[] = [
+            $contact->riwayatStatus()->create([
                 'status_lama' => $contact->status,
                 'status_baru' => $validated['status'],
-                'waktu_perubahan' => now()->toDateTimeString(),
+                'waktu_perubahan' => now(),
                 'diubah_oleh' => auth()->check() ? auth()->user()->id_sales : 'sistem'
-            ];
-
-            $contact->history_status = json_encode($historyStatus);
+            ]);
         }
 
         $contact->nama_perusahaan = $validated['nama_perusahaan'];
@@ -356,115 +487,125 @@ class ContactController extends Controller
         ]);
     }
 
+    // 1. Fungsi Utama Hanya Memuat View Secara Instan
     public function allHistoryStatus()
     {
-        // Mengambil semua data perusahaan yang memiliki riwayat status
-        $perusahaans = Perusahaan::whereNotNull('history_status')->get();
+        return view('crm.contact.all_history_status');
+    }
 
-        $totalConversionDays = 0;
-        $conversionCount = 0;
-        $transitionRate = [];
-        $userPerformance = [];
-        $timeBasedTrends = [];
+    public function apiHistoryAnalytics()
+    {
+        $analytics = Cache::remember('history_status_analytics', 3600, function () {
+            $totalConversionDays = 0;
+            $conversionCount = 0;
+            $transitionRate = [];
+            $timeBasedTrends = [];
 
-        // Melakukan iterasi pada setiap perusahaan untuk mengkalkulasi analitik
-        foreach ($perusahaans as $perusahaan) {
-            $history = $perusahaan->history_status_array;
+            // 1. Kalkulasi Durasi Konversi (Agregasi SQL)
+            $conversionData = RiwayatStatusPerusahaan::select(
+                    'perusahaan_id',
+                    DB::raw('MIN(waktu_perubahan) as first_date'),
+                    DB::raw('MAX(waktu_perubahan) as last_date')
+                )
+                ->groupBy('perusahaan_id')
+                ->havingRaw('COUNT(id) > 1')
+                ->get();
 
-            // 1. Mengkalkulasi Durasi Konversi Status (Lead Time)
-            if (count($history) > 1) {
-                $firstDate = strtotime($history[0]['waktu_perubahan']);
-                $lastDate = strtotime(end($history)['waktu_perubahan']);
+            foreach ($conversionData as $data) {
+                $firstDate = strtotime($data->first_date);
+                $lastDate = strtotime($data->last_date);
                 $diffDays = ($lastDate - $firstDate) / (60 * 60 * 24);
                 $totalConversionDays += $diffDays;
                 $conversionCount++;
             }
 
-            foreach ($history as $item) {
-                $lama = $item['status_lama'] ?? '-';
-                $baru = $item['status_baru'] ?? '-';
-                $user = $item['diubah_oleh'] ?? '-';
-                $waktu = date('Y-m-d', strtotime($item['waktu_perubahan']));
+            // 2. Kalkulasi Rasio Transisi (Agregasi SQL)
+            $transitions = RiwayatStatusPerusahaan::select(
+                    'status_lama',
+                    'status_baru',
+                    DB::raw('COUNT(id) as total')
+                )
+                ->groupBy('status_lama', 'status_baru')
+                ->get();
 
-                // 2. Mengkalkulasi Rasio Transisi Status
-                $transitionKey = $lama . ' -> ' . $baru;
-                if (!isset($transitionRate[$transitionKey])) {
-                    $transitionRate[$transitionKey] = 0;
-                }
-                $transitionRate[$transitionKey]++;
-
-                // 4. Mengkalkulasi Volume Aktivitas Berdasarkan Tanggal
-                if (!isset($timeBasedTrends[$waktu])) {
-                    $timeBasedTrends[$waktu] = 0;
-                }
-                $timeBasedTrends[$waktu]++;
+            foreach ($transitions as $t) {
+                $lama = $t->status_lama ?? '-';
+                $baru = $t->status_baru ?? '-';
+                $key = $lama . ' -> ' . $baru;
+                $transitionRate[$key] = $t->total;
             }
-        }
+            arsort($transitionRate);
 
-        // Memformat hasil kalkulasi
-        $averageConversionDays = $conversionCount > 0 ? round($totalConversionDays / $conversionCount, 2) : 0;
+            // 3. Kalkulasi Tren Tanggal (Agregasi SQL)
+            $trends = RiwayatStatusPerusahaan::select(
+                    DB::raw('DATE(waktu_perubahan) as tanggal'),
+                    DB::raw('COUNT(id) as total')
+                )
+                ->whereNotNull('waktu_perubahan')
+                ->groupBy(DB::raw('DATE(waktu_perubahan)'))
+                ->orderBy('tanggal', 'asc')
+                ->get();
 
-        arsort($transitionRate);
-        arsort($userPerformance);
-        ksort($timeBasedTrends);
+            foreach ($trends as $trend) {
+                $timeBasedTrends[$trend->tanggal] = $trend->total;
+            }
 
-        return view('crm.contact.all_history_status', compact(
-            'averageConversionDays',
-            'transitionRate',
-            'timeBasedTrends'
-        ));
+            return [
+                'averageConversionDays' => $conversionCount > 0 ? round($totalConversionDays / $conversionCount, 2) : 0,
+                'transitionRate' => $transitionRate,
+                'timeBasedTrends' => $timeBasedTrends
+            ];
+        });
+
+        return response()->json($analytics);
     }
 
     public function allHistoryStatusData(Request $request)
     {
-        // Mengambil semua data perusahaan yang memiliki riwayat status
-        $perusahaans = Perusahaan::whereNotNull('history_status')->get();
+        // 1. Inisialisasi Kueri Dasar dengan Join ke Tabel Perusahaan
+        $query = RiwayatStatusPerusahaan::join('perusahaans', 'riwayat_status_perusahaans.perusahaan_id', '=', 'perusahaans.id')
+            ->select(
+                'riwayat_status_perusahaans.waktu_perubahan',
+                'riwayat_status_perusahaans.status_lama',
+                'riwayat_status_perusahaans.status_baru',
+                'perusahaans.nama_perusahaan'
+            );
 
-        $allHistory = [];
+        // 2. Hitung Total Data Keseluruhan (Sebelum Filter)
+        $recordsTotal = RiwayatStatusPerusahaan::count();
 
-        // Menggabungkan seluruh data riwayat status ke dalam satu array
-        foreach ($perusahaans as $perusahaan) {
-            $historyArray = $perusahaan->history_status_array;
-
-            foreach ($historyArray as $history) {
-                $allHistory[] = [
-                    'waktu_perubahan' => $history['waktu_perubahan'] ?? null,
-                    'nama_perusahaan' => $perusahaan->nama_perusahaan,
-                    'status_lama' => $history['status_lama'] ?? '-',
-                    'status_baru' => $history['status_baru'] ?? '-'
-                ];
-            }
-        }
-
-        // Mengurutkan data secara default berdasarkan waktu perubahan terbaru
-        usort($allHistory, function ($a, $b) {
-            return strtotime($b['waktu_perubahan']) - strtotime($a['waktu_perubahan']);
-        });
-
-        // Memproses fitur pencarian global DataTables
+        // 3. Eksekusi Pencarian (Filtering)
         $searchValue = $request->input('search.value');
         if (!empty($searchValue)) {
-            $allHistory = array_filter($allHistory, function ($item) use ($searchValue) {
-                return false !== strpos(strtolower($item['nama_perusahaan']), strtolower($searchValue)) ||
-                    false !== strpos(strtolower($item['status_lama']), strtolower($searchValue)) ||
-                    false !== strpos(strtolower($item['status_baru']), strtolower($searchValue));
+            $query->where(function($q) use ($searchValue) {
+                $q->where('perusahaans.nama_perusahaan', 'like', "%{$searchValue}%")
+                  ->orWhere('riwayat_status_perusahaans.status_lama', 'like', "%{$searchValue}%")
+                  ->orWhere('riwayat_status_perusahaans.status_baru', 'like', "%{$searchValue}%");
             });
-            $allHistory = array_values($allHistory);
         }
 
-        $totalRecords = count($allHistory);
+        // 4. Hitung Total Data Setelah Filter
+        $recordsFiltered = $query->count();
 
-        // Memproses batasan paginasi (Server-side Slicing)
-        $start = $request->input('start', 0);
-        $length = $request->input('length', 10);
-        $slicedData = array_slice($allHistory, $start, $length);
+        // 5. Pengurutan Data (Sorting) secara Default
+        $query->orderBy('riwayat_status_perusahaans.waktu_perubahan', 'desc');
 
-        // Mengembalikan respons berformat JSON sesuai dengan spesifikasi DataTables
+        // 6. Batasan Paginasi (Limit & Offset) sesuai Permintaan DataTables
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 10);
+
+        if ($length > 0) {
+            $query->offset($start)->limit($length);
+        }
+
+        $data = $query->get();
+
+        // 7. Pengembalian Respons dengan Format Standar DataTables
         return response()->json([
             'draw' => intval($request->input('draw')),
-            'recordsTotal' => $totalRecords,
-            'recordsFiltered' => $totalRecords,
-            'data' => $slicedData
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data
         ]);
     }
 

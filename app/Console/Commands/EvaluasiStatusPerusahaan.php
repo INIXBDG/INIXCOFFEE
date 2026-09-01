@@ -74,21 +74,19 @@ class EvaluasiStatusPerusahaan extends Command
                 }
             }
 
-            // Pengecekan dan pencatatan riwayat status
+            // Pengecekan dan pencatatan riwayat status melalui relasi tabel baru
             if (!empty($statusBaru) && $statusLama !== $statusBaru) {
-                $historyStatus = $perusahaan->history_status_array;
-
-                $historyStatus[] = [
-                    'status_lama' => $statusLama ?? '-',
-                    'status_baru' => $statusBaru,
-                    'waktu_perubahan' => now()->toDateTimeString(),
-                    'diubah_oleh' => 'sistem'
-                ];
-
                 // Memperbarui atribut perusahaan
                 $perusahaan->status = $statusBaru;
-                $perusahaan->history_status = json_encode($historyStatus);
                 $perusahaan->save();
+
+                // Mencatat riwayat ke tabel riwayat_status_perusahaans
+                $perusahaan->riwayatStatus()->create([
+                    'status_lama' => $statusLama ?? '-',
+                    'status_baru' => $statusBaru,
+                    'waktu_perubahan' => now(),
+                    'diubah_oleh' => 'sistem'
+                ]);
             }
         }
 
