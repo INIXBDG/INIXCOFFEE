@@ -30,6 +30,11 @@ class Modul extends Model
         return $this->hasMany(PesertaModul::class, 'modul', 'id');
     }
 
+    public function materi()
+    {
+        return $this->belongsTo(Materi::class, 'id_materi');
+    }
+
     // 2. Buat Accessor khusus untuk menangani fallback
     public function getDetailMateriAttribute()
     {
