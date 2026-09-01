@@ -661,11 +661,35 @@ class JurnalAkuntansiController extends Controller
         * 75000
         */
 
-        $clean = preg_replace('/[^0-9.-]/', '', $value);
+        $clean = preg_replace('/[^0-9.,-]/', '', $value);
+        
+        $lastComma = strrpos($clean, ',');
+        $lastDot = strrpos($clean, '.');
+        
+        if ($lastComma !== false && $lastDot !== false) {
+            if ($lastComma > $lastDot) {
+                // Comma is decimal: 294.300,00
+                $clean = str_replace('.', '', $clean); 
+                $clean = str_replace(',', '.', $clean);
+            } else {
+                // Dot is decimal: 294,300.00
+                $clean = str_replace(',', '', $clean);
+            }
+        } elseif ($lastComma !== false) {
+            // Only comma. If 3 digits after comma, it's likely thousands separator.
+            if (preg_match('/,[0-9]{3}$/', $clean)) {
+                $clean = str_replace(',', '', $clean);
+            } else {
+                $clean = str_replace(',', '.', $clean);
+            }
+        } elseif ($lastDot !== false) {
+            // Only dot. If 3 digits after dot, it's likely thousands separator.
+            if (preg_match('/\.[0-9]{3}$/', $clean)) {
+                $clean = str_replace('.', '', $clean);
+            }
+        }
 
-        return $clean !== ''
-            ? (float) $clean
-            : 0;
+        return $clean !== '' ? abs((float) $clean) : 0;
     }
 
     /**
