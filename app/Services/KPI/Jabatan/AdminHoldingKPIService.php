@@ -83,6 +83,7 @@ class AdminHoldingKPIService
             $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif); // 1x per po
             $totalPercent += $percent;
             $count++;
+
         }
 
         if ($count === 0) return 0.0;
