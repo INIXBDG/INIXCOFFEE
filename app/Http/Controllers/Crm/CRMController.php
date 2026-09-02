@@ -21,6 +21,7 @@ use App\Models\TargetActivity;
 use App\Models\User;
 use App\Models\vendor;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,17 +52,6 @@ class CRMController extends Controller
         $firstDayOfMonth = $today->copy()->startOfMonth();
         $mingguKeBulan = ceil(($today->day + $firstDayOfMonth->dayOfWeek) / 7);
 
-        // 1. Kategori perusahaan chart
-        $data = Perusahaan::select('kategori_perusahaan', DB::raw('count(*) as total'))->groupBy('kategori_perusahaan')->get();
-        $total = $data->sum('total') ?: 1;
-
-        $chartData = $data->map(function ($item) use ($total) {
-            return [
-                'kategori' => $item->kategori_perusahaan ?? 'Tidak Ada Kategori',
-                'persen' => round(($item->total / $total) * 100, 2),
-            ];
-        });
-
         // 2. Filter Tanggal & Waktu Aktivitas
         $tahun = $request->input('tahun', Carbon::now()->year);
         $bulan = $request->input('bulan', Carbon::now()->month);
@@ -70,8 +60,10 @@ class CRMController extends Controller
         $endDate = $request->input('end_date');
 
         if ($startDate && $endDate) {
-            $tanggalRange = \Carbon\Carbon::parse($startDate)->translatedFormat('d M Y') . ' - ' . \Carbon\Carbon::parse($endDate)->translatedFormat('d M Y');
-            $bulanTahun = \Carbon\Carbon::parse($startDate)->translatedFormat('F Y');
+            $tanggalRange = Carbon::parse($startDate)->translatedFormat('d M Y') . ' - ' . Carbon::parse($endDate)->translatedFormat('d M Y');
+            $bulanTahun = Carbon::parse($startDate)->translatedFormat('F Y');
+            $startFilter = Carbon::parse($startDate)->startOfDay()->format('Y-m-d H:i:s');
+            $endFilter = Carbon::parse($endDate)->endOfDay()->format('Y-m-d H:i:s');
         } else {
             $monthStart = Carbon::create($tahun, $bulan, 1)->startOfMonth();
             $monthEnd = (clone $monthStart)->endOfMonth();
@@ -88,250 +80,188 @@ class CRMController extends Controller
             }
             $tanggalRange = $startOfWeek->translatedFormat('d') . ' – ' . $endOfWeek->translatedFormat('d F Y');
             $bulanTahun = $startOfWeek->translatedFormat('F Y');
+            $startFilter = $startOfWeek->format('Y-m-d H:i:s');
+            $endFilter = $endOfWeek->format('Y-m-d H:i:s');
         }
+
+        // 1. Kategori perusahaan chart (Cached 1 Jam)
+        $chartData = Cache::remember('chart_kategori_perusahaan', 3600, function () {
+            $data = Perusahaan::select('kategori_perusahaan', DB::raw('COUNT(id) as total'))->groupBy('kategori_perusahaan')->get();
+            $total = $data->sum('total') ?: 1;
+            return $data->map(fn($item) => [
+                'kategori' => $item->kategori_perusahaan ?? 'Tidak Ada Kategori',
+                'persen' => round(($item->total / $total) * 100, 2),
+            ]);
+        });
 
         // 3. Ambil Target Sales Spesifik Kolom
         $target = TargetActivity::select('id_sales', 'Contact', 'Call', 'Email', 'Visit', 'Meet', 'Incharge', 'PA', 'PI', 'FormM', 'DB')
             ->get()->keyBy('id_sales');
 
-        // 4. Inisialisasi Eager Loading untuk Aktivitas
-        $aktivitasQuery = Aktivitas::with([
-            'contact.perusahaan',
-            'peserta',
-            'perusahaanLangsung'
-        ]);
 
-        if ($startDate && $endDate) {
-            $aktivitasQuery->whereBetween('waktu_aktivitas', [
-                $startDate . ' 00:00:00',
-                $endDate . ' 23:59:59'
-            ]);
-        } else {
-            $aktivitasQuery->whereBetween('waktu_aktivitas', [$startOfWeek, $endOfWeek]);
-        }
+        // 6. Top 5 Produk Chart Terjual & Menguntungkan (Digabung jadi 1 query)
+        $rkmStats = Cache::remember('rkm_stats_top_5', 3600, function () {
+            return RKM::with('materi:id,nama_materi')
+                ->select(
+                    'materi_key',
+                    DB::raw('SUM(pax) as total_pax'),
+                    DB::raw('SUM(COALESCE(harga_jual, 0) * COALESCE(pax, 0)) as total_revenue')
+                )
+                ->where('status', '0')
+                ->groupBy('materi_key')
+                ->get();
+        });
 
-        $aktivitas = $aktivitasQuery->get();
+        $best = $rkmStats->sortByDesc('total_pax')->take(5)->values();
+        $profit = $rkmStats->sortByDesc('total_revenue')->take(5)->values();
 
-        // 5. Hitung Aktivitas Per Sales
-        $salesList = User::where('jabatan', 'Sales')->where('status_akun', '1')->pluck('id_sales')->toArray();
-        $activitysales = [];
+        // 8. Segmentasi Daerah per Sales (Cached 1 Jam untuk meringankan beban TTFB)
+        $dataSegmentasi = Cache::remember('segmentasi_daerah_sales', 3600, function () {
+            $lokasiData = Perusahaan::select('sales_key', 'lokasi', DB::raw('COUNT(id) as total'))
+                ->whereNotNull('sales_key')
+                ->whereNotNull('lokasi')
+                ->groupBy('sales_key', 'lokasi')
+                ->get();
 
-        foreach ($salesList as $id_sales) {
-            $userAktivitas = $aktivitas->where('id_sales', $id_sales);
+            $salesTotals = [];
+            foreach ($lokasiData as $row) {
+                $salesTotals[$row->sales_key] = ($salesTotals[$row->sales_key] ?? 0) + $row->total;
+            }
 
-            $contactData = $userAktivitas->where('aktivitas', 'Contact');
-            $callData = $userAktivitas->where('aktivitas', 'Call');
-            $emailData = $userAktivitas->where('aktivitas', 'Email');
-            $visitData = $userAktivitas->where('aktivitas', 'Visit');
-            $meetData = $userAktivitas->where('aktivitas', 'Meet');
-            $inchargeData = $userAktivitas->where('aktivitas', 'Incharge');
-            $paData = $userAktivitas->where('aktivitas', 'PA');
-            $piData = $userAktivitas->whereIn('aktivitas', ['PI', 'Leads']);
-            $formMasukData = $userAktivitas->whereIn('aktivitas', ['Form_Masuk', 'Regis Form']);
-            $dbData = $userAktivitas->where('aktivitas', 'DB');
+            $totalDaerah = [];
+            foreach ($lokasiData as $row) {
+                $totalSales = $salesTotals[$row->sales_key] ?? 0;
+                $persen = $totalSales > 0 ? round(($row->total / $totalSales) * 100, 2) : 0;
+                $totalDaerah[$row->sales_key][] = [
+                    'lokasi' => $row->lokasi,
+                    'total' => $row->total,
+                    'persen' => $persen,
+                ];
+            }
 
-            $salesTarget = $target[$id_sales] ?? null;
-
-            $activitysales[] = [
-                'id_sales' => $id_sales,
-                'contact'    => $contactData->count(),
-                'call'       => $callData->count(),
-                'email'      => $emailData->count(),
-                'visit'      => $visitData->count(),
-                'meet'       => $meetData->count(),
-                'incharge'   => $inchargeData->count(),
-                'PA'         => $paData->count(),
-                'Leads'      => $piData->count(),
-                'Regis_Form' => $formMasukData->count(),
-                'DB'         => $dbData->count(),
-                'total_PA'         => $paData->sum('total'),
-                'total_Regis_Form' => $formMasukData->sum('total'),
-                'target_contact'    => $salesTarget->Contact ?? 0,
-                'target_call'       => $salesTarget->Call ?? 0,
-                'target_email'      => $salesTarget->Email ?? 0,
-                'target_visit'      => $salesTarget->Visit ?? 0,
-                'target_meet'       => $salesTarget->Meet ?? 0,
-                'target_incharge'   => $salesTarget->Incharge ?? 0,
-                'target_PA'         => $salesTarget->PA ?? 0,
-                'target_PI'         => $salesTarget->PI ?? 0,
-                'target_Form_Masuk' => $salesTarget->FormM ?? 0,
-                'target_DB'         => $salesTarget->DB ?? 0,
-                'data_contact'    => $contactData->values(),
-                'data_call'       => $callData->values(),
-                'data_email'      => $emailData->values(),
-                'data_visit'      => $visitData->values(),
-                'data_meet'       => $meetData->values(),
-                'data_incharge'   => $inchargeData->values(),
-                'data_PA'         => $paData->values(),
-                'data_Leads'      => $piData->values(),
-                'data_Regis_Form' => $formMasukData->values(),
-                'data_DB'         => $dbData->values(),
+            return [
+                'totalDaerah' => $totalDaerah,
+                'sales' => collect(array_keys($salesTotals))
             ];
-        }
+        });
 
-        // 6. Top 5 Produk Chart Terjual & Menguntungkan (Optimasi Select Eager Load)
-        $best = RKM::with('materi:id,nama_materi')
-            ->select('materi_key', DB::raw('SUM(pax) as total_pax'))
-            ->where('status', '0')
-            ->groupBy('materi_key')
-            ->orderByDesc('total_pax')->limit(5)->get();
+        $totalDaerah = $dataSegmentasi['totalDaerah'];
+        $sales = $dataSegmentasi['sales'];
 
-        $profit = RKM::with('materi:id,nama_materi')
-            ->select('materi_key', DB::raw('SUM(COALESCE(harga_jual, 0) * COALESCE(pax, 0)) as total_revenue'))
-            ->where('status', '0')
-            ->groupBy('materi_key')
-            ->orderByDesc('total_revenue')->limit(5)->get();
+        // 10. Map Perusahaan (Cached)
+        $map = Cache::remember('map_perusahaan', 3600, function () {
+            return DB::table('lokasis')
+                ->leftJoin('perusahaans', 'lokasis.lokasi', '=', 'perusahaans.lokasi')
+                ->select('lokasis.lokasi', 'lokasis.latitude', 'lokasis.longitude', DB::raw('COUNT(perusahaans.id) as company_count'))
+                ->groupBy('lokasis.id', 'lokasis.lokasi', 'lokasis.latitude', 'lokasis.longitude')
+                ->get();
+        });
 
-        // 7. Total Win & Lost
-        $tahunDipilih = $request->query('tahun', now()->year);
+        // 11. Top Vendors & Kategori Materi Terjual & Segmen Spend (Cached)
+        $topVendors = Cache::remember('top_vendors', 3600, function () {
+            return DB::table('r_k_m_s')->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                ->where('r_k_m_s.status', '0')->select('materis.vendor', DB::raw('COUNT(r_k_m_s.id) as total'))
+                ->groupBy('materis.vendor')->orderByDesc('total')->get();
+        });
 
-        $dataRingkasanWin = Peluang::whereNotNull('merah')
-            ->whereYear('merah', $tahunDipilih)
-            ->select(
-                'id_sales',
-                DB::raw('CASE WHEN MONTH(merah) BETWEEN 1 AND 3 THEN "TR1" WHEN MONTH(merah) BETWEEN 4 AND 6 THEN "TR2" WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3" WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4" END as triwulan'),
-                DB::raw('SUM(netsales * pax) as total_jumlah')
-            )
-            ->groupBy('id_sales', 'triwulan')
-            ->get()
-            ->groupBy('id_sales')
-            ->map(fn($grup) => $grup->pluck('total_jumlah', 'triwulan')->toArray())
-            ->toArray();
+        $topKategoriMateri = Cache::remember('top_kategori_materi', 3600, function () {
+            return DB::table('r_k_m_s')->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                ->where('r_k_m_s.status', '0')->select('materis.kategori_materi', DB::raw('COUNT(r_k_m_s.id) as total'))
+                ->groupBy('materis.kategori_materi')->orderByDesc('total')->get();
+        });
 
-        $dataRingkasanLost = Peluang::whereNotNull('lost')
-            ->whereYear('lost', $tahunDipilih)
-            ->select(
-                'id_sales',
-                DB::raw('CASE WHEN MONTH(lost) BETWEEN 1 AND 3 THEN "TR1" WHEN MONTH(lost) BETWEEN 4 AND 6 THEN "TR2" WHEN MONTH(lost) BETWEEN 7 AND 9 THEN "TR3" WHEN MONTH(lost) BETWEEN 10 AND 12 THEN "TR4" END as triwulan'),
-                DB::raw('SUM(COALESCE(harga, 0) * COALESCE(pax, 0)) as total_jumlah')
-            )
-            ->groupBy('id_sales', 'triwulan')
-            ->get()
-            ->groupBy('id_sales')
-            ->map(fn($grup) => $grup->pluck('total_jumlah', 'triwulan')->toArray())
-            ->toArray();
-
-        $pengguna = User::where('status_akun', '1')->select('id_sales', 'username')->get()->keyBy('id_sales');
-
-        $totalWin = [];
-        $totalLost = [];
-        foreach ($salesList as $id_sales) {
-            $username = $pengguna[$id_sales]->username ?? $id_sales;
-            $totalWin[$id_sales] = [
-                'username' => $username,
-                'TR1' => $dataRingkasanWin[$id_sales]['TR1'] ?? 0,
-                'TR2' => $dataRingkasanWin[$id_sales]['TR2'] ?? 0,
-                'TR3' => $dataRingkasanWin[$id_sales]['TR3'] ?? 0,
-                'TR4' => $dataRingkasanWin[$id_sales]['TR4'] ?? 0,
-            ];
-            $totalLost[$id_sales] = [
-                'username' => $username,
-                'TR1' => $dataRingkasanLost[$id_sales]['TR1'] ?? 0,
-                'TR2' => $dataRingkasanLost[$id_sales]['TR2'] ?? 0,
-                'TR3' => $dataRingkasanLost[$id_sales]['TR3'] ?? 0,
-                'TR4' => $dataRingkasanLost[$id_sales]['TR4'] ?? 0,
-            ];
-        }
-
-        // 8. Status Perusahaan & Segmentasi Daerah per Sales
-        $totalStatus = Perusahaan::select('status', 'sales_key', DB::raw('count(*) as total'))
-            ->groupBy('status', 'sales_key')->get();
-
-        $lokasi = Perusahaan::select('sales_key', 'lokasi', DB::raw('count(*) as total'))
-            ->whereNotNull('sales_key')->whereNotNull('lokasi')
-            ->groupBy('sales_key', 'lokasi')->get();
-
-        $salesKeys = Perusahaan::select('sales_key')->whereNotNull('sales_key')->distinct()->pluck('sales_key');
-        $salesTotals = Perusahaan::select('sales_key', DB::raw('count(*) as total'))->whereNotNull('sales_key')->groupBy('sales_key')->pluck('total', 'sales_key')->toArray();
-
-        $totalDaerah = [];
-        foreach ($lokasi as $row) {
-            $totalSales = $salesTotals[$row->sales_key] ?? 0;
-            $persen = $totalSales > 0 ? round(($row->total / $totalSales) * 100, 2) : 0;
-            $totalDaerah[$row->sales_key][] = [
-                'lokasi' => $row->lokasi,
-                'total' => $row->total,
-                'persen' => $persen,
-            ];
-        }
-
-        $sales = $salesKeys;
-
-        // 9. Prospek terbuat minggu ini
-        $prospek = Peluang::with('materiRelation')
-            ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
-            ->get();
-
-        // 10. Map Perusahaan
-        $map = DB::table('lokasis')
-            ->leftJoin('perusahaans', 'lokasis.lokasi', '=', 'perusahaans.lokasi')
-            ->select('lokasis.lokasi', 'lokasis.latitude', 'lokasis.longitude', DB::raw('COUNT(perusahaans.id) as company_count'))
-            ->groupBy('lokasis.id', 'lokasis.lokasi', 'lokasis.latitude', 'lokasis.longitude')->get();
-
-        // 11. Top Vendors & Kategori Materi Terjual & Segmen Spend
-        $topVendors = DB::table('r_k_m_s')->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-            ->where('r_k_m_s.status', '0')->select('materis.vendor', DB::raw('count(*) as total'))
-            ->groupBy('materis.vendor')->orderByDesc('total')->get();
-
-        $topKategoriMateri = DB::table('r_k_m_s')->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-            ->where('r_k_m_s.status', '0')->select('materis.kategori_materi', DB::raw('count(*) as total'))
-            ->groupBy('materis.kategori_materi')->orderByDesc('total')->get();
-
-        $topSpendSeg = DB::table('r_k_m_s')->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
-            ->where('r_k_m_s.status', '0')->select('perusahaans.kategori_perusahaan', DB::raw('COUNT(*) as total'), DB::raw('SUM(r_k_m_s.harga_jual) as spend'))
-            ->groupBy('perusahaans.kategori_perusahaan')->orderByDesc('total')->get();
-
-        // 12. PA yg belum di approve
-        $PA = perhitunganNetSales::with(['rkm.materi', 'rkm.perusahaan', 'trackingNetSales', 'rkm.peluang'])
-            ->whereHas('trackingNetSales', function ($query) {
-                $query->where('tracking', '!=', 'Selesai')->orWhereNull('tracking');
-            })->paginate(10);
+        $topSpendSeg = Cache::remember('top_spend_seg', 3600, function () {
+            return DB::table('r_k_m_s')->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
+                ->where('r_k_m_s.status', '0')->select('perusahaans.kategori_perusahaan', DB::raw('COUNT(r_k_m_s.id) as total'), DB::raw('SUM(r_k_m_s.harga_jual) as spend'))
+                ->groupBy('perusahaans.kategori_perusahaan')->orderByDesc('total')->get();
+        });
 
         // 13. Data Checklist Milik Adm Sales
         $query = RKM::with(['checklist', 'materi', 'perusahaan', 'instruktur', 'sales']);
 
         if ($request->search) {
             $query->whereHas('materi', function ($q) use ($request) {
-                $q->where('nama_materi', 'like', '%' . $request->search . '%');
+                $q->where('nama_materi', 'like', $request->search . '%');
             });
         }
 
-        if ($request->bulan) $query->whereMonth('created_at', $request->bulan);
-        if ($request->tahun) $query->whereYear('created_at', $request->tahun);
-        if ($request->minggu) $query->whereRaw('CEIL(DAY(created_at)/7) = ?', [$request->minggu]);
+        if ($request->bulan && $request->tahun) {
+            if ($request->minggu) {
+                $startMonth = Carbon::create($request->tahun, $request->bulan, 1);
+                $startWk = $startMonth->copy()->addWeeks($request->minggu - 1)->startOfWeek(Carbon::MONDAY);
+                $endWk = $startWk->copy()->endOfWeek(Carbon::SUNDAY);
 
-        $dataRKM = $query->paginate(10);
-
-        return view('crm.dashboard', compact(
-            'chartData', 'activitysales', 'best', 'profit', 'totalWin', 'totalLost',
-            'tahunDipilih', 'totalStatus', 'totalDaerah', 'sales', 'prospek', 'map',
-            'tanggal', 'mingguKeBulan', 'tahun', 'bulan', 'mingguKe', 'bulanTahun',
-            'tanggalRange', 'topSpendSeg', 'topKategoriMateri', 'topVendors', 'PA', 'dataRKM'
-        ));
-    }
-    public function updateChecklist(Request $request)
-    {
-        $checklist = checklistRKM::where('id_rkm', $request->rkm_id)->first();
-
-        if (!$checklist) {
-            $checklist = checklistRKM::create([
-                'id_rkm' => $request->rkm_id,
-                'registrasi_form' => 0,
-                'surat_kontrak' => 0,
-                'PA' => 0,
-                'PO' => 0,
-            ]);
+                $query->whereBetween('created_at', [
+                    $startWk->format('Y-m-d 00:00:00'),
+                    $endWk->format('Y-m-d 23:59:59')
+                ]);
+            } else {
+                $startMonth = Carbon::create($request->tahun, $request->bulan, 1)->format('Y-m-d 00:00:00');
+                $endMonth = Carbon::create($request->tahun, $request->bulan, 1)->endOfMonth()->format('Y-m-d 23:59:59');
+                $query->whereBetween('created_at', [$startMonth, $endMonth]);
+            }
+        } elseif ($request->tahun) {
+            $startYr = "{$request->tahun}-01-01 00:00:00";
+            $endYr = "{$request->tahun}-12-31 23:59:59";
+            $query->whereBetween('created_at', [$startYr, $endYr]);
         }
 
-        $checklist->update([
-            $request->field => (bool) $request->value,
-        ]);
+        $dataRKM = $query->simplePaginate(10);
+
+        return view('crm.dashboard', compact(
+            'chartData', 'best', 'profit', 
+            'totalDaerah', 'sales', 'map',
+            'tanggal', 'mingguKeBulan', 'tahun', 'bulan', 'mingguKe', 'bulanTahun',
+            'tanggalRange', 'topSpendSeg', 'topKategoriMateri', 'topVendors', 'dataRKM'
+        ));
+    }
+
+    public function updateChecklist(Request $request)
+    {
+        $checklist = checklistRKM::updateOrCreate(
+            ['id_rkm' => $request->rkm_id],
+            [
+                'registrasi_form' => DB::raw('registrasi_form'), // Pertahankan nilai lama jika ada
+                'surat_kontrak' => DB::raw('surat_kontrak'),
+                'PA' => DB::raw('PA'),
+                'PO' => DB::raw('PO'),
+                $request->field => (bool) $request->value,
+            ]
+        );
 
         return response()->json([
             'success' => true,
             'updated_field' => $request->field,
             'value' => (bool) $request->value,
         ]);
+    }
+
+    public function detailAktivitasApi(Request $request)
+    {
+        $query = Aktivitas::select(
+                'id', 'aktivitas', 'waktu_aktivitas', 'id_contact', 'id_peserta',
+                'id_peluang', 'deskripsi', 'harga', 'pax', 'total', 'foto_lokasi', 'latitude', 'longitude'
+            )
+            ->with(['contact.perusahaan', 'peserta', 'perusahaanLangsung'])
+            ->where('id_sales', $request->id_sales);
+
+        $label = $request->aktivitas;
+        $tipeArray = [$label];
+
+        if ($label === 'Penawaran Awal') $tipeArray = ['PA'];
+        if ($label === 'Leads') $tipeArray = ['PI', 'Leads'];
+        if ($label === 'Regis Form') $tipeArray = ['Form_Masuk', 'Regis Form'];
+
+        $query->whereIn('aktivitas', $tipeArray);
+
+        if ($request->start_date && $request->end_date) {
+            $query->whereBetween('waktu_aktivitas', [
+                $request->start_date . ' 00:00:00',
+                $request->end_date . ' 23:59:59'
+            ]);
+        }
+
+        return response()->json($query->get());
     }
 
     public function chartRKM(Request $request)
@@ -373,22 +303,218 @@ class CRMController extends Controller
         $status = $request->status ?? 'win';
 
         $dateColumn = $status === 'lost' ? 'lost' : 'merah';
+        $query = Peluang::with(['materiRelation:id,nama_materi', 'perusahaan:id,nama_perusahaan'])
+            ->where('id_sales', $id_sales)
+            ->whereNotNull($dateColumn);
 
-        $query = Peluang::with('materiRelation', 'perusahaan')->where('id_sales', $id_sales)->whereNotNull($dateColumn)->whereYear($dateColumn, $tahun);
-        $range = [
-            'TR1' => [1, 3],
-            'TR2' => [4, 6],
-            'TR3' => [7, 9],
-            'TR4' => [10, 12],
+        // Optimasi Range Tanggal Tanpa Fungsi SQL di Kolom
+        $ranges = [
+            'TR1' => ["{$tahun}-01-01 00:00:00", "{$tahun}-03-31 23:59:59"],
+            'TR2' => ["{$tahun}-04-01 00:00:00", "{$tahun}-06-30 23:59:59"],
+            'TR3' => ["{$tahun}-07-01 00:00:00", "{$tahun}-09-30 23:59:59"],
+            'TR4' => ["{$tahun}-10-01 00:00:00", "{$tahun}-12-31 23:59:59"],
         ];
 
-        if (isset($range[$triwulan])) {
-            $query->whereBetween(DB::raw("MONTH($dateColumn)"), $range[$triwulan]);
+        if (isset($ranges[$triwulan])) {
+            $query->whereBetween($dateColumn, $ranges[$triwulan]);
+        } else {
+            $query->whereBetween($dateColumn, ["{$tahun}-01-01 00:00:00", "{$tahun}-12-31 23:59:59"]);
         }
 
-        $data = $query->select('materi', 'id_contact', 'netsales', 'pax', DB::raw('(netsales * pax) as total'), 'merah')->get();
+        $data = $query->select('materi', 'perusahaan_id', 'id_contact', 'netsales', 'pax', DB::raw('(netsales * pax) as total'), $dateColumn)->get();
 
         return response()->json($data);
+    }
+
+    public function apiProspekMingguan()
+    {
+        $prospekStart = Carbon::now()->startOfWeek()->format('Y-m-d H:i:s');
+        $prospekEnd = Carbon::now()->endOfWeek()->format('Y-m-d H:i:s');
+        
+        $prospek = Peluang::with('materiRelation:id,nama_materi')
+            ->whereBetween('created_at', [$prospekStart, $prospekEnd])
+            ->get();
+            
+        return response()->json($prospek);
+    }
+
+    public function apiIncompletePA(Request $request)
+    {
+        $PA = perhitunganNetSales::with([
+                'rkm.materi', 
+                'rkm.perusahaan', 
+                'trackingNetSales', 
+                'rkm.peluang'
+            ])
+            ->whereHas('trackingNetSales', function ($query) {
+                $query->where('tracking', '!=', 'Selesai')->orWhereNull('tracking');
+            })
+            ->simplePaginate(10); // Menggunakan simplePaginate untuk meringankan kueri COUNT
+            
+        return response()->json($PA);
+    }
+
+    public function apiPivotStatus()
+    {
+        $totalStatus = Perusahaan::select('status', 'sales_key', DB::raw('COUNT(id) as total'))
+            ->whereNotNull('status')
+            ->whereNotNull('sales_key')
+            ->groupBy('status', 'sales_key')
+            ->get();
+
+        $statuses = $totalStatus->pluck('status')->unique()->sort()->values();
+        $pivotData = [];
+        
+        foreach ($totalStatus as $item) {
+            $pivotData[$item->sales_key][$item->status] = $item->total;
+        }
+
+        return response()->json([
+            'statuses' => $statuses,
+            'data' => $pivotData
+        ]);
+    }
+
+    public function apiTotalWinLost(Request $request)
+    {
+        $tahunDipilih = $request->query('tahun', now()->year);
+        $startYear = "{$tahunDipilih}-01-01 00:00:00";
+        $endYear = "{$tahunDipilih}-12-31 23:59:59";
+
+        $dataRingkasanWinRaw = Peluang::whereBetween('merah', [$startYear, $endYear])
+            ->select('id_sales', DB::raw('QUARTER(merah) as triwulan_angka'), DB::raw('SUM(netsales * pax) as total_jumlah'))
+            ->groupBy('id_sales', 'triwulan_angka')
+            ->get();
+
+        $dataRingkasanLostRaw = Peluang::whereBetween('lost', [$startYear, $endYear])
+            ->select('id_sales', DB::raw('QUARTER(lost) as triwulan_angka'), DB::raw('SUM(COALESCE(harga, 0) * COALESCE(pax, 0)) as total_jumlah'))
+            ->groupBy('id_sales', 'triwulan_angka')
+            ->get();
+
+        $formatTriwulan = function($data) {
+            $result = [];
+            foreach ($data as $row) {
+                $result[$row->id_sales]['TR' . $row->triwulan_angka] = $row->total_jumlah;
+            }
+            return $result;
+        };
+
+        $dataRingkasanWin = $formatTriwulan($dataRingkasanWinRaw);
+        $dataRingkasanLost = $formatTriwulan($dataRingkasanLostRaw);
+
+        $salesList = User::where('jabatan', 'Sales')->where('status_akun', '1')->pluck('id_sales')->toArray();
+        $pengguna = User::where('status_akun', '1')->select('id_sales', 'username')->get()->keyBy('id_sales');
+
+        $totalWin = [];
+        $totalLost = [];
+        
+        foreach ($salesList as $id_sales) {
+            $username = $pengguna[$id_sales]->username ?? $id_sales;
+            $totalWin[$id_sales] = [
+                'username' => $username,
+                'TR1' => $dataRingkasanWin[$id_sales]['TR1'] ?? 0,
+                'TR2' => $dataRingkasanWin[$id_sales]['TR2'] ?? 0,
+                'TR3' => $dataRingkasanWin[$id_sales]['TR3'] ?? 0,
+                'TR4' => $dataRingkasanWin[$id_sales]['TR4'] ?? 0,
+            ];
+            $totalLost[$id_sales] = [
+                'username' => $username,
+                'TR1' => $dataRingkasanLost[$id_sales]['TR1'] ?? 0,
+                'TR2' => $dataRingkasanLost[$id_sales]['TR2'] ?? 0,
+                'TR3' => $dataRingkasanLost[$id_sales]['TR3'] ?? 0,
+                'TR4' => $dataRingkasanLost[$id_sales]['TR4'] ?? 0,
+            ];
+        }
+
+        return response()->json([
+            'win' => $totalWin,
+            'lost' => $totalLost
+        ]);
+    }
+
+    public function apiTargetAktivitas(Request $request)
+    {
+        $today = Carbon::now()->locale('id');
+        $tahun = $request->input('tahun', $today->year);
+        $bulan = $request->input('bulan', $today->month);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        // Kalkulasi Rentang Waktu
+        if ($startDate && $endDate) {
+            $tanggalRange = Carbon::parse($startDate)->translatedFormat('d M Y') . ' - ' . Carbon::parse($endDate)->translatedFormat('d M Y');
+            $startFilter = Carbon::parse($startDate)->startOfDay()->format('Y-m-d H:i:s');
+            $endFilter = Carbon::parse($endDate)->endOfDay()->format('Y-m-d H:i:s');
+        } else {
+            $startOfWeek = Carbon::create($tahun, $bulan, 1)->startOfMonth();
+            $endOfWeek = (clone $startOfWeek)->endOfMonth();
+            
+            $tanggalRange = $startOfWeek->translatedFormat('d') . ' – ' . $endOfWeek->translatedFormat('d F Y');
+            $startFilter = $startOfWeek->format('Y-m-d H:i:s');
+            $endFilter = $endOfWeek->format('Y-m-d H:i:s');
+        }
+
+        // Ambil Target Sales Spesifik Kolom
+        $target = TargetActivity::select('id_sales', 'Contact', 'Call', 'Email', 'Visit', 'Meet', 'Incharge', 'PA', 'PI', 'FormM', 'DB')
+            ->get()->keyBy('id_sales');
+
+        // Hitung Aktivitas Per Sales
+        $aktivitasCountsRaw = Aktivitas::select(
+                'id_sales',
+                'aktivitas',
+                DB::raw('COUNT(id) as hitungan'),
+                DB::raw('SUM(total) as nilai_total')
+            )
+            ->whereBetween('waktu_aktivitas', [$startFilter, $endFilter])
+            ->groupBy('id_sales', 'aktivitas')
+            ->get();
+
+        $aktivitasCounts = [];
+        $aktivitasSums = [];
+        foreach ($aktivitasCountsRaw as $ac) {
+            $aktivitasCounts[$ac->id_sales][$ac->aktivitas] = $ac->hitungan;
+            $aktivitasSums[$ac->id_sales][$ac->aktivitas] = $ac->nilai_total;
+        }
+
+        $salesList = User::where('jabatan', 'Sales')->where('status_akun', '1')->pluck('id_sales')->toArray();
+        $activitysales = [];
+
+        foreach ($salesList as $id_sales) {
+            $salesTarget = $target[$id_sales] ?? null;
+
+            $activitysales[] = [
+                'id_sales'          => $id_sales,
+                'DB'                => $aktivitasCounts[$id_sales]['DB'] ?? 0,
+                'contact'           => $aktivitasCounts[$id_sales]['Contact'] ?? 0,
+                'call'              => $aktivitasCounts[$id_sales]['Call'] ?? 0,
+                'email'             => $aktivitasCounts[$id_sales]['Email'] ?? 0,
+                'visit'             => $aktivitasCounts[$id_sales]['Visit'] ?? 0,
+                'meet'              => $aktivitasCounts[$id_sales]['Meet'] ?? 0,
+                'incharge'          => $aktivitasCounts[$id_sales]['Incharge'] ?? 0,
+                'PA'                => $aktivitasCounts[$id_sales]['PA'] ?? 0,
+                'Leads'             => ($aktivitasCounts[$id_sales]['PI'] ?? 0) + ($aktivitasCounts[$id_sales]['Leads'] ?? 0),
+                'Regis_Form'        => ($aktivitasCounts[$id_sales]['Form_Masuk'] ?? 0) + ($aktivitasCounts[$id_sales]['Regis Form'] ?? 0),
+
+                'total_PA'          => $aktivitasSums[$id_sales]['PA'] ?? 0,
+                'total_Regis_Form'  => ($aktivitasSums[$id_sales]['Form_Masuk'] ?? 0) + ($aktivitasSums[$id_sales]['Regis Form'] ?? 0),
+
+                'target_DB'         => $salesTarget->DB ?? 0,
+                'target_contact'    => $salesTarget->Contact ?? 0,
+                'target_call'       => $salesTarget->Call ?? 0,
+                'target_email'      => $salesTarget->Email ?? 0,
+                'target_visit'      => $salesTarget->Visit ?? 0,
+                'target_meet'       => $salesTarget->Meet ?? 0,
+                'target_incharge'   => $salesTarget->Incharge ?? 0,
+                'target_PA'         => $salesTarget->PA ?? 0,
+                'target_PI'         => $salesTarget->PI ?? 0,
+                'target_Form_Masuk' => $salesTarget->FormM ?? 0,
+            ];
+        }
+
+        return response()->json([
+            'tanggalRange' => $tanggalRange,
+            'activitysales' => $activitysales
+        ]);
     }
 
     public function getProfile()
