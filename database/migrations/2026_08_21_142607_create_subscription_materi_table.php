@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('subscription_materi', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('subscription_id')->constrained('subscriptions')->onDelete('cascade');
-            $table->foreignId('materi_id')->constrained('materis')->onDelete('cascade');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('subscription_materi')) {
+            Schema::create('subscription_materi', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('subscription_id')->constrained('subscriptions')->onDelete('cascade');
+                $table->foreignId('materi_id')->constrained('materis')->onDelete('cascade');
+                $table->timestamps();
+            });
+        }
     }
 
     /**
