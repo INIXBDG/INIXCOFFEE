@@ -441,7 +441,7 @@
 
                         actions += '</div></div>';
                     }
-
+//comadddd
                     // ===== DIREKSI =====
                     else if (userRole == 'Direktur' || userRole == 'Direktur Utama') {
                         actions += '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';
