@@ -295,19 +295,7 @@ class DatabaseKPIController extends Controller
                 'catatan' => $form->catatan,
             ];
 
-            $dataAbsensi = AbsensiKaryawan::where('id_karyawan', $form->id_karyawan)
-                ->whereYear('created_at', $tahun)
-                ->get();
-
-            $telat = $dataAbsensi->where('keterangan', 'Telat')->count();
-            $izin  = $dataAbsensi->where('keterangan', 'Izin')->count();
-            $sakit = $dataAbsensi->where('keterangan', 'Sakit')->count();
-
-            $dataAbsen = [
-                'sakit' => $sakit,
-                'telat' => $telat,
-                'izin'  => $izin
-            ];
+            $dataAbsen = $this->getDataAbsen($form->id_karyawan, $tahun);
 
             // === Ambil Kategori KPI ===
             $allKategoriKPIs = $forms->flatMap(function ($form) {
@@ -471,19 +459,7 @@ class DatabaseKPIController extends Controller
             default => [10, 11, 12],
         };
 
-        $dataAbsensi = AbsensiKaryawan::where('id_karyawan', $form->id_karyawan)
-            ->whereYear('created_at', now()->year)
-            ->get();
-
-        $telat = $dataAbsensi->where('keterangan', 'Telat')->count();
-        $izin  = $dataAbsensi->where('keterangan', 'Izin')->count();
-        $sakit = $dataAbsensi->where('keterangan', 'Sakit')->count();
-
-        $dataAbsen = [
-            'sakit' => $sakit,
-            'telat' => $telat,
-            'izin'  => $izin
-        ];
+        $dataAbsen = $this->getDataAbsen($form->id_karyawan, now()->year);
 
         $allKategoriKPIs = $formPenilaians->flatMap(function ($form) {
             return kategoriKPI::where('kode_kategori', $form->kode_kategori)->get();
@@ -625,20 +601,7 @@ class DatabaseKPIController extends Controller
                 default => [10, 11, 12],
             };
 
-            $dataAbsensi = AbsensiKaryawan::where('id_karyawan', $form->id_karyawan)
-                ->whereYear('created_at', now()->year)
-                ->get();
-
-            $telat = $dataAbsensi->where('keterangan', 'Telat')->count();
-            $izin  = $dataAbsensi->where('keterangan', 'Izin')->count();
-            $sakit = $dataAbsensi->where('keterangan', 'Sakit')->count();
-
-            $dataAbsen = [
-                'sakit' => $sakit,
-                'telat' => $telat,
-                'izin'  => $izin
-            ];
-
+            $dataAbsen = $this->getDataAbsen($form->id_karyawan, now()->year);
 
             $allKategoriKPIs = $formPenilaians->flatMap(function ($form) {
                 return kategoriKPI::where('kode_kategori', $form->kode_kategori)->get();
@@ -798,27 +761,7 @@ class DatabaseKPIController extends Controller
             'kode_form'   => $form->kode_form
         ];
 
-        $currentMonth = now()->month;
-        $currentQuartal = match (true) {
-            $currentMonth >= 1 && $currentMonth <= 3 => [1, 2, 3],
-            $currentMonth >= 4 && $currentMonth <= 6 => [4, 5, 6],
-            $currentMonth >= 7 && $currentMonth <= 9 => [7, 8, 9],
-            default => [10, 11, 12],
-        };
-
-        $dataAbsensi = AbsensiKaryawan::where('id_karyawan', $form->id_karyawan)
-            ->whereIn(DB::raw('MONTH(created_at)'), $currentQuartal)
-            ->get();
-
-        $telat = $dataAbsensi->where('keterangan', 'Telat')->count();
-        $izin  = $dataAbsensi->where('keterangan', 'Izin')->count();
-        $sakit = $dataAbsensi->where('keterangan', 'Sakit')->count();
-
-        $dataAbsen = [
-            'sakit' => $sakit,
-            'telat' => $telat,
-            'izin'  => $izin
-        ];
+        $dataAbsen = $this->getDataAbsen($form->id_karyawan, $form->tahun);
 
         $allKategoriKPIs = $formPenilaians->flatMap(function ($form) {
             return kategoriKPI::where('kode_kategori', $form->kode_kategori)->get();
@@ -2147,19 +2090,7 @@ class DatabaseKPIController extends Controller
 
         $catatan = $formPenilaian->pluck('catatan')->unique();
 
-        $dataAbsensi = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
-            ->whereYear('created_at', $selectedTahun)
-            ->get();
-
-        $telat = $dataAbsensi->where('keterangan', 'Telat')->count();
-        $izin  = $dataAbsensi->where('keterangan', 'Izin')->count();
-        $sakit = $dataAbsensi->where('keterangan', 'Sakit')->count();
-
-        $dataAbsen = [
-            'sakit' => $sakit,
-            'telat' => $telat,
-            'izin'  => $izin
-        ];
+        $dataAbsen = $this->getDataAbsen($id_karyawan, $selectedTahun);
 
         $allJenisPenilaian = [];
         $kodeFormList = $formPenilaian->pluck('kode_form');
@@ -2660,7 +2591,7 @@ class DatabaseKPIController extends Controller
                 $jenisPenilaian = 'Rekan Kerja (Satu Divisi)';
                 break;
             case 'JP04':
-                $jenisPenilaian = 'Pekerja (Beda Divisi)'; // ❗ Perbaiki ini!
+                $jenisPenilaian = 'Pekerja (Beda Divisi)';
                 break;
             case 'JP05':
                 $jenisPenilaian = 'Self Apprisial';
@@ -2737,7 +2668,7 @@ class DatabaseKPIController extends Controller
         $AbsenSakit = $applyUserFilter(
             pengajuancuti::with('karyawan')
                 ->where('tipe', 'Sakit')
-                ->whereYear('created_at', $year)
+                ->whereYear('tanggal_awal', $year)
                 ->where('approval_manager', '1')
         )->get();
 
@@ -2956,6 +2887,30 @@ class DatabaseKPIController extends Controller
         return response()->json([
             'data' => $karyawan
         ]);
+    }
+
+    private function getDataAbsen($id_karyawan, $tahun)
+    {
+        $sakit = pengajuancuti::where('id_karyawan', $id_karyawan)
+            ->where('tipe', 'Sakit')
+            ->where('approval_manager', '1')
+            ->whereYear('tanggal_awal', $tahun)
+            ->count();
+
+        $izin = izinTigaJam::where('id_karyawan', $id_karyawan)
+            ->whereYear('created_at', $tahun)
+            ->count();
+
+        $telat = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
+            ->whereYear('created_at', $tahun)
+            ->where('keterangan', 'Telat')
+            ->count();
+
+        return [
+            'sakit' => $sakit,
+            'telat' => $telat,
+            'izin'  => $izin,
+        ];
     }
 
     public function indexProject()

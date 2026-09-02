@@ -192,6 +192,10 @@
                         <div class="modal-body">
                             <div>
                                 <div class="col-md-12 mb-3">
+                                    <label class="form-label">Tanggal Pembuatan</label>
+                                    <input type="date" name="created_at" class="form-control" value="{{ old('created_at', now()->format('Y-m-d')) }}">
+                                </div>
+                                <div class="col-md-12 mb-3">
                                     <label class="form-label">Case <span class="text-danger">*</span></label>
                                     <input type="text" name="case" class="form-control" required>
                                 </div>
@@ -430,12 +434,11 @@
                 }
             });
 
-            // Update date range display on date change
             $('#filterTodoStartDate, #filterTodoEndDate').on('change', function() {
                 const $startDate = $('#filterTodoStartDate');
                 const $endDate = $('#filterTodoEndDate');
 
-                if (</div>$startDate.val() && $endDate.val()) {
+                if ($startDate.val() && $endDate.val()) {
                     const startFormatted = new Date($startDate.val()).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                     const endFormatted = new Date($endDate.val()).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                     $('#dateRangeDisplay').text('(' + startFormatted + ' - ' + endFormatted + ')');
@@ -443,7 +446,6 @@
                     $('#dateRangeDisplay').text('(Tanggal belum lengkap)');
                 }
             });
-
         });
 
         function applyTodoFilter(filterType) {

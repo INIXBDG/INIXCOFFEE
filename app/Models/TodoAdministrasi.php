@@ -16,5 +16,6 @@ class TodoAdministrasi extends Model
         'catatan',
         'tanggal_selesai',
         'dokumen',
+        'created_at',
     ];
 }
