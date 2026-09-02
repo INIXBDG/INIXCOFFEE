@@ -33,32 +33,34 @@ class TodoAdministrasiController extends Controller
         
         $today = Carbon::today();
         
-        // Apply filters berdasarkan created_at
         if ($filterType === 'tahun' && $tahun && $tahun !== 'default') {
-            // Filter by year
             $query->whereBetween('created_at', [
                 Carbon::create($tahun, 1, 1)->startOfDay(),
                 Carbon::create($tahun, 12, 31)->endOfDay()
             ]);
         } elseif ($filterType === 'bulan' && $bulan && $bulan !== 'default') {
-            // Filter by month (current year)
             $query->whereMonth('created_at', $bulan)
-                  ->whereYear('created_at', $today->year);
+                ->whereYear('created_at', $today->year);
         } elseif ($filterType === 'triwulan' && $triwulan && $triwulan !== 'default') {
-            // Filter by quarter (current year)
             $startMonth = ($triwulan - 1) * 3 + 1;
             $endMonth = $triwulan * 3;
             $filterStart = Carbon::create($today->year, $startMonth, 1)->startOfDay();
             $filterEnd = Carbon::create($today->year, $endMonth, 1)->endOfMonth()->endOfDay();
             $query->whereBetween('created_at', [$filterStart, $filterEnd]);
         } elseif ($filterType === 'custom' && $startDate && $endDate) {
-            // Filter by custom date range
             $filterStart = Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
             $filterEnd = Carbon::createFromFormat('Y-m-d', $endDate)->endOfDay();
             $query->whereBetween('created_at', [$filterStart, $filterEnd]);
         }
         
-        $todos = $query->orderByDesc('created_at')->paginate(10);
+        $todos = $query
+            ->orderByRaw("CASE 
+                WHEN status = 'progress' THEN 0 
+                WHEN status IN ('selesai', 'gagal') THEN 2 
+                ELSE 1 
+            END")
+            ->orderByDesc('created_at')
+            ->paginate(10);
         
         return view('crm.todoAdministrasi.index', compact('todos', 'filterType', 'tahun', 'bulan', 'triwulan', 'startDate', 'endDate'));
     }
@@ -69,7 +71,10 @@ class TodoAdministrasiController extends Controller
             $todo = $request->validate([
                 'case' => 'required|string',
                 'catatan' => 'nullable|string',
+                'created_at' => 'nullable|date',
             ]);
+
+            $todo['created_at'] = $todo['created_at'] ?? now();
 
             TodoAdministrasi::create($todo);
 
