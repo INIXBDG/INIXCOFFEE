@@ -288,17 +288,16 @@ class OfficeExamController extends Controller
             'approvalexam'
         )->whereHas('approvalexam', function ($q) {
             $q->where('technical_support', 1)
-              ->orWhere('office_manager', 1);
+            ->orWhere('office_manager', 1);
         });
 
-            
         // ── Filter waktu ──────────────────────────────────────────
         if ($request->filled('tahun')) {
             $query->whereYear('tanggal_pengajuan', $request->tahun);
         }
 
         if ($request->filled('triwulan')) {
-            $startMonth = ((int)$request->triwulan - 1) * 3 + 1;
+            $startMonth = ((int) $request->triwulan - 1) * 3 + 1;
             $endMonth   = $startMonth + 2;
             $query->whereMonth('tanggal_pengajuan', '>=', $startMonth)
                 ->whereMonth('tanggal_pengajuan', '<=', $endMonth);
@@ -309,42 +308,50 @@ class OfficeExamController extends Controller
         $exams = $query->get();
 
         // ── Helper ────────────────────────────────────────────────
-        $lulus = fn($registexam) => $registexam
-            ->filter(fn($r) => optional($r->dokumentasiExam)->keterangan_lulus === 'Lulus')
+        $lulus = fn ($registexam) => $registexam
+            ->filter(fn ($r) => strtolower(optional($r->dokumentasiExam)->keterangan_lulus ?? '') === 'lulus')
             ->count();
 
-        $tidakLulus = fn($registexam) => $registexam
-            ->filter(fn($r) => $r->dokumentasiExam !== null
-                && optional($r->dokumentasiExam)->keterangan_lulus !== 'Lulus')
+        $tidakExam = fn ($registexam) => $registexam
+            ->filter(fn ($r) => $r->dokumentasiExam === null)
             ->count();
 
-        $ringkasan = fn($group) => [
+        $tidakLulus = fn ($registexam) => $registexam->count() - $lulus($registexam) - $tidakExam($registexam);
+
+        $ringkasan = fn ($group) => [
             'total_exam'        => $group->count(),
-            'total_peserta'     => $group->sum(fn($e) => $e->registexam->count()),
-            'total_lulus'       => $group->sum(fn($e) => $lulus($e->registexam)),
-            'total_tidak_lulus' => $group->sum(fn($e) => $tidakLulus($e->registexam)),
+            'total_peserta'     => $group->sum(fn ($e) => $e->registexam->count()),
+            'total_lulus'       => $group->sum(fn ($e) => $lulus($e->registexam)),
+            'total_tidak_lulus' => $group->sum(fn ($e) => $tidakLulus($e->registexam)),
+            'total_tidak_exam'  => $group->sum(fn ($e) => $tidakExam($e->registexam)),
         ];
 
         // ── Grand total ───────────────────────────────────────────
         $totalExam       = $exams->count();
-        $totalPeserta    = $exams->sum(fn($e) => $e->registexam->count());
-        $totalLulus      = $exams->sum(fn($e) => $lulus($e->registexam));
-        $totalTidakLulus = $exams->sum(fn($e) => $tidakLulus($e->registexam));
+        $totalPeserta    = $exams->sum(fn ($e) => $e->registexam->count());
+        $totalLulus      = $exams->sum(fn ($e) => $lulus($e->registexam));
+        $totalTidakLulus = $exams->sum(fn ($e) => $tidakLulus($e->registexam));
+        $totalTidakExam  = $exams->sum(fn ($e) => $tidakExam($e->registexam));
 
         // ── Group by materi ───────────────────────────────────────
         $materiExam = $exams
-            ->groupBy(fn($e) => $e->materi . " | " . $e->rkm?->materi?->kategori_exam ?? '#')
+            ->groupBy(fn ($e) => $e->materi . " | " . ($e->rkm?->materi?->kategori_exam ?? '#'))
             ->map($ringkasan);
 
         // ── Group by perusahaan ───────────────────────────────────
         $instansi = $exams
-            ->groupBy(fn($e) => $e->perusahaan ?? 'Unknown')
+            ->groupBy(fn ($e) => $e->perusahaan ?? 'Unknown')
             ->map($ringkasan);
 
         // ── Group by instruktur ───────────────────────────────────
         $keberhasilanMengajar = $exams
-            ->groupBy(fn($e) => optional($e->rkm?->instruktur)->nama_lengkap ?? 'Unknown')
+            ->groupBy(fn ($e) => optional($e->rkm?->instruktur)->nama_lengkap ?? 'Unknown')
             ->map($ringkasan);
+
+        // ── Group by kategori exam (total count per kategori) ─────
+        $kategori = $exams
+            ->groupBy(fn ($e) => $e->rkm?->materi?->kategori_exam ?? 'Unknown')
+            ->map(fn ($group) => $group->count());
 
         return response()->json([
             'filter' => [
@@ -352,13 +359,15 @@ class OfficeExamController extends Controller
                 'triwulan' => $request->triwulan,
                 'bulan'    => $request->bulan,
             ],
-            'total_exam'              => $totalExam,
-            'total_peserta'           => $totalPeserta,
-            'total_lulus'             => $totalLulus,
-            'total_tidak_lulus'       => $totalTidakLulus,
-            'materi_exam'             => $materiExam,
-            'instansi'                => $instansi,
-            'instruktur'   => $keberhasilanMengajar,
+            'total_exam'        => $totalExam,
+            'total_peserta'     => $totalPeserta,
+            'total_lulus'       => $totalLulus,
+            'total_tidak_lulus' => $totalTidakLulus,
+            'total_tidak_exam'  => $totalTidakExam,
+            'materi_exam'       => $materiExam,
+            'instansi'          => $instansi,
+            'instruktur'        => $keberhasilanMengajar,
+            'kategori'          => $kategori,
         ]);
     }
 }
