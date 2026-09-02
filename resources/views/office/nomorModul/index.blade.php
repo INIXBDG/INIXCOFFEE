@@ -140,7 +140,7 @@
                                                 <li>
                                                     <button type="button" class="dropdown-item editBtn"
                                                         data-id="{{ $item->id }}" data-no="{{ $item->no_modul }}"
-                                                        data-type="{{ $item->type }}"
+                                                        data-type="{{ $item->type }}" data-uploaded="{{ $item->uploaded }}"
                                                         data-bs-toggle="modal" data-bs-target="#editModal">
                                                         <i class="bi bi-pencil-square text-warning me-2"></i> Edit
                                                     </button>
@@ -444,9 +444,11 @@
                 const id = $(this).data('id');
                 const no = $(this).data('no');
                 const type = $(this).data('type');
+                const uploaded = $(this).data('uploaded');
 
                 $('#edit_no_modul').val(no);
                 $('#edit_type').val(type);
+                $('#edit_uploaded').val(uploaded ? uploaded.split(' ')[0].split('T')[0] : '');
                 $('#editForm').attr('action', `/office/modul/update/nomor/${id}`);
             });
 
