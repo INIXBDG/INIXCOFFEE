@@ -780,19 +780,19 @@ class JurnalAkuntansiController extends Controller
         $listPengajuan = $jurnalAkuntansi->ListPengajuan();
 
         $firstPengajuan = $listPengajuan->first();
-        $finance = null;
+        $menyetujui = null;
 
         if ($firstPengajuan && $firstPengajuan->karyawan) {
             $divisi = $firstPengajuan->karyawan->divisi;
 
             if ($divisi == 'Education') {
-                $finance = karyawan::where('jabatan', 'Education Manager')->latest()->first();
+                $menyetujui = karyawan::where('jabatan', 'Education Manager')->latest()->first();
             } elseif ($divisi == 'Sales & Marketing') {
-                $finance = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
+                $menyetujui = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
             } elseif ($divisi == 'Office') {
-                $finance = karyawan::where('jabatan', 'GM')->latest()->first();
+                $menyetujui = karyawan::where('jabatan', 'GM')->latest()->first();
             } elseif ($divisi == 'IT Service Management') {
-                $finance = karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
+                $menyetujui = karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
             }
         }
 
@@ -810,7 +810,7 @@ class JurnalAkuntansiController extends Controller
         $finance = karyawan::where('jabatan', 'Finance & Accounting')->where('status_aktif', "1")->latest()->first();
         $penerima = karyawan::find($request->id_penerima) ?? null;
         $orangluar = $request->orang_luar ?? null;
-        $pdf = Pdf::loadView('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'gm', 'finance', 'listPengajuan', 'netSales', 'sales', 'manager', 'dirut', 'finance', 'ttd_accounting', 'ttd_gm', 'ttd_keuangan', 'terbilang', 'penerima', 'orangluar'))
+        $pdf = Pdf::loadView('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'gm', 'finance', 'listPengajuan', 'netSales', 'sales', 'manager', 'dirut', 'menyetujui', 'ttd_accounting', 'ttd_gm', 'ttd_keuangan', 'terbilang', 'penerima', 'orangluar'))
             ->setPaper('A4', 'portrait');
 
         return $pdf->stream('laporan-jurnal-' . $jurnalAkuntansi->nomor_kk . '.pdf');
