@@ -1254,7 +1254,7 @@ class DatabaseKPIController extends Controller
         $request->validate([
             'id_karyawan'       => 'required|array',
             'id_karyawan.*'     => 'integer',
-            'divisi'            => 'required|array',
+            'divisi'            => 'nullable|array',          // ubah jadi nullable
             'divisi.*'          => 'string',
             'kode_form'         => 'required|string',
             'id_evaluated'      => 'required|integer',
@@ -1263,7 +1263,7 @@ class DatabaseKPIController extends Controller
         ]);
 
         $id_evaluator_array = $request->input('id_karyawan');
-        $divisi_array       = $request->input('divisi');
+        $divisi_array       = $request->input('divisi', []);
         $kode_form          = $request->input('kode_form');
         $id_evaluated       = $request->input('id_evaluated');
         $jenis_penilaian    = $request->input('jenis_penilaian');
@@ -1292,8 +1292,15 @@ class DatabaseKPIController extends Controller
             $karyawan = Karyawan::find($id_evaluator);
             if (!$karyawan) continue;
 
-            $isGM = strtoupper($karyawan->jabatan) === 'GM';
-            $divisiEvaluators = $isGM ? [$karyawan->divisi] : $divisi_array;
+            $isGM = strtoupper($karyawan->jabatan) === 'GM' || $jenis_penilaian === 'General Manager';
+
+            $divisiEvaluators = $isGM 
+                ? [$karyawan->divisi]         
+                : $divisi_array;
+
+            if (empty($divisiEvaluators)) {
+                continue;
+            }
 
             foreach ($divisiEvaluators as $divisi) {
                 $pairKey = $id_evaluator . '-' . $divisi;
@@ -1375,6 +1382,62 @@ class DatabaseKPIController extends Controller
         }
 
         return redirect()->back()->with('success', 'Berhasil mengirim form, jangan lupa untuk review nantinya');
+    }
+
+    public function getEvaluatorsByForm(Request $request)
+    {
+        $request->validate([
+            'kode_form' => 'required|string'
+        ]);
+
+        $kodeForm = $request->kode_form;
+
+        $evaluators = shareForm::with('evaluator')
+            ->where('kode_form', $kodeForm)
+            ->get()
+            ->map(function ($item) {
+                $evaluated = karyawan::find($item->id_evaluated);
+
+                return [
+                    'id'                => $item->id,
+                    'id_evaluator'      => $item->id_evaluator,
+                    'nama_evaluator'    => optional($item->evaluator)->nama_lengkap ?? '-',
+                    'jabatan'           => optional($item->evaluator)->jabatan ?? '-',
+                    'divisi_evaluator'  => $item->divisi_evaluator,
+                    'jenis_penilaian'   => $item->jenis_penilaian,
+                    'id_evaluated'      => $item->id_evaluated,
+                    'nama_evaluated'    => optional($evaluated)->nama_lengkap ?? '-',
+                ];
+            });
+
+        $listDivisi = karyawan::select('divisi')
+            ->whereNotNull('divisi')
+            ->where('divisi', '!=', '')
+            ->distinct()
+            ->orderBy('divisi')
+            ->pluck('divisi');
+
+        return response()->json([
+            'evaluators'  => $evaluators,
+            'list_divisi' => $listDivisi
+        ]);
+    }
+
+    public function updateDivisiEvaluator(Request $request)
+    {
+        $request->validate([
+            'id'               => 'required|integer|exists:share_forms,id',
+            'divisi_evaluator' => 'required|string|max:100',
+        ]);
+
+        $share = shareForm::findOrFail($request->id);
+        $share->divisi_evaluator = $request->divisi_evaluator;
+        $share->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Divisi evaluator berhasil diperbarui'
+        ]);
     }
 
     public function kategoriStore(Request $request)

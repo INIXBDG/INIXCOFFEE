@@ -872,8 +872,7 @@
                 success: function(response) {
                     const karyawan = response.karyawan;
                     const divisiSet = new Set(karyawan.map(item => item.divisi).filter(Boolean));
-                    const gmList = karyawan.filter(item => item.jabatan === 'GM' && item.divisi ===
-                        'Office');
+                    const gmList = karyawan.filter(item => item.jabatan === 'GM');
 
                     const html = `
                     <div class="mb-3">
@@ -917,22 +916,23 @@
 
                     function renderDivisiSelect(allowGm) {
                         $divisiSelect.empty();
-                        const defaultDivisi = 'Office';
+                        $('#defaultDivisiInput').remove();
+
                         if (allowGm) {
-                            const option = new Option(defaultDivisi, defaultDivisi, true, true);
-                            $(option).attr('disabled', true);
-                            $divisiSelect.append(option);
-                            if (!$('#defaultDivisiInput').length) contentSelect.append(
-                                `<input type="hidden" name="divisi[]" value="${defaultDivisi}" id="defaultDivisiInput">`
+                            $divisiSelect.append(new Option('— Tidak perlu Divisi (GM) —', '', true, true));
+                            $divisiSelect.prop('disabled', true);
+
+                            contentSelect.append(
+                                `<input type="hidden" name="divisi[]" value="" id="defaultDivisiInput">`
                             );
                         } else {
-                            $('#defaultDivisiInput').remove();
+                            $divisiSelect.prop('disabled', false);
+
+                            divisiSet.forEach(divisi => {
+                                $divisiSelect.append(new Option(divisi, divisi));
+                            });
                         }
 
-                        divisiSet.forEach(divisi => {
-                            if (!allowGm || divisi !== defaultDivisi) $divisiSelect.append(new Option(
-                                divisi, divisi));
-                        });
                         $divisiSelect.trigger('change');
                     }
 
@@ -961,11 +961,17 @@
                     $jenisPenilaianSelect.on('change', function() {
                         const jenis = $(this).val();
                         const allowGm = jenis === 'General Manager';
+                        
                         renderDivisiSelect(allowGm);
-                        const selectedDivisi = $divisiSelect.val() || [];
-                        const finalDivisi = allowGm ? [...new Set([...selectedDivisi,
-                            'Office'
-                        ])] : selectedDivisi;
+
+                        let finalDivisi;
+
+                        if (allowGm) {
+                            finalDivisi = [];
+                        } else {
+                            finalDivisi = $divisiSelect.val() || [];
+                        }
+
                         updateEvaluatorOptions(finalDivisi, allowGm);
                     });
 
@@ -973,9 +979,9 @@
                         const selectedDivisi = $(this).val() || [];
                         const jenis = $jenisPenilaianSelect.val();
                         const allowGm = jenis === 'General Manager';
-                        const finalDivisi = allowGm ? [...new Set([...selectedDivisi,
-                            'Office'
-                        ])] : selectedDivisi;
+
+                        const finalDivisi = allowGm ? [] : selectedDivisi;
+
                         updateEvaluatorOptions(finalDivisi, allowGm);
                     });
 

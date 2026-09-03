@@ -359,6 +359,54 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalEvaluator" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-user-check text-primary me-2"></i>
+                        Daftar Evaluator
+                        <small class="text-muted ms-2" id="modalKodeFormLabel"></small>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="evaluatorLoading" class="text-center py-5 d-none">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2 text-muted">Memuat data evaluator...</p>
+                    </div>
+
+                    <div id="evaluatorContent" class="d-none">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%">No</th>
+                                        <th>Nama Evaluator</th>
+                                        <th>Jabatan</th>
+                                        <th>Jenis Penilaian</th>
+                                        <th>Divisi Saat Ini</th>
+                                        <th width="220">Ubah Divisi</th>
+                                        <th width="80">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bodyEvaluator"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="evaluatorEmpty" class="text-center py-5 d-none">
+                        <i class="fa-solid fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Belum ada evaluator untuk form ini</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- CDN DataTables di sini, setelah jQuery --}}
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
@@ -451,9 +499,17 @@
                                     </td>
                                     <td>${item.tahun}</td>
                                     <td class="text-center">
-                                        <a class="btn-table-action" href="/penilaian/data-form/edit/${item.kode_form}" title="Edit Form">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                        </a>
+                                        <div class="d-flex gap-1 justify-content-center">
+                                            <a class="btn-table-action" href="/penilaian/data-form/edit/${item.kode_form}" title="Edit Form">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </a>
+                                            <button type="button" class="btn-table-action btn-lihat-evaluator"
+                                                    data-kode="${item.kode_form}"
+                                                    data-label="${item.label_kode_form}"
+                                                    title="Lihat & Perbaiki Evaluator">
+                                                <i class="fa-solid fa-users-gear"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             `);
@@ -515,6 +571,128 @@
             listHtml += "</ul>";
             $("#evaluatedContent").html(listHtml);
             $("#modalEvaluated").modal("show");
+        });
+
+        let currentListDivisi = [];
+
+        $(document).on('click', '.btn-lihat-evaluator', function () {
+            const kodeForm = $(this).data('kode');
+            const label    = $(this).data('label');
+
+            $('#modalKodeFormLabel').text(`(${label})`);
+            $('#modalEvaluator').modal('show');
+
+            // Reset
+            $('#evaluatorLoading').removeClass('d-none');
+            $('#evaluatorContent, #evaluatorEmpty').addClass('d-none');
+            $('#bodyEvaluator').empty();
+
+            $.ajax({
+                url: "{{ route('penilaian.form.evaluators') }}",
+                type: 'GET',
+                data: { kode_form: kodeForm },
+                success: function (res) {
+                    $('#evaluatorLoading').addClass('d-none');
+                    currentListDivisi = res.list_divisi || [];
+
+                    if (!res.evaluators || res.evaluators.length === 0) {
+                        $('#evaluatorEmpty').removeClass('d-none');
+                        return;
+                    }
+
+                    $('#evaluatorContent').removeClass('d-none');
+
+                    res.evaluators.forEach((item, index) => {
+                        let options = `<option value="">-- Pilih Divisi --</option>`;
+                        currentListDivisi.forEach(div => {
+                            const selected = div === item.divisi_evaluator ? 'selected' : '';
+                            options += `<option value="${div}" ${selected}>${div}</option>`;
+                        });
+
+                        // Tampilkan divisi lama jika tidak ada di list
+                        if (item.divisi_evaluator && !currentListDivisi.includes(item.divisi_evaluator)) {
+                            options += `<option value="${item.divisi_evaluator}" selected>${item.divisi_evaluator} (lama)</option>`;
+                        }
+
+                        $('#bodyEvaluator').append(`
+                            <tr data-id="${item.id}">
+                                <td>${index + 1}</td>
+                                <td>
+                                    <div class="fw-semibold">${item.nama_evaluator}</div>
+                                    <small class="text-muted">Evaluated: ${item.nama_evaluated}</small>
+                                </td>
+                                <td><span class="badge bg-secondary">${item.jabatan}</span></td>
+                                <td><small>${item.jenis_penilaian}</small></td>
+                                <td>
+                                    <span class="badge bg-primary current-divisi">${item.divisi_evaluator || '-'}</span>
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm select-divisi">
+                                        ${options}
+                                    </select>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-success btn-simpan-divisi" title="Simpan">
+                                        <i class="fa-solid fa-floppy-disk"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                },
+                error: function () {
+                    $('#evaluatorLoading').addClass('d-none');
+                    Swal.fire('Error', 'Gagal memuat data evaluator', 'error');
+                }
+            });
+        });
+
+        // Simpan perubahan divisi
+        $(document).on('click', '.btn-simpan-divisi', function () {
+            const $row = $(this).closest('tr');
+            const id = $row.data('id');
+            const newDivisi = $row.find('.select-divisi').val();
+
+            if (!newDivisi) {
+                Swal.fire('Peringatan', 'Pilih divisi terlebih dahulu', 'warning');
+                return;
+            }
+
+            const $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: "{{ route('penilaian.form.updateDivisiEvaluator') }}",
+                type: 'POST',
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: id,
+                    divisi_evaluator: newDivisi
+                },
+                success: function (res) {
+                    if (res.success) {
+                        $row.find('.current-divisi')
+                            .text(newDivisi)
+                            .removeClass('bg-primary')
+                            .addClass('bg-success');
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    const msg = xhr.responseJSON?.message || 'Gagal menyimpan';
+                    Swal.fire('Error', msg, 'error');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-floppy-disk"></i>');
+                }
+            });
         });
     </script>
 @endsection
