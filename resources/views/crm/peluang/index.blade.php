@@ -1,9 +1,5 @@
 @extends('layouts_crm.app')
 @section('crm_contents')
-    @php
-        $allowedUser = ['HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
-    @endphp
-
     <div class="content-wrapper">
 
         @if(session('error'))
@@ -101,11 +97,7 @@
                                 <label class="form-label" for="id_perusahaan">Perusahaan</label>
                                 <select class="form-select" id="id_perusahaan" name="id_contact" required>
                                     <option value="" disabled selected>Pilih Perusahaan</option>
-                                    @foreach ($Perusahaan as $p)
-                                        <option value="{{ $p->id }}" {{ old('id_contact') == $p->id ? 'selected' : '' }}>
-                                            {{ $p->nama_perusahaan }} ({{ $p->cp ?? '-' }})
-                                        </option>
-                                    @endforeach
+                                    <!-- Opsi akan dimuat secara asinkron -->
                                 </select>
                                 <div class="invalid-feedback">Pilih Perusahaan.</div>
                             </div>
@@ -119,11 +111,7 @@
                                 <label class="form-label" for="materi">Materi</label>
                                 <select class="form-select" id="materi" name="materi" required>
                                     <option value="" disabled selected>Pilih Materi</option>
-                                    @foreach ($materi as $item)
-                                        <option value="{{ $item->id }}" {{ old('materi') == $item->id ? 'selected' : '' }}>
-                                            {{ $item->nama_materi }}
-                                        </option>
-                                    @endforeach
+                                    <!-- Opsi akan dimuat secara asinkron -->
                                 </select>
                                 <div class="invalid-feedback">Pilih materi.</div>
                             </div>
@@ -238,7 +226,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Prospect Management</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
-                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
+                    onclick="resetForm()" {{ Gate::allows('akses-tambah-lead') ? '' : 'disabled' }}>
                     Tambah Lead
                 </button>
             </div>
@@ -249,7 +237,7 @@
                 </div>
                 <div class="card-body mt-3">
                     <div class="table-responsive" style="min-height: 500px;">
-                        <table id="peluangTable" class="table table-bordered table-hover w-100">
+                        <table id="peluangTable" class="table table-bordered table-hover w-100 text-nowrap">
                             <thead class="table-primary">
                                 <tr>
                                     <th style="text-align:center;">No</th>
@@ -280,7 +268,7 @@
                 </div>
                 <div class="card-body mt-3">
                     <div class="table-responsive">
-                        <table id="peluangLostTable" class="table table-bordered table-hover w-100">
+                        <table id="peluangLostTable" class="table table-bordered table-hover w-100 text-nowrap">
                             <thead class="table-info">
                                 <tr>
                                     <th style="text-align:center;">No</th>
@@ -320,7 +308,7 @@
         });
 
         $(document).ready(function() {
-            // 🔹 Otomatis buka kembali modal Tambah Lead jika terjadi error (duplikasi/validasi)
+            // Otomatis buka kembali modal Tambah Lead jika terjadi error (duplikasi/validasi)
             @if(session('error') || $errors->any())
                 var opportunityModal = new bootstrap.Modal(document.getElementById('opportunityModal'));
                 opportunityModal.show();
@@ -442,6 +430,9 @@
             let tableAktif = $('#peluangTable').DataTable({
                 processing: true,
                 serverSide: true,
+                autoWidth: false,
+                deferRender: true,
+                scrollX: true,
                 order: [[11, 'desc']],
                 ajax: {
                     url: '{{ route("index.peluang.json") }}',
@@ -461,6 +452,9 @@
             let tableLost = $('#peluangLostTable').DataTable({
                 processing: true,
                 serverSide: true,
+                autoWidth: false,
+                deferRender: true,
+                scrollX: true,
                 order: [[11, 'desc']],
                 ajax: {
                     url: '{{ route("index.peluang.json") }}',
@@ -489,8 +483,11 @@
             bindNumbering(tableAktif);
             bindNumbering(tableLost);
 
-            initPerusahaanSelect2();
-            initMateriSelect2();
+            // 6. Penjadwalan inisialisasi Select2 ke antrean makro-task
+            setTimeout(() => {
+                initPerusahaanSelect2();
+                initMateriSelect2();
+            }, 100);
 
             // Event listener Select2 untuk perusahaan
             $('#id_perusahaan').on('change', function() {
@@ -566,7 +563,21 @@
             $select.select2({
                 width: '100%',
                 theme: 'bootstrap-5',
-                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                placeholder: 'Pilih Perusahaan',
+                dropdownParent: $closestModal.length ? $closestModal : $(document.body),
+                ajax: {
+                    url: '/crm/peluang/search-perusahaan',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { q: params.term };
+                    },
+                    processResults: function (data) {
+                        return { results: data };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 1
             });
         }
 
@@ -577,7 +588,21 @@
             $select.select2({
                 width: '100%',
                 theme: 'bootstrap-5',
-                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                placeholder: 'Pilih Materi',
+                dropdownParent: $closestModal.length ? $closestModal : $(document.body),
+                ajax: {
+                    url: '/crm/peluang/search-materi',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { q: params.term };
+                    },
+                    processResults: function (data) {
+                        return { results: data };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 1
             });
         }
 
@@ -611,7 +636,7 @@
                 })
                 .then(data => {
                     alert(data.message || 'Peluang berhasil diubah statusnya.');
-                    $('#peluangTable').DataTable().ajax.reload();
+                    $('#peluangTable').DataTable().ajax.reload(null, false);
                 })
                 .catch(error => {
                     console.error("Error:", error);
