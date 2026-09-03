@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\DB;
 
 class LeadProjectController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         return view('lead_project.index');
