@@ -49,7 +49,7 @@ class ContactController extends Controller
 
     public function getPerusahaan(Request $request)
     {
-        if (Gate::denies('akses-crm-perusahaan')) {
+        if (Gate::denies('akses-crm')) {
             return response()->json([
                 'error' => 'Anda tidak memiliki akses ke data ini.'
             ], 403);
@@ -143,10 +143,10 @@ class ContactController extends Controller
                     'sales_key' => $contact->sales_key,
                     'kelas_terakhir' => $rkm?->materi?->nama_materi ?? 'Belum ada kelas',
                     'kelas_terakhir_date' => $rkm
-                        ? \Carbon\Carbon::parse($rkm->created_at)->translatedFormat('d F Y')
+                        ? Carbon::parse($rkm->created_at)->translatedFormat('d F Y')
                         : null,
                     'aktivitas_terakhir_date' => $contact->aktivitas_terakhir_date
-                        ? \Carbon\Carbon::parse($contact->aktivitas_terakhir_date)->format('d-m-Y')
+                        ? Carbon::parse($contact->aktivitas_terakhir_date)->format('d-m-Y')
                         : 'Belum ada aktivitas',
                     'npwp' => $contact->npwp,
                     'alamat' => $contact->alamat,
