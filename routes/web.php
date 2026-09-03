@@ -751,10 +751,16 @@ Route::prefix('crm')->group(function () {
     Route::get('/profile', [CRMController::class, 'getProfile'])
         ->middleware('auth')
         ->name('crm.profile');
+    // Dashboard Global
     Route::get('/chartRKM', [CRMController::class, 'chartRKM'])->name('chartRKM');
     Route::get('/chartPerusahaan', [CRMController::class, 'chartPerusahaan'])->name('chartPerusahaan');
     Route::get('/chartClosed', [CRMController::class, 'chartClosed'])->name('chartClosed');
-
+    Route::get('/detail-aktivitas-api', [CRMController::class, 'detailAktivitasApi'])->name('crm.detail.aktivitas.api');
+    Route::get('/prospek-minggu-ini', [CRMController::class, 'apiProspekMingguan'])->name('crm.api.prospek');
+    Route::get('/incomplete-pa', [CRMController::class, 'apiIncompletePA'])->name('crm.api.pa');
+    Route::get('/pivot-status', [CRMController::class, 'apiPivotStatus'])->name('crm.api.pivot');
+    Route::get('/total-win-lost', [CRMController::class, 'apiTotalWinLost'])->name('crm.api.winlost');
+    Route::get('/target-filter-aktivitas', [CRMController::class, 'apiTargetAktivitas'])->name('crm.api.aktivitas');
     Route::post('/checklist/update', [CRMController::class, 'updateChecklist'])->name('checklist.update');
 
     //Koordinasi Driver
@@ -771,6 +777,7 @@ Route::prefix('crm')->group(function () {
     Route::put('/update/pic', [PicController::class, 'updatePIC'])->name('pic.update');
     Route::delete('/delete/pic/{id}', [PicController::class, 'deletePIC'])->name('pic.delete');
     Route::get('/contact/history-status/all', [ContactController::class, 'allHistoryStatus'])->name('crm.contact.all_history_status');
+    Route::get('/contact/history-analytics-api', [ContactController::class, 'apiHistoryAnalytics'])->name('crm.contact.history_analytics_api');
     Route::get('/contact/history-status/data', [ContactController::class, 'allHistoryStatusData'])->name('crm.contact.all_history_status_data');
 
     //cheklist RKM admin sales
@@ -793,7 +800,9 @@ Route::prefix('crm')->group(function () {
     Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
     Route::post('/peluang/paymentAdvance', [PeluangController::class, 'storePaymentAdvance'])->name('store.payment.advance');
     Route::post('/peluang/restore/{id}', [PeluangController::class, 'restore'])->name('restore.peluang');
-    Route::delete('/crm/peluang/force-delete/{id}', [PeluangController::class, 'forceDelete'])->name('forceDelete.peluang');
+    Route::delete('/peluang/force-delete/{id}', [PeluangController::class, 'forceDelete'])->name('forceDelete.peluang');
+    Route::get('/peluang/search-perusahaan', [PeluangController::class, 'searchPerusahaan'])->name('peluang.searchPerusahaan');
+    Route::get('/peluang/search-materi', [PeluangController::class, 'searchMateri'])->name('peluang.searchMateri');
 
     // Aktivitas CRM
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('index.aktivitas');
@@ -1268,6 +1277,9 @@ Route::prefix('office')
             Route::put('/download/pdf/{id}', [ModulController::class, 'pdfModul'])->name('modul.download.pdf');
             Route::put('/download/pdf/{id}/peserta', [ModulController::class, 'pdfPeserta'])->name('modul.download.pdf.peserta');
             Route::put('/download/excel/{id}/peserta', [ModulController::class, 'excelPeserta'])->name('modul.download.excel.peserta');
+
+            Route::get('/rekap/json', [ModulController::class, 'rekapJson'])->name('modul.rekap.json');
+            Route::get('/rekap', [ModulController::class, 'rekapIndex'])->name('modul.rekap');
         });
 
         Route::prefix('kegiatan')->group(function () {
@@ -1903,10 +1915,11 @@ Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
     Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
     Route::get('/', [KelasSettingController::class, 'getData'])->name('data');
     Route::post('/store', [KelasSettingController::class, 'store'])->name('store');
-    
+
     Route::patch('/update/{id}', [KelasSettingController::class, 'update'])->name('update');
     Route::delete('/destroy/{id}', [KelasSettingController::class, 'destroy'])->name('destroy');
     Route::post('/restore/{id}', [KelasSettingController::class, 'restore'])->name('restore');
 
     Route::post('/clear-all', [KelasSettingController::class, 'clearAll'])->name('clear-all');
 });
+

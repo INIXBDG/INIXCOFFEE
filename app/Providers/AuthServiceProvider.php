@@ -9,6 +9,7 @@ use App\Policies\ProjectPolicy;
 use App\Policies\ProjectTaskPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Telegram\Bot\Methods\Get;
+use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -29,6 +30,25 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        Gate::define('akses-crm', function ($user) {
+            $allowedJabatan = [
+                'Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting',
+                'GM', 'Sales', 'Direktur Utama', 'Direktur'
+            ];
+            return in_array($user->jabatan, $allowedJabatan);
+        });
+
+        Gate::define('akses-filter-sales', function ($user) {
+            $allowedJabatan = [
+                'Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting',
+                'GM', 'Direktur Utama', 'Direktur'
+            ];
+            return in_array($user->jabatan, $allowedJabatan);
+        });
+
+        Gate::define('akses-tambah-lead', function ($user) {
+            $restrictedJabatan = ['HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+            return !in_array($user->jabatan, $restrictedJabatan);
+        });
     }
 }

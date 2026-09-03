@@ -158,7 +158,6 @@
                                     'hitam' => 'secondary',
                                     'biru' => 'info',
                                     'merah' => 'danger',
-                                    'lost' => 'primary',
                                     default => 'dark',
                                 };
                             @endphp
@@ -253,71 +252,61 @@
             </div>
 
             <!-- Card Daftar Aktivitas -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Aktivitas Terkait</h5>
-                    </div>
-                    <div class="card-body">
-                        @if ($peluang->aktivitas->isEmpty())
-                            <p class="text-muted">Belum ada aktivitas yang tercatat.</p>
-                        @else
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead class="table-primary">
-                                        <tr>
-                                            <th scope="col" class="px-3 py-2 text-center">ID Sales</th>
-                                            <th scope="col" class="px-3 py-2">Contact (PIC)</th>
-                                            <th scope="col" class="px-3 py-2">Aktivitas</th>
-                                            <th scope="col" class="px-3 py-2">Deskripsi</th>
-                                            <th scope="col" class="px-3 py-2">Waktu Aktivitas</th>
-                                            <th scope="col" class="px-3 py-2 text-center">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($peluang->aktivitas as $item)
-                                            <tr>
-                                                <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
-                                                <td class="px-3 py-2">
-                                                    {{ $item->contact->nama ?? ($item->peserta->nama ?? '-') }}
-                                                </td>
-                                                <td class="px-3 py-2">
-                                                    @if ($item->aktivitas === 'Incharge')
-                                                        Incharge Inhouse
-                                                    @elseif ($item->aktivitas === 'Form_Masuk')
-                                                        Regis Form
-                                                    @elseif ($item->aktivitas === 'PI')
-                                                        Leads
-                                                    @else
-                                                        {{ $item->aktivitas }}
-                                                    @endif
-                                                </td>
-                                                <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
-                                                <td class="px-3 py-2">
-                                                    {{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}
-                                                </td>
-                                                <td class="px-3 py-2 text-center">
-                                                    <div class="d-flex gap-2 justify-content-center">
-                                                        <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
-                                                            data-bs-target="#editAktivitasModal" onclick='editAktivitas(@json($item))'>
-                                                            Edit
-                                                        </button>
-                                                        <form action="{{ route('delete.aktivitas', $item->id) }}" method="POST"
-                                                            onsubmit="return confirm('Yakin ingin menghapus?')"
-                                                            style="display: inline;">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
-                                                        </form>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @endif
-                    </div>
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Aktivitas Terkait</h5>
                 </div>
+                <div class="card-body">
+                    @if ($peluang->aktivitas->isEmpty())
+                        <p class="text-muted">Belum ada aktivitas yang tercatat.</p>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th scope="col" class="px-3 py-2 text-center">ID Sales</th>
+                                        <th scope="col" class="px-3 py-2">Contact (PIC)</th>
+                                        <th scope="col" class="px-3 py-2">Aktivitas</th>
+                                        <th scope="col" class="px-3 py-2">Deskripsi</th>
+                                        <th scope="col" class="px-3 py-2">Waktu Aktivitas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($peluang->aktivitas as $item)
+                                        <tr>
+                                            <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
+                                            <td class="px-3 py-2">
+                                                @if ($item->aktivitas === 'PA')
+                                                    {{ $peluang->perusahaan->nama_perusahaan ?? '-' }}
+                                                @else
+                                                    {{ $item->contact->nama ?? ($item->peserta->nama ?? '-') }}
+                                                @endif
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                @if ($item->aktivitas === 'Incharge')
+                                                    Incharge Inhouse
+                                                @elseif ($item->aktivitas === 'Form_Masuk')
+                                                    Regis Form
+                                                @elseif ($item->aktivitas === 'PI')
+                                                    Leads
+                                                @elseif ($item->aktivitas === 'PA')
+                                                    Penawaran Awal
+                                                @else
+                                                    {{ $item->aktivitas }}
+                                                @endif
+                                            </td>
+                                            <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
+                                            <td class="px-3 py-2">
+                                                {{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            </div>
 
             @if ($histories && count($histories) > 0)
                 <div class="card mt-4">
@@ -476,13 +465,14 @@
                             <div class="mb-3">
                                 <label for="edit_id_perusahaan" class="form-label">Perusahaan</label>
 
-                                <select class="form-select" id="edit_id_perusahaan" disabled>
-                                    <option value="">-- Pilih Perusahaan --</option>
-                                    @foreach ($perusahaanAll as $item)
-                                        <option value="{{ $item->id }}" {{ $item->id == $peluang->perusahaan?->id ? 'selected' : '' }}>
-                                            {{ $item->nama_perusahaan }}
+                                <select class="form-select bg-light" id="edit_id_perusahaan" disabled>
+                                    @if($peluang->perusahaan)
+                                        <option value="{{ $peluang->perusahaan->id }}" selected>
+                                            {{ $peluang->perusahaan->nama_perusahaan }}
                                         </option>
-                                    @endforeach
+                                    @else
+                                        <option value="">-- Tidak Ada Perusahaan --</option>
+                                    @endif
                                 </select>
 
                                 <input type="hidden" name="id_perusahaan" value="{{ $peluang->perusahaan?->id }}">
@@ -1345,6 +1335,8 @@
                                 labelAktivitas = 'Regis Form';
                             } else if (a.aktivitas === 'Incharge') {
                                 labelAktivitas = 'Incharge Inhouse';
+                            } else if (a.aktivitas === 'PA') {
+                                labelAktivitas = 'Penawaran Awal';
                             }
 
                             table += `
@@ -1381,7 +1373,6 @@
 
             // Existing JavaScript for Select2 and input formatting
             initContactSelect2();
-            initPerusahaanSelect2();
             initMateriSelect2();
 
             let peluang = @json($peluang);
@@ -1492,21 +1483,6 @@
 
             function initContactSelect2() {
                 var $select = $('#id_contact');
-                if (typeof $.fn.select2 !== 'function') {
-                    console.error('Select2 belum ter-load!');
-                    return;
-                }
-                var $closestModal = $select.closest('.modal');
-                $select.select2({
-                    width: '100%',
-                    theme: 'bootstrap-5',
-                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
-                });
-            }
-
-            function initPerusahaanSelect2() {
-                // Ubah selektor menjadi #edit_id_perusahaan sesuai dengan ID elemen HTML
-                var $select = $('#edit_id_perusahaan');
                 if (typeof $.fn.select2 !== 'function') {
                     console.error('Select2 belum ter-load!');
                     return;

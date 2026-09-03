@@ -18,12 +18,20 @@
             </div>
         @endif
 
-        <div
-            class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
             <h4 class="mb-0 fw-bold text-dark">Data Nomor Modul</h4>
-            <button class="btn btn-primary px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#createModal">
-                Tambah Nomor Modul
-            </button>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary px-4 shadow-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createModal">
+                    Tambah Nomor Modul
+                </button>
+
+                <a href="{{ route('office.modul.rekap') }}" class="btn btn-primary px-4 shadow-sm">
+                    Rekap
+                </a>
+            </div>
         </div>
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden glass-force">
@@ -132,7 +140,7 @@
                                                 <li>
                                                     <button type="button" class="dropdown-item editBtn"
                                                         data-id="{{ $item->id }}" data-no="{{ $item->no_modul }}"
-                                                        data-type="{{ $item->type }}"
+                                                        data-type="{{ $item->type }}" data-uploaded="{{ $item->uploaded }}"
                                                         data-bs-toggle="modal" data-bs-target="#editModal">
                                                         <i class="bi bi-pencil-square text-warning me-2"></i> Edit
                                                     </button>
@@ -436,9 +444,11 @@
                 const id = $(this).data('id');
                 const no = $(this).data('no');
                 const type = $(this).data('type');
+                const uploaded = $(this).data('uploaded');
 
                 $('#edit_no_modul').val(no);
                 $('#edit_type').val(type);
+                $('#edit_uploaded').val(uploaded ? uploaded.split(' ')[0].split('T')[0] : '');
                 $('#editForm').attr('action', `/office/modul/update/nomor/${id}`);
             });
 

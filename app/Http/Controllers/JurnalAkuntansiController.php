@@ -325,7 +325,7 @@ class JurnalAkuntansiController extends Controller
             ]);
         }
 
-        $tanggal_transaksi = now();
+        $tanggal_transaksi = $suratPerjalanan->tanggal_berangkat ?? now();
         $namaKaryawan = $suratPerjalanan->karyawan->nama_lengkap ?? '-';
         $tujuan = $suratPerjalanan->tujuan ?? '-';
 
@@ -661,11 +661,35 @@ class JurnalAkuntansiController extends Controller
         * 75000
         */
 
-        $clean = preg_replace('/[^0-9.-]/', '', $value);
+        $clean = preg_replace('/[^0-9.,-]/', '', $value);
+        
+        $lastComma = strrpos($clean, ',');
+        $lastDot = strrpos($clean, '.');
+        
+        if ($lastComma !== false && $lastDot !== false) {
+            if ($lastComma > $lastDot) {
+                // Comma is decimal: 294.300,00
+                $clean = str_replace('.', '', $clean); 
+                $clean = str_replace(',', '.', $clean);
+            } else {
+                // Dot is decimal: 294,300.00
+                $clean = str_replace(',', '', $clean);
+            }
+        } elseif ($lastComma !== false) {
+            // Only comma. If 3 digits after comma, it's likely thousands separator.
+            if (preg_match('/,[0-9]{3}$/', $clean)) {
+                $clean = str_replace(',', '', $clean);
+            } else {
+                $clean = str_replace(',', '.', $clean);
+            }
+        } elseif ($lastDot !== false) {
+            // Only dot. If 3 digits after dot, it's likely thousands separator.
+            if (preg_match('/\.[0-9]{3}$/', $clean)) {
+                $clean = str_replace('.', '', $clean);
+            }
+        }
 
-        return $clean !== ''
-            ? (float) $clean
-            : 0;
+        return $clean !== '' ? abs((float) $clean) : 0;
     }
 
     /**
@@ -780,19 +804,19 @@ class JurnalAkuntansiController extends Controller
         $listPengajuan = $jurnalAkuntansi->ListPengajuan();
 
         $firstPengajuan = $listPengajuan->first();
-        $finance = null;
+        $menyetujui = null;
 
         if ($firstPengajuan && $firstPengajuan->karyawan) {
             $divisi = $firstPengajuan->karyawan->divisi;
 
             if ($divisi == 'Education') {
-                $finance = karyawan::where('jabatan', 'Education Manager')->latest()->first();
+                $menyetujui = karyawan::where('jabatan', 'Education Manager')->latest()->first();
             } elseif ($divisi == 'Sales & Marketing') {
-                $finance = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
+                $menyetujui = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
             } elseif ($divisi == 'Office') {
-                $finance = karyawan::where('jabatan', 'GM')->latest()->first();
+                $menyetujui = karyawan::where('jabatan', 'GM')->latest()->first();
             } elseif ($divisi == 'IT Service Management') {
-                $finance = karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
+                $menyetujui = karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
             }
         }
 
@@ -810,7 +834,7 @@ class JurnalAkuntansiController extends Controller
         $finance = karyawan::where('jabatan', 'Finance & Accounting')->where('status_aktif', "1")->latest()->first();
         $penerima = karyawan::find($request->id_penerima) ?? null;
         $orangluar = $request->orang_luar ?? null;
-        $pdf = Pdf::loadView('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'gm', 'finance', 'listPengajuan', 'netSales', 'sales', 'manager', 'dirut', 'finance', 'ttd_accounting', 'ttd_gm', 'ttd_keuangan', 'terbilang', 'penerima', 'orangluar'))
+        $pdf = Pdf::loadView('jurnalakuntansi.eksportPdf', compact('jurnalAkuntansi', 'gm', 'finance', 'listPengajuan', 'netSales', 'sales', 'manager', 'dirut', 'menyetujui', 'ttd_accounting', 'ttd_gm', 'ttd_keuangan', 'terbilang', 'penerima', 'orangluar'))
             ->setPaper('A4', 'portrait');
 
         return $pdf->stream('laporan-jurnal-' . $jurnalAkuntansi->nomor_kk . '.pdf');
@@ -941,7 +965,7 @@ class JurnalAkuntansiController extends Controller
             ];
         }
 
-        $tanggal_transaksi = now();
+        $tanggal_transaksi = $suratPerjalanan->tanggal_berangkat ?? now();
         $namaKaryawan = $suratPerjalanan->karyawan->nama_lengkap ?? '-';
         $tujuan = $suratPerjalanan->tujuan ?? '-';
 

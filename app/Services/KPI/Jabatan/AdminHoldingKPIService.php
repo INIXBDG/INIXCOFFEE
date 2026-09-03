@@ -14,13 +14,13 @@ class AdminHoldingKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function hitungSkorKetepatan($po, $modul)
+    private function hitungSkorKetepatan($po, $awalTrainingDate)
     {
-        if (!$po->uploaded || !$modul->awal_training) return 0;
+        if (!$po->uploaded || !$awalTrainingDate) return 0;
 
         $uploaded = Carbon::parse($po->uploaded)->startOfDay();
-        $awalTraining = Carbon::parse($modul->awal_training)->startOfDay();
-        
+        $awalTraining = Carbon::parse($awalTrainingDate)->startOfDay();
+
         $daysBefore = $awalTraining->diffInDays($uploaded);
         $poScore = 0;
 
@@ -36,21 +36,21 @@ class AdminHoldingKPIService
 
         if ($po->type === 'Authorize') {
             $subscodeScore = 0;
-            
+
             if ($po->tanggal_subscode_masuk) {
                 $subscode = Carbon::parse($po->tanggal_subscode_masuk)->startOfDay();
-                
+
                 $dayOfWeek = $awalTraining->dayOfWeekIso;
                 $seninDeadline = $awalTraining->copy()->subDays($dayOfWeek - 1);
-                
+
                 if ($subscode->lte($seninDeadline)) {
                     $subscodeScore = 100;
                 } else {
-                    $daysLate = $seninDeadline->diffInDays($subscode); 
+                    $daysLate = $seninDeadline->diffInDays($subscode);
                     $subscodeScore = max(0, 100 - ($daysLate * 25));
                 }
             }
-            
+
             return ($poScore + $subscodeScore) / 2;
         }
 
@@ -77,12 +77,13 @@ class AdminHoldingKPIService
         foreach ($pos as $po) {
             if (!$po->uploaded) continue;
 
-            foreach ($po->moduls as $modul) {
-                if (!$modul->awal_training) continue;
+            $tenggatEfektif = $po->moduls->min('awal_training');
+            if (!$tenggatEfektif) continue;
 
-                $totalPercent += $this->hitungSkorKetepatan($po, $modul);
-                $count++;
-            }
+            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif); // 1x per po
+            $totalPercent += $percent;
+            $count++;
+
         }
 
         if ($count === 0) return 0.0;
@@ -120,32 +121,31 @@ class AdminHoldingKPIService
 
         foreach ($pos as $po) {
             if (!$po->uploaded) continue;
-            
+
+            $tenggatEfektif = $po->moduls->min('awal_training');
+            if (!$tenggatEfektif) continue;
+
+            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif);
+
             $date = Carbon::parse($po->uploaded);
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
-            foreach ($po->moduls as $modul) {
-                if (!$modul->awal_training) continue;
+            $totalPercent += $percent;
+            $count++;
 
-                $percent = $this->hitungSkorKetepatan($po, $modul);
-                
-                $totalPercent += $percent;
-                $count++;
-
-                if ($percent >= $nilaiTarget) {
-                    $aboveTarget++;
-                }
-
-                $monthlyDataRaw[$monthKey][] = $percent;
-                $dailyDataRaw[$monthKey][$dayKey][] = $percent;
+            if ($percent >= $nilaiTarget) {
+                $aboveTarget++;
             }
+
+            $monthlyDataRaw[$monthKey][] = $percent;
+            $dailyDataRaw[$monthKey][$dayKey][] = $percent;
         }
 
         if ($count === 0) return $emptyResponse;
 
         $progress = round($totalPercent / $count, 1);
-        
+
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
         if ($gap === '') $gap = '0';
@@ -176,7 +176,7 @@ class AdminHoldingKPIService
             ],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyAverages, 
+            'monthly_progress' => $monthlyAverages,
             'daily_progress_per_month' => $dailyBreakdownPerMonth,
         ];
     }

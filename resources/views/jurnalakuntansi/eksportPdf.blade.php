@@ -370,8 +370,8 @@
                 @endif
             </td>
             <td style="vertical-align: middle;">
-                @if ($finance && $finance->ttd && file_exists(public_path('storage/ttd/' . $finance->ttd)))
-                    <img src="{{ public_path('storage/ttd/' . $finance->ttd) }}" style="width: 100px; height: auto;">
+                @if ($menyetujui && $menyetujui->ttd && file_exists(public_path('storage/ttd/' . $menyetujui->ttd)))
+                    <img src="{{ public_path('storage/ttd/' . $menyetujui->ttd) }}" style="width: 100px; height: auto;">
                 @endif
             </td>
             <td style="vertical-align: middle;">
@@ -382,8 +382,8 @@
         </tr>
         <tr style="font-weight: bold;">
             <td>{{ $firstKaryawan?->nama_lengkap ?? '-' }}</td>
-            <td>{{ $finance->nama_lengkap ?? '_________________' }}</td>
-            <td>{{ $gm->nama_lengkap ?? '_________________' }}</td>
+            <td>{{ $menyetujui?->nama_lengkap ?? '_________________' }}</td>
+            <td>{{ $gm?->nama_lengkap ?? '_________________' }}</td>
         </tr>
     </table>
 </div>
