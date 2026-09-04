@@ -16,9 +16,21 @@ class AdminHoldingKPIService
 
     private function hitungSkorKetepatan($po, $awalTrainingDate)
     {
-        if (!$po->uploaded || !$awalTrainingDate) return 0;
+        if (!$po->uploaded) return 0;
 
         $uploaded = Carbon::parse($po->uploaded)->startOfDay();
+
+        if ($po->type !== 'Authorize') {
+            if (!$po->created_at) return 0;
+
+            // Senin minggu depan dari created_at
+            $tenggat = Carbon::parse($po->created_at)->startOfWeek()->addWeek();
+
+            return $uploaded->lte($tenggat) ? 100 : 0;
+        }
+
+        if (!$awalTrainingDate) return 0;
+
         $awalTraining = Carbon::parse($awalTrainingDate)->startOfDay();
 
         $daysBefore = $awalTraining->diffInDays($uploaded);
@@ -34,27 +46,23 @@ class AdminHoldingKPIService
                 : ($daysBefore * 100) / 7;
         }
 
-        if ($po->type === 'Authorize') {
-            $subscodeScore = 0;
+        $subscodeScore = 0;
 
-            if ($po->tanggal_subscode_masuk) {
-                $subscode = Carbon::parse($po->tanggal_subscode_masuk)->startOfDay();
+        if ($po->tanggal_subscode_masuk) {
+            $subscode = Carbon::parse($po->tanggal_subscode_masuk)->startOfDay();
 
-                $dayOfWeek = $awalTraining->dayOfWeekIso;
-                $seninDeadline = $awalTraining->copy()->subDays($dayOfWeek - 1);
+            $dayOfWeek = $awalTraining->dayOfWeekIso;
+            $seninDeadline = $awalTraining->copy()->subDays($dayOfWeek - 1);
 
-                if ($subscode->lte($seninDeadline)) {
-                    $subscodeScore = 100;
-                } else {
-                    $daysLate = $seninDeadline->diffInDays($subscode);
-                    $subscodeScore = max(0, 100 - ($daysLate * 25));
-                }
+            if ($subscode->lte($seninDeadline)) {
+                $subscodeScore = 100;
+            } else {
+                $daysLate = $seninDeadline->diffInDays($subscode);
+                $subscodeScore = max(0, 100 - ($daysLate * 25));
             }
-
-            return ($poScore + $subscodeScore) / 2;
         }
 
-        return $poScore;
+        return ($poScore + $subscodeScore) / 2;
     }
 
     public function calculateKetepatanWaktuPo($item, $personId = null)
