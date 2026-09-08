@@ -66,6 +66,8 @@ class rekapInstrukturController extends Controller
                 WHEN MONTH(r_k_m_s.tanggal_awal) <> MONTH(r_k_m_s.tanggal_akhir) THEN
                     CASE
                         -- Apakah jumlah hari di bulan akhir LEBIH BANYAK dari jumlah hari di bulan awal?
+                        -- DAY(tanggal_akhir) = hitung hari di bulan baru (misal tgl 3 berarti 3 hari)
+                        -- DATEDIFF(LAST_DAY(tanggal_awal), tanggal_awal) + 1 = hitung sisa hari di bulan lama
                         WHEN DAY(r_k_m_s.tanggal_akhir) > (DATEDIFF(LAST_DAY(r_k_m_s.tanggal_awal), r_k_m_s.tanggal_awal) + 1)
                             THEN MONTH(r_k_m_s.tanggal_akhir)
                         ELSE MONTH(r_k_m_s.tanggal_awal)
