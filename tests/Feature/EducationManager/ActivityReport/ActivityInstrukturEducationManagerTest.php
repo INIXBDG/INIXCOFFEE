@@ -5,12 +5,12 @@ namespace Tests\Feature\EducationManager\ActivityReport;
 use App\Models\ActivityInstruktur;
 use App\Models\karyawan;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class ActivityInstrukturEducationManagerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $educationManager;
 
@@ -31,7 +31,6 @@ class ActivityInstrukturEducationManagerTest extends TestCase
         ]);
 
         $this->educationManager = User::create([
-            'id' => $karyawanEduman->id,
             'username' => 'eduman_test',
             'jabatan' => 'Education Manager',
             'status_akun' => '1',
@@ -39,6 +38,9 @@ class ActivityInstrukturEducationManagerTest extends TestCase
             'karyawan_id' => $karyawanEduman->id,
             'id_instruktur' => $karyawanEduman->id,
         ]);
+
+        $this->educationManager->id = $karyawanEduman->id;
+        $this->educationManager->save();
     }
 
     public function test_education_manager_can_view_activities_index_page(): void

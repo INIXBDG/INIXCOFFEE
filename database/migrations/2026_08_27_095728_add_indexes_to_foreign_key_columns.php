@@ -62,9 +62,11 @@ return new class extends Migration
                     continue;
                 }
 
-                Schema::table($table, function (Blueprint $blueprint) use ($column) {
-                    $blueprint->index($column);
-                });
+                if (Schema::hasTable($table)) {
+                    Schema::table($table, function (Blueprint $blueprint) use ($column) {
+                        $blueprint->index($column);
+                    });
+                }
             }
         }
     }

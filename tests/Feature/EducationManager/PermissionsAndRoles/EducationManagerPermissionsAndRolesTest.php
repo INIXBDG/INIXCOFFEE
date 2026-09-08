@@ -4,14 +4,14 @@ namespace Tests\Feature\EducationManager\PermissionsAndRoles;
 
 use App\Models\karyawan;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class EducationManagerPermissionsAndRolesTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $educationManager;
     protected User $instruktur;

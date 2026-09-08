@@ -8,12 +8,12 @@ use App\Models\HariLibur;
 use App\Models\karyawan;
 use App\Models\targetKPI;
 use App\Services\KPI\Jabatan\EducationManagerKPIService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class EvaluasiKinerjaEducationManagerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected EducationManagerKPIService $service;
 

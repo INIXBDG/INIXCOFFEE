@@ -7,13 +7,13 @@ use App\Models\karyawan;
 use App\Models\targetKPI;
 use App\Models\User;
 use App\Services\KPI\Jabatan\EducationManagerKPIService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class PembuatanArtikelEducationManagerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected EducationManagerKPIService $service;
 

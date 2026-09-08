@@ -5,12 +5,12 @@ namespace Tests\Feature\EducationManager\RekapMengajar;
 use App\Models\User;
 use App\Models\karyawan;
 use App\Models\jabatan;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class RekapMengajarEducationManagerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected $user;
     protected $karyawan;
