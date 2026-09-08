@@ -77,23 +77,114 @@ class TargetKPIController extends Controller
         $jabatanList = array_map('strtolower', $jabatanList);
 
         $routeMapping = [
-            'gm' => ['pemasukan kotor', 'pemasukan bersih', 'target penjualan project tahunan', 'kepuasan pelanggan', 'rasio biaya operasional terhadap revenue', 'performa kpi departemen'],
-            'customer care' => ['peserta puas dengan pelayanan dan fasilitas training', 'dorong inovasi pelayanan', 'penanganan komplain perseta', 'report persiapan kelas'],
-            'finance & accounting' => ['outstanding', 'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'laporan analisis keuangan', 'pencairan biaya operasional', 'penyelesaian tagihan perusahaan', 'akurasi pencatatan masuk'],
-            'hrd' => ['pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan', 'administrasi karyawan'],
-            'driver' => ['perbaikan kendaraan', 'report kondisi kendaraan', 'kontrol pengeluaran transportasi', 'feedback kenyamanan berkendaran'],
-            'office boy' => ['feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian'],
-            'koordinator itsm' => ['meningkatkan kepuasan dan loyalitas peserta/client', 'availability sistem internal kritis', 'persentase gap kompetensi tim terhadap standar skill'],
-            'programmer' => ['ketepatan waktu penyelesaian fitur', 'mengukur kualitas aplikasi agar minim bug'],
-            'tim digital' => ['konsistensi campaign digital', 'efektifitas digital marketing'],
-            'project administrator & business support' => ['pendapatan penjualan project', 'leads project'],
-            'technical support' => ['keberhasilan support memenuhi sla', 'kualitas layanan exam'],
-            'instruktur' => ['presentase kinerja instruktur', 'kepuasan peserta pelatihan', 'upseling lanjutan materi', 'sertifikasi kompetensi internal', 'pelatihan kompetensi eksternal'],
-            'education manager' => ['pengembangan kurikulum pelatihan', 'peningkatan knowledge sharing', 'peningkatan kontribusi pelatihan', 'evaluasi kinerja instruktur', 'pembuatan artikel'],
-            'sales' => ['target penjualan tahunan', 'biaya akuisisi perclient', 'peningkatan kemampuan kompetensi sales'],
-            'spv sales' => ['meningkatkan revenue perusahaan', 'customer acquisition cost', 'evaluasi kinerja sales'],
-            'adm sales' => ['laporan mom', 'akurasi kelengkapan data penjualan', 'todo administrasi'],
-            'admin holding' => ['ketepatan waktu po', 'kualitas dokumentasi support dan proctor'],
+            'gm' => [
+                'pemasukan kotor',
+                'pemasukan bersih',
+                'target penjualan project tahunan',
+                'kepuasan pelanggan',
+                'rasio biaya operasional terhadap revenue',
+                'performa kpi departemen'
+            ],
+
+            'customer care' => [
+                'peserta puas dengan pelayanan dan fasilitas training',
+                'dorong inovasi pelayanan',
+                'penanganan komplain perseta',
+                'report persiapan kelas'
+            ],
+
+            'finance & accounting' => [
+                'outstanding',
+                'inisiatif efisiensi keuangan',
+                'mengurangi manual work dan error',
+                'laporan analisis keuangan',
+                'pencairan biaya operasional',
+                'penyelesaian tagihan perusahaan',
+                'akurasi pencatatan masuk'
+            ],
+
+            'hrd' => [
+                'pelaksanaan kegiatan karyawan',
+                'pengeluaran biaya karyawan',
+                'administrasi karyawan'
+            ],
+
+            'driver' => [
+                'perbaikan kendaraan',
+                'report kondisi kendaraan',
+                'kontrol pengeluaran transportasi',
+                'feedback kenyamanan berkendaran'
+            ],
+
+            'office boy' => [
+                'feedback kebersihan dan kenyamanan',
+                'penyelesaian tugas harian'
+            ],
+
+            'koordinator itsm' => [
+                'meningkatkan kepuasan dan loyalitas peserta/client',
+                'availability sistem internal kritis',
+                'persentase gap kompetensi tim terhadap standar skill'
+            ],
+
+            'programmer' => [
+                'ketepatan waktu penyelesaian fitur',
+                'mengukur kualitas aplikasi agar minim bug'
+            ],
+
+            'tim digital' => [
+                'konsistensi campaign digital',
+            ],
+
+            'project administrator & business support' => [
+                'efektifitas digital marketing'
+            ],
+
+            'technical support' => [
+                'keberhasilan support memenuhi sla',
+                'kualitas layanan exam'
+            ],
+
+            'instruktur' => [
+                'presentase kinerja instruktur',
+                'kepuasan peserta pelatihan',
+                'upseling lanjutan materi',
+                'sertifikasi kompetensi internal',
+                'pelatihan kompetensi eksternal'
+            ],
+
+            'education manager' => [
+                'pengembangan kurikulum pelatihan',
+                'peningkatan knowledge sharing',
+                'peningkatan kontribusi pelatihan',
+                'evaluasi kinerja instruktur',
+                'pembuatan artikel'
+            ],
+
+            'sales' => [
+                'target penjualan tahunan',
+                'biaya akuisisi perclient',
+                'peningkatan kemampuan kompetensi sales'
+            ],
+
+            'spv sales' => [
+                'meningkatkan revenue perusahaan',
+                'customer acquisition cost',
+                'evaluasi kinerja sales',
+                'pendapatan penjualan project',
+                'leads project'
+            ],
+
+            'adm sales' => [
+                'laporan mom',
+                'akurasi kelengkapan data penjualan',
+                'todo administrasi'
+            ],
+
+            'admin holding' => [
+                'ketepatan waktu po',
+                'kualitas dokumentasi support dan proctor'
+            ],
         ];
 
         $kombinasiIT = ['programmer', 'tim digital', 'technical support'];
@@ -321,14 +412,8 @@ class TargetKPIController extends Controller
 
     public function getDataOverviewPersonal(Request $request, OverviewDashboardService $overviewService)
     {
-        $karyawanId = (int) ($request->id_karyawan ?? auth()->id());
+        $karyawanId = auth()->id();
         $tahunFilter = (int) ($request->tahun ?? now()->year);
-
-        $user = auth()->user();
-        $superRoles = ['GM', 'HRD', 'Direktur Utama'];
-        if ($karyawanId !== auth()->id() && !in_array($user->jabatan, $superRoles)) {
-            abort(403, 'Anda tidak memiliki akses ke data karyawan ini.');
-        }
 
         $data = $overviewService->getPersonalOverviewData($karyawanId, $tahunFilter);
 
@@ -339,56 +424,27 @@ class TargetKPIController extends Controller
 
     public function kpiOverview()
     {
-        $userKaryawan = Auth::user()->karyawan;
-        $superRoles = ['GM', 'HRD', 'Direktur Utama', 'Direktur'];
-
-        $departments = in_array(auth()->user()->jabatan, $superRoles) ? karyawan::where('divisi', '!=', 'Direksi')->whereNotNull('divisi')->distinct()->pluck('divisi')->values() : collect([$userKaryawan->divisi ?? null])->filter()->values();
-
+        $userKaryawan = karyawan::where('id', Auth::id())->first();
+        $departments = karyawan::where('divisi', '!=', 'Direksi')->whereNotNull('divisi')->distinct()->pluck('divisi')->values();
+        
         return view('KPIdata.TargetDivisi.overview', [
             'departments' => $departments,
-            'divisi'      => $userKaryawan->divisi ?? null,
-            'jabatan'     => $userKaryawan->jabatan ?? null,
-            'user_id'     => Auth::id(),
+            'divisi' => $userKaryawan->divisi ?? null,
+            'jabatan' => $userKaryawan->jabatan ?? null,
+            'user_id' => Auth::id()
         ]);
     }
-    
+
     public function getDataOverview(Request $request, OverviewDashboardService $overviewService)
     {
-        $user = auth()->user();
-        $userDivisi = $user->karyawan->divisi ?? null;
-        $superRoles = ['GM', 'HRD', 'Direktur Utama', 'Direktur'];
-
-        $divisi = $request->divisi ?? $userDivisi;
-
-        if (!in_array($user->jabatan, $superRoles) && $divisi !== $userDivisi) {
-            return response()->json([
-                'message' => 'Anda tidak memiliki akses untuk melihat data divisi lain.'
-            ], 403);
-        }
-
-        $tahun = $request->tahun ?? now()->year;
-
-        if (!$divisi) {
-            return response()->json([
-                'message' => 'Divisi tidak ditemukan. Pastikan karyawan memiliki divisi.',
-                'divisi_user' => $userDivisi
-            ], 400);
-        }
-
-        if (!$tahun) {
-            return response()->json(['message' => 'Tahun harus diisi'], 400);
+        if (!$request->divisi || !$request->tahun) {
+            return response()->json(['message' => 'Divisi dan tahun harus diisi'], 400);
         }
 
         $personId = $request->id_karyawan ?? auth()->id();
-        if (!in_array($user->jabatan, $superRoles)) {
-            $targetKaryawan = karyawan::find($personId);
-            if (!$targetKaryawan || $targetKaryawan->divisi !== $userDivisi) {
-                return response()->json(['message' => 'Akses ditolak.'], 403);
-            }
-        }
 
-        $data = $overviewService->getDepartmentOverviewData($divisi, $tahun, $personId);
-
+        $data = $overviewService->getDepartmentOverviewData($request->divisi, $request->tahun, $personId);
+        
         return response()->json($data);
     }
 
@@ -398,29 +454,72 @@ class TargetKPIController extends Controller
         $idUser = $request->idUser;
         $typeGet = $request->typeGet;
 
-        $targetUser = (filled($idUser) && filled($typeGet)) ? karyawan::find($idUser) : karyawan::find($user->id);
-        if (!$targetUser) return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
+        $targetUser = (filled($idUser) && filled($typeGet)) ? karyawan::find($idUser) : $user;
+        if (!$targetUser) {
+            return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
+        }
 
         $divisiUser = $targetUser->divisi;
-        $superRoles = ['GM', 'HRD', 'Direktur Utama'];
 
-        $dataJabatan = in_array($user->jabatan, $superRoles)
+        $superRoles = ['GM', 'HRD', 'Direktur Utama', 'Direktur'];
+        $divisionHeadRoles = ['SPV Sales', 'Koordinator ITSM', 'Education Manager'];
+
+        $isSuper = in_array($user->jabatan, $superRoles);
+        $isDivisionHead = in_array($user->jabatan, $divisionHeadRoles);
+
+        // PERBAIKAN: Untuk Division Head, ambil divisi berdasarkan jabatan mereka
+        if ($isDivisionHead) {
+            // Ambil divisi dari karyawan yang memiliki jabatan yang sama dengan user
+            $divisiUser = karyawan::where('jabatan', $user->jabatan)
+                ->whereNotNull('divisi')
+                ->where('divisi', '!=', '')
+                ->distinct()
+                ->pluck('divisi')
+                ->first();
+                
+            if (!$divisiUser) {
+                return response()->json(['message' => 'Divisi tidak ditemukan untuk jabatan Anda'], 400);
+            }
+        }
+
+        $dataJabatan = $isSuper
             ? karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])->distinct()->pluck('jabatan')
             : karyawan::where('divisi', $divisiUser)->whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])->distinct()->pluck('jabatan');
 
         $query = targetKPI::with(['karyawan', 'detailTargetKPI.dataTarget', 'detailTargetKPI.detailPersonKPI'])
             ->whereYear('created_at', now()->year);
 
-        // Logika Filtering untuk Memangkas Load Data
         if (filled($idUser) && filled($typeGet)) {
-            // Jika admin/atasan melihat data user spesifik
+            $requestedUser = karyawan::find($idUser);
+
+            if (!$requestedUser) {
+                return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
+            }
+
+            if (!$isSuper && !$isDivisionHead) {
+                if ($requestedUser->id != $user->id) {
+                    return response()->json(['message' => 'Anda tidak memiliki akses untuk melihat data karyawan ini'], 403);
+                }
+            } elseif ($isDivisionHead && !$isSuper) {
+                if ($requestedUser->divisi !== $divisiUser) {
+                    return response()->json(['message' => 'Anda tidak memiliki akses untuk melihat data divisi lain'], 403);
+                }
+            }
+
             $query->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $idUser));
-        } elseif (!in_array($user->jabatan, $superRoles)) {
-            // OPTIMASI: Eliminasi KPI milik rekan satu divisi.
-            // Hanya tarik KPI yang secara spesifik ditugaskan ke user yang sedang login.
-            $query->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $user->id));
+
+        } else {
+            if ($isSuper) {
+                // Super melihat semua
+            } elseif ($isDivisionHead) {
+                // PERBAIKAN: Division Head melihat semua target di divisinya
+                // Filter berdasarkan divisi di detailTargetKPI
+                $query->whereHas('detailTargetKPI', fn($q) => $q->where('divisi', $divisiUser));
+            } else {
+                // Karyawan biasa hanya lihat target mereka
+                $query->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $user->id));
+            }
         }
-        // Catatan: Super Roles tanpa parameter idUser akan tetap menarik semua KPI (untuk kebutuhan dashboard overview)
 
         $detailList = $query->get();
 
@@ -429,9 +528,8 @@ class TargetKPIController extends Controller
                 $detail = $item->detailTargetKPI->first();
                 if (!$detail) return null;
 
-                // Perbaikan: Pastikan personId selalu memiliki nilai (ID User) 
-                // agar method calculateProgress di Trait tidak menerima nilai null.
-                $personId = !empty($idUser) ? (int) $idUser : $user->id;
+                $personId = filled($idUser) ? (int) $idUser : null;
+
                 $progress = $this->resolveProgress($item, $personId);
 
                 $totalPeserta = $item->detailTargetKPI->flatMap(function ($detailItem) {
@@ -439,10 +537,10 @@ class TargetKPIController extends Controller
                 })->unique()->count();
 
                 return [
-                    'id' => $item->id, 
-                    'pembuat' => $item->karyawan->nama_lengkap ?? null, 
+                    'id' => $item->id,
+                    'pembuat' => $item->karyawan->nama_lengkap ?? null,
                     'id_pembuat' => $item->id_pembuat,
-                    'judul' => $item->judul, 
+                    'judul' => $item->judul,
                     'deskripsi' => $item->deskripsi,
                     'jabatan' => $item->detailTargetKPI->pluck('jabatan')->unique()->values(),
                     'divisi' => $item->detailTargetKPI->pluck('divisi')->unique()->values(),
@@ -452,11 +550,11 @@ class TargetKPIController extends Controller
                     'tipe_target' => $detail->dataTarget?->tipe_target,
                     'nilai_target' => $detail->dataTarget?->nilai_target,
                     'manual_value' => $detail->manual_value,
-                    'status' => $item->status, 
+                    'status' => $item->status,
                     'created_at' => $item->created_at,
                     'tenggat_waktu' => $this->formatTenggatWaktuExport($detail->dataTarget?->jangka_target ?? '', $detail->detail_jangka ?? ''),
                     'progress' => $progress,
-                    'total_peserta' => $totalPeserta, 
+                    'total_peserta' => $totalPeserta,
                 ];
             })->filter()->values(),
             'jabatan_list' => $dataJabatan,
@@ -564,7 +662,101 @@ class TargetKPIController extends Controller
     {
         $allRoutes = DataTarget::pluck('asistant_route')->unique()->sort()->values();
         // Gunakan pemetaan langsung untuk memotong kode panjang map di controller
-        $routeMapping = ['gm' => ['pemasukan kotor', 'pemasukan bersih', 'kepuasan pelanggan', 'target penjualan project tahunan', 'rasio biaya operasional terhadap revenue', 'performa kpi departemen'], 'customer care' => ['peserta puas dengan pelayanan dan fasilitas training', 'dorong inovasi pelayanan', 'penanganan komplain perseta', 'report persiapan kelas'], 'finance & accounting' => ['outstanding', 'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'laporan analisis keuangan', 'pencairan biaya operasional', 'penyelesaian tagihan perusahaan', 'akurasi pencatatan masuk'], 'hrd' => ['pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan', 'administrasi karyawan'], 'driver' => ['perbaikan kendaraan', 'report kondisi kendaraan', 'kontrol pengeluaran transportasi', 'feedback kenyamanan berkendaran'], 'office boy' => ['feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian'], 'koordinator itsm' => ['meningkatkan kepuasan dan loyalitas peserta/client', 'availability sistem internal kritis', 'persentase gap kompetensi tim terhadap standar skill'], 'programmer' => ['ketepatan waktu penyelesaian fitur', 'mengukur kualitas aplikasi agar minim bug'], 'tim digital' => ['konsistensi campaign digital', 'efektifitas digital marketing'], 'project administrator & business support' => ['pendapatan penjualan project', 'leads project'], 'technical support' => ['keberhasilan support memenuhi sla', 'kualitas layanan exam'], 'instruktur' => ['presentase kinerja instruktur', 'kepuasan peserta pelatihan', 'upseling lanjutan materi', 'sertifikasi kompetensi internal', 'pelatihan kompetensi eksternal'], 'education manager' => ['pengembangan kurikulum pelatihan', 'peningkatan knowledge sharing', 'peningkatan kontribusi pelatihan', 'evaluasi kinerja instruktur', 'pembuatan artikel'], 'sales' => ['target penjualan tahunan', 'biaya akuisisi perclient', 'peningkatan kemampuan kompetensi sales'], 'spv sales' => ['meningkatkan revenue perusahaan', 'customer acquisition cost', 'evaluasi kinerja sales'], 'adm sales' => ['laporan mom', 'akurasi kelengkapan data penjualan', 'todo administrasi'], 'admin holding' => ['ketepatan waktu po', 'kualitas dokumentasi support dan proctor']];
+    $routeMapping = [
+        'gm' => [
+            'pemasukan kotor',
+            'pemasukan bersih',
+            'kepuasan pelanggan',
+            'target penjualan project tahunan',
+            'rasio biaya operasional terhadap revenue',
+            'performa kpi departemen'
+        ],
+        'customer care' => [
+            'peserta puas dengan pelayanan dan fasilitas training',
+            'dorong inovasi pelayanan',
+            'penanganan komplain perseta',
+            'report persiapan kelas'
+        ],
+        'finance & accounting' => [
+            'outstanding',
+            'inisiatif efisiensi keuangan',
+            'mengurangi manual work dan error',
+            'laporan analisis keuangan',
+            'pencairan biaya operasional',
+            'penyelesaian tagihan perusahaan',
+            'akurasi pencatatan masuk'
+        ],
+        'hrd' => [
+            'pelaksanaan kegiatan karyawan',
+            'pengeluaran biaya karyawan',
+            'administrasi karyawan'
+        ],
+        'driver' => [
+            'perbaikan kendaraan',
+            'report kondisi kendaraan',
+            'kontrol pengeluaran transportasi',
+            'feedback kenyamanan berkendaran'
+        ],
+        'office boy' => [
+            'feedback kebersihan dan kenyamanan',
+            'penyelesaian tugas harian'
+        ],
+        'koordinator itsm' => [
+            'meningkatkan kepuasan dan loyalitas peserta/client',
+            'availability sistem internal kritis',
+            'persentase gap kompetensi tim terhadap standar skill'
+        ],
+        'programmer' => [
+            'ketepatan waktu penyelesaian fitur',
+            'mengukur kualitas aplikasi agar minim bug'
+        ],
+        'tim digital' => [
+            'konsistensi campaign digital',
+            'efektifitas digital marketing'
+        ],
+        'project administrator & business support' => [
+            'efektifitas digital marketing',
+        ],
+        'technical support' => [
+            'keberhasilan support memenuhi sla',
+            'kualitas layanan exam'
+        ],
+        'instruktur' => [
+            'presentase kinerja instruktur',
+            'kepuasan peserta pelatihan',
+            'upseling lanjutan materi',
+            'sertifikasi kompetensi internal',
+            'pelatihan kompetensi eksternal'
+        ],
+        'education manager' => [
+            'pengembangan kurikulum pelatihan',
+            'peningkatan knowledge sharing',
+            'peningkatan kontribusi pelatihan',
+            'evaluasi kinerja instruktur',
+            'pembuatan artikel'
+        ],
+        'sales' => [
+            'target penjualan tahunan',
+            'biaya akuisisi perclient',
+            'peningkatan kemampuan kompetensi sales'
+        ],
+        'spv sales' => [
+            'meningkatkan revenue perusahaan',
+            'customer acquisition cost',
+            'evaluasi kinerja sales',
+            'pendapatan penjualan project',
+            'leads project'
+        ],
+        'adm sales' => [
+            'laporan mom',
+            'akurasi kelengkapan data penjualan',
+            'todo administrasi'
+        ],
+        'admin holding' => [
+            'ketepatan waktu po',
+            'kualitas dokumentasi support dan proctor'
+        ]
+    ];
         return Excel::download(new KpiTargetTemplateExport($allRoutes, $routeMapping), 'template_import_kpi_' . date('Y-m-d') . '.xlsx');
     }
 

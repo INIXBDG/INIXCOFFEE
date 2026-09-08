@@ -59,6 +59,14 @@
                                             </tr>
                                             <tr>
                                                 <td>
+                                                    <p>Perusahaan :</p>
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="custom_perusahaan" class="form-control" placeholder="Masukkan Perusahaan" value="{{$rkm->perusahaan->nama_perusahaan}}" id="custom_perusahaan">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
                                                     <p>Materi :</p>
                                                 </td>
                                                 <td>
@@ -122,7 +130,7 @@
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ ucwords(strtolower($r->peserta->nama)) }}</td>
-                                    <td>{{$rkm->perusahaan->nama_perusahaan}}</td>
+                                    <td class="instansi_value">{{$rkm->perusahaan->nama_perusahaan}}</td>
                                     {{-- @foreach($period as $date) --}}
                                     <td></td>
                                     {{-- @endforeach --}}
@@ -164,11 +172,16 @@
                 return moment(date).format('dddd, LL');
             }
             // Set initial values
+            $('.instansi_value').text($('#custom_perusahaan').val());
             $('.materi_value').text($('#custom_materi').val());
             $('.tanggal_awal_value').text(formatTanggalIndo($('#custom_tanggal_awal').val()));
             $('.tanggal_akhir_value').text(formatTanggalIndo($('#custom_tanggal_akhir').val()));
 
             // Update values on input change
+            $('#custom_perusahaan').on('input', function() {
+                $('.instansi_value').text($(this).val());
+            });
+
             $('#custom_materi').on('input', function() {
                 $('.materi_value').text($(this).val());
             });

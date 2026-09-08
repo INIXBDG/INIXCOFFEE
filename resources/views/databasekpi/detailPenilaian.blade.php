@@ -440,6 +440,16 @@
             margin: auto;
         }
 
+        .modern-table tbody td {
+            word-wrap: break-word;
+            word-break: break-word;
+            max-width: 200px;
+        }
+
+        .modern-table .evaluator-header td {
+            max-width: none;
+        }
+
         @keyframes spin {
             100% {
                 transform: rotate(360deg);
@@ -738,22 +748,24 @@
                     </a>
                 `;
 
-                    let emailSend = `
+                const routePreview = "{{ route('penilaian.download.pdf') }}"; 
+
+                let emailSend = `
                     <div class="d-flex flex-wrap gap-2">
                         <button id="kirimEmail" class="btn-action success" data-kodeform="${kodeForm}" data-id="${id_karyawan}">
                             <i class="fa-solid fa-paper-plane"></i> Kirim Email
                         </button>
-                        <form method="POST" action="{{ route('penilaian.download.pdf') }}" class="d-flex gap-2">
-                            @csrf
-                            <input type="hidden" name="kodeForm" value="${kodeForm}">
-                            <input type="hidden" name="id_karyawan" value="${id_karyawan}">
-                            <button type="submit" name="tipe" value="office" class="btn-action danger">
-                                <i class="fa-solid fa-file-pdf"></i> PDF Office
-                            </button>
-                            <button type="submit" name="tipe" value="non_office" class="btn-action danger">
-                                <i class="fa-solid fa-file-pdf"></i> PDF Non-Office
-                            </button>
-                        </form>
+                        
+                        <a href="${routePreview}?kodeForm=${kodeForm}&id_karyawan=${id_karyawan}&tipe=office" target="_blank" 
+                        class="btn-action danger">
+                            <i class="fa-solid fa-file-pdf"></i> Preview & Print Office
+                        </a>
+                        
+                        <a href="${routePreview}?kodeForm=${kodeForm}&id_karyawan=${id_karyawan}&tipe=non_office" 
+                        target="_blank" 
+                        class="btn-action danger">
+                            <i class="fa-solid fa-file-pdf"></i> Preview & Print Non-Office
+                        </a>
                     </div>
                 `;
 
@@ -855,39 +867,34 @@
             };
 
             let groupRata2 = {};
-            let filteredEvaluators = filterJenis === 'all' ? globalEvaluators : globalEvaluators.filter(ev => ev
-                .jenis_penilaian === filterJenis);
+            let filteredEvaluators = filterJenis === 'all' 
+                ? globalEvaluators 
+                : globalEvaluators.filter(ev => ev.jenis_penilaian === filterJenis);
 
             if (filteredEvaluators.length === 0) {
                 content.append(
-                    `<tr><td colspan="6" class="text-center py-5 text-muted"><i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>Tidak Ada Data</td></tr>`
-                    );
+                    `<tr><td colspan="6" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>Tidak Ada Data
+                    </td></tr>`
+                );
                 return;
             }
 
+            // ====== LANGKAH 1: Hitung rata-rata per evaluator ======
             filteredEvaluators.forEach(evaluator => {
                 let nilaiList = evaluator.nilai;
                 let nilaiIndex = 0;
                 globalKriteria.forEach(kriteria => {
                     kriteria.detailKriteria.forEach(sub => {
-                        const nilaiItem = nilaiList[nilaiIndex++] || {
-                            nilai: '-',
-                            pesan: '-'
-                        };
+                        const nilaiItem = nilaiList[nilaiIndex++] || { nilai: '-', pesan: '-' };
                         const nilai = parseFloat(nilaiItem.nilai);
                         if (sub.tipe_input !== 'textarea' && !isNaN(nilai)) {
-                            groupRata2[evaluator.jenis_penilaian] = groupRata2[evaluator
-                                .jenis_penilaian] || {};
-                            groupRata2[evaluator.jenis_penilaian][kriteria.kriteria] = groupRata2[
-                                evaluator.jenis_penilaian][kriteria.kriteria] || {};
-                            groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub
-                                .sub_kriteria
-                            ] = groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub
-                                .sub_kriteria
-                            ] || [];
-                            groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub
-                                .sub_kriteria
-                            ].push(nilai);
+                            groupRata2[evaluator.jenis_penilaian] = groupRata2[evaluator.jenis_penilaian] || {};
+                            groupRata2[evaluator.jenis_penilaian][kriteria.kriteria] = 
+                                groupRata2[evaluator.jenis_penilaian][kriteria.kriteria] || {};
+                            groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub.sub_kriteria] = 
+                                groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub.sub_kriteria] || [];
+                            groupRata2[evaluator.jenis_penilaian][kriteria.kriteria][sub.sub_kriteria].push(nilai);
                         }
                     });
                 });
@@ -908,15 +915,19 @@
 
             let jenisTotalRaw = {};
 
+            // ====== LANGKAH 2: Render per evaluator ======
             filteredEvaluators.forEach(evaluator => {
+                // Header evaluator
                 content.append(`
-                <tr id="${evaluator.nama}-${evaluator.jenis_penilaian}" class="evaluator-header">
-                    <td colspan="6">
-                        <i class="fa-solid fa-user me-2"></i>${evaluator.nama} 
-                        <span class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size: .75rem;">${evaluator.jenis_penilaian}</span>
-                    </td>
-                </tr>
-            `);
+                    <tr id="${evaluator.nama}-${evaluator.jenis_penilaian}" class="evaluator-header">
+                        <td colspan="6">
+                            <i class="fa-solid fa-user me-2"></i>${evaluator.nama} 
+                            <span class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size: .75rem;">
+                                ${evaluator.jenis_penilaian}
+                            </span>
+                        </td>
+                    </tr>
+                `);
 
                 let nilaiList = evaluator.nilai;
                 let nilaiIndex = 0;
@@ -924,25 +935,35 @@
 
                 globalKriteria.forEach(kriteria => {
                     const subKriteriaList = kriteria.detailKriteria;
-                    const rowspan = subKriteriaList.length;
+                    const jumlahSub = subKriteriaList.length;
+                    const kriteriaId = `kriteria-${kriteria.kriteria.replace(/\s+/g, '-').toLowerCase()}`;
+
                     subKriteriaList.forEach((sub, idxSub) => {
-                        const nilaiItem = nilaiList[nilaiIndex++] || {
-                            nilai: '-',
-                            pesan: '-'
-                        };
+                        const nilaiItem = nilaiList[nilaiIndex++] || { nilai: '-', pesan: '-' };
                         const nilai = nilaiItem.nilai;
                         const pesan = nilaiItem.pesan;
                         const tipe = sub.tipe_input;
                         const bobot = parseFloat(sub.bobot);
+
+                        // ====== Kolom Kriteria (dengan rowspan di baris pertama) ======
+                        
+                        let kriteriaCell = '';
+                        if (idxSub === 0) {
+                            kriteriaCell = `<td rowspan="${jumlahSub}" class="text-left fw-semibold align-middle" id="${kriteriaId}">${kriteria.kriteria}</td>`;
+                        }
+
+                        // ====== Kolom Sub Kriteria ======
+                        let subKriteriaCell = `<td style="text-align: left;">${sub.sub_kriteria}</td>`;
+
+                        // ====== Kolom Bobot, Nilai, Rata-Rata, Total ======
                         let dataNilai = '';
                         if (tipe === 'textarea') {
-                            dataNilai =
-                                `<td colspan="4" style="font-style: italic; color: #64748b;">${pesan && pesan.trim() !== '' ? pesan : '-'}</td>`;
+                            dataNilai = `<td colspan="4" style="font-style: italic; color: #64748b;">
+                                ${pesan && pesan.trim() !== '' ? pesan : '-'}
+                            </td>`;
                         } else {
                             const nilaiAngka = parseFloat(nilai);
-                            const rataData = rata2Hasil[evaluator.jenis_penilaian]?.[kriteria
-                                .kriteria
-                            ]?.[sub.sub_kriteria];
+                            const rataData = rata2Hasil[evaluator.jenis_penilaian]?.[kriteria.kriteria]?.[sub.sub_kriteria];
                             let rata = '-';
                             let skor = 0;
                             if (!isNaN(nilaiAngka)) {
@@ -951,44 +972,30 @@
                                 totalSkorEvaluator += skor;
                             }
                             dataNilai = `
-                            <td><span class="badge bg-light text-dark border">${bobot}%</span></td>
-                            <td class="fw-semibold">${nilai}</td>
-                            <td>${rata === '-' ? '-' : pengubahFormat(rata)}</td>
-                            <td class="fw-bold text-primary">${rata === '-' ? '-' : pengubahFormat(skor)}</td>
-                        `;
+                                <td><span class="badge bg-light text-dark border">${bobot}%</span></td>
+                                <td class="fw-semibold">${nilai}</td>
+                                <td>${rata === '-' ? '-' : pengubahFormat(rata)}</td>
+                                <td class="fw-bold text-primary">${rata === '-' ? '-' : pengubahFormat(skor)}</td>
+                            `;
                         }
 
-                        const kriteriaText = kriteria.kriteria;
-                        const subKriteriaText = sub.sub_kriteria;
-                        const isKriteriaLong = kriteriaText.length > 30;
-                        const isSubKriteriaLong = subKriteriaText.length > 30;
-                        const displayKriteria = isKriteriaLong ? kriteriaText.substring(0, 30) +
-                            '...' : kriteriaText;
-                        const displaySubKriteria = isSubKriteriaLong ? subKriteriaText.substring(0,
-                            30) + '...' : subKriteriaText;
-                        const fullKriteriaContent = isKriteriaLong ?
-                            `<span class="full-text" style="display:none;">${kriteriaText}</span><span class="short-text">${displayKriteria}</span><button class="btn btn-sm btn-link text-primary p-0 ms-1 read-more-btn" type="button" onclick="toggleText(this)">...</button>` :
-                            kriteriaText;
-                        const fullSubKriteriaContent = isSubKriteriaLong ?
-                            `<span class="full-text" style="display:none;">${subKriteriaText}</span><span class="short-text">${displaySubKriteria}</span><button class="btn btn-sm btn-link text-primary p-0 ms-1 read-more-btn" type="button" onclick="toggleText(this)">...</button>` :
-                            subKriteriaText;
-
                         content.append(`
-                        <tr>
-                            ${idxSub === 0 ? `<td class="text-left fw-semibold">${fullKriteriaContent}</td>` : ''}
-                            <td style="text-align: left;">${fullSubKriteriaContent}</td>
-                            ${dataNilai}
-                        </tr>
-                    `);
+                            <tr>
+                                ${kriteriaCell}
+                                ${subKriteriaCell}
+                                ${dataNilai}
+                            </tr>
+                        `);
                     });
                 });
 
+                // Total per evaluator
                 content.append(`
-                <tr class="total-row">
-                    <td colspan="5" class="text-end">Total (${evaluator.nama})</td>
-                    <td class="text-center">${pengubahFormat(totalSkorEvaluator)}</td>
-                </tr>
-            `);
+                    <tr class="total-row">
+                        <td colspan="5" class="text-end">Total (${evaluator.nama})</td>
+                        <td class="text-center">${pengubahFormat(totalSkorEvaluator)}</td>
+                    </tr>
+                `);
 
                 const jenis = evaluator.jenis_penilaian;
                 if (!jenisTotalRaw.hasOwnProperty(jenis)) {
@@ -996,6 +1003,7 @@
                 }
             });
 
+            // ====== LANGKAH 3: Hitung total akhir & grade ======
             let jenisTotalPost = {};
             for (const jenis in jenisTotalRaw) {
                 const persen = persentaseJenis[jenis] || 0;
@@ -1010,23 +1018,11 @@
             }
 
             let grade = '';
-            let keterangan = '';
-            if (totalSemuaSkor >= 90) {
-                grade = 'A';
-                keterangan = 'Sangat Baik';
-            } else if (totalSemuaSkor >= 80) {
-                grade = 'B';
-                keterangan = 'Baik';
-            } else if (totalSemuaSkor >= 70) {
-                grade = 'C';
-                keterangan = 'Cukup';
-            } else if (totalSemuaSkor >= 60) {
-                grade = 'D';
-                keterangan = 'Kurang';
-            } else {
-                grade = 'E';
-                keterangan = 'Sangat Kurang';
-            }
+            if (totalSemuaSkor >= 90) grade = 'A';
+            else if (totalSemuaSkor >= 80) grade = 'B';
+            else if (totalSemuaSkor >= 70) grade = 'C';
+            else if (totalSemuaSkor >= 60) grade = 'D';
+            else grade = 'E';
 
             content.append(`
                 <tr class="grand-total-row">

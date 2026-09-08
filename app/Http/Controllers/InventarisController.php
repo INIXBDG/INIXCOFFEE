@@ -21,7 +21,7 @@ class InventarisController extends Controller
     public function index()
     {
         $usernames = DB::table('karyawans')->pluck('nama_lengkap')->toArray();
-        $kodeBarang = DB::table('kode_barang_inventaris')->pluck('kode_barang')->toArray();
+        $kodeBarang = DB::table('kode_barang_inventaris')->select('kode_barang', 'nama_barang')->get();
         return view('inventaris.index', compact('usernames', 'kodeBarang'));
     }
 

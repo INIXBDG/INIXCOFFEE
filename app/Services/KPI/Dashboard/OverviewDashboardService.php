@@ -7,7 +7,6 @@ use App\Models\targetKPI;
 use App\Models\DetailTargetKPI;
 use App\Models\nilaiKPI;
 use App\Services\KPI\Jabatan\GMKPIService;
-use App\Services\KPI\Jabatan\ProjectAdminKPIService;
 use App\Services\KPI\Jabatan\SPVSalesKPIService;
 use App\Traits\KPIResolverTrait;
 use Carbon\Carbon;
@@ -285,7 +284,7 @@ class OverviewDashboardService
             'pemasukan kotor' => fn($t, $p) => app(GMKPIService::class)->calculatePemasukanKotor($t, $p),
             'target penjualan project tahunan' => fn($t, $p) => app(GMKPIService::class)->calculateTargetPenjualanProjectTahunan($t, $p),
             'meningkatkan revenue perusahaan' => fn($t, $p) => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($t, $p),
-            'pendapatan penjualan project' => fn($t, $p) => app(ProjectAdminKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
+            'pendapatan penjualan project' => fn($t, $p) => app(SPVSalesKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
         ];
     }
 

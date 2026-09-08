@@ -93,6 +93,7 @@
                                     <option value="Microsoft" @if ($materis->vendor == "Microsoft") selected @endif>Microsoft</option>
                                     <option value="Mikrotik" @if ($materis->vendor == "Mikrotik") selected @endif>Mikrotik</option>
                                     <option value="CompTIA" @if ($materis->vendor == "CompTIA") selected @endif>CompTIA</option>
+                                    <option value="Certiprof" @if ($materis->vendor == "Certiprof") selected @endif>Certiprof</option>
                                     <option value="Regular" @if ($materis->vendor == "Regular") selected @endif>Regular</option>
                                     <option value="RedHat" @if ($materis->vendor == "RedHat") selected @endif>RedHat</option>
                                     

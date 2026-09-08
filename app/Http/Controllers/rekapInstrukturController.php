@@ -24,7 +24,9 @@ class rekapInstrukturController extends Controller
         $month = Carbon::now()->format('m');
         $year = Carbon::now()->format('Y');
 
-        $karyawan = karyawan::where('divisi', 'Education')
+        $karyawan = karyawan::
+            // where('divisi', 'Education')
+            whereIn('jabatan', ['Instruktur', 'Education Manager', 'Technical Support'])
             ->where('status_aktif', '1')
             ->where('kode_karyawan', 'NOT LIKE', '%OL%') // Mengecualikan kode karyawan yang mengandung 'OL'
             ->get();
@@ -58,7 +60,7 @@ class rekapInstrukturController extends Controller
         // =========================================================================
         // 2. LOGIKA CASE BULAN & TAHUN
         // =========================================================================
-       $caseMonth = '
+        $caseMonth = '
             CASE
                 -- Cek apakah lintas bulan
                 WHEN MONTH(r_k_m_s.tanggal_awal) <> MONTH(r_k_m_s.tanggal_akhir) THEN

@@ -434,9 +434,14 @@
                         } else {
                             actions += '<a class="dropdown-item disabled" href="#">Menunggu Approval</a>';
                         }
+
+                        // Hapus dan Edit Data bisa dilakukan kapan saja oleh HRD
+                        actions += '<a class="dropdown-item" href="{{ url("/suratperjalanan") }}/' + row.id + '/editspj">Edit Data</a>';
+                        actions += '<form onsubmit="return confirm(\'Yakin ingin menghapus?\');" action="{{ url("/suratperjalanan") }}/' + row.id + '" method="POST">@csrf @method("DELETE")<button type="submit" class="dropdown-item text-danger">Hapus</button></form>';
+
                         actions += '</div></div>';
                     }
-
+//comadddd
                     // ===== DIREKSI =====
                     else if (userRole == 'Direktur' || userRole == 'Direktur Utama') {
                         actions += '<div class="dropdown"><button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button><div class="dropdown-menu">';

@@ -1,29 +1,37 @@
 @extends('layouts_crm.app')
 
 @section('crm_contents')
-    @php
-        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
-    @endphp
+    <style>
+        h1, h2, h3, h4, h5, h6, p, span, div, td, th { font-display: swap !important; }
+        .skeleton-cell {
+            background: linear-gradient(90deg, #f8f9fa 25%, #e9ecef 50%, #f8f9fa 75%);
+            background-size: 200% 100%;
+            animation: pulse 1.5s infinite;
+            color: transparent;
+            user-select: none;
+        }
+        @keyframes pulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
-            <!-- Header -->
+
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Database Client</h4>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-success" onclick="exportPdf()">
-                        Export PDF
-                    </button>
+                    <button type="button" class="btn btn-success" onclick="exportPdf()">Export PDF</button>
+                    <!-- Menggunakan Gate Laravel Standar -->
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
-                        onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
+                        onclick="resetForm()" @can('Store Contact CRM') @else disabled @endcan>
                         Tambah Perusahaan
                     </button>
                 </div>
             </div>
 
-            <!-- Tabel Contact -->
             <div class="card">
                 <div class="card-body">
-                    @if(in_array(Auth::user()->jabatan, $allowedUser))
+                    <!-- Menggunakan Gate Laravel Standar -->
+                    @can('akses-filter-sales')
                         <div class="row mb-3">
                             <div class="col-md-2">
                                 <label for="filterSales" class="form-label">Filter Sales</label>
@@ -35,23 +43,33 @@
                                 </select>
                             </div>
                         </div>
-                    @endif
+                    @endcan
 
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover" id="perusahaanTable">
+                    <div id="dt-space-reserver" style="height: 50px; width: 100%;"></div>
+
+                    <div class="table-responsive" style="min-height: 500px;">
+                        <table class="table table-bordered table-hover w-100" id="perusahaanTable">
                             <thead class="table-primary">
                                 <tr>
-                                    <th style="text-align: center;">No</th>
-                                    <th style="text-align: center;">Perusahaan</th>
-                                    <th style="text-align: center;">Lokasi</th>
-                                    <th style="text-align: center;">Status</th>
-                                    <th style="text-align: center;">Sales</th>
-                                    <th style="text-align: center;">Kelas Terakhir</th>
-                                    <th style="text-align: center;">Aktivitas Terakhir</th>
-                                    <th style="text-align: center;">Aksi</th>
+                                    <th class="text-center">No</th>
+                                    <th class="text-center">Perusahaan</th>
+                                    <th class="text-center">Lokasi</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Sales</th>
+                                    <th class="text-center">Kelas Terakhir</th>
+                                    <th class="text-center">Aktivitas Terakhir</th>
+                                    <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                @for ($i = 0; $i < 10; $i++)
+                                    <!-- Menyesuaikan tinggi dengan tumpukan tombol di kolom aksi -->
+                                    <tr style="height: 95px;">
+                                        @for ($j = 0; $j < 8; $j++)
+                                            <td class="skeleton-cell border-bottom">&nbsp;</td>
+                                        @endfor
+                                    </tr>
+                                @endfor
                             </tbody>
                         </table>
                     </div>
@@ -299,129 +317,115 @@
         </div>
     </div>
 @endsection
+
 @section('scripts')
     <script>
         $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
         });
 
         $(document).ready(function() {
-            const formElement = document.getElementById('perusahaanForm');
+            let table;
 
-            // Inisialisasi DataTables (Server-Side)
-            let table = $('#perusahaanTable').DataTable({
-                processing: true,
-                serverSide: true,
-                deferRender: true,
-                // stateSave: true,
-                order: [[0, 'desc']], // Instruksi eksplisit untuk mengurutkan berdasarkan ID secara menurun
-                ajax: {
-                    url: "{{ route('contact.data') }}",
-                    type: "GET",
-                    data: function(d) {
-                        d.sales_key = $('#filterSales').val();
-                    },
-                    error: function(xhr, error, thrown) {
-                        alert('Gagal memuat data perusahaan: ' + thrown);
-                    }
-                },
-                columns: [
-                    { data: null, className: "text-center", orderable: false, searchable: false }, // Kolom penomoran akan diatur ulang oleh bindNumbering
-                    { data: 'nama_perusahaan', name: 'nama_perusahaan' },
-                    { data: 'lokasi', name: 'lokasi' },
-                    { data: 'status', name: 'status' },
-                    { data: 'sales_key', name: 'sales_key' },
-                    {
-                        data: 'kelas_terakhir',
-                        name: 'kelas_terakhir',
-                        orderable: false,
-                        searchable: false,
-                        render: function (data, type, row) {
-                            if (data === 'Belum ada kelas') return data;
-                            return `${data} ${row.kelas_terakhir_date ? '| <span style="color:red;">(' + row.kelas_terakhir_date + ')</span>' : ''}`;
+            setTimeout(() => {
+                table = $('#perusahaanTable').DataTable({
+                    processing: false,
+                    serverSide: true,
+                    deferRender: true,
+                    order: [[0, 'desc']],
+                    ajax: {
+                        url: "{{ route('contact.data') }}",
+                        type: "GET",
+                        data: function(d) {
+                            const filterSalesElement = document.getElementById('filterSales');
+                            if (filterSalesElement) d.sales_key = filterSalesElement.value;
+                        },
+                        error: function(xhr, error, thrown) {
+                            alert('Gagal memuat data perusahaan: ' + thrown);
                         }
                     },
-                    { data: 'aktivitas_terakhir_date', name: 'aktivitas_terakhir_date', orderable: false, searchable: false },
-                    {
-                        data: 'id',
-                        orderable: false,
-                        searchable: false,
-                        render: function (id, type, row) {
-                            const contactData = JSON.stringify(row)
-                                .replace(/'/g, "&apos;")
-                                .replace(/"/g, "&quot;");
-                            return `
-                                <div class="d-flex flex-column gap-2">
-                                    <a href="/crm/contact/${id}/detail" class="btn btn-sm btn-info w-100">Detail</a>
-                                    <button class="btn btn-sm btn-warning w-100"
-                                        data-contact="${contactData}"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#editContactModal"
-                                        onclick="editContactFromButton(this)">Edit</button>
-                                    <form action="/crm/contact/delete/${id}" method="POST"
-                                        onsubmit="return confirm('Yakin ingin menghapus?')" style="display:inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger w-100">Hapus</button>
-                                    </form>
-                                </div>`;
+                    initComplete: function(settings, json) {
+                        const reserver = document.getElementById('dt-space-reserver');
+                        if (reserver) reserver.style.display = 'none';
+                    },
+                    columns: [
+                        { data: null, className: "text-center", orderable: false, searchable: false },
+                        { data: 'nama_perusahaan', name: 'nama_perusahaan' },
+                        { data: 'lokasi', name: 'lokasi' },
+                        { data: 'status', name: 'status' },
+                        { data: 'sales_key', name: 'sales_key' },
+                        {
+                            data: 'kelas_terakhir',
+                            name: 'kelas_terakhir',
+                            orderable: false,
+                            searchable: false,
+                            render: function (data, type, row) {
+                                if (data === 'Belum ada kelas') return data;
+                                return `${data} ${row.kelas_terakhir_date ? '| <span style="color:red;">(' + row.kelas_terakhir_date + ')</span>' : ''}`;
+                            }
+                        },
+                        { data: 'aktivitas_terakhir_date', name: 'aktivitas_terakhir_date', orderable: false, searchable: false },
+                        {
+                            data: 'id',
+                            orderable: false,
+                            searchable: false,
+                            render: function (id, type, row) {
+                                const contactData = JSON.stringify(row).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+                                return `
+                                    <div class="d-flex flex-column gap-2">
+                                        <a href="/crm/contact/${id}/detail" class="btn btn-sm btn-info w-100">Detail</a>
+                                        <button class="btn btn-sm btn-warning w-100"
+                                            data-contact="${contactData}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editContactModal"
+                                            onclick="editContactFromButton(this)">Edit</button>
+                                        <form action="/crm/contact/delete/${id}" method="POST" onsubmit="return confirm('Yakin ingin menghapus?')" style="display:inline;">
+                                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="_method" value="DELETE">
+                                            <button type="submit" class="btn btn-sm btn-danger w-100">Hapus</button>
+                                        </form>
+                                    </div>`;
+                            }
                         }
-                    }
-                ]
-            });
+                    ]
+                });
 
-            // Callback Penomoran Asinkron yang Presisi untuk Server-Side Processing
-            function bindNumbering(tableInstance) {
-                tableInstance.on('draw.dt', function() {
-                    let info = tableInstance.page.info();
-                    tableInstance.column(0, { search: 'applied', order: 'applied' }).nodes().each(function(cell, i) {
+                table.on('draw.dt', function() {
+                    let info = table.page.info();
+                    table.column(0, { search: 'applied', order: 'applied' }).nodes().each(function(cell, i) {
                         cell.innerHTML = info.start + i + 1;
                     });
                 });
-            }
-            bindNumbering(table);
 
-            // Pemicu pembaruan tabel jika filter Sales diganti
-            $('#filterSales').on('change', function() {
-                table.ajax.reload();
-            });
+                $('#filterSales').on('change', function() { table.ajax.reload(); });
+
+            }, 10);
 
             window.exportPdf = function() {
-                let salesFilter = document.getElementById('filterSales') ? document.getElementById('filterSales').value : '';
-                let searchFilter = $('#perusahaanTable').DataTable().search() || '';
-
-                let url = "{{ route('contact.export_pdf') }}?sales_key=" + encodeURIComponent(salesFilter) + "&search=" + encodeURIComponent(searchFilter);
+                const salesFilter = document.getElementById('filterSales') ? document.getElementById('filterSales').value : '';
+                const searchFilter = $('#perusahaanTable').DataTable().search() || '';
+                const url = "{{ route('contact.export_pdf') }}?sales_key=" + encodeURIComponent(salesFilter) + "&search=" + encodeURIComponent(searchFilter);
                 window.open(url, '_blank');
             };
 
-            // Fungsi parsing data dari tombol Edit
             window.editContactFromButton = function(button) {
-                let contactStr = button.getAttribute('data-contact');
-                let contactJson = contactStr.replace(/&quot;/g, '"').replace(/&apos;/g, "'");
-                let contact = JSON.parse(contactJson);
-                editContact(contact);
+                const contactJson = button.getAttribute('data-contact').replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+                editContact(JSON.parse(contactJson));
             };
 
-            // Pemetaan data JSON ke input Form Modal
             window.editContact = function(contact) {
                 document.getElementById('edit_nama_perusahaan').value = contact.nama_perusahaan || '';
                 document.getElementById('edit_email').value = contact.email || '';
 
-                const kategoriSelect = document.getElementById('edit_kategori_perusahaan');
-                if (kategoriSelect) kategoriSelect.value = contact.kategori_perusahaan || '';
-
-                const lokasiSelect = document.getElementById('edit_lokasi');
-                if (lokasiSelect) lokasiSelect.value = contact.lokasi || '';
-
-                const statusSelect = document.getElementById('edit_status');
-                if (statusSelect) statusSelect.value = contact.status || '';
+                ['edit_kategori_perusahaan', 'edit_lokasi', 'edit_status'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = contact[id.replace('edit_', '')] || '';
+                });
 
                 document.getElementById('edit_npwp').value = contact.npwp || '';
                 document.getElementById('edit_alamat').value = contact.alamat || '';
-
                 document.getElementById('edit_contact_id').value = contact.id || '';
+
                 const editForm = document.getElementById('editContactForm');
                 if (editForm) editForm.action = '/crm/contact/update/' + contact.id;
             };

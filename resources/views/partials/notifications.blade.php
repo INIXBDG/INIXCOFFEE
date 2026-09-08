@@ -1,3 +1,4 @@
+@if(auth()->check() && auth()->user())
 @foreach (auth()->user()->unreadNotifications as $notification)
     @php
         // Menggunakan null coalescing untuk mencegah "Undefined array key"
@@ -2055,3 +2056,4 @@
     @endif
     <hr>
 @endforeach
+@endif

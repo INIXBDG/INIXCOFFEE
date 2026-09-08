@@ -119,7 +119,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" step="0.01" class="form-control @error('ratemakan') is-invalid @enderror" name="ratemakan" id="ratemakan" >
+                                    <input type="text" step="0.01" class="form-control @error('ratemakan') is-invalid @enderror" name="ratemakan" id="ratemakan" value="{{ $suratperjalanan->ratemakan ? number_format($suratperjalanan->ratemakan, 0, '', '.') : '' }}">
                                 </div>
                                 @error('ratemakan')
                                     <span class="invalid-feedback" role="alert">
@@ -133,7 +133,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" step="0.01" class="form-control @error('ratespj') is-invalid @enderror" name="ratespj" id="ratespj" >
+                                    <input type="text" step="0.01" class="form-control @error('ratespj') is-invalid @enderror" name="ratespj" id="ratespj" value="{{ $suratperjalanan->ratespj ? number_format($suratperjalanan->ratespj, 0, '', '.') : '' }}">
                                 </div>
                                 @error('ratespj')
                                     <span class="invalid-feedback" role="alert">
@@ -147,7 +147,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" step="0.01" class="form-control @error('ratetaksi') is-invalid @enderror" name="ratetaksi" id="ratetaksi" >
+                                    <input type="text" step="0.01" class="form-control @error('ratetaksi') is-invalid @enderror" name="ratetaksi" id="ratetaksi" value="{{ $suratperjalanan->ratetaksi ? number_format($suratperjalanan->ratetaksi, 0, '', '.') : '' }}">
                                 </div>
                                 @error('ratetaksi')
                                     <span class="invalid-feedback" role="alert">
@@ -162,7 +162,7 @@
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
-                                    <input type="text" class="form-control @error('total') is-invalid @enderror" name="total" id="total" readonly>
+                                    <input type="text" class="form-control @error('total') is-invalid @enderror" name="total" id="total" value="{{ $suratperjalanan->total ? number_format($suratperjalanan->total, 0, '', '.') : '' }}" readonly>
                                 </div>
                                 @error('total')
                                     <span class="invalid-feedback" role="alert">
@@ -244,6 +244,9 @@
             $('#ratetaksi').val($('#ratetaksi').val().replace(/\./g, ''));
             $('#total').val($('#total').val().replace(/\./g, ''));
         });
+
+        // Hitung total saat form pertama kali dimuat
+        calculateTotal();
     });
 
 </script>

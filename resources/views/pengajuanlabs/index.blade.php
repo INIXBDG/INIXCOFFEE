@@ -98,7 +98,7 @@
                     </div>
 
                     @if (in_array($userJabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support','Education Manager']))
-                        <div class="card my-3">
+                        <div class="card m-4">
                             <div class="card-body d-flex justify-content-center">
                                 <div class="col-md-4 mx-1">
                                     <label class="form-label">Tahun</label>

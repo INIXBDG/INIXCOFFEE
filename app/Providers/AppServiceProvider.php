@@ -30,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
             return $app->make(WebPushChannel::class);
         });
 
-        if (config('app.env') !== 'local' || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) {
+        if (request()->isSecure() || request()->header('X-Forwarded-Proto') === 'https') {
             URL::forceScheme('https');
         }
     }

@@ -2,33 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\activityLog;
-use App\Models\jabatan;
-use App\Models\karyawan;
+use App\Models\ActivityLog;
+use App\Models\Jabatan;
+use App\Models\Karyawan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
-use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Vinkla\Hashids\Facades\Hashids;
-use Illuminate\Notifications\Notifiable;
-use App\Models\Sertifikasi;
-use App\Models\Pelatihan;
 use App\Exports\UserExport;
 use Maatwebsite\Excel\Facades\Excel;
 
-
 class UserController extends Controller
 {
-    use Notifiable;
-
     public function __construct()
     {
         $this->middleware('auth');
-        // $this->middleware('permission:Akses Development', ['only' => ['showUserDropdown', 'changeUser', 'indexUser','updateUser','editUser']]);
     }
 
     public function index()
@@ -39,19 +30,17 @@ class UserController extends Controller
 
     public function create()
     {
-        // $user = Karyawan::latest()->first();
-        $user = User::max('id');
-
-        $countuser = $user + 1;
-        // dd($user);
-        $jabatan = jabatan::all();
+        // Ambil ID user tertinggi untuk keperluan tampilan UI (calon ID berikutnya)
+        // Catatan: Jangan gunakan ini sebagai primary key sebenarnya, biarkan auto increment
+        $lastUserId = User::max('id') ?? 0;
+        $countuser = $lastUserId + 1;
+        $jabatan = Jabatan::all();
 
         return view('user.register', compact('countuser', 'jabatan'));
     }
 
     public function regist(Request $request)
     {
-        // dd($request->all());
         $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255'],
@@ -71,18 +60,16 @@ class UserController extends Controller
             $id_instruktur = null;
             $id_sales = null;
 
-            if ($request->jabatan == 'Instruktur' || $request->jabatan == 'Technical Support') {
+            if (in_array($request->jabatan, ['Instruktur', 'Technical Support'])) {
                 $id_instruktur = $request->kode_karyawan;
             }
 
-            if ($request->jabatan == 'SPV Sales' || $request->jabatan == 'Sales' || $request->jabatan == 'Adm Sales') {
+            if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
                 $id_sales = $request->kode_karyawan;
             }
 
-            // Gunakan ID dari users sebagai ID untuk karyawan
-            // $karyawanId = User::max('id') + 1;
-
-            $karyawan_id = Karyawan::create([
+            // Buat data karyawan terlebih dahulu
+            $karyawan = Karyawan::create([
                 'nama_lengkap' => $request->nama_lengkap,
                 'status_aktif' => '1',
                 'jabatan' => $request->jabatan,
@@ -91,11 +78,12 @@ class UserController extends Controller
                 'email' => $request->email,
             ]);
 
+            // Buat user dengan merelasikan ke karyawan yang baru dibuat
             User::create([
                 'username' => $request->username,
                 'jabatan' => $request->jabatan,
                 'status_akun' => '1',
-                'karyawan_id' => $karyawan_id->id, // Gunakan ID dari users sebagai ID untuk karyawan
+                'karyawan_id' => $karyawan->id,
                 'password' => Hash::make($request->password),
                 'id_instruktur' => $id_instruktur,
                 'id_sales' => $id_sales,
@@ -116,44 +104,50 @@ class UserController extends Controller
         if (empty($decoded)) abort(404);
 
         $userId = $decoded[0];
-        $users = User::with(['karyawan.educations', 'karyawan'])->findOrFail($userId);
-        $karyawan = karyawan::findOrFail($userId);
 
-        // Batasi akses: hanya user itu sendiri atau admin
+        // Eager loading karyawan beserta educations-nya dalam 1 query efisien
+        $users = User::with(['karyawan.educations'])->findOrFail($userId);
+
+        // Ambil relasi karyawan yang sudah di-load, hindari query ulang
+        $karyawan = $users->karyawan;
+        if (!$karyawan) {
+            abort(404, 'Data karyawan tidak ditemukan untuk user ini.');
+        }
+
+        // Batasi akses: hanya user itu sendiri atau HRD
         if (auth()->id() !== $users->id && auth()->user()->jabatan !== 'HRD') {
             abort(403, 'Kamu tidak diizinkan mengakses data ini.');
         }
 
-        $sertifikasis = Sertifikasi::where('user_id', $userId)
-                        ->where('status_approval', 'approved')
-                        ->orderBy('tanggal_ujian', 'desc')
-                        ->get()
-                        ->unique(function ($item) {
-                            return strtolower($item->nama_sertifikat . $item->penyedia . $item->vendor);
-                        });
+        $sertifikasis = \App\Models\Sertifikasi::where('user_id', $userId)
+            ->where('status_approval', 'approved')
+            ->orderBy('tanggal_ujian', 'desc')
+            ->get()
+            ->unique(function ($item) {
+                return strtolower($item->nama_sertifikat . $item->penyedia . $item->vendor);
+            });
 
-        $id_karyawan = Auth::user()->id;
+        // Ambil log aktivitas berdasarkan user yang SEDANG DILIHAT, bukan user yang login
+        $targetUserId = $userId;
 
-        $dataAuth = activityLog::with('karyawan')
-            ->where('user_id', $id_karyawan)
+        $dataAuth = ActivityLog::with('karyawan')
+            ->where('user_id', $targetUserId)
             ->whereIn('status', ['Login', 'Logout'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $dataVisit = activityLog::with('karyawan')
-            ->where('user_id', $id_karyawan)
-            ->whereNotIn('status', ['Login', 'Logout'])
-            ->whereNotIn('status', ['Absen Masuk', 'Absen keluar'])
+        $dataVisit = ActivityLog::with('karyawan')
+            ->where('user_id', $targetUserId)
+            ->whereNotIn('status', ['Login', 'Logout', 'Absen Masuk', 'Absen keluar'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $dataAbsen = activityLog::with('karyawan')
-            ->where('user_id', $id_karyawan)
+        $dataAbsen = ActivityLog::with('karyawan')
+            ->where('user_id', $targetUserId)
             ->whereIn('status', ['Absen Masuk', 'Absen Keluar'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Jangan lupa tambahkan variabel baru ke compact
         return view('user.show', compact([
             'dataAuth',
             'dataVisit',
@@ -170,14 +164,15 @@ class UserController extends Controller
         if (empty($decoded)) abort(404);
 
         $realId = $decoded[0];
-        $users = User::findOrFail($realId);
+        $users = User::with('karyawan')->findOrFail($realId);
 
         // Batasi akses ke user sendiri atau admin
         if (auth()->id() !== $users->id && auth()->user()->role !== 'Admin') {
             abort(403);
         }
 
-        $karyawan = Karyawan::findOrFail($realId);
+        // Gunakan relasi yang sudah di-eager load
+        $karyawan = $users->karyawan;
 
         return view('user.editpassword', compact('users', 'karyawan'));
     }
@@ -207,7 +202,7 @@ class UserController extends Controller
             $users->update($data);
 
             return redirect()->route('user.show', ['hashid' => $users->hashids])
-                ->with('success', 'Password berhasil diperbarui.'); //fixing redirect route and message
+                ->with('success', 'Password berhasil diperbarui.');
         } else {
             return back()->with('error', 'Password Lama Anda Salah');
         }
@@ -217,22 +212,18 @@ class UserController extends Controller
     {
         $users = User::findOrFail($id);
 
-        // Cek apakah karyawan ada
+        // Hapus data karyawan yang terkait
         if ($users->karyawan_id) {
             $karyawan = Karyawan::find($users->karyawan_id);
-
-            // Jika karyawan ditemukan, hapus
             if ($karyawan) {
                 $karyawan->delete();
             }
         }
 
-        // Hapus user
         $users->delete();
 
         return redirect('/user')->with('success', 'User Berhasil Dihapus');
     }
-
 
     public function datas()
     {
@@ -255,16 +246,17 @@ class UserController extends Controller
 
     public function getUsers()
     {
-        $users = User::get();
+        $users = User::with('karyawan')->get();
         return response()->json($users);
     }
+
     public function showUserDropdown()
     {
-        $users = auth()->user();
-        $jabatan = $users->jabatan;
+        $currentUser = auth()->user();
+        $jabatan = $currentUser->jabatan;
 
-        $users = User::get();
-        return view('user.changeuser', compact('users'));
+        $users = User::with('karyawan')->get();
+        return view('user.changeuser', compact('users', 'currentUser', 'jabatan'));
     }
 
     public function indexUser()
@@ -284,6 +276,7 @@ class UserController extends Controller
             'userRoles' => $userRoles
         ]);
     }
+
     public function updateUser(Request $request, $id)
     {
         $request->validate([
@@ -292,14 +285,13 @@ class UserController extends Controller
         ]);
 
         $user = User::findOrFail($id);
-
         $user->syncRoles($request->roles);
 
         return redirect('/userRolePermissions')->with('success', 'User Updated Successfully with roles');
     }
 
-    // Nama lengkap & email saja
-    public function ExportExcel(){
+    public function ExportExcel()
+    {
         return Excel::download(new UserExport, 'Data User.xlsx');
     }
 }

@@ -80,4 +80,26 @@ class Perusahaan extends Model
     {
         return $this->hasMany(SopPerusahaan::class, 'id_perusahaan', 'id');
     }
+
+    public function riwayatStatus()
+    {
+        return $this->hasMany(RiwayatStatusPerusahaan::class, 'perusahaan_id', 'id');
+    }
+
+    public function kelasTerakhir()
+    {
+        return $this->hasOne(RKM::class, 'perusahaan_key', 'id')->latestOfMany('created_at');
+    }
+
+    // public function aktivitasTerakhir()
+    // {
+    //     return $this->hasOneThrough(
+    //         Aktivitas::class,
+    //         Contact::class,
+    //         'id_perusahaan', // Foreign key pada tabel contacts
+    //         'id_contact',    // Foreign key pada tabel aktivitas
+    //         'id',            // Local key pada tabel perusahaans
+    //         'id'             // Local key pada tabel contacts
+    //     )->latestOfMany('created_at');
+    // }
 }

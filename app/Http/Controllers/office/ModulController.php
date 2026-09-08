@@ -444,4 +444,80 @@ class ModulController extends Controller
         // Parameter constructor dikirim ke Class Export
         return Excel::download(new ModulPesertaExport($no, $peserta, $ttd), 'Peserta_' . $id . '.xlsx');
     }
+
+    public function rekapJson(Request $request){
+        $totalNomor     = NomorModul::count();
+        $totalModul     = Modul::count();
+        $totalRegular   = NomorModul::where('type', 'Regular')->count();
+        $totalAuthorize = NomorModul::where('type', 'Authorize')->count();
+
+        $query = Modul::query()->with(['materi', 'nomorModul']);
+        $col = 'awal_training'; // sesuaikan kalau field tanggal acuannya beda
+
+        // Filter tahun (select selalu punya value, default tahun berjalan)
+        if ($tahun = $request->input('tahun')) {
+            $query->whereYear($col, $tahun);
+        }
+
+        // Filter bulan (1-12), hanya aktif kalau tipe periode = bulan
+        if ($bulan = $request->input('bulan')) {
+            $query->whereMonth($col, $bulan);
+        }
+
+        // Filter triwulan (1-4), hanya aktif kalau tipe periode = triwulan
+        if ($triwulan = $request->input('triwulan')) {
+            $endMonth = $triwulan * 3;
+            $startMonth = $endMonth - 2;
+            $query->whereMonth($col, '>=', $startMonth)
+                ->whereMonth($col, '<=', $endMonth);
+        }
+
+        $moduls = $query->get();
+
+        // Fallback resolve materi untuk row yang id_materi-nya kosong (batch, bukan per-row)
+        $needsFallback = $moduls->whereNull('id_materi')
+            ->filter(fn ($m) => $m->nama_materi || $m->kode_materi);
+
+        if ($needsFallback->isNotEmpty()) {
+            $names = $needsFallback->pluck('nama_materi')->filter()->unique()->values();
+            $codes = $needsFallback->pluck('kode_materi')->filter()->unique()->values();
+
+            $candidates = Materi::where(function ($q) use ($names, $codes) {
+                if ($names->isNotEmpty()) $q->whereIn('nama_materi', $names);
+                if ($codes->isNotEmpty()) $q->orWhereIn('kode_materi', $codes);
+            })->get();
+
+            foreach ($needsFallback as $modul) {
+                $match = $candidates->first(fn ($mat) =>
+                    ($modul->nama_materi && $mat->nama_materi === $modul->nama_materi) ||
+                    ($modul->kode_materi && $mat->kode_materi === $modul->kode_materi)
+                );
+                if ($match) {
+                    $modul->setRelation('materi', $match);
+                    $modul->id_materi = $match->id; // hanya key grouping, tidak disimpan ke DB
+                }
+            }
+        }
+
+        $dataRegular = $moduls
+            ->filter(fn ($m) => optional($m->nomorModul)->type === 'Regular')
+            ->groupBy(fn ($m) => $m->id_materi ?? $m->kode_materi ?? $m->nama_materi ?? 'unknown');
+
+        $dataAuthorize = $moduls
+            ->filter(fn ($m) => optional($m->nomorModul)->type === 'Authorize')
+            ->groupBy(fn ($m) => $m->id_materi ?? $m->kode_materi ?? $m->nama_materi ?? 'unknown');
+
+        return response()->json([
+            'total_nomor'     => $totalNomor,
+            'total_modul'     => $totalModul,
+            'total_regular'   => $totalRegular,
+            'total_authorize' => $totalAuthorize,
+            'data_regular'    => $dataRegular,
+            'data_authorize'  => $dataAuthorize,
+        ]);
+    }
+
+    public function rekapIndex(){
+        return view('office.nomorModul.rekap');
+    }
 }

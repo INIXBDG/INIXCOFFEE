@@ -28,6 +28,7 @@ use App\Notifications\CommentNotification;
 use App\Notifications\PoReminder;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Gate;
 
 class PeluangController extends Controller
 {
@@ -49,52 +50,36 @@ class PeluangController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
 
-        if (!in_array($user->jabatan, $allowedJabatan) && $user->jabatan !== 'Sales') {
+        // Implementasi Gate untuk validasi otorisasi akses tingkat halaman
+        if (!Gate::allows('akses-filter-sales') && $user->jabatan !== 'Sales') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        // Hanya memuat data materi dengan spesifikasi kolom yang dibutuhkan oleh dropdown Blade
-        $materi = Materi::where('status', '!=', 'Nonaktif')
-            ->select('id', 'nama_materi')
-            ->get();
-
         $salesList = [];
 
-        if ($user->jabatan === 'Sales') {
-            // Hanya memuat entitas perusahaan dengan spesifikasi kolom spesifik
-            $Perusahaan = Perusahaan::where('sales_key', $user->id_sales)
-                ->select('id', 'nama_perusahaan', 'cp')
+        // Evaluasi otorisasi spesifik untuk pemuatan data dropdown daftar sales
+        if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales'])) {
+            $salesList = User::where('jabatan', 'Sales')
+                ->where('status_akun', '1')
+                ->select('id_sales', 'username')
                 ->get();
-        } else {
-            // Hanya memuat entitas perusahaan dengan spesifikasi kolom spesifik
-            $Perusahaan = Perusahaan::select('id', 'nama_perusahaan', 'cp')->get();
-
-            // Memuat data sales untuk otorisasi spesifik di dalam modal
-            if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales'])) {
-                $salesList = User::where('jabatan', 'Sales')
-                    ->where('status_akun', '1')
-                    ->select('id_sales', 'username')
-                    ->get();
-            }
         }
 
-        // Variabel $data dan $aktivitas dihapus karena data ditarik secara asinkron (AJAX)
-        return view('crm.peluang.index', compact('Perusahaan', 'materi', 'salesList'));
+        // Variabel $materi dan $Perusahaan dihapus dari fungsi compact()
+        return view('crm.peluang.index', compact('salesList'));
     }
 
     public function indexJson(Request $request)
     {
         try {
             $user = Auth::user();
-            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
-            if ($user->jabatan !== 'Sales' && !in_array($user->jabatan, $allowedJabatan)) {
+            // 1. Integrasi Gate untuk otorisasi akses utama
+            if (!Gate::allows('akses-crm')) {
                 return response()->json(['error' => 'Unauthorized access.'], 403);
             }
 
-            // 1. Parameter Utama DataTables Server-Side (Menetapkan default indeks 11 jika kosong)
             $draw = $request->input('draw');
             $start = $request->input('start', 0);
             $length = $request->input('length', 10);
@@ -103,7 +88,6 @@ class PeluangController extends Controller
             $orderDir = $request->input('order.0.dir', 'desc');
             $statusFilter = $request->input('status_filter', 'aktif');
 
-            // 2. Pemetaan Indeks Kolom DataTables ke Nama Kolom Basis Data
             $columns = [
                 0 => 'id',
                 4 => 'harga',
@@ -112,37 +96,26 @@ class PeluangController extends Controller
                 7 => 'periode_mulai',
                 9 => 'tahap',
                 10 => 'id_sales',
-                11 => 'id', // Dialihkan dari 'created_at' ke 'id' untuk optimalisasi performa
+                11 => 'id',
             ];
 
-            // Menggunakan 'id' sebagai lapisan cadangan absolut jika indeks tidak ditemukan
             $orderColumn = $columns[$orderColumnIndex] ?? 'id';
 
-            // 3. Kueri Relasional Dasar
-            $query = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
-                ->with([
-                    'materiRelation',
-                    'rkm' => function($q) {
-                        $q->withTrashed()->with('perusahaan');
-                    }
-                ]);
+            $query = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales');
 
-            // 4. Implementasi Filter Otorisasi
-            if ($user->jabatan === 'Sales') {
+            // 2. Integrasi Gate untuk restriksi visibilitas kueri data
+            if (!Gate::allows('akses-filter-sales')) {
                 $query->where('id_sales', $user->id_sales);
             }
 
-            // 5. Implementasi Filter Status Data (Aktif vs Lost)
             if ($statusFilter === 'lost') {
                 $query->where('tahap', 'lost');
             } else {
                 $query->where('tahap', '!=', 'lost');
             }
 
-            // 6. Eksekusi Perhitungan Total Rekaman (Sebelum Pencarian Global)
             $recordsTotal = $query->count();
 
-            // 7. Implementasi Logika Pencarian Global (Search)
             if (!empty($searchValue)) {
                 $query->where(function($q) use ($searchValue) {
                     $q->where('tahap', 'like', "%{$searchValue}%")
@@ -153,17 +126,31 @@ class PeluangController extends Controller
                 });
             }
 
-            // 8. Eksekusi Perhitungan Total Rekaman (Setelah Pencarian Global)
             $recordsFiltered = $query->count();
 
-            // 9. Implementasi Pengurutan (Order) dan Paginasi (Limit & Offset) menggunakan kolom ID
             $query->orderBy($orderColumn, $orderDir);
             if ($length != -1) {
                 $query->offset($start)->limit($length);
             }
 
-            // 10. Eksekusi Kueri Pengambilan Data dan Pemetaan
-            $data = $query->get()->map(function ($item) {
+            $rawData = $query->with([
+                'materiRelation',
+                'rkm' => function($q) {
+                    $q->withTrashed()->with('perusahaan');
+                }
+            ])->get();
+
+            $peluangIds = $rawData->pluck('id')->toArray();
+            $historiPeluang = [];
+
+            if (!empty($peluangIds)) {
+                $historiPeluang = DB::table('peluang_histories')
+                    ->whereIn('id_peluang', $peluangIds)
+                    ->pluck('id_peluang')
+                    ->toArray();
+            }
+
+            $data = $rawData->map(function ($item) use ($historiPeluang) {
                 $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
 
                 $rkm = $item->rkm;
@@ -189,14 +176,11 @@ class PeluangController extends Controller
                     ];
                 }
 
-                $item->has_history = DB::table('peluang_histories')
-                    ->where('id_peluang', $item->id)
-                    ->exists();
+                $item->has_history = in_array($item->id, $historiPeluang);
 
                 return $item;
             });
 
-            // 11. Pengembalian Struktur JSON Standar DataTables Server-Side
             return response()->json([
                 'draw' => intval($draw),
                 'recordsTotal' => $recordsTotal,
@@ -217,23 +201,26 @@ class PeluangController extends Controller
 
     public function detail($id)
     {
-        // Ambil peluang dan relasi terkait
+        // 1. Eksekusi Nested Eager Loading tersentralisasi
         $peluang = Peluang::with([
             'materiRelation',
             'rkm' => function($query) { $query->withTrashed(); },
-            'aktivitas'
-        ])
-            ->where('id', $id)
-            ->firstOrFail();
+            'aktivitas.contact',
+            'aktivitas.peserta',
+            'perusahaan.contacts',
+            'perusahaan.peserta'
+        ])->findOrFail($id);
 
-        // Normalisasi data RKM
-        if ($peluang->rkm) {
-            $peluang->rkm->tanggal_awal_day = $peluang->rkm->tanggal_awal ? date('d', strtotime($peluang->rkm->tanggal_awal)) : null;
-            $peluang->rkm->tanggal_awal_month = $peluang->rkm->tanggal_awal ? date('n', strtotime($peluang->rkm->tanggal_awal)) : null;
-            $peluang->rkm->tanggal_awal_year = $peluang->rkm->tanggal_awal ? date('Y', strtotime($peluang->rkm->tanggal_awal)) : null;
+        // 2. Normalisasi atribut temporal RKM
+        if ($peluang->rkm && $peluang->rkm->tanggal_awal) {
+            $timestamp = strtotime($peluang->rkm->tanggal_awal);
+            $peluang->rkm->tanggal_awal_day = date('d', $timestamp);
+            $peluang->rkm->tanggal_awal_month = date('n', $timestamp);
+            $peluang->rkm->tanggal_awal_year = date('Y', $timestamp);
         }
 
-        $materi = Materi::where('status', '!=', 'Nonaktif')->get();
+        // 3. Pengambilan dependensi entitas tunggal
+        $materi = Materi::where('status', '!=', 'Nonaktif')->select('id', 'nama_materi')->get();
 
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')
             ->where('id_rkm', $peluang->id_rkm)
@@ -241,66 +228,53 @@ class PeluangController extends Controller
 
         $regis = Regisform::where('id_peluang', $id)->first();
 
-        // 🔹 Ambil semua aktivitas seperti $aktivitass
         $perusahaan = $peluang->perusahaan;
 
-        $perusahaanAll = Perusahaan::orderBy('nama_perusahaan', 'asc')->get();
-
-        $aktivitass = Aktivitas::with(['contact', 'peserta'])
-            ->where('id_peluang', $id)
-            ->where(function ($query) use ($perusahaan) {
-                $query->whereIn('id_contact', $perusahaan->contacts->pluck('id'))
-                    ->orWhereIn('id_peserta', $perusahaan->peserta->pluck('id'));
-            })
-            ->orderByDesc('created_at')
-            ->get();
-
-        $user = Auth::user();
-        $aktivitasTambahan = Aktivitas::where('id_sales', $user->id_sales)->whereNull('id_peluang')->get();
-
-        $data = Perusahaan::with(['contacts', 'peserta'])->where('id', $perusahaan->id)->firstOrFail();
-        $items = [];
-        foreach ($data->contacts as $contact) {
-            $items[] = [
+        // 4. Transformasi dan penggabungan koleksi relasional ke memori
+        $contactsItem = $perusahaan->contacts->map(function ($contact) {
+            return [
                 'id' => $contact->id,
                 'nama' => $contact->nama,
                 'type' => 'contact',
-                'label' => "[Contact] " . $contact->nama . " (" . ($contact->email ?? 'Tidak ada email') . ")"
+                'label' => "[Contact] {$contact->nama} (" . ($contact->email ?? 'Tidak ada email') . ")"
             ];
-        }
-        foreach ($data->peserta as $peserta) {
-            $items[] = [
+        });
+
+        $pesertaItem = $perusahaan->peserta->map(function ($peserta) {
+            return [
                 'id' => $peserta->id,
                 'nama' => $peserta->nama,
                 'type' => 'peserta',
-                'label' => "[Peserta] " . $peserta->nama . " (" . ($peserta->email ?? 'Tidak ada email') . ")"
+                'label' => "[Peserta] {$peserta->nama} (" . ($peserta->email ?? 'Tidak ada email') . ")"
             ];
-        }
-        usort($items, function ($a, $b) {
-            return strcasecmp($a['label'], $b['label']);
         });
 
-        // 🔹 Ambil Histori Pemulihan (Restore)
+        $items = $contactsItem->concat($pesertaItem)->sortBy(function ($item) {
+            return strtolower($item['label']);
+        })->values()->all();
+
         $histories = \Illuminate\Support\Facades\DB::table('peluang_histories')
             ->where('id_peluang', $id)
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->get();
 
+        // 5. Transmisi variabel koleksi final ke lapisan View
         return view('crm.peluang.detail', compact(
             'peluang',
-            'aktivitass',
             'materi',
             'netsales',
             'regis',
             'items',
-            'aktivitasTambahan',
-            'perusahaanAll',
-            'histories' // 🔹 Teruskan variabel ini ke view
+            'histories'
         ));
     }
-
+    // Pada method AmbilAktivitas($id)
     public function AmbilAktivitas($id)
     {
+        // Ambil data perusahaan untuk referensi nama
+        $perusahaanData = \App\Models\Perusahaan::select('id', 'nama_perusahaan')->find($id);
+        $namaPerusahaan = $perusahaanData ? $perusahaanData->nama_perusahaan : '-';
+
         $contacts = Contact::where('id_perusahaan', $id)
             ->select('id', 'nama', 'email', 'divisi')
             ->get()
@@ -314,7 +288,6 @@ class PeluangController extends Controller
                 ];
             });
 
-        // Ambil semua peserta berdasarkan perusahaan
         $peserta = Peserta::where('perusahaan_key', $id)
             ->select('id', 'nama', 'email')
             ->get()
@@ -332,22 +305,28 @@ class PeluangController extends Controller
         $pesertaIds = $peserta->pluck('id')->toArray();
 
         $aktivitas = Aktivitas::with(['contact', 'peserta'])
-            ->where(function ($query) use ($contactIds, $pesertaIds) {
+            ->where(function ($query) use ($contactIds, $pesertaIds, $id) {
                 if (!empty($contactIds)) {
                     $query->whereIn('id_contact', $contactIds);
                 }
                 if (!empty($pesertaIds)) {
                     $query->orWhereIn('id_peserta', $pesertaIds);
                 }
+                // Penyesuaian kueri untuk aktivitas PA
+                $query->orWhere(function ($subQuery) use ($id) {
+                    $subQuery->where('aktivitas', 'PA')
+                            ->where('id_contact', $id);
+                });
             })
             ->whereNull('id_peluang')
             ->orderByDesc('created_at')
             ->get();
 
-        $result = $aktivitas->map(function ($a) {
+        $result = $aktivitas->map(function ($a) use ($namaPerusahaan) {
             return [
                 'id' => $a->id,
-                'kontak' => $a->contact->nama ?? ($a->peserta->nama ?? '-'),
+                // Modifikasi kondisi label kontak jika aktivitas = PA
+                'kontak' => $a->aktivitas === 'PA' ? $namaPerusahaan : ($a->contact->nama ?? ($a->peserta->nama ?? '-')),
                 'aktivitas' => ucfirst($a->aktivitas),
                 'subject' => $a->subject,
                 'deskripsi' => $a->deskripsi ?? '-',
@@ -1260,6 +1239,59 @@ class PeluangController extends Controller
                 'message' => 'Gagal memulihkan peluang: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function searchPerusahaan(Request $request)
+    {
+        $search = $request->input('q');
+        $user = Auth::user();
+
+        $query = Perusahaan::select('id', 'nama_perusahaan', 'cp');
+
+        if ($user->jabatan === 'Sales') {
+            $query->where('sales_key', $user->id_sales);
+        }
+
+        if (!empty($search)) {
+            $query->where('nama_perusahaan', 'like', "%{$search}%");
+        }
+
+        // Membatasi hasil maksimal 20 rekaman per kueri untuk stabilitas performa
+        $perusahaan = $query->limit(20)->get();
+
+        $formattedData = [];
+        foreach ($perusahaan as $item) {
+            $formattedData[] = [
+                'id' => $item->id,
+                'text' => $item->nama_perusahaan . ' (' . $item->cp . ')'
+            ];
+        }
+
+        return response()->json($formattedData);
+    }
+
+    public function searchMateri(Request $request)
+    {
+        $search = $request->input('q');
+
+        $query = Materi::select('id', 'nama_materi')->where('status', '!=', 'Nonaktif');
+
+        if (!empty($search)) {
+            $query->where('nama_materi', 'like', "%{$search}%");
+        }
+
+        // Membatasi hasil maksimal 20 rekaman per kueri untuk stabilitas performa
+        $materi = $query->limit(20)->get();
+
+        $formattedData = [];
+        foreach ($materi as $item) {
+            $formattedData[] = [
+                'id' => $item->id,
+                'text' => $item->nama_materi
+            ];
+        }
+
+        return response()->json($formattedData);
     }
 
 }

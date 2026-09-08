@@ -240,6 +240,13 @@ class SuratPerjalananController extends Controller
         $data = $request->all();
         $data['jadwal_RKM'] = $request->input('jadwal_RKM') !== '-' ? $request->input('jadwal_RKM') : null;
 
+        // Kalkulasi durasi di sisi backend jika bernilai null atau kosong
+        if (empty($data['durasi'])) {
+            $berangkat = \Carbon\Carbon::parse($request->tanggal_berangkat)->startOfDay();
+            $pulang = \Carbon\Carbon::parse($request->tanggal_pulang)->startOfDay();
+            $data['durasi'] = $berangkat->diffInDays($pulang) + 1;
+        }
+
         $data['approval_manager'] = '0';
         $data['approval_hrd'] = '0';
         $data['approval_gm'] = '0';
@@ -400,6 +407,30 @@ class SuratPerjalananController extends Controller
     public function destroy($id)
     {
         $suratPerjalanan = SuratPerjalanan::findOrFail($id);
+
+        // Hapus tagihan/biaya supir secara massal (Batch Deletion) untuk performa lebih cepat
+        $biayaDrivers = \App\Models\BiayaTransportasiDriver::where('id_pengajuan_spj', $id)->get();
+        $filesToDelete = [];
+        $idsToDelete = [];
+
+        foreach ($biayaDrivers as $biaya) {
+            if (!empty($biaya->bukti)) {
+                $filesToDelete[] = $biaya->bukti;
+            }
+            $idsToDelete[] = $biaya->id;
+        }
+
+        // Hapus semua file sekaligus (melewati fungsi pengecekan I/O satu per satu)
+        if (!empty($filesToDelete)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($filesToDelete);
+        }
+
+        // Hapus semua baris database dalam 1 kali eksekusi Query
+        if (!empty($idsToDelete)) {
+            \App\Models\BiayaTransportasiDriver::whereIn('id', $idsToDelete)->delete();
+        }
+
+        // Hapus data SPJ utama (Jurnal Akuntansi akan terhapus otomatis secara cascade di database)
         $suratPerjalanan->delete();
 
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil dihapus.');
