@@ -245,13 +245,11 @@
                                     <th style="text-align: center;">Client</th>
                                     <th style="text-align: center;">Event</th>
                                     <th style="text-align: center;">Harga (Rp)</th>
-                                    <th style="text-align: center;">Net Sales</th>
                                     <th style="text-align: center;">Pax</th>
                                     <th style="text-align: center;">Periode</th>
                                     <th style="text-align: center;">Exam</th>
                                     <th style="text-align: center;">Tahap</th>
                                     <th style="text-align: center;">Sales</th>
-                                    <th style="text-align: center;">Prospek Terbuat</th>
                                     <th style="text-align: center;">Aksi</th>
                                 </tr>
                             </thead>
@@ -276,13 +274,11 @@
                                     <th style="text-align: center;">Client</th>
                                     <th style="text-align: center;">Event</th>
                                     <th style="text-align: center;">Harga (Rp)</th>
-                                    <th style="text-align: center;">Net Sales</th>
                                     <th style="text-align: center;">Pax</th>
                                     <th style="text-align: center;">Periode</th>
                                     <th style="text-align: center;">Exam</th>
                                     <th style="text-align: center;">Tahap</th>
                                     <th style="text-align: center;">Sales</th>
-                                    <th style="text-align: center;">Prospek Terbuat</th>
                                     <th style="text-align: center;">Aksi</th>
                                 </tr>
                             </thead>
@@ -344,12 +340,6 @@
                         return data ? 'Rp ' + parseInt(data).toLocaleString('id-ID') : 'Rp 0';
                     }
                 },
-                {
-                    data: 'netsales',
-                    render: function(data, type, row) {
-                        return data ? 'Rp ' + parseInt(data).toLocaleString('id-ID') : 'Rp 0,00';
-                    }
-                },
                 { data: 'pax' },
                 {
                     data: null,
@@ -373,12 +363,6 @@
                     }
                 },
                 { data: 'id_sales' },
-                {
-                    data: 'created_at',
-                    render: function(data, type, row) {
-                        return data ? moment(data).format('DD-MM-YYYY') : '-';
-                    }
-                },
                 {
                     data: 'id',
                     render: function(id, type, data) {
@@ -426,64 +410,76 @@
                 }
             };
 
-            // 3. Inisialisasi Tabel Aktif (Server-Side Processing)
-            let tableAktif = $('#peluangTable').DataTable({
-                processing: true,
-                serverSide: true,
-                autoWidth: false,
-                deferRender: true,
-                scrollX: true,
-                order: [[11, 'desc']],
-                ajax: {
-                    url: '{{ route("index.peluang.json") }}',
-                    type: 'GET',
-                    data: function(d) {
-                        d.status_filter = 'aktif';
-                    },
-                    error: function(xhr, error, thrown) {
-                        alert('Gagal memuat data peluang aktif: ' + thrown);
-                    }
-                },
-                createdRow: tableCreatedRow,
-                columns: tableColumns
-            });
-
-            // 4. Inisialisasi Tabel Lost (Server-Side Processing)
-            let tableLost = $('#peluangLostTable').DataTable({
-                processing: true,
-                serverSide: true,
-                autoWidth: false,
-                deferRender: true,
-                scrollX: true,
-                order: [[11, 'desc']],
-                ajax: {
-                    url: '{{ route("index.peluang.json") }}',
-                    type: 'GET',
-                    data: function(d) {
-                        d.status_filter = 'lost';
-                    },
-                    error: function(xhr, error, thrown) {
-                        alert('Gagal memuat data peluang lost: ' + thrown);
-                    }
-                },
-                createdRow: tableCreatedRow,
-                columns: tableColumns
-            });
-
-            // 5. Callback penomoran untuk kedua tabel
+            // Callback penomoran untuk kedua tabel
             function bindNumbering(tableInstance) {
                 tableInstance.on('draw.dt', function() {
                     let info = tableInstance.page.info();
                     tableInstance.column(0, { search: 'applied', order: 'applied' }).nodes().each(function(cell, i) {
                         cell.innerHTML = info.start + i + 1;
                     });
+
+                    // Memaksa DataTables menghitung ulang lebar kolom setelah render
+                    setTimeout(function() {
+                        tableInstance.columns.adjust();
+                    }, 50);
                 });
             }
 
-            bindNumbering(tableAktif);
-            bindNumbering(tableLost);
+        $('#peluangTable, #peluangLostTable').css('visibility', 'visible');
 
-            // 6. Penjadwalan inisialisasi Select2 ke antrean makro-task
+            // 3. Eksekusi Tabel Aktif
+            setTimeout(() => {
+                let tableAktif = $('#peluangTable').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    autoWidth: false,
+                    deferRender: true,
+                    scrollX: true,
+                    order: [[10, 'desc']], // Ubah urutan default ke indeks 10 (Aksi/ID)
+                    ajax: {
+                        url: '{{ route("index.peluang.json") }}',
+                        type: 'GET',
+                        data: function(d) {
+                            d.status_filter = 'aktif';
+                        },
+                        error: function(xhr, error, thrown) {
+                            alert('Gagal memuat data peluang aktif: ' + thrown);
+                        }
+                    },
+                    createdRow: tableCreatedRow,
+                    columns: tableColumns
+                });
+
+                bindNumbering(tableAktif);
+            }, 50);
+
+            // 4. Eksekusi Tabel Lost
+            setTimeout(() => {
+                let tableLost = $('#peluangLostTable').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    autoWidth: false,
+                    deferRender: true,
+                    scrollX: true,
+                    order: [[10, 'desc']], // Ubah urutan default ke indeks 10 (Aksi/ID)
+                    ajax: {
+                        url: '{{ route("index.peluang.json") }}',
+                        type: 'GET',
+                        data: function(d) {
+                            d.status_filter = 'lost';
+                        },
+                        error: function(xhr, error, thrown) {
+                            alert('Gagal memuat data peluang lost: ' + thrown);
+                        }
+                    },
+                    createdRow: tableCreatedRow,
+                    columns: tableColumns
+                });
+
+                bindNumbering(tableLost);
+            }, 250);
+
+            // 5. Penjadwalan inisialisasi Select2 ke antrean makro-task
             setTimeout(() => {
                 initPerusahaanSelect2();
                 initMateriSelect2();
