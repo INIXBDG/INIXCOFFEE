@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\TargetActivity;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -30,23 +31,27 @@ class AktivitasController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        Gate::authorize('akses-crm');
 
-        if ($user->jabatan === 'Sales') {
+        if (Gate::denies('akses-filter-sales')) {
             $idSales = $user->id_sales;
-            $data = Aktivitas::where('id_sales', $idSales)->get();
-            $perusahaan = Perusahaan::where('sales_key', $idSales)->get();
-        } elseif (in_array($user->jabatan, $allowedJabatan)) {
-            $data = Aktivitas::all();
-            $perusahaan = Perusahaan::all();
+            $perusahaan = Perusahaan::where('sales_key', $idSales)
+                ->select('id', 'nama_perusahaan')
+                ->get();
         } else {
-            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+            $perusahaan = Perusahaan::select('id', 'nama_perusahaan')->get();
         }
 
-        $sales_option = karyawan::where('jabatan', 'sales')->where('status_aktif', '1')->get();
-        $contact = Contact::with('perusahaan')->get();
+        $sales_option = karyawan::where('jabatan', 'sales')
+            ->where('status_aktif', '1')
+            ->get();
 
-        return view('crm.aktivitas.index', compact('data', 'perusahaan', 'contact', 'sales_option'));
+        $contact = Contact::select('id', 'id_perusahaan', 'nama')->get();
+
+        return view(
+            'crm.aktivitas.index',
+            compact('perusahaan', 'contact', 'sales_option')
+        );
     }
 
     public function getContactsAndPeserta($id)
@@ -86,7 +91,7 @@ class AktivitasController extends Controller
     {
         try {
             $user = Auth::user();
-            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
+            Gate::authorize('akses-crm');
 
             $query = Aktivitas::with([
                 'contact:id,id_perusahaan,nama,email',
@@ -97,12 +102,8 @@ class AktivitasController extends Controller
             ])
                 ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'pax', 'total', 'harga', 'deskripsi', 'waktu_aktivitas', 'created_at', 'foto_lokasi', 'longitude', 'latitude');
 
-            if ($user->jabatan === 'Sales') {
+            if (Gate::denies('akses-filter-sales')) {
                 $query->where('id_sales', $user->id_sales);
-            } elseif (!in_array($user->jabatan, $allowedJabatan)) {
-                return response()->json([
-                    'error' => 'Unauthorized access.'
-                ], 403);
             }
 
             $draw = $request->input('draw', 1);
@@ -369,51 +370,90 @@ class AktivitasController extends Controller
     public function semuaTargetAktivitas()
     {
         try {
-            $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+            Gate::authorize('akses-crm');
             $user = auth()->user();
 
-            // 🔹 Jika user bukan role manajemen → tampilkan target miliknya sendiri
-            if (!in_array($user->jabatan, $allowedUser)) {
-                $target = TargetActivity::where('id_sales', $user->id_sales)->first();
-                if (!$target) {
-                    return response()->json(['message' => 'Belum ada target aktivitas.']);
-                }
+            $jenisAktivitas = [
+                'Contact',
+                'Call',
+                'Visit',
+                'Email',
+                'Meet',
+                'DB',
+                'PA',
+                'PI',
+                'Incharge',
+                'Telemarketing',
+                'FormM',
+                'FormK'
+            ];
 
+            $activityTypeMap = [
+                'FormM' => 'Form_Masuk',
+                'FormK' => 'Form_Keluar',
+            ];
+
+            $activityTypes = array_merge(
+                array_values($activityTypeMap),
+                array_diff($jenisAktivitas, array_keys($activityTypeMap))
+            );
+
+            $buildHasil = function (
+                TargetActivity $target,
+                string $idSales,
+                $activityCounts
+            ) use ($jenisAktivitas, $activityTypeMap) {
                 $deadline = \Carbon\Carbon::parse($target->deadline)->format('d/m/Y');
-                $jenisAktivitas = [
-                    'Contact',
-                    'Call',
-                    'Visit',
-                    'Email',
-                    'Meet',
-                    'DB',
-                    'PA',
-                    'PI',
-                    'Incharge',
-                    'Telemarketing',
-                    'FormM',
-                    'FormK'
-                ];
-
+                $salesCounts = $activityCounts->get($idSales, collect());
                 $hasil = [];
+
                 foreach ($jenisAktivitas as $jenis) {
                     $targetJumlah = $target->$jenis ?? 0;
-                    $realisasi = Aktivitas::where('id_sales', $user->id_sales)
-                        ->where(function ($q) use ($jenis) {
-                            if ($jenis === 'FormM') $q->where('aktivitas', 'Form_Masuk');
-                            elseif ($jenis === 'FormK') $q->where('aktivitas', 'Form_Keluar');
-                            else $q->where('aktivitas', $jenis);
-                        })
-                        ->count();
+                    $activityType = $activityTypeMap[$jenis] ?? $jenis;
+                    $realisasi = (int) $salesCounts->get($activityType, 0);
 
                     $hasil[] = [
                         'jenis' => $jenis,
                         'target' => $targetJumlah,
                         'realisasi' => $realisasi,
-                        'percent' => $targetJumlah > 0 ? round(($realisasi / $targetJumlah) * 100) : 0,
+                        'percent' => $targetJumlah > 0
+                            ? round(($realisasi / $targetJumlah) * 100)
+                            : 0,
                         'deadline' => $deadline
                     ];
                 }
+
+                return [$deadline, $hasil];
+            };
+
+            if (Gate::denies('akses-filter-sales')) {
+                $target = TargetActivity::where('id_sales', $user->id_sales)->first();
+
+                if (!$target) {
+                    return response()->json([
+                        'message' => 'Belum ada target aktivitas.'
+                    ]);
+                }
+
+                $activityCounts = Aktivitas::query()
+                    ->select('id_sales', 'aktivitas')
+                    ->selectRaw('COUNT(*) as total')
+                    ->where('id_sales', $user->id_sales)
+                    ->whereIn('aktivitas', $activityTypes)
+                    ->groupBy('id_sales', 'aktivitas')
+                    ->get()
+                    ->groupBy('id_sales')
+                    ->map(fn ($rows) => $rows->mapWithKeys(
+                        fn ($row) => [
+                            $row->aktivitas => (int) $row->total
+                        ]
+                    ));
+
+                [$deadline, $hasil] = $buildHasil(
+                    $target,
+                    $user->id_sales,
+                    $activityCounts
+                );
 
                 return response()->json([
                     'id_sales' => $user->id_sales,
@@ -422,51 +462,53 @@ class AktivitasController extends Controller
                 ]);
             }
 
-            // 🔹 Jika role manajemen → tampilkan semua sales
             $salesList = User::whereNotNull('id_sales')
-                ->whereNotIn('jabatan', $allowedUser)
+                ->whereNotIn('jabatan', [
+                    'Adm Sales',
+                    'SPV Sales',
+                    'HRD',
+                    'Finance & Accounting',
+                    'GM',
+                    'Direktur Utama',
+                    'Direktur',
+                ])
                 ->get();
 
+            $salesIds = $salesList->pluck('id_sales');
+
+            $targets = TargetActivity::whereIn('id_sales', $salesIds)
+                ->get()
+                ->groupBy('id_sales')
+                ->map(fn ($rows) => $rows->first());
+
+            $activityCounts = Aktivitas::query()
+                ->select('id_sales', 'aktivitas')
+                ->selectRaw('COUNT(*) as total')
+                ->whereIn('id_sales', $salesIds)
+                ->whereIn('aktivitas', $activityTypes)
+                ->groupBy('id_sales', 'aktivitas')
+                ->get()
+                ->groupBy('id_sales')
+                ->map(fn ($rows) => $rows->mapWithKeys(
+                    fn ($row) => [
+                        $row->aktivitas => (int) $row->total
+                    ]
+                ));
+
             $data = [];
+
             foreach ($salesList as $sales) {
-                $target = TargetActivity::where('id_sales', $sales->id_sales)->first();
-                if (!$target) continue;
+                $target = $targets->get($sales->id_sales);
 
-                $deadline = \Carbon\Carbon::parse($target->deadline)->format('d/m/Y');
-                $jenisAktivitas = [
-                    'Contact',
-                    'Call',
-                    'Visit',
-                    'Email',
-                    'Meet',
-                    'DB',
-                    'PA',
-                    'PI',
-                    'Incharge',
-                    'Telemarketing',
-                    'FormM',
-                    'FormK'
-                ];
-
-                $hasil = [];
-                foreach ($jenisAktivitas as $jenis) {
-                    $targetJumlah = $target->$jenis ?? 0;
-                    $realisasi = Aktivitas::where('id_sales', $sales->id_sales)
-                        ->where(function ($q) use ($jenis) {
-                            if ($jenis === 'FormM') $q->where('aktivitas', 'Form_Masuk');
-                            elseif ($jenis === 'FormK') $q->where('aktivitas', 'Form_Keluar');
-                            else $q->where('aktivitas', $jenis);
-                        })
-                        ->count();
-
-                    $hasil[] = [
-                        'jenis' => $jenis,
-                        'target' => $targetJumlah,
-                        'realisasi' => $realisasi,
-                        'percent' => $targetJumlah > 0 ? round(($realisasi / $targetJumlah) * 100) : 0,
-                        'deadline' => $deadline
-                    ];
+                if (!$target) {
+                    continue;
                 }
+
+                [$deadline, $hasil] = $buildHasil(
+                    $target,
+                    $sales->id_sales,
+                    $activityCounts
+                );
 
                 $data[] = [
                     'id_sales' => $sales->id_sales,
@@ -475,14 +517,19 @@ class AktivitasController extends Controller
                 ];
             }
 
-            return response()->json(['data' => $data]);
+            return response()->json([
+                'data' => $data
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Gagal memuat semua target aktivitas.'], 500);
+            return response()->json([
+                'error' => 'Gagal memuat semua target aktivitas.'
+            ], 500);
         }
     }
-
     public function storeNew(Request $request)
     {
+        Gate::authorize('akses-tambah-lead');
+
         $rules = [
             'id_perusahaan'   => 'nullable|integer',
             'id_peluang'      => 'nullable|integer',
@@ -503,7 +550,7 @@ class AktivitasController extends Controller
         $validated = $request->validate($rules);
         $user = auth()->user();
 
-        if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales'])) {
+        if (Gate::allows('akses-pilih-sales')) {
             $validated['id_sales'] = $request->id_sales;
         } else {
             $validated['id_sales'] = $user->id_sales;

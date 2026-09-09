@@ -21,29 +21,25 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
-        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet" />
 
-    <!-- Vendor CSS -->
+    <!-- 1. Pemanggilan Vendor CSS Statis (Wajib dipertahankan untuk integritas visual) -->
     <link rel="stylesheet" href="{{ asset('assets/vendor/fonts/iconify-icons.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/css/core.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}" />
-
-    {{-- DataTables CSS --}}
     <link rel="stylesheet" href="{{ asset('assets/vendor/css/dataTables.bootstrap5.min.css') }}">
-
-    {{-- CSS Bawaan Select2 --}}
     <link rel="stylesheet" href="{{ asset('assets/vendor/css/select2.min.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/css/select2-bootstrap-5-theme.min.css') }}" />
-
-    <!-- Page CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
 
-    <!-- Helpers -->
+    <!-- 2. Preload Pustaka DataTables untuk optimasi LCP -->
     <link rel="preload" href="{{ asset('assets/vendor/libs/jquery/jquery.js') }}" as="script">
     <link rel="preload" href="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}" as="script">
+
+    <!-- 3. Pemanggilan Aset Hasil Kompilasi Produksi Vite -->
+    {{-- @vite(['resources/js/app.js']) --}}
+
     <style>
         .avatar {
             width: 40px;
@@ -159,32 +155,20 @@
         </div>
     </div>
 
+
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
-
-    <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}" defer></script>
-
-    {{-- Global Validator JS --}}
-    <script src="{{ asset('js/global-validator.js') }}" defer></script>
-
-    {{-- Select2 JS --}}
-    <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}" defer></script>
-
-    {{-- Moment JS --}}
-    <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}" defer></script>
-
-    {{-- Hapus atribut defer pada DataTables JS --}}
     <script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/dataTables/dataTables.bootstrap5.min.js') }}"></script>
 
-    <!-- Bootstrap JS -->
+    <!-- 2. Pustaka Pendukung (Eksekusi Asinkron/Defer) -->
+    <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}" defer></script>
+    <script src="{{ asset('js/global-validator.js') }}" defer></script>
+    <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}" defer></script>
+    <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.js') }}" defer></script>
-
-    <!-- Vendors JS -->
     <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}" defer></script>
-    <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/js/menu.js') }}" defer></script>
-
     <!-- Custom JS -->
     <script src="{{ asset('assets/js/main.js') }}" defer></script>
     <script src="{{ asset('assets/js/dashboards-analytics.js') }}" defer></script>
@@ -199,7 +183,7 @@
 
     <!-- User Profile Ajax -->
     <script>
-        $(document).ready(function() {
+        document.addEventListener('DOMContentLoaded', function() {
             var profileUrl = "{{ route('crm.profile') }}";
 
             $.ajax({
