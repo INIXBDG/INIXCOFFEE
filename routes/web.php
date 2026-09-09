@@ -1872,6 +1872,8 @@ Route::post('/system/documentation/features', [FeatureDocumentationController::c
     ->name('documentation.features.store');
 Route::get('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'show'])
     ->name('documentation.features.show');
+Route::get('/system/documentation/features/{id}/edit-data', [FeatureDocumentationController::class, 'editData'])
+    ->name('documentation.features.edit-data');
 Route::put('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'update'])
     ->name('documentation.features.update');
 Route::delete('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'destroy'])
