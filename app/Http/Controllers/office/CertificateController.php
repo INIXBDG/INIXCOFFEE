@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Office;
 
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
+use App\Models\certificate_summary;
+use App\Models\CertificateSummary;
+use App\Models\eksam as ModelsEksam;
 use App\Models\RKM;
 use App\Models\Karyawan;
 use App\Models\Materi;
+use App\Models\Perusahaan;
 use App\Models\Peserta;
 use App\Models\Registrasi;
 use Illuminate\Http\Request;
@@ -32,7 +36,11 @@ class CertificateController extends Controller
             ->orderBy('nama_materi')
             ->get();
 
-        return view('office.certificate.index', compact('materis'));
+        $perusahaans = Perusahaan::select('id', 'nama_perusahaan')
+            ->orderBy('nama_perusahaan')
+            ->get();
+
+        return view('office.certificate.index', compact('materis', 'perusahaans'));
     }
 
     public function getData(Request $request)
@@ -363,5 +371,260 @@ class CertificateController extends Controller
         // Ganti "/" dengan "-" untuk nama file stream yang aman
         $streamName = str_replace('/', '-', $certificate->nomor_sertifikat) . '.pdf';
         return $pdf->stream($streamName);
+    }
+
+    public function certificateSummary()
+    {
+        $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+        $materis = Materi::orderBy('nama_materi')->get();
+        return view('office.certificate.rekap', compact('perusahaans', 'materis'));
+    }
+
+    public function certificateSummaryJson(Request $request)
+    {
+        $period  = $request->input('period', 'month');
+        $year    = (int) $request->input('year', now()->year);
+        $month   = (int) $request->input('month', now()->month);
+        $quarter = (int) $request->input('quarter', ceil(now()->month / 3));
+
+        $dateColumn = 'created_at';
+
+        // Resolusi rentang tanggal berdasarkan period
+        if ($period === 'quarter') {
+            $startDate = Carbon::create($year, 1, 1)
+                ->addMonths(($quarter - 1) * 3)
+                ->startOfMonth();
+
+            $endDate = Carbon::create($year, 1, 1)
+                ->addMonths(($quarter - 1) * 3 + 2)
+                ->endOfMonth();
+        } elseif ($period === 'year') {
+            $startDate = Carbon::create($year, 1, 1)->startOfYear();
+            $endDate   = Carbon::create($year, 12, 31)->endOfYear();
+        } else {
+            $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+            $endDate   = Carbon::create($year, $month, 1)->endOfMonth();
+        }
+
+        // ==========================================
+        // CERTIFICATE SUMMARY
+        // ==========================================
+
+        $regDigitalD = CertificateSummary::where('type', 'Reg Digital')
+            ->whereBetween($dateColumn, [$startDate, $endDate])
+            ->get();
+
+        $webinarD = CertificateSummary::where('type', 'Webinar')
+            ->whereBetween($dateColumn, [$startDate, $endDate])
+            ->get();
+
+        // ==========================================
+        // CERTIFICATE BANDUNG
+        // ==========================================
+
+        $bandungD = Certificate::whereBetween($dateColumn, [$startDate, $endDate])
+            ->get();
+
+        // ==========================================
+        // AUTHORIZED
+        // ModelsEksam -> registexam -> peserta
+        // Tanggal (tanggal_mulai/tanggal_selesai) ditempel ke tiap peserta SEBELUM
+        // di-flatten, supaya info periode-nya tidak hilang.
+        // ==========================================
+
+        $authorizedD = ModelsEksam::with('rkm.materi', 'registexam.peserta', 'registexam')
+            ->whereHas('rkm.materi', function ($query) {
+                $query->where('kategori_exam', 'Authorize');
+            })
+            ->whereBetween($dateColumn, [$startDate, $endDate])
+            ->get()
+            ->flatMap(function ($eksam) {
+                return collect($eksam->registexam)->map(function ($reg) use ($eksam) {
+                    $peserta = $reg->peserta;
+                    if (!$peserta) {
+                        return null;
+                    }
+                    $peserta->tanggal_exam = $reg->tanggal_exam ?? null;
+                    $peserta->materi = $eksam->materi ?? null;
+                    return $peserta;
+                });
+            })
+            ->filter()
+            ->values();
+
+        // ==========================================
+        // BNSP
+        // ModelsEksam -> registexam -> peserta
+        // ==========================================
+
+        $bnspD = ModelsEksam::with('rkm.materi', 'registexam.peserta')
+            ->whereHas('rkm.materi', function ($query) {
+                $query->where('kategori_exam', 'BNSP');
+            })
+            ->whereBetween($dateColumn, [$startDate, $endDate])
+            ->get()
+            ->flatMap(function ($eksam) {
+                return collect($eksam->registexam)->map(function ($reg) use ($eksam) {
+                    $peserta = $reg->peserta;
+                    if (!$peserta) {
+                        return null;
+                    }
+                    $peserta->tanggal_exam = $reg->tanggal_exam ?? null;
+                    $peserta->materi = $eksam->materi ?? null;
+                    return $peserta;
+                });
+            })
+            ->filter()
+            ->values();
+
+        // ==========================================
+        // INIXCERT
+        // ModelsEksam -> registexam -> peserta
+        // ==========================================
+
+        $inixcertD = ModelsEksam::with('rkm.materi', 'registexam.peserta')
+            ->whereHas('rkm.materi', function ($query) {
+                $query->where('kategori_exam', 'Inixcert');
+            })
+            ->whereBetween($dateColumn, [$startDate, $endDate])
+            ->get()
+            ->flatMap(function ($eksam) {
+                return collect($eksam->registexam)->map(function ($reg) use ($eksam) {
+                    $peserta = $reg->peserta;
+                    if (!$peserta) {
+                        return null;
+                    }
+                    $peserta->tanggal_exam = $reg->tanggal_exam ?? null;
+                    $peserta->materi = $eksam->materi ?? null;
+                    return $peserta;
+                });
+            })
+            ->filter()
+            ->values();
+
+        // ==========================================
+        // WORKSHOP
+        // RKM -> registrasi -> peserta
+        // Tanggal (tanggal_awal/tanggal_akhir) ditempel ke tiap peserta dari RKM-nya
+        // ==========================================
+
+        $workshopD = RKM::with('registrasi.peserta')
+            ->where('status', '0')
+            ->where('event', 'Workshop')
+            ->whereBetween($dateColumn, [$startDate, $endDate])
+            ->get()
+            ->flatMap(function ($rkm) {
+                return collect($rkm->registrasi)->map(function ($reg) use ($rkm) {
+                    $peserta = $reg->peserta;
+                    if (!$peserta) {
+                        return null;
+                    }
+                    $peserta->tanggal_awal = $rkm->tanggal_awal;
+                    $peserta->tanggal_akhir = $rkm->tanggal_akhir;
+                    $peserta->materi = $rkm->materi->nama_materi ?? null;
+                    return $peserta;
+                });
+            })
+            ->filter()
+            ->values();
+
+        // ==========================================
+        // RETURN
+        // ==========================================
+
+        return response()->json([
+            'filter' => [
+                'period'     => $period,
+                'year'       => $year,
+                'month'      => $period === 'month' ? $month : null,
+                'quarter'    => $period === 'quarter' ? $quarter : null,
+                'start_date' => $startDate->toDateString(),
+                'end_date'   => $endDate->toDateString(),
+            ],
+
+            'regDigital' => [
+                'count' => $regDigitalD->count(),
+                'data'  => $regDigitalD,
+            ],
+
+            'authorized' => [
+                'count' => $authorizedD->count(),
+                'data'  => $authorizedD,
+            ],
+
+            'bandung' => [
+                'count' => $bandungD->count(),
+                'data'  => $bandungD,
+            ],
+
+            'bnsp' => [
+                'count' => $bnspD->count(),
+                'data'  => $bnspD,
+            ],
+
+            'inixcert' => [
+                'count' => $inixcertD->count(),
+                'data' => $inixcertD,
+            ],
+
+            'workshop' => [
+                'count' => $workshopD->count(),
+                'data'  => $workshopD,
+            ],
+
+            'webinar' => [
+                'count' => $webinarD->count(),
+                'data'  => $webinarD,
+            ],
+        ]);
+    }
+
+    public function storeSummary(Request $request)
+    {
+        $validated = $request->validate([
+            'type' => 'nullable|in:Reg Digital,Webinar',
+            'no_sertifikat' => 'nullable|string|max:255',
+            'nama_peserta' => 'required|string|max:255',
+            'perusahaan' => 'required|string|max:255',
+            'materi' => 'required|string|max:255',
+            'awal_training' => 'required|date',
+            'akhir_training' => 'required|date|after_or_equal:awal_training',
+            'keterangan' => 'nullable|string|max:1000',
+        ]);
+
+        CertificateSummary::create($validated);
+
+        return redirect()->back()->with('success', 'Certificate summary created successfully.');
+    }
+
+
+    public function updateSummary(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'type' => 'nullable|in:Reg Digital,Webinar',
+            'no_sertifikat' => 'nullable|string|max:255',
+            'nama_peserta' => 'required|string|max:255',
+            'perusahaan' => 'required|string|max:255',
+            'materi' => 'required|string|max:255',
+            'awal_training' => 'required|date',
+            'akhir_training' => 'required|date|after_or_equal:awal_training',
+            'keterangan' => 'nullable|string|max:1000',
+        ]);
+
+        $summary = CertificateSummary::findOrFail($id);
+
+        $summary->update($validated);
+
+        return redirect()->back()->with('success', 'Certificate summary updated successfully.');
+    }
+
+
+    public function deleteSummary($id)
+    {
+        $summary = CertificateSummary::findOrFail($id);
+
+        $summary->delete();
+
+        return redirect()->back()->with('success', 'Certificate summary deleted successfully.');
     }
 }
