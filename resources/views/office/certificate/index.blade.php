@@ -5,7 +5,12 @@
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
             <h4 class="mb-0 fw-bold text-dark">Generate Sertifikat</h4>
-            <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
+            <div class="d-flex align-items-center gap-3">
+                <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
+                <a href="{{ route('office.certificate.certificateSummary') }}" class="btn btn-primary shadow-sm hover-scale">
+                    Rekap Sertifikat
+                </a>
+            </div>
         </div>
 
         <!-- Alert Success -->
@@ -273,6 +278,7 @@
             html += `</ul></nav></div>`;
             document.getElementById('paginationContainer').innerHTML = html;
         }
+
 
         // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {

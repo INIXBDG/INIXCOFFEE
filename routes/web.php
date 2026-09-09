@@ -1387,9 +1387,15 @@ Route::prefix('office')
             Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
             Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
             Route::delete('/delete/{rkm_id}/{peserta_id}', [CertificateController::class, 'delete'])->name('delete');
+
+            Route::get('/rekap', [CertificateController::class, 'certificateSummary'])->name('certificateSummary');
+            Route::get('/rekap/json', [CertificateController::class, 'certificateSummaryJson'])->name('certificateSummaryJson');
+            Route::post('/rekap/certif/store', [CertificateController::class, 'storeSummary'])->name('storeSummary');
+            Route::put('/rekap/certif/put/{id}', [CertificateController::class, 'updateSummary'])->name('updateSummary');
+            Route::delete('/rekap/certif/delete/{id}', [CertificateController::class, 'deleteSummary'])->name('deleteSummary');
         });
 
-        Route::prefix('vendor')->name('vendor.')->group(function () {
+    Route::prefix('vendor')->name('vendor.')->group(function () {
             Route::resource('/souvenir', vendorOfficeController::class);
             Route::resource('/makansiang', vendorOfficeController::class);
             Route::resource('/coffeebreak', vendorOfficeController::class);
