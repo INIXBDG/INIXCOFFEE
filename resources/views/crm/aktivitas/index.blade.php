@@ -102,7 +102,53 @@
             </div>
 
             <div class="row g-3 mb-4" id="salesTargetWrapper">
-                <!-- Card sales akan muncul di sini -->
+                @if ($isAllowedUser)
+                    <!-- Render 4 skeleton grid untuk menahan ruang agar CLS tidak bergeser -->
+                    @for ($k = 0; $k < 4; $k++)
+                        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" data-sales-target-skeleton>
+                            <div class="card shadow-sm border-0 rounded-3 h-100 placeholder-glow">
+                                <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                                    <span class="placeholder col-6"></span>
+                                </div>
+                                <div class="card-body p-3" style="max-height: 300px; overflow-y: hidden;">
+                                    @for ($i = 0; $i < 6; $i++)
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between mb-1 small">
+                                                <span class="placeholder col-7"></span>
+                                                <span class="placeholder col-2"></span>
+                                            </div>
+                                            <div class="progress" style="height: 10px;">
+                                                <div class="progress-bar placeholder" style="width: 100%;"></div>
+                                            </div>
+                                        </div>
+                                    @endfor
+                                </div>
+                            </div>
+                        </div>
+                    @endfor
+                @else
+                    <!-- Render 1 skeleton penuh untuk Sales -->
+                    <div class="col-12" data-sales-target-skeleton>
+                        <div class="card shadow-sm border-0 rounded-3 h-100 placeholder-glow">
+                            <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                                <span class="placeholder col-3"></span>
+                            </div>
+                            <div class="card-body p-3">
+                                @for ($i = 0; $i < 12; $i++)
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1 small">
+                                            <span class="placeholder col-7"></span>
+                                            <span class="placeholder col-2"></span>
+                                        </div>
+                                        <div class="progress" style="height: 10px;">
+                                            <div class="progress-bar placeholder" style="width: 100%;"></div>
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <!-- Modal untuk Create Aktivitas -->
@@ -291,10 +337,7 @@
                                     <select class="form-select" id="edit_id_contact" name="id_contact">
                                         <option value="">Pilih Kontak</option>
                                         @foreach ($contact as $c)
-                                            <option value="{{ $c->id }}">
-                                                {{ $c->nama }} ({{ $c->divisi ?? 'Tidak ada divisi' }}) -
-                                                {{ $c->perusahaan->nama_perusahaan ?? 'N/A' }}
-                                            </option>
+                                            <option value="{{ $c->id }}">...
                                         @endforeach
                                     </select>
                                 </div>
@@ -449,7 +492,7 @@
         scroll-behavior: smooth;
         scrollbar-width: thin;
     }
-</style>    
+</style>
 @section('scripts')
     <script src="{{ asset('js/webcam.js') }}"></script>
     <script>
@@ -682,33 +725,31 @@
 
         async function loadSemuaTargetAktivitas(isAllowedUser = false) {
             try {
-                console.log("Memulai loadSemuaTargetAktivitas...");
                 const res = await fetch(`/crm/semua-target-aktivitas`);
-                if (!res.ok) throw new Error("Gagal mengambil data target aktivitas");
+
+                if (!res.ok) {
+                    throw new Error("Gagal mengambil data target aktivitas");
+                }
 
                 const response = await res.json();
-                console.log("Data dari API:", response);
-
                 const wrapper = document.getElementById("salesTargetWrapper");
+
                 if (!wrapper) {
-                    console.error("Elemen #salesTargetWrapper tidak ditemukan!");
                     return;
                 }
 
+                // Menghapus skeleton setelah response berhasil diterima
                 wrapper.innerHTML = "";
+
                 let list = [];
 
                 if (response.id_sales && Array.isArray(response.data)) {
-                    console.log("Mode Sales Tunggal");
                     list = [response];
                 } else if (Array.isArray(response.data)) {
-                    console.log("Mode Multi Sales");
                     list = response.data;
                 } else {
-                    console.warn("⚠️ Format data tidak dikenali:", response);
                     return;
                 }
-
                 list.forEach((sales) => {
                     const idSales = sales.id_sales || "(tanpa ID)";
                     const items = sales.data || [];

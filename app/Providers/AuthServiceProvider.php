@@ -50,5 +50,21 @@ class AuthServiceProvider extends ServiceProvider
             $restrictedJabatan = ['HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
             return !in_array($user->jabatan, $restrictedJabatan);
         });
+
+        Gate::define('akses-pilih-sales', function ($user) {
+            return in_array($user->jabatan, ['Adm Sales', 'SPV Sales']);
+        });
+
+        Gate::define('view-registrasi', function ($user) {
+            $allowedRoles = [
+                'Sales', 'Adm Sales', 'GM', 'SPV Sales', 'Instruktur', 
+                'Education Manager', 'Office Manager', 'Customer Care', 
+                'Customer Service', 'Admin Holding', 'Finance & Accounting', 
+                'HRD', 'Koordinator Office', 'Programmer', 'Direktur Utama', 
+                'Direktur', 'Technical Support'
+            ];
+            
+            return in_array($user->jabatan, $allowedRoles);
+        });
     }
 }
