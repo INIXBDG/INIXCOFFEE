@@ -6,12 +6,12 @@ use App\Models\karyawan;
 use App\Models\Module;
 use App\Models\PengajuanKlaimModul;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class KlaimModulEducationManagerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $educationManager;
     protected karyawan $karyawanEduman;

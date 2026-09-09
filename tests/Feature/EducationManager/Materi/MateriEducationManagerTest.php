@@ -5,7 +5,7 @@ namespace Tests\Feature\EducationManager\Materi;
 use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class MateriEducationManagerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $educationManager;
     protected User $instruktur;

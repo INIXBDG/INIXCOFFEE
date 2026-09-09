@@ -8,12 +8,12 @@ use App\Models\DetailTargetKPI;
 use App\Models\targetKPI;
 use App\Services\KPI\Jabatan\EducationManagerKPIService;
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class KnowledgeSharingEducationManagerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected EducationManagerKPIService $service;
 
@@ -68,7 +68,7 @@ class KnowledgeSharingEducationManagerTest extends TestCase
         $detail->setRelation('dataTarget', new DataTarget(['nilai_target' => 10]));
         $itemDetail->setRelation('detailTargetKPI', collect([$detail]));
 
-        $result = $this->service->calculatePeningkatanKnowledgeSharingDetail($itemDetail);
+        $result = $this->service->calculatePeningkatanKnowledgeSharingDetail($itemDetail, '1');
 
         $this->assertIsArray($result);
         $this->assertEquals(2, $result['progress']);

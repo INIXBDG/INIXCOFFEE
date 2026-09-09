@@ -5,14 +5,14 @@ namespace Tests\Feature\EducationManager\Peserta;
 use App\Models\User;
 use App\Models\karyawan;
 use App\Models\jabatan;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class PesertaEducationManagerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected $user;
     protected $karyawan;

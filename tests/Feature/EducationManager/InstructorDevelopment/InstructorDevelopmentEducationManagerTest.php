@@ -6,12 +6,12 @@ use App\Models\karyawan;
 use App\Models\Pelatihan;
 use App\Models\Sertifikasi;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class InstructorDevelopmentEducationManagerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $educationManager;
     protected User $instruktur;

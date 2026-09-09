@@ -5,12 +5,12 @@ namespace Tests\Feature\EducationManager\TunjanganEducation;
 use App\Models\karyawan;
 use App\Models\rekapMengajarInstruktur;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class TunjanganEducationManagerTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $educationManager;
 

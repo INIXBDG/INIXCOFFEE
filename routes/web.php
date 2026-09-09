@@ -207,6 +207,12 @@ Route::middleware('auth')
     })
     ->name('notifications.unread-count');
 
+Route::middleware('auth')
+    ->get('/notifications/modal-content', function () {
+        return view('partials.notifications');
+    })
+    ->name('notifications.modal-content');
+
 Route::get('/daily-activities-data', [DailyActivityController::class, 'activitiesData']);
 
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
