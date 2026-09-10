@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('subscriptions', function (Blueprint $table) {
-            $table->string('tipe')->default('subscription')->after('merk');
-            $table->boolean('is_active')->default(true)->after('status');
+            if (!Schema::hasColumn('subscriptions', 'tipe')) {
+                $table->string('tipe')->default('subscription')->after('merk');
+            }
+            if (!Schema::hasColumn('subscriptions', 'is_active')) {
+                $table->boolean('is_active')->default(true)->after('status');
+            }
         });
     }
 

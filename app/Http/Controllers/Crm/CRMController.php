@@ -209,7 +209,7 @@ class CRMController extends Controller
         $dataRKM = $query->simplePaginate(10);
 
         return view('crm.dashboard', compact(
-            'chartData', 'best', 'profit', 
+            'chartData', 'best', 'profit',
             'totalDaerah', 'sales', 'map',
             'tanggal', 'mingguKeBulan', 'tahun', 'bulan', 'mingguKe', 'bulanTahun',
             'tanggalRange', 'topSpendSeg', 'topKategoriMateri', 'topVendors', 'dataRKM'
@@ -303,11 +303,11 @@ class CRMController extends Controller
         $status = $request->status ?? 'win';
 
         $dateColumn = $status === 'lost' ? 'lost' : 'merah';
+
         $query = Peluang::with(['materiRelation:id,nama_materi', 'perusahaan:id,nama_perusahaan'])
             ->where('id_sales', $id_sales)
             ->whereNotNull($dateColumn);
 
-        // Optimasi Range Tanggal Tanpa Fungsi SQL di Kolom
         $ranges = [
             'TR1' => ["{$tahun}-01-01 00:00:00", "{$tahun}-03-31 23:59:59"],
             'TR2' => ["{$tahun}-04-01 00:00:00", "{$tahun}-06-30 23:59:59"],
@@ -321,7 +321,17 @@ class CRMController extends Controller
             $query->whereBetween($dateColumn, ["{$tahun}-01-01 00:00:00", "{$tahun}-12-31 23:59:59"]);
         }
 
-        $data = $query->select('materi', 'perusahaan_id', 'id_contact', 'netsales', 'pax', DB::raw('(netsales * pax) as total'), $dateColumn)->get();
+        $data = $query->select(
+            'id',
+            'materi',
+            'id_contact',
+            'netsales',
+            'harga',
+            'pax',
+            $dateColumn
+        )->get();
+
+        return response()->json($data);
 
         return response()->json($data);
     }
@@ -330,27 +340,27 @@ class CRMController extends Controller
     {
         $prospekStart = Carbon::now()->startOfWeek()->format('Y-m-d H:i:s');
         $prospekEnd = Carbon::now()->endOfWeek()->format('Y-m-d H:i:s');
-        
+
         $prospek = Peluang::with('materiRelation:id,nama_materi')
             ->whereBetween('created_at', [$prospekStart, $prospekEnd])
             ->get();
-            
+
         return response()->json($prospek);
     }
 
     public function apiIncompletePA(Request $request)
     {
         $PA = perhitunganNetSales::with([
-                'rkm.materi', 
-                'rkm.perusahaan', 
-                'trackingNetSales', 
+                'rkm.materi',
+                'rkm.perusahaan',
+                'trackingNetSales',
                 'rkm.peluang'
             ])
             ->whereHas('trackingNetSales', function ($query) {
                 $query->where('tracking', '!=', 'Selesai')->orWhereNull('tracking');
             })
             ->simplePaginate(10); // Menggunakan simplePaginate untuk meringankan kueri COUNT
-            
+
         return response()->json($PA);
     }
 
@@ -364,7 +374,7 @@ class CRMController extends Controller
 
         $statuses = $totalStatus->pluck('status')->unique()->sort()->values();
         $pivotData = [];
-        
+
         foreach ($totalStatus as $item) {
             $pivotData[$item->sales_key][$item->status] = $item->total;
         }
@@ -407,7 +417,7 @@ class CRMController extends Controller
 
         $totalWin = [];
         $totalLost = [];
-        
+
         foreach ($salesList as $id_sales) {
             $username = $pengguna[$id_sales]->username ?? $id_sales;
             $totalWin[$id_sales] = [
@@ -448,7 +458,7 @@ class CRMController extends Controller
         } else {
             $startOfWeek = Carbon::create($tahun, $bulan, 1)->startOfMonth();
             $endOfWeek = (clone $startOfWeek)->endOfMonth();
-            
+
             $tanggalRange = $startOfWeek->translatedFormat('d') . ' – ' . $endOfWeek->translatedFormat('d F Y');
             $startFilter = $startOfWeek->format('Y-m-d H:i:s');
             $endFilter = $endOfWeek->format('Y-m-d H:i:s');

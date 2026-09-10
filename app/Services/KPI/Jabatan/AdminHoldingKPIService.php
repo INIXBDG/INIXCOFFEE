@@ -3,6 +3,7 @@
 namespace App\Services\KPI\Jabatan;
 
 use App\Models\DokumentasiExam;
+use App\Models\HariLibur;
 use App\Models\NomorModul;
 use App\Models\registexam;
 use App\Models\Registrasi;
@@ -14,7 +15,7 @@ class AdminHoldingKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function hitungSkorKetepatan($po, $awalTrainingDate)
+    private function hitungSkorKetepatan($po, $awalTrainingDate, $holidaySet)
     {
         if (!$po->uploaded) return 0;
 
@@ -24,6 +25,10 @@ class AdminHoldingKPIService
             if (!$po->created_at) return 0;
 
             $tenggat = Carbon::parse($po->created_at)->startOfWeek()->addWeek();
+
+            while (isset($holidaySet[$tenggat->toDateString()])) {
+                $tenggat = $tenggat->copy()->addDay();
+            }
 
             return $uploaded->lte($tenggat) ? 100 : 0;
         }
@@ -78,6 +83,8 @@ class AdminHoldingKPIService
         $pos = NomorModul::with('moduls')->whereYear('created_at', $tahun)->get();
         if ($pos->isEmpty()) return 0.0;
 
+        $holidaySet = HariLibur::pluck('tanggal')->mapWithKeys(fn ($t) => [Carbon::parse($t)->toDateString() => true]);
+
         $totalPercent = 0;
         $count = 0;
 
@@ -87,7 +94,7 @@ class AdminHoldingKPIService
             $tenggatEfektif = $po->moduls->min('awal_training');
             if (!$tenggatEfektif) continue;
 
-            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif);
+            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif, $holidaySet); // 1x per po
             $totalPercent += $percent;
             $count++;
         }
@@ -118,6 +125,8 @@ class AdminHoldingKPIService
         $pos = NomorModul::with('moduls')->whereYear('created_at', $tahun)->get();
         if ($pos->isEmpty()) return $emptyResponse;
 
+        $holidaySet = HariLibur::pluck('tanggal')->mapWithKeys(fn ($t) => [Carbon::parse($t)->toDateString() => true]);
+
         $totalPercent = 0;
         $count = 0;
         $aboveTarget = 0;
@@ -131,7 +140,7 @@ class AdminHoldingKPIService
             $tenggatEfektif = $po->moduls->min('awal_training');
             if (!$tenggatEfektif) continue;
 
-            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif);
+            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif, $holidaySet);
 
             $date = Carbon::parse($po->uploaded);
             $monthKey = $date->format('Y-m');

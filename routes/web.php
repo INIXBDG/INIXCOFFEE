@@ -207,6 +207,12 @@ Route::middleware('auth')
     })
     ->name('notifications.unread-count');
 
+Route::middleware('auth')
+    ->get('/notifications/modal-content', function () {
+        return view('partials.notifications');
+    })
+    ->name('notifications.modal-content');
+
 Route::get('/daily-activities-data', [DailyActivityController::class, 'activitiesData']);
 
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
@@ -681,6 +687,7 @@ Route::get('registrasi/export/excel', [App\Http\Controllers\RegistrasiController
 Route::get('registrasi/export/pdf', [App\Http\Controllers\RegistrasiController::class, 'exportPDF'])->name('registrasi.exportPDF');
 Route::get('registrasi/export/excels', [App\Http\Controllers\RegistrasiController::class, 'exportExcelKhusus'])->name('registrasi.exportExcels');
 Route::get('registrasi/export/pdfs', [App\Http\Controllers\RegistrasiController::class, 'exportPDFKhusus'])->name('registrasi.exportPDFs');
+Route::post('/registrasi/souvenir', [\App\Http\Controllers\RegistrasiController::class, 'storeSouvenir'])->name('registrasi.storeSouvenir');
 Route::get('peserta/export/excels', [App\Http\Controllers\PesertaController::class, 'exportExcelKhusus'])->name('peserta.exportExcels');
 Route::get('peserta/export/pdfs', [App\Http\Controllers\PesertaController::class, 'exportPDFKhusus'])->name('peserta.exportPDFs');
 Route::get('feedback/export/excels/{id}', [App\Http\Controllers\feedbackController::class, 'exportExcelKhusus'])->name('feedback.exportExcels');
@@ -1387,9 +1394,15 @@ Route::prefix('office')
             Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
             Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
             Route::delete('/delete/{rkm_id}/{peserta_id}', [CertificateController::class, 'delete'])->name('delete');
+
+            Route::get('/rekap', [CertificateController::class, 'certificateSummary'])->name('certificateSummary');
+            Route::get('/rekap/json', [CertificateController::class, 'certificateSummaryJson'])->name('certificateSummaryJson');
+            Route::post('/rekap/certif/store', [CertificateController::class, 'storeSummary'])->name('storeSummary');
+            Route::put('/rekap/certif/put/{id}', [CertificateController::class, 'updateSummary'])->name('updateSummary');
+            Route::delete('/rekap/certif/delete/{id}', [CertificateController::class, 'deleteSummary'])->name('deleteSummary');
         });
 
-        Route::prefix('vendor')->name('vendor.')->group(function () {
+    Route::prefix('vendor')->name('vendor.')->group(function () {
             Route::resource('/souvenir', vendorOfficeController::class);
             Route::resource('/makansiang', vendorOfficeController::class);
             Route::resource('/coffeebreak', vendorOfficeController::class);
