@@ -34,53 +34,32 @@ class InstrukturKPIService
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0.0;
-            }
+        }
 
-            $jamKerjaPerHari = 9;
-
+        $jamKerjaPerHari = 9;
         $today = Carbon::today();
-
         $startDate = Carbon::create($tahun, 1, 1)->startOfYear();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Jika KPI tahun sekarang -> hitung sampai hari ini
-        | Jika KPI tahun lalu -> hitung sampai akhir tahun
-        |--------------------------------------------------------------------------
-        */
-        $endDate = ($tahun == $today->year)
-            ? $today
-            : Carbon::create($tahun, 12, 31)->endOfYear();
+        $endDate = ($tahun == $today->year) ? $today : Carbon::create($tahun, 12, 31)->endOfYear();
 
         $liburNasional = HariLibur::pluck('tanggal')
             ->map(fn($t) => Carbon::parse($t)->toDateString())
             ->toArray();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Hitung hari kerja dalam periode
-        |--------------------------------------------------------------------------
-        */
         $hariKerjaPeriode = 0;
-
         for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-
-            if (
-                !$date->isWeekend() &&
-                !in_array($date->toDateString(), $liburNasional)
-            ) {
+            if (!$date->isWeekend() && !in_array($date->toDateString(), $liburNasional)) {
                 $hariKerjaPeriode++;
             }
         }
 
         $targetJamPerOrang = $hariKerjaPeriode * $jamKerjaPerHari;
-
         $totalJamMengajar = 0;
 
         if ($personId !== null) {
-            $instrukturList = karyawan::where('id', $personId)->get();
+            $instrukturList = karyawan::select('id', 'kode_karyawan')->where('id', $personId)->get();
         } else {
-            $instrukturList = karyawan::where('status_aktif', '1')
+            $instrukturList = karyawan::select('id', 'kode_karyawan')
+                ->where('status_aktif', '1')
                 ->whereNot('jabatan', 'Outsource')
                 ->where('kode_karyawan', 'NOT LIKE', 'OL%')
                 ->whereNot('jabatan', 'Pilih Jabatan')
@@ -99,6 +78,7 @@ class InstrukturKPIService
                 ->whereHas('user', function ($q) use ($idInstruktur) {
                     $q->where('user_id', $idInstruktur);
                 })
+                ->select('activity_date')
                 ->pluck('activity_date')
                 ->map(fn($date) => Carbon::parse($date)->toDateString())
                 ->unique()
@@ -110,7 +90,9 @@ class InstrukturKPIService
                     $q->where('instruktur_key', $kode)
                         ->orWhere('instruktur_key2', $kode)
                         ->orWhere('asisten_key', $kode);
-                })->get();
+                })
+                ->select('tanggal_awal', 'tanggal_akhir')
+                ->get();
 
             $rkmDates = [];
             foreach ($rkms as $rkm) {
@@ -126,12 +108,12 @@ class InstrukturKPIService
             }
 
             $allWorkingDays = array_unique(array_merge($activityDates, $rkmDates));
-
             $cutiDates = [];
 
             $cutis = pengajuancuti::where('id_karyawan', $instruktur->id)
                 ->where('tanggal_awal', '<=', $endDate)
                 ->where('tanggal_akhir', '>=', $startDate)
+                ->select('tanggal_awal', 'tanggal_akhir')
                 ->get();
 
             foreach ($cutis as $cuti) {
@@ -147,18 +129,14 @@ class InstrukturKPIService
             }
 
             $cutiDates = array_unique($cutiDates);
-
             $allWorkingDays = array_diff($allWorkingDays, $cutiDates);
 
             $totalJamMengajar += count($allWorkingDays) * $jamKerjaPerHari;
         }
 
         $jumlahInstruktur = $instrukturList->count();
-
         $avgFactor = ($personId !== null || $jumlahInstruktur == 0) ? 1 : $jumlahInstruktur;
-
         $totalJamMengajarRataRata = $totalJamMengajar / $avgFactor;
-
         $targetJam = $targetJamPerOrang;
 
         if ($targetJam <= 0) {
@@ -198,59 +176,37 @@ class InstrukturKPIService
         }
 
         $jamKerjaPerHari = 9;
-
         $today = Carbon::today();
-
         $startDate = Carbon::create($tahun, 1, 1)->startOfYear();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Jika KPI tahun sekarang -> hitung sampai hari ini
-        | Jika KPI tahun lalu -> hitung sampai akhir tahun
-        |--------------------------------------------------------------------------
-        */
-        $endDate = ($tahun == $today->year)
-            ? $today
-            : Carbon::create($tahun, 12, 31)->endOfYear();
-
-        $liburNasional = HariLibur::pluck('tanggal')
-            ->map(fn($t) => Carbon::parse($t)->toDateString())
-            ->toArray();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Hitung hari kerja dalam periode
-        |--------------------------------------------------------------------------
-        */
-        $hariKerjaPeriode = 0;
-
-        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-
-            if (
-                !$date->isWeekend() &&
-                !in_array($date->toDateString(), $liburNasional)
-            ) {
-                $hariKerjaPeriode++;
-            }
-        }
-
-        $targetJamPerOrang = $hariKerjaPeriode * $jamKerjaPerHari;
-
-        $totalJamMengajar = 0;
-        $dailyValues = [];
-        $instrukturDetails = [];
+        $endDate = ($tahun == $today->year) ? $today : Carbon::create($tahun, 12, 31)->endOfYear();
 
         $hariLiburNasionalList = HariLibur::whereBetween('tanggal', [$startDate, $endDate])
+            ->select('tanggal', 'keterangan')
             ->get()
             ->mapWithKeys(function ($libur) {
                 return [Carbon::parse($libur->tanggal)->toDateString() => $libur->keterangan ?? 'Hari Libur Nasional'];
             })
             ->toArray();
 
+        $liburNasional = array_keys($hariLiburNasionalList);
+        $hariKerjaPeriode = 0;
+
+        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+            if (!$date->isWeekend() && !in_array($date->toDateString(), $liburNasional)) {
+                $hariKerjaPeriode++;
+            }
+        }
+
+        $targetJamPerOrang = $hariKerjaPeriode * $jamKerjaPerHari;
+        $totalJamMengajar = 0;
+        $dailyValues = [];
+        $instrukturDetails = [];
+
         if ($personId !== null) {
-            $instrukturList = karyawan::where('id', $personId)->get();
+            $instrukturList = karyawan::select('id', 'kode_karyawan', 'nama_lengkap', 'jabatan')->where('id', $personId)->get();
         } else {
-            $instrukturList = karyawan::where('status_aktif', '1')
+            $instrukturList = karyawan::select('id', 'kode_karyawan', 'nama_lengkap', 'jabatan')
+                ->where('status_aktif', '1')
                 ->whereNot('jabatan', 'Outsource')
                 ->where('kode_karyawan', 'NOT LIKE', 'OL%')
                 ->whereNot('jabatan', 'Pilih Jabatan')
@@ -269,6 +225,7 @@ class InstrukturKPIService
                 ->whereHas('user', function ($q) use ($idInstruktur) {
                     $q->where('user_id', $idInstruktur);
                 })
+                ->select('activity_date')
                 ->pluck('activity_date')
                 ->map(fn($date) => Carbon::parse($date)->toDateString())
                 ->unique()
@@ -280,7 +237,9 @@ class InstrukturKPIService
                     $q->where('instruktur_key', $kode)
                         ->orWhere('instruktur_key2', $kode)
                         ->orWhere('asisten_key', $kode);
-                })->get();
+                })
+                ->select('tanggal_awal', 'tanggal_akhir')
+                ->get();
 
             $rkmDates = [];
             foreach ($rkms as $rkm) {
@@ -296,12 +255,13 @@ class InstrukturKPIService
             }
 
             $allWorkingDays = array_values(array_unique(array_merge($activityDates, $rkmDates)));
-
             $cutiDates = [];
             $cutiDetailList = [];
+
             $cutis = pengajuancuti::where('id_karyawan', $instruktur->id)
                 ->where('tanggal_awal', '<=', $endDate)
                 ->where('tanggal_akhir', '>=', $startDate)
+                ->select('tanggal_awal', 'tanggal_akhir', 'alasan', 'tipe')
                 ->get();
 
             foreach ($cutis as $cuti) {
@@ -323,7 +283,6 @@ class InstrukturKPIService
                 }
             }
             $cutiDates = array_values(array_unique($cutiDates));
-
             $allWorkingDays = array_values(array_diff($allWorkingDays, $cutiDates));
 
             $jamAktifInstruktur = count($allWorkingDays) * $jamKerjaPerHari;
@@ -333,9 +292,7 @@ class InstrukturKPIService
                 $dailyValues[$dateStr] = ($dailyValues[$dateStr] ?? 0) + $jamKerjaPerHari;
             }
 
-            $persentaseInstruktur = $targetJamPerOrang > 0
-                ? round(($jamAktifInstruktur / $targetJamPerOrang) * 100, 1)
-                : 0;
+            $persentaseInstruktur = $targetJamPerOrang > 0 ? round(($jamAktifInstruktur / $targetJamPerOrang) * 100, 1) : 0;
 
             $daftarLiburPerInstruktur = [];
             foreach ($hariLiburNasionalList as $tgl => $ket) {
@@ -392,13 +349,8 @@ class InstrukturKPIService
         }
 
         $jumlahInstruktur = $instrukturList->count();
-
-        // Faktor pembagi: Jika personId tidak null, bagi dengan 1 (data utuh). Jika null, bagi dengan jumlah instruktur.
         $avgFactor = ($personId !== null || $jumlahInstruktur == 0) ? 1 : $jumlahInstruktur;
-
         $totalJamMengajarRataRata = $totalJamMengajar / $avgFactor;
-
-        // Target jam untuk perbandingan persentase adalah target per orang
         $targetJam = $targetJamPerOrang;
 
         if ($targetJam <= 0) {
@@ -419,8 +371,6 @@ class InstrukturKPIService
         foreach ($dailyValues as $dateStr => $jam) {
             $date = Carbon::parse($dateStr);
             $m = $date->format('Y-m');
-
-            // Bagi dengan avgFactor untuk mendapatkan rata-rata jam per instruktur
             $jamRataRata = $jam / $avgFactor;
 
             $monthly[$m] = ($monthly[$m] ?? 0) + $jamRataRata;
@@ -428,16 +378,12 @@ class InstrukturKPIService
         }
 
         foreach ($monthly as $month => $totalJam) {
-            $monthlyProgress[$month] = $targetJam > 0
-                ? round(($totalJam / $targetJam) * 100, 1)
-                : 0;
+            $monthlyProgress[$month] = $targetJam > 0 ? round(($totalJam / $targetJam) * 100, 1) : 0;
         }
 
         foreach ($dailyPerMonth as $month => $days) {
             foreach ($days as $d => $val) {
-                $dailyProgress[$month][$d] = $targetJam > 0
-                    ? round(($val / $targetJam) * 100, 1)
-                    : 0;
+                $dailyProgress[$month][$d] = $targetJam > 0 ? round(($val / $targetJam) * 100, 1) : 0;
             }
         }
 
@@ -502,174 +448,36 @@ class InstrukturKPIService
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
         $allScores = [];
 
         if ($personId !== null) {
-            $kodeKaryawan = karyawan::where('id', $personId)->first();
+            $kodeKaryawan = karyawan::select('id', 'kode_karyawan')->where('id', $personId)->first();
 
             if ($kodeKaryawan) {
-                    $rkmList = RKM::whereYear('tanggal_awal', $tahun)
-                        ->where(function ($query) use ($kodeKaryawan) {
-                            $query->where('instruktur_key', $kodeKaryawan->kode_karyawan)
-                                ->orWhere('instruktur_key2', $kodeKaryawan->kode_karyawan)
-                                ->orWhere('asisten_key', $kodeKaryawan->kode_karyawan);
-                        })
-                        ->get();
+                $rkmList = RKM::whereYear('tanggal_awal', $tahun)
+                    ->where(function ($query) use ($kodeKaryawan) {
+                        $query->where('instruktur_key', $kodeKaryawan->kode_karyawan)
+                            ->orWhere('instruktur_key2', $kodeKaryawan->kode_karyawan)
+                            ->orWhere('asisten_key', $kodeKaryawan->kode_karyawan);
+                    })
+                    ->select('id', 'instruktur_key', 'instruktur_key2', 'asisten_key')
+                    ->get();
 
-                    if ($rkmList->isNotEmpty()) {
+                if ($rkmList->isNotEmpty()) {
                     $rkmIds = $rkmList->pluck('id')->filter()->toArray();
 
                     $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])
                         ->whereIn('id_rkm', $rkmIds)
+                        ->select('id_rkm', 'I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8', 'I1b', 'I2b', 'I3b', 'I4b', 'I5b', 'I6b', 'I7b', 'I8b')
                         ->get();
 
                     foreach ($feedbacks as $fb) {
-                        // KOREKSI: Mengubah 'id_rkm' menjadi 'id' sebagai argumen pertama
                         $rkm = $rkmList->firstWhere('id', $fb->id_rkm);
-
-                        if (!$rkm) {
-                            continue;
-                        }
-
-                        $avg = 0;
-
-                        if ($rkm->instruktur_key == $kodeKaryawan->kode_karyawan) {
-                            $scores = [(float) ($fb->I1 ?? 0), (float) ($fb->I2 ?? 0), (float) ($fb->I3 ?? 0), (float) ($fb->I4 ?? 0), (float) ($fb->I5 ?? 0), (float) ($fb->I6 ?? 0), (float) ($fb->I7 ?? 0), (float) ($fb->I8 ?? 0)];
-                            $avg = array_sum($scores) / 8;
-                        } elseif ($rkm->instruktur_key2 == $kodeKaryawan->kode_karyawan) {
-                            $scores = [(float) ($fb->I1b ?? 0), (float) ($fb->I2b ?? 0), (float) ($fb->I3b ?? 0), (float) ($fb->I4b ?? 0), (float) ($fb->I5b ?? 0), (float) ($fb->I6b ?? 0), (float) ($fb->I7b ?? 0), (float) ($fb->I8b ?? 0)];
-                            $avg = array_sum($scores) / 8;
-                        } elseif ($rkm->asisten_key == $kodeKaryawan->kode_karyawan) {
-                            $scores = [(float) ($fb->I1as ?? 0), (float) ($fb->I2as ?? 0), (float) ($fb->I3as ?? 0), (float) ($fb->I4as ?? 0), (float) ($fb->I5as ?? 0), (float) ($fb->I6as ?? 0), (float) ($fb->I7as ?? 0), (float) ($fb->I8as ?? 0)];
-                            $avg = array_sum($scores) / 8;
-                        }
-
-                        $avg = min(4, max(1, $avg));
-                        $allScores[] = $avg;
-                    }
-                }
-            }
-        } else {
-            $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
-
-            foreach ($feedbacks as $fb) {
-                $i1 = (float) ($fb->I1 ?? 0);
-                $i2 = (float) ($fb->I2 ?? 0);
-                $i3 = (float) ($fb->I3 ?? 0);
-                $i4 = (float) ($fb->I4 ?? 0);
-                $i5 = (float) ($fb->I5 ?? 0);
-                $i6 = (float) ($fb->I6 ?? 0);
-                $i7 = (float) ($fb->I7 ?? 0);
-                $i8 = (float) ($fb->I8 ?? 0);
-                $sumBase = $i1 + $i2 + $i3 + $i4 + $i5 + $i6 + $i7 + $i8;
-
-                $i1b = (float) ($fb->I1b ?? 0);
-                $i2b = (float) ($fb->I2b ?? 0);
-                $i3b = (float) ($fb->I3b ?? 0);
-                $i4b = (float) ($fb->I4b ?? 0);
-                $i5b = (float) ($fb->I5b ?? 0);
-                $i6b = (float) ($fb->I6b ?? 0);
-                $i7b = (float) ($fb->I7b ?? 0);
-                $i8b = (float) ($fb->I8b ?? 0);
-                $sumB = $i1b + $i2b + $i3b + $i4b + $i5b + $i6b + $i7b + $i8b;
-
-                if ($sumB > 0) {
-                    $totalSum = $sumBase + $sumB;
-                    $totalItem = 16;
-                } else {
-                    $totalSum = $sumBase;
-                    $totalItem = 8;
-                }
-
-                if ($totalItem > 0) {
-                    $avg = $totalSum / $totalItem;
-                    $avg = min(4, max(1, $avg));
-                    $allScores[] = $avg;
-                }
-            }
-        }
-
-        if (empty($allScores)) {
-            return 0;
-        }
-
-        $totalResponden = count($allScores);
-        $respondenPuas = 0;
-
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
-                $respondenPuas++;
-            }
-        }
-
-        $progress = ($respondenPuas / $totalResponden) * 100;
-
-        return round($progress, 1);
-    }
-
-    public function calculateKepuasanPesertaPelatihanDetail($itemDetail, $personId)
-    {
-        $detail = $itemDetail->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
-        }
-
-        $nilaiTarget = (float) $detail->nilai_target;
-        $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
-        }
-
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-        $allScores = [];
-        $scoreDatePairs = [];
-
-        if ($personId !== null) {
-            $kodeKaryawan = karyawan::where('id', $personId)->first();
-
-            if ($kodeKaryawan) {
-                $rkmList = RKM::where('instruktur_key', $kodeKaryawan->kode_karyawan)
-                    ->orWhere('instruktur_key2', $kodeKaryawan->kode_karyawan)
-                    ->orWhere('asisten_key', $kodeKaryawan->kode_karyawan)
-                    ->get();
-
-                if (!$rkmList->isEmpty()) {
-                    $rkmIds = $rkmList->pluck('id_rkm')->filter()->toArray();
-
-                    $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])
-                        ->whereIn('id_rkm', $rkmIds)
-                        ->get();
-
-                    foreach ($feedbacks as $fb) {
-                        $rkm = $rkmList->firstWhere('id_rkm', $fb->id_rkm);
                         if (!$rkm) continue;
 
                         $avg = 0;
-
                         if ($rkm->instruktur_key == $kodeKaryawan->kode_karyawan) {
                             $scores = [(float)($fb->I1 ?? 0), (float)($fb->I2 ?? 0), (float)($fb->I3 ?? 0), (float)($fb->I4 ?? 0), (float)($fb->I5 ?? 0), (float)($fb->I6 ?? 0), (float)($fb->I7 ?? 0), (float)($fb->I8 ?? 0)];
                             $avg = array_sum($scores) / 8;
@@ -682,38 +490,21 @@ class InstrukturKPIService
                         }
 
                         $avg = min(4, max(1, $avg));
-
                         $allScores[] = $avg;
-                        $scoreDatePairs[] = [
-                            'score' => $avg,
-                            'date' => $fb->created_at->format('Y-m-d'),
-                        ];
                     }
                 }
             }
         } else {
-            $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
+            $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])
+                ->select('I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8', 'I1b', 'I2b', 'I3b', 'I4b', 'I5b', 'I6b', 'I7b', 'I8b')
+                ->get();
 
             foreach ($feedbacks as $fb) {
-                $i1 = (float)($fb->I1 ?? 0);
-                $i2 = (float)($fb->I2 ?? 0);
-                $i3 = (float)($fb->I3 ?? 0);
-                $i4 = (float)($fb->I4 ?? 0);
-                $i5 = (float)($fb->I5 ?? 0);
-                $i6 = (float)($fb->I6 ?? 0);
-                $i7 = (float)($fb->I7 ?? 0);
-                $i8 = (float)($fb->I8 ?? 0);
-                $sumBase = $i1 + $i2 + $i3 + $i4 + $i5 + $i6 + $i7 + $i8;
+                $sumBase = (float)($fb->I1 ?? 0) + (float)($fb->I2 ?? 0) + (float)($fb->I3 ?? 0) + (float)($fb->I4 ?? 0) + 
+                           (float)($fb->I5 ?? 0) + (float)($fb->I6 ?? 0) + (float)($fb->I7 ?? 0) + (float)($fb->I8 ?? 0);
 
-                $i1b = (float)($fb->I1b ?? 0);
-                $i2b = (float)($fb->I2b ?? 0);
-                $i3b = (float)($fb->I3b ?? 0);
-                $i4b = (float)($fb->I4b ?? 0);
-                $i5b = (float)($fb->I5b ?? 0);
-                $i6b = (float)($fb->I6b ?? 0);
-                $i7b = (float)($fb->I7b ?? 0);
-                $i8b = (float)($fb->I8b ?? 0);
-                $sumB = $i1b + $i2b + $i3b + $i4b + $i5b + $i6b + $i7b + $i8b;
+                $sumB = (float)($fb->I1b ?? 0) + (float)($fb->I2b ?? 0) + (float)($fb->I3b ?? 0) + (float)($fb->I4b ?? 0) + 
+                        (float)($fb->I5b ?? 0) + (float)($fb->I6b ?? 0) + (float)($fb->I7b ?? 0) + (float)($fb->I8b ?? 0);
 
                 if ($sumB > 0) {
                     $totalSum = $sumBase + $sumB;
@@ -724,42 +515,119 @@ class InstrukturKPIService
                 }
 
                 if ($totalItem > 0) {
-                    $avg = $totalSum / $totalItem;
-                    $avg = min(4, max(1, $avg));
-
+                    $avg = min(4, max(1, $totalSum / $totalItem));
                     $allScores[] = $avg;
-                    $scoreDatePairs[] = [
-                        'score' => $avg,
-                        'date' => $fb->created_at->format('Y-m-d'),
-                    ];
                 }
             }
         }
 
         if (empty($allScores)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return 0;
         }
 
         $totalResponden = count($allScores);
-        $respondenPuas = 0;
+        $respondenPuas = collect($allScores)->filter(fn($skor) => $skor >= 3.5)->count();
 
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
-                $respondenPuas++;
+        return round(($respondenPuas / $totalResponden) * 100, 1);
+    }
+
+    public function calculateKepuasanPesertaPelatihanDetail($itemDetail, $personId)
+    {
+        $detail = $itemDetail->detailTargetKPI->first();
+
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return $this->getDefaultDetailResponse();
+        }
+
+        $nilaiTarget = (float) $detail->nilai_target;
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return $this->getDefaultDetailResponse();
+        }
+
+        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+
+        $allScores = [];
+        $scoreDatePairs = [];
+
+        if ($personId !== null) {
+            $kodeKaryawan = karyawan::select('id', 'kode_karyawan')->where('id', $personId)->first();
+
+            if ($kodeKaryawan) {
+                $rkmList = RKM::where('instruktur_key', $kodeKaryawan->kode_karyawan)
+                    ->orWhere('instruktur_key2', $kodeKaryawan->kode_karyawan)
+                    ->orWhere('asisten_key', $kodeKaryawan->kode_karyawan)
+                    ->select('id_rkm', 'instruktur_key', 'instruktur_key2', 'asisten_key')
+                    ->get();
+
+                if (!$rkmList->isEmpty()) {
+                    $rkmIds = $rkmList->pluck('id_rkm')->filter()->toArray();
+
+                    $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])
+                        ->whereIn('id_rkm', $rkmIds)
+                        ->select('id_rkm', 'created_at', 'I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8', 'I1b', 'I2b', 'I3b', 'I4b', 'I5b', 'I6b', 'I7b', 'I8b')
+                        ->get();
+
+                    foreach ($feedbacks as $fb) {
+                        $rkm = $rkmList->firstWhere('id_rkm', $fb->id_rkm);
+                        if (!$rkm) continue;
+
+                        $avg = 0;
+                        if ($rkm->instruktur_key == $kodeKaryawan->kode_karyawan) {
+                            $scores = [(float)($fb->I1 ?? 0), (float)($fb->I2 ?? 0), (float)($fb->I3 ?? 0), (float)($fb->I4 ?? 0), (float)($fb->I5 ?? 0), (float)($fb->I6 ?? 0), (float)($fb->I7 ?? 0), (float)($fb->I8 ?? 0)];
+                            $avg = array_sum($scores) / 8;
+                        } elseif ($rkm->instruktur_key2 == $kodeKaryawan->kode_karyawan) {
+                            $scores = [(float)($fb->I1b ?? 0), (float)($fb->I2b ?? 0), (float)($fb->I3b ?? 0), (float)($fb->I4b ?? 0), (float)($fb->I5b ?? 0), (float)($fb->I6b ?? 0), (float)($fb->I7b ?? 0), (float)($fb->I8b ?? 0)];
+                            $avg = array_sum($scores) / 8;
+                        } elseif ($rkm->asisten_key == $kodeKaryawan->kode_karyawan) {
+                            $scores = [(float)($fb->I1as ?? 0), (float)($fb->I2as ?? 0), (float)($fb->I3as ?? 0), (float)($fb->I4as ?? 0), (float)($fb->I5as ?? 0), (float)($fb->I6as ?? 0), (float)($fb->I7as ?? 0), (float)($fb->I8as ?? 0)];
+                            $avg = array_sum($scores) / 8;
+                        }
+
+                        $avg = min(4, max(1, $avg));
+                        $allScores[] = $avg;
+                        $scoreDatePairs[] = ['score' => $avg, 'date' => $fb->created_at->format('Y-m-d')];
+                    }
+                }
+            }
+        } else {
+            $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])
+                ->select('created_at', 'I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8', 'I1b', 'I2b', 'I3b', 'I4b', 'I5b', 'I6b', 'I7b', 'I8b')
+                ->get();
+
+            foreach ($feedbacks as $fb) {
+                $sumBase = (float)($fb->I1 ?? 0) + (float)($fb->I2 ?? 0) + (float)($fb->I3 ?? 0) + (float)($fb->I4 ?? 0) + 
+                           (float)($fb->I5 ?? 0) + (float)($fb->I6 ?? 0) + (float)($fb->I7 ?? 0) + (float)($fb->I8 ?? 0);
+
+                $sumB = (float)($fb->I1b ?? 0) + (float)($fb->I2b ?? 0) + (float)($fb->I3b ?? 0) + (float)($fb->I4b ?? 0) + 
+                        (float)($fb->I5b ?? 0) + (float)($fb->I6b ?? 0) + (float)($fb->I7b ?? 0) + (float)($fb->I8b ?? 0);
+
+                if ($sumB > 0) {
+                    $totalSum = $sumBase + $sumB;
+                    $totalItem = 16;
+                } else {
+                    $totalSum = $sumBase;
+                    $totalItem = 8;
+                }
+
+                if ($totalItem > 0) {
+                    $avg = min(4, max(1, $totalSum / $totalItem));
+                    $allScores[] = $avg;
+                    $scoreDatePairs[] = ['score' => $avg, 'date' => $fb->created_at->format('Y-m-d')];
+                }
             }
         }
 
-        $progress = ($respondenPuas / $totalResponden) * 100;
-        $progress = round($progress, 1);
+        if (empty($allScores)) {
+            return $this->getDefaultDetailResponse();
+        }
 
+        $totalResponden = count($allScores);
+        $respondenPuas = collect($allScores)->filter(fn($skor) => $skor >= 3.5)->count();
+
+        $progress = round(($respondenPuas / $totalResponden) * 100, 1);
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
@@ -776,7 +644,6 @@ class InstrukturKPIService
 
             $monthlyData[$monthKey][] = $score;
             $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
-
             $monthlyProgressRaw[$monthKey][] = $score;
             $dailyProgressPerMonthRaw[$monthKey][$dayKey][] = $score;
         }
@@ -810,10 +677,7 @@ class InstrukturKPIService
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => [
-                'above' => $respondenPuas,
-                'below' => $totalResponden - $respondenPuas,
-            ],
+            'pie_chart' => ['above' => $respondenPuas, 'below' => $totalResponden - $respondenPuas],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgress,
@@ -838,7 +702,6 @@ class InstrukturKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        // PERBAIKAN: Hapus eager loading yang tidak perlu (with) dan perbaiki struktur query
         $rkmQuery = RKM::whereBetween('tanggal_awal', [$start, $end])
             ->where('tanggal_akhir', '<', now())
             ->where('status', '0')
@@ -847,16 +710,14 @@ class InstrukturKPIService
                 $query->where('tentatif', 0);
             });
 
-        // PERBAIKAN: Terapkan filter instruktur_key jika personId ada
         if ($personId !== null) {
-            $kodeKaryawan = karyawan::find($personId);
+            $kodeKaryawan = karyawan::select('id', 'kode_karyawan')->find($personId);
             if ($kodeKaryawan) {
                 $rkmQuery->where('instruktur_key', $kodeKaryawan->kode_karyawan);
             }
         }
 
         $totalData = $rkmQuery->count();
-
         if ($totalData === 0) {
             return 0.0;
         }
@@ -870,11 +731,7 @@ class InstrukturKPIService
     public function calculateUpselingLanjutanMateriDetail($itemDetail, $personId): array
     {
         $detail = $itemDetail->detailTargetKPI->first();
-        $emptyResponse = [
-            'progress' => 0, 'gap' => 0, 'pie_chart' => ['above' => 0, 'below' => 0],
-            'monthly_data' => [], 'daily_breakdown_per_month' => [],
-            'monthly_progress' => [], 'daily_progress_per_month' => [],
-        ];
+        $emptyResponse = $this->getDefaultDetailResponse();
 
         if (!$detail) return $emptyResponse;
 
@@ -888,7 +745,6 @@ class InstrukturKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        // PERBAIKAN: Samakan kondisi query dengan fungsi primer agar data sinkron
         $rkmQuery = RKM::whereBetween('created_at', [$start, $end])
             ->where('tanggal_akhir', '<', now())
             ->where('status', '0')
@@ -897,16 +753,13 @@ class InstrukturKPIService
                 $query->where('tentatif', 0);
             });
 
-        // Terapkan filter instruktur_key
         if ($personId !== null) {
-            $kodeKaryawan = karyawan::find($personId);
+            $kodeKaryawan = karyawan::select('id', 'kode_karyawan')->find($personId);
             if (!$kodeKaryawan) return $emptyResponse;
-            
             $rkmQuery->where('instruktur_key', $kodeKaryawan->kode_karyawan);
         }
 
-        $rkms = $rkmQuery->get(['id', 'created_at']);
-
+        $rkms = $rkmQuery->select('id', 'created_at')->get();
         if ($rkms->isEmpty()) return $emptyResponse;
 
         $rkmIds = $rkms->pluck('id');
@@ -918,7 +771,6 @@ class InstrukturKPIService
         $dailyData = [];
         $monthlyDataRaw = [];
 
-        // Looping pemrosesan per tanggal (Sudah efisien)
         foreach ($rkms as $rkm) {
             $hasRekom = $hasRekomendasiMap->has($rkm->id);
             if ($hasRekom) $totalRekomendasi++;
@@ -951,7 +803,6 @@ class InstrukturKPIService
         foreach ($dailyData as $dayKey => $data) {
             $monthKey = Carbon::parse($dayKey)->format('Y-m');
             $rate = $data['total'] > 0 ? ($data['rekom'] ?? 0) / $data['total'] * 100 : 0;
-            
             $dailyBreakdownPerMonth[$monthKey][$dayKey] = round($rate, 1);
         }
         ksort($dailyBreakdownPerMonth);
@@ -966,8 +817,8 @@ class InstrukturKPIService
             'pie_chart' => ['above' => $totalRekomendasi, 'below' => $totalData - $totalRekomendasi],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyAverages, // Menggunakan referensi yang sama agar hemat iterasi
-            'daily_progress_per_month' => $dailyBreakdownPerMonth, // Sama seperti di atas
+            'monthly_progress' => $monthlyAverages,
+            'daily_progress_per_month' => $dailyBreakdownPerMonth,
         ];
     }
 
@@ -990,27 +841,31 @@ class InstrukturKPIService
         $endYear = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
         $query = detailPersonKPI::where('detailTargetKey', $detail->id);
-
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
         }
 
-        $detailPersons = $query->get();
+        $detailPersons = $query->select('id_karyawan')->get();
         $totalData = $detailPersons->count();
 
         if ($totalData === 0) {
             return 0.0;
         }
 
-        $countAchieved = 0;
+        $karyawanIds = $detailPersons->pluck('id_karyawan');
+        $sertifikasiCounts = Sertifikasi::whereIn('user_id', $karyawanIds)
+            ->where('tanggal_berlaku_dari', '<=', $endYear)
+            ->where(function ($q) use ($startYear) {
+                $q->where('tanggal_berlaku_sampai', '>=', $startYear)->orWhereNull('tanggal_berlaku_sampai');
+            })
+            ->select('user_id')
+            ->get()
+            ->groupBy('user_id')
+            ->map->count();
 
+        $countAchieved = 0;
         foreach ($detailPersons as $personItem) {
-            $validSertifikasi = Sertifikasi::where('user_id', $personItem->id_karyawan)
-                ->where('tanggal_berlaku_dari', '<=', $endYear)
-                ->where(function ($q) use ($startYear) {
-                    $q->where('tanggal_berlaku_sampai', '>=', $startYear)->orWhereNull('tanggal_berlaku_sampai');
-                })
-                ->count();
+            $validSertifikasi = $sertifikasiCounts[$personItem->id_karyawan] ?? 0;
 
             if ($personId !== null) {
                 $countAchieved += $validSertifikasi;
@@ -1031,16 +886,7 @@ class InstrukturKPIService
     public function calculateSertifikasiKompetensiInternalDetail($itemDetail, $personId)
     {
         $detail = $itemDetail->detailTargetKPI->first();
-
-        $emptyResponse = [
-            'progress' => 0,
-            'gap' => 0,
-            'pie_chart' => ['above' => 0, 'below' => 0],
-            'monthly_data' => [],
-            'daily_breakdown_per_month' => [],
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
-        ];
+        $emptyResponse = $this->getDefaultDetailResponse();
 
         if (is_null($detail) || is_null($detail->nilai_target) || is_null($detail->detail_jangka)) {
             return $emptyResponse;
@@ -1057,40 +903,39 @@ class InstrukturKPIService
         $endYear = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
         $query = detailPersonKPI::where('detailTargetKey', $detail->id);
-
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
         }
 
-        $detailPersons = $query->get();
+        $detailPersons = $query->select('id_karyawan')->get();
         $totalData = $detailPersons->count();
 
         if ($totalData === 0) {
             return $emptyResponse;
         }
 
+        $karyawanIds = $detailPersons->pluck('id_karyawan');
+        $sertifikasisGrouped = Sertifikasi::whereIn('user_id', $karyawanIds)
+            ->where('tanggal_berlaku_dari', '<=', $endYear)
+            ->where(function ($q) use ($startYear) {
+                $q->where('tanggal_berlaku_sampai', '>=', $startYear)->orWhereNull('tanggal_berlaku_sampai');
+            })
+            ->select('user_id', 'tanggal_berlaku_dari')
+            ->get()
+            ->groupBy('user_id');
+
         $countAchieved = 0;
         $dailyValues = [];
 
         foreach ($detailPersons as $personItem) {
-            $validSertifikasis = Sertifikasi::where('user_id', $personItem->id_karyawan)
-                ->where('tanggal_berlaku_dari', '<=', $endYear)
-                ->where(function ($q) use ($startYear) {
-                    $q->where('tanggal_berlaku_sampai', '>=', $startYear)
-                        ->orWhereNull('tanggal_berlaku_sampai');
-                })
-                ->get();
-
+            $validSertifikasis = $sertifikasisGrouped[$personItem->id_karyawan] ?? collect();
             $validSertifikasi = $validSertifikasis->count();
 
             if ($personId !== null) {
                 $countAchieved += $validSertifikasi;
-
                 foreach ($validSertifikasis as $cert) {
                     $tanggal = Carbon::parse($cert->tanggal_berlaku_dari);
-                    if ($tanggal < $startYear) {
-                        $tanggal = $startYear;
-                    }
+                    if ($tanggal < $startYear) $tanggal = $startYear;
 
                     if ($tanggal >= $startYear && $tanggal <= $endYear) {
                         $dateKey = $tanggal->format('Y-m-d');
@@ -1100,14 +945,10 @@ class InstrukturKPIService
             } else {
                 if ($validSertifikasi > 0) {
                     $countAchieved += 1;
-
                     if ($validSertifikasis->isNotEmpty()) {
                         $firstCert = $validSertifikasis->sortBy('tanggal_berlaku_dari')->first();
                         $tanggal = Carbon::parse($firstCert->tanggal_berlaku_dari);
-
-                        if ($tanggal < $startYear) {
-                            $tanggal = $startYear;
-                        }
+                        if ($tanggal < $startYear) $tanggal = $startYear;
 
                         if ($tanggal >= $startYear && $tanggal <= $endYear) {
                             $dateKey = $tanggal->format('Y-m-d');
@@ -1127,13 +968,8 @@ class InstrukturKPIService
         $gapRaw = $progress - $actualTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        if ($personId !== null) {
-            $above = $countAchieved;
-            $below = 0;
-        } else {
-            $above = $countAchieved;
-            $below = $totalData - $countAchieved;
-        }
+        $above = $countAchieved;
+        $below = $personId !== null ? 0 : $totalData - $countAchieved;
 
         $dailyAverages = [];
         foreach ($dailyValues as $dateStr => $values) {
@@ -1152,7 +988,6 @@ class InstrukturKPIService
 
             $monthlyData[$monthKey][] = $avg;
             $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
-
             $monthlyProgressRaw[$monthKey][] = $avg;
             $dailyProgressPerMonth[$monthKey][$dayKey] = $avg * 100;
         }
@@ -1201,24 +1036,28 @@ class InstrukturKPIService
         $endYear = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
         $query = detailPersonKPI::where('detailTargetKey', $detail->id);
-
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
         }
 
-        $detailPersons = $query->get();
+        $detailPersons = $query->select('id_karyawan')->get();
         $totalData = $detailPersons->count();
 
         if ($totalData === 0) {
             return 0.0;
         }
 
-        $countAchieved = 0;
+        $karyawanIds = $detailPersons->pluck('id_karyawan');
+        $pelatihanCounts = Pelatihan::whereIn('user_id', $karyawanIds)
+            ->whereBetween('tanggal_selesai', [$startYear, $endYear])
+            ->select('user_id')
+            ->get()
+            ->groupBy('user_id')
+            ->map->count();
 
+        $countAchieved = 0;
         foreach ($detailPersons as $personItem) {
-            $validPelatihan = Pelatihan::where('user_id', $personItem->id_karyawan)
-                ->whereBetween('tanggal_selesai', [$startYear, $endYear])
-                ->count();
+            $validPelatihan = $pelatihanCounts[$personItem->id_karyawan] ?? 0;
 
             if ($personId !== null) {
                 $countAchieved += $validPelatihan;
@@ -1239,16 +1078,7 @@ class InstrukturKPIService
     public function calculatePelatihanKompetensiEksternalDetail($itemDetail, $personId)
     {
         $detail = $itemDetail->detailTargetKPI->first();
-
-        $emptyResponse = [
-            'progress' => 0,
-            'gap' => 0,
-            'pie_chart' => ['above' => 0, 'below' => 0],
-            'monthly_data' => [],
-            'daily_breakdown_per_month' => [],
-            'monthly_progress' => [],
-            'daily_progress_per_month' => [],
-        ];
+        $emptyResponse = $this->getDefaultDetailResponse();
 
         if (is_null($detail) || is_null($detail->nilai_target) || is_null($detail->detail_jangka)) {
             return $emptyResponse;
@@ -1265,36 +1095,36 @@ class InstrukturKPIService
         $endYear = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
         $query = detailPersonKPI::where('detailTargetKey', $detail->id);
-
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
         }
 
-        $detailPersons = $query->get();
+        $detailPersons = $query->select('id_karyawan')->get();
         $totalData = $detailPersons->count();
 
         if ($totalData === 0) {
             return $emptyResponse;
         }
 
+        $karyawanIds = $detailPersons->pluck('id_karyawan');
+        $pelatihansGrouped = Pelatihan::whereIn('user_id', $karyawanIds)
+            ->whereBetween('tanggal_selesai', [$startYear, $endYear])
+            ->select('user_id', 'tanggal_selesai')
+            ->get()
+            ->groupBy('user_id');
+
         $countAchieved = 0;
         $dailyValues = [];
 
         foreach ($detailPersons as $personItem) {
-            $validPelatihans = Pelatihan::where('user_id', $personItem->id_karyawan)
-                ->whereBetween('tanggal_selesai', [$startYear, $endYear])
-                ->get();
-
+            $validPelatihans = $pelatihansGrouped[$personItem->id_karyawan] ?? collect();
             $validPelatihan = $validPelatihans->count();
 
             if ($personId !== null) {
                 $countAchieved += $validPelatihan;
-
                 foreach ($validPelatihans as $cert) {
                     $tanggal = Carbon::parse($cert->tanggal_selesai);
-                    if ($tanggal < $startYear) {
-                        $tanggal = $startYear;
-                    }
+                    if ($tanggal < $startYear) $tanggal = $startYear;
 
                     if ($tanggal >= $startYear && $tanggal <= $endYear) {
                         $dateKey = $tanggal->format('Y-m-d');
@@ -1304,14 +1134,10 @@ class InstrukturKPIService
             } else {
                 if ($validPelatihan >= $nilaiTarget) {
                     $countAchieved += 1;
-
                     if ($validPelatihans->isNotEmpty()) {
                         $firstCert = $validPelatihans->sortBy('tanggal_selesai')->first();
                         $tanggal = Carbon::parse($firstCert->tanggal_selesai);
-
-                        if ($tanggal < $startYear) {
-                            $tanggal = $startYear;
-                        }
+                        if ($tanggal < $startYear) $tanggal = $startYear;
 
                         if ($tanggal >= $startYear && $tanggal <= $endYear) {
                             $dateKey = $tanggal->format('Y-m-d');
@@ -1331,13 +1157,8 @@ class InstrukturKPIService
         $gapRaw = $progress - $actualTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        if ($personId !== null) {
-            $above = $countAchieved;
-            $below = 0;
-        } else {
-            $above = $countAchieved;
-            $below = $totalData - $countAchieved;
-        }
+        $above = $countAchieved;
+        $below = $personId !== null ? 0 : $totalData - $countAchieved;
 
         $dailyAverages = [];
         foreach ($dailyValues as $dateStr => $values) {
@@ -1356,7 +1177,6 @@ class InstrukturKPIService
 
             $monthlyData[$monthKey][] = $avg;
             $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
-
             $monthlyProgressRaw[$monthKey][] = $avg;
             $dailyProgressPerMonth[$monthKey][$dayKey] = $avg * 100;
         }
