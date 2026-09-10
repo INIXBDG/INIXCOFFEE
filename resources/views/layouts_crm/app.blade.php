@@ -56,6 +56,58 @@
         .swal2-container {
             z-index: 999999 !important;
         }
+
+        #layout-menu {
+            display: flex;
+            background-color: #fff !important;
+            transition: transform 0.35s ease-in-out, visibility 0.35s ease-in-out !important;
+            max-height: 100vh;
+        }
+
+        #layout-menu .menu-inner {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Biar scrollbar-nya nggak norak, opsional */
+        #layout-menu .menu-inner::-webkit-scrollbar {
+            width: 5px;
+        }
+        #layout-menu .menu-inner::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        #layout-menu .menu-inner::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        @media (max-width: 1199.98px) {
+            #layout-menu {
+                transform: translate3d(-100%, 0, 0);
+                visibility: hidden;
+            }
+
+            html.layout-menu-expanded #layout-menu {
+                transform: translate3d(0, 0, 0);
+                visibility: visible;
+            }
+        }
+
+        /* ==========================
+        Overlay: gelap tipis transparan, bukan solid
+        ========================== */
+        .layout-overlay {
+            background-color: rgba(0, 0, 0, 0.5) !important; /* atur angka 0.5 sesuai selera gelapnya */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease-in-out, visibility 0.35s ease-in-out;
+        }
+
+        html.layout-menu-expanded .layout-overlay {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 
@@ -278,6 +330,32 @@
                     });
                 }, 300);
             }
+        });
+
+        const menuToggleBtn = document.querySelector('.layout-menu-toggle .nav-link');
+        const overlay = document.querySelector('.layout-overlay');
+        const html = document.documentElement;
+
+        if (menuToggleBtn) {
+            menuToggleBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                html.classList.toggle('layout-menu-expanded');
+            });
+        }
+
+        // Klik di area overlay (backdrop gelap) buat nutup sidebar lagi
+        if (overlay) {
+            overlay.addEventListener('click', function () {
+                html.classList.remove('layout-menu-expanded');
+            });
+        }
+
+        document.querySelectorAll('#layout-menu .menu-link').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth < 1200) { // breakpoint xl
+                    html.classList.remove('layout-menu-expanded');
+                }
+            });
         });
     </script>
 
