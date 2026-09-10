@@ -127,6 +127,40 @@
     padding:10px 14px; box-shadow:0 4px 16px rgba(0,0,0,0.10);
     font-size:13px; color:#333; min-width:180px; z-index:9999;
   "></div>
+
+  {{-- Modal detail kategori --}}
+  <div class="modal fade" id="modalKategoriDetail" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title mb-0" id="modalKategoriTitle">Detail Kategori</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-3">
+              <thead>
+                <tr>
+                  <th style="width:130px;">Pengajuan</th>
+                  <th style="width:130px;">Periode</th>
+                  <th>Materi</th>
+                  <th>Instansi</th>
+                  <th>Instruktur</th>
+                </tr>
+              </thead>
+              <tbody id="modalKategoriBody"></tbody>
+            </table>
+          </div>
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="text-muted" style="font-size:12px;" id="modalKategoriInfo"></div>
+            <nav>
+              <ul class="pagination pagination-sm mb-0" id="modalKategoriPagination"></ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -160,6 +194,13 @@ const SERIES = [
 const SIMPLE_SERIES = [
   { label: 'Jumlah exam', key: null, color: '#2a78d6' },
 ];
+
+// ── Data detail per kategori (utk modal) ───────────────────────
+let kategoriDetailData = {};
+let modalRows          = [];
+let modalCurrentPage   = 1;
+const MODAL_PAGE_SIZE  = 10;
+let bsModalKategori     = null;
 
 // ── Track mouse ───────────────────────────────────────────────
 document.addEventListener('mousemove', function (e) {
@@ -208,7 +249,8 @@ function loadData() {
   fetch(`${URL_REKAP}?${params}`)
     .then(r => r.json())
     .then(data => {
-      lastData = data;
+      lastData            = data;
+      kategoriDetailData  = data.kategori_data || {};
       document.getElementById('v-exam').textContent       = data.total_exam;
       document.getElementById('v-peserta').textContent    = data.total_peserta;
       document.getElementById('v-lulus').textContent      = data.total_lulus;
@@ -308,6 +350,17 @@ function renderChart(tab, data) {
       indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
+      onClick: (evt, elements) => {
+        if (currentTab !== 'kategori' || !elements.length) return;
+        const idx   = elements[0].index;
+        const label = chartInst.data.labels[idx];
+        openKategoriModal(label);
+      },
+      onHover: (evt, elements) => {
+        if (evt.native?.target) {
+          evt.native.target.style.cursor = (currentTab === 'kategori' && elements.length) ? 'pointer' : 'default';
+        }
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -330,7 +383,10 @@ function renderChart(tab, data) {
                   </span>
                   <span style="font-weight:500;color:#111;">${val}</span>
                 </div>`;
-              }).join('');
+              }).join('') +
+              (currentTab === 'kategori'
+                ? `<div style="margin-top:8px;padding-top:6px;border-top:1px dashed #eee;font-size:11px;color:#999;">Klik bar untuk lihat detail</div>`
+                : '');
 
             tooltip.style.display = 'block';
             requestAnimationFrame(() => positionTooltip(tooltip));
@@ -380,6 +436,65 @@ function toggleSeries(el, idx) {
     el.style.opacity     = '1';
     dot.style.background = series[idx].color;
   }
+}
+
+// ── Modal detail kategori ───────────────────────────────────────
+function openKategoriModal(label) {
+  if (!bsModalKategori) {
+    bsModalKategori = new bootstrap.Modal(document.getElementById('modalKategoriDetail'));
+  }
+  modalRows        = kategoriDetailData[label] || [];
+  modalCurrentPage = 1;
+  document.getElementById('modalKategoriTitle').textContent = `Detail Kategori - ${label}`;
+  renderModalPage();
+  bsModalKategori.show();
+}
+
+function renderModalPage() {
+  const tbody   = document.getElementById('modalKategoriBody');
+  const infoEl  = document.getElementById('modalKategoriInfo');
+  const start   = (modalCurrentPage - 1) * MODAL_PAGE_SIZE;
+  const pageRows = modalRows.slice(start, start + MODAL_PAGE_SIZE);
+
+  tbody.innerHTML = pageRows.length
+    ? pageRows.map(r => `
+        <tr>
+          <td>${r.tanggal_pengajuan ?? '-'}</td>
+          <td>${r.tanggal_mulai && r.tanggal_selesai ? `${r.tanggal_mulai}/${r.tanggal_selesai}` : '-' }</td>
+          <td>${r.materi ?? '-'}</td>
+          <td>${r.perusahaan ?? '-'}</td>
+          <td>${r.instruktur ?? '-'}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada data</td></tr>`;
+
+  infoEl.textContent = modalRows.length
+    ? `Menampilkan ${start + 1}-${Math.min(start + MODAL_PAGE_SIZE, modalRows.length)} dari ${modalRows.length} data`
+    : '';
+
+  renderModalPagination();
+}
+
+function renderModalPagination() {
+  const pagEl = document.getElementById('modalKategoriPagination');
+  const totalPages = Math.ceil(modalRows.length / MODAL_PAGE_SIZE);
+  if (totalPages <= 1) { pagEl.innerHTML = ''; return; }
+
+  let html = `<li class="page-item ${modalCurrentPage === 1 ? 'disabled' : ''}">
+    <a class="page-link" href="#" onclick="gotoModalPage(${modalCurrentPage - 1});return false;">&laquo;</a></li>`;
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<li class="page-item ${i === modalCurrentPage ? 'active' : ''}">
+      <a class="page-link" href="#" onclick="gotoModalPage(${i});return false;">${i}</a></li>`;
+  }
+  html += `<li class="page-item ${modalCurrentPage === totalPages ? 'disabled' : ''}">
+    <a class="page-link" href="#" onclick="gotoModalPage(${modalCurrentPage + 1});return false;">&raquo;</a></li>`;
+  pagEl.innerHTML = html;
+}
+
+function gotoModalPage(page) {
+  const totalPages = Math.ceil(modalRows.length / MODAL_PAGE_SIZE);
+  if (page < 1 || page > totalPages) return;
+  modalCurrentPage = page;
+  renderModalPage();
 }
 
 loadData();
