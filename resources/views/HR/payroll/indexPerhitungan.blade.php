@@ -910,41 +910,82 @@
         function renderDetailHtml(data) {
             const p = data.payroll;
             if (!p) return `<div class="p-4 text-center text-muted">Belum ada payroll untuk karyawan ini.</div>`;
+            
             const tunjDetail = (p.tunjangan && p.tunjangan.detail) ? p.tunjangan.detail : [];
+            const tunjHtml = renderTunjItems(tunjDetail);
+            
+            // Hitung breakdown BPJS
+            const jhtPer = p.jht_perusahaan || 0;
+            const jkmPer = p.jkm_perusahaan || 0;
+            const jkkPer = p.jkk_perusahaan || 0;
+            const jpPer = p.jp_perusahaan || 0;
+            const kesPer = p.bpjs_kes_perusahaan || 0;
+            const totalPer = p.total_bpjs_perusahaan || 0;
+            
+            const jhtKar = p.jht_karyawan || 0;
+            const jpKar = p.jp_karyawan || 0;
+            const kesKar = p.bpjs_kes_karyawan || 0;
+            const totalKar = p.total_bpjs_karyawan || 0;
+            
+            const colCount = dtTable.columns().count();
+            
             return `
-                <div class="detail-panel m-2">
+                <div class="detail-panel m-3">
                     <div class="row g-3">
+                        <!-- PENDAPATAN -->
                         <div class="col-md-4">
                             <div class="detail-section">
-                                <h6><i class="fa-solid fa-wallet" style="color:var(--pri)"></i>Pendapatan</h6>
+                                <h6><i class="fa-solid fa-wallet" style="color:var(--pri)"></i>PENDAPATAN</h6>
                                 <div class="detail-item"><span>Gaji Pokok</span><span class="fw-bold">Rp ${fmtNum(data.gaji_pokok)}</span></div>
-                                ${renderTunjItems(tunjDetail)}
-                                <div class="detail-item detail-total"><span>THP Kotor</span><span class="text-primary">Rp ${fmtNum(p.thp_kotor)}</span></div>
+                                ${tunjHtml}
+                                <div class="detail-item detail-total"><span>THP Kotor</span><span class="text-primary fw-bold">Rp ${fmtNum(p.thp_kotor)}</span></div>
                             </div>
                         </div>
+                        
+                        <!-- BPJS PERUSAHAAN -->
                         <div class="col-md-4">
                             <div class="detail-section">
-                                <h6><i class="fa-solid fa-shield-alt" style="color:var(--success)"></i>BPJS Perusahaan</h6>
-                                <div class="detail-item"><span>Total BPJS Ketenagakerjaan</span><span>Rp ${fmtNum((p.total_bpjs_perusahaan||0)-(p.bpjs_kes_perusahaan||0))}</span></div>
-                                <div class="detail-item"><span>BPJS Kesehatan (4%)</span><span>Rp ${fmtNum(p.bpjs_kes_perusahaan||0)}</span></div>
-                                <div class="detail-item detail-total"><span>Total</span><span class="text-success">Rp ${fmtNum(p.total_bpjs_perusahaan||0)}</span></div>
+                                <h6><i class="fa-solid fa-building" style="color:var(--success)"></i>BPJS PERUSAHAAN</h6>
+                                <div class="detail-item"><span>JHT (3.7%)</span><span>Rp ${fmtNum(jhtPer)}</span></div>
+                                <div class="detail-item"><span>JKM (0.3%)</span><span>Rp ${fmtNum(jkmPer)}</span></div>
+                                <div class="detail-item"><span>JKK (0.24%)</span><span>Rp ${fmtNum(jkkPer)}</span></div>
+                                <div class="detail-item"><span>JP (2%)</span><span>Rp ${fmtNum(jpPer)}</span></div>
+                                <div class="detail-item"><span>BPJS Kes. (4%)</span><span>Rp ${fmtNum(kesPer)}</span></div>
+                                <div class="detail-item detail-total"><span>Total</span><span class="text-success fw-bold">Rp ${fmtNum(totalPer)}</span></div>
                             </div>
                         </div>
+                        
+                        <!-- POTONGAN KARYAWAN -->
                         <div class="col-md-4">
                             <div class="detail-section">
-                                <h6><i class="fa-solid fa-user-shield" style="color:var(--info)"></i>Potongan Karyawan</h6>
-                                <div class="detail-item"><span>BPJS Ketenagakerjaan</span><span>Rp ${fmtNum((p.total_bpjs_karyawan||0)-(p.bpjs_kes_karyawan||0))}</span></div>
-                                <div class="detail-item"><span>BPJS Kesehatan (1%)</span><span>Rp ${fmtNum(p.bpjs_kes_karyawan||0)}</span></div>
-                                <div class="detail-item detail-total"><span>THP Bersih</span><span class="fw-bold text-primary">Rp ${fmtNum(p.thp_bersih)}</span></div>
+                                <h6><i class="fa-solid fa-user-shield" style="color:var(--info)"></i>POTONGAN KARYAWAN</h6>
+                                <div class="detail-item"><span>JHT (2%)</span><span>Rp ${fmtNum(jhtKar)}</span></div>
+                                <div class="detail-item"><span>JP (1%)</span><span>Rp ${fmtNum(jpKar)}</span></div>
+                                <div class="detail-item"><span>BPJS Kes. (1%)</span><span>Rp ${fmtNum(kesKar)}</span></div>
+                                ${p.potongan_pph21 ? `<div class="detail-item"><span>PPh 21</span><span>Rp ${fmtNum(p.potongan_pph21)}</span></div>` : ''}
+                                ${p.potongan_kasbon ? `<div class="detail-item"><span>Kasbon</span><span>Rp ${fmtNum(p.potongan_kasbon)}</span></div>` : ''}
+                                ${p.potongan_denda ? `<div class="detail-item"><span>Denda</span><span>Rp ${fmtNum(p.potongan_denda)}</span></div>` : ''}
+                                <div class="detail-item detail-total"><span>THP Bersih</span><span class="text-primary fw-bold" style="font-size:1.05rem">Rp ${fmtNum(p.thp_bersih)}</span></div>
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex gap-2 mt-3">
-                        <button class="btn btn-sm btn-outline-primary" onclick="showDetail(${p.id},event)"><i class="fa-solid fa-eye me-1"></i>Detail Lengkap</button>
-                        ${['draft','calculated'].includes(p.status)?`<button class="btn btn-sm btn-success" onclick="approvePayrollId(${p.id},event)"><i class="fa-solid fa-check me-1"></i>Approve</button>`:''}
-                        <button class="btn btn-sm btn-outline-danger" onclick="deletePayrollId(${p.id},event)"><i class="fa-solid fa-trash me-1"></i>Hapus</button>
+                    
+                    <!-- Tombol Aksi -->
+                    <div class="d-flex gap-2 mt-4 pt-3 border-top">
+                        <button class="btn btn-sm btn-outline-primary" onclick="showDetail(${p.id},event)">
+                            <i class="fa-solid fa-eye me-1"></i>Detail Lengkap Modal
+                        </button>
+                        ${['draft','calculated'].includes(p.status) ? `
+                            <button class="btn btn-sm btn-success" onclick="approvePayrollId(${p.id},event)">
+                                <i class="fa-solid fa-check me-1"></i>Approve
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-outline-danger" onclick="deletePayrollId(${p.id},event)">
+                            <i class="fa-solid fa-trash me-1"></i>Hapus
+                        </button>
                     </div>
-                </div>`;
+                </div>
+            `;
         }
 
         function showLogModal() {
