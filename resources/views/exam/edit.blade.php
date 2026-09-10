@@ -14,7 +14,7 @@
                         <div class="row mb-3">
                             <label for="tanggal_pengajuan" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Pengajuan') }}</label>
                             <div class="col-md-6">
-                                <input type="date" class="form-control @error('tanggal_pengajuan') is-invalid @enderror" name="tanggal_pengajuan" id="tanggal_pengajuan" value="{{ $exam->tanggal_pengajuan }}" readonly required>
+                                <input type="date" class="form-control @error('tanggal_pengajuan') is-invalid @enderror" name="tanggal_pengajuan" id="tanggal_pengajuan" value="{{ old('tanggal_pengajuan', \Carbon\Carbon::parse($exam->tanggal_pengajuan)->format('Y-m-d')) }}" readonly required>
                                 @error('tanggal_pengajuan')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
