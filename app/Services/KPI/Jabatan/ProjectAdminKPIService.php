@@ -7,7 +7,6 @@ use App\Traits\KPIDefaultResponseTrait;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
-
 class ProjectAdminKPIService
 {
     use KPIDefaultResponseTrait;
@@ -29,9 +28,8 @@ class ProjectAdminKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $dataColaborator = colaborator::whereBetween('created_at', [$start, $end])->get();
-
         $quartersWith = [];
+        $dataColaborator = colaborator::select('created_at')->whereBetween('created_at', [$start, $end])->get();
 
         foreach ($dataColaborator as $colab) {
             $month = $colab->created_at->month;
@@ -39,9 +37,7 @@ class ProjectAdminKPIService
             $quartersWith[$quarter] = true;
         }
 
-        $filledQuartersCount = count($quartersWith);
-
-        return (string) round($filledQuartersCount);
+        return (string) round(count($quartersWith));
     }
 
     public function calculateEfektifitasDiitalMarketingDetail($itemDetail, $personId = null)
@@ -65,8 +61,7 @@ class ProjectAdminKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $dataColaborator = colaborator::whereBetween('created_at', [$start, $end])->get();
-
+        $dataColaborator = colaborator::select('created_at')->whereBetween('created_at', [$start, $end])->get();
         $totalData = $dataColaborator->count();
 
         if ($totalData === 0) {
@@ -78,35 +73,25 @@ class ProjectAdminKPIService
 
         $totalQuarters = 4;
         $quartersWith = [];
+        $dailyValues = [];
 
         foreach ($dataColaborator as $colab) {
             $month = (int) $colab->created_at->month;
             $quarter = (int) ceil($month / 3);
             $quartersWith[$quarter] = true;
+
+            $dateKey = $colab->created_at->format('Y-m-d');
+            $dailyValues[$dateKey][] = 1;
         }
 
         $filledQuartersCount = count($quartersWith);
-        $konsistensiPersen = (float) $filledQuartersCount;
-        $progress = (float) round($konsistensiPersen);
+        $progress = (float) round((float) $filledQuartersCount);
 
         $gapRaw = (float) ($progress - $nilaiTarget);
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $above = (int) $filledQuartersCount;
         $below = (int) ($totalQuarters - $filledQuartersCount);
-
-        $dailyValues = [];
-
-        foreach ($dataColaborator as $colab) {
-            $tanggal = Carbon::parse($colab->created_at);
-            $dateKey = $tanggal->format('Y-m-d');
-
-            if (!isset($dailyValues[$dateKey])) {
-                $dailyValues[$dateKey] = [];
-            }
-
-            $dailyValues[$dateKey][] = 1;
-        }
 
         $dailyAverages = [];
         foreach ($dailyValues as $dateStr => $values) {

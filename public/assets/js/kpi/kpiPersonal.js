@@ -1,0 +1,1166 @@
+(function() {
+    'use strict';
+
+    let performanceChart = null;
+    let statusPieChart = null;
+    let allTargetsData = [];
+    let currentFilter = 'all';
+
+    const allowedAssistantRoutes = ['dorong inovasi pelayanan', 'inisiatif efisiensi keuangan', 'mengurangi manual work dan error'];
+    const allowedDoubleManualRoutes = window.allowedDoubleManualRoutes || []; 
+
+    // =========================================================================
+    // 1. UTILITY & SKELETON FUNCTIONS
+    // =========================================================================
+    function formatNumber(value) {
+        if (!value && value !== '0') return '';
+        const raw = String(value).replace(/[^0-9]/g, '');
+        if (!raw) return '';
+        return new Intl.NumberFormat('id-ID').format(raw);
+    }
+
+    function getRawNumber(value) {
+        if (!value) return '';
+        return String(value).replace(/[^0-9]/g, '');
+    }
+
+    function initInputFormatting() {
+        $('#manual_value_display').off('input.formatting').on('input.formatting', function() {
+            const raw = getRawNumber($(this).val());
+            $('#manual_value').val(raw);
+            const format = $('#manual_format').val();
+            let formatted = formatNumber(raw);
+            if (format === 'rupiah' && raw) formatted = 'Rp ' + formatted;
+            else if (format === 'persen' && raw) formatted = formatted + '%';
+            $(this).val(formatted);
+        });
+
+        ['biaya_gaji', 'biaya_bpjs', 'biaya_rekrutmen'].forEach(type => {
+            $(`#${type}_display`).off('input.formatting').on('input.formatting', function() {
+                const raw = getRawNumber($(this).val());
+                $(`#${type}_tahunan`).val(raw);
+                $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
+            });
+        });
+    }
+
+    function resetFormManual() {
+        $('#formManualValue')[0].reset();
+        $('#documentPreview').html('');
+        $('#singleInputArea').show();
+        $('#doubleInputArea').hide();
+        $('#manual_value_display').val('').trigger('input');
+        $('#manual_value').val('');
+        ['biaya_gaji', 'biaya_bpjs', 'biaya_rekrutmen'].forEach(type => {
+            $(`#${type}_display`).val('').trigger('input');
+            $(`#${type}_tahunan`).val('');
+        });
+        $('#manualValueId').val('');
+    }
+
+    function showError(message) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'error', title: 'Error', text: message, confirmButtonText: 'OK' });
+        } else {
+            alert(message);
+        }
+    }
+
+    // Fungsi untuk menampilkan/menyembunyikan semua skeleton di halaman utama
+    function toggleSkeletons(show) {
+        const display = show ? 'block' : 'none';
+        document.querySelectorAll('.skeleton-overlay').forEach(el => {
+            el.style.display = display;
+        });
+    }
+
+    // Fungsi untuk menghasilkan HTML skeleton modal detail
+    function getDetailModalSkeleton() {
+        return `
+            <div class="skeleton-modal-content p-4">
+                <div class="skeleton-modal-header">
+                    <div>
+                        <div class="skeleton" style="width: 250px; height: 28px; margin-bottom: 8px;"></div>
+                        <div class="skeleton" style="width: 120px; height: 14px;"></div>
+                    </div>
+                    <div class="skeleton" style="width: 32px; height: 32px; border-radius: 50%;"></div>
+                </div>
+                <div class="card shadow h-100 border-0 mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div class="skeleton" style="width: 20%; height: 24px;"></div>
+                            <div class="skeleton" style="width: 20%; height: 24px;"></div>
+                        </div>
+                        <div class="skeleton-modal-stats">
+                            <div class="skeleton-modal-stat-item"><div class="skeleton-label skeleton"></div><div class="skeleton-value skeleton"></div></div>
+                            <div class="skeleton-modal-stat-item"><div class="skeleton-label skeleton"></div><div class="skeleton-value skeleton"></div></div>
+                            <div class="skeleton-modal-stat-item"><div class="skeleton-label skeleton"></div><div class="skeleton-value skeleton"></div></div>
+                        </div>
+                        <div class="skeleton mb-4" style="width: 100%; height: 18px; border-radius: 9px;"></div>
+                        <div class="skeleton-modal-cards">
+                            <div class="skeleton-modal-card skeleton"></div>
+                            <div class="skeleton-modal-card skeleton"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card shadow border-0">
+                            <div class="card-body">
+                                <div class="skeleton mb-3" style="width: 40%; height: 20px;"></div>
+                                <div class="skeleton" style="width: 100%; height: 150px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card shadow border-0">
+                            <div class="card-body d-flex flex-column">
+                                <div class="skeleton mb-3" style="width: 50%; height: 20px;"></div>
+                                <div class="skeleton flex-grow-1" style="width: 100%; height: 200px; border-radius: 50%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // =========================================================================
+    // 2. DATA LOADING & RENDERING
+    // =========================================================================
+    function loadDataPersonal() {
+        // 1. Tampilkan skeleton sebelum request
+        toggleSkeletons(true);
+        $('#targetCardContainer').css('opacity', '0.5'); // Efek visual tambahan
+
+        const config = window.KPI_CONFIG;
+        $.ajax({
+            url: config.dataPersonalRoute,
+            type: 'GET',
+            data: { tahun: config.currentYear, id_karyawan: config.targetId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // 2. Sembunyikan skeleton setelah data diterima
+                    toggleSkeletons(false);
+                    $('#targetCardContainer').css('opacity', '1');
+
+                    updateHeader(response);
+                    updateStats(response);
+                    updateCharts(response.statistik_per_target, response.distribusi_status);
+                    updateTargetCards(response.daftar_target_pribadi);
+                    allTargetsData = response.daftar_target_pribadi;
+                } else {
+                    toggleSkeletons(false);
+                    showError(response.message || 'Terjadi kesalahan saat memuat data');
+                }
+            },
+            error: function() {
+                toggleSkeletons(false);
+                showError('Gagal memuat data. Silakan coba lagi.');
+            }
+        });
+    }
+
+    function updateHeader(data) {
+        $('#userName').text(data.user_info?.nama || 'User');
+        $('#userJabatan').text(data.user_info?.jabatan || '-');
+        $('#userDivisi').text(data.user_info?.divisi || '-');
+    }
+
+    function updateStats(data) {
+        $('#stat0').text(data.total_target + ' Target');
+        $('#stat1').text(Math.round(data.rata_rata_progress) + '%');
+        $('#stat2').text(data.kpi_aktif);
+        $('#stat3').text(data.kpi_selesai);
+    }
+
+    function updateCharts(statistikTargets, distribusiStatus) {
+        if (performanceChart) performanceChart.destroy();
+        if (statusPieChart) statusPieChart.destroy();
+
+        const targetLabels = statistikTargets.map(item => item.judul.length > 20 ? item.judul.substring(0, 20) + '...' : item.judul);
+        const targetProgress = statistikTargets.map(item => {
+            if ((item.tipe_target === "rupiah" || item.tipe_target === "angka") && item.target > 0) {
+                return Math.round((item.progress / item.target) * 100);
+            }
+            return Math.round(item.progress || 0);
+        });
+
+        const backgroundColors = statistikTargets.map(item => {
+            let progress = item.progress || 0;
+            if (progress === 0) return 'rgba(254, 215, 24, 0.7)';
+            if (item.tipe_target === "rupiah") {
+                let percent = item.target ? (progress / item.target) * 100 : 0;
+                return percent >= 100 ? 'rgba(40, 207, 180, 0.7)' : 'rgba(254, 124, 150, 0.7)';
+            }
+            return progress >= item.target ? 'rgba(40, 207, 180, 0.7)' : 'rgba(254, 124, 150, 0.7)';
+        });
+
+        const borderColors = backgroundColors.map(c => c.replace('0.7', '1'));
+
+        const performanceCtx = document.getElementById('performanceChart');
+        if (performanceCtx) {
+            performanceChart = new Chart(performanceCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: targetLabels,
+                    datasets: [{
+                        label: 'Progress (%)',
+                        data: targetProgress,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+                }
+            });
+        }
+
+        const pieLabels = Object.keys(distribusiStatus);
+        const pieData = Object.values(distribusiStatus);
+        const statusCtx = document.getElementById('statusPieChart');
+        if (statusCtx) {
+            statusPieChart = new Chart(statusCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: pieLabels,
+                    datasets: [{
+                        data: pieData,
+                        backgroundColor: ['#28CFB4', '#FE7C96', '#FED718'],
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '65%'
+                }
+            });
+        }
+    }
+
+    function updateTargetCards(targets) {
+        const container = $('#targetCardContainer');
+        if (!targets || targets.length === 0) {
+            container.html(`<div class="col-12"><div class="content-card"><div class="card-body text-center py-5"><i class="fa-solid fa-inbox fa-4x text-muted mb-3"></i><h5 class="text-muted">Belum ada target KPI</h5></div></div></div>`);
+            return;
+        }
+
+        let html = '';
+        targets.forEach(target => {
+            let progressBarColor = target.progress >= target.target ? 'bg-success' : 'bg-primary';
+            let statusBadgeColor = target.status === 'Selesai' ? 'bg-success' : 'bg-warning text-dark';
+            let cardBorderColor = target.progress >= 75 ? 'border-success' : (target.progress >= 50 ? 'border-primary' : 'border-warning');
+
+            let perubahanProgressRupiah = (target.tipe_target === 'rupiah' || target.tipe_target === 'angka') 
+                ? (target.progress / target.target) * 100 
+                : target.progress;
+
+            let targetChange = target.tipe_target === "rupiah" ? "Rp " + Number(target.target).toLocaleString("id-ID") : 
+                               (target.tipe_target === "persen" ? target.target + "%" : target.target);
+            
+            let realisasiChange = target.tipe_target === "rupiah" ? "Rp " + Number(target.progress).toLocaleString("id-ID") : 
+                                  (target.tipe_target === "angka" ? target.progress : target.progress + "%");
+
+            let buttonIsiForm = allowedAssistantRoutes.includes(target.asistant_route) ? 'true' : '';
+
+            html += `
+                <div class="col-12 col-sm-6 col-lg-4 mb-4">
+                    <div class="target-card border-start border-4 ${cardBorderColor}">
+                        ${buttonIsiForm ? `<button type="button" class="action-btn buttonForm" data-id="${target.id}" data-value="${target.manual_value}" data-route="${target.asistant_route}" data-bs-toggle="modal" data-bs-target="#modalFormManual" title="Isi Data"><i class="fa-solid fa-file-pen"></i></button>` : ''}
+                        <button type="button" class="btn btn-link p-0 text-start w-100 h-100 text-decoration-none buttonDetailTarget" data-id="${target.id}" data-bs-toggle="modal" data-bs-target="#detailTargetModal" style="outline: none;">
+                            <div class="card-body-inner">
+                                <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary status-badge">${target.periode}</span>
+                                    <span class="badge ${statusBadgeColor} status-badge">${target.status}</span>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-2 lh-base title-badge">${target.judul}</h6>
+                                <p class="text-muted small mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 40px;">${target.deskripsi || 'Tidak ada deskripsi'}</p>
+                                <div class="mt-auto">
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small class="text-muted fw-semibold" style="font-size: 0.8rem;">Progress</small>
+                                            <small class="fw-bold text-primary" style="font-size: 0.8rem;">${target.progress_display}</small>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar ${progressBarColor}" role="progressbar" style="width: ${perubahanProgressRupiah}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 pt-2 border-top">
+                                        <div class="col-6">
+                                            <small class="text-muted d-block" style="font-size: 0.75rem;">Target</small>
+                                            <strong class="text-dark" style="font-size: 0.9rem;">${targetChange}</strong>
+                                        </div>
+                                        <div class="col-6 text-end">
+                                            <small class="text-muted d-block" style="font-size: 0.75rem;">Realisasi</small>
+                                            <strong class="text-primary" style="font-size: 0.9rem;">${realisasiChange}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        container.html(html);
+    }
+
+    // =========================================================================
+    // 3. EVENT LISTENERS & MODAL LOGIC
+    // =========================================================================
+    $(document).ready(function() {
+        initInputFormatting();
+        loadDataPersonal();
+
+        $('#modalFormManual').on('show.bs.modal', resetFormManual);
+        $('#modalFormManual').on('hidden.bs.modal', resetFormManual);
+
+        $(document).on('click', '.filter-btn-group .btn', function() {
+            $('.filter-btn-group .btn').removeClass('active');
+            $(this).addClass('active');
+            
+            let filter = $(this).data('filter');
+            currentFilter = filter;
+            let filteredTargets = allTargetsData;
+            
+            if (filter === 'active') filteredTargets = allTargetsData.filter(t => t.status === 'Aktif');
+            else if (filter === 'completed') filteredTargets = allTargetsData.filter(t => t.status === 'Selesai');
+            
+            updateTargetCards(filteredTargets);
+        });
+
+        $(document).on('click', '.buttonForm', function() {
+            const route = $(this).data('route');
+            const value = $(this).data('value') || '';
+            const id = $(this).data('id');
+            $('#manualValueId').val(id);
+
+            if (allowedDoubleManualRoutes.includes(route)) {
+                $('#singleInputArea').hide();
+                $('#doubleInputArea').show();
+                let parts = value && value.includes(',') ? value.split(',') : [value, '', ''];
+                ['biaya_gaji', 'biaya_bpjs', 'biaya_rekrutmen'].forEach((type, idx) => {
+                    const raw = getRawNumber(parts[idx]);
+                    $(`#${type}_display`).val(raw ? 'Rp ' + formatNumber(raw) : '').trigger('input');
+                    $(`#${type}_tahunan`).val(raw);
+                });
+            } else {
+                $('#singleInputArea').show();
+                $('#doubleInputArea').hide();
+                const format = $('#manual_format').val();
+                const rawValue = getRawNumber(value);
+                let displayValue = formatNumber(rawValue);
+                if (format === 'rupiah' && rawValue) displayValue = 'Rp ' + displayValue;
+                else if (format === 'persen' && rawValue) displayValue = displayValue + '%';
+                $('#manual_value_display').val(displayValue);
+                $('#manual_value').val(rawValue);
+            }
+        });
+
+        $(document).on('change', '#manual_format', function() {
+            if ($('#doubleInputArea').is(':visible')) return;
+            const format = $(this).val();
+            const rawValue = getRawNumber($('#manual_value').val());
+            let displayValue = formatNumber(rawValue);
+            if (format === 'rupiah' && rawValue) displayValue = 'Rp ' + displayValue;
+            else if (format === 'persen' && rawValue) displayValue = displayValue + '%';
+            $('#manual_value_display').val(displayValue);
+        });
+
+        $('#formManualValue').on('submit', function(e) {
+            e.preventDefault();
+            const $submitBtn = $(this).find('button[type="submit"]');
+            const originalText = $submitBtn.html();
+            $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Menyimpan...');
+            
+            const formData = new FormData(this);
+            if ($('#doubleInputArea').is(':visible')) {
+                formData.set('biaya_gaji_tahunan', $('#biaya_gaji_tahunan').val());
+                formData.set('biaya_bpjs_tahunan', $('#biaya_bpjs_tahunan').val());
+                formData.set('biaya_rekrutmen_tahunan', $('#biaya_rekrutmen_tahunan').val());
+            } else {
+                formData.set('manual_value', $('#manual_value').val());
+                formData.set('manual_format', $('#manual_format').val());
+            }
+
+            $.ajax({
+                url: window.KPI_CONFIG.manualValueRoute,
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function() {
+                    $('#modalFormManual').modal('hide');
+                    resetFormManual();
+                    $submitBtn.prop('disabled', false).html(originalText);
+                    loadDataPersonal();
+                },
+                error: function(xhr) {
+                    $submitBtn.prop('disabled', false).html(originalText);
+                    if (xhr.status === 422) {
+                        const errors = xhr.responseJSON?.errors || {};
+                        alert(Object.values(errors).map(e => e[0]).join('\n'));
+                    } else {
+                        alert('Terjadi kesalahan sistem.');
+                    }
+                }
+            });
+        });
+
+        // =========================================================================
+        // DETAIL MODAL DENGAN SKELETON
+        // =========================================================================
+        $(document).on('click', '.buttonDetailTarget', function() {
+            let id = $(this).data('id');
+            const body = $('#bodyContentDetailTarget');
+
+            body.html(getDetailModalSkeleton());
+
+            const modalEl = document.getElementById('detailTargetModal');
+            if (modalEl) {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+
+            $.ajax({
+                url: window.KPI_CONFIG.detailRoute,
+                method: 'GET',
+                data: { id, idUser: window.KPI_CONFIG.targetId },
+                dataType: 'json',
+                success: function(response) {
+                    body.empty();
+
+                    let detailArray = response.detail;
+                    let data = detailArray && detailArray.length > 0 ? detailArray[0].data : null;
+
+                    if (!data) {
+                        body.append(`
+                            <div class="modal-header"><h5 class="modal-title">Detail Target</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                            <div class="modal-body text-center py-5">Belum ada data</div>
+                            <div class="modal-footer"><button class="btn btn-danger" data-bs-dismiss="modal">Tutup</button></div>
+                        `);
+                    } else {
+                        const monthlyData = data.data_detail.monthly_data || {};
+                        const dailyData = data.data_detail.daily_breakdown_per_month || {};
+                        const dateNow = new Date().toISOString().split('T')[0];
+                        const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0];
+                        const tenggatWaktu = data.tenggat_waktu;
+
+                        function isDateBefore(date1, date2) { return new Date(date1) < new Date(date2); }
+                        function isDateAfter(date1, date2) { return new Date(date1) > new Date(date2); }
+
+                        let Tercapai;
+                        if (isDateBefore(dateNow, startOfYear)) Tercapai = "Belum Dimulai";
+                        else if (isDateAfter(dateNow, tenggatWaktu) || dateNow === tenggatWaktu) {
+                            Tercapai = data.data_detail.progress >= data.nilai_target ? "Mencapai Target" : "Target Gagal";
+                        } else {
+                            Tercapai = data.data_detail.progress >= data.nilai_target ? "Mencapai Target" : "Sedang Berjalan";
+                        }
+
+                        let targetValue, progressValue, gapValue;
+                        if (data.tipe_target === "persen") {
+                            targetValue = data.nilai_target + ' %';
+                            progressValue = data.data_detail.progress + ' %';
+                            gapValue = data.data_detail.gap + ' %';
+                        } else if (data.tipe_target === "rupiah") {
+                            const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                            targetValue = formatter.format(data.nilai_target);
+                            progressValue = formatter.format(data.data_detail.progress);
+                            gapValue = formatter.format(Math.abs(data.data_detail.gap));
+                        } else {
+                            targetValue = data.nilai_target;
+                            progressValue = data.data_detail.progress;
+                            gapValue = data.data_detail.gap;
+                        }
+
+                        let bgCard = Tercapai === "Mencapai Target" ? "success" : Tercapai === "Target Gagal" ? "danger" : Tercapai === "Sedang Berjalan" ? "warning" : "secondary";
+
+                        const pieChart = data.data_detail.pie_chart || { above: 0, below: 0 };
+                        const dataPieChart = {
+                            labels: ['Above', 'Below'],
+                            datasets: [{ label: 'Jumlah', data: [pieChart.above ?? 0, pieChart.below ?? 0], backgroundColor: ['#B66DFF', '#FE7C96'], hoverOffset: 4 }]
+                        };
+
+                        const NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                        function getNamaBulan(tahunBulan) {
+                            const parts = tahunBulan.split('-');
+                            if (parts.length < 2) return tahunBulan;
+                            const bulanIndex = parseInt(parts[1], 10) - 1;
+                            return NAMA_BULAN[bulanIndex] || tahunBulan;
+                        }
+
+                        const monthlyEntries = Object.entries(monthlyData);
+                        const lastMonthEntry = monthlyEntries[monthlyEntries.length - 1] || [];
+                        const labelBulanTerakhir = lastMonthEntry[0] ? getNamaBulan(lastMonthEntry[0]) : '-';
+                        const nilaiBulanTerakhirRupiah = lastMonthEntry[1] || 0;
+
+                        let allDays = [];
+                        Object.values(dailyData).forEach(month => {
+                            Object.entries(month).forEach(([tanggal, nilai]) => { allDays.push([tanggal, nilai]); });
+                        });
+                        const top3HariTertinggi = allDays.sort((a, b) => b[1] - a[1]).slice(0, 3);
+                        const karyawanTerkaitRupiah = data.karyawan?.[0] || null;
+
+                        function formatRupiah(angka) {
+                            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
+                        }
+
+                        function formatTanggalSingkat(tanggal) {
+                            const date = new Date(tanggal);
+                            return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                        }
+
+                        const karyawanList = Array.isArray(data.karyawan) ? data.karyawan : [data.karyawan];
+                        let no = 1;
+                        const karyawanHtml = karyawanList.map(item => `
+                            <div class="d-flex align-items-center py-2 participant-item">
+                                <div class="avatar me-3">${no++}</div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold text-dark small">${item.nama_lengkap || '-'}</div>
+                                    <div class="text-muted small">${item.jabatan || '-'}</div>
+                                </div>
+                            </div>
+                        `).join('');
+
+                        let FormatedProgress = 0;
+                        if (data.nilai_target && data.nilai_target > 0) {
+                            if (data.tipe_target === "rupiah") {
+                                FormatedProgress = Math.min((data.data_detail.progress / data.nilai_target) * 100, 100).toFixed(2);
+                            } else if (data.tipe_target === "angka") {
+                                FormatedProgress = ((data.data_detail.progress / data.nilai_target) * 100).toFixed(2);
+                            } else {
+                                FormatedProgress = Math.min(data.data_detail.progress, 100).toFixed(2);
+                            }
+                        }
+
+                        const allowedDetailAssistantRoutes = ['dorong inovasi pelayanan', 'inisiatif efisiensi keuangan', 'mengurangi manual work dan error', 'pengeluaran biaya karyawan'];
+                        const allowedDetailAssistantRoutesForRupiah = ['Pemasukan Kotor', 'meningkatkan revenue perusahaan'];
+                        const allowedDetailAssistantRoutesForPresentaseGapKompetensi = ['persentase gap kompetensi tim terhadap standar skill'];
+                        const allowedAssistantRoutesForTargetPenjualanTahunan = ['target penjualan tahunan', 'Pemasukan Kotor'];
+                        const allowedAssistantRoutesForPeningkatanKontribusiPelatihan = ['peningkatan kontribusi pelatihan'];
+                        const allowedAssistantRoutesForPemasukanBersih = ['pemasukan bersih'];
+                        const allowedAssistantRoutesForLaporanAnalisisKeuangan = ['laporan analisis keuangan'];
+
+                        let ContentTrafikSales = '';
+                        if (allowedAssistantRoutesForTargetPenjualanTahunan.includes(data.condition)) {
+                            const salesPerf = data.data_detail?.sales_performance;
+                            if (salesPerf && salesPerf.data) {
+                                if (salesPerf.type === 'individual') {
+                                    const s = salesPerf.data;
+                                    const statusClass = s.status === 'achieved' ? 'badge-success' : 'badge-warning';
+                                    const progressColor = s.status === 'achieved' ? '#28a745' : '#ffc107';
+                                    const progressWidth = Math.min(s.percentage, 100);
+                                    ContentTrafikSales = `
+                                        <div class="card shadow-sm mb-4 mt-2"><div class="card-body"><div class="row">
+                                            <div class="col-md-6">
+                                                <p class="mb-2"><strong>Sales:</strong> ${s.nama || '-'}</p>
+                                                <p class="mb-2"><strong>Revenue:</strong> ${formatRupiah(s.revenue)}</p>
+                                                <p class="mb-3"><strong>Target:</strong> ${formatRupiah(s.presentase_kemampuan)}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between"><span>Progress</span><span>${s.percentage}%</span></div>
+                                                    <div class="progress" style="height: 10px;"><div class="progress-bar" role="progressbar" style="width: ${progressWidth}%; background-color: ${progressColor};"></div></div>
+                                                </div>
+                                                <div class="text-end"><span class="badge ${statusClass} p-2">${(s.status || '').toUpperCase()}</span></div>
+                                            </div>
+                                        </div></div></div>
+                                    `;
+                                } else if (salesPerf.type === 'all') {
+                                    let rows = '';
+                                    salesPerf.data.forEach((sales, index) => {
+                                        const statusClass = sales.status === 'achieved' ? 'badge-success' : 'badge-warning';
+                                        const textClass = sales.status === 'achieved' ? 'text-success' : 'text-warning';
+                                        const targetValueStr = Number(sales.presentase_kemampuan).toLocaleString('id-ID', { useGrouping: false });
+                                        rows += `
+                                            <tr id="row-${sales.kode_karyawan}">
+                                                <td class="text-center">${index + 1}</td>
+                                                <td><strong>${sales.nama || '-'}</strong></td>
+                                                <td class="text-end">${formatRupiah(sales.revenue)}</td>
+                                                <td class="text-center">
+                                                    <div class="input-group input-group-sm" style="max-width: 150px; float: right;">
+                                                        <input type="text" class="form-control text-end target-input ${sales.id_detailPerson ? '' : 'is-invalid'}" value="${targetValueStr}" data-id-detail="${sales.id_detailPerson || ''}" data-kode-karyawan="${sales.kode_karyawan}" placeholder="Target" ${!sales.id_detailPerson ? 'disabled' : ''}>
+                                                    </div>
+                                                    <div class="loading-spinner" style="display: none; float: right; margin-right: 10px;"><span class="spinner-border spinner-border-sm text-primary" role="status"></span></div>
+                                                    <div class="update-feedback" style="display: none; float: right; margin-right: 10px; margin-top: 5px;"><i class="fa-solid fa-check-circle text-success"></i></div>
+                                                    <div class="clearfix"></div>
+                                                </td>
+                                                <td class="text-center ${textClass}"><strong>${sales.percentage}%</strong></td>
+                                                <td class="text-center"><span class="badge ${statusClass}">${(sales.status || '').toUpperCase()}</span></td>
+                                            </tr>
+                                        `;
+                                    });
+                                    let htmlTargetTahunanSales = '';
+                                    Object.entries(data.data_detail.triwulan_data || {}).forEach(([label, value]) => {
+                                        htmlTargetTahunanSales += `<div class="col-md-6"><div class="card h-100 shadow-sm border-0"><div class="card-body"><h5 class="card-title">${label.replace('_', ' ')}</h5><p class="card-text">Rp ${Number(value).toLocaleString('id-ID')}</p></div></div></div>`;
+                                    });
+                                    ContentTrafikSales = `
+                                        <div class="row">
+                                            <div class="col"><div class="card shadow-sm mt-3"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><thead class="thead-light"><tr><th class="text-center" width="5%">No</th><th>Sales</th><th class="text-end" width="20%">Revenue</th><th class="text-end" width="20%">Target (Editable)</th><th class="text-center" width="15%">Persentase</th><th class="text-center" width="15%">Status</th></tr></thead><tbody>${rows}</tbody></table></div></div></div></div>
+                                            <div class="col"><div class="card shadow-sm border-0 mt-3"><div class="card-body"><div class="row g-3">${htmlTargetTahunanSales}</div></div><div class="mb-2 text-center"><hr><p>Data Triwulan diambil dari tahun ${data.detail_jangka || '-'}</p></div></div></div>
+                                        </div>
+                                    `;
+                                    setTimeout(() => {
+                                        document.querySelectorAll('.target-input').forEach(input => {
+                                            let timeout = null;
+                                            input.addEventListener('input', function() {
+                                                const el = this;
+                                                const row = el.closest('tr');
+                                                const spinner = row.querySelector('.loading-spinner');
+                                                const feedback = row.querySelector('.update-feedback');
+                                                clearTimeout(timeout);
+                                                if (feedback) feedback.style.display = 'none';
+                                                timeout = setTimeout(() => {
+                                                    const idDetailPerson = el.dataset.idDetail;
+                                                    const kodeKaryawan = el.dataset.kodeKaryawan;
+                                                    const newTarget = el.value.replace(/\./g, '');
+                                                    if (!idDetailPerson) { el.classList.add('is-invalid'); return; }
+                                                    if (spinner) spinner.style.display = 'inline-block';
+                                                    el.disabled = true;
+                                                    $.ajax({
+                                                        url: window.KPI_CONFIG.updateTargetPerSalesRoute,
+                                                        method: 'POST',
+                                                        data: { _token: window.KPI_CONFIG.csrfToken, id_detailPerson: idDetailPerson, kode_karyawan: kodeKaryawan, presentase_kemampuan: newTarget },
+                                                        success: function(response) {
+                                                            if (spinner) spinner.style.display = 'none';
+                                                            el.disabled = false;
+                                                            if (feedback) { feedback.style.display = 'inline-block'; setTimeout(() => { feedback.style.display = 'none'; }, 2000); }
+                                                            el.classList.remove('is-invalid'); el.classList.add('is-valid');
+                                                            if (response?.data) {
+                                                                const percentageCell = row.querySelector('td:nth-child(5)');
+                                                                const statusCell = row.querySelector('td:nth-child(6)');
+                                                                if (percentageCell && response.data.percentage) percentageCell.innerHTML = `<strong class="${response.data.status === 'achieved' ? 'text-success' : 'text-warning'}">${response.data.percentage}%</strong>`;
+                                                                if (statusCell && response.data.status) {
+                                                                    const statusClass = response.data.status === 'achieved' ? 'badge-success' : 'badge-warning';
+                                                                    statusCell.innerHTML = `<span class="badge ${statusClass}">${response.data.status.toUpperCase()}</span>`;
+                                                                }
+                                                            }
+                                                            setTimeout(() => { el.classList.remove('is-valid'); }, 2000);
+                                                        },
+                                                        error: function() {
+                                                            if (spinner) spinner.style.display = 'none';
+                                                            el.disabled = false;
+                                                            el.classList.add('is-invalid');
+                                                        }
+                                                    });
+                                                }, 1000);
+                                            });
+                                            input.addEventListener('blur', function() {
+                                                const value = this.value.replace(/\./g, '');
+                                                if (value) this.value = Number(value).toLocaleString('id-ID');
+                                            });
+                                            input.addEventListener('focus', function() {
+                                                const value = this.value.replace(/\./g, '');
+                                                if (value) this.value = value;
+                                            });
+                                        });
+                                    }, 100);
+                                }
+                            }
+                        } else if (allowedAssistantRoutesForPeningkatanKontribusiPelatihan.includes(data.condition)) {
+                            const cb = data.data_detail.class_breakdown || {};
+                            const inhouse = cb.Inhouse || {};
+                            ContentTrafikSales = `
+                                <div class="card mt-4 border-0 rounded-4" style="background:#f8fafc;">
+                                    <div class="card-body p-4">
+                                        <div class="d-flex justify-content-between align-items-end mb-4">
+                                            <div><div class="text-muted small">Total Kelas</div><div class="fs-2 fw-semibold text-dark">${cb.total || 0}</div></div>
+                                        </div>
+                                        <div class="row g-3 mb-4">
+                                            <div class="col-md-6"><div class="p-3 rounded-3 bg-white border h-100"><div class="text-muted small mb-2">Kelas Inixindo</div><div class="fs-4 fw-semibold text-dark">${cb.kelas_od || 0}</div></div></div>
+                                            <div class="col-md-6"><div class="p-3 rounded-3 bg-white border h-100"><div class="text-muted small mb-2">Kelas Orang Luar</div><div class="fs-4 fw-semibold text-dark">${cb.kelas_ol || 0}</div></div></div>
+                                            <div class="col-md-6"><div class="p-3 rounded-3 bg-white border h-100"><div class="text-muted small mb-2">Kelas Offline</div><div class="fs-4 fw-semibold text-dark">${cb.kelas_offline || 0}</div></div></div>
+                                            <div class="col-md-6"><div class="p-3 rounded-3 bg-white border h-100"><div class="text-muted small mb-2">Kelas Online</div><div class="fs-4 fw-semibold text-dark">${cb.kelas_online || 0}</div></div></div>
+                                        </div>
+                                        <div class="p-3 rounded-3 bg-white border">
+                                            <div class="fw-semibold mb-3">Kelas Inhouse</div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted small">Bandung</span><span class="fw-semibold text-dark">${inhouse.kelas_inhouse || 0}</span></div>
+                                            <div class="d-flex justify-content-between py-2"><span class="text-muted small">Luar Bandung</span><span class="fw-semibold text-dark">${inhouse.kelas_inhouse_luar || 0}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        let contentPieChart = '';
+                        if (allowedDetailAssistantRoutes.includes(data.condition)) {
+                            const fileUrl = data.data_detail.dataManual?.manual_document || '';
+                            const fileName = fileUrl ? fileUrl.split('/').pop() : '';
+                            const fileExtension = fileName ? fileName.split('.').pop().toLowerCase() : '';
+                            const imageExtensions = ['jpg', 'jpeg', 'png'];
+                            const pdfExtensions = ['pdf'];
+                            let fileContent = '';
+                            const fullFileUrl = fileUrl ? `/storage/${fileUrl}` : '';
+                            if (imageExtensions.includes(fileExtension)) {
+                                fileContent = `<div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3"><div class="mb-3" style="max-width: 100%; max-height: 300px;"><img src="${fullFileUrl}" alt="${fileName}" class="img-fluid rounded shadow-sm" style="max-width: 100%; max-height: 300px; object-fit: contain;"></div><div class="mt-2 text-center"><a href="${fullFileUrl}" download="${fileName}" class="btn btn-primary btn-sm"><i class="fa-solid fa-download me-1"></i>Download Gambar</a></div><div class="mt-2 small text-muted"><i class="fa-solid fa-file-image me-1"></i>${fileName}</div></div>`;
+                            } else if (pdfExtensions.includes(fileExtension)) {
+                                fileContent = `<div class="w-100 h-100 d-flex flex-column"><div class="flex-grow-1 mb-3" style="min-height: 250px;"><iframe src="${fullFileUrl}" class="w-100 h-100" style="border: 1px solid #dee2e6; border-radius: 8px;"></iframe></div><div class="text-center"><a href="${fullFileUrl}" download="${fileName}" class="btn btn-primary btn-sm"><i class="fa-solid fa-download me-1"></i>Download PDF</a></div><div class="mt-2 small text-muted text-center"><i class="fa-solid fa-file-pdf me-1"></i>${fileName}</div></div>`;
+                            } else {
+                                fileContent = `<div class="text-center py-5"><div class="mb-3"><i class="fa-solid fa-file text-secondary" style="font-size: 4rem;"></i></div><p class="text-muted mb-3">File tidak dapat ditampilkan</p><p class="text-muted small">Hanya gambar dan PDF yang dapat ditampilkan</p></div>`;
+                            }
+                            contentPieChart = `<h6 class="fw-semibold mb-3 text-secondary"><i class="fa-solid fa-file me-2"></i>Dokumen Manual</h6><div class="manual-document-container flex-grow-1 d-flex flex-column align-items-center justify-content-center p-3" style="background-color: #f8f9fa; border-radius: 8px;">${fileContent}</div><div class="mt-3 small text-muted text-center"><i class="fa-solid fa-info-circle me-1"></i>Klik tombol download untuk menyimpan file</div>`;
+                        } else if (allowedDetailAssistantRoutesForRupiah.includes(data.condition)) {
+                            contentPieChart = `<div class="mb-4"><h6 class="fw-semibold text-primary mb-1"><i class="fa-solid fa-wallet me-2"></i>${data.judul}</h6><small class="text-muted">Ringkasan performa</small></div><div class="mb-4 p-3 rounded bg-light"><div class="text-muted small mb-1">Bulan Terakhir</div><div class="fw-semibold">${labelBulanTerakhir}</div><div class="fw-bold fs-6 text-dark">${formatRupiah(nilaiBulanTerakhirRupiah)}</div></div><div class="mb-3"><div class="text-muted small mb-2">Top Hari Tertinggi</div>${top3HariTertinggi.map(([tanggal, nilai], index) => `<div class="d-flex justify-content-between mb-1 ${index > 0 ? 'text-muted' : ''}"><span>${formatTanggalSingkat(tanggal)}</span><span class="fw-semibold">${formatRupiah(nilai)}</span></div>`).join('')}</div><hr class="my-3"><div class="d-flex align-items-center gap-2 text-muted small"><i class="fa-solid fa-user-circle fs-5"></i><span class="fw-semibold text-dark">${karyawanTerkaitRupiah?.nama_lengkap ?? '-'}</span><span>• ${karyawanTerkaitRupiah?.jabatan ?? '-'}</span></div>`;
+                        } else {
+                            contentPieChart = `<h6 class="fw-semibold mb-3 text-secondary"><i class="fa-solid fa-chart-pie me-2"></i>Chart ${data.condition}</h6><div class="chart-container flex-grow-1"><canvas id="MyChartDoughtnut"></canvas></div>`;
+                        }
+
+                        let contentStatisticChart = '';
+                        if (allowedDetailAssistantRoutes.includes(data.condition)) {
+                            contentStatisticChart = '';
+                        } else if (allowedAssistantRoutesForLaporanAnalisisKeuangan.includes(data.condition)) {
+                            const bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                            contentStatisticChart = `<div class="row g-4">${(data.data_detail.analisa_data || []).map(item => `<div class="col-md-4 mt-5"><div class="card border-0 shadow-sm h-100"><div class="mb-2 p-3"><h5 class="fw-bold text-primary mb-1">${bulanIndo[item.month] || '-'}</h5><small class="text-muted">Laporan Analisis Bulanan</small></div><div class="card-body d-flex flex-column" style="overflow-y: scroll; max-height: 280px;"><div class="mb-3"><p class="mb-0" style="text-align: justify;">${item.description || ''}</p></div></div><div class="mt-auto p-3"><a href="/storage/${item.file_paths || ''}" class="btn btn-sm btn-outline-primary w-100" ${item.file_paths ? 'download' : ''}><i class="fa-solid fa-file-alt"></i></a></div></div></div>`).join('')}</div>`;
+                        } else if (allowedAssistantRoutesForPemasukanBersih.includes(data.condition)) {
+                            const bulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                            contentStatisticChart = `
+                                <div class="mt-4"><div class="row g-4">${(data.data_detail.previous_quarter?.data || []).map((item, index) => `
+                                        <div class="col-12 col-md-6 col-lg-4">
+                                            <div class="card border-0 shadow-sm h-100 quarter-card">
+                                                <div class="card-body d-flex flex-column p-4">
+                                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                                        <div><h6 class="fw-semibold text-muted mb-1">Periode</h6><h5 class="fw-bold mb-0">${bulanIndo[(item.month || 1) - 1] ?? '-'}</h5></div>
+                                                        <span class="badge rounded-pill bg-${item.color || 'secondary'} bg-opacity-10 text-${item.color || 'secondary'} px-3 py-2">Laporan</span>
+                                                    </div>
+                                                    <div class="mb-3"><h3 class="fw-bold text-dark mb-0">Rp ${item.nilai ? Number(item.nilai).toLocaleString('id-ID') : '-'}</h3><small class="text-muted">Total Pemasukan</small></div>
+                                                    <div class="flex-grow-1">
+                                                        <p class="text-muted small mb-2 description-text" id="desc-${index}">${item.description ?? '-'}</p>
+                                                        ${(item.description && item.description.length > 100) ? `<button class="btn btn-sm btn-link p-0 text-primary btn-toggle-desc" data-target="desc-${index}">Lihat Selengkapnya</button>` : ''}
+                                                    </div>
+                                                    <div class="d-flex justify-content-end align-items-center mt-4">
+                                                        <a href="/storage/${item.file_paths || ''}" class="btn btn-sm btn-dark d-flex align-items-center gap-2" ${item.file_paths ? 'download' : ''}><i class="fa-solid fa-download"></i> Download</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}</div></div>
+                                <style>.quarter-card { border-radius: 16px; transition: all 0.25s ease; background: #ffffff; }.quarter-card:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 15px 35px rgba(0,0,0,0.08); }.quarter-card h3 { letter-spacing: 0.5px; }.quarter-card .badge { font-size: 12px; font-weight: 500; }.description-text { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }.description-text.expanded { -webkit-line-clamp: unset; overflow: visible; }.quarter-card .btn { border-radius: 8px; font-size: 13px; }</style>
+                            `;
+                            setTimeout(() => {
+                                document.querySelectorAll('.btn-toggle-desc').forEach(btn => {
+                                    btn.addEventListener('click', function() {
+                                        const targetId = this.getAttribute('data-target');
+                                        const textEl = document.getElementById(targetId);
+                                        if (textEl) {
+                                            if (textEl.classList.contains('expanded')) {
+                                                textEl.classList.remove('expanded');
+                                                this.innerText = 'Lihat Selengkapnya';
+                                            } else {
+                                                textEl.classList.add('expanded');
+                                                this.innerText = 'Sembunyikan';
+                                            }
+                                        }
+                                    });
+                                });
+                            }, 0);
+                        } else if (allowedDetailAssistantRoutesForPresentaseGapKompetensi.includes(data.condition)) {
+                            const isKoordinatorItsm = window.authUser?.jabatan === 'Koordinator ITSM';
+                            const disabledAttr = isKoordinatorItsm ? '' : 'disabled';
+                            const submitBtnHtml = isKoordinatorItsm ? '<div class="mt-3"><button type="submit" class="btn btn-primary">Simpan</button></div>' : '';
+                            contentStatisticChart = `
+                                <div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold mb-3">Input Presentase Kemampuan Programmer</h6>
+                                    <form id="formGapKompetensi">
+                                        <div class="row mb-2 fw-semibold text-muted border-bottom pb-2"><div class="col-md-4">Nama Karyawan</div><div class="col-md-4">Kemampuan (%)</div><div class="col-md-4">Standar (%)</div></div>
+                                        ${(data.karyawan || []).map((item, index) => {
+                                            const kemampuan = parseFloat(item.presentase_kemampuan ?? 0);
+                                            const standar = parseFloat(item.presentase_standar ?? 100);
+                                            let badge = '';
+                                            if (kemampuan === 0) badge = `<span class="badge bg-danger">0%</span>`;
+                                            else if (kemampuan < standar) badge = `<span class="badge bg-warning text-dark">Not Achieved</span>`;
+                                            else badge = `<span class="badge bg-success">Achieved</span>`;
+                                            return `<div class="row mb-2 align-items-center p-2 rounded"><div class="col-md-4 d-flex justify-content-between align-items-center"><span>${item.nama_lengkap ?? '-'}</span>${badge}</div><div class="col-md-4"><input type="number" step="0.1" class="form-control kemampuan-input" name="data[${index}][kemampuan]" value="${kemampuan}" ${disabledAttr}></div><div class="col-md-4"><input type="number" step="0.1" class="form-control standar-input" name="data[${index}][standar]" value="${standar}" ${disabledAttr}></div><input type="hidden" name="data[${index}][id]" value="${item.id || ''}"></div>`;
+                                        }).join('')}
+                                        ${submitBtnHtml}
+                                    </form>
+                                </div></div></div>
+                            `;
+                            $(document).off('submit', '#formGapKompetensi').on('submit', '#formGapKompetensi', function(e) {
+                                e.preventDefault();
+                                let formData = $(this).serialize();
+                                $.ajax({
+                                    url: window.KPI_CONFIG.updateGapKompetensiRoute,
+                                    method: 'POST',
+                                    data: formData,
+                                    success: function() {
+                                        if (typeof Swal !== 'undefined') {
+                                            Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Berhasil diupdate.', timer: 2000, showConfirmButton: false }).then(() => {
+                                                const modalEl = document.getElementById('detailTargetModal');
+                                                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                                                modal.hide();
+                                            });
+                                        }
+                                        loadDataPersonal();
+                                    },
+                                    error: function(err) {
+                                        if (typeof Swal !== 'undefined') {
+                                            Swal.fire({ icon: 'error', title: 'Gagal!', html: err.responseJSON?.message || 'Terjadi kesalahan' });
+                                        }
+                                    }
+                                });
+                            });
+                        } else {
+                            contentStatisticChart = `<div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><div class="d-flex justify-content-between mb-3"><h6 class="fw-semibold mb-0">Statistik ${data.condition}</h6><div class="d-flex gap-2"><select class="form-select form-select-sm" id="filterType"><option value="year">Per Tahun</option><option value="month">Per Bulan</option></select><select class="form-select form-select-sm d-none" id="filterMonth"><option value="">Pilih Bulan</option></select></div></div><div style="height:300px"><canvas id="StatisticChart"></canvas></div></div></div></div>`;
+                        }
+
+                        let contentKalenderInstruktur = '';
+                        const instrukturDetails = Array.isArray(data.data_detail.instruktur_details) ? data.data_detail.instruktur_details : [];
+                        const hariLiburNasional = data.data_detail.hari_libur_nasional || { jumlah: 0, daftar: {} };
+
+                        if (instrukturDetails.length > 0) {
+                            const NAMA_BULAN_KAL = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                            const NAMA_HARI = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+                            window.__instrukturData = instrukturDetails;
+                            window.__currentMonthIndex = {};
+
+                            function buildKalenderBulanHtml(instruktur, bulanKey) {
+                                const kalender = instruktur.kalender || {};
+                                if (!kalender[bulanKey]) return '<div class="text-muted text-center py-4">Tidak ada data untuk bulan ini.</div>';
+                                const [thn, bln] = bulanKey.split('-');
+                                const namaBulan = NAMA_BULAN_KAL[parseInt(bln, 10) - 1];
+                                const daysInMonth = new Date(thn, bln, 0).getDate();
+                                const firstDayOfWeek = new Date(thn, parseInt(bln,10)-1, 1).getDay();
+                                let cellsHtml = '';
+                                NAMA_HARI.forEach(h => { cellsHtml += `<div class="kal-header">${h}</div>`; });
+                                for (let i = 0; i < firstDayOfWeek; i++) { cellsHtml += `<div class="kal-cell kal-empty"></div>`; }
+                                for (let d = 1; d <= daysInMonth; d++) {
+                                    const cellData = kalender[bulanKey][d] || { status: 'empty', keterangan: '' };
+                                    const statusClass = 'kal-' + cellData.status;
+                                    cellsHtml += `<div class="kal-cell ${statusClass}" title="${cellData.keterangan || ''}" data-bs-toggle="tooltip"><div class="kal-day">${d}</div></div>`;
+                                }
+                                const monthStats = Object.values(kalender[bulanKey]).reduce((acc, cur) => { acc[cur.status] = (acc[cur.status] || 0) + 1; return acc; }, {});
+                                return `
+                                    <div class="kalender-bulan-slide" data-bulan="${bulanKey}">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-semibold mb-0">${namaBulan} ${thn}</h6>
+                                            <div class="d-flex gap-2 small">
+                                                <span class="badge bg-success">Aktif: ${monthStats.working || 0}</span>
+                                                <span class="badge bg-warning text-dark">Cuti: ${monthStats.cuti || 0}</span>
+                                                <span class="badge bg-danger">Libur: ${monthStats.libur || 0}</span>
+                                            </div>
+                                        </div>
+                                        <div class="kalender-grid">${cellsHtml}</div>
+                                    </div>
+                                `;
+                            }
+
+                            window.showKalenderBulan = function(instrukturId, bulanIndex) {
+                                const instruktur = window.__instrukturData.find(i => i.id == instrukturId);
+                                if (!instruktur) return;
+                                const kalender = instruktur.kalender || {};
+                                const bulanKeys = Object.keys(kalender).sort();
+                                const totalBulan = bulanKeys.length;
+                                if (totalBulan === 0) return;
+                                if (bulanIndex < 0) bulanIndex = totalBulan - 1;
+                                if (bulanIndex >= totalBulan) bulanIndex = 0;
+                                window.__currentMonthIndex[instrukturId] = bulanIndex;
+                                const bulanKey = bulanKeys[bulanIndex];
+                                const slideContainer = document.getElementById(`kalenderSlide_${instrukturId}`);
+                                if (slideContainer) slideContainer.innerHTML = buildKalenderBulanHtml(instruktur, bulanKey);
+                                const counterEl = document.getElementById(`bulanCounter_${instrukturId}`);
+                                if (counterEl) counterEl.textContent = `${bulanIndex + 1} dari ${totalBulan} bulan`;
+                                const prevBtn = document.getElementById(`btnPrevBulan_${instrukturId}`);
+                                const nextBtn = document.getElementById(`btnNextBulan_${instrukturId}`);
+                                if (prevBtn) prevBtn.disabled = (totalBulan <= 1);
+                                if (nextBtn) nextBtn.disabled = (totalBulan <= 1);
+                            };
+
+                            function buildCutiHtml(instruktur) {
+                                const cutiEntries = Object.entries(instruktur.daftar_cuti || {});
+                                if (cutiEntries.length === 0) return '';
+                                return `
+                                    <div class="mt-3">
+                                        <h6 class="fw-semibold small text-muted mb-2"><i class="fa-solid fa-suitcase-rolling me-1"></i>Detail Cuti (${cutiEntries.length} hari)</h6>
+                                        <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                            <table class="table table-sm table-bordered mb-0">
+                                                <thead class="table-warning"><tr><th>Tanggal</th><th>Tipe</th><th>Alasan</th></tr></thead>
+                                                <tbody>
+                                                    ${cutiEntries.map(([tgl, dt]) => `
+                                                        <tr>
+                                                            <td class="small">${new Date(tgl).toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'})}</td>
+                                                            <td class="small">${dt.tipe || '-'}</td>
+                                                            <td class="small">${dt.alasan || '-'}</td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+
+                            let liburNasionalHtml = '';
+                            const liburEntries = Object.entries(hariLiburNasional.daftar || {});
+                            if (liburEntries.length > 0) {
+                                liburNasionalHtml = `
+                                    <div class="alert alert-light border mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0 fw-semibold"><i class="fa-solid fa-flag me-2 text-danger"></i>Hari Libur Nasional</h6>
+                                            <span class="badge bg-danger">${hariLiburNasional.jumlah} Hari</span>
+                                        </div>
+                                        <div class="row g-2" style="max-height: 150px; overflow-y: auto;">
+                                            ${liburEntries.map(([tgl, ket]) => `
+                                                <div class="col-md-6">
+                                                    <div class="small p-2 bg-danger bg-opacity-10 rounded">
+                                                        <strong>${new Date(tgl).toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'})}</strong>
+                                                        <div class="text-muted">${ket}</div>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `;
+                            }
+
+                            let accordionItems = '';
+                            instrukturDetails.forEach((instruktur, idx) => {
+                                const persentaseColor = instruktur.persentase >= 100 ? 'success' : (instruktur.persentase >= 75 ? 'warning' : 'danger');
+                                const kalender = instruktur.kalender || {};
+                                const bulanKeys = Object.keys(kalender).sort();
+                                const totalBulan = bulanKeys.length;
+                                window.__currentMonthIndex[instruktur.id] = 0;
+                                const cutiHtml = buildCutiHtml(instruktur);
+                                accordionItems += `
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="headingInstruktur${idx}">
+                                            <button class="accordion-button ${idx > 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInstruktur${idx}" aria-expanded="${idx === 0 ? 'true' : 'false'}">
+                                                <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                                    <div>
+                                                        <strong>${instruktur.nama}</strong>
+                                                        <div class="small text-muted">${instruktur.kode_karyawan} • ${instruktur.jabatan}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="fw-bold text-${persentaseColor}">${instruktur.persentase}%</div>
+                                                        <div class="small text-muted">${instruktur.jam_aktif} / ${instruktur.target_jam} jam</div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </h2>
+                                        <div id="collapseInstruktur${idx}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}" data-bs-parent="#accordionInstruktur">
+                                            <div class="accordion-body">
+                                                <div class="row g-2 mb-3">
+                                                    <div class="col-6 col-md-3"><div class="p-2 border rounded text-center bg-success-subtle"><div class="small text-muted">Hari Aktif</div><div class="fw-bold fs-5">${instruktur.total_hari_kerja}</div></div></div>
+                                                    <div class="col-6 col-md-3"><div class="p-2 border rounded text-center bg-warning-subtle"><div class="small text-muted">Hari Cuti</div><div class="fw-bold fs-5">${instruktur.total_hari_cuti}</div></div></div>
+                                                    <div class="col-6 col-md-3"><div class="p-2 border rounded text-center bg-danger-subtle"><div class="small text-muted">Hari Libur</div><div class="fw-bold fs-5">${instruktur.total_hari_libur}</div></div></div>
+                                                    <div class="col-6 col-md-3"><div class="p-2 border rounded text-center bg-primary-subtle"><div class="small text-muted">Jam Aktif</div><div class="fw-bold fs-5">${instruktur.jam_aktif}</div></div></div>
+                                                </div>
+                                                <div class="d-flex flex-wrap gap-2 mb-3 small">
+                                                    <span><span class="kal-legend-box kal-working"></span> Hari Aktif</span>
+                                                    <span><span class="kal-legend-box kal-cuti"></span> Cuti</span>
+                                                    <span><span class="kal-legend-box kal-libur"></span> Libur Nasional</span>
+                                                    <span><span class="kal-legend-box kal-weekend"></span> Weekend</span>
+                                                    <span><span class="kal-legend-box kal-empty"></span> Tidak Ada Aktivitas</span>
+                                                </div>
+                                                ${cutiHtml}
+                                                <div class="mt-3">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <h6 class="fw-semibold mb-0"><i class="fa-solid fa-calendar me-2"></i>Kalender Bulanan</h6>
+                                                        <span class="badge bg-info" id="bulanCounter_${instruktur.id}">1 dari ${totalBulan} bulan</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-3 p-2 bg-light rounded-3">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnPrevBulan_${instruktur.id}" onclick="showKalenderBulan(${instruktur.id}, window.__currentMonthIndex[${instruktur.id}] - 1)"><i class="fa-solid fa-chevron-left me-1"></i> Bulan Sebelumnya</button>
+                                                        <div class="flex-grow-1 text-center"><small class="text-muted">Gunakan tombol atau swipe untuk navigasi</small></div>
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNextBulan_${instruktur.id}" onclick="showKalenderBulan(${instruktur.id}, window.__currentMonthIndex[${instruktur.id}] + 1)">Bulan Selanjutnya <i class="fa-solid fa-chevron-right ms-1"></i></button>
+                                                    </div>
+                                                    <div id="kalenderSlide_${instruktur.id}">
+                                                        ${totalBulan > 0 ? buildKalenderBulanHtml(instruktur, bulanKeys[0]) : '<div class="text-muted text-center py-4">Tidak ada data kalender.</div>'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+
+                            contentKalenderInstruktur = `
+                                <div class="mt-3">
+                                    <div class="card shadow-sm border-0 rounded-4">
+                                        <div class="card-body">
+                                            <h6 class="fw-semibold mb-3"><i class="fa-solid fa-calendar-days me-2"></i>Kalender Kinerja Instruktur</h6>
+                                            ${liburNasionalHtml}
+                                            <div class="accordion" id="accordionInstruktur">
+                                                ${accordionItems}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <style>
+                                    .kalender-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; background: #f8f9fa; padding: 6px; border-radius: 8px; }
+                                    .kal-header { text-align: center; font-size: 11px; font-weight: 600; color: #6c757d; padding: 4px 0; }
+                                    .kal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 12px; cursor: pointer; transition: transform 0.15s; position: relative; }
+                                    .kal-cell:hover { transform: scale(1.1); z-index: 2; }
+                                    .kal-day { font-weight: 500; }
+                                    .kal-empty { background: transparent; }
+                                    .kal-working { background: #d1e7dd; color: #0f5132; }
+                                    .kal-cuti { background: #fff3cd; color: #664d03; }
+                                    .kal-libur { background: #f8d7da; color: #842029; }
+                                    .kal-weekend { background: #e2e3e5; color: #41464b; }
+                                    .kal-legend-box { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 4px; }
+                                    .kal-legend-box.kal-working { background: #d1e7dd; }
+                                    .kal-legend-box.kal-cuti { background: #fff3cd; }
+                                    .kal-legend-box.kal-libur { background: #f8d7da; }
+                                    .kal-legend-box.kal-weekend { background: #e2e3e5; }
+                                    .kal-legend-box.kal-empty { background: #f8f9fa; border: 1px dashed #adb5bd; }
+                                    .kalender-bulan-slide { animation: slideInBulan 0.3s ease-out; }
+                                    @keyframes slideInBulan { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+                                </style>
+                            `;
+                        }
+
+                        body.append(`
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold">${data.judul}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body pt-3">
+                                <div class="container-fluid p-3">
+                                    <div class="row g-4">
+                                        <div class="col-lg-8">
+                                            <div class="card shadow h-100">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                                        <span class="badge bg-primary">${data.jangka_target}</span>
+                                                        <span class="badge bg-${bgCard}">${Tercapai}</span>
+                                                    </div>
+                                                    <div class="row text-center mb-3">
+                                                        <div class="col"><small class="text-muted d-block">Target</small><h4 class="fw-bold mb-0" style="font-size: 25px">${targetValue}</h4></div>
+                                                        <div class="col"><small class="text-muted d-block">Progress</small><h1 class="fw-bold text-${bgCard} mb-0" style="font-size: 55px;">${progressValue}</h1></div>
+                                                        <div class="col"><small class="text-muted d-block">Gap</small><h4 class="fw-bold text-danger mb-0" style="font-size: 25px">-${gapValue}</h4></div>
+                                                    </div>
+                                                    <div class="position-relative mb-3">
+                                                        <div class="progress" style="height:18px;"><div class="progress-bar bg-${bgCard} progress-bar-striped progress-bar-animated" style="width: ${FormatedProgress}%"></div></div>
+                                                        <div class="position-absolute bg-light top-0" style="left:${data.nilai_target}%; height:18px; width:2px;"></div>
+                                                    </div>
+                                                    <div class="text-muted mb-4"><i class="fa-solid fa-calendar-days me-1"></i> Deadline: <strong>${data.tenggat_waktu}</strong></div>
+                                                    <div class="row g-4">
+                                                        <div class="col-md-6">
+                                                            <div class="card border-0 shadow-sm rounded-4 kpi-card">
+                                                                <div class="card-body px-4 py-3">
+                                                                    <div class="d-flex align-items-center mb-3"><div class="me-2 rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="fa-solid fa-chart-line text-primary"></i></div><h6 class="mb-0 fw-semibold text-secondary">INFORMASI KPI</h6></div>
+                                                                    <div class="row mb-3"><div class="col-4 label">KPI Divisi</div><div class="col-8 value">${data.divisi_kpi || '-'}</div></div>
+                                                                    <div class="row mb-3"><div class="col-4 label">KPI Jabatan</div><div class="col-8 value">${data.jabatan_kpi || '-'}</div></div>
+                                                                    <div class="row"><div class="col-4 label">Pembuat</div><div class="col-8 value">${data.pembuat || '-'}</div></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="card border-0 shadow-sm rounded-4 participant-card h-100">
+                                                                <div class="card-body px-4 py-3">
+                                                                    <div class="d-flex align-items-center mb-3"><div class="me-2 rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="fa-solid fa-users text-success"></i></div><h6 class="mb-0 fw-semibold text-secondary">KARYAWAN</h6></div>
+                                                                    <div class="participant-list" style="overflow-y: scroll; max-height: 140px;">
+                                                                        ${karyawanHtml || '<div class="text-muted small">Tidak ada karyawan</div>'}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <div class="card shadow h-100 border-0 rounded-4">
+                                                <div class="card-body d-flex flex-column">${contentPieChart}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ${ContentTrafikSales}
+                                    ${contentStatisticChart}
+                                    ${contentKalenderInstruktur}
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0"><button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button></div>
+                        `);
+
+                        setTimeout(() => {
+                            body.addClass('modal-content-loaded');
+                            
+                            const ctx = document.getElementById('MyChartDoughtnut');
+                            if (ctx) {
+                                new Chart(ctx, {
+                                    type: 'doughnut',
+                                    data: dataPieChart,
+                                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } } } }
+                                });
+                            }
+
+                            let statisticChart = null;
+                            const statisticCtx = document.getElementById('StatisticChart');
+                            function renderStatistic(labels, values, label) {
+                                if (!statisticCtx) return;
+                                if (statisticChart) statisticChart.destroy();
+                                const maxValue = values.length > 0 ? Math.max(...values) : 0;
+                                const suggestedMax = maxValue + 3;
+                                statisticChart = new Chart(statisticCtx, {
+                                    type: 'line',
+                                    data: {
+                                        labels,
+                                        datasets: [{ label, data: values, borderColor: '#4e73df', backgroundColor: 'rgba(78, 115, 223, 0.1)', tension: 0.4, fill: true }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        scales: {
+                                            y: { beginAtZero: true, suggestedMax: suggestedMax, ticks: { count: 6, precision: 0, callback: function(value) { return Math.round(value); } } }
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            const monthLabels = Object.keys(monthlyData).map(key => getNamaBulan(key));
+                            const monthValues = Object.values(monthlyData);
+                            renderStatistic(monthLabels, monthValues, 'Rata-rata');
+                            
+                            $('#filterType').off('change').on('change', function() {
+                                if (this.value === 'month') {
+                                    $('#filterMonth').removeClass('d-none').empty().append('<option value="">Pilih Bulan</option>');
+                                    Object.keys(dailyData).forEach(monthKey => {
+                                        $('#filterMonth').append(`<option value="${monthKey}">${getNamaBulan(monthKey)}</option>`);
+                                    });
+                                    if (statisticChart) statisticChart.destroy();
+                                } else {
+                                    $('#filterMonth').addClass('d-none');
+                                    renderStatistic(monthLabels, monthValues, 'Rata-rata');
+                                }
+                            });
+                            
+                            $('#filterMonth').off('change').on('change', function() {
+                                const selectedMonth = this.value;
+                                if (!selectedMonth || !dailyData[selectedMonth]) return;
+                                const dayLabels = Object.keys(dailyData[selectedMonth]).map(d => d.substring(8));
+                                const dayValues = Object.values(dailyData[selectedMonth]);
+                                renderStatistic(dayLabels, dayValues, `Tanggal ${getNamaBulan(selectedMonth)}`);
+                            });
+                        }, 50);
+                    }
+                },
+                error: function() {
+                    body.empty();
+                    body.html(`
+                        <div class="modal-header border-0 pb-2">
+                            <h5 class="modal-title fw-bold mb-1 text-danger">Gagal Memuat</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center py-4">
+                            <i class="fa-solid fa-circle-exclamation text-danger" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                            <h6 class="fw-semibold">Terjadi Kesalahan Jaringan</h6>
+                            <p class="text-muted small">Silakan coba lagi nanti.</p>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                        </div>
+                    `);
+                    body.addClass('modal-content-loaded');
+                }
+            });
+        });
+    });
+})();

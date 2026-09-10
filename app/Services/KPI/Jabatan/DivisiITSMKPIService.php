@@ -6,6 +6,7 @@ use App\Models\Nilaifeedback;
 use App\Models\IdeInovasi;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class DivisiITSMKPIService
@@ -29,41 +30,33 @@ class DivisiITSMKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $allScores = [];
+        $feedbacks = Nilaifeedback::select('F1', 'F2', 'F3', 'F4', 'F5')
+            ->whereBetween('created_at', [$start, $end])
+            ->get();
 
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
-
-        foreach ($feedbacks as $fb) {
-            $f1 = is_numeric($fb->F1) ? (float) $fb->F1 : 0;
-            $f2 = is_numeric($fb->F2) ? (float) $fb->F2 : 0;
-            $f3 = is_numeric($fb->F3) ? (float) $fb->F3 : 0;
-            $f4 = is_numeric($fb->F4) ? (float) $fb->F4 : 0;
-            $f5 = is_numeric($fb->F5) ? (float) $fb->F5 : 0;
-
-            $avg = ($f1 + $f2 + $f3 + $f4 + $f5) / 5;
-
-            // Pastikan tetap di skala 1 - 4
-            $avg = min(4, max(1, $avg));
-
-            $allScores[] = $avg;
-        }
-
-        if (empty($allScores)) {
+        if ($feedbacks->isEmpty()) {
             return 0;
         }
 
-        $totalResponden = count($allScores);
+        $totalResponden = 0;
         $respondenPuas = 0;
 
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.0) {
+        foreach ($feedbacks as $fb) {
+            $f1 = (float) ($fb->F1 ?? 0);
+            $f2 = (float) ($fb->F2 ?? 0);
+            $f3 = (float) ($fb->F3 ?? 0);
+            $f4 = (float) ($fb->F4 ?? 0);
+            $f5 = (float) ($fb->F5 ?? 0);
+
+            $avg = min(4, max(1, ($f1 + $f2 + $f3 + $f4 + $f5) / 5));
+            $totalResponden++;
+
+            if ($avg >= 3.0) {
                 $respondenPuas++;
             }
         }
 
-        $progress = ($respondenPuas / $totalResponden) * 100;
-
-        return round($progress, 1);
+        return $totalResponden > 0 ? round(($respondenPuas / $totalResponden) * 100, 1) : 0;
     }
 
     public function calculateProgressKepuasanClientITSMDetail($itemDetail, $personId = null)
@@ -84,67 +77,50 @@ class DivisiITSMKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $allScores = [];
-        $scoreDatePairs = [];
+        $feedbacks = Nilaifeedback::select('F1', 'F2', 'F3', 'F4', 'F5', 'created_at')
+            ->whereBetween('created_at', [$start, $end])
+            ->get();
 
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
-
-        foreach ($feedbacks as $fb) {
-            $f1 = is_numeric($fb->F1) ? (float) $fb->F1 : 0;
-            $f2 = is_numeric($fb->F2) ? (float) $fb->F2 : 0;
-            $f3 = is_numeric($fb->F3) ? (float) $fb->F3 : 0;
-            $f4 = is_numeric($fb->F4) ? (float) $fb->F4 : 0;
-            $f5 = is_numeric($fb->F5) ? (float) $fb->F5 : 0;
-
-            $avg = ($f1 + $f2 + $f3 + $f4 + $f5) / 5;
-            $avg = min(4, max(1, $avg));
-
-            $allScores[] = $avg;
-
-            $scoreDatePairs[] = [
-                'score' => $avg,
-                'date' => $fb->created_at->format('Y-m-d'),
-            ];
-        }
-
-        if (empty($allScores)) {
+        if ($feedbacks->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        $totalResponden = count($allScores);
+        $totalResponden = 0;
         $respondenPuas = 0;
-
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.0) {
-                $respondenPuas++;
-            }
-        }
-
-        $progress = ($respondenPuas / $totalResponden) * 100;
-        $progress = round($progress, 1);
-
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
         $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
         $monthlyProgress = [];
+        $dailyBreakdownPerMonth = [];
         $dailyProgressPerMonth = [];
 
-        foreach ($scoreDatePairs as $pair) {
-            $date = Carbon::parse($pair['date']);
+        foreach ($feedbacks as $fb) {
+            $f1 = (float) ($fb->F1 ?? 0);
+            $f2 = (float) ($fb->F2 ?? 0);
+            $f3 = (float) ($fb->F3 ?? 0);
+            $f4 = (float) ($fb->F4 ?? 0);
+            $f5 = (float) ($fb->F5 ?? 0);
+
+            $avg = min(4, max(1, ($f1 + $f2 + $f3 + $f4 + $f5) / 5));
+            $totalResponden++;
+
+            if ($avg >= 3.0) {
+                $respondenPuas++;
+            }
+
+            $date = Carbon::parse($fb->created_at);
             $monthKey = $date->format('Y-m');
-            $dayKey = $pair['date'];
-            $score = $pair['score'];
+            $dayKey = $date->format('Y-m-d');
 
-            $monthlyData[$monthKey][] = $score;
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
+            $progressVal = $avg >= 3.0 ? 100 : round(($avg / 4) * 100, 1);
 
-            $progressVal = $score >= 3.0 ? 100 : round(($score / 4) * 100, 1);
-
+            $monthlyData[$monthKey][] = $avg;
             $monthlyProgress[$monthKey][] = $progressVal;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
             $dailyProgressPerMonth[$monthKey][$dayKey] = $progressVal;
         }
+
+        $progress = $totalResponden > 0 ? round(($respondenPuas / $totalResponden) * 100, 1) : 0;
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $monthlyAverages = [];
         $monthlyProgressAvg = [];
@@ -167,7 +143,7 @@ class DivisiITSMKPIService
             'gap' => $gap,
             'pie_chart' => [
                 'above' => $respondenPuas,
-                'below' => $totalResponden - $respondenPuas,
+                'below' => max(0, $totalResponden - $respondenPuas),
             ],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
@@ -192,13 +168,7 @@ class DivisiITSMKPIService
 
         $totalIde = IdeInovasi::whereYear('created_at', $tahun)->count();
 
-        if ($totalIde <= 0) {
-            return 0;
-        }
-
-        $progress = ($totalIde / $totalIde) * 100;
-
-        return round($progress, 1);
+        return $totalIde > 0 ? 100.0 : 0.0;
     }
 
     public function calculateInovationAdaptionRateDetail($itemDetail, $personId = null)
@@ -219,66 +189,45 @@ class DivisiITSMKPIService
         $start = "$tahun-01-01";
         $end = "$tahun-12-31";
 
-        $ideInovasi = IdeInovasi::whereBetween('created_at', [$start, $end])->get();
+        $ideInovasi = IdeInovasi::selectRaw('DATE(created_at) as tanggal')
+            ->whereBetween('created_at', [$start, $end])
+            ->groupBy('tanggal')
+            ->get();
 
         if ($ideInovasi->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        $dailyResults = [];
-
-        foreach ($ideInovasi as $ide) {
-            $tanggal = $ide->created_at->format('Y-m-d');
-            $dailyResults[$tanggal][] = 100;
-        }
-
-        $dailyAverages = [];
-
-        foreach ($dailyResults as $tanggal => $values) {
-            $dailyAverages[$tanggal] = array_sum($values) / count($values);
-        }
-
-        $totalDays = count($dailyAverages);
-        $above = $totalDays;
-        $below = 0;
-
-        $progress = $totalDays > 0 ? 100 : 0;
-
+        $totalDays = $ideInovasi->count();
+        $progress = 100.0;
         $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
-        if ($progress > $nilaiTarget) {
-            $gap = 0;
-        } else {
-            $gap = $progress - $nilaiTarget;
-        }
+        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $monthlyData = [];
         $dailyBreakdownPerMonth = [];
         $monthlyProgress = [];
         $dailyProgressPerMonth = [];
 
-        foreach ($dailyAverages as $dateStr => $avg) {
-            $date = Carbon::parse($dateStr);
+        foreach ($ideInovasi as $row) {
+            $date = Carbon::parse($row->tanggal);
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
-            $monthlyData[$monthKey][] = $avg;
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
-
-            $monthlyProgress[$monthKey][] = $avg;
-            $dailyProgressPerMonth[$monthKey][$dayKey] = $avg;
+            $monthlyData[$monthKey][] = 100;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = 100;
+            $monthlyProgress[$monthKey][] = 100;
+            $dailyProgressPerMonth[$monthKey][$dayKey] = 100;
         }
 
         $monthlyAverages = [];
         $monthlyProgressAvg = [];
 
         foreach ($monthlyData as $month => $values) {
-            $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
+            $monthlyAverages[$month] = 100.0;
         }
 
         foreach ($monthlyProgress as $month => $values) {
-            $monthlyProgressAvg[$month] = round(array_sum($values) / count($values), 1);
+            $monthlyProgressAvg[$month] = 100.0;
         }
 
         ksort($monthlyAverages);
@@ -290,8 +239,8 @@ class DivisiITSMKPIService
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => [
-                'above' => $above,
-                'below' => $below
+                'above' => $totalDays,
+                'below' => 0,
             ],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,

@@ -30,56 +30,40 @@ class KoordinatorITSMKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $allScores = [];
+        $dataSurvey = SurveyKepuasan::select('q1', 'q2', 'q4')
+            ->whereBetween('created_at', [$start, $end])
+            ->get();
 
-        $dataSurvey = SurveyKepuasan::whereBetween('created_at', [$start, $end])->get();
-
-        foreach ($dataSurvey as $survey) {
-            $nilaiQ1 = match ($survey->q1) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ4 = match ($survey->q4) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ2 = match ($survey->q2) {
-                'Ya' => 20,
-                'Tidak' => 10,
-                default => 0,
-            };
-
-            $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
-
-            $skor = 1 + ($totalBaris * 3) / 100;
-
-            $allScores[] = $skor;
-        }
-
-        if (empty($allScores)) {
+        if ($dataSurvey->isEmpty()) {
             return 0;
         }
 
-        $totalResponden = count($allScores);
+        $totalResponden = 0;
         $respondenPuas = 0;
 
-        foreach ($allScores as $skor) {
+        foreach ($dataSurvey as $survey) {
+            $nilaiQ1 = match ($survey->q1) {
+                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+            };
+
+            $nilaiQ4 = match ($survey->q4) {
+                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+            };
+
+            $nilaiQ2 = match ($survey->q2) {
+                'Ya' => 20, 'Tidak' => 10, default => 0,
+            };
+
+            $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
+            $skor = 1 + ($totalBaris * 3) / 100;
+
+            $totalResponden++;
             if ($skor >= 3.0) {
                 $respondenPuas++;
             }
         }
 
-        $progress = ($respondenPuas / $totalResponden) * 100;
-
-        return round($progress, 1);
+        return round(($respondenPuas / $totalResponden) * 100, 1);
     }
 
     public function calculateMeningkatkanKepuasanDanLoyalitasPesertaDetail($itemDetail, $personId = null)
@@ -100,82 +84,54 @@ class KoordinatorITSMKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $allScores = [];
-        $scoreDatePairs = [];
+        $dataSurvey = SurveyKepuasan::select('q1', 'q2', 'q4', 'created_at')
+            ->whereBetween('created_at', [$start, $end])
+            ->get();
 
-        $dataSurvey = SurveyKepuasan::whereBetween('created_at', [$start, $end])->get();
-
-        foreach ($dataSurvey as $survey) {
-            $nilaiQ1 = match ($survey->q1) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ4 = match ($survey->q4) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ2 = match ($survey->q2) {
-                'Ya' => 20,
-                'Tidak' => 10,
-                default => 0,
-            };
-
-            $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
-            $skor = 1 + ($totalBaris * 3) / 100;
-
-            $allScores[] = $skor;
-
-            $scoreDatePairs[] = [
-                'score' => $skor,
-                'date' => $survey->created_at->format('Y-m-d'),
-            ];
-        }
-
-        if (empty($allScores)) {
+        if ($dataSurvey->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        $totalResponden = count($allScores);
+        $totalResponden = 0;
         $respondenPuas = 0;
-
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.0) {
-                $respondenPuas++;
-            }
-        }
-
-        $progress = ($respondenPuas / $totalResponden) * 100;
-        $progress = round($progress, 1);
-
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
         $monthlyData = [];
         $dailyBreakdownPerMonth = [];
         $monthlyProgress = [];
         $dailyProgressPerMonth = [];
 
-        foreach ($scoreDatePairs as $pair) {
-            $date = Carbon::parse($pair['date']);
+        foreach ($dataSurvey as $survey) {
+            $nilaiQ1 = match ($survey->q1) {
+                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+            };
+
+            $nilaiQ4 = match ($survey->q4) {
+                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+            };
+
+            $nilaiQ2 = match ($survey->q2) {
+                'Ya' => 20, 'Tidak' => 10, default => 0,
+            };
+
+            $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
+            $skor = 1 + ($totalBaris * 3) / 100;
+
+            $totalResponden++;
+            $isPuas = $skor >= 3.0 ? 100 : 0;
+            if ($skor >= 3.0) $respondenPuas++;
+
+            $date = Carbon::parse($survey->created_at);
             $monthKey = $date->format('Y-m');
-            $dayKey = $pair['date'];
-            $score = $pair['score'];
-            $isPuas = $score >= 3.0 ? 100 : 0;
+            $dayKey = $date->format('Y-m-d');
 
-            $monthlyData[$monthKey][] = $score;
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
-
+            $monthlyData[$monthKey][] = $skor;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $skor;
             $monthlyProgress[$monthKey][] = $isPuas;
             $dailyProgressPerMonth[$monthKey][$dayKey] = $isPuas;
         }
+
+        $progress = round(($respondenPuas / $totalResponden) * 100, 1);
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $monthlyAverages = [];
         $monthlyProgressAvg = [];
@@ -196,10 +152,7 @@ class KoordinatorITSMKPIService
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => [
-                'above' => $respondenPuas,
-                'below' => $totalResponden - $respondenPuas,
-            ],
+            'pie_chart' => ['above' => $respondenPuas, 'below' => $totalResponden - $respondenPuas],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgressAvg,
@@ -224,20 +177,19 @@ class KoordinatorITSMKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $logs = activityLog::whereBetween('status', ['100', '599'])
+        $stats = activityLog::whereBetween('status', ['100', '599'])
             ->whereBetween('checked_at', [$start, $end])
-            ->get();
+            ->selectRaw('COUNT(*) as total_checks, SUM(CASE WHEN is_up = 1 THEN 1 ELSE 0 END) as up_checks')
+            ->first();
 
-        if ($logs->isEmpty()) {
+        $totalChecks = $stats->total_checks ?? 0;
+        $upChecks = $stats->up_checks ?? 0;
+
+        if ($totalChecks == 0) {
             return 0;
         }
 
-        $totalChecks = $logs->count();
-        $upChecks = $logs->where('is_up', 1)->count();
-
-        $availability = ($upChecks / $totalChecks) * 100;
-
-        return round($availability, 1);
+        return round(($upChecks / $totalChecks) * 100, 1);
     }
 
     public function calculateAvailabilitySistemInternalKritisDetail($itemDetail, $personId = null)
@@ -258,7 +210,8 @@ class KoordinatorITSMKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $logs = activityLog::whereBetween('status', ['100', '599'])
+        $logs = activityLog::select('checked_at', 'is_up')
+            ->whereBetween('status', ['100', '599'])
             ->whereBetween('checked_at', [$start, $end])
             ->get();
 
@@ -269,9 +222,7 @@ class KoordinatorITSMKPIService
         $totalChecks = $logs->count();
         $upChecks = $logs->where('is_up', 1)->count();
 
-        $progress = ($upChecks / $totalChecks) * 100;
-        $progress = round($progress, 1);
-
+        $progress = round(($upChecks / $totalChecks) * 100, 1);
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
@@ -289,7 +240,6 @@ class KoordinatorITSMKPIService
 
             $monthlyData[$monthKey][] = $value;
             $dailyBreakdownPerMonth[$monthKey][$dayKey][] = $value;
-
             $monthlyProgress[$monthKey][] = $value;
             $dailyProgressPerMonth[$monthKey][$dayKey][] = $value;
         }
@@ -325,10 +275,7 @@ class KoordinatorITSMKPIService
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => [
-                'above' => $upChecks,
-                'below' => $totalChecks - $upChecks,
-            ],
+            'pie_chart' => ['above' => $upChecks, 'below' => $totalChecks - $upChecks],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgressAvg,
@@ -358,26 +305,12 @@ class KoordinatorITSMKPIService
             $query->where('id_karyawan', $personId);
         }
 
-        $detailPersons = $query->get();
+        $stats = $query->where('presentase_standar', '>', 0)
+            ->selectRaw('SUM(presentase_kemampuan) as total_kemampuan, SUM(presentase_standar) as total_standar')
+            ->first();
 
-        if ($detailPersons->isEmpty()) {
-            return 0;
-        }
-
-        $totalKemampuan = 0;
-        $totalStandar = 0;
-
-        foreach ($detailPersons as $detailPerson) {
-            $kemampuan = (float) $detailPerson->presentase_kemampuan;
-            $standar = (float) $detailPerson->presentase_standar;
-
-            if ($standar <= 0) {
-                continue;
-            }
-
-            $totalKemampuan += $kemampuan;
-            $totalStandar += $standar;
-        }
+        $totalKemampuan = (float) ($stats->total_kemampuan ?? 0);
+        $totalStandar = (float) ($stats->total_standar ?? 0);
 
         if ($totalStandar <= 0) {
             return 0;
@@ -412,7 +345,9 @@ class KoordinatorITSMKPIService
             $query->where('id_karyawan', $personId);
         }
 
-        $detailPersons = $query->get();
+        $detailPersons = $query->select('presentase_kemampuan', 'presentase_standar')
+            ->where('presentase_standar', '>', 0)
+            ->get();
 
         if ($detailPersons->isEmpty()) {
             return $this->getDefaultDetailResponse();
@@ -420,37 +355,15 @@ class KoordinatorITSMKPIService
 
         $totalKemampuan = 0;
         $totalStandar = 0;
-        $validPersons = [];
+        $above = 0;
+        $below = 0;
 
         foreach ($detailPersons as $dp) {
             $kemampuan = (float) $dp->presentase_kemampuan;
             $standar = (float) $dp->presentase_standar;
 
-            if ($standar <= 0) {
-                continue;
-            }
-
             $totalKemampuan += $kemampuan;
             $totalStandar += $standar;
-
-            $validPersons[] = $dp;
-        }
-
-        if ($totalStandar <= 0) {
-            $progress = 0;
-            $gap = 0;
-        } else {
-            $progress = ($totalKemampuan / $totalStandar) * 100;
-            $progress = round(min($progress, 100), 1);
-            $gap = round(100 - $progress, 1);
-        }
-
-        $above = 0;
-        $below = 0;
-
-        foreach ($validPersons as $dp) {
-            $kemampuan = (float) $dp->presentase_kemampuan;
-            $standar = (float) $dp->presentase_standar;
 
             if ($kemampuan >= $standar) {
                 $above++;
@@ -459,13 +372,13 @@ class KoordinatorITSMKPIService
             }
         }
 
+        $progress = ($totalStandar > 0) ? round(min(($totalKemampuan / $totalStandar) * 100, 100), 1) : 0;
+        $gap = round(100 - $progress, 1);
+
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => [
-                'above' => $above,
-                'below' => $below,
-            ],
+            'pie_chart' => ['above' => $above, 'below' => $below],
             'monthly_data' => [],
             'daily_breakdown_per_month' => [],
             'monthly_progress' => [],

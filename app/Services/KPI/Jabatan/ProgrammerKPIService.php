@@ -5,7 +5,6 @@ namespace App\Services\KPI\Jabatan;
 use App\Models\Tickets;
 use App\Models\karyawan;
 use App\Models\detailPersonKPI;
-
 use App\Traits\KPIDefaultResponseTrait;
 use App\Traits\TimeCalculationTrait;
 use Carbon\Carbon;
@@ -30,13 +29,12 @@ class ProgrammerKPIService
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
-
         $start = Carbon::create($tahun, 1, 1, 0, 0, 0, 'Asia/Jakarta');
         $end = Carbon::create($tahun, 12, 31, 23, 59, 59, 'Asia/Jakarta');
 
         $idKaryawans = detailPersonKPI::where('detailTargetKey', $detail->id)
+            ->distinct()
             ->pluck('id_karyawan')
-            ->unique()
             ->toArray();
 
         if (empty($idKaryawans)) {
@@ -63,43 +61,39 @@ class ProgrammerKPIService
             };
         }, $picNames);
 
-        $errorQuery = Tickets::whereBetween('created_at', [$start, $end])
-            ->where('kategori', 'Error (Aplikasi)')
-            ->where('keperluan', 'Programming')
-            ->whereNotNull('tanggal_selesai');
+        $picFilter = $personId !== null 
+            ? (function() use ($personId) {
+                $karyawanData = karyawan::find($personId);
+                if (!$karyawanData) return null;
+                $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
+                return match ($firstName) {
+                    'Stepanus' => 'Stefan',
+                    'Jonathan' => 'Valen',
+                    default => $firstName,
+                };
+            })()
+            : $normalizedPicNames;
 
-        $requestQuery = Tickets::whereBetween('created_at', [$start, $end])
-            ->where('kategori', 'Request');
-
-        if ($personId !== null) {
-            $karyawanData = karyawan::find($personId);
-            if (!$karyawanData) {
-                return 0;
-            }
-
-            $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
-            if (!$firstName) {
-                return 0;
-            }
-
-            $firstName = match ($firstName) {
-                'Stepanus' => 'Stefan',
-                'Jonathan' => 'Valen',
-                default => $firstName,
-            };
-
-            $errorQuery->where('pic', $firstName);
-            $requestQuery->where('pic', $firstName);
-        } else {
-            $errorQuery->whereIn('pic', $normalizedPicNames);
-            $requestQuery->whereIn('pic', $normalizedPicNames);
+        if (!$picFilter || (is_array($picFilter) && empty($picFilter))) {
+            return 0;
         }
 
-        $ticketsError = $errorQuery->get();
-        $ticketsRequest = $requestQuery->get();
+        $jumlahRequest = Tickets::whereBetween('created_at', [$start, $end])
+            ->where('kategori', 'Request')
+            ->when(is_array($picFilter), fn($q) => $q->whereIn('pic', $picFilter))
+            ->when(!is_array($picFilter), fn($q) => $q->where('pic', $picFilter))
+            ->count();
+
+        $ticketsError = Tickets::select('created_at', 'tanggal_selesai', 'jam_selesai', 'tingkat_kesulitan')
+            ->whereBetween('created_at', [$start, $end])
+            ->where('kategori', 'Error (Aplikasi)')
+            ->where('keperluan', 'Programming')
+            ->whereNotNull('tanggal_selesai')
+            ->when(is_array($picFilter), fn($q) => $q->whereIn('pic', $picFilter))
+            ->when(!is_array($picFilter), fn($q) => $q->where('pic', $picFilter))
+            ->get();
 
         $jumlahError = $ticketsError->count();
-        $jumlahRequest = $ticketsRequest->count();
         $totalTicket = $jumlahError + $jumlahRequest;
 
         if ($totalTicket === 0) {
@@ -112,11 +106,9 @@ class ProgrammerKPIService
             $rataSkorError = 100;
         } else {
             $totalSkorError = 0;
-
             foreach ($ticketsError as $ticket) {
                 try {
                     $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
-
                     $endAt = strlen($ticket->tanggal_selesai) > 10
                         ? Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta')
                         : Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
@@ -141,12 +133,10 @@ class ProgrammerKPIService
                     continue;
                 }
             }
-
-            $rataSkorError = $jumlahError > 0 ? $totalSkorError / $jumlahError : 0;
+            $rataSkorError = $totalSkorError / $jumlahError;
         }
 
         $skorKualitas = ($skorRasio * 0.5) + ($rataSkorError * 0.5);
-
         $progress = $nilaiTarget > 0 ? ($skorKualitas / $nilaiTarget) * 100 : 0;
 
         return min(100, round($progress, 1));
@@ -155,17 +145,8 @@ class ProgrammerKPIService
     public function calculateMengukurKualitasAplikasiAgarMinimBugDetail($itemDetail, $personId = null)
     {
         $details = $itemDetail->detailTargetKPI;
-
         if ($details->isEmpty()) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $firstDetail = $details->first();
@@ -173,48 +154,28 @@ class ProgrammerKPIService
         $tahun = (int) $firstDetail->detail_jangka;
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
+        $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)
+            ->when($personId, fn($q) => $q->where('id_karyawan', $personId))
+            ->distinct()
+            ->pluck('id_karyawan')
+            ->toArray();
+
         $picNames = [];
-
-        if ($personId !== null) {
-            $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)
-                ->where('id_karyawan', $personId)
-                ->pluck('id_karyawan')->unique()->toArray();
-        } else {
-            $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)
-                ->pluck('id_karyawan')->unique()->toArray();
-        }
-
         if (!empty($idKaryawans)) {
-            $namaLengkapList = karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray();
-            $picNames = array_map(fn($nama) => explode(' ', trim($nama))[0] ?? '', $namaLengkapList);
+            $picNames = array_filter(array_map(
+                fn($nama) => explode(' ', trim($nama))[0] ?? '', 
+                karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray()
+            ));
         }
-
-        $picNames = array_filter($picNames);
 
         if (empty($picNames)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $normalizedPicNames = array_map(fn($name) => match ($name) {
@@ -223,85 +184,75 @@ class ProgrammerKPIService
             default => $name
         }, $picNames);
 
-        $ticketsError = Tickets::whereBetween('created_at', [$start, $end])
+        $ticketsError = Tickets::select('created_at', 'tanggal_selesai', 'jam_selesai', 'tingkat_kesulitan')
+            ->whereBetween('created_at', [$start, $end])
             ->where('kategori', 'Error (Aplikasi)')
             ->where('keperluan', 'Programming')
             ->whereIn('pic', $normalizedPicNames)
             ->whereNotNull('tanggal_selesai')
             ->get();
 
-        $ticketsRequest = Tickets::whereBetween('created_at', [$start, $end])
+        $jumlahRequest = Tickets::whereBetween('created_at', [$start, $end])
             ->where('kategori', 'Request')
             ->whereIn('pic', $normalizedPicNames)
-            ->get();
+            ->count();
 
         $jumlahError = $ticketsError->count();
-        $jumlahRequest = $ticketsRequest->count();
         $totalTicket = $jumlahRequest + $jumlahError;
 
         if ($totalTicket === 0) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return $this->getDefaultDetailResponse();
         }
 
         $skorRasio = ($jumlahRequest / $totalTicket) * 100;
-
-        $monthlyProgress = [];
+        $rataSkorError = 100;
+        $above = 0;
+        $below = 0;
+        $monthlyAverages = [];
+        $dailyBreakdownPerMonth = [];
+        $monthlyProgressAvg = [];
         $dailyProgressPerMonth = [];
 
-        if ($jumlahError === 0) {
-            $rataSkorError = 100;
-            $above = 0;
-            $below = 0;
-            $monthlyAverages = [];
-            $dailyBreakdownPerMonth = [];
-        } else {
+        if ($jumlahError > 0) {
             $totalSkorError = 0;
             $ticketScores = [];
 
             foreach ($ticketsError as $ticket) {
-                $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
-                $endAt = strlen($ticket->tanggal_selesai) > 10
-                    ? Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta')
-                    : Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
+                try {
+                    $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
+                    $endAt = strlen($ticket->tanggal_selesai) > 10
+                        ? Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta')
+                        : Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
 
-                $durasiJam = $this->hitungJamKerja($startAt, $endAt);
+                    $durasiJam = $this->hitungJamKerja($startAt, $endAt);
+                    $skorDurasi = match (true) {
+                        $durasiJam <= 4 => 100,
+                        $durasiJam <= 8 => 80,
+                        $durasiJam <= 24 => 60,
+                        default => 30,
+                    };
 
-                $skorDurasi = match (true) {
-                    $durasiJam <= 4 => 100,
-                    $durasiJam <= 8 => 80,
-                    $durasiJam <= 24 => 60,
-                    default => 30,
-                };
+                    $bobot = match ($ticket->tingkat_kesulitan) {
+                        'Major' => 1.5,
+                        'Moderate' => 1.2,
+                        default => 1.0,
+                    };
 
-                $bobot = match ($ticket->tingkat_kesulitan) {
-                    'Major' => 1.5,
-                    'Moderate' => 1.2,
-                    default => 1.0,
-                };
+                    $skorError = min(100, $skorDurasi * $bobot);
+                    $totalSkorError += $skorError;
 
-                $skorError = min(100, $skorDurasi * $bobot);
-                $totalSkorError += $skorError;
-
-                $dateKey = $endAt->format('Y-m-d');
-                $ticketScores[$dateKey] = $skorError;
+                    $dateKey = $endAt->format('Y-m-d');
+                    $ticketScores[$dateKey] = $skorError;
+                } catch (\Exception $e) {
+                    continue;
+                }
             }
 
             $rataSkorError = $totalSkorError / $jumlahError;
-
             $above = count(array_filter($ticketScores, fn($s) => $s >= 70));
             $below = $jumlahError - $above;
 
             $monthlyData = [];
-            $dailyBreakdownPerMonth = [];
-
             foreach ($ticketScores as $dateStr => $score) {
                 $date = Carbon::parse($dateStr);
                 $monthKey = $date->format('Y-m');
@@ -309,19 +260,15 @@ class ProgrammerKPIService
 
                 $dailyBreakdownPerMonth[$monthKey][$dayKey] = round($score, 1);
                 $monthlyData[$monthKey][] = $score;
-
                 $dailyProgressPerMonth[$monthKey][$dayKey] = round(min($score, 100), 1);
-                $monthlyProgress[$monthKey][] = min($score, 100);
+                $monthlyProgressAvg[$monthKey][] = min($score, 100);
             }
-
-            $monthlyAverages = [];
-            $monthlyProgressAvg = [];
 
             foreach ($monthlyData as $month => $scores) {
                 $monthlyAverages[$month] = round(array_sum($scores) / count($scores), 1);
             }
 
-            foreach ($monthlyProgress as $month => $vals) {
+            foreach ($monthlyProgressAvg as $month => $vals) {
                 $monthlyProgressAvg[$month] = round(array_sum($vals) / count($vals), 1);
             }
 
@@ -343,10 +290,10 @@ class ProgrammerKPIService
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => ['above' => $above, 'below' => $below],
-            'monthly_data' => $monthlyAverages ?? [],
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth ?? [],
-            'monthly_progress' => $monthlyProgressAvg ?? [],
-            'daily_progress_per_month' => $dailyProgressPerMonth ?? [],
+            'monthly_data' => $monthlyAverages,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+            'monthly_progress' => $monthlyProgressAvg,
+            'daily_progress_per_month' => $dailyProgressPerMonth,
         ];
     }
 
@@ -365,13 +312,12 @@ class ProgrammerKPIService
         }
 
         $nilaiTarget = (float) $detail->nilai_target;
-
         $start = Carbon::create($tahun, 1, 1, 0, 0, 0, 'Asia/Jakarta');
         $end = Carbon::create($tahun, 12, 31, 23, 59, 59, 'Asia/Jakarta');
 
         $idKaryawans = detailPersonKPI::where('detailTargetKey', $detail->id)
+            ->distinct()
             ->pluck('id_karyawan')
-            ->unique()
             ->toArray();
 
         if (empty($idKaryawans)) {
@@ -398,45 +344,43 @@ class ProgrammerKPIService
             ->values()
             ->toArray();
 
-        $jabatanFilter = array_map(function ($jabatan) {
+        $jabatanFilter = array_unique(array_filter(array_map(function ($jabatan) {
             return match (strtolower($jabatan)) {
                 'programmer', 'koordinator itsm' => 'Programming',
                 'technical support' => 'Technical Support',
                 'tim digital' => 'Tim Digital',
                 default => $jabatan,
             };
-        }, $picJabatan);
-
-        $jabatanFilter = array_unique(array_filter($jabatanFilter));
+        }, $picJabatan)));
 
         if (empty($jabatanFilter)) {
             return 0;
         }
 
-        $ticketQuery = Tickets::whereIn('keperluan', $jabatanFilter)
-            ->whereBetween('created_at', [$start, $end])
-            ->whereNotNull('tanggal_selesai');
+        $picFilter = $personId !== null 
+            ? (function() use ($personId) {
+                $karyawanData = karyawan::find($personId);
+                if (!$karyawanData) return null;
+                $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
+                return match ($firstName) {
+                    'Stepanus' => 'Stefan',
+                    'Jonathan' => 'Valen',
+                    default => $firstName,
+                };
+            })()
+            : $picNames;
 
-        if ($personId !== null) {
-            $karyawanData = karyawan::find($personId);
-            if (!$karyawanData) {
-                return 0;
-            }
-
-            $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
-
-            $firstName = match ($firstName) {
-                'Stepanus' => 'Stefan',
-                'Jonathan' => 'Valen',
-                default => $firstName,
-            };
-
-            $ticketQuery->where('pic', $firstName);
-        } else {
-            $ticketQuery->whereIn('pic', $picNames);
+        if (!$picFilter || (is_array($picFilter) && empty($picFilter))) {
+            return 0;
         }
 
-        $tickets = $ticketQuery->get();
+        $tickets = Tickets::select('created_at', 'tanggal_selesai', 'jam_selesai', 'tingkat_kesulitan', 'kategori')
+            ->whereIn('keperluan', $jabatanFilter)
+            ->whereBetween('created_at', [$start, $end])
+            ->whereNotNull('tanggal_selesai')
+            ->when(is_array($picFilter), fn($q) => $q->whereIn('pic', $picFilter))
+            ->when(!is_array($picFilter), fn($q) => $q->where('pic', $picFilter))
+            ->get();        
 
         if ($tickets->isEmpty()) {
             return 0;
@@ -448,7 +392,6 @@ class ProgrammerKPIService
         foreach ($tickets as $ticket) {
             try {
                 $priority = 'Low';
-
                 if (in_array(strtolower($ticket->tingkat_kesulitan), ['major', 'moderate'])) {
                     $priority = 'High';
                 } elseif ($ticket->kategori === 'Error (Aplikasi)') {
@@ -456,13 +399,11 @@ class ProgrammerKPIService
                 }
 
                 $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
-
                 $endAt = strlen($ticket->tanggal_selesai) > 10
                     ? Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta')
                     : Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
 
                 $actualHours = $this->hitungJamKerja($startAt, $endAt);
-
                 $slaMet = match ($priority) {
                     'High' => $actualHours <= 24,
                     'Medium' => $actualHours <= 40,
@@ -486,34 +427,24 @@ class ProgrammerKPIService
     public function calculateProgressKetepatanWaktuPenyelesaianFiturDetail($itemDetail, $personId)
     {
         $details = $itemDetail->detailTargetKPI;
-
         if ($details->isEmpty()) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'realisasi_persen' => 0,
-                'total_ticket' => 0,
-                'sla_met_count' => 0,
-                'average_resolution_hours' => 0,
-                'fastest_resolution' => 0,
-                'slowest_resolution' => 0,
-                'sla_rate_per_priority' => [],
-                'top_pic_performance' => [],
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'monthly_ticket_count' => [],
-                'daily_breakdown_per_month' => [],
-                'monthly_progress' => [],
-                'daily_progress_per_month' => [],
-            ];
+            return array_merge($this->getDefaultDetailResponse(), [
+                'realisasi_persen' => 0, 'total_ticket' => 0, 'sla_met_count' => 0,
+                'average_resolution_hours' => 0, 'fastest_resolution' => 0, 'slowest_resolution' => 0,
+                'sla_rate_per_priority' => [], 'top_pic_performance' => [], 'monthly_ticket_count' => [],
+            ]);
         }
 
         $firstDetail = $details->first();
         $nilaiTarget = (float) $firstDetail->nilai_target;
         $tahun = (int) $firstDetail->detail_jangka;
 
-        if ($nilaiTarget <= 0) {
-            return [];
+        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return array_merge($this->getDefaultDetailResponse(), [
+                'realisasi_persen' => 0, 'total_ticket' => 0, 'sla_met_count' => 0,
+                'average_resolution_hours' => 0, 'fastest_resolution' => 0, 'slowest_resolution' => 0,
+                'sla_rate_per_priority' => [], 'top_pic_performance' => [], 'monthly_ticket_count' => [],
+            ]);
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
@@ -521,14 +452,21 @@ class ProgrammerKPIService
 
         $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)
             ->when($personId, fn($q) => $q->where('id_karyawan', $personId))
-            ->pluck('id_karyawan')->unique()->toArray();
+            ->distinct()
+            ->pluck('id_karyawan')
+            ->toArray();
 
-        $namaLengkapList = karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray();
-        $picNames = array_map(fn($n) => explode(' ', trim($n))[0] ?? '', $namaLengkapList);
-        $picNames = array_filter($picNames);
+        $picNames = array_filter(array_map(
+            fn($n) => explode(' ', trim($n))[0] ?? '', 
+            karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray()
+        ));
 
         if (empty($picNames)) {
-            return [];
+            return array_merge($this->getDefaultDetailResponse(), [
+                'realisasi_persen' => 0, 'total_ticket' => 0, 'sla_met_count' => 0,
+                'average_resolution_hours' => 0, 'fastest_resolution' => 0, 'slowest_resolution' => 0,
+                'sla_rate_per_priority' => [], 'top_pic_performance' => [], 'monthly_ticket_count' => [],
+            ]);
         }
 
         $normalizedPicNames = array_map(fn($name) => match ($name) {
@@ -538,25 +476,28 @@ class ProgrammerKPIService
         }, $picNames);
 
         $targetJabatanList = $details->pluck('jabatan')->unique()->toArray();
+        $picJabatan = karyawan::whereIn('jabatan', $targetJabatanList)->pluck('jabatan')->unique()->toArray();
 
-        $picJabatan = karyawan::whereIn('jabatan', $targetJabatanList)
-            ->pluck('jabatan')->unique()->toArray();
-
-        $jabatanFilter = array_map(fn($j) => match (strtolower($j)) {
+        $jabatanFilter = array_unique(array_filter(array_map(fn($j) => match (strtolower($j)) {
             'programmer', 'koordinator itsm' => 'Programming',
             'technical support' => 'Technical Support',
             'tim digital' => 'Tim Digital',
             default => $j
-        }, $picJabatan);
+        }, $picJabatan)));
 
-        $tickets = Tickets::whereIn('keperluan', $jabatanFilter)
+        $tickets = Tickets::select('created_at', 'tanggal_selesai', 'jam_selesai', 'tingkat_kesulitan', 'kategori')
+            ->whereIn('keperluan', $jabatanFilter)
             ->whereBetween('created_at', [$start, $end])
             ->whereIn('pic', $normalizedPicNames)
             ->whereNotNull('tanggal_selesai')
             ->get();
 
         if ($tickets->isEmpty()) {
-            return [];
+            return array_merge($this->getDefaultDetailResponse(), [
+                'realisasi_persen' => 0, 'total_ticket' => 0, 'sla_met_count' => 0,
+                'average_resolution_hours' => 0, 'fastest_resolution' => 0, 'slowest_resolution' => 0,
+                'sla_rate_per_priority' => [], 'top_pic_performance' => [], 'monthly_ticket_count' => [],
+            ]);
         }
 
         $metCount = 0;
@@ -572,20 +513,18 @@ class ProgrammerKPIService
 
         foreach ($tickets as $t) {
             $priority = 'Low';
-
             if (in_array(strtolower($t->tingkat_kesulitan), ['major', 'moderate'])) {
                 $priority = 'High';
             } elseif (in_array(strtolower($t->tingkat_kesulitan), ['minor', 'normal']) && $t->kategori === 'Error (Aplikasi)') {
                 $priority = 'Medium';
             }
 
-            $startAt = Carbon::parse($t->created_at);
+            $startAt = Carbon::parse($t->created_at, 'Asia/Jakarta');
             $endAt = strlen($t->tanggal_selesai) > 10
-                ? Carbon::parse($t->tanggal_selesai)
-                : Carbon::parse($t->tanggal_selesai . ' ' . ($t->jam_selesai ?? '23:59:59'));
+                ? Carbon::parse($t->tanggal_selesai, 'Asia/Jakarta')
+                : Carbon::parse($t->tanggal_selesai . ' ' . ($t->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
 
             $hours = $this->hitungJamKerja($startAt, $endAt);
-
             $slaMet = match ($priority) {
                 'High' => $hours <= 24,
                 'Medium' => $hours <= 40,
@@ -600,15 +539,12 @@ class ProgrammerKPIService
 
             $month = $endAt->format('Y-m');
             $day = $endAt->format('Y-m-d');
-
             $val = $slaMet ? 1 : 0;
 
             $monthlyData[$month][] = $val;
             $dailyBreakdown[$month][$day] = $val;
-
-            $progressVal = $val * 100;
-            $monthlyProgress[$month][] = $progressVal;
-            $dailyProgressPerMonth[$month][$day] = $progressVal;
+            $monthlyProgress[$month][] = $val * 100;
+            $dailyProgressPerMonth[$month][$day] = $val * 100;
         }
 
         $monthlyAvg = [];
@@ -639,10 +575,7 @@ class ProgrammerKPIService
             'average_resolution_hours' => round($totalHours / $total, 1),
             'fastest_resolution' => $fastest,
             'slowest_resolution' => $slowest,
-            'pie_chart' => [
-                'above' => $metCount,
-                'below' => $total - $metCount
-            ],
+            'pie_chart' => ['above' => $metCount, 'below' => $total - $metCount],
             'monthly_data' => $monthlyAvg,
             'monthly_ticket_count' => [],
             'daily_breakdown_per_month' => $dailyBreakdown,

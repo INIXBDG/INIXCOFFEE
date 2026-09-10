@@ -23,7 +23,6 @@ class AdminHoldingKPIService
         if ($po->type !== 'Authorize') {
             if (!$po->created_at) return 0;
 
-            // Senin minggu depan dari created_at
             $tenggat = Carbon::parse($po->created_at)->startOfWeek()->addWeek();
 
             return $uploaded->lte($tenggat) ? 100 : 0;
@@ -88,10 +87,9 @@ class AdminHoldingKPIService
             $tenggatEfektif = $po->moduls->min('awal_training');
             if (!$tenggatEfektif) continue;
 
-            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif); // 1x per po
+            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif);
             $totalPercent += $percent;
             $count++;
-
         }
 
         if ($count === 0) return 0.0;
@@ -203,8 +201,7 @@ class AdminHoldingKPIService
             return 0;
         }
 
-        $registrasi = registexam::whereYear('created_at', $tahun)
-            ->count();
+        $registrasi = registexam::whereYear('created_at', $tahun)->count();
 
         if ($registrasi === 0) {
             return 0.0;
@@ -321,13 +318,15 @@ class AdminHoldingKPIService
                 ($dailyProgressPerMonth[$monthKey][$dayKey] ?? 0) + 1;
         }
 
+        $registrasiByMonth = $registrasi->groupBy(function ($r) {
+            return $r->created_at->format('Y-m');
+        })->map->count();
+
         $monthlyPercentages = [];
         $monthlyProgressPercentages = [];
 
         foreach ($monthlyData as $month => $countDok) {
-            $registrasiPerMonth = $registrasi->filter(function ($r) use ($month) {
-                return $r->created_at->format('Y-m') === $month;
-            })->count();
+            $registrasiPerMonth = $registrasiByMonth[$month] ?? 0;
 
             if ($registrasiPerMonth > 0) {
                 $monthlyPercentages[$month] = round(($countDok / $registrasiPerMonth) * 100, 2);
