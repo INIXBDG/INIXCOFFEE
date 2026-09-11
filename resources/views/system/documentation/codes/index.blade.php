@@ -741,7 +741,7 @@
                                                 <span class="code-lang">{{ $block['language'] ?? 'php' }}</span>
                                                 <button class="btn-icon"
                                                     style="width: 26px; height: 26px; border-color: #334155; color: #94a3b8;"
-                                                    data-code="{{ addslashes($block['code']) }}"
+                                                    data-code="{{ e($block['code']) }}"
                                                     onclick="event.stopPropagation(); copyCode(this)" title="Copy">
                                                     <i class="fas fa-copy" style="font-size: 0.7rem;"></i>
                                                 </button>
@@ -946,6 +946,16 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 
     <script>
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         let codeBlockCount = 0;
         let relationCount = 0;
         let changeLogCount = 0;
@@ -1301,26 +1311,33 @@
                         html +=
                             `<div class="mb-4">
                             <div class="section-label"><span><i class="fas fa-laptop-code"></i> Kode Implementasi (${response.code_blocks.length})</span></div>`;
-                        response.code_blocks.forEach((block, index) => {
-                            let lang = block.language || 'php';
-                            let desc = block.description ?
-                                `<p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-style: italic;">${block.description}</p>` :
-                                '';
-                            html += `<div class="mb-3">
-                                ${desc}
-                                <div class="code-preview" style="border-radius: 10px;">
-                                    <div class="code-preview-header">
-                                        <span class="code-lang">${lang}</span>
-                                        <button class="btn-icon" style="width: 28px; height: 28px; border-color: #334155; color: #94a3b8;" data-code="${block.code.replace(/"/g, '&quot;')}" onclick="copyCode(this)">
-                                            <i class="fas fa-copy" style="font-size: 0.75rem;"></i>
-                                        </button>
-                                    </div>
-                                    <div class="code-preview-body" style="min-height: 300px;">
-                                        <pre><code class="language-${lang}" style="font-size: 0.85rem;">${block.code}</code></pre>
-                                    </div>
-                                </div>
-                            </div>`;
-                        });
+                                response.code_blocks.forEach((block, index) => {
+                                    let lang = block.language || 'php';
+                                    let desc = block.description
+                                        ? `<p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-style: italic;">${escapeHtml(block.description)}</p>`
+                                        : '';
+
+                                    // Escape kode dengan benar
+                                    const safeCode = escapeHtml(block.code);
+
+                                    html += `
+                                        <div class="mb-3">
+                                            ${desc}
+                                            <div class="code-preview" style="border-radius: 10px;">
+                                                <div class="code-preview-header">
+                                                    <span class="code-lang">${escapeHtml(lang)}</span>
+                                                    <button class="btn-icon" style="width: 28px; height: 28px; border-color: #334155; color: #94a3b8;"
+                                                        data-code="${escapeHtml(block.code)}"
+                                                        onclick="copyCode(this)">
+                                                        <i class="fas fa-copy" style="font-size: 0.75rem;"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="code-preview-body" style="min-height: 300px;">
+                                                    <pre><code class="language-${escapeHtml(lang)}" style="font-size: 0.85rem;">${safeCode}</code></pre>
+                                                </div>
+                                            </div>
+                                        </div>`;
+                                });
                         html += `</div>`;
                     }
 
@@ -1410,28 +1427,40 @@
                     if (response.code_blocks) {
                         response.code_blocks.forEach(block => {
                             codeBlockCount++;
-                            $('#codeBlocksContainer').append(`
+                            const $block = $(`
                                 <div class="code-block-form p-3 mb-3 bg-white rounded border" id="codeBlock_${codeBlockCount}">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <label class="form-label-custom mb-0">Deskripsi Kode</label>
-                                        <button type="button" class="btn-remove" onclick="removeCodeBlock(${codeBlockCount})"><i class="fas fa-times"></i></button>
+                                        <button type="button" class="btn-remove" onclick="removeCodeBlock(${codeBlockCount})">
+                                            <i class="fas fa-times"></i>
+                                        </button>
                                     </div>
-                                    <textarea class="form-control form-control-custom mb-3 code-block-description" rows="2">${block.description || ''}</textarea>
+                                    <textarea class="form-control form-control-custom mb-3 code-block-description" rows="2"></textarea>
                                     <div class="row">
                                         <div class="col-md-3 mb-2">
                                             <select class="form-select form-select-custom code-block-language">
-                                                <option value="php" ${block.language === 'php' ? 'selected' : ''}>PHP</option>
-                                                <option value="javascript" ${block.language === 'javascript' ? 'selected' : ''}>JavaScript</option>
-                                                <option value="sql" ${block.language === 'sql' ? 'selected' : ''}>SQL</option>
-                                                <option value="html" ${block.language === 'html' ? 'selected' : ''}>HTML</option>
-                                                <option value="css" ${block.language === 'css' ? 'selected' : ''}>CSS</option>
+                                                <option value="php">PHP</option>
+                                                <option value="javascript">JavaScript</option>
+                                                <option value="sql">SQL</option>
+                                                <option value="html">HTML</option>
+                                                <option value="css">CSS</option>
+                                                <option value="bash">Bash</option>
                                             </select>
                                         </div>
                                         <div class="col-md-9 mb-2">
-                                            <textarea class="form-control form-control-custom code-block-code" rows="5" style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">${block.code}</textarea>
+                                            <textarea class="form-control form-control-custom code-block-code" rows="5"
+                                                style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;"></textarea>
                                         </div>
                                     </div>
-                                </div>`);
+                                </div>
+                            `);
+
+                            // Isi value dengan aman (menggunakan .val() / .text())
+                            $block.find('.code-block-description').val(block.description || '');
+                            $block.find('.code-block-language').val(block.language || 'php');
+                            $block.find('.code-block-code').val(block.code || '');
+
+                            $('#codeBlocksContainer').append($block);
                         });
                     }
 

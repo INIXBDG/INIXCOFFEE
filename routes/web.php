@@ -207,6 +207,12 @@ Route::middleware('auth')
     })
     ->name('notifications.unread-count');
 
+Route::middleware('auth')
+    ->get('/notifications/modal-content', function () {
+        return view('partials.notifications');
+    })
+    ->name('notifications.modal-content');
+
 Route::get('/daily-activities-data', [DailyActivityController::class, 'activitiesData']);
 
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
@@ -681,6 +687,7 @@ Route::get('registrasi/export/excel', [App\Http\Controllers\RegistrasiController
 Route::get('registrasi/export/pdf', [App\Http\Controllers\RegistrasiController::class, 'exportPDF'])->name('registrasi.exportPDF');
 Route::get('registrasi/export/excels', [App\Http\Controllers\RegistrasiController::class, 'exportExcelKhusus'])->name('registrasi.exportExcels');
 Route::get('registrasi/export/pdfs', [App\Http\Controllers\RegistrasiController::class, 'exportPDFKhusus'])->name('registrasi.exportPDFs');
+Route::post('/registrasi/souvenir', [\App\Http\Controllers\RegistrasiController::class, 'storeSouvenir'])->name('registrasi.storeSouvenir');
 Route::get('peserta/export/excels', [App\Http\Controllers\PesertaController::class, 'exportExcelKhusus'])->name('peserta.exportExcels');
 Route::get('peserta/export/pdfs', [App\Http\Controllers\PesertaController::class, 'exportPDFKhusus'])->name('peserta.exportPDFs');
 Route::get('feedback/export/excels/{id}', [App\Http\Controllers\feedbackController::class, 'exportExcelKhusus'])->name('feedback.exportExcels');
@@ -1878,6 +1885,8 @@ Route::post('/system/documentation/features', [FeatureDocumentationController::c
     ->name('documentation.features.store');
 Route::get('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'show'])
     ->name('documentation.features.show');
+Route::get('/system/documentation/features/{id}/edit-data', [FeatureDocumentationController::class, 'editData'])
+    ->name('documentation.features.edit-data');
 Route::put('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'update'])
     ->name('documentation.features.update');
 Route::delete('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'destroy'])

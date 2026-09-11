@@ -3,12 +3,12 @@
 namespace Tests\Unit;
 
 use App\Models\PoExamSertifa;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class PoExamSertifaTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_can_create_and_read_po_exam_sertifa_record(): void
     {

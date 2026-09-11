@@ -588,6 +588,9 @@ class examController extends Controller
             ]);
 
             $exam = eksam::findOrFail($id);
+
+            $current_status = $exam->status ?? 'Pending';
+
             $exam->update([
                 'tanggal_pengajuan' => $request->tanggal_pengajuan,
                 'materi' => $request->materi,
@@ -604,13 +607,13 @@ class examController extends Controller
                 'total_pax' => $request->pax,
                 'total' => $request->total,
                 'keterangan' => $request->keterangan,
-                'status' => $exam->status,
+                'status' => $current_status,
             ]);
 
             changeexam::create([
                 'id_exam' => $exam->id,
                 'keterangan' => $request->keterangan,
-                'status' => $exam->status,
+                'status' => $current_status,
                 'kode_karyawan' => $kode_karyawan,
             ]);
 

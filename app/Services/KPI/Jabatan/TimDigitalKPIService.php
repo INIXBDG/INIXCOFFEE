@@ -28,7 +28,8 @@ class TimDigitalKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
+        $contentSchedules = ContentSchedule::select('upload_date')
+            ->whereBetween('upload_date', [$start, $end])
             ->whereNotNull('upload_date')
             ->get();
 
@@ -40,24 +41,19 @@ class TimDigitalKPIService
 
         foreach ($contentSchedules as $schedule) {
             $date = Carbon::parse($schedule->upload_date);
-
-            $weekStart = $date->copy()->startOfWeek(Carbon::MONDAY);
-            $weekEnd = $date->copy()->endOfWeek(Carbon::SUNDAY);
-
-            $weekKey = $weekStart->format('Y-m-d') . '_' . $weekEnd->format('Y-m-d');
+            $weekKey = $date->copy()->startOfWeek(Carbon::MONDAY)->format('Y-m-d') . '_' . 
+                       $date->copy()->endOfWeek(Carbon::SUNDAY)->format('Y-m-d');
 
             $weeklyCounts[$weekKey] = ($weeklyCounts[$weekKey] ?? 0) + 1;
         }
 
         $targetMingguan = 3;
-
         $compliantWeeks = 0;
         $totalWeeksWithData = 0;
 
         foreach ($weeklyCounts as $count) {
             if ($count >= 1) {
                 $totalWeeksWithData++;
-
                 if ($count >= $targetMingguan) {
                     $compliantWeeks++;
                 }
@@ -65,11 +61,9 @@ class TimDigitalKPIService
         }
 
         $CS = $totalWeeksWithData === 0 ? 0 : $compliantWeeks / $totalWeeksWithData;
-
         $totalKonten = $contentSchedules->count();
 
         $jumlahMinggu = 0;
-
         $current = $start->copy()->startOfWeek(Carbon::MONDAY);
         $endOfYearWeek = $end->copy()->endOfWeek(Carbon::SUNDAY);
 
@@ -109,7 +103,8 @@ class TimDigitalKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
+        $contentSchedules = ContentSchedule::select('upload_date')
+            ->whereBetween('upload_date', [$start, $end])
             ->whereNotNull('upload_date')
             ->get();
 
@@ -138,19 +133,16 @@ class TimDigitalKPIService
                 $dailyBreakdownPerWeek[$weekKey] = [];
             }
 
-            $dailyBreakdownPerWeek[$weekKey][$dayKey] =
-                ($dailyBreakdownPerWeek[$weekKey][$dayKey] ?? 0) + 1;
+            $dailyBreakdownPerWeek[$weekKey][$dayKey] = ($dailyBreakdownPerWeek[$weekKey][$dayKey] ?? 0) + 1;
         }
 
         $targetMingguan = 3;
-
         $compliantWeeks = 0;
         $totalWeeksWithData = 0;
 
         foreach ($weeklyCounts as $count) {
             if ($count >= 1) {
                 $totalWeeksWithData++;
-
                 if ($count >= $targetMingguan) {
                     $compliantWeeks++;
                 }
@@ -158,11 +150,9 @@ class TimDigitalKPIService
         }
 
         $CS = $totalWeeksWithData === 0 ? 0 : $compliantWeeks / $totalWeeksWithData;
-
         $totalKonten = $contentSchedules->count();
 
         $jumlahMinggu = 0;
-
         $current = $start->copy()->startOfWeek(Carbon::MONDAY);
         $endOfYearWeek = $end->copy()->endOfWeek(Carbon::SUNDAY);
 
@@ -180,11 +170,10 @@ class TimDigitalKPIService
         $CSPercent = round($CS * 100, 1);
         $PSPercent = round($PS * 100, 1);
 
-        $nilaiTarget = $details->pluck('nilai_target')->first() ?? 0;
+        $nilaiTarget = (float) ($details->pluck('nilai_target')->first() ?? 0);
         $gap = round($progress - $nilaiTarget, 1);
 
         $expectedTotal = $targetMingguan * $jumlahMinggu;
-
         $above = min($totalKonten, $expectedTotal);
         $below = max($expectedTotal - $totalKonten, 0);
 
