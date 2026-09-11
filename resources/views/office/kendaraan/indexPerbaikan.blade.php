@@ -19,16 +19,17 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
-        {{-- Alert error --}}
+
         @if ($errors->any())
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
-
 
         {{-- Filter & Export Card --}}
         <div class="card shadow-sm mb-3 glass-force">
@@ -41,6 +42,24 @@
                     <div class="col-md-3">
                         <label class="form-label fw-bold small mb-1">Sampai Tanggal</label>
                         <input type="date" id="maxDate" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small mb-1">Filter Kondisi</label>
+                        <select id="filterKondisi" class="form-select form-select-sm">
+                            <option value="">Semua</option>
+                            <option value="Perawatan">Perawatan</option>
+                            <option value="Kecelakaan">Kecelakaan</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small mb-1">Filter Status</label>
+                        <select id="filterStatus" class="form-select form-select-sm">
+                            <option value="">Semua</option>
+                            <option value="Diajukan">Diajukan</option>
+                            <option value="Diproses">Diproses</option>
+                            <option value="Selesai">Selesai</option>
+                            <option value="Ditolak">Ditolak</option>
+                        </select>
                     </div>
                     <div class="col-md-3">
                         <button id="resetFilter" class="btn btn-sm btn-secondary w-100">
@@ -99,37 +118,36 @@
                                 <th>Pengguna / Driver</th>
                                 <th>Kendaraan</th>
                                 <th>Kondisi</th>
+                                <th>Tanggal Diajukan</th>
                                 <th>Tanggal Perbaikan</th>
                                 <th>Status</th>
                                 <th class="text-center" style="width: 15%">Aksi</th>
                             </tr>
                         </thead>
-                        {{-- Table Body --}}
                         <tbody>
                             @forelse ($perbaikan as $item)
-                                @php
-                                    $rawStatus = $item->getOriginal('status');
-                                    $displayStatus = $item->status; // sudah melalui accessor (sync dengan tracking)
-                                @endphp
-                                <tr>
+                                <tr data-kondisi="{{ $item->type_condition }}" data-status="{{ $item->status }}">
                                     <td class="text-center">{{ $loop->iteration }}</td>
                                     <td>{{ $item->user->karyawan->nama_lengkap ?? ($item->user->name ?? '-') }}</td>
                                     <td>{{ $item->kendaraan }}</td>
                                     <td>
-                                        <span class="badge bg-{{ $item->type_condition == 'Kecelakaan' ? 'Danger' : 'Info' }}">
+                                        <span
+                                            class="badge bg-{{ $item->type_condition == 'Kecelakaan' ? 'danger' : 'info' }}">
                                             {{ $item->type_condition }}
                                         </span>
+                                    </td>
+                                    <td data-order="{{ $item->created_at->format('Y-m-d H:i:s') }}">
+                                        {{ $item->created_at->format('d M Y, H:i') }}
                                     </td>
                                     <td
                                         data-order="{{ $item->tanggal_perbaikan ? \Carbon\Carbon::parse($item->tanggal_perbaikan)->format('Y-m-d') : '' }}">
                                         {{ $item->tanggal_perbaikan ? \Carbon\Carbon::parse($item->tanggal_perbaikan)->format('d M Y') : '-' }}
                                     </td>
                                     <td>
-                                        {{ $displayStatus }}
+                                        {{ $item->status }}
                                         @if ($item->type_condition === 'Kecelakaan' && $item->estimasi > 1000000)
-                                            <br><small class="text-danger">
-                                                Estimasi paling lambat pencairan 1 minggu dari tanggal pembuatan
-                                            </small>
+                                            <br><small class="text-danger">Estimasi paling lambat pencairan 1 minggu dari
+                                                tanggal pembuatan</small>
                                         @endif
                                     </td>
                                     <td class="text-center">
@@ -139,18 +157,15 @@
                                                 Aksi
                                             </button>
                                             <ul class="dropdown-menu">
-
-                                                {{-- Detail --}}
                                                 <li>
                                                     <a class="dropdown-item"
                                                         href="{{ route('office.detailPerbaikanKendaraan', $item->id) }}">
                                                         Detail
                                                     </a>
                                                 </li>
-
-                                                {{-- Hapus (Driver only) --}}
                                                 <li>
-                                                    <form action="{{ route('office.deletePerbaikanKendaraan', $item->id) }}"
+                                                    <form
+                                                        action="{{ route('office.deletePerbaikanKendaraan', $item->id) }}"
                                                         method="POST"
                                                         onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
                                                         @csrf
@@ -160,19 +175,19 @@
                                                         </button>
                                                     </form>
                                                 </li>
-
-                                                {{-- Invoice (jika sudah selesai dan ada invoice) --}}
                                                 @if ($item->status === 'Selesai' && $item->invoice)
                                                     <li>
                                                         <button type="button" class="dropdown-item btnViewInvoice"
                                                             data-bs-toggle="modal" data-bs-target="#ModalViewInvoice"
-                                                            data-id="{{ $item->id }}">
+                                                            data-tanggal="{{ $item->tanggal_perbaikan ? \Carbon\Carbon::parse($item->tanggal_perbaikan)->format('Y-m-d') : '' }}"
+                                                            data-deskripsi="{{ $item->deskripsi_perbaikan }}"
+                                                            data-invoice-url="{{ asset('storage/' . $item->invoice) }}"
+                                                            data-invoice-ext="{{ strtolower(pathinfo($item->invoice, PATHINFO_EXTENSION)) }}">
                                                             Invoice
                                                         </button>
                                                     </li>
                                                 @endif
 
-                                                {{-- Selesaikan (Driver upload invoice) --}}
                                                 <li>
                                                     <button type="button" class="dropdown-item btnSelesaiPerbaikan"
                                                         data-bs-toggle="modal" data-bs-target="#modalSelesaiPerbaikan"
@@ -180,15 +195,13 @@
                                                         Selesaikan
                                                     </button>
                                                 </li>
-
-
                                             </ul>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">Belum ada data pemeriksaan</td>
+                                    <td colspan="8" class="text-center text-muted py-4">Belum ada data pemeriksaan</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -301,8 +314,7 @@
 
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Deskripsi Kondisi</label>
-                                <textarea name="deskripsi_kondisi" class="form-control" rows="4"
-                                    placeholder="Jelaskan kondisi kendaraan..."></textarea>
+                                <textarea name="deskripsi_kondisi" class="form-control" rows="4" placeholder="Jelaskan kondisi kendaraan..."></textarea>
                             </div>
 
                             <div class="col-12">
@@ -332,8 +344,8 @@
                 </div>
 
                 <div class="modal-body">
-                    <form action="{{ route('office.selesaiPerbaikanKendaraan') }}" method="POST" id="formSelesaiPerbaikan"
-                        enctype="multipart/form-data">
+                    <form action="{{ route('office.selesaiPerbaikanKendaraan') }}" method="POST"
+                        id="formSelesaiPerbaikan" enctype="multipart/form-data">
                         @csrf
 
                         <input type="hidden" name="id" id="modal_selesai_id">
@@ -349,101 +361,61 @@
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Deskripsi Perbaikan</label>
                                 <textarea name="deskripsi_perbaikan" class="form-control" rows="4"
-                                    placeholder="Jelaskan perbaikan kendaraan..."></textarea required>
-                                    </div>
+                                    placeholder="Jelaskan perbaikan kendaraan..."></textarea>
+                            </div>
 
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold">Invoice<span
-                                                style="text-danger">*</span></label>
-                                        <input type="file" name="invoice" class="form-control" required>
-                                    </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Invoice<span style="text-danger">*</span></label>
+                                <input type="file" name="invoice" class="form-control" required>
+                            </div>
 
-                                </div>
-                            </form>
                         </div>
+                    </form>
+                </div>
 
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" form="formSelesaiPerbaikan" class="btn btn-primary">Simpan</button>
-                        </div>
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" form="formSelesaiPerbaikan" class="btn btn-primary">Simpan</button>
                 </div>
             </div>
+        </div>
+    </div>
 
-            @if (count($perbaikan) > 0)
-                            <div class="modal fade" id="ModalViewInvoice" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg modal-dialog-centered">
-                                        <div class="modal-content shadow">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Invoice Perbaikan Kendaraan</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
+    <div class="modal fade" id="ModalViewInvoice" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title">Invoice Perbaikan Kendaraan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
-                                            <div class="modal-body">
+                <div class="modal-body">
+                    <div class="row g-4">
 
-                                                <div class="row g-4">
-
-                                                    <div class="col-12">
-                                                        <label class="form-label fw-semibold">Tanggal Perbaikan</label>
-                                                        <input type="date" name="tanggal_perbaikan" class="form-control" disabled value="{{ $item?->tanggal_perbaikan }}">
-                                                    </div>
-
-                                                    <div class="col-12">
-                                                        <label class="form-label fw-semibold">Deskripsi Perbaikan</label>
-                                                        <textarea name="deskripsi_perbaikan" class="form-control" rows="4" disabled>{{ $item?->deskripsi_perbaikan }}</textarea>
-                                        </div>
-
-                                        <div class="col-12">
-                                            <label class="form-label fw-semibold">Invoice<span style="text-danger">*</span></label>
-                                            @php
-                                                $extension = strtolower(pathinfo($item?->invoice, PATHINFO_EXTENSION));
-                                                $fileUrl = asset('storage/' . $item?->invoice);
-                                            @endphp
-
-                                            <div class="mb-3">
-
-                                                @if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp']))
-                                                    <img src="{{ $fileUrl }}" class="img-fluid rounded shadow-sm border"
-                                                        style="max-height:250px;">
-                                                @elseif (in_array($extension, ['mp4', 'mov', 'avi', 'webm']))
-                                                    <video class="rounded shadow-sm border" style="max-height:250px;" controls>
-                                                        <source src="{{ $fileUrl }}">
-                                                        Browser tidak mendukung video.
-                                                    </video>
-                                                @elseif ($extension === 'pdf')
-                                                    <iframe src="{{ $fileUrl }}" class="w-100 border rounded"
-                                                        style="height:400px;"></iframe>
-                                                @elseif (in_array($extension, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']))
-                                                    <div class="alert alert-info">
-                                                        File dokumen tidak bisa ditampilkan langsung.<br>
-                                                        <a href="{{ $fileUrl }}" target="_blank" class="btn btn-sm btn-primary mt-2">
-                                                            Download / Buka File
-                                                        </a>
-                                                    </div>
-                                                @else
-                                                    <div class="alert alert-warning">
-                                                        File tidak dapat ditampilkan.<br>
-                                                        <a href="{{ $fileUrl }}" target="_blank" class="btn btn-sm btn-secondary mt-2">
-                                                            Download File
-                                                        </a>
-                                                    </div>
-                                                @endif
-
-                                                <div class="mt-2">
-                                                    <a href="{{ $fileUrl }}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                                        <i class="fas fa-download"></i> Download Invoice
-                                                    </a>
-                                                </div>
-
-                                            </div>
-                                        </div>
-
-                                    </div>
-                            </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Tanggal Perbaikan</label>
+                            <input type="date" class="form-control" disabled id="invoiceTanggal">
                         </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Deskripsi Perbaikan</label>
+                            <textarea class="form-control" rows="4" disabled id="invoiceDeskripsi"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Invoice</label>
+                            <div class="mb-3" id="invoicePreviewContainer"></div>
+                        </div>
+
                     </div>
                 </div>
-            @endif
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     {{-- Scripts --}}
@@ -452,61 +424,67 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
-        $(document).ready(function () {
-            // Initialize DataTable
+        $(document).ready(function() {
             const table = $('#tablePerbaikan').DataTable({
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json"
                 },
                 order: [
                     [4, 'desc']
-                ], // Sort by date descending
+                ],
                 columnDefs: [{
                     orderable: false,
-                    targets: 6
+                    targets: [0, 7]
                 }],
-                pageLength: 25
+                pageLength: 10
             });
 
-            // Custom date range filter
-            $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+            $.fn.dataTable.ext.search.push(function (settings, data, dataIndex, rowData, counter) {
+                const row = table.row(dataIndex).node();
+                const $row = $(row);
+
                 const min = $('#minDate').val();
                 const max = $('#maxDate').val();
                 const dateStr = table.cell(dataIndex, 4).nodes().to$().attr('data-order');
+                if (dateStr) {
+                    const date = new Date(dateStr.split(' ')[0] + 'T00:00:00');
+                    const minDate = min ? new Date(min + 'T00:00:00') : null;
+                    const maxDate = max ? new Date(max + 'T23:59:59') : null;
+                    if (minDate && date < minDate) return false;
+                    if (maxDate && date > maxDate) return false;
+                }
 
-                // Jika data kosong, tetap tampil
-                if (!dateStr) return true;
-                if (!min && !max) return true;
+                const kondisi = $('#filterKondisi').val();
+                if (kondisi && $row.data('kondisi') !== kondisi) return false;
 
-                // Pastikan format tanggal valid (YYYY-MM-DD)
-                const date = dateStr ? new Date(dateStr + 'T00:00:00') : null;
-                const minDate = min ? new Date(min + 'T00:00:00') : null;
-                const maxDate = max ? new Date(max + 'T23:59:59') : null;
-
-                if (minDate && date < minDate) return false;
-                if (maxDate && date > maxDate) return false;
+                const status = $('#filterStatus').val();
+                if (status && $row.data('status') !== status) return false;
 
                 return true;
             });
 
-            // Date filter events
-            $('#minDate, #maxDate').on('change', function () {
+            $('#filterKondisi, #filterStatus, #minDate, #maxDate').on('change', function () {
+                table.draw();
+            });
+
+            $('#resetFilter').on('click', function () {
+                $('#minDate, #maxDate').val('');
+                $('#filterKondisi, #filterStatus').val('');
+                table.draw();
+            });
+
+            $('#minDate, #maxDate').on('change', function() {
                 table.draw();
             });
 
             // Reset filter
-            $('#resetFilter').on('click', function () {
+            $('#resetFilter').on('click', function() {
                 $('#minDate, #maxDate').val('');
                 table.draw();
             });
 
-            // Reset form when modal closes
-            $('#modalTambahPerbaikan').on('hidden.bs.modal', function () {
-                $('#formKondisi')[0].reset();
-                $('#formKondisi select').each(function () {
-                    $(this).val('1');
-                });
-                $('input[name="tanggal_pemeriksaan"]').val('{{ date('Y-m-d') }}');
+            $('#modalTambahPerbaikan').on('hidden.bs.modal', function() {
+                $('#formPerbaikan')[0].reset();
             });
         });
 
@@ -515,21 +493,52 @@
             document.querySelector('#ModalUpdateStatus form').submit();
         }
 
-        $(document).on('click', '.btnUpdateStatus', function () {
+        $(document).on('click', '.btnUpdateStatus', function() {
             let id = $(this).data('id');
             $('#modal_id').val(id);
         });
 
-        $(document).on('click', '.btnSelesaiPerbaikan', function () {
+        $(document).on('click', '.btnSelesaiPerbaikan', function() {
             let id = $(this).data('id');
             $('#modal_selesai_id').val(id);
         });
 
-        document.addEventListener("DOMContentLoaded", function () {
+        $(document).on('click', '.btnViewInvoice', function() {
+            const tanggal = $(this).data('tanggal');
+            const deskripsi = $(this).data('deskripsi');
+            const url = $(this).data('invoice-url');
+            const ext = $(this).data('invoice-ext');
+
+            $('#invoiceTanggal').val(tanggal);
+            $('#invoiceDeskripsi').val(deskripsi);
+
+            let preview = '';
+            if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+                preview = `<img src="${url}" class="img-fluid rounded shadow-sm border" style="max-height:250px;">`;
+            } else if (['mp4', 'mov', 'avi', 'webm'].includes(ext)) {
+                preview =
+                    `<video class="rounded shadow-sm border" style="max-height:250px;" controls><source src="${url}">Browser tidak mendukung video.</video>`;
+            } else if (ext === 'pdf') {
+                preview = `<iframe src="${url}" class="w-100 border rounded" style="height:400px;"></iframe>`;
+            } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+                preview =
+                    `<div class="alert alert-info">File dokumen tidak bisa ditampilkan langsung.<br>
+                    <a href="${url}" target="_blank" class="btn btn-sm btn-primary mt-2">Download / Buka File</a></div>`;
+            } else {
+                preview = `<div class="alert alert-warning">File tidak dapat ditampilkan.<br>
+                    <a href="${url}" target="_blank" class="btn btn-sm btn-secondary mt-2">Download File</a></div>`;
+            }
+            preview +=
+                `<div class="mt-2"><a href="${url}" class="btn btn-sm btn-outline-primary" target="_blank"><i class="fas fa-download"></i> Download Invoice</a></div>`;
+
+            $('#invoicePreviewContainer').html(preview);
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
             const displayInput = document.getElementById("estimasi_display");
             const hiddenInput = document.getElementById("estimasi");
 
-            displayInput.addEventListener("input", function (e) {
+            displayInput.addEventListener("input", function(e) {
                 let value = this.value.replace(/\D/g, "");
 
                 hiddenInput.value = value;
@@ -546,13 +555,13 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
 
 
             const typeCondition = document.querySelector('select[name="type_condition"]');
             const sectionKecelakaan = document.getElementById('sectionKecelakaan');
 
-            typeCondition.addEventListener('change', function () {
+            typeCondition.addEventListener('change', function() {
 
                 if (this.value === 'Kecelakaan') {
                     sectionKecelakaan.classList.remove('d-none');
@@ -565,7 +574,7 @@
 
         });
         // Export PDF button
-        $('#exportPdfBtn').on('click', function (e) {
+        $('#exportPdfBtn').on('click', function(e) {
             e.preventDefault();
             // Ambil tanggal dari filter
             const from = $('#minDate').val();
@@ -576,7 +585,7 @@
         });
 
         // Export Excel button
-        $('#exportExcelBtn').on('click', function (e) {
+        $('#exportExcelBtn').on('click', function(e) {
             e.preventDefault();
             const from = $('#minDate').val();
             const to = $('#maxDate').val();

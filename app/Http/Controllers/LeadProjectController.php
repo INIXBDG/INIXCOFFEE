@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\DB;
 
 class LeadProjectController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         return view('lead_project.index');
@@ -110,6 +115,42 @@ class LeadProjectController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Gagal memperbarui tahapan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        DB::beginTransaction();
+        try {
+            $lead = LeadProject::withTrashed()->findOrFail($id);
+
+            if ($lead->project) {
+                $project = $lead->project;
+
+                $administration = ProjectAdministration::withTrashed()
+                    ->where('project_id', $project->id)
+                    ->first();
+                if ($administration) {
+                    $administration->delete();
+                }
+
+                $handover = \App\Models\ProjectHandover::withTrashed()
+                    ->where('project_id', $project->id)
+                    ->first();
+                if ($handover) {
+                    $handover->delete();
+                }
+
+                $project->delete();
+            }
+
+            $lead->delete();
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Lead dan data project terkait berhasil dihapus.'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus lead: ' . $e->getMessage()], 500);
         }
     }
 

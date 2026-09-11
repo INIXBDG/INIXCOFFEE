@@ -8,6 +8,7 @@ use App\Models\RKM;
 use App\Models\ChecklistKeperluan;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CustomerCareKPIService
@@ -28,52 +29,40 @@ class CustomerCareKPIService
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return 0;
-        }
-
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $allScores = [];
-
         $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
-        foreach ($feedbacks as $fb) {
-            $f1 = is_numeric($fb->F1) ? (float) $fb->F1 : 0;
-            $f2 = is_numeric($fb->F2) ? (float) $fb->F2 : 0;
-            $f3 = is_numeric($fb->F3) ? (float) $fb->F3 : 0;
-            $f4 = is_numeric($fb->F4) ? (float) $fb->F4 : 0;
-            $f5 = is_numeric($fb->F5) ? (float) $fb->F5 : 0;
-            $p1 = is_numeric($fb->P1) ? (float) $fb->P1 : 0;
-            $p2 = is_numeric($fb->P2) ? (float) $fb->P2 : 0;
-            $p3 = is_numeric($fb->P3) ? (float) $fb->P3 : 0;
-            $p4 = is_numeric($fb->P4) ? (float) $fb->P4 : 0;
-            $p5 = is_numeric($fb->P5) ? (float) $fb->P5 : 0;
-            $p6 = is_numeric($fb->P6) ? (float) $fb->P6 : 0;
-            $p7 = is_numeric($fb->P7) ? (float) $fb->P7 : 0;
-
-            $avg = ($f1 + $f2 + $f3 + $f4 + $f5 + $p1 + $p2 + $p3 + $p4 + $p5 + $p6 + $p7) / 12;
-            $avg = min(4, max(1, $avg));
-            $allScores[] = $avg;
-        }
-
-        if (empty($allScores)) {
+        
+        if ($feedbacks->isEmpty()) {
             return 0;
         }
 
-        $totalResponden = count($allScores);
+        $totalResponden = 0;
         $respondenPuas = 0;
 
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
+        foreach ($feedbacks as $fb) {
+            $values = [
+                (float)($fb->F1 ?? 0), (float)($fb->F2 ?? 0), (float)($fb->F3 ?? 0),
+                (float)($fb->F4 ?? 0), (float)($fb->F5 ?? 0), (float)($fb->P1 ?? 0),
+                (float)($fb->P2 ?? 0), (float)($fb->P3 ?? 0), (float)($fb->P4 ?? 0),
+                (float)($fb->P5 ?? 0), (float)($fb->P6 ?? 0), (float)($fb->P7 ?? 0)
+            ];
+
+            $avg = array_sum($values) / 12;
+            $avg = min(4, max(1, $avg));
+            
+            $totalResponden++;
+            if ($avg >= 3.5) {
                 $respondenPuas++;
             }
         }
 
-        $progress = ($respondenPuas / $totalResponden) * 100;
-        return round($progress, 1);
+        if ($totalResponden === 0) {
+            return 0;
+        }
+
+        return round(($respondenPuas / $totalResponden) * 100, 1);
     }
 
     public function calculatePesertaPuasDenganPelayananDanFasilitasTrainingDetail($itemDetail, $personId = null)
@@ -94,96 +83,50 @@ class CustomerCareKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
+        $feedbacks = Nilaifeedback::select('F1', 'F2', 'F3', 'F4', 'F5', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'created_at')
+            ->whereBetween('created_at', [$start, $end])
+            ->get();
 
         if ($feedbacks->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        $allScores = [];
-        $scoreDatePairs = [];
-
-        foreach ($feedbacks as $fb) {
-
-            $values = [
-                $fb->F1,
-                $fb->F2,
-                $fb->F3,
-                $fb->F4,
-                $fb->F5,
-                $fb->P1,
-                $fb->P2,
-                $fb->P3,
-                $fb->P4,
-                $fb->P5,
-                $fb->P6,
-                $fb->P7
-            ];
-
-            $cleanValues = [];
-
-            foreach ($values as $v) {
-                $cleanValues[] = is_numeric($v) ? (float) $v : 0;
-            }
-
-            $avg = array_sum($cleanValues) / 12;
-            $avg = min(4, max(1, $avg));
-
-            $allScores[] = $avg;
-
-            $scoreDatePairs[] = [
-                'score' => $avg,
-                'date' => $fb->created_at->format('Y-m-d')
-            ];
-        }
-
-        $totalResponden = count($allScores);
+        $totalResponden = 0;
         $respondenPuas = 0;
-
-        foreach ($allScores as $score) {
-            if ($score >= 3.5) {
-                $respondenPuas++;
-            }
-        }
-
-        $progress = ($respondenPuas / $totalResponden) * 100;
-        $progress = round($progress, 1);
-
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
         $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
         $monthlyProgress = [];
+        $dailyBreakdownPerMonth = [];
         $dailyProgressPerMonth = [];
 
-        $monthlyTarget = $nilaiTarget / 12;
-        $dailyTarget = $nilaiTarget / 365;
+        foreach ($feedbacks as $fb) {
+            $values = [
+                (float)($fb->F1 ?? 0), (float)($fb->F2 ?? 0), (float)($fb->F3 ?? 0),
+                (float)($fb->F4 ?? 0), (float)($fb->F5 ?? 0), (float)($fb->P1 ?? 0),
+                (float)($fb->P2 ?? 0), (float)($fb->P3 ?? 0), (float)($fb->P4 ?? 0),
+                (float)($fb->P5 ?? 0), (float)($fb->P6 ?? 0), (float)($fb->P7 ?? 0)
+            ];
 
-        foreach ($scoreDatePairs as $pair) {
+            $avg = min(4, max(1, array_sum($values) / 12));
+            $pct = $avg >= 3.5 ? 100 : 0;
 
-            $date = Carbon::parse($pair['date']);
+            $totalResponden++;
+            if ($avg >= 3.5) {
+                $respondenPuas++;
+            }
+
+            $date = Carbon::parse($fb->created_at);
             $monthKey = $date->format('Y-m');
-            $dayKey = $pair['date'];
-            $score = $pair['score'];
-            $pct = $score >= 3.5 ? 100 : 0;
+            $dayKey = $date->format('Y-m-d');
 
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-                $monthlyProgress[$monthKey] = [];
-            }
-
-            $monthlyData[$monthKey][] = $score;
+            $monthlyData[$monthKey][] = $avg;
             $monthlyProgress[$monthKey][] = $pct;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-                $dailyProgressPerMonth[$monthKey] = [];
-            }
-
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
             $dailyProgressPerMonth[$monthKey][$dayKey] = $pct;
         }
+
+        $progress = $totalResponden > 0 ? round(($respondenPuas / $totalResponden) * 100, 1) : 0;
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $monthlyAverages = [];
         $monthlyProgressAverages = [];
@@ -206,7 +149,7 @@ class CustomerCareKPIService
             'gap' => $gap,
             'pie_chart' => [
                 'above' => $respondenPuas,
-                'below' => $totalResponden - $respondenPuas,
+                'below' => max(0, $totalResponden - $respondenPuas),
             ],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
@@ -223,12 +166,9 @@ class CustomerCareKPIService
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
         $progress = 0;
-
-        if (!is_null($detail->manual_value)) {
+        if (!is_null($detail->manual_value) && is_numeric($detail->manual_value)) {
             $manualValue = (float) $detail->manual_value;
-
             if ($manualValue > 0) {
                 $progress = $manualValue;
             }
@@ -257,10 +197,8 @@ class CustomerCareKPIService
         }
 
         $progress = 0;
-
-        if (!is_null($detail->manual_value)) {
+        if (!is_null($detail->manual_value) && is_numeric($detail->manual_value)) {
             $manualValue = (float) $detail->manual_value;
-
             if ($manualValue > 0) {
                 $progress = $manualValue;
             }
@@ -268,17 +206,13 @@ class CustomerCareKPIService
 
         $progress = round($progress);
         $gapRaw = $progress - $nilaiTarget;
-        if ($progress > $nilaiTarget) {
-            $gap = 0;
-        } else {
-            $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-        }
+        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         return array_merge($this->getDefaultDetailResponse(), [
             'progress' => $progress,
             'gap' => $gap,
             'dataManual' => [
-                'manual_document' => $detail->manual_document,
+                'manual_document' => $detail->manual_document ?? null,
             ]
         ]);
     }
@@ -297,39 +231,21 @@ class CustomerCareKPIService
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return 0;
-        }
-
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $komplainData = KomplainPeserta::whereBetween('created_at', [$start, $end])->get();
-
-        $totalData = $komplainData->count();
+        $totalData = KomplainPeserta::whereBetween('created_at', [$start, $end])->count();
 
         if ($totalData === 0) {
             return 0;
         }
 
-        $dataTepatWaktu = 0;
+        $dataTepatWaktu = KomplainPeserta::whereBetween('created_at', [$start, $end])
+            ->whereNotNull('tanggal_selesai')
+            ->whereRaw('DATE(created_at) = DATE(tanggal_selesai)')
+            ->count();
 
-        foreach ($komplainData as $data) {
-            if ($data->tanggal_selesai) {
-                $createdDate = Carbon::parse($data->created_at);
-                $finishedDate = Carbon::parse($data->tanggal_selesai);
-
-                if ($createdDate->format('Y-m-d') === $finishedDate->format('Y-m-d')) {
-                    $dataTepatWaktu++;
-                }
-            }
-        }
-
-        $presentase = ($dataTepatWaktu / $totalData) * 100;
-
-        return round($presentase, 1);
+        return round(($dataTepatWaktu / $totalData) * 100, 1);
     }
 
     public function calculatePenangananKomplainPersetaDetail($itemDetail, $personId = null)
@@ -350,7 +266,9 @@ class CustomerCareKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $komplainData = KomplainPeserta::whereBetween('created_at', [$start, $end])->get();
+        $komplainData = KomplainPeserta::select('created_at', 'tanggal_selesai')
+            ->whereBetween('created_at', [$start, $end])
+            ->get();
 
         $totalData = $komplainData->count();
 
@@ -370,7 +288,6 @@ class CustomerCareKPIService
 
             if ($data->tanggal_selesai) {
                 $finishedDate = Carbon::parse($data->tanggal_selesai);
-
                 if ($createdDate->format('Y-m-d') === $finishedDate->format('Y-m-d')) {
                     $dataTepatWaktu++;
                     $isTepatWaktu = 1;
@@ -381,20 +298,12 @@ class CustomerCareKPIService
                 $dataTidakTepatWaktu++;
             }
 
-            if (!isset($dailyValues[$dateKey])) {
-                $dailyValues[$dateKey] = [];
-            }
             $dailyValues[$dateKey][] = $isTepatWaktu * 100;
         }
 
-        $presentase = ($dataTepatWaktu / $totalData) * 100;
-        $progress = round($presentase, 1);
-
+        $progress = round(($dataTepatWaktu / $totalData) * 100, 1);
         $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
-        $above = $dataTepatWaktu;
-        $below = $dataTidakTepatWaktu;
+        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $dailyAverages = [];
         foreach ($dailyValues as $dateStr => $values) {
@@ -411,23 +320,15 @@ class CustomerCareKPIService
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-                $monthlyProgress[$monthKey] = [];
-            }
             $monthlyData[$monthKey][] = $avg;
             $monthlyProgress[$monthKey][] = $avg >= 100 ? 100 : 0;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-                $dailyProgressPerMonth[$monthKey] = [];
-            }
             $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
             $dailyProgressPerMonth[$monthKey][$dayKey] = $avg >= 100 ? 100 : 0;
         }
 
         $monthlyAverages = [];
         $monthlyProgressAverages = [];
+        
         foreach ($monthlyData as $month => $dailyVals) {
             $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
         }
@@ -443,7 +344,7 @@ class CustomerCareKPIService
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => ['above' => $above, 'below' => $below],
+            'pie_chart' => ['above' => $dataTepatWaktu, 'below' => $dataTidakTepatWaktu],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgressAverages,
@@ -465,15 +366,15 @@ class CustomerCareKPIService
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
+        $totalRkm = RKM::where('status', '0')->whereYear('tanggal_awal', $tahun)->count();
 
-        $totalRkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
-                ->where('status', '0')
-                ->whereYear('tanggal_awal', $tahun)->count();
+        if ($totalRkm === 0) {
+            return 0;
+        }
 
         $totalTuntas = ChecklistKeperluan::whereHas('rkm', function ($query) use ($tahun) {
-            $query->whereYear('tanggal_awal', $tahun);
-        })
+                $query->whereYear('tanggal_awal', $tahun);
+            })
             ->whereNotNull('tanggal_keperluan')
             ->where('materi', '1')
             ->where('kelas', '1')
@@ -499,13 +400,7 @@ class CustomerCareKPIService
             })
             ->count();
 
-        if ($totalRkm > 0) {
-            $progress = ($totalTuntas / $totalRkm) * 100;
-        } else {
-            $progress = 0;
-        }
-
-        return round($progress, 1);
+        return round(($totalTuntas / $totalRkm) * 100, 1);
     }
 
     public function calculateReportPersiapanKelasDetail($itemDetail, $personId = null)
@@ -514,19 +409,17 @@ class CustomerCareKPIService
         $detail = $details->first();
 
         $nilaiTarget = (float) optional($detail)->nilai_target;
-        $tahun = (int) optional($detail)->detail_jangka ?? now()->year;
+        $tahun = (int) (optional($detail)->detail_jangka ?? now()->year);
 
         if ($details->isEmpty() || $nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
             return $this->getDefaultDetailResponse();
         }
 
-        $totalRkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
-                ->where('status', '0')
-                ->whereYear('tanggal_awal', $tahun)->count();
+        $totalRkm = RKM::where('status', '0')->whereYear('tanggal_awal', $tahun)->count();
 
         $checklistItems = ChecklistKeperluan::whereHas('rkm', function ($query) use ($tahun) {
-            $query->whereYear('tanggal_awal', $tahun);
-        })
+                $query->whereYear('tanggal_awal', $tahun);
+            })
             ->whereNotNull('tanggal_keperluan')
             ->where('materi', 1)
             ->where('kelas', 1)
@@ -554,12 +447,7 @@ class CustomerCareKPIService
             ->get();
 
         $totalTuntas = $checklistItems->count();
-
-        if ($totalRkm > 0) {
-            $progress = ($totalTuntas / $totalRkm) * 100;
-        } else {
-            $progress = 0;
-        }
+        $progress = $totalRkm > 0 ? round(($totalTuntas / $totalRkm) * 100, 1) : 0;
 
         $dailyBreakdownPerMonth = [];
         $monthlyTotals = [];
@@ -574,8 +462,6 @@ class CustomerCareKPIService
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
 
-            $value = 1;
-
             if (!isset($dailyBreakdownPerMonth[$monthKey])) {
                 $dailyBreakdownPerMonth[$monthKey] = [];
                 $dailyProgressPerMonth[$monthKey] = [];
@@ -586,7 +472,7 @@ class CustomerCareKPIService
                 $dailyProgressPerMonth[$monthKey][$dateKey] = 0;
             }
 
-            $dailyBreakdownPerMonth[$monthKey][$dateKey] += $value;
+            $dailyBreakdownPerMonth[$monthKey][$dateKey] += 1;
             $dailyProgressPerMonth[$monthKey][$dateKey] = $dailyTarget > 0
                 ? round(($dailyBreakdownPerMonth[$monthKey][$dateKey] / $dailyTarget) * 100, 1)
                 : 100;
@@ -595,7 +481,8 @@ class CustomerCareKPIService
                 $monthlyTotals[$monthKey] = 0;
                 $monthlyProgress[$monthKey] = 0;
             }
-            $monthlyTotals[$monthKey] += $value;
+            
+            $monthlyTotals[$monthKey] += 1;
             $monthlyProgress[$monthKey] = $monthlyTarget > 0
                 ? round(($monthlyTotals[$monthKey] / $monthlyTarget) * 100, 1)
                 : 100;
@@ -607,10 +494,10 @@ class CustomerCareKPIService
         ksort($dailyProgressPerMonth);
 
         $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         return [
-            'progress' => round($progress, 1),
+            'progress' => min(100, round($progress, 1)),
             'gap' => $gap,
             'pie_chart' => [
                 'above' => $totalTuntas,

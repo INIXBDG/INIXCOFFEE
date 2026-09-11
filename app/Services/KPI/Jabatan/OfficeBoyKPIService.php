@@ -29,37 +29,33 @@ class OfficeBoyKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $allScores = [];
+        $feedbacks = Nilaifeedback::select('F1', 'F2', 'F3', 'F4', 'F5')
+            ->whereBetween('created_at', [$start, $end])
+            ->get();
 
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
-
-        foreach ($feedbacks as $fb) {
-            $f1 = is_numeric($fb->F1) ? (float) $fb->F1 : 0;
-            $f2 = is_numeric($fb->F2) ? (float) $fb->F2 : 0;
-            $f3 = is_numeric($fb->F3) ? (float) $fb->F3 : 0;
-            $f4 = is_numeric($fb->F4) ? (float) $fb->F4 : 0;
-            $f5 = is_numeric($fb->F5) ? (float) $fb->F5 : 0;
-
-            $avg = ($f1 + $f2 + $f3 + $f4 + $f5) / 5;
-            $avg = min(4, max(1, $avg));
-            $allScores[] = $avg;
-        }
-
-        if (empty($allScores)) {
+        if ($feedbacks->isEmpty()) {
             return 0;
         }
 
-        $totalResponden = count($allScores);
+        $totalResponden = 0;
         $respondenPuas = 0;
 
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
+        foreach ($feedbacks as $fb) {
+            $f1 = (float) ($fb->F1 ?? 0);
+            $f2 = (float) ($fb->F2 ?? 0);
+            $f3 = (float) ($fb->F3 ?? 0);
+            $f4 = (float) ($fb->F4 ?? 0);
+            $f5 = (float) ($fb->F5 ?? 0);
+
+            $avg = min(4, max(1, ($f1 + $f2 + $f3 + $f4 + $f5) / 5));
+            $totalResponden++;
+
+            if ($avg >= 3.5) {
                 $respondenPuas++;
             }
         }
 
-        $progress = ($respondenPuas / $totalResponden) * 100;
-        return round($progress, 1);
+        return round(($respondenPuas / $totalResponden) * 100, 1);
     }
 
     public function calculateFeedbackKebersihanDanKenyamananDetail($itemDetail, $personId = null)
@@ -80,81 +76,56 @@ class OfficeBoyKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $allScores = [];
-        $scoreDatePairs = [];
+        $feedbacks = Nilaifeedback::select('F1', 'F2', 'F3', 'F4', 'F5', 'created_at')
+            ->whereBetween('created_at', [$start, $end])
+            ->get();
 
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
-
-        foreach ($feedbacks as $fb) {
-            $f1 = is_numeric($fb->F1) ? (float) $fb->F1 : 0;
-            $f2 = is_numeric($fb->F2) ? (float) $fb->F2 : 0;
-            $f3 = is_numeric($fb->F3) ? (float) $fb->F3 : 0;
-            $f4 = is_numeric($fb->F4) ? (float) $fb->F4 : 0;
-            $f5 = is_numeric($fb->F5) ? (float) $fb->F5 : 0;
-
-            $avg = ($f1 + $f2 + $f3 + $f4 + $f5) / 5;
-            $avg = min(4, max(1, $avg));
-
-            $allScores[] = $avg;
-            $scoreDatePairs[] = [
-                'score' => $avg,
-                'date' => $fb->created_at->format('Y-m-d'),
-            ];
-        }
-
-        if (empty($allScores)) {
+        if ($feedbacks->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        $totalResponden = count($allScores);
+        $totalResponden = 0;
         $respondenPuas = 0;
-
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
-                $respondenPuas++;
-            }
-        }
-
-        $progress = ($respondenPuas / $totalResponden) * 100;
-        $progress = round($progress, 1);
-
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
         $monthlyData = [];
         $dailyBreakdownPerMonth = [];
         $monthlyProgress = [];
         $dailyProgressPerMonth = [];
 
-        foreach ($scoreDatePairs as $pair) {
-            $date = Carbon::parse($pair['date']);
+        foreach ($feedbacks as $fb) {
+            $f1 = (float) ($fb->F1 ?? 0);
+            $f2 = (float) ($fb->F2 ?? 0);
+            $f3 = (float) ($fb->F3 ?? 0);
+            $f4 = (float) ($fb->F4 ?? 0);
+            $f5 = (float) ($fb->F5 ?? 0);
+
+            $avg = min(4, max(1, ($f1 + $f2 + $f3 + $f4 + $f5) / 5));
+            $totalResponden++;
+            
+            $pct = round($avg * 25, 1);
+            if ($avg >= 3.5) {
+                $respondenPuas++;
+            }
+
+            $date = Carbon::parse($fb->created_at);
             $monthKey = $date->format('Y-m');
-            $dayKey = $pair['date'];
-            $score = $pair['score'];
-            $pct = round($score * 25, 1);
+            $dayKey = $date->format('Y-m-d');
 
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-                $monthlyProgress[$monthKey] = [];
-            }
-            $monthlyData[$monthKey][] = $score;
+            $monthlyData[$monthKey][] = $avg;
             $monthlyProgress[$monthKey][] = $pct;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-                $dailyProgressPerMonth[$monthKey] = [];
-            }
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
             $dailyProgressPerMonth[$monthKey][$dayKey] = $pct;
         }
+
+        $progress = round(($respondenPuas / $totalResponden) * 100, 1);
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+        if ($gap === '') $gap = '0';
 
         $monthlyAverages = [];
         $monthlyProgressAverages = [];
         foreach ($monthlyData as $month => $dailyVals) {
             $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-        foreach ($monthlyProgress as $month => $dailyVals) {
-            $monthlyProgressAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
+            $monthlyProgressAverages[$month] = round(array_sum($monthlyProgress[$month]) / count($monthlyProgress[$month]), 1);
         }
 
         ksort($monthlyAverages);
@@ -167,7 +138,7 @@ class OfficeBoyKPIService
             'gap' => $gap,
             'pie_chart' => [
                 'above' => $respondenPuas,
-                'below' => $totalResponden - $respondenPuas,
+                'below' => max(0, $totalResponden - $respondenPuas),
             ],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
@@ -190,24 +161,21 @@ class OfficeBoyKPIService
             return 0;
         }
 
+        $query = KontrolTugas::whereYear('created_at', $tahun);
+
         if ($personId !== null) {
-            $daftarTugas = KontrolTugas::whereYear('created_at', $tahun)
-                ->where('id_karyawan', $personId);
-        } else {
-            $daftarTugas = KontrolTugas::whereYear('created_at', $tahun);
+            $query->where('id_karyawan', $personId);
         }
 
-        $jumlahTugas = $daftarTugas->count();
+        $jumlahTugas = $query->count();
 
         if ($jumlahTugas === 0) {
             return 0;
         }
 
-        $jumlahTugasSelesai = $daftarTugas->where('status', '1')->count();
+        $jumlahTugasSelesai = (clone $query)->where('status', '1')->count();
 
-        $presentase = ($jumlahTugasSelesai / $jumlahTugas) * 100;
-
-        return round($presentase, 1);
+        return round(($jumlahTugasSelesai / $jumlahTugas) * 100, 1);
     }
 
     public function calculatePenyelesaianTugasHarianDetail($itemDetail, $personId = null)
@@ -225,7 +193,7 @@ class OfficeBoyKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $query = KontrolTugas::whereYear('created_at', $tahun);
+        $query = KontrolTugas::select('created_at', 'status')->whereYear('created_at', $tahun);
 
         if ($personId !== null) {
             $query->where('id_karyawan', $personId);
@@ -238,16 +206,13 @@ class OfficeBoyKPIService
         }
 
         $jumlahTugas = $tugas->count();
-        // Diseragamkan menggunakan filter collection agar aman dari tipe data string/int
         $jumlahTugasSelesai = $tugas->filter(fn($t) => $t->status == 1)->count();
 
         $progress = round(($jumlahTugasSelesai / $jumlahTugas) * 100, 1);
-
         $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
         if ($gap === '') $gap = '0';
 
-        // Array penampung akumulasi data mentah
         $monthlyDataRaw = [];
         $dailyDataRaw = [];
 
@@ -258,14 +223,12 @@ class OfficeBoyKPIService
 
             $isSelesai = $t->status == 1 ? 1 : 0;
 
-            // Kumpulkan akumulasi bulanan
             if (!isset($monthlyDataRaw[$monthKey])) {
                 $monthlyDataRaw[$monthKey] = ['total' => 0, 'selesai' => 0];
             }
             $monthlyDataRaw[$monthKey]['total']++;
             $monthlyDataRaw[$monthKey]['selesai'] += $isSelesai;
 
-            // Kumpulkan akumulasi harian (Mencegah Bug Timpa Data)
             if (!isset($dailyDataRaw[$monthKey][$dayKey])) {
                 $dailyDataRaw[$monthKey][$dayKey] = ['total' => 0, 'selesai' => 0];
             }
@@ -278,14 +241,12 @@ class OfficeBoyKPIService
         $dailyBreakdownPerMonth = [];
         $dailyProgressPerMonth = [];
 
-        // Hitung persentase bulanan
         foreach ($monthlyDataRaw as $month => $data) {
             $persentase = round(($data['selesai'] / $data['total']) * 100, 1);
-            $monthlyAverages[$month] = $persentase; 
-            $monthlyProgressAverages[$month] = $persentase; 
+            $monthlyAverages[$month] = $persentase;
+            $monthlyProgressAverages[$month] = $persentase;
         }
 
-        // Hitung persentase harian
         foreach ($dailyDataRaw as $month => $days) {
             foreach ($days as $day => $data) {
                 $persentase = round(($data['selesai'] / $data['total']) * 100, 1);
@@ -304,7 +265,7 @@ class OfficeBoyKPIService
             'gap' => $gap,
             'pie_chart' => [
                 'above' => $jumlahTugasSelesai,
-                'below' => $jumlahTugas - $jumlahTugasSelesai,
+                'below' => max(0, $jumlahTugas - $jumlahTugasSelesai),
             ],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,

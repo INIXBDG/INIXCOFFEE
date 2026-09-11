@@ -22,7 +22,7 @@
                     <button type="button" class="btn btn-success" onclick="exportPdf()">Export PDF</button>
                     <!-- Menggunakan Gate Laravel Standar -->
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
-                        onclick="resetForm()" @can('akses-filter-sales') @else disabled @endcan>
+                        onclick="resetForm()" @can('Store Contact CRM') @else disabled @endcan>
                         Tambah Perusahaan
                     </button>
                 </div>

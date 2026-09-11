@@ -51,6 +51,39 @@
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="modalTambahSouvenir" tabindex="-1" aria-labelledby="modalTambahSouvenirLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ route('registrasi.storeSouvenir') }}" method="POST">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalTambahSouvenirLabel">Isi Data Souvenir</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Input Hidden untuk relasi tabel -->
+                            <input type="hidden" name="id_regist" id="souvenir_id_regist">
+                            <input type="hidden" name="id_rkm" id="souvenir_id_rkm">
+
+                            <div class="mb-3">
+                                <label for="id_souvenir" class="form-label">Pilih Souvenir</label>
+                                <select class="form-select" name="id_souvenir" id="id_souvenir" required>
+                                    <option value="" selected disabled>-- Pilih Souvenir --</option>
+                                    <!-- Pastikan variabel $listSouvenir di-passing dari method index controller -->
+                                    @foreach($listSouvenir as $souvenir)
+                                        <option value="{{ $souvenir->id }}">{{ $souvenir->nama_souvenir }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <style>
@@ -113,174 +146,97 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script>
+    function addSouvenir(idRegist, idRkm) {
+        $('#souvenir_id_regist').val(idRegist);
+        $('#souvenir_id_rkm').val(idRkm);
+        $('#modalTambahSouvenir').modal('show');
+    }
+
     $(document).ready(function(){
-        var idInstruktur = "{{ auth()->user()->id_instruktur }}";
-        var idSales = "{{ auth()->user()->id_sales }}";
-
-        if(idInstruktur == 'AD'){
-            var idInstruktur = "";
-        }
-        if(idSales == 'AM'){
-                var idSales = "";
-            }
-
         $('#registrasitable').DataTable({
+            "processing": true,
+            "serverSide": true, // Aktifkan Server-Side Processing
             "dom": 'Bfrtip',
             "buttons": [
+                // (Konfigurasi tombol export Anda tetap sama)
                 {
                     extend: 'excel',
                     text: 'Export to Excel',
-                    exportOptions: {
-                        columns: [ 0, 1, 2, 3, 4, 5 ] // Kolom yang akan diekspor ke Excel
-                    },
-                    filename: 'Inixindo E-office Data Registrasi', // Specify the filename here
+                    exportOptions: { columns: [ 0, 1, 2, 3, 4, 5 ] },
+                    filename: 'Inixindo E-office Data Registrasi',
                 },
                 {
                     extend: 'pdf',
                     text: 'Export to PDF',
-                    exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5] // Kolom yang akan diekspor ke PDF
-                    },
-                    filename: 'Inixindo E-office Data Registrasi', // Specify the filename here
+                    exportOptions: { columns: [0, 1, 2, 3, 4, 5] },
+                    filename: 'Inixindo E-office Data Registrasi',
                     customize: function(doc) {
-                        doc.content[1].table.widths = ['*', '*', '*', '*', '*', '*']; // Menyesuaikan lebar kolom
+                        doc.content[1].table.widths = ['*', '*', '*', '*', '*', '*'];
                         doc.content.splice(0, 1, {
                             text: 'Inixindo E-Office Data Peserta',
-                            fontSize: 12,
-                            alignment: 'center',
-                            margin: [0, 0, 0, 12] // Margin dari header
+                            fontSize: 12, alignment: 'center', margin: [0, 0, 0, 12]
                         });
-                        doc['footer'] = function(currentPage, pageCount) {
-                            return {
-                                text: 'Data Peserta ' + currentPage.toString() + ' of ' + pageCount,
-                                alignment: 'center',
-                                margin: [0, 0, 0, 12] // Margin dari footer
-                            };
-                        };
                     }
                 }
             ],
             "ajax": {
                 "url": "{{ route('getRegistrasiall') }}",
                 "type": "GET",
-                "beforeSend": function () {
-                    $('#loadingModal').modal('show');
-                    $('#loadingModal').on('show.bs.modal', function () {
-                        $('#loadingModal').removeAttr('inert');
-                    });
-                },
-                "complete": function () {
-                    setTimeout(() => {
-                        $('#loadingModal').modal('hide');
-                        $('#loadingModal').on('hidden.bs.modal', function () {
-                            $('#loadingModal').attr('inert', true);
-                        });
-                    }, 1000);
-                },
-                "error": function(xhr, error, code) {
-                    console.log("Error Code: " + code);
-                    console.log("Error Message: " + error);
-                    console.log("Response Text: " + xhr.responseText);
-                }
+                // "beforeSend": function () {
+                //     $('#loadingModal').modal('show');
+                // },
+                // "complete": function () {
+                //     setTimeout(() => { $('#loadingModal').modal('hide'); }, 500);
+                // }
             },
             "columns": [
+                { "data": "nama_peserta" },
+                { "data": "nama_perusahaan" },
+                { "data": "nama_materi" },
+                { "data": "periode" },
+                { "data": "id_instruktur" },
+                { "data": "id_sales" },
                 {
-                    "data": "peserta.nama",
-                    "render": function(data) {
-                        return data ? data : '-';
-                    }
-                },
-                {
-                    "data": "peserta.perusahaan.nama_perusahaan",
-                    "render": function(data) {
-                        return data ? data : '-';
-                    }
-                },
-                {
-                    "data": "materi.nama_materi",
-                    "render": function(data) {
-                        return data ? data : '-';
-                    }
-                },
-                {
-                    "data": null,
-                    "render": function(data) {
-                        moment.locale('id');
-                        if (data && data.rkm && data.rkm.tanggal_awal && data.rkm.tanggal_akhir) {
-                            return moment(data.rkm.tanggal_awal).format('DD MMMM YYYY') + ' s/d ' + moment(data.rkm.tanggal_akhir).format('DD MMMM YYYY');
-                        }
-                        return '-';
-                    }
-                },
-                {
-                    "data": "id_instruktur",
-                    "render": function(data) {
-                        return data ? data : '-';
-                    }
-                },
-                {
-                    "data": "id_sales",
-                    "render": function(data) {
-                        return data ? data : '-';
-                    }
-                },
-                {
-                    "data": "souvenirpeserta.souvenir.nama_souvenir",
-                    "render": function(data) {
-                        if (!data) {
-                            return '-';
-                        } else {
+                    "data": "nama_souvenir",
+                    "render": function(data, type, row) {
+                        if (data) {
                             return data;
+                        } else {
+                            var actionBtn = '-';
+                            @can('Edit Registrasi')
+                            actionBtn = '<button type="button" class="btn btn-sm btn-primary py-0 px-2" style="font-size: 12px;" onclick="addSouvenir(' + row.id + ', ' + row.id_rkm + ')">+ Souvenir</button>';
+                            @endcan
+                            return actionBtn;
                         }
-                    }
-                },
-                {
-                    "data": null,
-                    "render": function(data) {
-                        moment.locale('id');
-                        return data && data.created_at ? moment(data.created_at).format('YYYY-MM-DD') : '-';
                     },
-                    "visible": false,
+                    "orderable": false
                 },
+                { "data": "created_at", "visible": false },
                 {
-                    "data": null,
+                    "data": "id",
                     "render": function(data, type, row) {
                         var actions = "";
-                                actions += '@if (auth()->user()->can('Edit Registrasi') || auth()->user()->can('Delete Registrasi'))'
-                                actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                                actions += '@can('Edit Registrasi')';
-                                actions += '<a class="dropdown-item" href="{{ url('/registrasi') }}/' + row.id + '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
-                                actions += '@endcan';
-                                actions += '@can('Delete Registrasi')';
-                                actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/registrasi') }}/' + row.id + '" method="POST">';
-                                actions += '@csrf';
-                                actions += '@method('DELETE')';
-                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                                actions += '</form>';
-                                actions += '@endcan';
-                                actions += '</div>';
-                                actions += '</div>';
-                                actions += '@else';
-                                actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions += '</div>';
-                                actions += '@endif';
+                        @if (auth()->user()->can('Edit Registrasi') || auth()->user()->can('Delete Registrasi'))
+                            actions += '<div class="dropdown">';
+                            actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown">Actions</button>';
+                            actions += '<div class="dropdown-menu">';
+                            @can('Edit Registrasi')
+                            actions += '<a class="dropdown-item" href="{{ url('/registrasi') }}/' + row.id + '/edit">Edit</a>';
+                            @endcan
+                            @can('Delete Registrasi')
+                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/registrasi') }}/' + row.id + '" method="POST">@csrf @method("DELETE") <button type="submit" class="dropdown-item">Hapus</button></form>';
+                            @endcan
+                            actions += '</div></div>';
+                        @else
+                            actions += '<button class="btn dropdown-toggle disabled" type="button">Actions</button>';
+                        @endif
                         return actions;
-                    }
+                    },
+                    "orderable": false
                 },
             ],
-            "order": [[7, 'desc']],
-            "columnDefs": [{"targets": [7], "type": "date"}],
-            "initComplete": function() {
-                this.api().columns(4).search(idInstruktur).draw();
-                this.api().columns(5).search(idSales).draw();
-            }
+            "order": [[7, 'desc']] // Urutkan default berdasarkan created_at
         });
-
-
-
     });
 </script>
 @endpush

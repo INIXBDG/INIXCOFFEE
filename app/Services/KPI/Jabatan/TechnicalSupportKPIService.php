@@ -33,8 +33,8 @@ class TechnicalSupportKPIService
         $end = Carbon::create($tahun, 12, 31, 23, 59, 59, 'Asia/Jakarta');
 
         $idKaryawans = detailPersonKPI::where('detailTargetKey', $detail->id)
+            ->distinct()
             ->pluck('id_karyawan')
-            ->unique()
             ->toArray();
 
         if (empty($idKaryawans)) {
@@ -62,7 +62,6 @@ class TechnicalSupportKPIService
             ->toArray();
 
         $keperluanPatterns = [];
-
         foreach ($picJabatan as $jabatan) {
             if (str_contains($jabatan, 'programmer') || str_contains($jabatan, 'koordinator itsm')) {
                 $keperluanPatterns[] = 'Programming';
@@ -70,7 +69,6 @@ class TechnicalSupportKPIService
                 $keperluanPatterns[] = 'Technical Support';
             }
         }
-
         $keperluanPatterns = array_unique($keperluanPatterns);
 
         if (empty($keperluanPatterns)) {
@@ -78,6 +76,7 @@ class TechnicalSupportKPIService
         }
 
         $ticketQuery = DB::table('tickets')
+            ->select('created_at', 'tanggal_response', 'jam_response', 'tanggal_selesai', 'jam_selesai')
             ->whereIn('keperluan', $keperluanPatterns)
             ->whereBetween('created_at', [$start, $end])
             ->whereNotNull('tanggal_selesai');
@@ -87,7 +86,6 @@ class TechnicalSupportKPIService
             if (!$karyawanData) {
                 return 0;
             }
-
             $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
             $ticketQuery->where('pic', $firstName);
         } else {
@@ -129,7 +127,6 @@ class TechnicalSupportKPIService
                 }
 
                 $hours = $this->hitungJamKerja($startAt, $resolvedAt);
-
                 $total++;
 
                 if ($hours <= 8) {
@@ -140,11 +137,7 @@ class TechnicalSupportKPIService
             }
         }
 
-        if ($total === 0) {
-            return 0;
-        }
-
-        return round(($met / $total) * 100, 1);
+        return $total === 0 ? 0 : round(($met / $total) * 100, 1);
     }
 
     public function calculateTingkatKeberhasilanSupportMemenuhiSLADetail($itemDetail, $personId = null)
@@ -166,34 +159,25 @@ class TechnicalSupportKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
+        $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)
+            ->when($personId, fn($q) => $q->where('id_karyawan', $personId))
+            ->distinct()
+            ->pluck('id_karyawan')
+            ->toArray();
+
         $picNames = [];
-
-        if ($personId !== null) {
-            $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)
-                ->where('id_karyawan', $personId)
-                ->pluck('id_karyawan')->unique()->toArray();
-        } else {
-            $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)
-                ->pluck('id_karyawan')->unique()->toArray();
-        }
-
         if (!empty($idKaryawans)) {
-            $namaLengkapList = karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray();
-            $picNames = array_map(fn($nama) => explode(' ', trim($nama))[0] ?? '', $namaLengkapList);
+            $picNames = array_filter(array_map(
+                fn($nama) => explode(' ', trim($nama))[0] ?? '',
+                karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray()
+            ));
         }
-
-        $picNames = array_filter($picNames);
 
         if (empty($picNames)) {
             return $this->getDefaultDetailResponse();
         }
 
         $targetJabatanList = $details->pluck('jabatan')->unique()->toArray();
-
-        if (empty($targetJabatanList)) {
-            return $this->getDefaultDetailResponse();
-        }
-
         $keperluanPatterns = [];
 
         foreach ($targetJabatanList as $jabatan) {
@@ -204,7 +188,6 @@ class TechnicalSupportKPIService
                 $keperluanPatterns[] = 'Technical Support';
             }
         }
-
         $keperluanPatterns = array_unique($keperluanPatterns);
 
         if (empty($keperluanPatterns)) {
@@ -229,16 +212,16 @@ class TechnicalSupportKPIService
 
         foreach ($rawTickets as $ticket) {
             try {
-                $createdAt = Carbon::parse($ticket->created_at);
+                $createdAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
 
                 $responseAt = null;
                 if (!empty($ticket->tanggal_response) && !empty($ticket->jam_response)) {
-                    $responseAt = Carbon::createFromFormat('Y-m-d H:i:s', $ticket->tanggal_response . ' ' . $ticket->jam_response);
+                    $responseAt = Carbon::createFromFormat('Y-m-d H:i:s', $ticket->tanggal_response . ' ' . $ticket->jam_response, 'Asia/Jakarta');
                 }
 
                 $resolvedAt = null;
                 if (!empty($ticket->tanggal_selesai) && !empty($ticket->jam_selesai)) {
-                    $resolvedAt = Carbon::createFromFormat('Y-m-d H:i:s', $ticket->tanggal_selesai . ' ' . $ticket->jam_selesai);
+                    $resolvedAt = Carbon::createFromFormat('Y-m-d H:i:s', $ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
                 }
 
                 if (!$resolvedAt || !$createdAt) {
@@ -246,9 +229,7 @@ class TechnicalSupportKPIService
                 }
 
                 $totalTickets++;
-
                 $startResolution = $responseAt ?? $createdAt;
-
                 $actualResolutionHours = $this->hitungJamKerja($startResolution, $resolvedAt);
                 $metSLA = $actualResolutionHours <= 8;
 
@@ -267,12 +248,9 @@ class TechnicalSupportKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $progress = round(($resolutionMet / $totalTickets) * 100, 1);
-        $progress = min($progress, 100);
-
+        $progress = round(min(($resolutionMet / $totalTickets) * 100, 100), 1);
         $gapRaw = $progress - $nilaiTarget;
-        $gap = $gapRaw < 0 ? abs($gapRaw) : 0;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gap), '0'), '.');
+        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $above = $resolutionMet;
         $below = $totalTickets - $resolutionMet;
@@ -291,7 +269,6 @@ class TechnicalSupportKPIService
 
             $monthlyData[$monthKey][] = $dailyAvg;
             $dailyBreakdownPerMonth[$monthKey][$dayKey] = $dailyAvg;
-
             $monthlyProgress[$monthKey][] = $dailyAvg;
             $dailyProgressPerMonth[$monthKey][$dayKey] = $dailyAvg;
         }
@@ -340,25 +317,18 @@ class TechnicalSupportKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $query = PenilaianExam::selectRaw('id_rkm, AVG(nilai_emote) as nilai')
+        $data = PenilaianExam::selectRaw('id_rkm, AVG(nilai_emote) as nilai')
             ->whereBetween('created_at', [$start, $end])
             ->whereNotNull('id_rkm')
-            ->groupBy('id_rkm');
-
-        $data = $query->get();
+            ->groupBy('id_rkm')
+            ->get();
 
         $totalPenilaian = $data->count();
-
         if ($totalPenilaian == 0) {
             return 0.0;
         }
 
-        $qualifiedPenilaian = $data
-            ->filter(function ($item) {
-                return $item->nilai >= 3.5;
-            })
-            ->count();
-
+        $qualifiedPenilaian = $data->filter(fn($item) => $item->nilai >= 3.5)->count();
         $progress = ($qualifiedPenilaian / $totalPenilaian) * 100;
 
         return round($progress, 1);
@@ -382,26 +352,22 @@ class TechnicalSupportKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $queryKPI = PenilaianExam::selectRaw('id_rkm, AVG(nilai_emote) as nilai')
+        $dataKPI = PenilaianExam::selectRaw('id_rkm, AVG(nilai_emote) as nilai')
             ->whereBetween('created_at', [$start, $end])
             ->whereNotNull('id_rkm')
-            ->groupBy('id_rkm');
-
-        $dataKPI = $queryKPI->get();
+            ->groupBy('id_rkm')
+            ->get();
 
         $totalPenilaian = $dataKPI->count();
-
         if ($totalPenilaian == 0) {
             return $this->getDefaultDetailResponse();
         }
 
         $qualifiedPenilaian = $dataKPI->filter(fn($item) => $item->nilai >= 3.5)->count();
-
-        $presentase = ($qualifiedPenilaian / $totalPenilaian) * 100;
-        $progress = round($presentase, 1);
+        $progress = round(($qualifiedPenilaian / $totalPenilaian) * 100, 1);
 
         $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $above = $qualifiedPenilaian;
         $below = $totalPenilaian - $qualifiedPenilaian;
@@ -412,11 +378,8 @@ class TechnicalSupportKPIService
             ->get();
 
         $dailyValues = [];
-
         foreach ($allExams as $exam) {
-            $tanggal = Carbon::parse($exam->created_at);
-            $dateKey = $tanggal->format('Y-m-d');
-
+            $dateKey = Carbon::parse($exam->created_at)->format('Y-m-d');
             $nilaiItem = $exam->nilai_emote >= 3.5 ? 100 : 0;
             $dailyValues[$dateKey][] = $nilaiItem;
         }
@@ -438,7 +401,6 @@ class TechnicalSupportKPIService
 
             $monthlyData[$monthKey][] = $avg;
             $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
-
             $monthlyProgress[$monthKey][] = $avg;
             $dailyProgressPerMonth[$monthKey][$dayKey] = $avg;
         }

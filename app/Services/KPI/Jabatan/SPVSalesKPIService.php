@@ -35,16 +35,7 @@ class SPVSalesKPIService
             return 0;
         }
 
-        $progress = 0;
-
-        $peluang = ApprovalPendapatan::whereYear('created_at', $tahun)
-            ->get();
-
-        foreach ($peluang as $p) {
-            $bersih = $p->total_penjualan_bersih;
-
-            $progress += $bersih;
-        }
+        $progress = (float) (ApprovalPendapatan::whereYear('created_at', $tahun)->sum('total_penjualan_bersih') ?? 0);
 
         return round($progress);
     }
@@ -74,19 +65,18 @@ class SPVSalesKPIService
             return $emptyResponse;
         }
 
-        $approvals = ApprovalPendapatan::whereYear('created_at', $tahun)->get();
+        $approvals = ApprovalPendapatan::select('created_at', 'total_penjualan_bersih')
+            ->whereYear('created_at', $tahun)
+            ->get();
 
         $progress = 0;
         $dailyBreakdownPerMonth = [];
 
         foreach ($approvals as $approval) {
-
             $bersih = (float) $approval->total_penjualan_bersih;
-
             $progress += $bersih;
 
             $date = Carbon::parse($approval->created_at);
-
             $monthKey = $date->format('Y-m');
             $dayKey   = $date->format('Y-m-d');
 
@@ -108,36 +98,25 @@ class SPVSalesKPIService
         $dailyProgressPerMonth = [];
 
         foreach ($dailyBreakdownPerMonth as $month => $days) {
-
             $totalMonth = array_sum($days);
-
-            // jika ingin TOTAL per bulan
             $monthlyData[$month] = $totalMonth;
 
-            $monthlyProgress[$month] = $nilaiTarget > 0
-                ? ($totalMonth / $nilaiTarget) * 100
-                : 0;
+            $monthlyProgress[$month] = $nilaiTarget > 0 ? ($totalMonth / $nilaiTarget) * 100 : 0;
 
             foreach ($days as $day => $value) {
-                $dailyProgressPerMonth[$month][$day] = $nilaiTarget > 0
-                    ? ($value / $nilaiTarget) * 100
-                    : 0;
+                $dailyProgressPerMonth[$month][$day] = $nilaiTarget > 0 ? ($value / $nilaiTarget) * 100 : 0;
             }
         }
 
         $gap = $progress - $nilaiTarget;
 
         return [
-            // samakan dengan original
             'progress' => round($progress),
-
             'gap' => $gap,
-
             'pie_chart' => [
                 'above' => max($gap, 0),
                 'below' => abs(min($gap, 0)),
             ],
-
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgress,
@@ -154,26 +133,14 @@ class SPVSalesKPIService
         }
 
         $tahun = (int) $detail->detail_jangka;
-        $target = $detail->nilai_target; // Konversi ke float untuk akurasi komparasi
+        $target = $detail->nilai_target;
         $start = Carbon::create($tahun, 1, 1)->startOfDay();
         $end = Carbon::create($tahun, Carbon::now()->month, Carbon::now()->daysInMonth)->endOfDay();
 
-        Log::info("calculateCustomerAcquisitionCost - Inisialisasi Parameter", [
-            'target_id' => $item->id,
-            'person_id' => $personId,
-            'tahun' => $tahun,
-            'nilai_target_persentase' => $target,
-            'start_date' => $start->toDateString(),
-            'end_date' => $end->toDateString(),
-        ]);
-
-        $data = ApprovalPendapatanSales::with('pendapatan')
-                ->whereBetween('tanggal_mulai', [$start, $end])
-                ->get();
-
-        Log::info("calculateCustomerAcquisitionCost - Kueri Selesai", [
-            'jumlah_data_ditemukan' => $data->count(),
-        ]);
+        $data = ApprovalPendapatanSales::select('id', 'tanggal_mulai', 'total_pa', 'oleh_oleh', 'entertainment', 'total_cashback', 'total_uang_saku', 'total_akomodasi', 'biaya_transport', 'harga_net', 'pax')
+            ->with(['pendapatan:pax,harga_net'])
+            ->whereBetween('tanggal_mulai', [$start, $end])
+            ->get();
 
         if ($data->isEmpty()) return 0;
 
@@ -181,48 +148,28 @@ class SPVSalesKPIService
         $dataAkuisisiTidakTerdata = 0;
         $achieve = 0;
 
-        foreach ($data as $index => $row) {
+        foreach ($data as $row) {
             $hargaNet = ($row->pendapatan?->pax ?? 0) * ($row->pendapatan?->harga_net ?? 0);
-
-            $biayaPenjualan = ($row->total_pa + $row->oleh_oleh + $row->entertainment +
-                                    $row->total_cashback + $row->total_uang_saku +
-                                    $row->total_akomodasi + $row->biaya_transport);
-
-            $selisihBiayaUtama = ($row->harga_net * $row->pax) - $hargaNet;
-
-            if ($biayaPenjualan > $selisihBiayaUtama) {
-                $selisihBiaya = $biayaPenjualan - $selisihBiayaUtama;
-            } else {
-                $selisihBiaya = 0;
-            }
+            $biayaPenjualan = (float) ($row->total_pa + $row->oleh_oleh + $row->entertainment + $row->total_cashback + $row->total_uang_saku + $row->total_akomodasi + $row->biaya_transport);
+            $selisihBiayaUtama = (float) (($row->harga_net * $row->pax) - $hargaNet);
+            $selisihBiaya = $biayaPenjualan > $selisihBiayaUtama ? ($biayaPenjualan - $selisihBiayaUtama) : 0;
 
             if ($selisihBiaya <= 0) {
                 $dataAkuisisiTidakTerdata++;
                 continue;
             } else {
                 $totalDataAkuisisi++;
-
                 if ($hargaNet > 0) {
                     $persentase = ($selisihBiaya / $hargaNet) * 100;
-
-                    $isAchieved = $persentase <= 10;
-
-                    if ($isAchieved) {
+                    if ($persentase <= 10) {
                         $achieve++;
                     }
-                } else {
-                    Log::warning("calculateCustomerAcquisitionCost - Harga Net = 0 (Pembagian Dihindari)", [
-                        'row_id' => $row->id ?? 'unknown',
-                    ]);
                 }
             }
         }
 
-        if ($data->count() > 0) {
-            $progress = round(($achieve + $dataAkuisisiTidakTerdata) / $data->count() * 100, 2);
-        } else {
-            $progress = 0;
-        }
+        $totalCount = $data->count();
+        $progress = $totalCount > 0 ? round((($achieve + $dataAkuisisiTidakTerdata) / $totalCount) * 100, 2) : 0;
 
         return $progress;
     }
@@ -231,7 +178,6 @@ class SPVSalesKPIService
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
-        // 1. Validasi Input
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             return $this->getDefaultDetailResponse();
         }
@@ -246,16 +192,15 @@ class SPVSalesKPIService
         $start = Carbon::create($tahun, 1, 1)->startOfDay();
         $end = Carbon::create($tahun, 12, 31)->endOfDay();
 
-        // 2. Ambil data dengan relasi
-        $data = ApprovalPendapatanSales::with('pendapatan')
-                ->whereBetween('tanggal_mulai', [$start, $end])
-                ->get();
+        $data = ApprovalPendapatanSales::select('id', 'tanggal_mulai', 'total_pa', 'oleh_oleh', 'entertainment', 'total_cashback', 'total_uang_saku', 'total_akomodasi', 'biaya_transport', 'harga_net', 'pax')
+            ->with(['pendapatan:pax,harga_net'])
+            ->whereBetween('tanggal_mulai', [$start, $end])
+            ->get();
 
         if ($data->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        // 3. Inisialisasi Variabel Kalkulasi
         $totalDataAkuisisi = 0;
         $dataAkuisisiTidakTerdata = 0;
         $achieve = 0;
@@ -265,31 +210,23 @@ class SPVSalesKPIService
         $totalDataPerDay = [];
         $achievedDataPerDay = [];
 
-        // 4. Proses Iterasi dengan Logika Baru
         foreach ($data as $row) {
             $date = Carbon::parse($row->tanggal_mulai);
             $dateKey = $date->format('Y-m-d');
             $monthKey = $date->format('Y-m');
 
-            // Inisialisasi array matriks
             $totalDataPerMonth[$monthKey] = ($totalDataPerMonth[$monthKey] ?? 0) + 1;
             $totalDataPerDay[$monthKey][$dateKey] = ($totalDataPerDay[$monthKey][$dateKey] ?? 0) + 1;
-
             $achievedDataPerMonth[$monthKey] = $achievedDataPerMonth[$monthKey] ?? 0;
             $achievedDataPerDay[$monthKey][$dateKey] = $achievedDataPerDay[$monthKey][$dateKey] ?? 0;
 
-            // Kalkulasi Biaya
             $hargaNet = ($row->pendapatan?->pax ?? 0) * ($row->pendapatan?->harga_net ?? 0);
-            $biayaPenjualan = (float) ($row->total_pa + $row->oleh_oleh + $row->entertainment +
-                                    $row->total_cashback + $row->total_uang_saku +
-                                    $row->total_akomodasi + $row->biaya_transport);
-
+            $biayaPenjualan = (float) ($row->total_pa + $row->oleh_oleh + $row->entertainment + $row->total_cashback + $row->total_uang_saku + $row->total_akomodasi + $row->biaya_transport);
             $selisihBiayaUtama = (float) (($row->harga_net * $row->pax) - $hargaNet);
-            $selisihBiaya = ($biayaPenjualan > $selisihBiayaUtama) ? ($biayaPenjualan - $selisihBiayaUtama) : 0;
+            $selisihBiaya = $biayaPenjualan > $selisihBiayaUtama ? ($biayaPenjualan - $selisihBiayaUtama) : 0;
 
             $isRowAchieved = false;
 
-            // Validasi Capaian (Achieved)
             if ($selisihBiaya <= 0) {
                 $dataAkuisisiTidakTerdata++;
                 $isRowAchieved = true;
@@ -304,18 +241,15 @@ class SPVSalesKPIService
                 }
             }
 
-            // Perekaman Data Capaian ke Matriks
             if ($isRowAchieved) {
                 $achievedDataPerMonth[$monthKey]++;
                 $achievedDataPerDay[$monthKey][$dateKey]++;
             }
         }
 
-        // 5. Kalkulasi Progress Utama
         $totalCount = $data->count();
         $progress = $totalCount > 0 ? round((($achieve + $dataAkuisisiTidakTerdata) / $totalCount) * 100, 2) : 0;
 
-        // 6. Penyiapan Data Grafik Bulanan dan Harian
         $monthlyData = [];
         $monthlyProgress = [];
         $dailyBreakdownPerMonth = [];
@@ -335,7 +269,6 @@ class SPVSalesKPIService
             }
         }
 
-        // 7. Kalkulasi Metrik Final
         $gapRaw = ($progress > $nilaiTarget) ? 0 : ($progress - $nilaiTarget);
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
@@ -344,7 +277,7 @@ class SPVSalesKPIService
             'gap' => $gap,
             'pie_chart' => [
                 'above' => $achieve + $dataAkuisisiTidakTerdata,
-                'below' => ($achieve + $dataAkuisisiTidakTerdata) - $data->count()
+                'below' => max(0, $totalCount - ($achieve + $dataAkuisisiTidakTerdata))
             ],
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
@@ -367,9 +300,13 @@ class SPVSalesKPIService
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
-
-        $Saless = karyawan::where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi')
+        $Saless = karyawan::select('id', 'kode_karyawan')
+            ->where('status_aktif', '1')
+            ->whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi')
             ->where('jabatan', 'Sales')
             ->get();
 
@@ -377,19 +314,17 @@ class SPVSalesKPIService
             return 0;
         }
 
-        // ✅ PERBAIKAN 1: Hanya hitung dari awal tahun sampai hari ini
         $startDate = Carbon::create($tahun, 1, 1);
         $endDate = min(Carbon::create($tahun, 12, 31), now());
 
-        // Jika tanggal mulai lebih besar dari tanggal akhir, return 0
         if ($startDate > $endDate) {
             return 0;
         }
 
         $period = CarbonPeriod::create($startDate, $endDate);
 
-        // ✅ OPTIMASI 2: Load semua aktivitas sekali saja (hindari query di dalam loop)
-        $activities = Aktivitas::whereYear('created_at', $tahun)
+        $activities = Aktivitas::select('id_sales', 'created_at')
+            ->whereYear('created_at', $tahun)
             ->whereIn('id_sales', $Saless->pluck('kode_karyawan'))
             ->get()
             ->groupBy(function ($item) {
@@ -408,9 +343,7 @@ class SPVSalesKPIService
             $dateKey = $date->format('Y-m-d');
 
             foreach ($Saless as $sales) {
-                // Cek di array yang sudah di-load, bukan query database
                 $key = $sales->kode_karyawan . '_' . $dateKey;
-
                 if (isset($activities[$key])) {
                     $totalAktif++;
                 }
@@ -453,8 +386,13 @@ class SPVSalesKPIService
             return $emptyResponse;
         }
 
-        $Saless = karyawan::where('Divisi', '!=', 'Direksi')
-            ->where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)
+        $Saless = karyawan::select('id', 'kode_karyawan')
+            ->where('Divisi', '!=', 'Direksi')
+            ->where('status_aktif', '1')
+            ->whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
             ->where('jabatan', 'Sales')
             ->get();
 
@@ -471,7 +409,8 @@ class SPVSalesKPIService
 
         $period = CarbonPeriod::create($startDate, $endDate);
 
-        $activities = Aktivitas::whereYear('created_at', $tahun)
+        $activities = Aktivitas::select('user_id', 'created_at')
+            ->whereYear('created_at', $tahun)
             ->get()
             ->groupBy(function ($item) {
                 return $item->user_id . '_' . Carbon::parse($item->created_at)->format('Y-m-d');
@@ -592,27 +531,19 @@ class SPVSalesKPIService
         }
 
         $kodeKaryawan = null;
-        $karyawanData = null;
 
         if ($personId !== null && $personId !== 'null' && $personId !== '') {
             $karyawanData = karyawan::find($personId);
             $kodeKaryawan = $karyawanData ? $karyawanData->kode_karyawan : null;
-            
-            if (!$kodeKaryawan) {
-                Log::warning("calculatePendapatanPenjualanProject: Kode karyawan tidak ditemukan untuk personId: {$personId}");
-            }
         }
 
-        $query = LeadProject::where('status', 'won')
-            ->where('tahun_periode', $tahun);
+        $query = LeadProject::where('status', 'won')->where('tahun_periode', $tahun);
 
         if ($kodeKaryawan) {
             $query->where('lead_projects.sales_id', $kodeKaryawan);
         }
 
-        $totalSales = (float) ($query
-            ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total_sales'))
-            ->value('total_sales') ?? 0);
+        $totalSales = (float) ($query->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total_sales'))->value('total_sales') ?? 0);
 
         return $totalSales;
     }
@@ -641,14 +572,12 @@ class SPVSalesKPIService
         $kodeKaryawan = null;
         $karyawanData = null;
 
-        // Perbaikan: Menambahkan logika inisialisasi $kodeKaryawan berdasarkan $personId
         if ($personId !== null) {
             $karyawanData = karyawan::find($personId);
             $kodeKaryawan = $karyawanData ? $karyawanData->kode_karyawan : null;
         }
 
-        $query = LeadProject::where('status', 'won')
-            ->where('tahun_periode', $tahun);
+        $query = LeadProject::where('status', 'won')->where('tahun_periode', $tahun);
 
         if ($kodeKaryawan) {
             $query->where('lead_projects.sales_id', $kodeKaryawan);
@@ -670,16 +599,8 @@ class SPVSalesKPIService
             $total = (float) ($row->total ?? 0);
 
             $totalSales += $total;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-            }
             $dailyBreakdownPerMonth[$monthKey][$dateKey] = (float) number_format($total, 1, '.', '');
-
-            if (!isset($monthlyDataTemp[$monthKey])) {
-                $monthlyDataTemp[$monthKey] = 0;
-            }
-            $monthlyDataTemp[$monthKey] += $total;
+            $monthlyDataTemp[$monthKey] = ($monthlyDataTemp[$monthKey] ?? 0) + $total;
 
             $month = (int) $date->format('m');
             $triwulan = (int) ceil($month / 3);
@@ -713,9 +634,7 @@ class SPVSalesKPIService
         $dailyProgressPerMonth = [];
 
         foreach ($monthlyData as $month => $value) {
-            $monthlyProgress[$month] = $targetGlobal > 0
-                ? (float) number_format(((float)$value / $targetGlobal) * 100, 1, '.', '')
-                : 0;
+            $monthlyProgress[$month] = $targetGlobal > 0 ? (float) number_format(((float)$value / $targetGlobal) * 100, 1, '.', '') : 0;
         }
 
         foreach ($dailyBreakdownPerMonth as $month => $days) {
@@ -723,9 +642,7 @@ class SPVSalesKPIService
                 if (!isset($dailyProgressPerMonth[$month])) {
                     $dailyProgressPerMonth[$month] = [];
                 }
-                $dailyProgressPerMonth[$month][$day] = $targetGlobal > 0
-                    ? (float) number_format(((float)$value / $targetGlobal) * 100, 1, '.', '')
-                    : 0;
+                $dailyProgressPerMonth[$month][$day] = $targetGlobal > 0 ? (float) number_format(((float)$value / $targetGlobal) * 100, 1, '.', '') : 0;
             }
         }
 
@@ -749,35 +666,36 @@ class SPVSalesKPIService
                     ->orWhere('jabatan', 'Account Manager')
                     ->orWhereNull('jabatan')
                     ->where('status_aktif', '1');
-            })
-            ->get();
+            })->get();
+
+            $salesKeys = $allKaryawan->pluck('kode_karyawan')->filter();
+            
+            $salesRevenues = LeadProject::where('status', 'won')
+                ->where('tahun_periode', $tahun)
+                ->whereIn('sales_id', $salesKeys)
+                ->select('sales_id', DB::raw('SUM(estimasi_nilai) as total'))
+                ->groupBy('sales_id')
+                ->pluck('total', 'sales_id');
+
+            $detailPersons = detailPersonKPI::where('id_target', $itemDetail->id)
+                ->whereIn('id_karyawan', $allKaryawan->pluck('id'))
+                ->get()
+                ->keyBy('id_karyawan');
 
             foreach ($allKaryawan as $karyawanItem) {
                 $salesKey = $karyawanItem->kode_karyawan;
                 if (!$salesKey) continue;
 
-                $salesRevenue = LeadProject::where('status', 'won')
-                    ->where('tahun_periode', $tahun)
-                    ->where('sales_id', $salesKey)
-                    ->select(DB::raw('SUM(estimasi_nilai) as total'))
-                    ->value('total');
-
-                $salesRevenue = (float) ($salesRevenue ?? 0);
-
-                $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)
-                    ->where('id_karyawan', $karyawanItem->id)
-                    ->first();
-
-                $presentaseKemampuan = (float) ($detailPerson->presentase_kemampuan ?? 0);
-                $idDetailPerson = $detailPerson->id ?? null;
-
+                $salesRevenue = (float) ($salesRevenues[$salesKey] ?? 0);
+                $detailPerson = $detailPersons->get($karyawanItem->id);
+                $presentaseKemampuan = (float) ($detailPerson?->presentase_kemampuan ?? 0);
                 $percentage = $presentaseKemampuan > 0 ? ($salesRevenue / $presentaseKemampuan) * 100 : 0;
 
                 $allSalesData[] = [
                     'kode_karyawan' => (string) $salesKey,
                     'nama' => (string) ($karyawanItem->nama_lengkap ?? $karyawanItem->nama ?? $salesKey),
                     'revenue' => (float) number_format($salesRevenue, 1, '.', ''),
-                    'id_detailPerson' => $idDetailPerson,
+                    'id_detailPerson' => $detailPerson?->id,
                     'presentase_kemampuan' => (float) number_format($presentaseKemampuan, 1, '.', ''),
                     'percentage' => (float) number_format($percentage, 1, '.', ''),
                     'status' => $salesRevenue >= $presentaseKemampuan ? 'achieved' : 'pending'
@@ -789,15 +707,9 @@ class SPVSalesKPIService
                 'data' => $allSalesData
             ];
         } else {
-            $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)
-                ->where('id_karyawan', $personId)
-                ->first();
-
-            $presentaseKemampuan = (float) ($detailPerson->presentase_kemampuan ?? 0);
-            $idDetailPerson = $detailPerson->id ?? null;
-
+            $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)->where('id_karyawan', $personId)->first();
+            $presentaseKemampuan = (float) ($detailPerson?->presentase_kemampuan ?? 0);
             $percentage = $presentaseKemampuan > 0 ? ($totalSales / $presentaseKemampuan) * 100 : 0;
-
             $karyawanName = $karyawanData ? ($karyawanData->nama_lengkap ?? $karyawanData->nama ?? '') : '';
 
             $salesPerformance = [
@@ -806,7 +718,7 @@ class SPVSalesKPIService
                     'kode_karyawan' => (string) $kodeKaryawan,
                     'nama' => (string) $karyawanName,
                     'revenue' => (float) number_format($totalSales, 1, '.', ''),
-                    'id_detailPerson' => $idDetailPerson,
+                    'id_detailPerson' => $detailPerson?->id,
                     'presentase_kemampuan' => (float) number_format($presentaseKemampuan, 1, '.', ''),
                     'percentage' => (float) number_format($percentage, 1, '.', ''),
                     'status' => $totalSales >= $presentaseKemampuan ? 'achieved' : 'pending'
@@ -817,9 +729,7 @@ class SPVSalesKPIService
         return [
             'progress' => round($progressGlobal, 1),
             'gap' => round($gap, 1),
-            'dataManual' => [
-                'manual_document' => $detail->manual_document,
-            ],
+            'dataManual' => ['manual_document' => $detail->manual_document ?? null],
             'pie_chart' => ['above' => $above, 'below' => $below],
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
@@ -840,7 +750,6 @@ class SPVSalesKPIService
         }
 
         $tahun = (int) $detail->detail_jangka;
-        $target = (int) $detail->nilai_target;
 
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
@@ -888,15 +797,7 @@ class SPVSalesKPIService
             $jumlah = (int) $row->total;
 
             $totalLead += $jumlah;
-
-            if (!isset($monthlyDataTemp[$monthKey])) {
-                $monthlyDataTemp[$monthKey] = 0;
-            }
-            $monthlyDataTemp[$monthKey] += $jumlah;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-            }
+            $monthlyDataTemp[$monthKey] = ($monthlyDataTemp[$monthKey] ?? 0) + $jumlah;
             $dailyBreakdownPerMonth[$monthKey][$dayKey] = $jumlah;
 
             $triwulan = (int) ceil($date->month / 3);
@@ -926,11 +827,9 @@ class SPVSalesKPIService
         $gap = $totalLead - $targetTahunan;
 
         return [
-            'progress' => round($totalLead,),
+            'progress' => round($totalLead),
             'gap' => $gap,
-            'dataManual' => [
-                'manual_document' => $detail->manual_document ?? null,
-            ],
+            'dataManual' => ['manual_document' => $detail->manual_document ?? null],
             'pie_chart' => [
                 'above' => $totalLead >= $targetTahunan ? 1 : 0,
                 'below' => $totalLead >= $targetTahunan ? 0 : 1,

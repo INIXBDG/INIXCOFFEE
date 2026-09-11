@@ -207,6 +207,12 @@ Route::middleware('auth')
     })
     ->name('notifications.unread-count');
 
+Route::middleware('auth')
+    ->get('/notifications/modal-content', function () {
+        return view('partials.notifications');
+    })
+    ->name('notifications.modal-content');
+
 Route::get('/daily-activities-data', [DailyActivityController::class, 'activitiesData']);
 
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
@@ -621,6 +627,8 @@ Route::get('/penilaian360/index/{id_karyawan}', [KPIDatabaseKPIController::class
 Route::get('/penilaian360/get/{id_karyawan}', [KPIDatabaseKPIController::class, 'get360'])->name('get360');
 Route::get('/template/list', [KPIDatabaseKPIController::class, 'getTemplateList'])->name('template.list');
 Route::get('/template/load/{kodeKategori}', [KPIDatabaseKPIController::class, 'loadTemplate'])->name('template.load');
+Route::get('/penilaian/form/evaluators', [KPIDatabaseKPIController::class, 'getEvaluatorsByForm'])->name('penilaian.form.evaluators');
+Route::post('/penilaian/form/update-divisi-evaluator', [KPIDatabaseKPIController::class, 'updateDivisiEvaluator'])->name('penilaian.form.updateDivisiEvaluator');
 
 Route::post('/pengajuan-klaim/excel-download', [pengajuanKlaimController::class, 'pengajuanKlaimExcel'])->name('pengajuanklaim.excel');
 Route::post('/pengajuan-klaim/pdf-download', [pengajuanKlaimController::class, 'pengajuanKlaimPDF'])->name('pengajuanklaim.PDF');
@@ -679,6 +687,7 @@ Route::get('registrasi/export/excel', [App\Http\Controllers\RegistrasiController
 Route::get('registrasi/export/pdf', [App\Http\Controllers\RegistrasiController::class, 'exportPDF'])->name('registrasi.exportPDF');
 Route::get('registrasi/export/excels', [App\Http\Controllers\RegistrasiController::class, 'exportExcelKhusus'])->name('registrasi.exportExcels');
 Route::get('registrasi/export/pdfs', [App\Http\Controllers\RegistrasiController::class, 'exportPDFKhusus'])->name('registrasi.exportPDFs');
+Route::post('/registrasi/souvenir', [\App\Http\Controllers\RegistrasiController::class, 'storeSouvenir'])->name('registrasi.storeSouvenir');
 Route::get('peserta/export/excels', [App\Http\Controllers\PesertaController::class, 'exportExcelKhusus'])->name('peserta.exportExcels');
 Route::get('peserta/export/pdfs', [App\Http\Controllers\PesertaController::class, 'exportPDFKhusus'])->name('peserta.exportPDFs');
 Route::get('feedback/export/excels/{id}', [App\Http\Controllers\feedbackController::class, 'exportExcelKhusus'])->name('feedback.exportExcels');
@@ -749,7 +758,7 @@ Route::prefix('crm')->group(function () {
     Route::get('/profile', [CRMController::class, 'getProfile'])
         ->middleware('auth')
         ->name('crm.profile');
-    // Dashboard Global    
+    // Dashboard Global
     Route::get('/chartRKM', [CRMController::class, 'chartRKM'])->name('chartRKM');
     Route::get('/chartPerusahaan', [CRMController::class, 'chartPerusahaan'])->name('chartPerusahaan');
     Route::get('/chartClosed', [CRMController::class, 'chartClosed'])->name('chartClosed');
@@ -798,7 +807,9 @@ Route::prefix('crm')->group(function () {
     Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
     Route::post('/peluang/paymentAdvance', [PeluangController::class, 'storePaymentAdvance'])->name('store.payment.advance');
     Route::post('/peluang/restore/{id}', [PeluangController::class, 'restore'])->name('restore.peluang');
-    Route::delete('/crm/peluang/force-delete/{id}', [PeluangController::class, 'forceDelete'])->name('forceDelete.peluang');
+    Route::delete('/peluang/force-delete/{id}', [PeluangController::class, 'forceDelete'])->name('forceDelete.peluang');
+    Route::get('/peluang/search-perusahaan', [PeluangController::class, 'searchPerusahaan'])->name('peluang.searchPerusahaan');
+    Route::get('/peluang/search-materi', [PeluangController::class, 'searchMateri'])->name('peluang.searchMateri');
 
     // Aktivitas CRM
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('index.aktivitas');
@@ -1124,12 +1135,15 @@ Route::prefix('office')->group(function () {
         Route::post('/change-lock-password', [ApprovalPendapatanController::class, 'changeLockPassword']);
         Route::post('/change-accounting-password', [ApprovalPendapatanController::class, 'changeAccountingPassword']);
         Route::post('/setup-accounting-password', [ApprovalPendapatanController::class, 'setupAccountingPassword']);
+        Route::post('/export-excel', [ApprovalPendapatanController::class, 'exportExcel'])->name('export.excel');
     });
 
     Route::prefix('komisi-sales')->name('komisiSales.')->group(function () {
         Route::get('/index', [KomisiSalesController::class, 'index'])->name('index');
-        Route::get('/get/{tahun}/{quartal}', [KomisiSalesController::class, 'get'])->name('get');
+        Route::get('/get/{tahun}/{quartal}/{bulan?}', [KomisiSalesController::class, 'get'])->name('get');
         Route::post('/export-pdf', [KomisiSalesController::class, 'exportPdf'])->name('export-pdf');
+        Route::post('/export-excel', [KomisiSalesController::class, 'exportExcel'])->name('export-excel');
+        Route::post('/update-inline/{id_rkm}', [KomisiSalesController::class, 'updateInline'])->name('update-inline');
         Route::get('/lock-status', [KomisiSalesController::class, 'checkLockStatus']);
         Route::post('/unlock', [KomisiSalesController::class, 'unlock']);
         Route::post('/setup-lock', [KomisiSalesController::class, 'setupLockPassword']);
@@ -1137,7 +1151,7 @@ Route::prefix('office')->group(function () {
         Route::post('/change-accounting-password', [KomisiSalesController::class, 'changeAccountingPassword']);
         Route::post('/setup-accounting-password', [KomisiSalesController::class, 'setupAccountingPassword']);
     });
-
+    
     route::prefix('exam')->name('office.exam.')->group(function () {
         route::get('/index', [OfficeExamController::class, 'indexOffice'])->name('index');
         Route::get('/detail/{id}', [OfficeExamController::class, 'showDetailExam']);
@@ -1380,9 +1394,15 @@ Route::prefix('office')
             Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
             Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
             Route::delete('/delete/{rkm_id}/{peserta_id}', [CertificateController::class, 'delete'])->name('delete');
+
+            Route::get('/rekap', [CertificateController::class, 'certificateSummary'])->name('certificateSummary');
+            Route::get('/rekap/json', [CertificateController::class, 'certificateSummaryJson'])->name('certificateSummaryJson');
+            Route::post('/rekap/certif/store', [CertificateController::class, 'storeSummary'])->name('storeSummary');
+            Route::put('/rekap/certif/put/{id}', [CertificateController::class, 'updateSummary'])->name('updateSummary');
+            Route::delete('/rekap/certif/delete/{id}', [CertificateController::class, 'deleteSummary'])->name('deleteSummary');
         });
 
-        Route::prefix('vendor')->name('vendor.')->group(function () {
+    Route::prefix('vendor')->name('vendor.')->group(function () {
             Route::resource('/souvenir', vendorOfficeController::class);
             Route::resource('/makansiang', vendorOfficeController::class);
             Route::resource('/coffeebreak', vendorOfficeController::class);
@@ -1537,6 +1557,7 @@ Route::prefix('projects/leads')->group(function () {
     Route::get('/', [LeadProjectController::class, 'index'])->name('leads.index');
     Route::get('/data', [LeadProjectController::class, 'getLeads'])->name('leads.data');
     Route::post('/store', [LeadProjectController::class, 'store'])->name('leads.store');
+    Route::delete('/{id}', [LeadProjectController::class, 'destroy'])->name('leads.destroy');
     Route::post('/{id}/update-status', [LeadProjectController::class, 'updateStatus'])->name('leads.update_status');
     Route::post('/{id}/update-data', [LeadProjectController::class, 'updateLead'])->name('leads.update_data');
 });
@@ -1865,6 +1886,8 @@ Route::post('/system/documentation/features', [FeatureDocumentationController::c
     ->name('documentation.features.store');
 Route::get('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'show'])
     ->name('documentation.features.show');
+Route::get('/system/documentation/features/{id}/edit-data', [FeatureDocumentationController::class, 'editData'])
+    ->name('documentation.features.edit-data');
 Route::put('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'update'])
     ->name('documentation.features.update');
 Route::delete('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'destroy'])
@@ -1908,10 +1931,11 @@ Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
     Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
     Route::get('/', [KelasSettingController::class, 'getData'])->name('data');
     Route::post('/store', [KelasSettingController::class, 'store'])->name('store');
-    
+
     Route::patch('/update/{id}', [KelasSettingController::class, 'update'])->name('update');
     Route::delete('/destroy/{id}', [KelasSettingController::class, 'destroy'])->name('destroy');
     Route::post('/restore/{id}', [KelasSettingController::class, 'restore'])->name('restore');
 
     Route::post('/clear-all', [KelasSettingController::class, 'clearAll'])->name('clear-all');
 });
+

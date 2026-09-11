@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Gate;
 
 class RegistrasiController extends Controller
 {
@@ -30,43 +31,102 @@ class RegistrasiController extends Controller
 
     public function index()
     {
-        return view('registrasi.index');
+        $listSouvenir = souvenir::select('id', 'nama_souvenir')
+                            ->where('stok', '>', 0)
+                            ->get();
+
+        return view('registrasi.index', compact('listSouvenir'));
     }
 
-    public function getRegistrasiall()
+    public function getRegistrasiall(Request $request)
     {
-        try {
-            // Ambil data registrasi beserta relasinya
-            $registrasi = Registrasi::with(['rkm', 'peserta.perusahaan', 'materi', 'karyawan', 'sales', 'souvenirpeserta.souvenir'])
-                                    ->latest()
-                                    ->get();
-
-            // Cek jabatan user untuk menentukan respons yang sesuai
-            $jabatan = Auth::user()->jabatan;
-            if (in_array($jabatan, ['Sales', 'Adm Sales', 'GM', 'SPV Sales', 'Instruktur', 'Education Manager', 'Office Manager', 'Customer Care', 'Customer Service', 'Admin Holding', 'Finance & Accounting', 'HRD', 'Koordinator Office', 'Programmer', 'Direktur Utama', 'Direktur', 'Technical Support'])) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'List Registrasi',
-                    'data' => $registrasi,
-                ]);
-            } else {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'List Registrasi',
-                    'data' => '',
-                ]);
-            }
-        } catch (\Exception $e) {
-            // Catat error ke log
-            Log::error('Error fetching registrasi data: '.$e->getMessage());
-
-            // Kirim respons error
+        // Cek Hak Akses menggunakan Gate
+        if (!Gate::allows('view-registrasi')) {
             return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ], 500);
+                'draw' => intval($request->input('draw', 1)), 
+                'recordsTotal' => 0, 
+                'recordsFiltered' => 0, 
+                'data' => []
+            ]);
         }
+
+        // 1. Siapkan Kueri Dasar & Eager Loading spesifik kolom (Mengurangi beban RAM)
+        $query = Registrasi::with([
+            'peserta:id,nama,perusahaan_key', 
+            'peserta.perusahaan:id,nama_perusahaan', 
+            'materi:id,nama_materi', 
+            'rkm:id,tanggal_awal,tanggal_akhir', 
+            'souvenirpeserta.souvenir:id,nama_souvenir'
+        ])->select('id', 'id_peserta', 'id_materi', 'id_rkm', 'id_instruktur', 'id_sales', 'created_at');
+
+        // 2. Filter Role (Lebih aman dilakukan di backend daripada JavaScript)
+        $idInstruktur = Auth::user()->id_instruktur;
+        $idSales = Auth::user()->id_sales;
+
+        if ($idInstruktur && $idInstruktur !== 'AD') {
+            $query->where('id_instruktur', $idInstruktur);
+        }
+        if ($idSales && $idSales !== 'AM') {
+            $query->where('id_sales', $idSales);
+        }
+
+        // 3. Hitung total data sebelum pencarian
+        $recordsTotal = $query->count();
+
+        // 4. Fitur Pencarian (Search DataTables)
+        $searchValue = $request->input('search.value');
+        if (!empty($searchValue)) {
+            $query->where(function($q) use ($searchValue) {
+                $q->whereHas('peserta', function($q2) use ($searchValue) {
+                    $q2->where('nama', 'like', "%{$searchValue}%");
+                })
+                ->orWhereHas('peserta.perusahaan', function($q2) use ($searchValue) {
+                    $q2->where('nama_perusahaan', 'like', "%{$searchValue}%");
+                })
+                ->orWhereHas('materi', function($q2) use ($searchValue) {
+                    $q2->where('nama_materi', 'like', "%{$searchValue}%");
+                });
+            });
+            $recordsFiltered = $query->count();
+        } else {
+            $recordsFiltered = $recordsTotal;
+        }
+
+        // 5. Paginasi & Pengurutan (Otomatis dari DataTables)
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        
+        // Default urutkan berdasarkan created_at desc jika tidak ada request sortir
+        $query->orderBy('created_at', 'desc')->skip($start)->take($length);
+
+        // Ambil data terbatas
+        $data = $query->get();
+
+        // 6. Rapikan format data dengan Null-Safe operator (?->)
+        $responseData = $data->map(function ($row) {
+            $tglAwal = $row->rkm?->tanggal_awal ? \Carbon\Carbon::parse($row->rkm->tanggal_awal)->locale('id')->isoFormat('DD MMMM YYYY') : null;
+            $tglAkhir = $row->rkm?->tanggal_akhir ? \Carbon\Carbon::parse($row->rkm->tanggal_akhir)->locale('id')->isoFormat('DD MMMM YYYY') : null;
+            
+            return [
+                'id' => $row->id,
+                'id_rkm' => $row->id_rkm,
+                'nama_peserta' => $row->peserta?->nama ?? '-',
+                'nama_perusahaan' => $row->peserta?->perusahaan?->nama_perusahaan ?? '-',
+                'nama_materi' => $row->materi?->nama_materi ?? '-',
+                'periode' => ($tglAwal && $tglAkhir) ? "{$tglAwal} s/d {$tglAkhir}" : '-',
+                'id_instruktur' => $row->id_instruktur ?? '-',
+                'id_sales' => $row->id_sales ?? '-',
+                'nama_souvenir' => $row->souvenirpeserta?->souvenir?->nama_souvenir ?? null,
+                'created_at' => $row->created_at ? $row->created_at->format('Y-m-d') : '-',
+            ];
+        });
+
+        return response()->json([
+            'draw' => intval($request->input('draw', 1)),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $responseData,
+        ]);
     }
 
     /**
@@ -86,11 +146,58 @@ class RegistrasiController extends Controller
         return view('registrasi.create', compact('countPeserta'));
     }
 
+
+
     /**
-     * store.
+     * storeSouvenir
      *
-     * @param mixed $request
+     * @param  mixed $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function storeSouvenir(Request $request)
+    {
+        // Validasi input (Tambahkan validasi exists untuk memastikan souvenir ada di database)
+        $request->validate([
+            'id_regist'   => 'required|exists:registrasis,id',
+            'id_rkm'      => 'required',
+            'id_souvenir' => 'required|exists:souvenirs,id',
+        ]);
+
+        try {
+            // Memulai transaksi database
+            DB::beginTransaction();
+
+            $souvenir = souvenir::lockForUpdate()->find($request->id_souvenir);
+
+            if (!$souvenir || $souvenir->stok <= 0) {
+                DB::rollBack();
+                return redirect()->back()->with(['error' => 'Stok souvenir habis atau tidak mencukupi!']);
+            }
+
+            souvenirpeserta::create([
+                'id_regist'   => $request->id_regist,
+                'id_rkm'      => $request->id_rkm,
+                'id_souvenir' => $request->id_souvenir,
+            ]);
+
+            // 4. Kurangi stok souvenir sebanyak 1
+            $souvenir->decrement('stok');
+
+            DB::commit();
+
+            return redirect()->back()->with(['success' => 'Souvenir berhasil ditambahkan dan stok telah dikurangi!']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error("Error saving souvenir: " . $e->getMessage());
+            return redirect()->back()->with(['error' => 'Gagal menyimpan souvenir.']);
+        }
+    }
+
+    /**
+     * store
      *
+     * @param  mixed $request
      * @return RedirectResponse
      */
     public function store(Request $request)
@@ -231,7 +338,8 @@ class RegistrasiController extends Controller
                 'Sales' => $data->sales?->kode_karyawan ?? '-',
                 'Souvenir' => is_null($data->souvenirpeserta) || is_null($data->souvenirpeserta->first()) || is_null($data->souvenirpeserta->first()->souvenir)
              ? '-'
-             : $data->souvenirpeserta->first()->souvenir->nama_souvenir,
+             : $data->souvenirpeserta->first()->souvenir->nama_souvenir
+
             ];
         });
 
@@ -277,7 +385,8 @@ class RegistrasiController extends Controller
                 'Sales' => $data->sales?->kode_karyawan ?? '-',
                 'Souvenir' => is_null($data->souvenirpeserta) || is_null($data->souvenirpeserta->first()) || is_null($data->souvenirpeserta->first()->souvenir)
              ? '-'
-             : $data->souvenirpeserta->first()->souvenir->nama_souvenir,
+             : $data->souvenirpeserta->first()->souvenir->nama_souvenir
+
             ];
         });
 

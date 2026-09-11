@@ -3,6 +3,7 @@
 namespace App\Services\KPI\Jabatan;
 
 use App\Models\DokumentasiExam;
+use App\Models\HariLibur;
 use App\Models\NomorModul;
 use App\Models\registexam;
 use App\Models\Registrasi;
@@ -14,49 +15,58 @@ class AdminHoldingKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function hitungSkorKetepatan($po, $modul)
+    private function skorDariKeterlambatan($actual, $deadline)
     {
-        if (!$po->uploaded || !$modul->awal_training) return 0;
-
-        $uploaded = Carbon::parse($po->uploaded)->startOfDay();
-        $awalTraining = Carbon::parse($modul->awal_training)->startOfDay();
-        
-        $daysBefore = $awalTraining->diffInDays($uploaded);
-        $poScore = 0;
-
-        if ($uploaded->gt($awalTraining)) {
-            $poScore = 0;
-        } elseif ($daysBefore >= 7) {
-            $poScore = 100;
-        } elseif ($daysBefore > 0) {
-            $poScore = ($po->delay !== null && $po->delay !== 'Admin')
-                ? min(100, ($daysBefore * 150) / 7)
-                : ($daysBefore * 100) / 7;
+        if (!$actual || !$deadline) return 0;
+    
+        if ($actual->lte($deadline)) {
+            return 100;
         }
-
-        if ($po->type === 'Authorize') {
-            $subscodeScore = 0;
-            
-            if ($po->tanggal_subscode_masuk) {
-                $subscode = Carbon::parse($po->tanggal_subscode_masuk)->startOfDay();
-                
-                $dayOfWeek = $awalTraining->dayOfWeekIso;
-                $seninDeadline = $awalTraining->copy()->subDays($dayOfWeek - 1);
-                
-                if ($subscode->lte($seninDeadline)) {
-                    $subscodeScore = 100;
-                } else {
-                    $daysLate = $seninDeadline->diffInDays($subscode); 
-                    $subscodeScore = max(0, 100 - ($daysLate * 25));
-                }
-            }
-            
-            return ($poScore + $subscodeScore) / 2;
+    
+        $daysLate = $deadline->diffInDays($actual);
+    
+        if ($daysLate <= 3) {
+            return 80;
+        } elseif ($daysLate <= 7) {
+            return 60;
         }
-
-        return $poScore;
+    
+        return 0;
     }
-
+    
+    private function hitungSkorKetepatan($po, $awalTrainingDate, $holidaySet)
+    {
+        if (!$po->uploaded) return 0;
+    
+        $uploaded = Carbon::parse($po->uploaded)->startOfDay();
+    
+        if ($po->type !== 'Authorize') {
+            if (!$po->created_at) return 0;
+    
+            $tenggat = Carbon::parse($po->created_at)->startOfWeek()->addWeek();
+    
+            while (isset($holidaySet[$tenggat->toDateString()])) {
+                $tenggat = $tenggat->copy()->addDay();
+            }
+    
+            return $this->skorDariKeterlambatan($uploaded, $tenggat);
+        }
+    
+        if (!$awalTrainingDate) return 0;
+    
+        $awalTraining = Carbon::parse($awalTrainingDate)->startOfDay();
+    
+        $poScore = $this->skorDariKeterlambatan($uploaded, $awalTraining);
+    
+        $subscodeScore = 0;
+        if ($po->tanggal_subscode_masuk) {
+            $subscode = Carbon::parse($po->tanggal_subscode_masuk)->startOfDay();
+            $subscodeScore = $this->skorDariKeterlambatan($subscode, $awalTraining);
+        }
+    
+        return ($poScore + $subscodeScore) / 2;
+    }
+    
     public function calculateKetepatanWaktuPo($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
@@ -64,32 +74,34 @@ class AdminHoldingKPIService
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
-
+    
         $tahun = (int) $detail->detail_jangka;
         if ($tahun < 2000 || $tahun > now()->year + 5) return 0;
-
+    
         $pos = NomorModul::with('moduls')->whereYear('created_at', $tahun)->get();
         if ($pos->isEmpty()) return 0.0;
-
+    
+        $holidaySet = HariLibur::pluck('tanggal')->mapWithKeys(fn ($t) => [Carbon::parse($t)->toDateString() => true]);
+    
         $totalPercent = 0;
         $count = 0;
-
+    
         foreach ($pos as $po) {
             if (!$po->uploaded) continue;
-
+    
             $tenggatEfektif = $po->moduls->min('awal_training');
             if (!$tenggatEfektif) continue;
-
-            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif); // 1x per po
+    
+            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif, $holidaySet);
             $totalPercent += $percent;
-            $count++;   // ← ini dihitung PER PO, bukan per modul
+            $count++;
         }
-
+    
         if ($count === 0) return 0.0;
-
+    
         return round($totalPercent / $count, 1);
     }
-
+    
     public function calculateKetepatanWaktuPoDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
@@ -98,75 +110,76 @@ class AdminHoldingKPIService
             'monthly_data' => [], 'daily_breakdown_per_month' => [],
             'monthly_progress' => [], 'daily_progress_per_month' => [],
         ];
-
+    
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             return $emptyResponse;
         }
-
+    
         $tahun = (int) $detail->detail_jangka;
         $nilaiTarget = (float) $detail->nilai_target;
-
+    
         if ($tahun < 2000 || $tahun > now()->year + 5 || $nilaiTarget <= 0) return $emptyResponse;
-
+    
         $pos = NomorModul::with('moduls')->whereYear('created_at', $tahun)->get();
         if ($pos->isEmpty()) return $emptyResponse;
-
+    
+        $holidaySet = HariLibur::pluck('tanggal')->mapWithKeys(fn ($t) => [Carbon::parse($t)->toDateString() => true]);
+    
         $totalPercent = 0;
         $count = 0;
         $aboveTarget = 0;
-
+    
         $monthlyDataRaw = [];
         $dailyDataRaw = [];
-
+    
         foreach ($pos as $po) {
             if (!$po->uploaded) continue;
-            
+    
+            $tenggatEfektif = $po->moduls->min('awal_training');
+            if (!$tenggatEfektif) continue;
+    
+            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif, $holidaySet);
+    
             $date = Carbon::parse($po->uploaded);
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
-
-            foreach ($po->moduls as $modul) {
-                if (!$modul->awal_training) continue;
-
-                $percent = $this->hitungSkorKetepatan($po, $modul);
-                
-                $totalPercent += $percent;
-                $count++;
-
-                if ($percent >= $nilaiTarget) {
-                    $aboveTarget++;
-                }
-
-                $monthlyDataRaw[$monthKey][] = $percent;
-                $dailyDataRaw[$monthKey][$dayKey][] = $percent;
+    
+            $totalPercent += $percent;
+            $count++;
+    
+            if ($percent >= $nilaiTarget) {
+                $aboveTarget++;
             }
+    
+            $monthlyDataRaw[$monthKey][] = $percent;
+            $dailyDataRaw[$monthKey][$dayKey][] = $percent;
         }
-
+    
         if ($count === 0) return $emptyResponse;
-
+    
         $progress = round($totalPercent / $count, 1);
-        
+    
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
         if ($gap === '') $gap = '0';
-
+    
         $monthlyAverages = [];
         $dailyBreakdownPerMonth = [];
-
+    
         foreach ($monthlyDataRaw as $month => $values) {
             $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
         }
-
+    
         foreach ($dailyDataRaw as $month => $days) {
             foreach ($days as $day => $values) {
                 $dailyBreakdownPerMonth[$month][$day] = round(array_sum($values) / count($values), 1);
             }
             ksort($dailyBreakdownPerMonth[$month]);
         }
-
+    
         ksort($monthlyAverages);
         ksort($dailyBreakdownPerMonth);
-
+    
         return [
             'progress' => $progress,
             'gap' => $gap,
@@ -176,7 +189,7 @@ class AdminHoldingKPIService
             ],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyAverages, 
+            'monthly_progress' => $monthlyAverages,
             'daily_progress_per_month' => $dailyBreakdownPerMonth,
         ];
     }
@@ -195,8 +208,7 @@ class AdminHoldingKPIService
             return 0;
         }
 
-        $registrasi = registexam::whereYear('created_at', $tahun)
-            ->count();
+        $registrasi = registexam::whereYear('created_at', $tahun)->count();
 
         if ($registrasi === 0) {
             return 0.0;
@@ -313,13 +325,15 @@ class AdminHoldingKPIService
                 ($dailyProgressPerMonth[$monthKey][$dayKey] ?? 0) + 1;
         }
 
+        $registrasiByMonth = $registrasi->groupBy(function ($r) {
+            return $r->created_at->format('Y-m');
+        })->map->count();
+
         $monthlyPercentages = [];
         $monthlyProgressPercentages = [];
 
         foreach ($monthlyData as $month => $countDok) {
-            $registrasiPerMonth = $registrasi->filter(function ($r) use ($month) {
-                return $r->created_at->format('Y-m') === $month;
-            })->count();
+            $registrasiPerMonth = $registrasiByMonth[$month] ?? 0;
 
             if ($registrasiPerMonth > 0) {
                 $monthlyPercentages[$month] = round(($countDok / $registrasiPerMonth) * 100, 2);

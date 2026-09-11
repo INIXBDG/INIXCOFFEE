@@ -49,37 +49,14 @@ class ContactController extends Controller
 
     public function getPerusahaan(Request $request)
     {
-        DB::listen(function ($query) {
-            Log::info('SQL PERFORMANCE', [
-                'sql' => $query->sql,
-                'bindings' => $query->bindings,
-                'time_ms' => $query->time,
-            ]);
-        });
-
-        // Mulai total timer SEBELUM proses apapun
-        $totalStart = microtime(true);
-
-        // =========================
-        // 1. AUTHORIZATION
-        // =========================
-        $gateStart = microtime(true);
-
-        if (Gate::denies('akses-crm-perusahaan')) {
+        if (Gate::denies('akses-crm')) {
             return response()->json([
                 'error' => 'Anda tidak memiliki akses ke data ini.'
             ], 403);
         }
 
-        $gateTime = microtime(true) - $gateStart;
-
         try {
             $user = auth()->user();
-
-            // =========================
-            // 2. PARAMETER DATATABLES
-            // =========================
-            $parameterStart = microtime(true);
 
             $draw = intval($request->input('draw', 1));
             $startLimit = intval($request->input('start', 0));
@@ -98,14 +75,6 @@ class ContactController extends Controller
 
             $orderColumn = $columns[$request->input('order.0.column', 0)] ?? 'id';
             $orderDir = $request->input('order.0.dir', 'desc');
-
-            $parameterTime = microtime(true) - $parameterStart;
-
-
-            // =========================
-            // 3. BUILD QUERY
-            // =========================
-            $buildQueryStart = microtime(true);
 
             $query = Perusahaan::select(
                 'id',
@@ -127,49 +96,20 @@ class ContactController extends Controller
                 $query->where('sales_key', $request->input('sales_key'));
             }
 
-            $buildQueryTime = microtime(true) - $buildQueryStart;
-
-
-            // =========================
-            // 4. COUNT TOTAL
-            // =========================
-            $countTotalStart = microtime(true);
-
             $recordsTotal = $query->count();
-
-            $countTotalTime = microtime(true) - $countTotalStart;
-
-
-            // =========================
-            // 5. FILTER SEARCH
-            // =========================
-            $filterStart = microtime(true);
 
             if (!empty($searchValue)) {
                 $query->where(function ($q) use ($searchValue) {
                     $q->where('nama_perusahaan', 'like', "%{$searchValue}%")
-                      ->orWhere('lokasi', 'like', "%{$searchValue}%")
-                      ->orWhere('sales_key', 'like', "%{$searchValue}%")
-                      ->orWhere('status', 'like', "%{$searchValue}%");
+                    ->orWhere('lokasi', 'like', "%{$searchValue}%")
+                    ->orWhere('sales_key', 'like', "%{$searchValue}%")
+                    ->orWhere('status', 'like', "%{$searchValue}%");
                 });
 
-                // COUNT setelah filter
-                $countFilteredStart = microtime(true);
                 $recordsFiltered = $query->count();
-                $countFilteredTime = microtime(true) - $countFilteredStart;
-
             } else {
                 $recordsFiltered = $recordsTotal;
-                $countFilteredTime = 0;
             }
-
-            $filterTime = microtime(true) - $filterStart;
-
-
-            // =========================
-            // 6. ORDER + LIMIT
-            // =========================
-            $paginationStart = microtime(true);
 
             $query->orderBy($orderColumn, $orderDir);
 
@@ -177,15 +117,6 @@ class ContactController extends Controller
                 $query->offset($startLimit)->limit($length);
             }
 
-            $paginationTime = microtime(true) - $paginationStart;
-
-
-            // =========================
-            // 7. RELATION + SUBQUERY
-            // =========================
-            $relationStart = microtime(true);
-
-            // MENGAKTIFKAN KEMBALI SUBQUERY AKTIVITAS TERAKHIR
             $query->with('kelasTerakhir.materi:id,nama_materi')
                 ->addSelect([
                     'aktivitas_terakhir_date' =>
@@ -199,23 +130,7 @@ class ContactController extends Controller
                             ->limit(1)
                 ]);
 
-            $relationBuildTime = microtime(true) - $relationStart;
-
-
-            // =========================
-            // 8. EXECUTE DATABASE
-            // =========================
-            $queryStart = microtime(true);
-
             $data = $query->get();
-
-            $queryTime = microtime(true) - $queryStart;
-
-
-            // =========================
-            // 9. PROCESSING / MAPPING
-            // =========================
-            $processStart = microtime(true);
 
             $responseData = $data->map(function ($contact) {
                 $rkm = $contact->kelasTerakhir;
@@ -226,17 +141,13 @@ class ContactController extends Controller
                     'lokasi' => $contact->lokasi,
                     'status' => $contact->status,
                     'sales_key' => $contact->sales_key,
-
                     'kelas_terakhir' => $rkm?->materi?->nama_materi ?? 'Belum ada kelas',
-
                     'kelas_terakhir_date' => $rkm
-                        ? \Carbon\Carbon::parse($rkm->created_at)->translatedFormat('d F Y')
+                        ? Carbon::parse($rkm->created_at)->translatedFormat('d F Y')
                         : null,
-
                     'aktivitas_terakhir_date' => $contact->aktivitas_terakhir_date
-                        ? \Carbon\Carbon::parse($contact->aktivitas_terakhir_date)->format('d-m-Y')
+                        ? Carbon::parse($contact->aktivitas_terakhir_date)->format('d-m-Y')
                         : 'Belum ada aktivitas',
-
                     'npwp' => $contact->npwp,
                     'alamat' => $contact->alamat,
                     'kategori_perusahaan' => $contact->kategori_perusahaan,
@@ -244,56 +155,6 @@ class ContactController extends Controller
                 ];
             });
 
-            $processTime = microtime(true) - $processStart;
-
-
-            // =========================
-            // 10. TOTAL
-            // =========================
-            $totalTime = microtime(true) - $totalStart;
-
-
-            // =========================
-            // LOG PERFORMANCE
-            // =========================
-            Log::info('DataTables Performance - Perusahaan', [
-                // Request
-                'draw' => $draw,
-                'start' => $startLimit,
-                'length' => $length,
-                'search' => $searchValue,
-
-                // Timing
-                'gate_ms' => round($gateTime * 1000, 2),
-                'parameter_ms' => round($parameterTime * 1000, 2),
-                'build_query_ms' => round($buildQueryTime * 1000, 2),
-
-                // COUNT
-                'count_total_ms' => round($countTotalTime * 1000, 2),
-                'count_filtered_ms' => round($countFilteredTime * 1000, 2),
-
-                // Query
-                'filter_ms' => round($filterTime * 1000, 2),
-                'pagination_ms' => round($paginationTime * 1000, 2),
-                'relation_build_ms' => round($relationBuildTime * 1000, 2),
-                'get_query_ms' => round($queryTime * 1000, 2),
-
-                // PHP
-                'process_ms' => round($processTime * 1000, 2),
-
-                // Result
-                'records_total' => $recordsTotal,
-                'records_filtered' => $recordsFiltered,
-                'records_returned' => $data->count(),
-
-                // Total
-                'total_ms' => round($totalTime * 1000, 2),
-            ]);
-
-
-            // =========================
-            // RESPONSE
-            // =========================
             return response()->json([
                 'draw' => $draw,
                 'recordsTotal' => $recordsTotal,
@@ -302,11 +163,6 @@ class ContactController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('DataTables Error - Perusahaan', [
-                'message' => $e->getMessage(),
-                'line' => $e->getLine(),
-            ]);
-
             return response()->json([
                 'error' => 'Kesalahan server',
                 'message' => $e->getMessage(),

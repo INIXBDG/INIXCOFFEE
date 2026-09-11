@@ -1264,6 +1264,22 @@ class payrollController extends Controller
                         'total_bpjs_perusahaan' => $payroll->total_bpjs_perusahaan,
                         'total_bpjs_karyawan' => $payroll->total_bpjs_karyawan,
                         'tunjangan' => $tunjanganData,
+                        
+                        'jht_perusahaan' => $payroll->jht_perusahaan ?? 0,
+                        'jkm_perusahaan' => $payroll->jkm_perusahaan ?? 0,
+                        'jkk_perusahaan' => $payroll->jkk_perusahaan ?? 0,
+                        'jp_perusahaan' => $payroll->jp_perusahaan ?? 0,
+                        'bpjs_kes_perusahaan' => $payroll->bpjs_kes_perusahaan ?? 0,
+                        
+                        'jht_karyawan' => $payroll->jht_karyawan ?? 0,
+                        'jp_karyawan' => $payroll->jp_karyawan ?? 0,
+                        'bpjs_kes_karyawan' => $payroll->bpjs_kes_karyawan ?? 0,
+                        
+                        'potongan_pph21' => $payroll->potongan_pph21 ?? 0,
+                        'potongan_kasbon' => $payroll->potongan_kasbon ?? 0,
+                        'potongan_denda' => $payroll->potongan_denda ?? 0,
+                        'potongan_lain' => $payroll->potongan_lain ?? 0,
+                        'gaji_pokok' => $payroll->gaji_pokok ?? 0,
                     ]
                     : null,
             ];

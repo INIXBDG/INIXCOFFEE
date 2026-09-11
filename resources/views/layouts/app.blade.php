@@ -677,14 +677,33 @@
 
             const modalBody = document.querySelector('#notificationModal .modal-body');
             if (modalBody) {
-                const newNotif = `
+                // Simpan original content sebagai fallback
+                const originalHtml = modalBody.innerHTML;
+                
+                // Set loading spinner
+                modalBody.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Memuat notifikasi terbaru...</p></div>';
+
+                fetch('/notifications/modal-content')
+                    .then(res => {
+                        if (!res.ok) throw new Error('Network response was not ok');
+                        return res.text();
+                    })
+                    .then(html => {
+                        modalBody.innerHTML = html;
+                    })
+                    .catch(err => {
+                        console.error('Gagal memuat konten modal:', err);
+                        // Fallback: kembalikan konten lama dan tambahkan notif statis sederhana
+                        modalBody.innerHTML = originalHtml;
+                        const newNotif = `
             <div class="notification p-3 border-bottom animate__animated animate__fadeIn">
                 <p class="mb-1 fw-bold text-danger">Baru!</p>
                 <p class="mb-1"><strong>${data.message?.user || 'System'}</strong></p>
                 <p class="mb-1">${data.message?.message?.tipe || 'Notifikasi'}</p>
                 <small class="text-muted">Baru saja</small>
             </div>`;
-                modalBody.insertAdjacentHTML('afterbegin', newNotif);
+                        modalBody.insertAdjacentHTML('afterbegin', newNotif);
+                    });
             }
         });
     </script>

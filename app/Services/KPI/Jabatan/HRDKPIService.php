@@ -30,7 +30,7 @@ class HRDKPIService
             return 0;
         }
 
-        $kegiatans = Kegiatan::whereYear('created_at', $tahun)->get();
+        $kegiatans = Kegiatan::select('id', 'id_peserta', 'waktu_kegiatan')->whereYear('created_at', $tahun)->get();
 
         $totalKegiatan = $kegiatans->count();
         if ($totalKegiatan == 0) {
@@ -85,7 +85,7 @@ class HRDKPIService
         $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
         $endOfYear = Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $kegiatans = Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->get();
+        $kegiatans = Kegiatan::select('id', 'id_peserta', 'waktu_kegiatan', 'created_at')->whereBetween('created_at', [$startOfYear, $endOfYear])->get();
 
         $totalKegiatan = $kegiatans->count();
         $totalKehadiranValid = 0;
@@ -223,7 +223,7 @@ class HRDKPIService
 
         $kegiatanBudget = 0;
         $kegiatanRealisasi = 0;
-        $kegiatansQuery = Kegiatan::with('pengajuan_barang.detail')->whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'kegiatan');
+        $kegiatansQuery = Kegiatan::with('pengajuan_barang.detail')->select('id', 'realisasi')->whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'kegiatan');
 
         foreach ($kegiatansQuery->get() as $kegiatan) {
             $kegiatanRealisasi += (float) $kegiatan->realisasi;
@@ -285,7 +285,7 @@ class HRDKPIService
 
         $kegiatanBudget = 0;
         $kegiatanRealisasi = 0;
-        $kegiatansQuery = Kegiatan::with('pengajuan_barang.detail')->whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'kegiatan');
+        $kegiatansQuery = Kegiatan::with('pengajuan_barang.detail')->select('id', 'realisasi')->whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'kegiatan');
 
         foreach ($kegiatansQuery->get() as $kegiatan) {
             $kegiatanRealisasi += (float) $kegiatan->realisasi;
@@ -350,7 +350,7 @@ class HRDKPIService
             return 0;
         }
 
-        $dataAdministrasi = AdministrasiKaryawan::whereYear('created_at', $tahun)->get();
+        $dataAdministrasi = AdministrasiKaryawan::select('status', 'dateline', 'tanggal_selesai')->whereYear('created_at', $tahun)->get();
         $totalData = $dataAdministrasi->count();
 
         if ($totalData == 0) {
@@ -403,7 +403,7 @@ class HRDKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $allData = AdministrasiKaryawan::whereYear('created_at', $tahun)->get();
+        $allData = AdministrasiKaryawan::select('created_at', 'status', 'dateline', 'tanggal_selesai')->whereYear('created_at', $tahun)->get();
         $totalRecords = $allData->count();
 
         $groupedByMonth = $allData->groupBy(fn($d) => Carbon::parse($d->created_at)->format('Y-m'));
