@@ -494,7 +494,7 @@
                             <div class="mb-3">
                                 <label for="edit_id_materi" class="form-label">Materi</label>
 
-                                <select class="form-select" id="edit_id_materi">
+                                <select class="form-select" id="edit_id_materi" name="materi" required>
                                     <option value="">-- Pilih Materi --</option>
                                     @foreach ($materi as $item)
                                         <option value="{{ $item->id }}" {{ $item->id == $peluang->materi ? 'selected' : '' }}>
@@ -503,7 +503,7 @@
                                     @endforeach
                                 </select>
 
-                                <input type="hidden" name="materi" value="{{ $peluang->materi }}">
+                                <!-- <input type="hidden" name="materi" value="{{ $peluang->materi }}"> -->
 
                                 @error('materi')
                                     <div class="text-danger">{{ $message }}</div>
