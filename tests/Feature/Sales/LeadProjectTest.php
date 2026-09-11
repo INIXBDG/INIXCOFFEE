@@ -69,6 +69,11 @@ class LeadProjectTest extends TestCase
         $this->assertSame('lead_id', $lead->project()->getForeignKeyName());
     }
 
+    public function test_lead_project_controller_exposes_destroy_method(): void
+    {
+        $this->assertTrue(method_exists(LeadProjectController::class, 'destroy'));
+    }
+
     public function test_project_accepts_dates_and_defines_lead_and_client_relations(): void
     {
         $project = new Project([

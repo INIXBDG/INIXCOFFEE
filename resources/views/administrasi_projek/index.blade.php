@@ -241,6 +241,26 @@
     .modal-backdrop.show {
         opacity: 0.75;
     }
+    #administrasiProjekTable_wrapper {
+        overflow: visible !important;
+    }
+    #administrasiProjekTable_wrapper .dataTables_scrollBody {
+        overflow: visible !important;
+    }
+    #administrasiProjekTable_wrapper .dataTables_paginate {
+        overflow: visible !important;
+    }
+    #administrasiProjekTable_wrapper .pagination {
+        overflow: visible !important;
+    }
+    .dropdown-menu {
+        position: absolute !important;
+        z-index: 1060;
+    }
+    .btn-group.dropup {
+        position: relative;
+        overflow: visible !important;
+    }
 </style>
 
 @push('js')
@@ -326,11 +346,11 @@
                     "data": null,
                     "render": function(data, type, row) {
                         let isComplete = row.kak_file && row.proposal_file && row.budget_file && row.client_doc_file && row.surat_pekerjaan_dimulai_file;
-                        let actions = '<div class="btn-group dropup" style="overflow: visible !important;">';
+                        let actions = '<div class="btn-group dropup" style="position: relative; overflow: visible !important;">';
                         actions += '<button type="button" class="btn btn-sm dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-bs-boundary="window">';
                         actions += 'Actions ';
                         actions += '</button>';
-                        actions += '<div class="dropdown-menu shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
+                        actions += '<div class="dropdown-menu shadow-sm dropdown-menu-end" style="z-index: 1060; min-width: 210px; max-height: 250px; overflow-y: auto; border-radius: 6px; position: absolute;">';
 
                         if (row.dataproject.phase === 'administrasi') {
                             if (isComplete) {
@@ -344,6 +364,7 @@
 
                         actions += '<div class="dropdown-divider"></div>';
                         actions += '<button class="dropdown-item btn-edit-project"><i class="fas fa-pen me-2 text-warning"></i>Edit Proyek</button>';
+                        actions += '<button class="dropdown-item btn-delete-project text-danger"><i class="fas fa-trash me-2"></i>Hapus Proyek</button>';
                         actions += '</div></div>';
 
                         return actions;
@@ -453,6 +474,35 @@
                 },
                 complete: function() {
                     $('#btnUpdateSave').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Simpan');
+                    setTimeout(() => { $('#loadingModal').modal('hide'); }, 500);
+                }
+            });
+        });
+
+        $('#administrasiProjekTable tbody').on('click', '.btn-delete-project', function () {
+            var data = table.row($(this).parents('tr')).data();
+            var projectId = data.dataproject.id;
+            if (!confirm('Apakah anda yakin ingin menghapus proyek ini dari administrasi?')) {
+                return;
+            }
+
+            $.ajax({
+                url: "{{ url('/projects/administrasi') }}/" + projectId,
+                type: "DELETE",
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                beforeSend: function() {
+                    $('#loadingModal').modal('show');
+                },
+                success: function(response) {
+                    alert(response.message || 'Proyek berhasil dihapus.');
+                    table.ajax.reload(null, false);
+                },
+                error: function(xhr) {
+                    alert(xhr.responseJSON?.message || 'Gagal menghapus proyek.');
+                },
+                complete: function() {
                     setTimeout(() => { $('#loadingModal').modal('hide'); }, 500);
                 }
             });
