@@ -176,19 +176,23 @@
                                         <!-- Data will be populated here -->
                                     </tbody>
                                     <tfoot>
-                                        <tr style="background-color: #006A67; color:white;">
+                                        <tr>
                                             <td>Total Tunjangan:</td>
                                             <td id="total_tunjangan">Rp. 0.00</td>
                                         </tr>
-                                        <tr style="background-color: #FF2929; color:white;">
+                                        <tr>
                                             <td>Total Potongan:</td>
                                             <td id="total_potongan">Rp. 0.00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Tunjangan Bersih:</td>
+                                            <td id="tunjangan_bersih">Rp. 0.00</td>
                                         </tr>
                                         <tr>
                                             <td>Gaji:</td>
                                             <td id="gaji">Rp. 0.00</td>
                                         </tr>
-                                        <tr>
+                                        <tr style="background-color: #006A67; color: white; font-weight: bold;">
                                             <td>Total Bersih:</td>
                                             <td id="total_bersih">Rp. 0.00</td>
                                         </tr>
@@ -350,6 +354,7 @@
 
                         $('#total_tunjangan').text('Rp. ' + formatRupiah(totalTunjangan.toString()));
                         $('#total_potongan').text('Rp. ' + formatRupiah(totalPotongan.toString()));
+                        $('#tunjangan_bersih').text('Rp. ' + formatRupiah((totalTunjangan + totalPotongan).toString()));
                         $('#gaji').text('Rp. ' + formatRupiah(gajiPokok.toString()));
                         $('#total_bersih').text('Rp. ' + formatRupiah(totalBersih.toString()));
                     },
