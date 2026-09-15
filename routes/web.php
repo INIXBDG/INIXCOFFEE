@@ -881,6 +881,7 @@ Route::prefix('crm')->group(function () {
     Route::delete('laporan-harian/delete/{id}', [LaporanHarianSalesController::class, 'delete'])->name('laporan.harian.delete');
     Route::get('laporan-harian/export/{id}/{type}', [LaporanHarianSalesController::class, 'exportPdf'])->name('laporan.harian.pdf');
     Route::post('laporan-harian/autosave', [LaporanHarianSalesController::class, 'autoSave'])->name('laporan.harian.autosave');
+    Route::get('/laporan-harian-data', [LaporanHarianSalesController::class, 'getDataTables'])->name('laporan.harian.data');
 
     // Todo admin sales
     Route::get('todo-administrasi', [TodoAdministrasiController::class, 'index'])->name('todo-administrasi.index');
