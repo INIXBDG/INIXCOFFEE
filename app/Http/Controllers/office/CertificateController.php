@@ -25,9 +25,9 @@ class CertificateController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:View Inixcert', ['only' => ['index', 'getData', 'detail']]);
-        $this->middleware('permission:Store Inixcert', ['only' => ['create', 'store']]);
-        $this->middleware('permission:Delete Inixcert', ['only' => ['delete']]);
+        $this->middleware('permission:View Inixcert', ['only' => ['index', 'getData', 'detail', 'certificateSummary', 'certificateSummaryJson']]);
+        $this->middleware('permission:Store Inixcert', ['only' => ['create', 'store', 'storeSummary', 'updateSummary']]);
+        $this->middleware('permission:Delete Inixcert', ['only' => ['delete', 'deleteSummary']]);
     }
 
     public function index()
