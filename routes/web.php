@@ -207,6 +207,12 @@ Route::middleware('auth')
     })
     ->name('notifications.unread-count');
 
+Route::middleware('auth')
+    ->get('/notifications/modal-content', function () {
+        return view('partials.notifications');
+    })
+    ->name('notifications.modal-content');
+
 Route::get('/daily-activities-data', [DailyActivityController::class, 'activitiesData']);
 
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
@@ -875,6 +881,7 @@ Route::prefix('crm')->group(function () {
     Route::delete('laporan-harian/delete/{id}', [LaporanHarianSalesController::class, 'delete'])->name('laporan.harian.delete');
     Route::get('laporan-harian/export/{id}/{type}', [LaporanHarianSalesController::class, 'exportPdf'])->name('laporan.harian.pdf');
     Route::post('laporan-harian/autosave', [LaporanHarianSalesController::class, 'autoSave'])->name('laporan.harian.autosave');
+    Route::get('/laporan-harian-data', [LaporanHarianSalesController::class, 'getDataTables'])->name('laporan.harian.data');
 
     // Todo admin sales
     Route::get('todo-administrasi', [TodoAdministrasiController::class, 'index'])->name('todo-administrasi.index');
@@ -1388,9 +1395,15 @@ Route::prefix('office')
             Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
             Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
             Route::delete('/delete/{rkm_id}/{peserta_id}', [CertificateController::class, 'delete'])->name('delete');
+
+            Route::get('/rekap', [CertificateController::class, 'certificateSummary'])->name('certificateSummary');
+            Route::get('/rekap/json', [CertificateController::class, 'certificateSummaryJson'])->name('certificateSummaryJson');
+            Route::post('/rekap/certif/store', [CertificateController::class, 'storeSummary'])->name('storeSummary');
+            Route::put('/rekap/certif/put/{id}', [CertificateController::class, 'updateSummary'])->name('updateSummary');
+            Route::delete('/rekap/certif/delete/{id}', [CertificateController::class, 'deleteSummary'])->name('deleteSummary');
         });
 
-        Route::prefix('vendor')->name('vendor.')->group(function () {
+    Route::prefix('vendor')->name('vendor.')->group(function () {
             Route::resource('/souvenir', vendorOfficeController::class);
             Route::resource('/makansiang', vendorOfficeController::class);
             Route::resource('/coffeebreak', vendorOfficeController::class);
@@ -1873,6 +1886,8 @@ Route::post('/system/documentation/features', [FeatureDocumentationController::c
     ->name('documentation.features.store');
 Route::get('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'show'])
     ->name('documentation.features.show');
+Route::get('/system/documentation/features/{id}/edit-data', [FeatureDocumentationController::class, 'editData'])
+    ->name('documentation.features.edit-data');
 Route::put('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'update'])
     ->name('documentation.features.update');
 Route::delete('/system/documentation/features/{id}', [FeatureDocumentationController::class, 'destroy'])

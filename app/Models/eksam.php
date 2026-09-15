@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class eksam extends Model
 {
     use HasFactory;
+    protected $casts =[
+        'tanggal_pengajuan' => 'date',
+        'tanggal_mulai' => 'date',
+        'tanggal_selesai' => 'date',
+    ];
+
     protected $fillable = [
         'invoice',
         'file_invoice',

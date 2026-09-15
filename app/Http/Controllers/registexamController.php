@@ -43,8 +43,8 @@ class registexamController extends Controller
         $results = [];
 
         foreach ($registrasi as $reg) {
-            $id_rkm = $reg->exam->id_rkm;
-            $rkm = RKM::with('materi')->where('id', $id_rkm)->first(); // Use first() to get a single model instance
+            $id_rkm = optional($reg->exam)->id_rkm;
+            $rkm = $id_rkm ? RKM::with('materi')->where('id', $id_rkm)->first() : null;
             $results[] = [
                 'id' => $reg->id,
                 'id_peserta' => $reg->id_peserta,
@@ -63,7 +63,7 @@ class registexamController extends Controller
                 'exam' => $reg->exam,
                 'peserta' => $reg->peserta,
                 'rkm' => $rkm,
-                'vendor' => $rkm->materi->vendor,
+                'vendor' => optional(optional($rkm)->materi)->vendor,
             ];
         }
 
@@ -81,13 +81,13 @@ class registexamController extends Controller
         // dd($registrasi);  
 
         foreach ($registrasi as $reg) {
-            $id_rkm = $reg->exam->id_rkm;
+            $id_rkm = optional($reg->exam)->id_rkm;
             $reg_id = strval($reg->id);
             // Debugging untuk memeriksa nilai  
             // dd($reg_id, $reg->id_peserta);  
             $hasilexam = hasilexam::where('id_registexam', $reg_id)->where('id_peserta', $reg->id_peserta)->first();
 
-            $rkm = RKM::where('id', $id_rkm)->first(); // Use first() to get a single model instance  
+            $rkm = $id_rkm ? RKM::where('id', $id_rkm)->first() : null; // Use first() to get a single model instance  
 
             // Debugging untuk memeriksa hasil  
             // dd($hasilexam);  

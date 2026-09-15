@@ -353,6 +353,21 @@ class OfficeExamController extends Controller
             ->groupBy(fn ($e) => $e->rkm?->materi?->kategori_exam ?? 'Unknown')
             ->map(fn ($group) => $group->count());
 
+        $kategoriData = $exams
+            ->groupBy(fn ($e) => $e->rkm?->materi?->kategori_exam ?? 'Unknown')
+            ->map(function ($group) {
+                return $group->values()->map(function ($e) {
+                    return [
+                        'tanggal_pengajuan' => $e->tanggal_pengajuan?->format('d M Y'),
+                        'tanggal_mulai'     => $e->tanggal_mulai?->format('d M Y'),
+                        'tanggal_selesai'   => $e->tanggal_selesai?->format('d M Y'),
+                        'materi'            => $e->materi ?? '-',
+                        'perusahaan'        => $e->perusahaan ?? '-',
+                        'instruktur'        => $e->rkm?->instruktur?->nama_lengkap ?? '-',
+                    ];
+                });
+            });
+
         return response()->json([
             'filter' => [
                 'tahun'    => $request->tahun,
@@ -368,6 +383,7 @@ class OfficeExamController extends Controller
             'instansi'          => $instansi,
             'instruktur'        => $keberhasilanMengajar,
             'kategori'          => $kategori,
+            'kategori_data'     => $kategoriData,
         ]);
     }
 }

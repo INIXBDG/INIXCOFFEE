@@ -500,7 +500,7 @@
         </div>
     </div>
 
-    <div id="detailAktivitas" class="w3-modal" tabindex="-1" aria-hidden="true">
+    <div id="detailAktivitas" class="w3-modal" tabindex="-1" aria-hidden="true" onclick="if(event.target === this) this.style.display='none';">
         <div class="w3-modal-content w3-animate-top shadow-lg"
             style="max-width: 800px; border-radius: 12px; overflow: hidden;">
             <div class="card border-0">
@@ -742,13 +742,13 @@
                     tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Gagal memuat data.</td></tr>';
                 });
 
-                // Logika penutupan modal kustom saat mengklik area latar belakang (backdrop)
-                // window.addEventListener('click', function(event) {
-                //     const modalAktivitas = document.getElementById('detailAktivitas');
-                //     if (event.target === modalAktivitas) {
-                //         modalAktivitas.style.display = 'none';
-                //     }
-                // });
+                window.addEventListener('click', function(event) {
+                    const modalAktivitas = document.getElementById('detailAktivitas');
+                    // Menutup modal jika klik target tepat pada pembungkus luar modal
+                    if (event.target === modalAktivitas) {
+                        modalAktivitas.style.display = 'none';
+                    }
+                });
         }
 
         function openModalPerusahaan(label) {
@@ -789,17 +789,19 @@
             const tableBody = document.getElementById('bodyChartLaporanPenjualan');
             const modalTitle = document.getElementById('modalTitlesLaporan');
 
-            modalTitle.innerText = `Detail ${status.toUpperCase()} ${id_sales.toUpperCase()}- ${triwulan} (${tahun})`;
+            modalTitle.innerText = `Detail ${status.toUpperCase()} ${id_sales.toUpperCase()} - ${triwulan} (${tahun})`;
             tableBody.innerHTML = `<tr><td colspan="6" class="text-center">Memuat data...</td></tr>`;
 
-            const modal = new bootstrap.Modal(document.getElementById('chartLaporanPenjualan'));
+            const modalElement = document.getElementById('chartLaporanPenjualan');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
             modal.show();
 
+            // Menggunakan URI statis untuk mencegah anomali Helper Route Blade
             const url = `/crm/chartClosed?id_sales=${encodeURIComponent(id_sales)}&triwulan=${encodeURIComponent(triwulan)}&tahun=${encodeURIComponent(tahun)}&status=${encodeURIComponent(status)}`;
 
             fetch(url)
                 .then(response => {
-                    if (!response.ok) throw new Error('Respon jaringan bermasalah');
+                    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
                     return response.json();
                 })
                 .then(data => {
@@ -808,32 +810,38 @@
                         tableBody.innerHTML = `<tr><td colspan="6" class="text-center">Tidak ada data</td></tr>`;
                         return;
                     }
+
                     data.forEach(item => {
                         const namaPerusahaan = item.perusahaan?.nama_perusahaan ?? '-';
                         const namaMateri = item.materi_relation?.nama_materi ?? '-';
-                        const netsales = formatRupiah(item.netsales ?? 0);
-                        const pax = item.pax ?? 0;
-                        const total = formatRupiah(item.total ?? 0);
+
+                        // Kalkulasi matematika dilakukan di sisi klien untuk stabilitas
+                        const nilaiDasar = parseFloat(item.netsales) || parseFloat(item.harga) || 0;
+                        const jumlahPax = parseInt(item.pax) || 0;
+                        const nilaiTotal = nilaiDasar * jumlahPax;
+
+                        const formatNetsales = formatRupiah(nilaiDasar);
+                        const formatTotal = formatRupiah(nilaiTotal);
                         const tanggal = item.merah ?? item.lost ?? '-';
 
                         tableBody.innerHTML += `
                             <tr>
                                 <td>${namaPerusahaan}</td>
                                 <td>${namaMateri}</td>
-                                <td>${netsales}</td>
-                                <td>${pax}</td>
-                                <td>${total}</td>
+                                <td>${formatNetsales}</td>
+                                <td>${jumlahPax}</td>
+                                <td>${formatTotal}</td>
                                 <td>${tanggal}</td>
                             </tr>
                         `;
                     });
                 })
                 .catch(error => {
-                    console.error('Kesalahan:', error);
-                    tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Gagal mengambil data.</td></tr>`;
+                    console.error('Kesalahan Jaringan/JSON:', error);
+                    tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Gagal mengambil data. Periksa konsol.</td></tr>`;
                 });
         }
-
+        
         setTimeout(() => {
             // 1. Kategori Chart
             const chartData = @json($chartData);
