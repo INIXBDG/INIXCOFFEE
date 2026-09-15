@@ -53,13 +53,12 @@ class ProgrammerKPIService
             return 0;
         }
 
-        $normalizedPicNames = array_map(function ($name) {
+        $normalizedPicNames = collect(array_map(function ($name) {
             return match ($name) {
-                'Stepanus' => 'Stefan',
-                'Jonathan' => 'Valen',
+                'Stepanus' => ['Stefan', 'Stepanus Berkat Sinaga'],
                 default => $name,
             };
-        }, $picNames);
+        }, $picNames))->flatten()->toArray();
 
         $picFilter = $personId !== null 
             ? (function() use ($personId) {
@@ -67,8 +66,7 @@ class ProgrammerKPIService
                 if (!$karyawanData) return null;
                 $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
                 return match ($firstName) {
-                    'Stepanus' => 'Stefan',
-                    'Jonathan' => 'Valen',
+                    'Stepanus' => ['Stefan', 'Stepanus Berkat Sinaga'],
                     default => $firstName,
                 };
             })()
@@ -178,13 +176,17 @@ class ProgrammerKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $normalizedPicNames = array_map(fn($name) => match ($name) {
-            'Stepanus' => 'Stefan',
-            'Jonathan' => 'Valen',
+        $normalizedPicNames = collect(array_map(fn($name) => match ($name) {
+            'Stepanus' => ['Stefan', 'Stepanus Berkat Sinaga'],
             default => $name
-        }, $picNames);
+        }, $picNames))->flatten()->toArray();
 
-        $ticketsError = Tickets::select('created_at', 'tanggal_selesai', 'jam_selesai', 'tingkat_kesulitan')
+        $ticketsError = Tickets::select(
+                'created_at',
+                'tanggal_selesai',
+                'jam_selesai',
+                'tingkat_kesulitan'
+            )
             ->whereBetween('created_at', [$start, $end])
             ->where('kategori', 'Error (Aplikasi)')
             ->where('keperluan', 'Programming')
@@ -363,8 +365,7 @@ class ProgrammerKPIService
                 if (!$karyawanData) return null;
                 $firstName = explode(' ', trim($karyawanData->nama_lengkap))[0] ?? '';
                 return match ($firstName) {
-                    'Stepanus' => 'Stefan',
-                    'Jonathan' => 'Valen',
+                    'Stepanus' => ['Stefan', 'Stepanus Berkat Sinaga'],
                     default => $firstName,
                 };
             })()
@@ -469,11 +470,10 @@ class ProgrammerKPIService
             ]);
         }
 
-        $normalizedPicNames = array_map(fn($name) => match ($name) {
-            'Stepanus' => 'Stefan',
-            'Jonathan' => 'Valen',
+        $normalizedPicNames = collect(array_map(fn($name) => match ($name) {
+            'Stepanus' => ['Stefan', 'Stepanus Berkat Sinaga'],
             default => $name
-        }, $picNames);
+        }, $picNames))->flatten()->toArray();
 
         $targetJabatanList = $details->pluck('jabatan')->unique()->toArray();
         $picJabatan = karyawan::whereIn('jabatan', $targetJabatanList)->pluck('jabatan')->unique()->toArray();
