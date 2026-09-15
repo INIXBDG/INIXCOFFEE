@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\ITSM\ProjectAdministratorBusinessSupport;
 
+use App\Http\Controllers\ProjectAdministrationController;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use App\Models\User;
@@ -72,6 +73,11 @@ class AdministrasiProyekTest extends TestCase
         ]);
 
         return $projectId;
+    }
+
+    public function test_project_administration_controller_exposes_destroy_method(): void
+    {
+        $this->assertTrue(method_exists(ProjectAdministrationController::class, 'destroy'));
     }
 
     public function test_user_dapat_mengakses_halaman_administrasi_proyek()

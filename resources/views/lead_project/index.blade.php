@@ -177,6 +177,9 @@
     @-webkit-keyframes spin { to { -webkit-transform: rotate(360deg); } }
     .modal-content { border-radius: 0px; box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7); }
     .modal-backdrop.show { opacity: 0.75; }
+    .table-responsive { overflow: visible !important; }
+    .dropdown-menu { position: absolute !important; z-index: 1060; }
+    .btn-group.dropup { position: relative; overflow: visible !important; }
 </style>
 
 @push('js')
@@ -268,11 +271,11 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        let actions = '<div class="btn-group dropup">';
+                        let actions = '<div class="btn-group dropup" style="position: relative; overflow: visible !important;">';
                         actions += '<button type="button" class="btn btn-sm dropdown-toggle text-black" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
                         actions += 'Actions ';
                         actions += '</button>';
-                        actions += '<div class="dropdown-menu shadow-sm" style="max-height: 250px; overflow-y: auto; border-radius: 6px;">';
+                        actions += '<div class="dropdown-menu shadow-sm dropdown-menu-end" style="z-index: 1060; min-width: 210px; max-height: 250px; overflow-y: auto; border-radius: 6px; position: absolute;">';
                         actions += '<a class="dropdown-item btn-edit-status" href="#"'
                         + ' data-id="' + row.id + '"'
                         + ' data-status="' + row.status + '"'
@@ -286,6 +289,7 @@
                         data-nilai="' + row.estimasi_nilai + '" \
                         data-perusahaan="' + (row.perusahaan_id || '') + '" \
                         data-perusahaan-nama="' + (row.client?.nama_perusahaan || '') + '">Edit Data Lead</a>';
+                        actions += '<a class="dropdown-item btn-delete-lead text-danger" href="#" data-id="' + row.id + '">Hapus Lead</a>';
                         actions += '</div></div>';
                         return actions;
                     }
@@ -414,7 +418,35 @@
             $('#editLeadModal').modal('show');
         });
 
-        // 2. Mengirim Pembaruan Data via AJAX
+        $('#leadsTable tbody').on('click', '.btn-delete-lead', function (e) {
+            e.preventDefault();
+            let leadId = $(this).data('id');
+            if (!confirm('Apakah anda yakin ingin menghapus lead ini dan data proyek terkait?')) {
+                return;
+            }
+
+            $.ajax({
+                url: "{{ url('/projects/leads') }}/" + leadId,
+                type: "DELETE",
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                beforeSend: function() {
+                    $('#loadingModal').modal('show');
+                },
+                success: function(response) {
+                    alert(response.message || 'Lead berhasil dihapus.');
+                    table.ajax.reload(null, false);
+                },
+                error: function(xhr) {
+                    alert(xhr.responseJSON?.message || 'Gagal menghapus lead.');
+                },
+                complete: function() {
+                    setTimeout(() => { $('#loadingModal').modal('hide'); }, 500);
+                }
+            });
+        });
+
         $('#formEditLead').on('submit', function(e) {
             e.preventDefault();
             var leadId = $('#edit_lead_id').val();

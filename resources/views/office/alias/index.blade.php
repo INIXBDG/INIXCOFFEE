@@ -17,6 +17,7 @@
                             <th>Nama Materi</th>
                             <th>Alias</th>
                             <th>Kode Alias</th>
+                            <th>Alias Exam</th>
                             <th>Kategori Exam</th>
                             <th class="text-center" style="width: 80px;">Aksi</th>
                         </tr>
@@ -51,6 +52,10 @@
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-muted">Kode Alias</label>
                     <input type="text" id="edit-kode-alias" class="form-control" placeholder="Masukkan kode alias">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted">Alias Exam</label>
+                    <input type="text" id="edit-alias-exam" class="form-control" placeholder="Masukkan alias exam">
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-semibold text-muted">Kategori Exam</label>
@@ -108,6 +113,12 @@ $(function () {
                     : '<span class="text-muted fst-italic small">-</span>'
             },
             {
+                data: 'alias_exam',
+                render: val => val
+                    ? val
+                    : '<span class="text-muted fst-italic small">-</span>'
+            },
+            {
                 data: 'kategori_exam',
                 render: val => val
                     ? val
@@ -123,6 +134,7 @@ $(function () {
                         data-id="${row.id}"
                         data-nama="${row.nama_materi ?? ''}"
                         data-alias="${row.alias ?? ''}"
+                        data-alias-exam="${row.alias_exam ?? ''}"
                         data-kategori="${row.kategori_exam ?? ''}"
                         data-kode_alias="${row.kode_alias ?? ''}">
                         Edit
@@ -147,6 +159,7 @@ $(function () {
         $('#edit-id').val(btn.data('id'));
         $('#edit-nama-materi').val(btn.data('nama'));
         $('#edit-alias').val(btn.data('alias'));
+        $('#edit-alias-exam').val(btn.data('alias-exam'));
         $('#edit-kode-alias').val(btn.data('kode_alias'));
         $('#edit-kategori').val(btn.data('kategori'));
         $('#edit-alert').addClass('d-none').text('');
@@ -162,6 +175,7 @@ $(function () {
             method: 'POST',
             data: {
                 alias:         $('#edit-alias').val().trim(),
+                alias_exam:    $('#edit-alias-exam').val(),
                 kode_alias:    $('#edit-kode-alias').val().trim(),
                 kategori_exam: $('#edit-kategori').val().trim(),
                 _token:        '{{ csrf_token() }}',

@@ -21,6 +21,7 @@ class Materi extends Model
         'silabus',
         'alias',
         'kode_alias',
+        'alias_exam',
         'kategori_exam',
     ];
 

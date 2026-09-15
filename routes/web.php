@@ -1402,7 +1402,7 @@ Route::prefix('office')
             Route::delete('/rekap/certif/delete/{id}', [CertificateController::class, 'deleteSummary'])->name('deleteSummary');
         });
 
-    Route::prefix('vendor')->name('vendor.')->group(function () {
+        Route::prefix('vendor')->name('vendor.')->group(function () {
             Route::resource('/souvenir', vendorOfficeController::class);
             Route::resource('/makansiang', vendorOfficeController::class);
             Route::resource('/coffeebreak', vendorOfficeController::class);
@@ -1428,6 +1428,12 @@ Route::prefix('office')
             Route::get('/download/pdf', [KendaraanController::class, 'pdfExport'])->name('pdfExportPerbaikan');
             Route::get('/download/excel', [KendaraanController::class, 'excelExport'])->name('excelExportPerbaikan');
         });
+
+        Route::get('/rekap/rkm/json', [OfficeController::class, 'rekapRkmJson'])->name('rekapRkmJson');
+        Route::get('/rekap/rkm', [OfficeController::class, 'rekapRkm'])->name('rekapRkm');
+        Route::get('/rekap/rkm/select', [OfficeController::class, 'selectHide'])->name('rekapRkm.select');
+        Route::post('/rekap/rkm/toggle-hide', [OfficeController::class, 'toggleHide'])->name('rekapRkm.toggleHide');
+        Route::post('/rekap/rkm/bulk-toggle-hide', [OfficeController::class, 'bulkToggleHide'])->name('rekapRkm.bulkToggleHide');
     });
 
 Route::prefix('/rekomendasi-lanjutan')->name('rekomendasiLanjutan.')->group(function () {
@@ -1557,6 +1563,7 @@ Route::prefix('projects/leads')->group(function () {
     Route::get('/', [LeadProjectController::class, 'index'])->name('leads.index');
     Route::get('/data', [LeadProjectController::class, 'getLeads'])->name('leads.data');
     Route::post('/store', [LeadProjectController::class, 'store'])->name('leads.store');
+    Route::delete('/{id}', [LeadProjectController::class, 'destroy'])->name('leads.destroy');
     Route::post('/{id}/update-status', [LeadProjectController::class, 'updateStatus'])->name('leads.update_status');
     Route::post('/{id}/update-data', [LeadProjectController::class, 'updateLead'])->name('leads.update_data');
 });

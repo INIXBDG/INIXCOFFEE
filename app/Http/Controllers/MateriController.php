@@ -327,7 +327,7 @@ class MateriController extends Controller
     }
 
     public function indexJsonAlias(){
-        $materi = Materi::select(['id', 'nama_materi', 'alias', 'kode_alias', 'kategori_exam'])->get();
+        $materi = Materi::select(['id', 'nama_materi', 'alias', 'kode_alias', 'kategori_exam', 'alias_exam'])->get();
         return response()->json($materi);
     }
 
@@ -336,6 +336,7 @@ class MateriController extends Controller
         $materi->alias = $request->input('alias');
         $materi->kode_alias = $request->input('kode_alias');
         $materi->kategori_exam = $request->input('kategori_exam');
+        $materi->alias_exam = $request->input('alias_exam');
         $materi->save();
 
         return response()->json(['message' => 'Alias berhasil diperbarui.']);

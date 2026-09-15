@@ -91,6 +91,42 @@ class ProjectAdministrationController extends Controller
         return response()->json(['message' => 'Permintaan tidak valid'], 400);
     }
 
+    public function destroy($id): JsonResponse
+    {
+        DB::beginTransaction();
+        try {
+            $project = Project::withTrashed()->findOrFail($id);
+
+            $administration = ProjectAdministration::withTrashed()
+                ->where('project_id', $project->id)
+                ->first();
+            if ($administration) {
+                $administration->delete();
+            }
+
+            $handover = \App\Models\ProjectHandover::withTrashed()
+                ->where('project_id', $project->id)
+                ->first();
+            if ($handover) {
+                $handover->delete();
+            }
+
+            $project->delete();
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Proyek dan administrasi terkait berhasil dihapus.'
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus proyek: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function updateStage(Request $request, $id): JsonResponse
     {
         if (!$request->ajax()) {

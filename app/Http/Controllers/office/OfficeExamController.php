@@ -335,7 +335,7 @@ class OfficeExamController extends Controller
 
         // ── Group by materi ───────────────────────────────────────
         $materiExam = $exams
-            ->groupBy(fn ($e) => $e->materi . " | " . ($e->rkm?->materi?->kategori_exam ?? '#'))
+            ->groupBy(fn ($e) => ($e->rkm?->materi?->alias_exam ?? $e->materi) . " | " . ($e->rkm?->materi?->kategori_exam ?? '#'))
             ->map($ringkasan);
 
         // ── Group by perusahaan ───────────────────────────────────

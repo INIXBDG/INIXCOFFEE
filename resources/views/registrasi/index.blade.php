@@ -182,12 +182,12 @@
             "ajax": {
                 "url": "{{ route('getRegistrasiall') }}",
                 "type": "GET",
-                "beforeSend": function () {
-                    $('#loadingModal').modal('show');
-                },
-                "complete": function () {
-                    setTimeout(() => { $('#loadingModal').modal('hide'); }, 500);
-                }
+                // "beforeSend": function () {
+                //     $('#loadingModal').modal('show');
+                // },
+                // "complete": function () {
+                //     setTimeout(() => { $('#loadingModal').modal('hide'); }, 500);
+                // }
             },
             "columns": [
                 { "data": "nama_peserta" },
