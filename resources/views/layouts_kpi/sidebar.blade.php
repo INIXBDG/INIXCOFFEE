@@ -332,25 +332,25 @@
             <span class="menu-title">KPI</span>
         </li>
 
-        @if (
-            $auth === 'Koordinator ITSM' ||
-                $auth === 'HRD' ||
-                $auth === 'Education Manager' ||
-                $auth === 'GM' ||
-                $auth === 'SPV Sales')
-            <li class="menu-item {{ Request::routeIs('kpi.index') ? 'active' : '' }}">
-                <a class="menu-link" href="{{ route('kpi.index') }}">
-                    <i class="menu-icon fa-solid fa-bullseye"></i>
-                    <span class="menu-title">Target Divisi</span>
-                </a>
-            </li>
-            <li class="menu-item {{ Request::routeIs('kpi.overview.index') ? 'active' : '' }}">
-                <a class="menu-link" href="{{ route('kpi.overview.index') }}">
-                    <i class="menu-icon fa-solid fa-users-viewfinder"></i>
-                    <span class="menu-title">Overview Departement</span>
-                </a>
-            </li>
-        @endif
+            @if (
+                $auth === 'Koordinator ITSM' ||
+                    $auth === 'HRD' ||
+                    $auth === 'Education Manager' ||
+                    $auth === 'GM' ||
+                    $auth === 'SPV Sales')
+                <li class="menu-item {{ Request::routeIs('kpi.index') ? 'active' : '' }}">
+                    <a class="menu-link" href="{{ route('kpi.index') }}">
+                        <i class="menu-icon fa-solid fa-bullseye"></i>
+                        <span class="menu-title">Target Divisi</span>
+                    </a>
+                </li>
+                <li class="menu-item {{ Request::routeIs('kpi.overview.index') ? 'active' : '' }}">
+                    <a class="menu-link" href="{{ route('kpi.overview.index') }}">
+                        <i class="menu-icon fa-solid fa-users-viewfinder"></i>
+                        <span class="menu-title">Overview Departement</span>
+                    </a>
+                </li>
+            @endif
 
         <li class="menu-item {{ Request::routeIs('kpi.overview.indexPersonal') ? 'active' : '' }}">
             <a class="menu-link" href="{{ route('kpi.overview.indexPersonal') }}">
