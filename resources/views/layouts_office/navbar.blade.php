@@ -18,6 +18,22 @@
         <!-- /Search -->
 
         <ul class="navbar-nav flex-row align-items-center ms-auto">
+            @if (auth()->check())
+                <li class="nav-item me-4">
+                    <a href="#" class="nav-link position-relative d-flex align-items-center" 
+                        style="padding: 0 10px; font-size: 24px; line-height: 1; min-width: 28px;"
+                        data-bs-toggle="modal" data-bs-target="#notificationModal"
+                        title="Notifikasi" style="font-size: 24px; line-height: 1; min-width: 28px;">
+                            <i class="bx bx-bell" style="font-size: 24px; color: #5B73EB;"></i>
+                            @if (auth()->user()->unreadNotifications->count() > 0)
+                            <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle" style="font-size: 11px; min-width: 22px; padding: 4px 6px;">
+                                {{ auth()->user()->unreadNotifications->count() }}
+                            </span>
+                        @endif
+                    </a>
+                </li>
+            @endif
+
             <!-- User -->
             <li class="nav-item dropdown-user dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">
