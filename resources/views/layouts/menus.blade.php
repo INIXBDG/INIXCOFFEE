@@ -2287,7 +2287,7 @@
                                                                         <a href="{{ route('berandaKPI.get') }}" class="link stretched-link text-decoration-none">
                                                                             <h5 class="card-title">Penilaian</h5>
                                                                         </a>
-                                                                        <p class="card-text">Data Penilaian Semua Karyawan.</p>
+                                                                        <p class="card-text">Dashboard Database Penilaian.</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -2348,17 +2348,7 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
 
-                                        <!-- Section Penilaian 360 (Baru) -->
-                                        <div class="col-md-12 mt-1">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <h5 class="text-center card-title">Penilaian 360</h5>
-                                                    <div class="row">
                                                         <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
@@ -2384,7 +2374,7 @@
                                                                         <a href="{{ url('/getFormPenilaianUser/' . $id_karyawan) }}" class="link stretched-link text-decoration-none">
                                                                             <h5 class="card-title">Form Penilaian</h5>
                                                                         </a>
-                                                                        <p class="card-text">untuk menilai kinerja rekan kerja Anda.</p>
+                                                                        <p class="card-text">Form  penilaian untuk anda.</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
