@@ -3,7 +3,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <style>
         :root {
             --pri: #4f46e5;
@@ -38,107 +37,166 @@
 
         .page-header { margin-bottom: 1.5rem; }
         .page-title {
-            font-size: 1.6rem; font-weight: 700; color: var(--gray-900);
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--gray-900);
             margin-bottom: .15rem;
         }
         .page-sub { color: var(--gray-400); font-size: .875rem; }
 
-        /* ===== TABS ===== */
         .nav-tabs-custom { border-bottom: 2px solid var(--gray-200); }
         .nav-tabs-custom .nav-link {
-            border: none; color: var(--gray-400); font-weight: 600;
-            padding: .85rem 1.25rem; font-size: .875rem; transition: color .2s;
-            display: flex; align-items: center; gap: .5rem;
+            border: none;
+            color: var(--gray-400);
+            font-weight: 600;
+            padding: .85rem 1.25rem;
+            font-size: .875rem;
+            transition: color .2s;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
         }
         .nav-tabs-custom .nav-link:hover { color: var(--pri); }
         .nav-tabs-custom .nav-link.active {
-            color: var(--pri); border-bottom: 3px solid var(--pri); background: transparent;
+            color: var(--pri);
+            border-bottom: 3px solid var(--pri);
+            background: transparent;
         }
         .nav-tabs-custom .nav-link .tab-count {
-            background: var(--gray-100); color: var(--gray-600);
-            font-size: .7rem; padding: 2px 8px; border-radius: 10px;
+            background: var(--gray-100);
+            color: var(--gray-600);
+            font-size: .7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
             font-weight: 700;
         }
         .nav-tabs-custom .nav-link.active .tab-count {
-            background: var(--pri-light); color: var(--pri);
+            background: var(--pri-light);
+            color: var(--pri);
         }
 
-        /* ===== CARDS ===== */
         .card-shell {
-            border: none; border-radius: var(--radius);
-            box-shadow: var(--shadow); background: #fff;
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            background: #fff;
         }
         .card-shell .card-body { padding: 1.5rem; }
 
-        /* ===== BUTTONS ===== */
         .btn-pri {
-            background: var(--pri); border: none; color: #fff; font-weight: 600;
-            padding: .5rem 1.25rem; border-radius: 8px; transition: all .25s;
+            background: var(--pri);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            padding: .5rem 1.25rem;
+            border-radius: 8px;
+            transition: all .25s;
             font-size: .85rem;
         }
         .btn-pri:hover {
-            background: var(--pri-dark); transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(79, 70, 229, .35); color: #fff;
+            background: var(--pri-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, .35);
+            color: #fff;
         }
         .btn-outline-sec {
-            background: #fff; border: 1px solid var(--gray-200); color: var(--gray-600);
-            font-weight: 500; padding: .4rem 1rem; border-radius: 8px;
-            transition: all .2s; font-size: .85rem;
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            color: var(--gray-600);
+            font-weight: 500;
+            padding: .4rem 1rem;
+            border-radius: 8px;
+            transition: all .2s;
+            font-size: .85rem;
         }
         .btn-outline-sec:hover {
-            background: var(--gray-50); border-color: var(--gray-400); color: var(--gray-900);
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+            color: var(--gray-900);
         }
         .btn-outline-danger-custom {
-            background: transparent; border: 1px solid var(--danger-light);
-            color: var(--danger); font-weight: 500; padding: .4rem .85rem;
-            border-radius: 8px; transition: all .2s; font-size: .85rem;
+            background: transparent;
+            border: 1px solid var(--danger-light);
+            color: var(--danger);
+            font-weight: 500;
+            padding: .4rem .85rem;
+            border-radius: 8px;
+            transition: all .2s;
+            font-size: .85rem;
         }
         .btn-outline-danger-custom:hover {
-            background: var(--danger); border-color: var(--danger); color: #fff;
+            background: var(--danger);
+            border-color: var(--danger);
+            color: #fff;
         }
 
-        /* ===== TABLES ===== */
-        .table-modern { border-collapse: separate; border-spacing: 0; width: 100%; }
+        .table-modern {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
         .table-modern thead th {
-            font-size: .72rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .5px; color: var(--gray-600); background: var(--gray-50);
-            border-bottom: 2px solid var(--gray-200) !important; border-top: none !important;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--gray-600);
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200) !important;
+            border-top: none !important;
             padding: 0.85rem 1rem;
         }
         .table-modern tbody tr { transition: background .15s; }
         .table-modern tbody tr:hover { background: var(--pri-light) !important; }
         .table-modern tbody td {
-            vertical-align: middle; font-size: .875rem;
-            border-bottom: 1px solid var(--gray-100) !important; border-top: none !important;
-            padding: 0.85rem 1rem; color: var(--gray-700);
+            vertical-align: middle;
+            font-size: .875rem;
+            border-bottom: 1px solid var(--gray-100) !important;
+            border-top: none !important;
+            padding: 0.85rem 1rem;
+            color: var(--gray-700);
         }
         .table-modern tbody tr:last-child td { border-bottom: none !important; }
 
-        /* ===== BADGES ===== */
         .badge-karyawan {
-            background: var(--pri-light); color: var(--pri);
-            font-size: .72rem; font-weight: 600; padding: .3rem .65rem;
-            border-radius: 6px; display: inline-block; margin: 2px;
+            background: var(--pri-light);
+            color: var(--pri);
+            font-size: .72rem;
+            font-weight: 600;
+            padding: .3rem .65rem;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 2px;
         }
         .badge-count {
-            background: var(--gray-100); color: var(--gray-600);
-            font-size: .72rem; font-weight: 700; padding: .25rem .6rem;
+            background: var(--gray-100);
+            color: var(--gray-600);
+            font-size: .72rem;
+            font-weight: 700;
+            padding: .25rem .6rem;
             border-radius: 10px;
         }
 
-        /* ===== ACCORDION (Job Profile) ===== */
         .accordion { --bs-accordion-border-color: var(--gray-200); }
         .accordion-item {
-            border: 1px solid var(--gray-200) !important; border-radius: var(--radius) !important;
-            margin-bottom: 8px; overflow: hidden; transition: box-shadow .2s;
+            border: 1px solid var(--gray-200) !important;
+            border-radius: var(--radius) !important;
+            margin-bottom: 8px;
+            overflow: hidden;
+            transition: box-shadow .2s;
         }
         .accordion-item:hover { box-shadow: var(--shadow-sm); }
         .accordion-button {
-            background: #fff; color: var(--gray-700); font-weight: 600;
-            font-size: .9rem; padding: 1rem 1.25rem; box-shadow: none !important;
+            background: #fff;
+            color: var(--gray-700);
+            font-weight: 600;
+            font-size: .9rem;
+            padding: 1rem 1.25rem;
+            box-shadow: none !important;
         }
         .accordion-button:not(.collapsed) {
-            background: var(--pri-light); color: var(--pri);
+            background: var(--pri-light);
+            color: var(--pri);
             box-shadow: none !important;
         }
         .accordion-button::after { filter: none; }
@@ -147,168 +205,257 @@
         }
         .accordion-body { padding: 1.25rem; background: #fff; }
 
-        /* ===== KARYAWAN CARD ===== */
         .karyawan-card {
-            border: 1px solid var(--gray-200); border-radius: 8px;
-            padding: 1.25rem; margin-bottom: 10px; background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 10px;
+            background: var(--gray-50);
             transition: all .2s;
         }
         .karyawan-card:hover {
-            border-color: var(--pri); background: #fff;
+            border-color: var(--pri);
+            background: #fff;
             box-shadow: var(--shadow-sm);
         }
         .karyawan-card:last-child { margin-bottom: 0; }
         .karyawan-name {
-            font-weight: 700; color: var(--gray-900);
-            font-size: .95rem; margin-bottom: 4px;
+            font-weight: 700;
+            color: var(--gray-900);
+            font-size: .95rem;
+            margin-bottom: 4px;
         }
         .karyawan-meta { color: var(--gray-400); font-size: .8rem; }
 
-        /* ===== PROFILE SECTION ===== */
         .profile-section { margin-top: 12px; }
         .profile-section-title {
-            font-size: .72rem; font-weight: 700; color: var(--gray-600);
-            text-transform: uppercase; letter-spacing: .6px;
-            margin-bottom: .6rem; padding-bottom: .4rem;
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-bottom: .6rem;
+            padding-bottom: .4rem;
             border-bottom: 1px solid var(--gray-200);
-            display: flex; align-items: center; gap: .4rem;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
         }
         .profile-list { list-style: none; padding: 0; margin: 0 0 12px 0; }
         .profile-list li {
-            padding: .35rem 0 .35rem 18px; position: relative;
-            color: var(--gray-600); font-size: .85rem; line-height: 1.6;
+            padding: .35rem 0 .35rem 18px;
+            position: relative;
+            color: var(--gray-600);
+            font-size: .85rem;
+            line-height: 1.6;
         }
         .profile-list li::before {
-            content: "–"; position: absolute; left: 0; color: var(--pri); font-weight: 700;
+            content: "–";
+            position: absolute;
+            left: 0;
+            color: var(--pri);
+            font-weight: 700;
         }
         .empty-text { color: var(--gray-400); font-size: .82rem; font-style: italic; }
 
-        /* ===== FORM ELEMENTS ===== */
         .form-control, .form-select {
-            border: 1px solid var(--gray-200); border-radius: 8px;
-            padding: .5rem .85rem; font-size: .875rem; color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: .5rem .85rem;
+            font-size: .875rem;
+            color: var(--gray-700);
             transition: all .2s;
         }
         .form-control:focus, .form-select:focus {
-            border-color: var(--pri); box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
+            border-color: var(--pri);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
             outline: none;
         }
         .form-label {
-            font-weight: 600; color: var(--gray-700);
-            font-size: .82rem; margin-bottom: .4rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: .82rem;
+            margin-bottom: .4rem;
         }
 
-        /* ===== PARENT CARD (Nested Form) ===== */
         .parent-card {
-            background: var(--gray-50); border: 1px solid var(--gray-200);
-            border-radius: 8px; padding: 1rem; margin-bottom: 10px;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 10px;
         }
         .parent-header { display: flex; gap: 8px; margin-bottom: 8px; }
         .parent-header input { flex: 1; font-weight: 600; font-size: .875rem; }
         .details-container {
-            margin-left: 16px; padding-left: 12px;
+            margin-left: 16px;
+            padding-left: 12px;
             border-left: 2px solid var(--pri-light);
         }
         .detail-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: center; }
         .detail-row input { flex: 1; }
 
-        /* ===== MODAL ===== */
-        .modal-content { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); }
+        .modal-content {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+        }
         .modal-header-custom {
             background: linear-gradient(135deg, var(--pri) 0%, var(--pri-dark) 100%);
-            color: #fff; border-radius: 12px 12px 0 0; padding: 1.1rem 1.5rem;
+            color: #fff;
+            border-radius: 12px 12px 0 0;
+            padding: 1.1rem 1.5rem;
         }
         .modal-header-custom .modal-title { font-weight: 700; font-size: 1rem; }
         .modal-header-custom .btn-close { filter: brightness(0) invert(1); }
         .modal-body { padding: 1.5rem; }
-        .modal-footer { border-top: 1px solid var(--gray-100); padding: 1rem 1.5rem; }
+        .modal-footer {
+            border-top: 1px solid var(--gray-100);
+            padding: 1rem 1.5rem;
+        }
 
         .modal-dialog-scrollable .modal-content {
             max-height: calc(100vh - 2rem) !important;
-            overflow: hidden; display: flex; flex-direction: column;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
-        .modal-dialog-scrollable .modal-body { overflow-y: auto !important; flex: 1 1 auto; min-height: 0; }
+        .modal-dialog-scrollable .modal-body {
+            overflow-y: auto !important;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
         .modal-dialog-scrollable form {
-            display: flex; flex-direction: column; flex: 1 1 auto;
-            min-height: 0; overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
         }
         .modal-dialog-scrollable form .modal-body { overflow-y: auto !important; }
 
-        /* ===== ALERTS ===== */
         .alert-custom {
-            border: none; border-radius: 8px; padding: .85rem 1.15rem;
-            font-size: .85rem; font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            padding: .85rem 1.15rem;
+            font-size: .85rem;
+            font-weight: 500;
         }
         .alert-custom.alert-success { background: var(--success-light); color: var(--success); }
         .alert-custom.alert-danger { background: var(--danger-light); color: var(--danger); }
         .alert-custom.alert-info { background: var(--info-light); color: var(--info); }
 
-        /* ===== DROPDOWN ===== */
         .dropdown-menu {
-            border: none; box-shadow: var(--shadow-lg); border-radius: 8px;
-            padding: .4rem; font-size: .85rem;
+            border: none;
+            box-shadow: var(--shadow-lg);
+            border-radius: 8px;
+            padding: .4rem;
+            font-size: .85rem;
         }
         .dropdown-item {
-            padding: .5rem .85rem; border-radius: 6px; transition: all .15s;
+            padding: .5rem .85rem;
+            border-radius: 6px;
+            transition: all .15s;
         }
         .dropdown-item:hover { background: var(--pri-light); color: var(--pri); }
         .dropdown-item.text-danger:hover { background: var(--danger-light); color: var(--danger); }
 
-        /* ===== SECTION HEADER ===== */
         .section-divider {
-            border: none; border-top: 1px solid var(--gray-200);
+            border: none;
+            border-top: 1px solid var(--gray-200);
             margin: 1.5rem 0;
         }
         .section-title {
-            font-size: .85rem; font-weight: 700; color: var(--gray-700);
-            margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem;
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
         }
         .section-title i { color: var(--pri); }
 
-        /* ===== EMPTY STATE ===== */
         .empty-state {
-            text-align: center; padding: 3rem 1rem; color: var(--gray-400);
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--gray-400);
         }
-        .empty-state i { font-size: 2.5rem; margin-bottom: 1rem; opacity: .5; }
+        .empty-state i {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            opacity: .5;
+        }
         .empty-state p { font-size: .9rem; margin: 0; }
 
-        /* ===== DETAIL VIEW (in modal) ===== */
         .detail-block {
-            background: var(--gray-50); border-left: 3px solid var(--pri);
-            padding: 1rem 1.25rem; margin-bottom: 10px; border-radius: 0 8px 8px 0;
+            background: var(--gray-50);
+            border-left: 3px solid var(--pri);
+            padding: 1rem 1.25rem;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
         }
         .detail-block-title {
-            font-weight: 700; color: var(--gray-900);
-            font-size: .875rem; margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--gray-900);
+            font-size: .875rem;
+            margin-bottom: 8px;
         }
         .detail-block ul {
-            margin-left: 18px; padding-left: 12px;
-            border-left: 1px dashed var(--gray-200); margin-bottom: 0;
+            margin-left: 18px;
+            padding-left: 12px;
+            border-left: 1px dashed var(--gray-200);
+            margin-bottom: 0;
         }
         .detail-block ul li {
-            color: var(--gray-600); padding: 3px 0;
-            line-height: 1.6; font-size: .85rem;
+            color: var(--gray-600);
+            padding: 3px 0;
+            line-height: 1.6;
+            font-size: .85rem;
         }
 
         .info-card-mini {
-            background: var(--gray-50); border: 1px solid var(--gray-200);
-            border-radius: 8px; padding: .85rem 1rem;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: .85rem 1rem;
         }
         .info-card-mini .label {
-            font-size: .7rem; text-transform: uppercase; letter-spacing: .5px;
-            color: var(--gray-400); font-weight: 700; margin-bottom: 2px;
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--gray-400);
+            font-weight: 700;
+            margin-bottom: 2px;
         }
         .info-card-mini .value {
-            font-size: .9rem; font-weight: 600; color: var(--gray-900);
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--gray-900);
         }
 
         .kompetensi-tag {
-            display: inline-block; background: var(--pri-light); color: var(--pri);
-            padding: 4px 12px; border-radius: 6px; font-size: .78rem;
-            font-weight: 600; margin: 3px 4px 3px 0;
+            display: inline-block;
+            background: var(--pri-light);
+            color: var(--pri);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: .78rem;
+            font-weight: 600;
+            margin: 3px 4px 3px 0;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #f0f2f5 25%, #e6e9ef 50%, #f0f2f5 75%);
+            background-size: 200% 100%;
+            animation: skeleton-shimmer 1.4s ease-in-out infinite;
+            border-radius: 8px;
+        }
+        @keyframes skeleton-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
     </style>
-
     <div class="container-fluid px-4 py-4">
         <div class="d-sm-flex align-items-center justify-content-between page-header">
             <div>
@@ -317,7 +464,6 @@
             </div>
         </div>
 
-        {{-- ==================== TABS ==================== --}}
         <ul class="nav nav-tabs nav-tabs-custom mb-4" id="mainTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="jobdesk-tab" data-bs-toggle="tab" data-bs-target="#jobdesk-pane" type="button">
@@ -333,14 +479,13 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-pane" type="button">
-                    >Job Profile
+                    Job Profile
                     <span class="tab-count">{{ $orgStructures->count() }}</span>
                 </button>
             </li>
         </ul>
 
         <div class="tab-content" id="mainTabsContent">
-            {{-- ==================== TAB JOB DESK ==================== --}}
             <div class="tab-pane fade show active" id="jobdesk-pane" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="section-title mb-0">Daftar Job Desk</h6>
@@ -364,7 +509,7 @@
                                         <th width="90" class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="tbodyJobDesk">
                                     @php $no = 0; @endphp
                                     @forelse($jobDesks as $jobDesk)
                                         @if (!empty($jobDesk->fungsi_utama) || !empty($jobDesk->tugas_tanggung_jawab) || !empty($jobDesk->wewenang))
@@ -424,7 +569,6 @@
                 </div>
             </div>
 
-            {{-- ==================== TAB SOP ==================== --}}
             <div class="tab-pane fade" id="sop-pane" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="section-title mb-0">Standard Operating Procedure</h6>
@@ -447,13 +591,15 @@
                                         <th width="90" class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="tbodySop">
                                     @php
-                                        $sopDesks = $jobDesks->filter(fn($jd) => !empty($jd->sop) && count($jd->sop) > 0)->values();
+                                        $sopNo = 0;
+                                        $sopDesks = $jobDesks->filter(fn($jd) => !empty($jd->sop) && count($jd->sop) > 0);
                                     @endphp
-                                    @forelse($sopDesks as $index => $jobDesk)
+                                    @forelse($sopDesks as $jobDesk)
+                                        @php $sopNo++; @endphp
                                         <tr>
-                                            <td class="text-muted">{{ $index + 1 }}</td>
+                                            <td class="text-muted">{{ $sopNo }}</td>
                                             <td>
                                                 <strong style="color:var(--gray-900)">{{ $jobDesk->orgStructure->jabatan ?? '-' }}</strong>
                                                 @if ($jobDesk->orgStructure->divisi ?? false)
@@ -470,7 +616,13 @@
                                                 @endif
                                             </td>
                                             <td class="text-center"><span class="badge-count">{{ count($jobDesk->sop ?? []) }}</span></td>
-                                            <td style="max-width:300px">{{ Str::limit($jobDesk->sop[0]['name'] ?? '', 60) ?: '—' }}</td>
+                                            <td style="max-width:280px">
+                                                @if (!empty($jobDesk->sop) && count($jobDesk->sop) > 0)
+                                                    {{ Str::limit($jobDesk->sop[0]['name'] ?? '-', 50) }}
+                                                @else
+                                                    —
+                                                @endif
+                                            </td>
                                             <td class="text-center">
                                                 <div class="dropdown">
                                                     <button class="btn btn-sm btn-outline-sec dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -503,112 +655,133 @@
                 </div>
             </div>
 
-            {{-- ==================== TAB JOB PROFILE ==================== --}}
             <div class="tab-pane fade" id="profile-pane" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="section-title mb-0">>Job Profile</h6>
+                    <h6 class="section-title mb-0">Job Profile per Struktur Organisasi</h6>
                 </div>
                 <div id="alertContainerProfile"></div>
-                <div class="accordion" id="accordionProfile">
-                    @forelse($orgStructures as $org)
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrg{{ $org->id }}">
-                                    <div class="d-flex align-items-center w-100">
-                                        <div>
-                                            <div style="font-weight:700; color:var(--gray-900)">{{ $org->jabatan }}</div>
-                                            @if ($org->divisi)
-                                                <small style="color:var(--gray-400); font-weight:400">{{ $org->divisi }}</small>
-                                            @endif
-                                        </div>
-                                        <span class="badge-count ms-auto me-2">{{ $org->karyawans->count() }} <i class="fa-solid fa-user ms-1" style="font-size:.65rem"></i></span>
-                                    </div>
-                                </button>
-                            </h2>
-                            <div id="collapseOrg{{ $org->id }}" class="accordion-collapse collapse" data-bs-parent="#accordionProfile">
-                                <div class="accordion-body">
-                                    @foreach ($org->karyawans as $karyawan)
-                                        <div class="karyawan-card">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <div class="karyawan-name">{{ $karyawan->nama_lengkap }}</div>
-                                                    <div class="karyawan-meta">
-                                                        @if($karyawan->jobProfile)
-                                                            <i class="fa-solid fa-circle-check me-1" style="color:var(--success)"></i>Profile lengkap
-                                                        @else
-                                                            <i class="fa-solid fa-circle-exclamation me-1" style="color:var(--warning)"></i>Belum ada profile
+                <div id="profileAccordionArea">
+                    <div class="accordion" id="profileAccordion">
+                        @forelse($orgStructures as $org)
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading{{ $org->id }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $org->id }}">
+                                        <span class="me-2">{{ $org->jabatan }}</span>
+                                        @if ($org->divisi)
+                                            <small class="text-muted">— {{ $org->divisi }}</small>
+                                        @endif
+                                        <span class="badge-count ms-2">{{ $org->karyawans->count() }} karyawan</span>
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ $org->id }}" class="accordion-collapse collapse" data-bs-parent="#profileAccordion">
+                                    <div class="accordion-body">
+                                        @forelse($org->karyawans as $karyawan)
+                                            <div class="karyawan-card">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <div class="karyawan-name">{{ $karyawan->nama_lengkap }}</div>
+                                                        <div class="karyawan-meta">{{ $karyawan->jabatan ?? $org->jabatan }} · {{ $org->divisi ?? '-' }}</div>
+                                                    </div>
+                                                    <div class="d-flex gap-2">
+                                                        <button class="btn btn-sm btn-outline-sec" onclick="openModalProfile({{ $karyawan->id }}, '{{ addslashes($karyawan->nama_lengkap) }}')">
+                                                            <i class="fa-solid fa-pen me-1"></i>Profile
+                                                        </button>
+                                                        @if ($karyawan->jobProfile ?? false)
+                                                            <button class="btn btn-sm btn-outline-danger-custom" onclick="confirmDeleteProfile({{ $karyawan->id }})">
+                                                                <i class="fa-solid fa-trash"></i>
+                                                            </button>
                                                         @endif
                                                     </div>
                                                 </div>
-                                                <div class="d-flex gap-1">
-                                                    <button class="btn btn-pri btn-sm" onclick="openModalProfile({{ $karyawan->id }}, '{{ addslashes($karyawan->nama_lengkap) }}')">
-                                                        <i class="fa-solid fa-pen me-1"></i>{{ $karyawan->jobProfile ? 'Edit' : 'Tambah' }}
-                                                    </button>
-                                                    @if ($karyawan->jobProfile)
-                                                        <button class="btn btn-outline-danger-custom btn-sm" onclick="confirmDeleteProfile({{ $karyawan->id }})">
-                                                            <i class="fa-solid fa-trash"></i>
-                                                        </button>
-                                                    @endif
-                                                </div>
+                                                @if ($karyawan->jobProfile ?? false)
+                                                    <div class="profile-section mt-3">
+                                                        @if (!empty($karyawan->jobProfile->qualifications))
+                                                            <div class="profile-section-title"><i class="fa-solid fa-graduation-cap"></i> Qualifications</div>
+                                                            <ul class="profile-list">
+                                                                @foreach ($karyawan->jobProfile->qualifications as $q)
+                                                                    <li>{{ $q }}</li>
+                                                                @endforeach
+                                                            </ul>
+                                                        @endif
+                                                        @if (!empty($karyawan->jobProfile->descriptions))
+                                                            <div class="profile-section-title"><i class="fa-solid fa-file-lines"></i> Job Description</div>
+                                                            <ul class="profile-list">
+                                                                @foreach ($karyawan->jobProfile->descriptions as $d)
+                                                                    <li>{{ $d }}</li>
+                                                                @endforeach
+                                                            </ul>
+                                                        @endif
+                                                        @if (!empty($karyawan->jobProfile->compensation_benefit))
+                                                            <div class="profile-section-title"><i class="fa-solid fa-gift"></i> Compensation & Benefit</div>
+                                                            <ul class="profile-list">
+                                                                @foreach ($karyawan->jobProfile->compensation_benefit as $c)
+                                                                    <li>{{ $c }}</li>
+                                                                @endforeach
+                                                            </ul>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <p class="empty-text mt-2 mb-0">Belum ada Job Profile</p>
+                                                @endif
                                             </div>
-
-                                            @if($karyawan->jobProfile)
-                                                @php $data = $karyawan->jobProfile; $isPrivate = true; @endphp
-                                                @include('HR.job_desk._profile_section')
-                                            @else
-                                                <div class="empty-text mt-2">Belum ada job profile untuk karyawan ini</div>
-                                            @endif
-                                        </div>
-                                    @endforeach
+                                        @empty
+                                            <p class="empty-text mb-0">Tidak ada karyawan pada jabatan ini</p>
+                                        @endforelse
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    @empty
-                        <div class="empty-state">
-                            <i class="fa-solid fa-id-card d-block"></i>
-                            <p class="fw-semibold">Belum ada data jabatan dengan karyawan</p>
-                        </div>
-                    @endforelse
+                        @empty
+                            <div class="empty-state">
+                                <i class="fa-solid fa-sitemap d-block"></i>
+                                <p class="fw-semibold">Belum ada struktur organisasi</p>
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- ==================== MODAL JOB DESK ==================== --}}
-    <div class="modal fade" id="modalJobDesk" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal fade" id="modalJobDesk" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header modal-header-custom border-0">
-                    <h5 class="modal-title" id="modalJobDeskTitle"><i class="fa-solid fa-clipboard-list me-2"></i>Tambah Job Desk</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
                 <form id="formJobDesk">
-                    @csrf
-                    <input type="hidden" id="editJobDeskId" value="">
+                    <div class="modal-header modal-header-custom">
+                        <h5 class="modal-title" id="modalJobDeskTitle"><i class="fa-solid fa-clipboard-list me-2"></i>Tambah Job Desk</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
                     <div class="modal-body">
+                        <input type="hidden" id="editJobDeskId" name="id">
                         <div class="mb-3">
-                            <label class="form-label">Pilih Jabatan <span class="text-danger">*</span></label>
-                            <select name="id_org" id="selectOrgJobDesk" class="form-select" required>
+                            <label class="form-label">Jabatan / Struktur Organisasi</label>
+                            <select class="form-select" id="selectOrgJobDesk" name="id_org" required>
                                 <option value="">— Pilih Jabatan —</option>
+                                @foreach ($orgStructures as $org)
+                                    <option value="{{ $org->id }}">{{ $org->jabatan }}{{ $org->divisi ? ' — ' . $org->divisi : '' }}</option>
+                                @endforeach
                             </select>
                         </div>
-
-                        <hr class="section-divider">
-                        <h6 class="section-title"><i class="fa-solid fa-bullseye"></i>Fungsi Utama</h6>
                         <div class="mb-3">
-                            <textarea name="fungsi_utama" id="fungsiUtama" class="form-control" rows="3" placeholder="Deskripsi fungsi utama jabatan..."></textarea>
+                            <label class="form-label">Fungsi Utama</label>
+                            <textarea class="form-control" id="fungsiUtama" name="fungsi_utama" rows="3"></textarea>
                         </div>
-
-                        <hr class="section-divider">
-                        <h6 class="section-title"><i class="fa-solid fa-user-tie"></i>Spesifikasi Jabatan</h6>
-                        <div class="mb-3"><label class="form-label">Tujuan Jabatan</label>
-                            <textarea name="tujuan_jabatan" class="form-control" rows="2"></textarea>
-                        </div>
-                        <div class="mb-3"><label class="form-label">Kualifikasi Pendidikan</label>
-                            <textarea name="kualifikasi_pendidikan" class="form-control" rows="2"></textarea>
-                        </div>
-                        <div class="mb-3"><label class="form-label">Pengalaman Kerja</label>
-                            <textarea name="pengalaman_kerja" class="form-control" rows="2"></textarea>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tujuan Jabatan</label>
+                                <textarea class="form-control" name="tujuan_jabatan" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Kualifikasi Pendidikan</label>
+                                <textarea class="form-control" name="kualifikasi_pendidikan" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Pengalaman Kerja</label>
+                                <textarea class="form-control" name="pengalaman_kerja" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Karakteristik Pribadi</label>
+                                <textarea class="form-control" name="karakteristik_pribadi" rows="2"></textarea>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Kompetensi</label>
@@ -617,241 +790,232 @@
                                 <i class="fa-solid fa-plus me-1"></i>Tambah Kompetensi
                             </button>
                         </div>
-                        <div class="mb-3"><label class="form-label">Karakteristik Pribadi</label>
-                            <textarea name="karakteristik_pribadi" class="form-control" rows="2"></textarea>
+                        <div class="mb-3">
+                            <label class="form-label">Tugas & Tanggung Jawab</label>
+                            <div id="tugasContainer"></div>
+                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addParentField('tugasContainer', 'tugas_tanggung_jawab', 'Tugas Utama', 'Detail Tugas')">
+                                <i class="fa-solid fa-plus me-1"></i>Tambah Tugas
+                            </button>
                         </div>
-
-                        <hr class="section-divider">
-                        <h6 class="section-title"><i class="fa-solid fa-list-check"></i>Tugas dan Tanggung Jawab</h6>
-                        <div id="tugasContainer"></div>
-                        <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addParentField('tugasContainer', 'tugas_tanggung_jawab', 'Tugas Utama', 'Detail Tugas')">
-                            <i class="fa-solid fa-plus me-1"></i>Tambah Tugas Utama
-                        </button>
-
-                        <hr class="section-divider">
-                        <h6 class="section-title"><i class="fa-solid fa-gavel"></i>Wewenang</h6>
-                        <div id="wewenangContainer"></div>
-                        <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addParentField('wewenangContainer', 'wewenang', 'Wewenang Utama', 'Detail Wewenang')">
-                            <i class="fa-solid fa-plus me-1"></i>Tambah Wewenang Utama
-                        </button>
+                        <div class="mb-3">
+                            <label class="form-label">Wewenang</label>
+                            <div id="wewenangContainer"></div>
+                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addParentField('wewenangContainer', 'wewenang', 'Wewenang Utama', 'Detail Wewenang')">
+                                <i class="fa-solid fa-plus me-1"></i>Tambah Wewenang
+                            </button>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-sec" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-pri" id="btnSubmitJobDesk">
-                            <i class="fa-solid fa-save me-1"></i>Simpan
-                        </button>
+                        <button type="submit" class="btn btn-pri" id="btnSubmitJobDesk"><i class="fa-solid fa-save me-1"></i>Simpan</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    {{-- ==================== MODAL SOP ==================== --}}
-    <div class="modal fade" id="modalSop" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal fade" id="modalSop" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header modal-header-custom border-0">
-                    <h5 class="modal-title" id="modalSopTitle"><i class="fa-solid fa-file-contract me-2"></i>Tambah SOP</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
                 <form id="formSop">
-                    @csrf
-                    <input type="hidden" id="editSopId" value="">
+                    <div class="modal-header modal-header-custom">
+                        <h5 class="modal-title" id="modalSopTitle"><i class="fa-solid fa-file-contract me-2"></i>Tambah SOP</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
                     <div class="modal-body">
+                        <input type="hidden" id="editSopId" name="id">
                         <div class="mb-3">
-                            <label class="form-label">Pilih Jabatan <span class="text-danger">*</span></label>
-                            <select name="id_org" id="selectOrgSop" class="form-select" required>
+                            <label class="form-label">Jabatan / Struktur Organisasi</label>
+                            <select class="form-select" id="selectOrgSop" name="id_org" required>
                                 <option value="">— Pilih Jabatan —</option>
+                                @foreach ($orgStructures as $org)
+                                    <option value="{{ $org->id }}">{{ $org->jabatan }}{{ $org->divisi ? ' — ' . $org->divisi : '' }}</option>
+                                @endforeach
                             </select>
                         </div>
-
-                        <div class="alert alert-custom alert-info">
-                            <i class="fa-solid fa-info-circle me-1"></i>
-                            Setiap jabatan hanya memiliki 1 dokumen SOP. Tambahkan SOP utama beserta detail-detailnya di bawah ini.
+                        <div class="mb-3">
+                            <label class="form-label">SOP</label>
+                            <div id="sopContainer"></div>
+                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addParentField('sopContainer', 'sop', 'SOP Utama', 'Detail SOP')">
+                                <i class="fa-solid fa-plus me-1"></i>Tambah SOP
+                            </button>
                         </div>
-
-                        <hr class="section-divider">
-                        <h6 class="section-title">Standard Operating Procedure</h6>
-                        <div id="sopContainer"></div>
-                        <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addParentField('sopContainer', 'sop', 'SOP Utama', 'Detail SOP')">
-                            <i class="fa-solid fa-plus me-1"></i>Tambah SOP Utama
-                        </button>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-sec" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-pri" id="btnSubmitSop">
-                            <i class="fa-solid fa-save me-1"></i>Simpan
-                        </button>
+                        <button type="submit" class="btn btn-pri" id="btnSubmitSop"><i class="fa-solid fa-save me-1"></i>Simpan</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    {{-- ==================== MODAL JOB PROFILE ==================== --}}
-    <div class="modal fade" id="modalProfile" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal fade" id="modalProfile" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header modal-header-custom border-0">
-                    <h5 class="modal-title" id="modalProfileTitle"><i class="fa-solid fa-id-card me-2"></i>Job Profile</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="formProfile">
-                        @csrf
-                        <input type="hidden" id="profileKaryawanId" name="karyawan_id" value="">
-                        <div class="alert alert-custom alert-info mb-4">
-                            <i class="fa-solid fa-info-circle me-1"></i>
-                            Job Profile melekat pada karyawan individu, terlepas dari jabatan yang diembannya.
+                <form id="formProfile">
+                    <div class="modal-header modal-header-custom">
+                        <h5 class="modal-title" id="modalProfileTitle"><i class="fa-solid fa-user-tie me-2"></i>Job Profile</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="profileKaryawanId" name="karyawan_id">
+                        <div class="mb-3">
+                            <label class="form-label">Qualifications</label>
+                            <div id="profQualificationContainer"></div>
+                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addSimpleField('profQualificationContainer', 'qualifications[]', 'Qualification')">
+                                <i class="fa-solid fa-plus me-1"></i>Tambah
+                            </button>
                         </div>
-
-                        <h6 class="section-title"><i class="fa-solid fa-graduation-cap"></i>Qualification</h6>
-                        <div id="profQualificationContainer"></div>
-                        <button type="button" class="btn btn-outline-sec btn-sm mt-2 mb-3" onclick="addSimpleField('profQualificationContainer', 'qualifications[]', 'Qualification')">
-                            <i class="fa-solid fa-plus me-1"></i>Tambah Qualification
-                        </button>
-
-                        <hr class="section-divider">
-
-                        <h6 class="section-title"><i class="fa-solid fa-list-ul"></i>Job Description</h6>
-                        <div id="profDescriptionContainer"></div>
-                        <button type="button" class="btn btn-outline-sec btn-sm mt-2 mb-3" onclick="addSimpleField('profDescriptionContainer', 'descriptions[]', 'Job Description')">
-                            <i class="fa-solid fa-plus me-1"></i>Tambah Job Description
-                        </button>
-
-                        <hr class="section-divider">
-
-                        <h6 class="section-title"><i class="fa-solid fa-coins"></i>Compensation & Benefit</h6>
-                        <div id="profCompensationContainer"></div>
-                        <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addSimpleField('profCompensationContainer', 'compensation_benefit[]', 'Compensation & Benefit')">
-                            <i class="fa-solid fa-plus me-1"></i>Tambah Compensation & Benefit
-                        </button>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-sec" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" form="formProfile" class="btn btn-pri" id="btnProfileSubmit">
-                        <i class="fa-solid fa-save me-1"></i>Simpan
-                    </button>
-                </div>
+                        <div class="mb-3">
+                            <label class="form-label">Job Description</label>
+                            <div id="profDescriptionContainer"></div>
+                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addSimpleField('profDescriptionContainer', 'descriptions[]', 'Job Description')">
+                                <i class="fa-solid fa-plus me-1"></i>Tambah
+                            </button>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Compensation & Benefit</label>
+                            <div id="profCompensationContainer"></div>
+                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addSimpleField('profCompensationContainer', 'compensation_benefit[]', 'Compensation & Benefit')">
+                                <i class="fa-solid fa-plus me-1"></i>Tambah
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-sec" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-pri" id="btnProfileSubmit"><i class="fa-solid fa-save me-1"></i>Simpan</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    {{-- ==================== MODAL DETAIL ==================== --}}
-    <div class="modal fade" id="modalDetail" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal fade" id="modalDetail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header modal-header-custom border-0">
+                <div class="modal-header modal-header-custom">
                     <h5 class="modal-title" id="modalDetailTitle"><i class="fa-solid fa-file-lines me-2"></i>Detail</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" id="detailContent"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-sec" data-bs-dismiss="modal">Tutup</button>
+                <div class="modal-body" id="detailContent">
+                    <div id="detailSkeleton"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- ==================== MODAL DELETE ==================== --}}
-    <div class="modal fade" id="modalDelete" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal fade" id="modalDelete" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header" style="background:var(--danger-light);border:none;padding:1rem 1.25rem">
-                    <h6 class="modal-title" style="color:var(--danger);font-weight:700"><i class="fa-solid fa-triangle-exclamation me-2"></i>Konfirmasi Hapus</h6>
+                <div class="modal-header modal-header-custom">
+                    <h5 class="modal-title"><i class="fa-solid fa-trash me-2"></i>Konfirmasi Hapus</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-0" id="deleteMessage" style="font-size:.9rem;color:var(--gray-700)">Yakin ingin menghapus data ini?</p>
+                    <p id="deleteMessage" class="mb-0">Yakin ingin menghapus data ini?</p>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid var(--gray-100)">
-                    <button type="button" class="btn btn-sm btn-outline-sec" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger-custom" id="btnDeleteConfirm">Hapus</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-sec" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-outline-danger-custom" id="btnDeleteConfirm"><i class="fa-solid fa-trash me-1"></i>Hapus</button>
                 </div>
             </div>
         </div>
     </div>
+    @php
+        $orgStructuresData = $orgStructures->map(function ($o) {
+            return [
+                'id' => $o->id,
+                'jabatan' => $o->jabatan,
+                'divisi' => $o->divisi,
+                'karyawans' => $o->karyawans->map(function ($k) {
+                    return [
+                        'id' => $k->id,
+                        'nama_lengkap' => $k->nama_lengkap,
+                    ];
+                })->values(),
+            ];
+        })->values();
+    @endphp
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const orgStructures = {{ Illuminate\Support\Js::from($orgStructuresData) }};
+
         let deleteId = null;
         let deleteType = null;
-        let orgStructures = [];
+        let isProfileUpdate = false;
 
-        document.addEventListener('DOMContentLoaded', function() {
-            loadOrgStructures();
-        });
-
-        function loadOrgStructures() {
-            fetch("{{ route('HR.structure.api.tree') }}")
-                .then(response => response.json())
-                .then(data => {
-                    orgStructures = flattenTree(data.tree || []);
-                    populateOrgSelect('selectOrgJobDesk');
-                    populateOrgSelect('selectOrgSop');
-                });
+        function skeletonDetail() {
+            return `
+            <div class="row g-2 mb-4">
+                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
+                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
+                <div class="col-12"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
+            </div>
+            <div class="skeleton mb-3" style="height:18px;width:140px;"></div>
+            <div class="skeleton mb-4" style="height:60px;width:100%;"></div>
+            <div class="skeleton mb-3" style="height:18px;width:160px;"></div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
+                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
+                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
+                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
+                <div class="col-12"><div class="skeleton" style="height:80px;border-radius:8px;"></div></div>
+            </div>
+            <div class="skeleton mb-3" style="height:18px;width:200px;"></div>
+            <div class="skeleton mb-2" style="height:90px;border-radius:8px;"></div>
+            <div class="skeleton mb-2" style="height:90px;border-radius:8px;"></div>
+            <div class="skeleton" style="height:90px;border-radius:8px;"></div>`;
         }
 
-        function flattenTree(items) {
-            let result = [];
-            items.forEach(item => {
-                result.push(item);
-                if (item.children) result = result.concat(flattenTree(item.children));
-            });
-            return result;
+        function skeletonModalForm() {
+            return `
+            <div class="skeleton mb-3" style="height:16px;width:40%;"></div>
+            <div class="skeleton mb-4" style="height:40px;width:100%;border-radius:8px;"></div>
+            <div class="skeleton mb-3" style="height:16px;width:30%;"></div>
+            <div class="skeleton mb-4" style="height:80px;width:100%;border-radius:8px;"></div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6"><div class="skeleton" style="height:70px;border-radius:8px;"></div></div>
+                <div class="col-md-6"><div class="skeleton" style="height:70px;border-radius:8px;"></div></div>
+            </div>
+            <div class="skeleton mb-2" style="height:16px;width:35%;"></div>
+            <div class="skeleton mb-2" style="height:40px;width:100%;border-radius:8px;"></div>
+            <div class="skeleton" style="height:40px;width:100%;border-radius:8px;"></div>`;
         }
 
-        function populateOrgSelect(selectId) {
-            const select = document.getElementById(selectId);
-            if (!select) return;
-            select.innerHTML = '<option value="">— Pilih Jabatan —</option>';
-            orgStructures.forEach(org => {
-                const option = document.createElement('option');
-                option.value = org.id;
-                option.textContent = org.jabatan + (org.divisi ? ' - ' + org.divisi : '');
-                select.appendChild(option);
-            });
-        }
-
-        // ============ UTILITY FUNCTIONS ============
         function addSimpleField(containerId, fieldName, placeholder) {
             const container = document.getElementById(containerId);
-            const count = container.children.length + 1;
-            const div = document.createElement('div');
-            div.className = 'input-group mb-2';
-            div.innerHTML = `
-                <input type="text" name="${fieldName}" class="form-control" placeholder="${placeholder} ${count}">
-                <button type="button" class="btn btn-outline-danger-custom" onclick="this.parentElement.remove()">
+            const idx = container.children.length;
+            const row = document.createElement('div');
+            row.className = 'detail-row mb-2';
+            row.innerHTML = `
+                <input type="text" name="${fieldName}" class="form-control" placeholder="${placeholder} ${idx + 1}">
+                <button type="button" class="btn btn-outline-danger-custom btn-sm" onclick="this.parentElement.remove()">
                     <i class="fa-solid fa-xmark"></i>
-                </button>
-            `;
-            container.appendChild(div);
+                </button>`;
+            container.appendChild(row);
         }
 
         function populateSimpleField(containerId, fieldName, dataArray, placeholder) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             if (dataArray && dataArray.length > 0) {
-                dataArray.forEach((item, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'input-group mb-2';
-                    div.innerHTML = `
-                        <input type="text" name="${fieldName}" class="form-control" value="${escapeHtml(item)}" placeholder="${placeholder} ${index + 1}">
-                        <button type="button" class="btn btn-outline-danger-custom" onclick="this.parentElement.remove()">
+                dataArray.forEach((item, i) => {
+                    const row = document.createElement('div');
+                    row.className = 'detail-row mb-2';
+                    row.innerHTML = `
+                        <input type="text" name="${fieldName}" class="form-control" value="${escapeHtml(item)}" placeholder="${placeholder} ${i + 1}">
+                        <button type="button" class="btn btn-outline-danger-custom btn-sm" onclick="this.parentElement.remove()">
                             <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    `;
-                    container.appendChild(div);
+                        </button>`;
+                    container.appendChild(row);
                 });
             }
         }
 
         function addParentField(containerId, fieldName, parentPlaceholder, detailPlaceholder) {
             const container = document.getElementById(containerId);
-            const parentIndex = container.querySelectorAll('.parent-card').length;
-
+            const parentIndex = container.children.length;
             const card = document.createElement('div');
             card.className = 'parent-card';
             card.innerHTML = `
@@ -864,36 +1028,30 @@
                 <div class="details-container" data-field-name="${fieldName}" data-parent-index="${parentIndex}" data-detail-placeholder="${detailPlaceholder}"></div>
                 <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addDetailField(this)">
                     <i class="fa-solid fa-plus me-1"></i>Tambah ${detailPlaceholder}
-                </button>
-            `;
+                </button>`;
             container.appendChild(card);
-            addDetailField(card.querySelector('button.btn-outline-sec'));
         }
 
-        function addDetailField(button) {
-            const card = button.closest('.parent-card');
-            const detailsContainer = card.querySelector('.details-container');
+        function addDetailField(btn) {
+            const detailsContainer = btn.previousElementSibling;
             const fieldName = detailsContainer.dataset.fieldName;
             const parentIndex = detailsContainer.dataset.parentIndex;
-            const placeholder = detailsContainer.dataset.detailPlaceholder;
-            const detailIndex = detailsContainer.querySelectorAll('.detail-row').length + 1;
-
+            const detailPlaceholder = detailsContainer.dataset.detailPlaceholder;
+            const detailIndex = detailsContainer.children.length;
             const row = document.createElement('div');
             row.className = 'detail-row';
             row.innerHTML = `
-                <span class="text-muted small" style="min-width:20px">${detailIndex}.</span>
-                <input type="text" name="${fieldName}[${parentIndex}][details][]" class="form-control" placeholder="${placeholder} ${detailIndex}">
+                <span class="text-muted small" style="min-width:20px">${detailIndex + 1}.</span>
+                <input type="text" name="${fieldName}[${parentIndex}][details][]" class="form-control" placeholder="${detailPlaceholder} ${detailIndex + 1}">
                 <button type="button" class="btn btn-outline-danger-custom btn-sm" onclick="this.parentElement.remove()">
                     <i class="fa-solid fa-xmark"></i>
-                </button>
-            `;
+                </button>`;
             detailsContainer.appendChild(row);
         }
 
         function populateParentField(containerId, fieldName, dataArray, parentPlaceholder, detailPlaceholder) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-
             if (dataArray && dataArray.length > 0) {
                 dataArray.forEach((item, parentIndex) => {
                     const card = document.createElement('div');
@@ -908,10 +1066,8 @@
                         <div class="details-container" data-field-name="${fieldName}" data-parent-index="${parentIndex}" data-detail-placeholder="${detailPlaceholder}"></div>
                         <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addDetailField(this)">
                             <i class="fa-solid fa-plus me-1"></i>Tambah ${detailPlaceholder}
-                        </button>
-                    `;
+                        </button>`;
                     container.appendChild(card);
-
                     const detailsContainer = card.querySelector('.details-container');
                     if (item.details && item.details.length > 0) {
                         item.details.forEach((detail, detailIndex) => {
@@ -922,8 +1078,7 @@
                                 <input type="text" name="${fieldName}[${parentIndex}][details][]" class="form-control" value="${escapeHtml(detail)}" placeholder="${detailPlaceholder} ${detailIndex + 1}">
                                 <button type="button" class="btn btn-outline-danger-custom btn-sm" onclick="this.parentElement.remove()">
                                     <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            `;
+                                </button>`;
                             detailsContainer.appendChild(row);
                         });
                     }
@@ -934,7 +1089,7 @@
         function escapeHtml(text) {
             if (!text) return '';
             const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-            return text.replace(/[&<>"']/g, m => map[m]);
+            return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
         function showAlert(containerId, type, message) {
@@ -966,7 +1121,6 @@
             return html;
         }
 
-        // ============ JOB DESK FUNCTIONS ============
         function openModalCreateJobDesk() {
             document.getElementById('modalJobDeskTitle').innerHTML = '<i class="fa-solid fa-clipboard-list me-2"></i>Tambah Job Desk';
             document.getElementById('formJobDesk').reset();
@@ -979,70 +1133,78 @@
         }
 
         function openModalEditJobDesk(id) {
+            const modal = new bootstrap.Modal(document.getElementById('modalJobDesk'));
+            document.getElementById('modalJobDeskTitle').innerHTML = '<i class="fa-solid fa-pen me-2"></i>Edit Job Desk';
+            document.getElementById('formJobDesk').reset();
+            document.getElementById('editJobDeskId').value = id;
+            document.getElementById('kompetensiContainer').innerHTML = skeletonModalForm();
+            document.getElementById('tugasContainer').innerHTML = '';
+            document.getElementById('wewenangContainer').innerHTML = '';
+            document.getElementById('btnSubmitJobDesk').innerHTML = '<i class="fa-solid fa-save me-1"></i>Update';
+            modal.show();
+
             fetch(`/HR-dashboard/job-desk/api/${id}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data) {
-                        document.getElementById('modalJobDeskTitle').innerHTML = '<i class="fa-solid fa-pen me-2"></i>Edit Job Desk';
-                        document.getElementById('editJobDeskId').value = id;
                         document.getElementById('selectOrgJobDesk').value = data.id_org;
                         document.getElementById('fungsiUtama').value = data.fungsi_utama || '';
                         document.querySelector('#formJobDesk [name="tujuan_jabatan"]').value = data.tujuan_jabatan || '';
                         document.querySelector('#formJobDesk [name="kualifikasi_pendidikan"]').value = data.kualifikasi_pendidikan || '';
                         document.querySelector('#formJobDesk [name="pengalaman_kerja"]').value = data.pengalaman_kerja || '';
                         document.querySelector('#formJobDesk [name="karakteristik_pribadi"]').value = data.karakteristik_pribadi || '';
-
                         populateSimpleField('kompetensiContainer', 'kompetensi[]', data.kompetensi, 'Kompetensi');
                         populateParentField('tugasContainer', 'tugas_tanggung_jawab', data.tugas_tanggung_jawab, 'Tugas Utama', 'Detail Tugas');
                         populateParentField('wewenangContainer', 'wewenang', data.wewenang, 'Wewenang Utama', 'Detail Wewenang');
-
-                        document.getElementById('btnSubmitJobDesk').innerHTML = '<i class="fa-solid fa-save me-1"></i>Update';
-                        new bootstrap.Modal(document.getElementById('modalJobDesk')).show();
                     }
+                })
+                .catch(() => {
+                    document.getElementById('kompetensiContainer').innerHTML = '';
+                    showAlert('alertContainerJobDesk', 'error', 'Gagal memuat data Job Desk');
                 });
         }
 
         function openModalDetailJobDesk(id) {
+            document.getElementById('modalDetailTitle').innerHTML = '<i class="fa-solid fa-file-lines me-2"></i>Detail Job Desk';
+            document.getElementById('detailContent').innerHTML = skeletonDetail();
+            new bootstrap.Modal(document.getElementById('modalDetail')).show();
+
             fetch(`/HR-dashboard/job-desk/api/${id}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data) {
                         const org = orgStructures.find(o => o.id == data.id_org);
                         const karyawanList = org && org.karyawans ? org.karyawans.map(k => k.nama_lengkap).join(', ') : '—';
-
                         let kompetensiHtml = '';
                         if (data.kompetensi && data.kompetensi.length > 0) {
                             data.kompetensi.forEach(k => kompetensiHtml += `<span class="kompetensi-tag">${escapeHtml(k)}</span>`);
                         } else {
                             kompetensiHtml = '<span class="empty-text">-</span>';
                         }
-
                         const html = `
                             <div class="row g-2 mb-4">
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Jabatan</div><div class="value">${org ? org.jabatan : '—'}</div></div></div>
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Divisi</div><div class="value">${org ? org.divisi || '—' : '—'}</div></div></div>
-                                <div class="col-12"><div class="info-card-mini"><div class="label">Karyawan</div><div class="value">${karyawanList}</div></div></div>
+                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Jabatan</div><div class="value">${org ? escapeHtml(org.jabatan) : '—'}</div></div></div>
+                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Divisi</div><div class="value">${org ? escapeHtml(org.divisi || '—') : '—'}</div></div></div>
+                                <div class="col-12"><div class="info-card-mini"><div class="label">Karyawan</div><div class="value">${escapeHtml(karyawanList)}</div></div></div>
                             </div>
-
                             <h6 class="section-title"><i class="fa-solid fa-bullseye"></i>Fungsi Utama</h6>
-                            <p style="color:var(--gray-700);line-height:1.7;font-size:.9rem">${data.fungsi_utama || '<span class="empty-text">Belum diisi</span>'}</p>
-
+                            <p style="color:var(--gray-700);line-height:1.7;font-size:.9rem">${data.fungsi_utama ? escapeHtml(data.fungsi_utama) : '<span class="empty-text">Belum diisi</span>'}</p>
                             <h6 class="section-title"><i class="fa-solid fa-user-tie"></i>Spesifikasi Jabatan</h6>
                             <div class="row g-3 mb-3">
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Tujuan</div><div class="value" style="font-size:.85rem">${data.tujuan_jabatan || '-'}</div></div></div>
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Pendidikan</div><div class="value" style="font-size:.85rem">${data.kualifikasi_pendidikan || '-'}</div></div></div>
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Pengalaman</div><div class="value" style="font-size:.85rem">${data.pengalaman_kerja || '-'}</div></div></div>
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Karakteristik</div><div class="value" style="font-size:.85rem">${data.karakteristik_pribadi || '-'}</div></div></div>
+                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Tujuan</div><div class="value" style="font-size:.85rem">${escapeHtml(data.tujuan_jabatan || '-')}</div></div></div>
+                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Pendidikan</div><div class="value" style="font-size:.85rem">${escapeHtml(data.kualifikasi_pendidikan || '-')}</div></div></div>
+                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Pengalaman</div><div class="value" style="font-size:.85rem">${escapeHtml(data.pengalaman_kerja || '-')}</div></div></div>
+                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Karakteristik</div><div class="value" style="font-size:.85rem">${escapeHtml(data.karakteristik_pribadi || '-')}</div></div></div>
                                 <div class="col-12"><div class="info-card-mini"><div class="label">Kompetensi</div><div class="value mt-1">${kompetensiHtml}</div></div></div>
                             </div>
-
                             ${renderHierarchicalList('Tugas dan Tanggung Jawab', data.tugas_tanggung_jawab, 'fa-list-check')}
                             ${renderHierarchicalList('Wewenang', data.wewenang, 'fa-gavel')}
                         `;
-                        document.getElementById('modalDetailTitle').innerHTML = '<i class="fa-solid fa-file-lines me-2"></i>Detail Job Desk';
                         document.getElementById('detailContent').innerHTML = html;
-                        new bootstrap.Modal(document.getElementById('modalDetail')).show();
                     }
+                })
+                .catch(() => {
+                    document.getElementById('detailContent').innerHTML = '<div class="empty-state"><p>Gagal memuat data</p></div>';
                 });
         }
 
@@ -1059,10 +1221,17 @@
             const editId = document.getElementById('editJobDeskId').value;
             const url = editId ? `/HR-dashboard/job-desk/${editId}` : '/HR-dashboard/job-desk/store';
             if (editId) formData.append('_method', 'PUT');
+            const btn = document.getElementById('btnSubmitJobDesk');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Menyimpan...';
 
             fetch(url, {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 body: formData
             })
             .then(response => response.json())
@@ -1077,10 +1246,13 @@
                     showAlert('alertContainerJobDesk', 'error', errorMsg);
                 }
             })
-            .catch(error => showAlert('alertContainerJobDesk', 'error', 'Gagal menyimpan data: ' + error.message));
+            .catch(error => showAlert('alertContainerJobDesk', 'error', 'Gagal menyimpan data: ' + error.message))
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = editId ? '<i class="fa-solid fa-save me-1"></i>Update' : '<i class="fa-solid fa-save me-1"></i>Simpan';
+            });
         });
 
-        // ============ SOP FUNCTIONS ============
         function openModalCreateSop() {
             document.getElementById('modalSopTitle').innerHTML = '<i class="fa-solid fa-file-contract me-2"></i>Tambah SOP';
             document.getElementById('formSop').reset();
@@ -1091,40 +1263,52 @@
         }
 
         function openModalEditSop(id) {
+            const modal = new bootstrap.Modal(document.getElementById('modalSop'));
+            document.getElementById('modalSopTitle').innerHTML = '<i class="fa-solid fa-pen me-2"></i>Edit SOP';
+            document.getElementById('formSop').reset();
+            document.getElementById('editSopId').value = id;
+            document.getElementById('sopContainer').innerHTML = skeletonModalForm();
+            document.getElementById('btnSubmitSop').innerHTML = '<i class="fa-solid fa-save me-1"></i>Update';
+            modal.show();
+
             fetch(`/HR-dashboard/sop/api/${id}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data) {
-                        document.getElementById('modalSopTitle').innerHTML = '<i class="fa-solid fa-pen me-2"></i>Edit SOP';
-                        document.getElementById('editSopId').value = id;
                         document.getElementById('selectOrgSop').value = data.id_org;
                         populateParentField('sopContainer', 'sop', data.sop, 'SOP Utama', 'Detail SOP');
-                        document.getElementById('btnSubmitSop').innerHTML = '<i class="fa-solid fa-save me-1"></i>Update';
-                        new bootstrap.Modal(document.getElementById('modalSop')).show();
                     }
+                })
+                .catch(() => {
+                    document.getElementById('sopContainer').innerHTML = '';
+                    showAlert('alertContainerSop', 'error', 'Gagal memuat data SOP');
                 });
         }
 
         function openModalDetailSop(id) {
+            document.getElementById('modalDetailTitle').innerHTML = '<i class="fa-solid fa-file-lines me-2"></i>Detail SOP';
+            document.getElementById('detailContent').innerHTML = skeletonDetail();
+            new bootstrap.Modal(document.getElementById('modalDetail')).show();
+
             fetch(`/HR-dashboard/sop/api/${id}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data) {
                         const org = orgStructures.find(o => o.id == data.id_org);
                         const karyawanList = org && org.karyawans ? org.karyawans.map(k => k.nama_lengkap).join(', ') : '—';
-
                         const html = `
                             <div class="row g-2 mb-4">
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Jabatan</div><div class="value">${org ? org.jabatan : '—'}</div></div></div>
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Divisi</div><div class="value">${org ? org.divisi || '—' : '—'}</div></div></div>
-                                <div class="col-12"><div class="info-card-mini"><div class="label">Karyawan</div><div class="value">${karyawanList}</div></div></div>
+                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Jabatan</div><div class="value">${org ? escapeHtml(org.jabatan) : '—'}</div></div></div>
+                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Divisi</div><div class="value">${org ? escapeHtml(org.divisi || '—') : '—'}</div></div></div>
+                                <div class="col-12"><div class="info-card-mini"><div class="label">Karyawan</div><div class="value">${escapeHtml(karyawanList)}</div></div></div>
                             </div>
                             ${renderHierarchicalList('Standard Operating Procedure (SOP)', data.sop, 'fa-file-contract')}
                         `;
-                        document.getElementById('modalDetailTitle').innerHTML = '<i class="fa-solid fa-file-lines me-2"></i>Detail SOP';
                         document.getElementById('detailContent').innerHTML = html;
-                        new bootstrap.Modal(document.getElementById('modalDetail')).show();
                     }
+                })
+                .catch(() => {
+                    document.getElementById('detailContent').innerHTML = '<div class="empty-state"><p>Gagal memuat data</p></div>';
                 });
         }
 
@@ -1141,10 +1325,17 @@
             const editId = document.getElementById('editSopId').value;
             const url = editId ? `/HR-dashboard/sop/${editId}` : '/HR-dashboard/sop/store';
             if (editId) formData.append('_method', 'PUT');
+            const btn = document.getElementById('btnSubmitSop');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Menyimpan...';
 
             fetch(url, {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 body: formData
             })
             .then(response => response.json())
@@ -1159,17 +1350,23 @@
                     showAlert('alertContainerSop', 'error', errorMsg);
                 }
             })
-            .catch(error => showAlert('alertContainerSop', 'error', 'Gagal menyimpan data: ' + error.message));
+            .catch(error => showAlert('alertContainerSop', 'error', 'Gagal menyimpan data: ' + error.message))
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = editId ? '<i class="fa-solid fa-save me-1"></i>Update' : '<i class="fa-solid fa-save me-1"></i>Simpan';
+            });
         });
-
-        let isProfileUpdate = false;
 
         function openModalProfile(karyawanId, namaKaryawan) {
             document.getElementById('formProfile').reset();
             document.getElementById('profileKaryawanId').value = karyawanId;
-            document.getElementById('profQualificationContainer').innerHTML = '';
+            document.getElementById('profQualificationContainer').innerHTML = skeletonModalForm();
             document.getElementById('profDescriptionContainer').innerHTML = '';
             document.getElementById('profCompensationContainer').innerHTML = '';
+            document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-user-tie me-2"></i>Job Profile — ${escapeHtml(namaKaryawan)}`;
+            document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Memuat...';
+            document.getElementById('btnProfileSubmit').disabled = true;
+            new bootstrap.Modal(document.getElementById('modalProfile')).show();
 
             fetch(`/HR-dashboard/karyawan-profile/${karyawanId}`)
                 .then(r => {
@@ -1177,26 +1374,31 @@
                     return r.json();
                 })
                 .then(data => {
+                    document.getElementById('profQualificationContainer').innerHTML = '';
+                    document.getElementById('profDescriptionContainer').innerHTML = '';
+                    document.getElementById('profCompensationContainer').innerHTML = '';
+                    document.getElementById('btnProfileSubmit').disabled = false;
+
                     if (data && data.id) {
                         isProfileUpdate = true;
-                        document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-pen me-2"></i>Edit Job Profile — ${namaKaryawan}`;
+                        document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-pen me-2"></i>Edit Job Profile — ${escapeHtml(namaKaryawan)}`;
                         document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-save me-1"></i>Update';
                         populateSimpleField('profQualificationContainer', 'qualifications[]', data.qualifications || [], 'Qualification');
                         populateSimpleField('profDescriptionContainer', 'descriptions[]', data.descriptions || [], 'Job Description');
                         populateSimpleField('profCompensationContainer', 'compensation_benefit[]', data.compensation_benefit || [], 'Compensation & Benefit');
                     } else {
                         isProfileUpdate = false;
-                        document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-plus me-2"></i>Tambah Job Profile — ${namaKaryawan}`;
+                        document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-plus me-2"></i>Tambah Job Profile — ${escapeHtml(namaKaryawan)}`;
                         document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-save me-1"></i>Simpan';
                     }
-                    new bootstrap.Modal(document.getElementById('modalProfile')).show();
                 })
                 .catch(err => {
                     console.error('Error fetching profile:', err);
                     isProfileUpdate = false;
-                    document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-plus me-2"></i>Tambah Job Profile — ${namaKaryawan}`;
+                    document.getElementById('profQualificationContainer').innerHTML = '';
+                    document.getElementById('btnProfileSubmit').disabled = false;
+                    document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-plus me-2"></i>Tambah Job Profile — ${escapeHtml(namaKaryawan)}`;
                     document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-save me-1"></i>Simpan';
-                    new bootstrap.Modal(document.getElementById('modalProfile')).show();
                 });
         }
 
@@ -1207,10 +1409,17 @@
             if (!formData.has('karyawan_id')) formData.append('karyawan_id', karyawanId);
             const url = isProfileUpdate ? `/HR-dashboard/karyawan-profile/${karyawanId}` : '/HR-dashboard/karyawan-profile';
             if (isProfileUpdate) formData.append('_method', 'PUT');
+            const btn = document.getElementById('btnProfileSubmit');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Menyimpan...';
 
             fetch(url, {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 body: formData
             })
             .then(r => r.json())
@@ -1225,14 +1434,21 @@
                     showAlert('alertContainerProfile', 'error', errorMsg);
                 }
             })
-            .catch(err => showAlert('alertContainerProfile', 'error', 'Error: ' + err.message));
+            .catch(err => showAlert('alertContainerProfile', 'error', 'Error: ' + err.message))
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = isProfileUpdate ? '<i class="fa-solid fa-save me-1"></i>Update' : '<i class="fa-solid fa-save me-1"></i>Simpan';
+            });
         });
 
         function confirmDeleteProfile(karyawanId) {
             if (!confirm('Yakin ingin menghapus Job Profile karyawan ini?')) return;
             fetch(`/HR-dashboard/karyawan-profile/${karyawanId}`, {
                 method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' }
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
             })
             .then(r => r.json())
             .then(data => {
@@ -1248,12 +1464,23 @@
         document.getElementById('btnDeleteConfirm').addEventListener('click', function() {
             if (!deleteId) return;
             let url = '', containerAlert = '';
-            if (deleteType === 'jobdesk') { url = `/HR-dashboard/job-desk/${deleteId}`; containerAlert = 'alertContainerJobDesk'; }
-            else if (deleteType === 'sop') { url = `/HR-dashboard/sop/${deleteId}`; containerAlert = 'alertContainerSop'; }
+            if (deleteType === 'jobdesk') {
+                url = `/HR-dashboard/job-desk/${deleteId}`;
+                containerAlert = 'alertContainerJobDesk';
+            } else if (deleteType === 'sop') {
+                url = `/HR-dashboard/sop/${deleteId}`;
+                containerAlert = 'alertContainerSop';
+            }
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Menghapus...';
 
             fetch(url, {
                 method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' }
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
             })
             .then(response => response.json())
             .then(data => {
@@ -1264,6 +1491,10 @@
                 } else {
                     showAlert(containerAlert, 'error', data.message);
                 }
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-trash me-1"></i>Hapus';
             });
         });
     </script>

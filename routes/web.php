@@ -1689,7 +1689,9 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
         Route::post('/{template}/preview-generate', [ReportController::class, 'previewGenerate'])->name('preview.generate');
 
+        Route::get('/{template}/edit-data', [ReportController::class, 'getEditData'])->name('.edit.data');
 
+        Route::get('{template}/generate-modal', [ReportController::class, 'generateFormModal'])->name('.generate.modal');
     });
 
     Route::prefix('hire')->name('hire.')->group(function() {

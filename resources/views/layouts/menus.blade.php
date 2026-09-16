@@ -2616,6 +2616,97 @@
                                             </div>
                                         </div>
                                 @endcan
+                                @can('View HR')
+                                    <div class="col-md-12 mt-1">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="text-center card-title">INIX HR</h5>
+                                                <div class="row">
+                                                    @php
+                                                        $auth = Auth()->user()->jabatan;
+                                                    @endphp
+
+                                                    <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <img src="{{ asset('icon/pie-chart.svg') }}"
+                                                                        class="img-responsive" width="30px">
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="{{ route('HR.index') }}"
+                                                                        class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Dashboard HR
+                                                                        </h5>
+                                                                    </a>
+                                                                    <p class="card-text">Arsip dan trend data perkembangan perusahaan.
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <i class="bi bi-bar-chart-line fs-2"></i>
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="{{ route('HR.payroll.index') }}"
+                                                                        class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Payroll Statistics
+                                                                        </h5>
+                                                                    </a>
+                                                                    <p class="card-text">Data Payroll Karyawan.
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <i class="bi bi-person-vcard fs-2"></i>
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="{{ route('HR.perhitungan-tunjangan.index') }}"
+                                                                        class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Perhitungan BPJS
+                                                                        </h5>
+                                                                    </a>
+                                                                    <p class="card-text">Perhitungan BPJS Karyawan & Kantor.
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <i class="bi bi-receipt fs-2"></i>
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="{{ route('HR.perhitungan-pph.index') }}"
+                                                                        class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Perhitungan PPH 21
+                                                                        </h5>
+                                                                    </a>
+                                                                    <p class="card-text">Perhitungan PPH 21 Karyawan.
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                               @endcan
                                 @can('Fitur Menu Office')
                                         <div class="col-md-12 mt-1">
                                             <div class="card">
@@ -2640,27 +2731,7 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                        @can('View HR')
-                                                            <div class="col-sm-6 mt-2">
-                                                                <div class="card" id="card-hover">
-                                                                    <div class="card-body d-flex">
-                                                                        <div class="col-md-2">
-                                                                            <img src="{{ asset('icon/pie-chart.svg') }}"
-                                                                                class="img-responsive" width="30px">
-                                                                        </div>
-                                                                        <div class="col-md-10" style="margin-left: 10px">
-                                                                            <a href="{{ route('HR.index') }}"
-                                                                                class="link stretched-link text-decoration-none">
-                                                                                <h5 class="card-title">INIX HR
-                                                                                </h5>
-                                                                            </a>
-                                                                            <p class="card-text">Arsip dan trend data perkembangan perusahaan.
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        @endcan
+
                                                         @can('View Rekrutmen')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
