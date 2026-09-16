@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container-fluid" style="overflow: auto">
+    {{-- <div class="container-fluid income-statement-page"> --}}
         <!-- Loading Modal -->
         <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -17,7 +17,7 @@
     {{-- <button id="btnSaveData" class="btn-save">Simpan Data</button> --}}
     <a href="{{ route('income-statement.laporan') }}" class="btn-laporan">Laporan</a>
 
-    <div style="width: 100%; overflow-x: auto; overflow-y: visible; padding-bottom: 20px;">
+    <div class="income-statement-scroll">
         <table id="incomeStatementTable">
             <thead>
                 <tr>
@@ -233,7 +233,21 @@
         .btn-save:hover { background-color: var(--pastel-primary-dark); color: #fff; }
         .btn-laporan { background-color: var(--pastel-danger); color: #60383c; text-decoration: none; display: inline-block; }
         .btn-laporan:hover { background-color: #c77f86; color: #fff; }
-        #incomeStatementTable { margin-bottom: 16px; overflow-x: visible;  }
+        .income-statement-page { max-width: 100%; }
+        .income-statement-scroll {
+            width: 100%;
+            max-width: 100%;
+            max-height: calc(100vh - 170px);
+            overflow: auto;
+            padding-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-color: var(--pastel-primary) var(--pastel-header);
+            scrollbar-width: auto;
+        }
+        .income-statement-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+        .income-statement-scroll::-webkit-scrollbar-track { background: var(--pastel-header); border-radius: 6px; }
+        .income-statement-scroll::-webkit-scrollbar-thumb { background: var(--pastel-primary); border-radius: 6px; }
+        #incomeStatementTable { min-width: 1900px; margin-bottom: 16px; }
     </style>
     @push('js')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -421,83 +435,81 @@
                 }
             });
 
-            // Memproses ekspresi matematika pada kolom input
-            $(document).on('change', '.input-calc', function() {
-                let currentValue = $(this).val().replace(',', '.');
+             // --- 1. EVENT: SAAT USER MENGETIK (REALTIME FORMATTING) ---
+            $(document).on('input', '.input-calc', function() {
+                let val = $(this).val();
 
-                // Memeriksa ketersediaan karakter operator aritmatika
-                if (/[\+\-\*\/]/.test(currentValue)) {
-                    try {
-                        // Melakukan sanitasi: hanya mengizinkan angka, desimal, dan operator
-                        let sanitizedValue = currentValue.replace(/[^0-9\+\-\*\/\(\)\.]/g, '');
-                        
-                        // Mengevaluasi ekspresi matematika
-                        let calculatedResult = new Function('return ' + sanitizedValue)();
-                        
-                        // Memvalidasi hasil kalkulasi
-                        if (!isNaN(calculatedResult) && isFinite(calculatedResult)) {
-                            $(this).val(formatInputFromValue(calculatedResult));
-                        } else {
-                            $(this).val('0');
-                        }
-                    } catch (error) {
-                        // Mengembalikan nilai ke 0.00 jika terjadi kesalahan sintaksis
-                        $(this).val('0');
-                    }
-                } else {
-                    $(this).val(formatInputNumber($(this).val()));
+                if (val === '' || val === 'Rp ') {
+                    $(this).val('');
+                    $(this).data('raw', '');
+                    calculateIncomeStatement();
+                    return;
                 }
-                
-                // Menetapkan nilai default angka jika input dikosongkan
-                if ($(this).val().trim() === '') {
-                    $(this).val('0');
+
+                // Ambil angka murni
+                let rawNumber = val.replace(/[^0-9]/g, '');
+
+                if (rawNumber !== '') {
+                    $(this).val(formatRupiahRealtime(rawNumber));
+                    $(this).data('raw', rawNumber);
+                } else {
+                    $(this).val('');
+                    $(this).data('raw', '');
                 }
 
                 // Kalkulasi tabel otomatis saat ngetik (opsional, tapi bagus untuk realtime)
                 calculateIncomeStatement();
             });
 
-            $('#btnSaveData').on('click', function() {
-                let transactions = [];
-                
-                $('.input-calc').each(function() {
-                    let itemCode = $(this).data('item');
-                    let month = $(this).data('month');
-                    let amount = parseInputValue($(this).val());
-                    
-                    if(itemCode && month) {
-                        transactions.push({
-                            item_code: itemCode,
-                            month: month,
-                            amount: amount
-                        });
-                    }
-                });
+            // --- 2. EVENT: SAAT KURSOR BERPINDAH (AUTOSAVE) ---
+            $(document).on('change', '.input-calc', function() {
+                let $input = $(this);
+                let itemCode = $input.data('item');
+                let month = $input.data('month');
+                let rawValue = $input.data('raw');
 
-                $.ajax({
-                    url: "{{ route('income-statement.store') }}",
-                    type: "POST",
-                    contentType: "application/json",
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    data: JSON.stringify({ // Mengonversi array objek transaksi menjadi string JSON
-                        transactions: transactions
-                    }),
-                    success: function(response) {
-                        alert(response.message);
-                    },
-                    error: function(xhr) {
-                        alert('Terjadi kesalahan saat menyimpan data.');
-                    }
-                });
+                // Jika kosong, kirim null. Jika ada isi, kirim raw string numeric-nya.
+                let amount = (rawValue === '' || rawValue === undefined) ? null : rawValue;
+
+                if (itemCode && month) {
+                    // Indikator Visual Menyimpan (Warna Kuning Muda)
+                    $input.css('background-color', '#fff3cd');
+                    $input.attr('title', 'Menyimpan...');
+
+                    $.ajax({
+                        url: "{{ route('income-statement.store') }}",
+                        type: "POST",
+                        contentType: "application/json",
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        data: JSON.stringify({
+                            transactions: [{
+                                item_code: itemCode,
+                                month: month,
+                                amount: amount
+                            }]
+                        }),
+                        success: function(response) {
+                            // Indikator Visual Berhasil (Warna Hijau Muda, lalu kembali normal)
+                            $input.css('background-color', '#d4edda');
+                            $input.attr('title', 'Tersimpan');
+                            setTimeout(() => {
+                                $input.css('background-color', '');
+                                $input.removeAttr('title');
+                            }, 1000);
+                        },
+                        error: function(xhr) {
+                            // Indikator Visual Error (Warna Merah Muda)
+                            $input.css('background-color', '#f8d7da');
+                            $input.attr('title', 'Gagal Menyimpan');
+                            console.error('Gagal menyimpan otomatis pada sel:', itemCode, 'Bulan:', month);
+                        }
+                    });
+                }
             });
 
-            $('.input-calc').each(function() {
-                $(this).val(formatInputNumber($(this).val()));
-            });
-
-            // Eksekusi kalkulasi berdasarkan nilai yang dimuat dari database
+            // Jalankan kalkulasi pertama kali
             calculateIncomeStatement();
         });
     </script>
