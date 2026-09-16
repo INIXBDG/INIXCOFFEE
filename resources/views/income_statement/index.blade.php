@@ -272,10 +272,8 @@
 
                 if (normalizedValue.includes(',')) {
                     normalizedValue = normalizedValue.replace(/\./g, '').replace(',', '.');
-                } else if (/^-?\d{1,3}(\.\d{3})+$/.test(normalizedValue)) {
+                } else if (/^-?\d{1,3}(?:\.\d{3})+$/.test(normalizedValue)) {
                     normalizedValue = normalizedValue.replace(/\./g, '');
-                } else {
-                    normalizedValue = normalizedValue;
                 }
 
                 return parseFloat(normalizedValue) || 0;
@@ -305,30 +303,10 @@
                 return value.toFixed(2) + '%';
             }
 
-            function formatRupiahRealtime(angka) {
-                let number_string = angka.toString().replace(/[^,\d]/g, ''),
-                    split = number_string.split(','),
-                    sisa = split[0].length % 3,
-                    rupiah = split[0].substr(0, sisa),
-                    ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-
-                if (ribuan) {
-                    let separator = sisa ? '.' : '';
-                    rupiah += separator + ribuan.join('.');
-                }
-                return rupiah ? 'Rp ' + rupiah : '';
-            }
-
             $('.input-calc').each(function() {
-                let val = $(this).val();
-                if (val && val !== '0' && val !== '0.00') {
-                    let cleanNumber = parseFloat(val);
-                    $(this).val(formatRupiahRealtime(cleanNumber)); // Tampilkan sebagai Rupiah
-                    $(this).data('raw', cleanNumber); // Simpan angka murni di attribute data-raw
-                } else {
-                    $(this).val('');
-                    $(this).data('raw', '');
-                }
+                let value = $(this).val();
+                $(this).val(value ? formatInputNumber(value) : '');
+                $(this).data('raw', value ? parseInputValue(value) : '');
             });
 
             function calculateIncomeStatement() {
@@ -421,6 +399,7 @@
                 $('.percent-profit-loss').text(formatPercent(yearlyGrandTotalSales > 0 ? (yearlyProfitLoss / yearlyGrandTotalSales) * 100 : 0));
             }
 
+            // Format angka saat mengetik dan simpan nilai numeriknya untuk autosave.
             $(document).on('input', '.input-calc', function() {
                 let input = this;
                 let currentValue = input.value;
@@ -433,46 +412,20 @@
                     input.value = formattedValue;
                     input.setSelectionRange(formattedBeforeCaret.length, formattedBeforeCaret.length);
                 }
-            });
 
-             // --- 1. EVENT: SAAT USER MENGETIK (REALTIME FORMATTING) ---
-            $(document).on('input', '.input-calc', function() {
-                let val = $(this).val();
-
-                if (val === '' || val === 'Rp ') {
-                    $(this).val('');
-                    $(this).data('raw', '');
-                    calculateIncomeStatement();
-                    return;
-                }
-
-                // Ambil angka murni
-                let rawNumber = val.replace(/[^0-9]/g, '');
-
-                if (rawNumber !== '') {
-                    $(this).val(formatRupiahRealtime(rawNumber));
-                    $(this).data('raw', rawNumber);
-                } else {
-                    $(this).val('');
-                    $(this).data('raw', '');
-                }
-
-                // Kalkulasi tabel otomatis saat ngetik (opsional, tapi bagus untuk realtime)
+                $(this).data('raw', input.value.trim() === '' ? '' : parseInputValue(input.value));
                 calculateIncomeStatement();
             });
 
-            // --- 2. EVENT: SAAT KURSOR BERPINDAH (AUTOSAVE) ---
-            $(document).on('change', '.input-calc', function() {
-                let $input = $(this);
+            function saveInput(input) {
+                let $input = $(input);
                 let itemCode = $input.data('item');
                 let month = $input.data('month');
                 let rawValue = $input.data('raw');
 
-                // Jika kosong, kirim null. Jika ada isi, kirim raw string numeric-nya.
                 let amount = (rawValue === '' || rawValue === undefined) ? null : rawValue;
 
                 if (itemCode && month) {
-                    // Indikator Visual Menyimpan (Warna Kuning Muda)
                     $input.css('background-color', '#fff3cd');
                     $input.attr('title', 'Menyimpan...');
 
@@ -491,7 +444,6 @@
                             }]
                         }),
                         success: function(response) {
-                            // Indikator Visual Berhasil (Warna Hijau Muda, lalu kembali normal)
                             $input.css('background-color', '#d4edda');
                             $input.attr('title', 'Tersimpan');
                             setTimeout(() => {
@@ -500,12 +452,22 @@
                             }, 1000);
                         },
                         error: function(xhr) {
-                            // Indikator Visual Error (Warna Merah Muda)
                             $input.css('background-color', '#f8d7da');
                             $input.attr('title', 'Gagal Menyimpan');
                             console.error('Gagal menyimpan otomatis pada sel:', itemCode, 'Bulan:', month);
                         }
                     });
+                }
+            }
+
+            $(document).on('change', '.input-calc', function() {
+                saveInput(this);
+            });
+
+            $(document).on('keydown', '.input-calc', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    saveInput(this);
                 }
             });
 

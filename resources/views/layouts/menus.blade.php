@@ -2184,24 +2184,26 @@
                                                 <div class="card-body">
                                                     <h5 class="text-center card-title">Finance</h5>
                                                     <div class="row">
-                                                        {{-- <div class="col-sm-6 mt-2">
-                                                            <div class="card" id="card-hover">
-                                                                <div class="card-body d-flex">
-                                                                    <div class="col-md-2">
-                                                                        <img src="{{ asset('icon/calendar.svg') }}"
-                                                                            class="img-responsive" width="30px">
-                                                                    </div>
-                                                                    <div class="col-md-10" style="margin-left: 10px">
-                                                                        <a href="/kanban"
-                                                                            class="link stretched-link text-decoration-none">
-                                                                            <h5 class="card-title">Papan Kanban</h5>
-                                                                        </a>
-                                                                        <p class="card-text">untuk menejemen projek.
-                                                                        </p>
+                                                        @can('View Invoice')
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <img src="{{ asset('icon/calendar.svg') }}"
+                                                                                class="img-responsive" width="30px">
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="/income-statement"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Income Statement</h5>
+                                                                            </a>
+                                                                            <p class="card-text">Pencatatan laba rugi.
+                                                                            </p>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div> --}}
+                                                        @endcan
                                                         @can('View Invoice')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
