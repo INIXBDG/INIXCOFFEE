@@ -21,6 +21,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BiayaTransportasiExport;
 use App\Models\SuratPerjalanan;
 use App\Services\OperationalBudgetCalculator;
+use Illuminate\Support\Facades\Cache;
 
 class BiayaTransportasiController extends Controller
 {
@@ -236,6 +237,8 @@ class BiayaTransportasiController extends Controller
             }
         });
 
+        Cache::forget('office_biaya_transportasi_all');
+
         return response()->json([
             'success' => true,
             'message' => 'Biaya transportasi berhasil disimpan.',
@@ -244,8 +247,10 @@ class BiayaTransportasiController extends Controller
 
     public function get()
     {
-        $data = BiayaTransportasiDriver::with([        'pengajuanBarang.tracking', 'karyawan', 'pickupDriver.karyawan','pickupDriver.detailPickupDriver', 'pickupDriver', 'SPJ.karyawan',])
-            ->orderBy('created_at', 'desc')->get();
+        $data = Cache::remember('office_biaya_transportasi_all', now()->addHours(12), function () {
+            return BiayaTransportasiDriver::with([        'pengajuanBarang.tracking', 'karyawan', 'pickupDriver.karyawan','pickupDriver.detailPickupDriver', 'pickupDriver', 'SPJ.karyawan',])
+                ->orderBy('created_at', 'desc')->get();
+        });
 
         $budgetMap = OperationalBudgetCalculator::calculate($data);
 
@@ -410,6 +415,8 @@ class BiayaTransportasiController extends Controller
             }
         });
 
+        Cache::forget('office_biaya_transportasi_all');
+
         return response()->json(['success' => true, 'message' => 'Data berhasil diperbarui.']);
     }
 
@@ -434,18 +441,23 @@ class BiayaTransportasiController extends Controller
             }
 
             $pengajuanIds = array_unique($pengajuanIds);
-            foreach ($pengajuanIds as $pengajuanId) {
-                $count = BiayaTransportasiDriver::where('id_pengajuan_barang', $pengajuanId)->count();
-                if ($count === 0) {
-                    $pengajuan = PengajuanBarang::find($pengajuanId);
-                    if ($pengajuan) {
-                        $pengajuan->detail()->delete();
-                        $pengajuan->tracking()->delete();
-                        $pengajuan->delete();
-                    }
+            if (!empty($pengajuanIds)) {
+                $existingPids = BiayaTransportasiDriver::whereIn('id_pengajuan_barang', $pengajuanIds)
+                    ->pluck('id_pengajuan_barang')
+                    ->unique()
+                    ->toArray();
+                
+                $emptyPengajuanIds = array_diff($pengajuanIds, $existingPids);
+                
+                if (!empty($emptyPengajuanIds)) {
+                    \App\Models\detailPengajuanBarang::whereIn('id_pengajuan_barang', $emptyPengajuanIds)->delete();
+                    \App\Models\tracking_pengajuan_barang::whereIn('id_pengajuan_barang', $emptyPengajuanIds)->delete();
+                    PengajuanBarang::whereIn('id', $emptyPengajuanIds)->delete();
                 }
             }
         });
+
+        Cache::forget('office_biaya_transportasi_all');
 
         return response()->json(['success' => true, 'message' => 'Data berhasil dihapus.']);
     }
@@ -497,6 +509,8 @@ class BiayaTransportasiController extends Controller
         $biaya->update([
             'tipe' => $validated['tipe']
         ]);
+
+        Cache::forget('office_biaya_transportasi_all');
 
         return response()->json([
             'success' => true,
@@ -663,6 +677,8 @@ class BiayaTransportasiController extends Controller
         $biaya->created_at = $createdAt;
         $biaya->save();
 
+        Cache::forget('office_biaya_transportasi_all');
+
         return response()->json(['success' => true, 'message' => 'Data biaya operasional kantor berhasil disimpan.']);
     }
 
@@ -759,6 +775,8 @@ class BiayaTransportasiController extends Controller
         $pengajuan->update([
             'invoice' => $path,
         ]);
+
+        Cache::forget('office_biaya_transportasi_all');
 
         return response()->json([
             'success' => true,

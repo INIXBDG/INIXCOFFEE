@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\listexam;
 use App\Models\provider;
 use App\Models\vendor;
+use Illuminate\Support\Facades\Cache;
 
 class listexamController extends Controller
 {
@@ -21,7 +22,9 @@ class listexamController extends Controller
 
     public function getListExam()
     {
-        $data = listexam::get();
+        $data = Cache::remember('office_listexam_all', now()->addMinutes(10), function () {
+            return listexam::get();
+        });
             return response()->json([
                 'success' => true,
                 'message' => 'List Registrasi',
@@ -32,8 +35,8 @@ class listexamController extends Controller
 
     public function create()
     {
-        $provider = provider::get();
-        $vendor = vendor::get();
+        $provider = Cache::remember('master_provider_all', now()->addMinutes(60), fn() => provider::get());
+        $vendor = Cache::remember('master_vendor_all', now()->addMinutes(60), fn() => vendor::get());
         return view('listexams.create' , compact('provider', 'vendor'));
     }
 
@@ -85,6 +88,8 @@ class listexamController extends Controller
             // 'kurs_dollar' => $kursDollar ?? null,
         ]);
 
+        Cache::forget('office_listexam_all');
+
         return redirect()->route('listexams.index')
             ->with('success', 'Exam created successfully.');
     }
@@ -96,8 +101,8 @@ class listexamController extends Controller
 
     public function edit($id)
     {
-        $provider = provider::get();
-        $vendor = vendor::get();
+        $provider = Cache::remember('master_provider_all', now()->addMinutes(60), fn() => provider::get());
+        $vendor = Cache::remember('master_vendor_all', now()->addMinutes(60), fn() => vendor::get());
         $exam = ListExam::findOrFail($id);
         return view('listexams.edit', compact('exam', 'provider', 'vendor'));
     }
@@ -149,6 +154,8 @@ class listexamController extends Controller
             // 'kurs_dollar' => $kursDollar ?? $exam->kurs_dollar,
         ]);
 
+        Cache::forget('office_listexam_all');
+
         return redirect()->route('listexams.index')->with('success', 'List Exam updated successfully');
     }
 
@@ -159,6 +166,8 @@ class listexamController extends Controller
 
         $exam->delete();
 
+        Cache::forget('office_listexam_all');
+
         return redirect()->route('listexams.index')
             ->with('success', 'Exam deleted successfully');
     }
@@ -167,12 +176,14 @@ class listexamController extends Controller
     public function storeProviders(Request $request)
     {
         $provider = Provider::create(['nama' => $request->nama]);
+        Cache::forget('master_provider_all');
         return response()->json($provider);
     }
 
     public function storeVendor(Request $request)
     {
         $vendor = Vendor::create(['nama' => $request->nama]);
+        Cache::forget('master_vendor_all');
         return response()->json($vendor);
     }
 }

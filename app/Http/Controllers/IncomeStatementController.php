@@ -6,6 +6,7 @@ use App\Models\ApprovalPendapatan;
 use Illuminate\Http\Request;
 use App\Models\Cost;
 use App\Models\IncomeTransaction;
+use Illuminate\Support\Facades\Cache;
 
 class IncomeStatementController extends Controller
 {
@@ -17,16 +18,20 @@ class IncomeStatementController extends Controller
     public function index(Request $request)
     {
         $year = $request->input('year', date('Y'));
+        $cacheKey = 'income_statement_index_' . $year;
 
-        $variableCosts = Cost::where('status', 'variable')->get()->groupBy('type');
-        $fixedCosts = Cost::where('status', 'fixed')->get()->groupBy('type');
+        [$variableCosts, $fixedCosts, $transactionData] = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($year) {
+            $variableCosts = Cost::where('status', 'variable')->get()->groupBy('type');
+            $fixedCosts = Cost::where('status', 'fixed')->get()->groupBy('type');
+            $transactions = IncomeTransaction::where('year', $year)->get();
 
-        $transactions = IncomeTransaction::where('year', $year)->get();
+            $transactionData = [];
+            foreach ($transactions as $trx) {
+                $transactionData[$trx->item_code][$trx->month] = $trx->amount;
+            }
 
-        $transactionData = [];
-        foreach ($transactions as $trx) {
-            $transactionData[$trx->item_code][$trx->month] = $trx->amount;
-        }
+            return [$variableCosts, $fixedCosts, $transactionData];
+        });
 
         return view('income_statement.index', compact('variableCosts', 'fixedCosts', 'transactionData', 'year'));
     }
@@ -58,6 +63,12 @@ class IncomeStatementController extends Controller
                 );
             }
         }
+
+        // Invalidasi cache laporan setelah data disimpan
+        for ($m = 1; $m <= 12; $m++) {
+            Cache::forget('income_statement_laporan_' . $year . '_' . $m);
+        }
+        Cache::forget('income_statement_index_' . $year);
 
         return response()->json(['status' => 'success', 'message' => 'Data berhasil disimpan.']);
     }

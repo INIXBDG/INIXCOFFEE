@@ -1046,6 +1046,13 @@ Route::put('/expense-hub/update/{id}', [App\Http\Controllers\ExpenseHubControlle
 
 Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
+    Route::get('/api/dashboard/karyawan', [OfficeController::class, 'apiDashboardKaryawan'])->name('office.api.karyawan');
+    Route::get('/api/dashboard/kehadiran', [OfficeController::class, 'apiDashboardKehadiran'])->name('office.api.kehadiran');
+    Route::get('/api/dashboard/ticket', [OfficeController::class, 'apiDashboardTicket'])->name('office.api.ticket');
+    Route::get('/api/dashboard/rkm', [OfficeController::class, 'apiDashboardRKM'])->name('office.api.rkm');
+    Route::get('/api/dashboard/tagihan', [OfficeController::class, 'apiDashboardTagihan'])->name('office.api.tagihan');
+    Route::get('/api/dashboard/administrasi', [OfficeController::class, 'apiDashboardAdministrasi'])->name('office.api.administrasi');
+    Route::get('/api/dashboard/all-data', [OfficeController::class, 'apiDashboardAllData'])->name('office.api.all-data');
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
     Route::get('/detail-data-mengajar/{id}', [OfficeController::class, 'detailMengajar']);

@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class CateringController extends Controller
 {
@@ -41,65 +42,68 @@ class CateringController extends Controller
     {
         $type = $request->get('type', 'catering');
 
-        $query = Catering::with([
-            'karyawan',
-            'DetailCatering',
-            'TrackingCatering' => function ($q) {
-                $q->latest();
-            },
-        ]);
+        $cacheKey = "office_catering_getdata_{$type}";
+        $data = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($type) {
+            $query = Catering::with([
+                'karyawan',
+                'DetailCatering',
+                'TrackingCatering' => function ($q) {
+                    $q->latest();
+                },
+            ]);
 
-        if ($type === 'rencana') {
-            $query->whereNotNull('status_pembelian')->whereNotNull('tanggal_pembelian');
-        } else {
-            $query->where(function ($q) {
-                $q->whereNull('status_pembelian')->orWhereNull('tanggal_pembelian');
+            if ($type === 'rencana') {
+                $query->whereNotNull('status_pembelian')->whereNotNull('tanggal_pembelian');
+            } else {
+                $query->where(function ($q) {
+                    $q->whereNull('status_pembelian')->orWhereNull('tanggal_pembelian');
+                });
+            }
+
+            $dataCatering = $query->get();
+
+            return $dataCatering->map(function ($item) use ($type) {
+                $latestTracking = $item->TrackingCatering->first();
+                Carbon::setLocale('id');
+
+                $totalHarga = $item->DetailCatering->sum(function ($detail) {
+                    return $detail->jumlah * $detail->harga;
+                });
+
+                return [
+                    'id' => $item->id,
+                    'tanggal_pengajuan' => $item->created_at->translatedFormat('l, d F Y'),
+                    'nama_karyawan' => $item->karyawan->nama_lengkap ?? '-',
+                    'divisi' => $item->karyawan->divisi ?? '-',
+                    'jabatan' => $item->karyawan->jabatan ?? '-',
+                    'tipe' => $item->tipe,
+                    'tracking' => $latestTracking->tracking ?? '-',
+                    'status_pembelian' => $item->status_pembelian,
+                    'tanggal_pembelian' => $item->tanggal_pembelian ? Carbon::parse($item->tanggal_pembelian)->translatedFormat('l, d F Y') : '-',
+                    'detail' => $item->DetailCatering->map(function ($detail) {
+                        $vendor = null;
+                        if ($detail->tipe_detail === 'Coffee Break') {
+                            $vendor = vendorCoffeeBreak::where('id', $detail->id_vendor)->where('is_active', '1')->first();
+                        } elseif ($detail->tipe_detail === 'Makan Siang') {
+                            $vendor = vendorMakansiang::where('id', $detail->id_vendor)->where('is_active', '1')->first();
+                        }
+                        $namaMakanan = is_string($detail->nama_makanan) && json_decode($detail->nama_makanan, true) !== null ? json_decode($detail->nama_makanan, true) : [$detail->nama_makanan];
+                        return [
+                            'id' => $detail->id,
+                            'nama_makanan' => $namaMakanan,
+                            'jumlah' => $detail->jumlah,
+                            'harga' => $detail->harga,
+                            'keterangan' => $detail->keterangan,
+                            'id_vendor' => $detail->id_vendor,
+                            'vendor' => $vendor ? $vendor->nama : 'Vendor Tidak Ditemukan',
+                            'tipe_detail' => $detail->tipe_detail,
+                        ];
+                    }),
+                    'total_harga' => $totalHarga,
+                    'invoice' => $item->invoice,
+                    'is_rencana' => $type === 'rencana',
+                ];
             });
-        }
-
-        $dataCatering = $query->get();
-
-        $data = $dataCatering->map(function ($item) use ($type) {
-            $latestTracking = $item->TrackingCatering->first();
-            Carbon::setLocale('id');
-
-            $totalHarga = $item->DetailCatering->sum(function ($detail) {
-                return $detail->jumlah * $detail->harga;
-            });
-
-            return [
-                'id' => $item->id,
-                'tanggal_pengajuan' => $item->created_at->translatedFormat('l, d F Y'),
-                'nama_karyawan' => $item->karyawan->nama_lengkap ?? '-',
-                'divisi' => $item->karyawan->divisi ?? '-',
-                'jabatan' => $item->karyawan->jabatan ?? '-',
-                'tipe' => $item->tipe,
-                'tracking' => $latestTracking->tracking ?? '-',
-                'status_pembelian' => $item->status_pembelian,
-                'tanggal_pembelian' => $item->tanggal_pembelian ? Carbon::parse($item->tanggal_pembelian)->translatedFormat('l, d F Y') : '-',
-                'detail' => $item->DetailCatering->map(function ($detail) {
-                    $vendor = null;
-                    if ($detail->tipe_detail === 'Coffee Break') {
-                        $vendor = vendorCoffeeBreak::where('id', $detail->id_vendor)->where('is_active', '1')->first();
-                    } elseif ($detail->tipe_detail === 'Makan Siang') {
-                        $vendor = vendorMakansiang::where('id', $detail->id_vendor)->where('is_active', '1')->first();
-                    }
-                    $namaMakanan = is_string($detail->nama_makanan) && json_decode($detail->nama_makanan, true) !== null ? json_decode($detail->nama_makanan, true) : [$detail->nama_makanan];
-                    return [
-                        'id' => $detail->id,
-                        'nama_makanan' => $namaMakanan,
-                        'jumlah' => $detail->jumlah,
-                        'harga' => $detail->harga,
-                        'keterangan' => $detail->keterangan,
-                        'id_vendor' => $detail->id_vendor,
-                        'vendor' => $vendor ? $vendor->nama : 'Vendor Tidak Ditemukan',
-                        'tipe_detail' => $detail->tipe_detail,
-                    ];
-                }),
-                'total_harga' => $totalHarga,
-                'invoice' => $item->invoice,
-                'is_rencana' => $type === 'rencana',
-            ];
         });
 
         return response()->json($data);
@@ -199,6 +203,9 @@ class CateringController extends Controller
         foreach ($penerimaUsers as $user) {
             NotificationFacade::send($user, new CateringNotification($notifData, '/catering/index', 'Pengajuan catering', $user->id, $senderUsername, $senderNama));
         }
+        
+        Cache::forget('office_catering_getdata_rencana');
+        Cache::forget('office_catering_getdata_catering');
 
         return response()->json(['success' => 'Pengajuan berhasil dikirim!', 'id' => $catering->id]);
     }
@@ -268,6 +275,9 @@ class CateringController extends Controller
             'tanggal' => now(),
         ]);
 
+        Cache::forget('office_catering_getdata_rencana');
+        Cache::forget('office_catering_getdata_catering');
+
         return response()->json(['success' => 'Data catering berhasil diperbarui.']);
     }
         
@@ -289,6 +299,9 @@ class CateringController extends Controller
             'tracking' => 'Ditingkatkan dari Rencana Pembelian menjadi Catering',
             'tanggal' => now(),
         ]);
+
+        Cache::forget('office_catering_getdata_rencana');
+        Cache::forget('office_catering_getdata_catering');
 
         return response()->json(['success' => 'Rencana Pembelian berhasil ditingkatkan menjadi Catering']);
     }
@@ -454,6 +467,9 @@ class CateringController extends Controller
             }
         }
 
+        Cache::forget('office_catering_getdata_rencana');
+        Cache::forget('office_catering_getdata_catering');
+
         return response()->json(['success' => 'Status pengajuan berhasil diperbarui.']);
     }
 
@@ -469,6 +485,9 @@ class CateringController extends Controller
         TrackingCatering::where('id_catering', $dataCatering->id)->delete();
 
         $dataCatering->delete();
+
+        Cache::forget('office_catering_getdata_rencana');
+        Cache::forget('office_catering_getdata_catering');
 
         return response()->json(['success' => 'Berhasil menghapus data!']);
     }

@@ -1570,7 +1570,7 @@
         }
     </style>
 
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
     <script>
         let komisiData = {};
         let activeSales = null;

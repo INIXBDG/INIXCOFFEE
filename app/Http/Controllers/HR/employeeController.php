@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\karyawan;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -218,6 +219,7 @@ class employeeController extends Controller
             $employee->resigned_at = $validated['resigned_at'];
             $employee->alasan_resign = $validated['alasan_resign'] ?? null;
             $employee->save();
+            Cache::forget('office_karyawan_aktif'); // Invalidate cache
 
             return response()->json([
                 'message' => 'Karyawan berhasil dipindahkan ke status resign',
@@ -246,6 +248,7 @@ class employeeController extends Controller
             $employee->resigned_at = null;
             $employee->alasan_resign = null;
             $employee->save();
+            Cache::forget('office_karyawan_aktif'); // Invalidate cache
 
             return response()->json([
                 'message' => 'Karyawan berhasil dipulihkan menjadi aktif',

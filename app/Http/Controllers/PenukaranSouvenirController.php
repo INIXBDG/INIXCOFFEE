@@ -10,6 +10,7 @@ use App\Models\souvenirpeserta; // Pastikan huruf kecil/besar sesuai nama file M
 use App\Models\PenukaranSouvenir;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 class PenukaranSouvenirController extends Controller
 {
@@ -211,6 +212,8 @@ class PenukaranSouvenirController extends Controller
                 ));
             }
             DB::commit();
+
+            Cache::forget('office_dashboard_souvenir_' . date('Y'));
 
             return redirect()->route('penukaransouvenir.index')
                 ->with('success', 'Berhasil menukar souvenir. Notifikasi terkirim.');

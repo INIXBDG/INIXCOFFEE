@@ -2,7 +2,8 @@
 
 @section('office_contents')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <div class="container-fluid py-4">
+    @include('layouts_office.skeleton_table')
+    <div id="real-dashboard" class="container-fluid py-4 d-none">
         {{-- Flash Messages --}}
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show rounded shadow-sm" role="alert">
@@ -395,7 +396,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
     {{-- Scripts --}}
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
@@ -504,4 +505,5 @@
             });
         });
     </script>
+    </div> <!-- End of real-dashboard -->
 @endsection
