@@ -2,18 +2,8 @@
 @section('office_contents')
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <div class="container-fluid">
-        <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="cube">
-                    <div class="cube_item cube_x"></div>
-                    <div class="cube_item cube_y"></div>
-                    <div class="cube_item cube_x"></div>
-                    <div class="cube_item cube_z"></div>
-                </div>
-            </div>
-        </div>
-
+    @include('layouts_office.skeleton_tabs')
+    <div id="real-dashboard" class="container-fluid d-none">
         <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content">
@@ -319,7 +309,7 @@
         }
     </style>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -776,4 +766,5 @@
             });
         }
     </script>
+    </div> <!-- End of real-dashboard -->
 @endsection

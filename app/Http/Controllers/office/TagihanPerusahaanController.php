@@ -8,6 +8,7 @@ use App\Models\tagihanPerusahaan;
 use App\Models\trackingTagihanPerusahaan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class TagihanPerusahaanController extends Controller
 {
@@ -23,7 +24,7 @@ class TagihanPerusahaanController extends Controller
 
     public function index()
     {
-        $trackingTagihanPerusahaans = trackingTagihanPerusahaan::orderBy('tanggal_perkiraan_mulai', 'desc')->paginate(10);
+        $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')->orderBy('tanggal_perkiraan_mulai', 'desc')->paginate(10);
 
         return view('office.tagihanPerusahaan.index', compact('trackingTagihanPerusahaans'));
     }
@@ -59,6 +60,8 @@ class TagihanPerusahaanController extends Controller
             'tanggal_perkiraan_selesai' => $request->tanggal_perkiraan_selesai ?? $request->tanggal_perkiraan_mulai,
         ]);
 
+        Cache::forget('office_dashboard_tagihan');
+
         return back()->with('success_tagihan', 'Tagihan perusahaan berhasil dibuat.');
     }
 
@@ -75,6 +78,8 @@ class TagihanPerusahaanController extends Controller
         tagihanPerusahaan::where('id', $tracking->id_tagihan_perusahaan)->delete();
 
         $tracking->delete();
+        
+        Cache::forget('office_dashboard_tagihan');
 
         return back()->with('success_tagihan', 'Tagihan perusahaan berhasil dihapus.');
     }
@@ -121,6 +126,8 @@ class TagihanPerusahaanController extends Controller
             $tracking->status = 'selesai';
             $tracking->save();
         }
+
+        Cache::forget('office_dashboard_tagihan');
 
         return back()->with('success_tagihan', 'Tagihan berhasil diperbaharui.');
     }

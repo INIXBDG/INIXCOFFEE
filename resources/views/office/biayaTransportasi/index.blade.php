@@ -174,6 +174,10 @@
         }
     </style>
 
+    @include('layouts_office.skeleton_stats')
+    
+    <div id="real-dashboard" class="w-100 d-none">
+
     <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4">
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalTambah">
             <i class="fas fa-plus me-1"></i> Ajukan Biaya
@@ -770,12 +774,12 @@
         </div>
     @endcan
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/locale/id.min.js"></script>
@@ -1705,4 +1709,6 @@
             });
         });
     </script>
+    
+    </div> <!-- End of real-dashboard -->
 @endsection

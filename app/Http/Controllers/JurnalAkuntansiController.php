@@ -12,6 +12,7 @@ use App\Models\SuratPerjalanan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Concerns\ToArray;
 use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
+use Illuminate\Support\Facades\Cache;
 
 class JurnalArrayImport implements ToArray, WithCalculatedFormulas
 {
@@ -72,11 +73,28 @@ class JurnalAkuntansiController extends Controller
 
         $data = $query->latest()->get();
 
-        $data->transform(function ($jurnal) {
+        // Fix N+1: Kumpulkan semua id_pengajuan_barang lalu fetch sekali
+        $allIds = $data->pluck('id_pengajuan_barang')
+            ->filter(fn($ids) => is_array($ids) && count($ids) > 0)
+            ->flatten()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $pengajuanMap = [];
+        if (!empty($allIds)) {
+            $pengajuanMap = PengajuanBarang::with(['karyawan', 'detail'])
+                ->whereIn('id', $allIds)
+                ->get()
+                ->keyBy('id');
+        }
+
+        $data->transform(function ($jurnal) use ($pengajuanMap) {
             if (is_array($jurnal->id_pengajuan_barang) && count($jurnal->id_pengajuan_barang) > 0) {
-                $jurnal->list_pengajuan = PengajuanBarang::with('karyawan')->whereIn('id', $jurnal->id_pengajuan_barang)
-                    ->with('detail') // Muat detail barangnya juga
-                    ->get();
+                $jurnal->list_pengajuan = collect($jurnal->id_pengajuan_barang)
+                    ->map(fn($id) => $pengajuanMap->get($id))
+                    ->filter()
+                    ->values();
             } else {
                 $jurnal->list_pengajuan = [];
             }
@@ -93,20 +111,22 @@ class JurnalAkuntansiController extends Controller
      */
     public function getBelumJurnal()
     {
-        // 1. Ambil semua ID yang sudah terdaftar di Jurnal Akuntansi
-        $alreadyJurnaledIds = JurnalAkuntansi::whereNotNull('id_pengajuan_barang')
-            ->pluck('id_pengajuan_barang')
-            ->flatten()
-            ->unique()
-            ->toArray();
+        $data = Cache::remember('jurnal_belum_jurnal_all', now()->addMinutes(30), function () {
+            // 1. Ambil semua ID yang sudah terdaftar di Jurnal Akuntansi
+            $alreadyJurnaledIds = JurnalAkuntansi::whereNotNull('id_pengajuan_barang')
+                ->pluck('id_pengajuan_barang')
+                ->flatten()
+                ->unique()
+                ->toArray();
 
-        // 2. Ambil data pengajuan yang ID-nya TIDAK ADA di array di atas
-        $data = PengajuanBarang::with(['karyawan', 'detail', 'tracking'])
-            ->whereNotIn('id', $alreadyJurnaledIds)
-            ->whereHas('tracking', function ($query) {
-                $query->whereIn('tracking', ['Selesai', 'Pencairan Sudah Selesai']);
-            })
-            ->get();
+            // 2. Ambil data pengajuan yang ID-nya TIDAK ADA di array di atas
+            return PengajuanBarang::with(['karyawan', 'detail', 'tracking'])
+                ->whereNotIn('id', $alreadyJurnaledIds)
+                ->whereHas('tracking', function ($query) {
+                    $query->whereIn('tracking', ['Selesai', 'Pencairan Sudah Selesai']);
+                })
+                ->get();
+        });
 
         $formattedData = $data->map(function ($item) {
             $totalHarga = 0;
@@ -135,27 +155,28 @@ class JurnalAkuntansiController extends Controller
      */
     public function getBelumJurnalNetSales()
     {
-        $data = perhitunganNetSales::with([
-            'karyawan',
-            'approvedNetSales',
-            'rkm.materi',
-            'rkm.perusahaan'
-        ])
-            ->whereDoesntHave('jurnalAkuntansi')
-            ->whereHas('approvedNetSales', function ($query) {
-                $query->whereIn('keterangan', [
-                    'Selesai',
-                    'Pencairan Sudah Selesai'
-                ])
-                    ->whereRaw('id = (
+        $data = Cache::remember('jurnal_belum_netsales_all', now()->addMinutes(30), function () {
+            return perhitunganNetSales::with([
+                'karyawan',
+                'approvedNetSales',
+                'rkm.materi',
+                'rkm.perusahaan'
+            ])
+                ->whereDoesntHave('jurnalAkuntansi')
+                ->whereHas('approvedNetSales', function ($query) {
+                    $query->whereIn('keterangan', [
+                        'Selesai',
+                        'Pencairan Sudah Selesai'
+                    ])
+                        ->whereRaw('id = (
                 SELECT MAX(ans.id)
                 FROM approved_net_sales ans
                 WHERE ans.id_rkm = approved_net_sales.id_rkm
             )');
-            })
-            ->get();
+                })
+                ->get();
+        });
 
-        // return $data;
         $formattedData = $data->map(function ($item) {
             // Kalkulasi total pengeluaran Net Sales
             $totalHarga = $item->transportasi + $item->akomodasi_peserta + $item->akomodasi_tim +
@@ -188,19 +209,18 @@ class JurnalAkuntansiController extends Controller
 
     public function getBelumJurnalSuratPerjalanan()
     {
-        $alreadyJurnaledIds = JurnalAkuntansi::whereNotNull('id_surat_perjalanan')
-            ->pluck('id_surat_perjalanan')
-            ->unique()
-            ->toArray();
+        $data = Cache::remember('jurnal_belum_spj_all', now()->addMinutes(30), function () {
+            $alreadyJurnaledIds = JurnalAkuntansi::whereNotNull('id_surat_perjalanan')
+                ->pluck('id_surat_perjalanan')
+                ->unique()
+                ->toArray();
 
-        $query = SuratPerjalanan::with(['karyawan', 'RKM'])
-            ->whereNotIn('id', $alreadyJurnaledIds);
-
-        $query->where('approval_manager', '=', '1')
-            ->where('approval_hrd', '=', '1')
-            ->where('approval_direksi', '=', '1');
-
-        $data = $query->get();
+            return SuratPerjalanan::with(['karyawan', 'RKM'])
+                ->whereNotIn('id', $alreadyJurnaledIds)
+                ->where('approval_manager', '=', '1')
+                ->where('approval_hrd', '=', '1')
+                ->get();
+        });
 
         $formattedData = $data->map(function ($item) {
             return [
@@ -256,6 +276,8 @@ class JurnalAkuntansiController extends Controller
             'debit' => 0,
         ]);
 
+        Cache::forget('jurnal_belum_netsales_all');
+
         return response()->json(['success' => true, 'message' => 'Jurnal Net Sales berhasil dibuat!']);
     }
 
@@ -289,6 +311,8 @@ class JurnalAkuntansiController extends Controller
             'kredit' => $totalPengeluaran,
             'debit' => 0,
         ]);
+
+        Cache::forget('jurnal_belum_jurnal_all');
 
         return response()->json(['success' => true, 'message' => 'Jurnal berhasil dibuat!']);
     }
@@ -341,6 +365,8 @@ class JurnalAkuntansiController extends Controller
             'debit' => 0,
         ]);
 
+        Cache::forget('jurnal_belum_spj_all');
+
         return response()->json([
             'success' => true,
             'message' => 'Jurnal Surat Perjalanan berhasil dibuat!'
@@ -384,6 +410,11 @@ class JurnalAkuntansiController extends Controller
             'kredit' => $request->kredit,
         ]);
 
+        // Invalidasi cache setelah update
+        Cache::forget('jurnal_belum_jurnal_all');
+        Cache::forget('jurnal_belum_netsales_all');
+        Cache::forget('jurnal_belum_spj_all');
+
         return response()->json([
             'success' => true,
             'message' => 'Data Jurnal Akuntansi berhasil diperbarui.'
@@ -413,6 +444,11 @@ class JurnalAkuntansiController extends Controller
             'debit' => $debit,
             'kredit' => $kredit,
         ]);
+
+        // Invalidasi cache
+        Cache::forget('jurnal_belum_jurnal_all');
+        Cache::forget('jurnal_belum_netsales_all');
+        Cache::forget('jurnal_belum_spj_all');
 
         return response()->json([
             'success' => true,

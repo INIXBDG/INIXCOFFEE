@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use App\Models\souvenirinhouse;
 use App\Models\souvenirpeserta;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Exports\FeedbackSalesExport;
@@ -705,65 +706,58 @@ class feedbackController extends Controller
     {
         $tahun = $request->input('tahun', date('Y'));
 
-        $feedbacks = Nilaifeedback::with(['rkm.instruktur'])
-            ->whereHas('rkm', function ($query) use ($tahun) {
-                $query->whereYear('tanggal_awal', $tahun);
-            })
-            ->get();
+        $result = Cache::remember("office_feedback_total_{$tahun}", now()->addMinutes(10), function () use ($tahun) {
+            $feedbacks = Nilaifeedback::with(['rkm.instruktur'])
+                ->whereHas('rkm', function ($query) use ($tahun) {
+                    $query->whereYear('tanggal_awal', $tahun);
+                })
+                ->get();
 
-        if ($feedbacks->isEmpty()) {
-            return response()->json([]);
-        }
-
-        $groupedByInstruktur = [];
-
-        foreach ($feedbacks as $fb) {
-            $rkm = $fb->rkm;
-            if (!$rkm) {
-                continue;
+            if ($feedbacks->isEmpty()) {
+                return [];
             }
 
-            $instrukturName = 'Unknown Instruktur';
-            if ($rkm->instruktur) {
-                $instrukturName = $rkm->instruktur->nama_lengkap 
-                    ?? $rkm->instruktur->nama_karyawan 
-                    ?? $rkm->instruktur->nama 
-                    ?? $rkm->instruktur_key;
-            } elseif ($rkm->instruktur_key) {
-                $instrukturName = $rkm->instruktur_key;
+            $groupedByInstruktur = [];
+
+            foreach ($feedbacks as $fb) {
+                $rkm = $fb->rkm;
+                if (!$rkm) {
+                    continue;
+                }
+
+                $instrukturName = 'Unknown Instruktur';
+                if ($rkm->instruktur) {
+                    $instrukturName = $rkm->instruktur->nama_lengkap
+                        ?? $rkm->instruktur->nama_karyawan
+                        ?? $rkm->instruktur->nama
+                        ?? $rkm->instruktur_key;
+                } elseif ($rkm->instruktur_key) {
+                    $instrukturName = $rkm->instruktur_key;
+                }
+
+                $ratings = array_filter([
+                    $fb->I1, $fb->I2, $fb->I3, $fb->I4,
+                    $fb->I5, $fb->I6, $fb->I7, $fb->I8
+                ], fn ($val) => !is_null($val) && is_numeric($val));
+
+                if (empty($ratings)) {
+                    continue;
+                }
+
+                $avgScore = array_sum($ratings) / count($ratings);
+                $groupedByInstruktur[$instrukturName]['total_score'] =
+                    ($groupedByInstruktur[$instrukturName]['total_score'] ?? 0) + $avgScore;
+                $groupedByInstruktur[$instrukturName]['count'] =
+                    ($groupedByInstruktur[$instrukturName]['count'] ?? 0) + 1;
             }
 
-            $ratings = array_filter([
-                $fb->I1, $fb->I2, $fb->I3, $fb->I4,
-                $fb->I5, $fb->I6, $fb->I7, $fb->I8
-            ], function ($val) {
-                return !is_null($val) && is_numeric($val);
-            });
-
-            if (empty($ratings)) {
-                continue;
-            }
-
-            $avgScore = array_sum($ratings) / count($ratings);
-
-            if (!isset($groupedByInstruktur[$instrukturName])) {
-                $groupedByInstruktur[$instrukturName] = [
-                    'total_score' => 0,
-                    'count' => 0
+            return collect($groupedByInstruktur)->map(function ($stat, $nama) {
+                return [
+                    'nama_instruktur' => $nama,
+                    'nilai_rata_rata' => round($stat['total_score'] / $stat['count'], 2),
                 ];
-            }
-
-            $groupedByInstruktur[$instrukturName]['total_score'] += $avgScore;
-            $groupedByInstruktur[$instrukturName]['count'] += 1;
-        }
-
-        $result = [];
-        foreach ($groupedByInstruktur as $nama => $stat) {
-            $result[] = [
-                'nama_instruktur' => $nama,
-                'nilai_rata_rata' => round($stat['total_score'] / $stat['count'], 2)
-            ];
-        }
+            })->values()->all();
+        });
 
         return response()->json($result);
     }

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container-fluid">
+    {{-- <div class="container-fluid income-statement-page"> --}}
         <!-- Loading Modal -->
         <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -17,7 +17,7 @@
     {{-- <button id="btnSaveData" class="btn-save">Simpan Data</button> --}}
     <a href="{{ route('income-statement.laporan') }}" class="btn-laporan">Laporan</a>
 
-    <div style="width: 100%; overflow-x: auto; overflow-y: visible; padding-bottom: 20px;">
+    <div class="income-statement-scroll">
         <table id="incomeStatementTable">
             <thead>
                 <tr>
@@ -125,7 +125,7 @@
                     <tr>
                         <td class="text-left">{{ $cost->name }}</td>
                         @for ($m = 1; $m <= 12; $m++)
-                            <td><input type="text" class="input-calc vc-item month-{{ $m }}" data-item="vc_{{ $cost->id }}" data-month="{{ $m }}" value="{{ isset($transactionData['vc_' . $cost->id][$m]) && (float)$transactionData['vc_' . $cost->id][$m] != 0 ? (float)$transactionData['vc_' . $cost->id][$m] : '' }}" placeholder="0.00"></td>
+                            <td><input type="text" class="input-calc vc-item month-{{ $m }}" data-item="{{ $cost->item_code }}" data-month="{{ $m }}" value="{{ number_format($transactionData['vc_' . $cost->id][$m] ?? 0, 2, ',', '.') }}"></td>
                         @endfor
                         <td class="row-total display-currency">0.00</td>
                         <td class="row-avg display-currency">0.00</td>
@@ -142,7 +142,7 @@
                     <td class="display-currency avg-total-vc">0.00</td>
                     <td class="percent-total-vc">0.00%</td>
                 </tr>
-            </tbody>
+            </tbody>s
 
             <tbody id="fixedCostContainer">
                 <tr>
@@ -156,7 +156,7 @@
                     <tr>
                         <td class="text-left">{{ $cost->name }}</td>
                         @for ($m = 1; $m <= 12; $m++)
-                            <td><input type="text" class="input-calc fc-item month-{{ $m }}" data-item="fc_{{ $cost->id }}" data-month="{{ $m }}" value="{{ isset($transactionData['fc_' . $cost->id][$m]) && (float)$transactionData['fc_' . $cost->id][$m] != 0 ? (float)$transactionData['fc_' . $cost->id][$m] : '' }}" placeholder="0.00"></td>
+                            <td><input type="text" class="input-calc fc-item month-{{ $m }}" data-item="{{ $cost->item_code }}" data-month="{{ $m }}" value="{{ number_format($transactionData['fc_' . $cost->id][$m] ?? 0, 2, ',', '.') }}"></td>
                         @endfor
                         <td class="row-total display-currency">0.00</td>
                         <td class="row-avg display-currency">0.00</td>
@@ -199,25 +199,55 @@
     </div>
 
     <style>
-        body { font-family: sans-serif; font-size: 12px; }
+        :root {
+            --pastel-border: #d8dee9;
+            --pastel-header: #e8eef7;
+            --pastel-yellow: #fff3c4;
+            --pastel-blue: #d9eef7;
+            --pastel-green: #dcefdc;
+            --pastel-red: #f8d7da;
+            --pastel-orange: #ffe4c7;
+            --pastel-primary: #8fb8d8;
+            --pastel-primary-dark: #6f9fbe;
+            --pastel-danger: #d9959b;
+        }
+
+        body { font-family: sans-serif; font-size: 12px; color: #354052; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #000; padding: 4px; text-align: right; vertical-align: middle; }
-        th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+        th, td { border: 1px solid var(--pastel-border); padding: 4px; text-align: right; vertical-align: middle; }
+        th { background-color: var(--pastel-header); text-align: center; font-weight: bold; }
         .text-left { text-align: left; }
         .text-center { text-align: center; }
-
-        .bg-yellow { background-color: #ffff00 !important; font-weight: bold; }
-        .bg-blue { background-color: #00b0f0 !important; font-weight: bold; }
-        .bg-green { background-color: #00b050 !important; font-weight: bold; }
-        .bg-red { background-color: #ff0000 !important; color: #000; font-weight: bold; }
-        .bg-orange { background-color: #ffc000 !important; font-weight: bold; }
+        
+        .bg-yellow { background-color: var(--pastel-yellow) !important; font-weight: bold; }
+        .bg-blue { background-color: var(--pastel-blue) !important; font-weight: bold; }
+        .bg-green { background-color: var(--pastel-green) !important; font-weight: bold; }
+        .bg-red { background-color: var(--pastel-red) !important; color: #6f3f43; font-weight: bold; }
+        .bg-orange { background-color: var(--pastel-orange) !important; font-weight: bold; }
         .fw-bold { font-weight: bold; }
-
-        input { width: 100px; text-align: right; border: 1px solid #ccc; padding: 2px; }
-        input:focus { border: 1px solid #000; outline: none; }
-        .btn-save { margin-bottom: 15px; padding: 10px; cursor: pointer; background-color: #007bff; color: white; border: none; font-weight: bold; }
-        .btn-laporan { margin-bottom: 15px; padding: 10px; cursor: pointer; background-color: #ff0000; color: white; border: none; font-weight: bold; text-decoration: none; display: inline-block; }
-
+        
+        input { width: 130px; text-align: right; border: 1px solid var(--pastel-border); padding: 2px; color: #354052; background-color: #fbfcfe; }
+        input:focus { border: 1px solid var(--pastel-primary-dark); outline: 2px solid #dcebf5; }
+        .btn-save, .btn-laporan { margin-bottom: 15px; padding: 10px; cursor: pointer; color: #29445a; border: none; font-weight: bold; border-radius: 4px; }
+        .btn-save { background-color: var(--pastel-primary); }
+        .btn-save:hover { background-color: var(--pastel-primary-dark); color: #fff; }
+        .btn-laporan { background-color: var(--pastel-danger); color: #60383c; text-decoration: none; display: inline-block; }
+        .btn-laporan:hover { background-color: #c77f86; color: #fff; }
+        .income-statement-page { max-width: 100%; }
+        .income-statement-scroll {
+            width: 100%;
+            max-width: 100%;
+            max-height: calc(100vh - 170px);
+            overflow: auto;
+            padding-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-color: var(--pastel-primary) var(--pastel-header);
+            scrollbar-width: auto;
+        }
+        .income-statement-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+        .income-statement-scroll::-webkit-scrollbar-track { background: var(--pastel-header); border-radius: 6px; }
+        .income-statement-scroll::-webkit-scrollbar-thumb { background: var(--pastel-primary); border-radius: 6px; }
+        #incomeStatementTable { min-width: 1900px; margin-bottom: 16px; }
     </style>
     @push('js')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -226,8 +256,46 @@
 
             // --- FUNGSI FORMATTING ---
             function formatCurrency(value) {
-                if (value === 0 || isNaN(value)) return '-';
-                return 'Rp ' + value.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                if (isNaN(value) || !isFinite(value)) return 'Rp 0,00';
+                return new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(value);
+            }
+
+            function parseInputValue(value) {
+                let normalizedValue = String(value ?? '').trim()
+                    .replace(/^-?Rp\s*/i, match => match.startsWith('-') ? '-' : '')
+                    .replace(/\s/g, '');
+
+                if (normalizedValue.includes(',')) {
+                    normalizedValue = normalizedValue.replace(/\./g, '').replace(',', '.');
+                } else if (/^-?\d{1,3}(?:\.\d{3})+$/.test(normalizedValue)) {
+                    normalizedValue = normalizedValue.replace(/\./g, '');
+                }
+
+                return parseFloat(normalizedValue) || 0;
+            }
+
+            function formatInputNumber(value) {
+                let rawValue = String(value ?? '').replace(/\s/g, '');
+                let isNegative = rawValue.startsWith('-');
+                rawValue = rawValue.replace(/[^0-9,]/g, '');
+
+                let commaIndex = rawValue.indexOf(',');
+                let integerPart = commaIndex >= 0 ? rawValue.slice(0, commaIndex) : rawValue;
+                let decimalPart = commaIndex >= 0 ? rawValue.slice(commaIndex + 1).replace(/,/g, '') : '';
+
+                integerPart = integerPart.replace(/^0+(?=\d)/, '') || '0';
+                integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+                return (isNegative ? '-' : '') + integerPart + (commaIndex >= 0 ? ',' + decimalPart : '');
+            }
+
+            function formatInputFromValue(value) {
+                return formatInputNumber(Number(value).toFixed(2).replace('.', ','));
             }
 
             function formatPercent(value) {
@@ -235,30 +303,10 @@
                 return value.toFixed(2) + '%';
             }
 
-            function formatRupiahRealtime(angka) {
-                let number_string = angka.toString().replace(/[^,\d]/g, ''),
-                    split = number_string.split(','),
-                    sisa = split[0].length % 3,
-                    rupiah = split[0].substr(0, sisa),
-                    ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-
-                if (ribuan) {
-                    let separator = sisa ? '.' : '';
-                    rupiah += separator + ribuan.join('.');
-                }
-                return rupiah ? 'Rp ' + rupiah : '';
-            }
-
             $('.input-calc').each(function() {
-                let val = $(this).val();
-                if (val && val !== '0' && val !== '0.00') {
-                    let cleanNumber = parseFloat(val);
-                    $(this).val(formatRupiahRealtime(cleanNumber)); // Tampilkan sebagai Rupiah
-                    $(this).data('raw', cleanNumber); // Simpan angka murni di attribute data-raw
-                } else {
-                    $(this).val('');
-                    $(this).data('raw', '');
-                }
+                let value = $(this).val();
+                $(this).val(value ? formatInputNumber(value) : '');
+                $(this).data('raw', value ? parseInputValue(value) : '');
             });
 
             function calculateIncomeStatement() {
@@ -268,13 +316,12 @@
                 let yearlyNetSales = 0;
 
                 for (let m = 1; m <= 12; m++) {
-                    // PERUBAHAN: Sekarang membaca nilai dari .data('raw') bukan dari .val()
-                    let training = parseFloat($(`.sales-training.month-${m}`).data('raw')) || 0;
-                    let discount = parseFloat($(`.discount.month-${m}`).data('raw')) || 0;
-                    let advance = parseFloat($(`.advance.month-${m}`).data('raw')) || 0;
-                    let exam = parseFloat($(`.exam.month-${m}`).data('raw')) || 0;
-                    let project = parseFloat($(`.project.month-${m}`).data('raw')) || 0;
-                    let webinar = parseFloat($(`.webinar.month-${m}`).data('raw')) || 0;
+                    let training = parseInputValue($(`.sales-training.month-${m}`).val());
+                    let discount = parseInputValue($(`.discount.month-${m}`).val());
+                    let advance = parseInputValue($(`.advance.month-${m}`).val());
+                    let exam = parseInputValue($(`.exam.month-${m}`).val());
+                    let project = parseInputValue($(`.project.month-${m}`).val());
+                    let webinar = parseInputValue($(`.webinar.month-${m}`).val());
 
                     let netSales = training - (discount + advance + exam);
                     let totalSales = netSales + project + webinar;
@@ -287,14 +334,14 @@
 
                     let totalVc = 0;
                     $(`input.vc-item.month-${m}`).each(function() {
-                        totalVc += parseFloat($(this).data('raw')) || 0;
+                        totalVc += parseInputValue($(this).val());
                     });
                     yearlyGrandTotalVc += totalVc;
                     $(`td.total-vc.month-${m}`).text(formatCurrency(totalVc));
 
                     let totalFc = 0;
                     $(`input.fc-item.month-${m}`).each(function() {
-                        totalFc += parseFloat($(this).data('raw')) || 0;
+                        totalFc += parseInputValue($(this).val());
                     });
                     yearlyGrandTotalFc += totalFc;
                     $(`td.total-fc.month-${m}`).text(formatCurrency(totalFc));
@@ -312,7 +359,7 @@
                     if (isInputRow) {
                         let rowTotal = 0;
                         $(this).find('input.input-calc').each(function() {
-                            rowTotal += parseFloat($(this).data('raw')) || 0;
+                            rowTotal += parseInputValue($(this).val());
                         });
 
                         let rowAvg = rowTotal / 12;
@@ -352,45 +399,33 @@
                 $('.percent-profit-loss').text(formatPercent(yearlyGrandTotalSales > 0 ? (yearlyProfitLoss / yearlyGrandTotalSales) * 100 : 0));
             }
 
-
-            // --- 1. EVENT: SAAT USER MENGETIK (REALTIME FORMATTING) ---
+            // Format angka saat mengetik dan simpan nilai numeriknya untuk autosave.
             $(document).on('input', '.input-calc', function() {
-                let val = $(this).val();
+                let input = this;
+                let currentValue = input.value;
 
-                if (val === '' || val === 'Rp ') {
-                    $(this).val('');
-                    $(this).data('raw', '');
-                    calculateIncomeStatement();
-                    return;
+                if (!/[+\-*/]/.test(currentValue.replace(/^-/, ''))) {
+                    let caretPosition = input.selectionStart;
+                    let formattedValue = formatInputNumber(currentValue);
+                    let formattedBeforeCaret = formatInputNumber(currentValue.slice(0, caretPosition));
+
+                    input.value = formattedValue;
+                    input.setSelectionRange(formattedBeforeCaret.length, formattedBeforeCaret.length);
                 }
 
-                // Ambil angka murni
-                let rawNumber = val.replace(/[^0-9]/g, '');
-
-                if (rawNumber !== '') {
-                    $(this).val(formatRupiahRealtime(rawNumber));
-                    $(this).data('raw', rawNumber);
-                } else {
-                    $(this).val('');
-                    $(this).data('raw', '');
-                }
-
-                // Kalkulasi tabel otomatis saat ngetik (opsional, tapi bagus untuk realtime)
+                $(this).data('raw', input.value.trim() === '' ? '' : parseInputValue(input.value));
                 calculateIncomeStatement();
             });
 
-            // --- 2. EVENT: SAAT KURSOR BERPINDAH (AUTOSAVE) ---
-            $(document).on('change', '.input-calc', function() {
-                let $input = $(this);
+            function saveInput(input) {
+                let $input = $(input);
                 let itemCode = $input.data('item');
                 let month = $input.data('month');
                 let rawValue = $input.data('raw');
 
-                // Jika kosong, kirim null. Jika ada isi, kirim raw string numeric-nya.
                 let amount = (rawValue === '' || rawValue === undefined) ? null : rawValue;
 
                 if (itemCode && month) {
-                    // Indikator Visual Menyimpan (Warna Kuning Muda)
                     $input.css('background-color', '#fff3cd');
                     $input.attr('title', 'Menyimpan...');
 
@@ -409,7 +444,6 @@
                             }]
                         }),
                         success: function(response) {
-                            // Indikator Visual Berhasil (Warna Hijau Muda, lalu kembali normal)
                             $input.css('background-color', '#d4edda');
                             $input.attr('title', 'Tersimpan');
                             setTimeout(() => {
@@ -418,12 +452,22 @@
                             }, 1000);
                         },
                         error: function(xhr) {
-                            // Indikator Visual Error (Warna Merah Muda)
                             $input.css('background-color', '#f8d7da');
                             $input.attr('title', 'Gagal Menyimpan');
                             console.error('Gagal menyimpan otomatis pada sel:', itemCode, 'Bulan:', month);
                         }
                     });
+                }
+            }
+
+            $(document).on('change', '.input-calc', function() {
+                saveInput(this);
+            });
+
+            $(document).on('keydown', '.input-calc', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    saveInput(this);
                 }
             });
 

@@ -2,6 +2,8 @@
 
 @section($section)
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    @include('layouts_office.skeleton_tabs')
+    <div id="real-dashboard" class="d-none">
 
     <style>
         .table> :not(caption)>*>* {
@@ -407,7 +409,7 @@
         </div>
     @endif
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/id.min.js"></script>
@@ -944,4 +946,5 @@
             });
         });
     </script>
+    </div> <!-- End of real-dashboard -->
 @endsection

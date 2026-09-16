@@ -2,6 +2,8 @@
 
 @section('office_contents')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    @include('layouts_office.skeleton_tabs')
+    <div id="real-dashboard" class="d-none">
 
     {{-- Alert Success --}}
     @if (session('success'))
@@ -767,7 +769,7 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
@@ -1388,4 +1390,5 @@
 
         });
     </script>
+    </div> <!-- End of real-dashboard -->
 @endsection

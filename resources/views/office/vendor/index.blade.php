@@ -3,7 +3,8 @@
 @section('office_contents')
     @php use Illuminate\Support\Str; @endphp
 
-    <div class="container-fluid py-4">
+    @include('layouts_office.skeleton_tabs')
+    <div id="real-dashboard" class="container-fluid py-4 d-none">
 
         <div class="modal fade" id="detailModal" tabindex="-1">
             <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -322,7 +323,7 @@
         }
     </style>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
     <script>
         document.querySelectorAll('.vendor-row').forEach(row => {
             row.addEventListener('click', function(e) {
@@ -431,4 +432,5 @@
             }
         });
     </script>
+    </div> <!-- End of real-dashboard -->
 @endsection

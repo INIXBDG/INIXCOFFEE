@@ -370,11 +370,34 @@ class PerusahaanController extends Controller
         }
     }
 
-    public function indexSop(){
-        $perusahaan = Perusahaan::with('sop', 'karyawan')->get();
-        // dd($perusahaan->toArray());
+    public function indexSop(Request $request){
+        $query = Perusahaan::query()
+            ->select(['id', 'nama_perusahaan', 'kategori_perusahaan', 'status', 'sales_key'])
+            ->when($request->kategori, fn ($q, $value) => $q->where('kategori_perusahaan', $value))
+            ->when($request->status, fn ($q, $value) => $q->where('status', $value))
+            ->when($request->sales_key, fn ($q, $value) => $q->where('sales_key', $value))
+            ->orderBy('nama_perusahaan');
 
-        return view('office.sop.index', compact('perusahaan'));
+        $perusahaan = $query->paginate(20)->withQueryString();
+        $kategoriOptions = Perusahaan::whereNotNull('kategori_perusahaan')
+            ->distinct()
+            ->orderBy('kategori_perusahaan')
+            ->pluck('kategori_perusahaan');
+        $statusOptions = Perusahaan::whereNotNull('status')
+            ->distinct()
+            ->orderBy('status')
+            ->pluck('status');
+        $salesKeyOptions = Perusahaan::whereNotNull('sales_key')
+            ->distinct()
+            ->orderBy('sales_key')
+            ->pluck('sales_key');
+
+        return view('office.sop.index', compact(
+            'perusahaan',
+            'kategoriOptions',
+            'statusOptions',
+            'salesKeyOptions'
+        ));
     }
 
     public function detailSop($id){
