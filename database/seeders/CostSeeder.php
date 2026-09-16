@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Cost;
+use Illuminate\Database\Seeder;
 
 class CostSeeder extends Seeder
 {
@@ -36,13 +36,12 @@ class CostSeeder extends Seeder
             ['name' => 'Biaya Ujian Sertifikasi (Vue)/Pembayaran Exam Peserta', 'type' => 'Biaya-Biaya Training', 'status' => 'variable'],
             ['name' => 'Biaya Ujian Sertifikasi (Vue)/Pembayaran Exam Instruktur', 'type' => 'Biaya-Biaya Training', 'status' => 'variable'],
             ['name' => 'Biaya Proyek', 'type' => 'Biaya-Biaya Training', 'status' => 'variable'],
-            
+
             ['name' => 'Biaya Tunjangan Komisi Sales', 'type' => 'Biaya Tunjangan Prestasi', 'status' => 'variable'],
             ['name' => 'Biaya Tunjangan Komisi Instruktur', 'type' => 'Biaya Tunjangan Prestasi', 'status' => 'variable'],
             ['name' => 'Biaya Bonus Tahunan u/Sales', 'type' => 'Biaya Tunjangan Prestasi', 'status' => 'variable'],
             ['name' => 'Biaya FEE Proyek', 'type' => 'Biaya Tunjangan Prestasi', 'status' => 'variable'],
-           
-            
+
             // Data Fixed Cost
             ['name' => 'Inventaris Cicilan Kendaraan', 'type' => 'Biaya Inventaris', 'status' => 'fixed'],
             ['name' => 'Inventaris Office', 'type' => 'Biaya Inventaris', 'status' => 'fixed'],
@@ -65,23 +64,31 @@ class CostSeeder extends Seeder
             ['name' => 'Biaya Entertainment Outbond Staff', 'type' => 'Biaya Tunjangan Karyawan', 'status' => 'fixed'],
             ['name' => 'Biaya Tunjangan Akomodasi (Kostan)', 'type' => 'Biaya Tunjangan Karyawan', 'status' => 'fixed'],
 
-            ['name' => 'Biaya Akomodasi (Hotel) Direksi', 'type' => 'Biaya Tugas Luar Kota (SPJ) : DIREKSI', 'status' => 'fixed'],
-            ['name' => 'Biaya Transportasi Direksi', 'type' => 'Biaya Tugas Luar Kota (SPJ) : DIREKSI', 'status' => 'fixed'],
-            ['name' => 'Biaya Bensin Direksi', 'type' => 'Biaya Tugas Luar Kota (SPJ) : DIREKSI', 'status' => 'fixed'],
+            ['name' => 'Biaya Tugas Luar Kota (SPJ) : DIREKSI', 'type' => 'Biaya Tugas Luar Kota (SPJ) DIREKSI :', 'status' => 'fixed'],
+            ['name' => 'Biaya Akomodasi (Hotel) Direksi', 'type' => 'Biaya Tugas Luar Kota (SPJ) DIREKSI :', 'status' => 'fixed'],
+            ['name' => 'Biaya Transportasi Direksi', 'type' => 'Biaya Tugas Luar Kota (SPJ) DIREKSI :', 'status' => 'fixed'],
+            ['name' => 'Biaya Bensin Direksi', 'type' => 'Biaya Tugas Luar Kota (SPJ) DIREKSI :', 'status' => 'fixed'],
 
-            ['name' => 'Biaya Akomodasi (Hotel) Sales', 'type' => 'Biaya Tugas Luar Kota (SPJ) : SALES', 'status' => 'fixed'],
-            ['name' => 'Biaya Transportasi Sales', 'type' => 'Biaya Tugas Luar Kota (SPJ) : SALES', 'status' => 'fixed'],
-            ['name' => 'Biaya Bensin Sales', 'type' => 'Biaya Tugas Luar Kota (SPJ) : SALES', 'status' => 'fixed'],
-            ['name' => 'Biaya Tugas Luar Kota (SPJ) Mobile/Visit : SALES', 'type' => 'Biaya Tugas Luar Kota (SPJ) : SALES', 'status' => 'fixed'],
+            ['name' => 'Biaya Tugas Luar Kota (SPJ) : SALES', 'type' => 'Biaya Tugas Luar Kota (SPJ) SALES :', 'status' => 'fixed'],
+            ['name' => 'Biaya Akomodasi (Hotel) Sales', 'type' => 'Biaya Tugas Luar Kota (SPJ) SALES :', 'status' => 'fixed'],
+            ['name' => 'Biaya Transportasi Sales', 'type' => 'Biaya Tugas Luar Kota (SPJ) SALES :', 'status' => 'fixed'],
+            ['name' => 'Biaya Bensin Sales', 'type' => 'Biaya Tugas Luar Kota (SPJ) SALES :', 'status' => 'fixed'],
+            ['name' => 'Biaya Tugas Luar Kota (SPJ) Mobile/Visit : SALES', 'type' => 'Biaya Tugas Luar Kota (SPJ) SALES :', 'status' => 'fixed'],
 
-            ['name' => 'Biaya Akomodasi (Hotel) Office', 'type' => 'Biaya Tugas Luar Kota (SPJ) : OFFICE', 'status' => 'fixed'],
-            ['name' => 'Biaya Transportasi Office', 'type' => 'Biaya Tugas Luar Kota (SPJ) : OFFICE', 'status' => 'fixed'],
-            ['name' => 'Biaya Bensin Office', 'type' => 'Biaya Tugas Luar Kota (SPJ) : OFFICE', 'status' => 'fixed'],
+            ['name' => 'Biaya Tugas Luar Kota (SPJ) : OFFICE', 'type' => 'Biaya Tugas Luar Kota (SPJ) OFFICE :', 'status' => 'fixed'],
+            ['name' => 'Biaya Akomodasi (Hotel) Office', 'type' => 'Biaya Tugas Luar Kota (SPJ) OFFICE :', 'status' => 'fixed'],
+            ['name' => 'Biaya Transportasi Office', 'type' => 'Biaya Tugas Luar Kota (SPJ) OFFICE :', 'status' => 'fixed'],
+            ['name' => 'Biaya Bensin Office', 'type' => 'Biaya Tugas Luar Kota (SPJ) OFFICE :', 'status' => 'fixed'],
 
-            ['name' => 'Biaya Akomodasi (Hotel) Education', 'type' => 'Biaya Tugas Luar Kota (SPJ) : EDUCATION', 'status' => 'fixed'],
-            ['name' => 'Biaya Transportasi Education', 'type' => 'Biaya Tugas Luar Kota (SPJ) : EDUCATION', 'status' => 'fixed'],
-            ['name' => 'Biaya Bensin Education', 'type' => 'Biaya Tugas Luar Kota (SPJ) : EDUCATION', 'status' => 'fixed'],
+            ['name' => 'Biaya Tugas Luar Kota (SPJ) : EDUCATION', 'type' => 'Biaya Tugas Luar Kota (SPJ) EDUCATION :', 'status' => 'fixed'],
+            ['name' => 'Biaya Akomodasi (Hotel) Education', 'type' => 'Biaya Tugas Luar Kota (SPJ) EDUCATION :', 'status' => 'fixed'],
+            ['name' => 'Biaya Transportasi Education', 'type' => 'Biaya Tugas Luar Kota (SPJ) EDUCATION :', 'status' => 'fixed'],
+            ['name' => 'Biaya Bensin Education', 'type' => 'Biaya Tugas Luar Kota (SPJ) EDUCATION :', 'status' => 'fixed'],
 
+            ['name' => 'Biaya Tugas Luar Kota (SPJ) : ITSM', 'type' => 'Biaya Tugas Luar Kota (SPJ) ITSM :', 'status' => 'fixed'],
+            ['name' => 'Biaya Akomodasi (Hotel) ITSM', 'type' => 'Biaya Tugas Luar Kota (SPJ) ITSM :', 'status' => 'fixed'],
+            ['name' => 'Biaya Transportasi ITSM', 'type' => 'Biaya Tugas Luar Kota (SPJ) ITSM :', 'status' => 'fixed'],
+            ['name' => 'Biaya Bensin ITSM', 'type' => 'Biaya Tugas Luar Kota (SPJ) ITSM :', 'status' => 'fixed'],
 
             ['name' => 'Biaya Sewa Gedung ', 'type' => 'Biaya Operasional', 'status' => 'fixed'],
             ['name' => 'Biaya Keperluan Kantor/ ATK', 'type' => 'Biaya Operasional', 'status' => 'fixed'],
@@ -132,8 +139,20 @@ class CostSeeder extends Seeder
             ['name' => 'Biaya Bensin dan Toll /Mobile Sales', 'type' => 'Biaya Operasional', 'status' => 'fixed'],
 
             // ['name' => 'Biaya', 'type' => 'Biaya', 'status' => 'fixed'],
-           
         ];
+
+        $itemCounters = [
+            'variable' => 0,
+            'fixed' => 0,
+        ];
+
+        $costs = array_map(function (array $cost) use (&$itemCounters): array {
+            ++$itemCounters[$cost['status']];
+            $prefix = $cost['status'] === 'variable' ? 'vc' : 'fc';
+            $cost['item_code'] = $prefix.'_'.$itemCounters[$cost['status']];
+
+            return $cost;
+        }, $costs);
 
         Cost::insert($costs);
     }

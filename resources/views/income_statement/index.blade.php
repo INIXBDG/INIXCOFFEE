@@ -124,7 +124,7 @@
                 <tr>
                     <td class="text-left">{{ $cost->name }}</td>
                     @for ($m = 1; $m <= 12; $m++)
-                        <td><input type="text" class="input-calc vc-item month-{{ $m }}" data-item="vc_{{ $cost->id }}" data-month="{{ $m }}" value="{{ number_format($transactionData['vc_' . $cost->id][$m] ?? 0, 2, '.', '') }}"></td>
+                        <td><input type="text" class="input-calc vc-item month-{{ $m }}" data-item="{{ $cost->item_code }}" data-month="{{ $m }}" value="{{ number_format($transactionData['vc_' . $cost->id][$m] ?? 0, 2, '.', '') }}"></td>
                     @endfor
                     <td class="row-total display-currency">0.00</td>
                     <td class="row-avg display-currency">0.00</td>
@@ -141,7 +141,7 @@
                 <td class="display-currency avg-total-vc">0.00</td>
                 <td class="percent-total-vc">0.00%</td>
             </tr>
-        </tbody>
+        </tbody>s
 
         <tbody id="fixedCostContainer">
             <tr>
@@ -155,7 +155,7 @@
                 <tr>
                     <td class="text-left">{{ $cost->name }}</td>
                     @for ($m = 1; $m <= 12; $m++)
-                        <td><input type="text" class="input-calc fc-item month-{{ $m }}" data-item="fc_{{ $cost->id }}" data-month="{{ $m }}" value="{{ number_format($transactionData['fc_' . $cost->id][$m] ?? 0, 2, '.', '') }}"></td>
+                        <td><input type="text" class="input-calc fc-item month-{{ $m }}" data-item="{{ $cost->item_code }}" data-month="{{ $m }}" value="{{ number_format($transactionData['fc_' . $cost->id][$m] ?? 0, 2, '.', '') }}"></td>
                     @endfor
                     <td class="row-total display-currency">0.00</td>
                     <td class="row-avg display-currency">0.00</td>
