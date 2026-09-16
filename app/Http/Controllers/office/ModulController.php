@@ -65,7 +65,7 @@ class ModulController extends Controller
     public function indexModul($id)
     {
         $nomor = NomorModul::findOrFail($id);
-        $modul = Modul::where('no_modul', $id)->get();
+        $modul = Modul::with('detail_materi')->where('no_modul', $id)->get();
         $materi = Materi::all();
         $perusahaan = Perusahaan::all();
         $peserta = PesertaModul::with('perusahaan')->where('no_modul', $id)->get();

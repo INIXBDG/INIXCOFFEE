@@ -1,7 +1,8 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
-    <div class="container-fluid py-4">
+    @include('layouts_office.skeleton_table')
+    <div id="real-dashboard" class="container-fluid py-4 d-none">
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
             <h4 class="mb-0 fw-bold text-dark">Generate Sertifikat</h4>
@@ -299,4 +300,5 @@
             });
         });
     </script>
+    </div> <!-- End of real-dashboard -->
 @endsection

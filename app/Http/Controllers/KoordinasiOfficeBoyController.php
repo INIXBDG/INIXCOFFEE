@@ -8,6 +8,7 @@ use App\Models\TrackingKoordinasiOfficeBoy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class KoordinasiOfficeBoyController extends Controller
 {
@@ -33,13 +34,15 @@ class KoordinasiOfficeBoyController extends Controller
 
     public function getData()
     {
-        $koordinasis = KoordinasiOfficeBoy::with('tracking', 'pembuat', 'karyawan')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $data = Cache::remember('office_koordinasi_ob_all', now()->addMinutes(10), function () {
+            return KoordinasiOfficeBoy::with('tracking', 'pembuat', 'karyawan')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        });
 
         return response()->json([
             'message' => 'Data koordinasi office boy',
-            'data' => $koordinasis,
+            'data' => $data,
         ]);
     }
 
@@ -76,6 +79,8 @@ class KoordinasiOfficeBoyController extends Controller
             ]);
 
             $this->sendCreateNotification($koordinasi);
+
+            Cache::forget('office_koordinasi_ob_all');
 
             return back()->with('success', 'Koordinasi berhasil dibuat');
 
@@ -115,6 +120,8 @@ class KoordinasiOfficeBoyController extends Controller
 
             Log::info('Koordinasi berhasil diupdate dari website', ['id' => $koordinasi->id]);
 
+            Cache::forget('office_koordinasi_ob_all');
+
             return back()->with('success', 'Koordinasi berhasil di Update');
         } catch (\Exception $e) {
             Log::error('Error saat mengupdate koordinasi:', ['message' => $e->getMessage()]);
@@ -138,6 +145,8 @@ class KoordinasiOfficeBoyController extends Controller
 
             Log::info('Koordinasi berhasil dihapus', ['id' => $id]);
 
+            Cache::forget('office_koordinasi_ob_all');
+
             return response()->json(['message' => 'Data berhasil dihapus']);
         } catch (\Exception $e) {
             Log::error('Error saat menghapus koordinasi:', ['message' => $e->getMessage()]);
@@ -149,6 +158,7 @@ class KoordinasiOfficeBoyController extends Controller
     {
         try {
             $this->processStatusUpdate($action, $id, Auth()->user()->id);
+            Cache::forget('office_koordinasi_ob_all');
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             Log::error('Error update status dari website:', ['message' => $e->getMessage()]);

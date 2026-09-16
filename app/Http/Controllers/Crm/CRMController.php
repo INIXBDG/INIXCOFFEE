@@ -530,6 +530,7 @@ class CRMController extends Controller
     public function getProfile()
     {
         $user = auth()->user();
+        if (session_status() === PHP_SESSION_ACTIVE) { session_write_close(); }
         // Pastikan relasi karyawan sudah didefinisikan di model User
         $profile = $user->load('karyawan');
 

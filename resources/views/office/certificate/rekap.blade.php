@@ -1,7 +1,8 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
-    <div class="container-fluid py-4">
+    @include('layouts_office.skeleton_tabs')
+    <div id="real-dashboard" class="container-fluid py-4 d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="mb-0 fw-bold">Rekap Certificate</h4>
             <button type="button" class="btn btn-primary hover-scale" data-bs-toggle="modal"
@@ -137,11 +138,11 @@
         <div class="tab-content" id="rekap-tabs-content"></div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    
     <script>
         const URL_REKAP = "{{ route('office.certificate.certificateSummaryJson') }}";
         const STORE_URL = "{{ route('office.certificate.storeSummary') }}";
@@ -764,4 +765,5 @@
         populateSubFilter(document.getElementById('filter-tipe').value);
         loadRekap();
     </script>
+    </div> <!-- End of real-dashboard -->
 @endsection

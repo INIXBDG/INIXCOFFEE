@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Models\RKM;
 use App\Models\Karyawan;
 use App\Models\Perusahaan;
@@ -31,90 +32,121 @@ class OfficeExamController extends Controller
 
     public function showExamMonth($year, $month)
     {
-        $startDate = CarbonImmutable::create($year, $month, 1);
-        $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
+        $cacheKey = "office_exam_month_{$year}_{$month}";
+        $monthRanges = Cache::remember($cacheKey, now()->addMinutes(15), function () use ($year, $month) {
+            $startDate = CarbonImmutable::create($year, $month, 1);
+            $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
 
-        $monthRanges = [];
-        $date = $startDate;
+            $monthRangesResult = [];
+            $date = $startDate;
 
-        while ($date->month <= $endDate->month && $date->year <= $endDate->year) {
-            $startOfMonth = $date->startOfMonth();
-            $endOfMonth = $date->addMonth()->endOfMonth();
+            while ($date->month <= $endDate->month && $date->year <= $endDate->year) {
+                $startOfMonth = $date->startOfMonth();
+                $endOfMonth = $date->addMonth()->endOfMonth();
 
-            $weekRanges = [];
-            $startOfWeek = $startOfMonth->startOfWeek();
+                $weekRanges = [];
+                $startOfWeek = $startOfMonth->startOfWeek();
 
-            while ($startOfWeek->lte($endOfMonth)) {
-                $endOfWeek = $startOfWeek->copy()->endOfWeek();
-                $start = $startOfWeek->format('Y-m-d');
-                $end = $endOfWeek->format('Y-m-d');
-                $startOfWeek = $startOfWeek->addWeek();
+                while ($startOfWeek->lte($endOfMonth)) {
+                    $endOfWeek = $startOfWeek->copy()->endOfWeek();
+                    $start = $startOfWeek->format('Y-m-d');
+                    $end = $endOfWeek->format('Y-m-d');
+                    $startOfWeek = $startOfWeek->addWeek();
 
-                $rows = RKM::with(['materi', 'peluang', 'rekomendasilanjutan', 'eksam'])
-                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                    ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
-                    ->where('r_k_m_s.exam', '1')
-                    ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1);
-                    })
-                    ->where(function ($query) {
-                        $query
-                            ->whereHas('exam.approvalexam', function ($q) {
-                                $q->where('technical_support', 1);
-                            })
-                            ->orWhereDoesntHave('exam.approvalexam');
-                    })
-                    ->select(DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'), 'r_k_m_s.materi_key', 'r_k_m_s.ruang', 'r_k_m_s.metode_kelas', 'r_k_m_s.event', DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'), DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'), DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'), DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'), DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'), DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'), DB::raw('SUM(r_k_m_s.pax) AS total_pax'), 'r_k_m_s.tanggal_awal', DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir'))
-                    ->groupBy('r_k_m_s.materi_key', 'r_k_m_s.ruang', 'r_k_m_s.metode_kelas', 'r_k_m_s.event', 'r_k_m_s.tanggal_awal')
-                    ->orderBy('status_all', 'asc')
-                    ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-                    ->get();
+                    $rows = RKM::with(['materi', 'peluang', 'rekomendasilanjutan', 'eksam'])
+                        ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                        ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
+                        ->where('r_k_m_s.exam', '1')
+                        ->whereDoesntHave('peluang', function ($query) {
+                            $query->where('tentatif', 1);
+                        })
+                        ->where(function ($query) {
+                            $query
+                                ->whereHas('exam.approvalexam', function ($q) {
+                                    $q->where('technical_support', 1);
+                                })
+                                ->orWhereDoesntHave('exam.approvalexam');
+                        })
+                        ->select(DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'), 'r_k_m_s.materi_key', 'r_k_m_s.ruang', 'r_k_m_s.metode_kelas', 'r_k_m_s.event', DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'), DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'), DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'), DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'), DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'), DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'), DB::raw('SUM(r_k_m_s.pax) AS total_pax'), 'r_k_m_s.tanggal_awal', DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir'))
+                        ->groupBy('r_k_m_s.materi_key', 'r_k_m_s.ruang', 'r_k_m_s.metode_kelas', 'r_k_m_s.event', 'r_k_m_s.tanggal_awal')
+                        ->orderBy('status_all', 'asc')
+                        ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+                        ->get();
 
-                foreach ($rows as $row) {
-                    $sales_ids = array_filter(explode(', ', $row->sales_all ?? ''));
-                    $perusahaan_ids = array_filter(explode(', ', $row->perusahaan_all ?? ''));
+                    $allSalesIds = $rows->flatMap(fn($row) => array_filter(explode(', ', $row->sales_all ?? '')))->unique();
+                    $allCompanyIds = $rows->flatMap(fn($row) => array_filter(explode(', ', $row->perusahaan_all ?? '')))->unique();
+                    $allInstructorIds = $rows->flatMap(fn($row) => array_filter(explode(', ', $row->instruktur_all ?? '')))->unique();
+                    $allRkmIds = $rows->flatMap(fn($row) => array_filter(explode(', ', $row->id ?? '')))->unique();
 
-                    $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
-                    $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
+                    $salesByCode = Karyawan::whereIn('kode_karyawan', $allSalesIds)->get()->keyBy('kode_karyawan');
+                    $instructorsByCode = Karyawan::whereIn('kode_karyawan', $allInstructorIds)->get()->keyBy('kode_karyawan');
+                    $companiesById = Perusahaan::whereIn('id', $allCompanyIds)->get()->keyBy('id');
+                    $bundlingByRkm = BundlingExam::whereIn('id_rkm', $allRkmIds)->get()->groupBy('id_rkm');
+                    $examByRkm = Eksam::whereIn('id_rkm', $allRkmIds)->get()->groupBy('id_rkm');
 
-                    if ($row->instruktur_all) {
-                        $instruktur_ids = array_filter(explode(', ', $row->instruktur_all));
-                        $row->instruktur = Karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
+                    foreach ($rows as $row) {
+                        $sales_ids = array_filter(explode(', ', $row->sales_all ?? ''));
+                        $perusahaan_ids = array_filter(explode(', ', $row->perusahaan_all ?? ''));
+
+                        $row->sales = collect($sales_ids)
+                            ->map(fn($id) => $salesByCode->get($id))
+                            ->filter()
+                            ->values();
+                        $row->perusahaan = collect($perusahaan_ids)
+                            ->map(fn($id) => $companiesById->get($id))
+                            ->filter()
+                            ->values();
+
+                        if ($row->instruktur_all) {
+                            $instruktur_ids = array_filter(explode(', ', $row->instruktur_all));
+                            $row->instruktur = collect($instruktur_ids)
+                                ->map(fn($id) => $instructorsByCode->get($id))
+                                ->filter()
+                                ->values();
+                        }
+
+                        $rkmIds = array_filter(explode(', ', $row->id ?? ''));
+
+                        $bundlingData = collect($rkmIds)
+                            ->map(fn($id) => $bundlingByRkm->get($id, collect())->first())
+                            ->filter()
+                            ->first();
+                        $bundlingVal = $bundlingData ? $bundlingData->bundling : null;
+
+                        if ($bundlingVal === null || $bundlingVal == 0) {
+                            $row->bundling_status = 0;
+                        } elseif ($bundlingVal == 1) {
+                            $row->bundling_status = 1;
+                        } elseif ($bundlingVal == 2) {
+                            $row->bundling_status = 2;
+                        } else {
+                            $row->bundling_status = 0;
+                        }
+
+                        $eksamData = collect($rkmIds)
+                            ->map(fn($id) => $examByRkm->get($id, collect())->first())
+                            ->filter()
+                            ->first();
+                        if ($eksamData) {
+                            $row->exam_status = 'sudah_rekomendasi';
+                        } else {
+                            $row->exam_status = 'belum_pengajuan';
+                        }
                     }
 
-                    $rkmIds = array_filter(explode(', ', $row->id ?? ''));
-
-                    $bundlingData = BundlingExam::whereIn('id_rkm', $rkmIds)->first();
-                    $bundlingVal = $bundlingData ? $bundlingData->bundling : null;
-
-                    if ($bundlingVal === null || $bundlingVal == 0) {
-                        $row->bundling_status = 0;
-                    } elseif ($bundlingVal == 1) {
-                        $row->bundling_status = 1;
-                    } elseif ($bundlingVal == 2) {
-                        $row->bundling_status = 2;
-                    } else {
-                        $row->bundling_status = 0;
-                    }
-
-                    $eksamData = Eksam::whereIn('id_rkm', $rkmIds)->first();
-                    if ($eksamData) {
-                        $row->exam_status = 'sudah_rekomendasi';
-                    } else {
-                        $row->exam_status = 'belum_pengajuan';
-                    }
+                    $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $rows];
                 }
 
-                $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $rows];
+                $monthRangesResult[] = [
+                    'month' => $startOfMonth->translatedFormat('F-Y'),
+                    'weeksData' => $weekRanges,
+                ];
+
+                $date = $date->addMonth();
             }
-
-            $monthRanges[] = [
-                'month' => $startOfMonth->translatedFormat('F-Y'),
-                'weeksData' => $weekRanges,
-            ];
-
-            $date = $date->addMonth();
-        }
+            
+            return $monthRangesResult;
+        });
 
         return new PostResource(true, 'List Kelas dengan Exam', $monthRanges);
     }
@@ -135,6 +167,10 @@ class OfficeExamController extends Controller
 
             BundlingExam::updateOrCreate(['id_rkm' => $rkm->id], $updateData);
         }
+        
+        // Invalidate cache
+        $tanggal_awal = count($dataRkm) > 0 ? CarbonImmutable::parse($dataRkm[0]->tanggal_awal) : now();
+        Cache::forget("office_exam_month_{$tanggal_awal->year}_{$tanggal_awal->month}");
 
         return response()->json(['success' => true]);
     }
@@ -187,22 +223,39 @@ class OfficeExamController extends Controller
             }
         };
         
+        // Pre-fetch all necessary IDs to avoid N+1 inside the loop
+        $allPerusahaanIds = [];
+        $allKaryawanIds = [];
+        foreach ($rkms as $rkm) {
+            $allPerusahaanIds = array_merge($allPerusahaanIds, array_filter(explode(', ', $rkm->perusahaan_key ?? '')));
+            $allKaryawanIds = array_merge(
+                $allKaryawanIds, 
+                array_filter(explode(', ', $rkm->sales_key ?? '')),
+                array_filter(explode(', ', $rkm->instruktur_key ?? '')),
+                array_filter(explode(', ', $rkm->instruktur_key2 ?? '')),
+                array_filter(explode(', ', $rkm->asisten_key ?? ''))
+            );
+        }
+        
+        $perusahaanMap = Perusahaan::whereIn('id', array_unique($allPerusahaanIds))->pluck('nama_perusahaan', 'id');
+        $karyawanMap = Karyawan::whereIn('kode_karyawan', array_unique($allKaryawanIds))->pluck('nama_lengkap', 'kode_karyawan');
+        
         $details = [];
         foreach ($rkms as $rkm) {
             $perusahaan_ids = array_filter(explode(', ', $rkm->perusahaan_key ?? ''));
-            $perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->pluck('nama_perusahaan')->implode(', ') ?: '-';
+            $perusahaan = collect($perusahaan_ids)->map(fn($id) => $perusahaanMap[$id] ?? null)->filter()->implode(', ') ?: '-';
             
             $sales_ids = array_filter(explode(', ', $rkm->sales_key ?? ''));
-            $sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->pluck('nama_lengkap')->implode(', ') ?: '-';
+            $sales = collect($sales_ids)->map(fn($id) => $karyawanMap[$id] ?? null)->filter()->implode(', ') ?: '-';
             
             $instruktur_ids = array_filter(explode(', ', $rkm->instruktur_key ?? ''));
-            $instruktur = Karyawan::whereIn('kode_karyawan', $instruktur_ids)->pluck('nama_lengkap')->implode(', ') ?: '-';
+            $instruktur = collect($instruktur_ids)->map(fn($id) => $karyawanMap[$id] ?? null)->filter()->implode(', ') ?: '-';
 
             $instruktur2_ids = array_filter(explode(', ', $rkm->instruktur_key2 ?? ''));
-            $instruktur2 = Karyawan::whereIn('kode_karyawan', $instruktur2_ids)->pluck('nama_lengkap')->implode(', ') ?: '-';
+            $instruktur2 = collect($instruktur2_ids)->map(fn($id) => $karyawanMap[$id] ?? null)->filter()->implode(', ') ?: '-';
 
             $asisten_ids = array_filter(explode(', ', $rkm->asisten_key ?? ''));
-            $asisten = Karyawan::whereIn('kode_karyawan', $asisten_ids)->pluck('nama_lengkap')->implode(', ') ?: '-';
+            $asisten = collect($asisten_ids)->map(fn($id) => $karyawanMap[$id] ?? null)->filter()->implode(', ') ?: '-';
 
             $tglAwal = $formatDate($rkm->tanggal_awal);
             $tglAkhir = $formatDate($rkm->tanggal_akhir);
