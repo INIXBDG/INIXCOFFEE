@@ -2,13 +2,13 @@
 
 namespace App\Services\KPI\Jabatan;
 
-use App\Models\Nilaifeedback;
-use App\Models\ApprovalPendapatan;
 use App\Models\AnalysisReport;
-use App\Models\LeadProject;
-use App\Models\karyawan;
+use App\Models\ApprovalPendapatan;
 use App\Models\detailPersonKPI;
 use App\Models\IncomeTransaction;
+use App\Models\karyawan;
+use App\Models\LeadProject;
+use App\Models\Nilaifeedback;
 use App\Models\targetKPI;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
@@ -24,12 +24,14 @@ class GMKPIService
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+
             return 0;
         }
 
@@ -42,7 +44,7 @@ class GMKPIService
 
         $groupedFeedbacks = $feedbacks
             ->groupBy(function ($feedback) {
-                return optional($feedback->rkm)->materi?->nama_materi . '/' . optional($feedback->rkm)->tanggal_awal;
+                return optional($feedback->rkm)->materi?->nama_materi.'/'.optional($feedback->rkm)->tanggal_awal;
             })
             ->filter();
 
@@ -76,7 +78,8 @@ class GMKPIService
 
         $total = count($averageFeedbacks);
         if ($total > 0) {
-            $above = count(array_filter($averageFeedbacks, fn($v) => $v >= 3.5));
+            $above = count(array_filter($averageFeedbacks, fn ($v) => $v >= 3.5));
+
             return round(($above / $total) * 100, 1);
         }
 
@@ -126,7 +129,8 @@ class GMKPIService
             ->groupBy(function ($feedback) {
                 $materiNama = optional($feedback->rkm)->materi?->nama_materi ?? 'unknown';
                 $tanggalAwal = optional($feedback->rkm)->tanggal_awal ?? '0000-00-00';
-                return $materiNama . '/' . $tanggalAwal;
+
+                return $materiNama.'/'.$tanggalAwal;
             })
             ->filter();
 
@@ -139,7 +143,9 @@ class GMKPIService
 
         foreach ($groupedFeedbacks as $key => $group) {
             $totalFeedbacks = $group->count();
-            if ($totalFeedbacks === 0) continue;
+            if ($totalFeedbacks === 0) {
+                continue;
+            }
 
             $sums = [
                 'M' => $group->sum('M1') + $group->sum('M2') + $group->sum('M3') + $group->sum('M4'),
@@ -158,8 +164,12 @@ class GMKPIService
             $avgIas = round($sums['Ias'] / ($totalFeedbacks * 8), 1);
 
             $values = [$avgM, $avgP, $avgF, $avgI];
-            if ($avgIb > 0) $values[] = $avgIb;
-            if ($avgIas > 0) $values[] = $avgIas;
+            if ($avgIb > 0) {
+                $values[] = $avgIb;
+            }
+            if ($avgIas > 0) {
+                $values[] = $avgIas;
+            }
 
             $finalAvg = round(array_sum($values) / count($values), 1);
 
@@ -173,13 +183,13 @@ class GMKPIService
             foreach (['M' => $avgM, 'P' => $avgP, 'F' => $avgF, 'I' => $avgI, 'Ib' => $avgIb, 'Ias' => $avgIas] as $k => $v) {
                 if ($v > 0) {
                     $categoryTotals[$k] += $v;
-                    $categoryCounts[$k]++;
+                    ++$categoryCounts[$k];
                 }
             }
         }
 
         $totalGroups = count($averageFeedbacks);
-        $above = count(array_filter($averageFeedbacks, fn($v) => $v >= 3.5));
+        $above = count(array_filter($averageFeedbacks, fn ($v) => $v >= 3.5));
         $below = $totalGroups - $above;
         $progress = $totalGroups > 0 ? round(($above / $totalGroups) * 100, 1) : 0;
 
@@ -221,11 +231,11 @@ class GMKPIService
         ksort($dailyProgressPerMonth);
 
         $mapping = [
-            'M'   => 'Materi',
-            'P'   => 'Pelayanan',
-            'F'   => 'Fasilitas',
-            'I'   => 'Instruktur',
-            'Ib'  => 'Instruktur 2',
+            'M' => 'Materi',
+            'P' => 'Pelayanan',
+            'F' => 'Fasilitas',
+            'I' => 'Instruktur',
+            'Ib' => 'Instruktur 2',
             'Ias' => 'Asisten Instruktur',
         ];
 
@@ -249,8 +259,11 @@ class GMKPIService
 
         if (count($months) >= 2) {
             $trendValue = round(end($months) - prev($months), 1);
-            if ($trendValue > 0) $trend = 'up';
-            elseif ($trendValue < 0) $trend = 'down';
+            if ($trendValue > 0) {
+                $trend = 'up';
+            } elseif ($trendValue < 0) {
+                $trend = 'down';
+            }
         }
 
         $mean = count($averageFeedbacks) > 0 ? array_sum($averageFeedbacks) / count($averageFeedbacks) : 0;
@@ -263,8 +276,11 @@ class GMKPIService
         $consistency = $stdDev < 0.3 ? 'stable' : 'fluctuating';
 
         $targetStatus = 'behind';
-        if ($progress >= $nilaiTarget) $targetStatus = 'on_track';
-        elseif ($gapRaw >= -5) $targetStatus = 'at_risk';
+        if ($progress >= $nilaiTarget) {
+            $targetStatus = 'on_track';
+        } elseif ($gapRaw >= -5) {
+            $targetStatus = 'at_risk';
+        }
 
         $prediction = count($months) > 0 ? round(array_sum(array_slice($months, -3)) / min(3, count($months)), 1) : 0;
         $insight = "Kepuasan pelanggan {$trend} dengan perubahan {$trendValue}. Konsistensi {$consistency}.";
@@ -296,12 +312,14 @@ class GMKPIService
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+
             return 0;
         }
 
@@ -326,7 +344,7 @@ class GMKPIService
             'triwulan_data' => [],
             'sales_performance' => null,
             'dataManual' => [
-                'manual_document' => $detail->manual_document ?? null
+                'manual_document' => $detail->manual_document ?? null,
             ],
         ]);
 
@@ -366,11 +384,11 @@ class GMKPIService
             $triwulanDataTemp[$triwulan] += $total;
         }
 
-        $monthlyData = collect($monthlyDataTemp)->sortKeys()->map(fn($v) => (int) round($v))->toArray();
+        $monthlyData = collect($monthlyDataTemp)->sortKeys()->map(fn ($v) => (int) round($v))->toArray();
         ksort($dailyBreakdownPerMonth);
 
         $triwulanData = collect($triwulanDataTemp)
-            ->mapWithKeys(fn($value, $key) => ['Triwulan_' . $key => (int) round($value)])
+            ->mapWithKeys(fn ($value, $key) => ['Triwulan_'.$key => (int) round($value)])
             ->toArray();
 
         $progressGlobal = (int) round($totalSales);
@@ -415,8 +433,9 @@ class GMKPIService
             ->reduce(function ($carry, $item) {
                 if ($item->rkm && $item->rkm->sales_key) {
                     $key = $item->rkm->sales_key;
-                    $carry[$key] = ($carry[$key] ?? 0) + (float)($item->total_penjualan_sales ?? 0);
+                    $carry[$key] = ($carry[$key] ?? 0) + (float) ($item->total_penjualan_sales ?? 0);
                 }
+
                 return $carry;
             }, []);
 
@@ -435,7 +454,9 @@ class GMKPIService
         $allSalesData = [];
         foreach ($allKaryawan as $karyawan) {
             $salesKey = $karyawan->kode_karyawan;
-            if (!$salesKey) continue;
+            if (!$salesKey) {
+                continue;
+            }
 
             $salesRevenue = (int) round($revenueBySalesKey[$salesKey] ?? 0);
             $detailPerson = $detailPersons->get($karyawan->id);
@@ -449,7 +470,7 @@ class GMKPIService
                 'id_detailPerson' => $detailPerson?->id,
                 'presentase_kemampuan' => $presentaseKemampuan,
                 'percentage' => $percentage,
-                'status' => $salesRevenue >= $presentaseKemampuan ? 'achieved' : 'pending'
+                'status' => $salesRevenue >= $presentaseKemampuan ? 'achieved' : 'pending',
             ];
         }
 
@@ -463,7 +484,7 @@ class GMKPIService
             'monthly_progress' => $monthlyProgress,
             'daily_progress_per_month' => $dailyProgressPerMonth,
             'triwulan_data' => $triwulanData,
-            'sales_performance' => ['type' => 'all', 'data' => $allSalesData]
+            'sales_performance' => ['type' => 'all', 'data' => $allSalesData],
         ];
     }
 
@@ -472,12 +493,13 @@ class GMKPIService
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+
             return 0;
         }
 
         $labaKotor = $this->calculatePemasukanKotor($item, $personId);
         $tahun = (int) $detail->detail_jangka;
-        
+
         if ($tahun < 2000 || $tahun > now()->year + 5 || $labaKotor == 0) {
             return 0;
         }
@@ -518,7 +540,7 @@ class GMKPIService
 
         if ($prevQuarter < 1) {
             $prevQuarter = 4;
-            $prevYear--;
+            --$prevYear;
         }
 
         $previousQuarterData = AnalysisReport::where('year', $prevYear)->get();
@@ -538,16 +560,18 @@ class GMKPIService
         $daily_progress_per_month = [];
 
         foreach ($dataAnalisis as $report) {
-            if (is_null($report->nilai)) continue;
+            if (is_null($report->nilai)) {
+                continue;
+            }
 
             $month = (int) $report->month;
-            $monthKey = $tahun . '-' . str_pad($month, 2, '0', STR_PAD_LEFT);
+            $monthKey = $tahun.'-'.str_pad($month, 2, '0', STR_PAD_LEFT);
             $nilai = (float) $report->nilai;
 
             $monthly_data[$monthKey] = $nilai;
             $monthly_progress[$monthKey] = $labaKotor > 0 ? round(($nilai / $labaKotor) * 100, 1) : 0;
 
-            $dayKey = $monthKey . '-01';
+            $dayKey = $monthKey.'-01';
             if (!isset($daily_breakdown_per_month[$monthKey])) {
                 $daily_breakdown_per_month[$monthKey] = [];
                 $daily_progress_per_month[$monthKey] = [];
@@ -571,7 +595,7 @@ class GMKPIService
             'daily_breakdown_per_month' => $daily_breakdown_per_month,
             'monthly_progress' => $monthly_progress,
             'daily_progress_per_month' => $daily_progress_per_month,
-            'previous_quarter' => ['year' => $prevYear, 'data' => $previousQuarterData]
+            'previous_quarter' => ['year' => $prevYear, 'data' => $previousQuarterData],
         ];
     }
 
@@ -580,12 +604,14 @@ class GMKPIService
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+
             return 0;
         }
 
@@ -593,11 +619,14 @@ class GMKPIService
 
         if ($personId !== null) {
             $kodeKaryawan = karyawan::where('id', $personId)->value('kode_karyawan');
-            if (!$kodeKaryawan) return 0;
+            if (!$kodeKaryawan) {
+                return 0;
+            }
             $query->where('lead_projects.sales_id', $kodeKaryawan);
         }
 
         $totalSales = (float) ($query->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total_sales'))->value('total_sales') ?? 0);
+
         return round($totalSales);
     }
 
@@ -665,8 +694,8 @@ class GMKPIService
         ksort($dailyBreakdownPerMonth);
 
         $triwulanData = [];
-        for ($i = 1; $i <= 4; $i++) {
-            $triwulanData['Triwulan_' . $i] = (float) number_format($triwulanDataTemp[$i], 1, '.', '');
+        for ($i = 1; $i <= 4; ++$i) {
+            $triwulanData['Triwulan_'.$i] = (float) number_format($triwulanDataTemp[$i], 1, '.', '');
         }
 
         $progressGlobal = (float) $totalSales;
@@ -678,7 +707,7 @@ class GMKPIService
         $dailyProgressPerMonth = [];
 
         foreach ($monthlyData as $month => $value) {
-            $monthlyProgress[$month] = $nilaiTarget > 0 ? (float) number_format(((float)$value / $nilaiTarget) * 100, 1, '.', '') : 0;
+            $monthlyProgress[$month] = $nilaiTarget > 0 ? (float) number_format(((float) $value / $nilaiTarget) * 100, 1, '.', '') : 0;
         }
 
         foreach ($dailyBreakdownPerMonth as $month => $days) {
@@ -686,7 +715,7 @@ class GMKPIService
                 if (!isset($dailyProgressPerMonth[$month])) {
                     $dailyProgressPerMonth[$month] = [];
                 }
-                $dailyProgressPerMonth[$month][$day] = $nilaiTarget > 0 ? (float) number_format(((float)$value / $nilaiTarget) * 100, 1, '.', '') : 0;
+                $dailyProgressPerMonth[$month][$day] = $nilaiTarget > 0 ? (float) number_format(((float) $value / $nilaiTarget) * 100, 1, '.', '') : 0;
             }
         }
 
@@ -724,7 +753,9 @@ class GMKPIService
             $allSalesData = [];
             foreach ($allKaryawan as $karyawanItem) {
                 $salesKey = $karyawanItem->kode_karyawan;
-                if (!$salesKey) continue;
+                if (!$salesKey) {
+                    continue;
+                }
 
                 $salesRevenue = (float) ($salesRevenues[$salesKey] ?? 0);
                 $detailPerson = $detailPersons->get($karyawanItem->id);
@@ -738,7 +769,7 @@ class GMKPIService
                     'id_detailPerson' => $detailPerson?->id,
                     'presentase_kemampuan' => (float) number_format($presentaseKemampuan, 1, '.', ''),
                     'percentage' => (float) number_format($percentage, 1, '.', ''),
-                    'status' => $salesRevenue >= $presentaseKemampuan ? 'achieved' : 'pending'
+                    'status' => $salesRevenue >= $presentaseKemampuan ? 'achieved' : 'pending',
                 ];
             }
 
@@ -758,8 +789,8 @@ class GMKPIService
                     'id_detailPerson' => $detailPerson?->id,
                     'presentase_kemampuan' => (float) number_format($presentaseKemampuan, 1, '.', ''),
                     'percentage' => (float) number_format($percentage, 1, '.', ''),
-                    'status' => $totalSales >= $presentaseKemampuan ? 'achieved' : 'pending'
-                ]
+                    'status' => $totalSales >= $presentaseKemampuan ? 'achieved' : 'pending',
+                ],
             ];
         }
 
@@ -782,6 +813,7 @@ class GMKPIService
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             Log::warning("Data detail tidak valid untuk target ID: {$item->id}");
+
             return 0;
         }
 
@@ -790,6 +822,7 @@ class GMKPIService
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun atau nilai target tidak valid untuk target ID: {$item->id}");
+
             return 0;
         }
 
@@ -800,8 +833,9 @@ class GMKPIService
 
         $incomeTransaksi = IncomeTransaction::where('year', $tahun)
             ->whereIn('item_code', [
-                'FC_52', 'FC_53', 'FC_54', 'FC_55', 'FC_56', 'FC_57', 'FC_58', 'FC_59', 
-                'FC_60', 'FC_61', 'FC_65', 'FC_70', 'FC_71', 'FC_72', 'FC_105', 'FC_108',
+                'fc_24', 'fc_25', 'fc_26', 'fc_27', 'fc_28', 'fc_29', 'fc_30', 'fc_31',
+                'fc_32', 'fc_33', 'fc_34', 'fc_35', 'fc_36', 'fc_37', 'fc_38', 'fc_39',
+                'fc_40', 'fc_44', 'fc_49', 'fc_50', 'fc_51', 'fc_84', 'fc_87',
             ])
             ->sum('amount');
 
@@ -837,8 +871,9 @@ class GMKPIService
 
         $incomeTransaksi = IncomeTransaction::where('year', $tahun)
             ->whereIn('item_code', [
-                'FC_52', 'FC_53', 'FC_54', 'FC_55', 'FC_56', 'FC_57', 'FC_58', 'FC_59',
-                'FC_60', 'FC_61', 'FC_65', 'FC_70', 'FC_71', 'FC_72', 'FC_105', 'FC_108',
+                'fc_24', 'fc_25', 'fc_26', 'fc_27', 'fc_28', 'fc_29', 'fc_30', 'fc_31',
+                'fc_32', 'fc_33', 'fc_34', 'fc_35', 'fc_36', 'fc_37', 'fc_38', 'fc_39',
+                'fc_40', 'fc_44', 'fc_49', 'fc_50', 'fc_51', 'fc_84', 'fc_87',
             ])
             ->sum('amount');
 
@@ -869,7 +904,7 @@ class GMKPIService
         $aboveCount = 0;
         $belowCount = 0;
 
-        for ($bulan = 1; $bulan <= 12; $bulan++) {
+        for ($bulan = 1; $bulan <= 12; ++$bulan) {
             $monthKey = sprintf('%d-%02d', $tahun, $bulan);
             $incomeBulan = $monthlyIncomes[$bulan] ?? 0;
             $progressBulan = 0;
@@ -890,9 +925,9 @@ class GMKPIService
             $dailyProgressPerMonth[$monthKey] = [$dayKey => $progressBulan];
 
             if ($progressBulan >= $nilaiTarget) {
-                $aboveCount++;
+                ++$aboveCount;
             } else {
-                $belowCount++;
+                ++$belowCount;
             }
         }
 
@@ -916,10 +951,10 @@ class GMKPIService
     public function calculatePerformaKPIDepartemen($item, $personId)
     {
         $routeCalculators = [
-            'pemasukan kotor' => fn($t, $p) => $this->calculatePemasukanKotor($t, $p),
-            'target penjualan project tahunan' => fn($t, $p) => $this->calculateTargetPenjualanProjectTahunan($t, $p),
-            'meningkatkan revenue perusahaan' => fn($t, $p) => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($t, $p),
-            'pendapatan penjualan project' => fn($t, $p) => app(SPVSalesKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
+            'pemasukan kotor' => fn ($t, $p) => $this->calculatePemasukanKotor($t, $p),
+            'target penjualan project tahunan' => fn ($t, $p) => $this->calculateTargetPenjualanProjectTahunan($t, $p),
+            'meningkatkan revenue perusahaan' => fn ($t, $p) => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($t, $p),
+            'pendapatan penjualan project' => fn ($t, $p) => app(SPVSalesKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
         ];
 
         $allTargets = targetKPI::with(['detailTargetKPI.dataTarget'])->whereYear('created_at', now()->year)->get();
@@ -927,7 +962,9 @@ class GMKPIService
 
         foreach ($allTargets as $target) {
             $details = $target->detailTargetKPI;
-            if (!$details || $details->isEmpty()) continue;
+            if (!$details || $details->isEmpty()) {
+                continue;
+            }
 
             foreach ($details->pluck('divisi')->unique()->filter() as $divisi) {
                 $targetsByDivisi[$divisi][] = $target;
@@ -939,13 +976,19 @@ class GMKPIService
             $progresses = [];
             foreach ($items as $itemTarget) {
                 $detail = $itemTarget->detailTargetKPI->firstWhere('divisi', $divisi);
-                if (!$detail) continue;
+                if (!$detail) {
+                    continue;
+                }
 
                 $route = strtolower($detail->dataTarget?->asistant_route ?? '');
-                if ($route === 'performa kpi departemen') continue;
+                if ($route === 'performa kpi departemen') {
+                    continue;
+                }
 
                 $calculator = $routeCalculators[$route] ?? null;
-                if (!$calculator) continue;
+                if (!$calculator) {
+                    continue;
+                }
 
                 $rawValue = $calculator($itemTarget, $personId);
                 $progress = $this->normalizeToPercent($rawValue, $detail->tipe_target, $detail->nilai_target);
@@ -967,16 +1010,17 @@ class GMKPIService
         if (in_array($tipeTarget, ['rupiah', 'angka']) && $target > 0) {
             $raw = ($raw / $target) * 100;
         }
+
         return max(0, min(100, $raw));
     }
 
     public function calculatePerformaKPIDepartemenDetail($itemDetail, $personId = null)
     {
         $routeCalculators = [
-            'pemasukan kotor' => fn($t, $p) => $this->calculatePemasukanKotor($t, $p),
-            'target penjualan project tahunan' => fn($t, $p) => $this->calculateTargetPenjualanProjectTahunan($t, $p),
-            'meningkatkan revenue perusahaan' => fn($t, $p) => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($t, $p),
-            'pendapatan penjualan project' => fn($t, $p) => app(SPVSalesKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
+            'pemasukan kotor' => fn ($t, $p) => $this->calculatePemasukanKotor($t, $p),
+            'target penjualan project tahunan' => fn ($t, $p) => $this->calculateTargetPenjualanProjectTahunan($t, $p),
+            'meningkatkan revenue perusahaan' => fn ($t, $p) => app(SPVSalesKPIService::class)->calculateMeningkatkanRevenuePerusahaan($t, $p),
+            'pendapatan penjualan project' => fn ($t, $p) => app(SPVSalesKPIService::class)->calculatePendapatanPenjualanProject($t, $p),
         ];
 
         $allTargets = targetKPI::with(['detailTargetKPI.dataTarget'])->whereYear('created_at', now()->year)->get();
@@ -984,7 +1028,9 @@ class GMKPIService
 
         foreach ($allTargets as $target) {
             $details = $target->detailTargetKPI;
-            if (!$details || $details->isEmpty()) continue;
+            if (!$details || $details->isEmpty()) {
+                continue;
+            }
 
             foreach ($details->pluck('divisi')->unique()->filter() as $divisi) {
                 $targetsByDivisi[$divisi][] = $target;
@@ -999,13 +1045,19 @@ class GMKPIService
             $progresses = [];
             foreach ($items as $itemTarget) {
                 $detail = $itemTarget->detailTargetKPI->firstWhere('divisi', $divisi);
-                if (!$detail) continue;
+                if (!$detail) {
+                    continue;
+                }
 
                 $route = strtolower($detail->dataTarget?->asistant_route ?? '');
-                if ($route === 'performa kpi departemen') continue;
+                if ($route === 'performa kpi departemen') {
+                    continue;
+                }
 
                 $calculator = $routeCalculators[$route] ?? null;
-                if (!$calculator) continue;
+                if (!$calculator) {
+                    continue;
+                }
 
                 $rawValue = $calculator($itemTarget, $personId);
                 $progress = $this->normalizeToPercent($rawValue, $detail->tipe_target, $detail->nilai_target);
@@ -1022,14 +1074,16 @@ class GMKPIService
 
         $progress = !empty($divisionAverages) ? round(array_sum($divisionAverages) / count($divisionAverages), 1) : 0;
         $nilaiTarget = (float) ($itemDetail->nilai_target ?? $itemDetail->dataTarget?->nilai_target ?? 100);
-        
+
         if ($nilaiTarget <= 0) {
             $nilaiTarget = 100;
         }
 
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-        if ($gap === '-0') $gap = '0';
+        if ($gap === '-0') {
+            $gap = '0';
+        }
 
         $above = round(max(0, $progress), 1);
         $below = round(max(0, 100 - $progress), 1);
@@ -1044,11 +1098,11 @@ class GMKPIService
 
         $mean = count($allProgress) ? array_sum($allProgress) / count($allProgress) : 0;
         $variance = 0;
-        
+
         foreach ($allProgress as $val) {
             $variance += pow($val - $mean, 2);
         }
-        
+
         $variance = count($allProgress) ? $variance / count($allProgress) : 0;
         $stdDev = sqrt($variance);
         $consistency = $stdDev < 10 ? 'stable' : 'fluctuating';
@@ -1086,7 +1140,7 @@ class GMKPIService
             'total_kpi' => $allTargets->count(),
             'total_division' => count($divisionBreakdown),
             'risk_divisions' => $riskDivisions,
-            'insight' => $insight
+            'insight' => $insight,
         ]);
     }
 }
