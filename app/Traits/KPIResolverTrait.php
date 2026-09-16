@@ -24,6 +24,19 @@ use Illuminate\Support\Facades\Log;
 
 trait KPIResolverTrait
 {
+    protected array $calculationCache = [];
+
+    protected function getCalculationByRouteCached($target, $personId)
+    {
+        $key = $target->id . '_' . $personId;
+
+        if (!isset($this->calculationCache[$key])) {
+            $this->calculationCache[$key] = $this->getCalculationByRoute($target, $personId);
+        }
+
+        return $this->calculationCache[$key];
+    }
+
     protected function resolveProgress($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();

@@ -546,6 +546,11 @@ Route::prefix('kpi-data/')
                 route::post('/update-target-per-sales', [TargetKPIController::class, 'updateTargetPerSales'])->name('updateTargetPerSales');
             });
 
+        Route::get('/deadline-detail', [KPIDatabaseKPIController::class, 'getDeadlineDetail'])->name('deadlineDetail');
+        Route::get('/activity-detail', [KPIDatabaseKPIController::class, 'getActivityDetail'])->name('activityDetail');
+        Route::get('/achievement-detail', [KPIDatabaseKPIController::class, 'getAchievementDetail'])->name('achievementDetail');
+        Route::get('/news-detail', [KPIDatabaseKPIController::class, 'getNewsDetail'])->name('newsDetail');
+
         Route::get('/monitoring/export/pdf',   [TargetKPIController::class, 'exportMonitoringPdf'])
             ->name('monitoring.export.pdf');
 
@@ -881,6 +886,7 @@ Route::prefix('crm')->group(function () {
     Route::delete('laporan-harian/delete/{id}', [LaporanHarianSalesController::class, 'delete'])->name('laporan.harian.delete');
     Route::get('laporan-harian/export/{id}/{type}', [LaporanHarianSalesController::class, 'exportPdf'])->name('laporan.harian.pdf');
     Route::post('laporan-harian/autosave', [LaporanHarianSalesController::class, 'autoSave'])->name('laporan.harian.autosave');
+    Route::get('/laporan-harian-data', [LaporanHarianSalesController::class, 'getDataTables'])->name('laporan.harian.data');
 
     // Todo admin sales
     Route::get('todo-administrasi', [TodoAdministrasiController::class, 'index'])->name('todo-administrasi.index');

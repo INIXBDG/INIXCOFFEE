@@ -181,10 +181,10 @@ class InstrukturKPIService
         $endDate = ($tahun == $today->year) ? $today : Carbon::create($tahun, 12, 31)->endOfYear();
 
         $hariLiburNasionalList = HariLibur::whereBetween('tanggal', [$startDate, $endDate])
-            ->select('tanggal', 'keterangan')
+            ->select('tanggal', 'tipe')
             ->get()
             ->mapWithKeys(function ($libur) {
-                return [Carbon::parse($libur->tanggal)->toDateString() => $libur->keterangan ?? 'Hari Libur Nasional'];
+                return [Carbon::parse($libur->tanggal)->toDateString() => $libur->tipe ?? 'nasional'];
             })
             ->toArray();
 
@@ -559,11 +559,11 @@ class InstrukturKPIService
                 $rkmList = RKM::where('instruktur_key', $kodeKaryawan->kode_karyawan)
                     ->orWhere('instruktur_key2', $kodeKaryawan->kode_karyawan)
                     ->orWhere('asisten_key', $kodeKaryawan->kode_karyawan)
-                    ->select('id_rkm', 'instruktur_key', 'instruktur_key2', 'asisten_key')
+                    ->select('id', 'instruktur_key', 'instruktur_key2', 'asisten_key')
                     ->get();
 
                 if (!$rkmList->isEmpty()) {
-                    $rkmIds = $rkmList->pluck('id_rkm')->filter()->toArray();
+                    $rkmIds = $rkmList->pluck('id')->filter()->toArray();
 
                     $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])
                         ->whereIn('id_rkm', $rkmIds)
@@ -571,7 +571,7 @@ class InstrukturKPIService
                         ->get();
 
                     foreach ($feedbacks as $fb) {
-                        $rkm = $rkmList->firstWhere('id_rkm', $fb->id_rkm);
+                        $rkm = $rkmList->firstWhere('id', $fb->id_rkm);
                         if (!$rkm) continue;
 
                         $avg = 0;
