@@ -1,7 +1,8 @@
 @extends('layouts_office.app')
 @section('office_contents')
 
-<div class="container-fluid py-3">
+@include('layouts_office.skeleton_table')
+<div id="real-dashboard" class="container-fluid py-3 d-none">
   <h5 class="mb-3">Rekap Laporan Exam</h5>
 
   {{-- Filter --}}
@@ -163,9 +164,9 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
 
 <script>
 const URL_REKAP  = "{{ route('office.exam.rekap.json') }}";
@@ -499,4 +500,5 @@ function gotoModalPage(page) {
 
 loadData();
 </script>
+</div> <!-- End of real-dashboard -->
 @endsection

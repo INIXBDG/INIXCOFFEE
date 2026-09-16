@@ -6,7 +6,8 @@
 @endsection
 
 @section('office_contents')
-<div class="container-fluid py-4">
+@include('layouts_office.skeleton_table')
+<div id="real-dashboard" class="container-fluid py-4 d-none">
     <div class="row mb-3">
         <div class="col-md-12">
             <div class="card">
@@ -412,4 +413,5 @@
         });
     });
 </script>
+</div> <!-- End of real-dashboard -->
 @endsection

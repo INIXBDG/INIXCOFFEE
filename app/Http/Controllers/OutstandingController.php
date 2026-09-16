@@ -39,6 +39,7 @@ use Mostafaznv\PdfOptimizer\Laravel\Facade\PdfOptimizer as FacadePdfOptimizer;
 use Mostafaznv\PdfOptimizer\PdfOptimizer as PdfOptimizerPdfOptimizer;
 use Spatie\Browsershot\Browsershot;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Cache;
 
 class OutstandingController extends Controller
 {
@@ -211,19 +212,23 @@ class OutstandingController extends Controller
         $tahun = $request->input('tahun', date('Y'));
         $users = auth()->user();
         $idSales = $users->jabatan == 'SPV Sales' ? '' : $users->id_sales;
+        $cacheKey = 'outstanding_lunas_' . $tahun . '_' . $users->id;
 
-        $query = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
-            ->where('status_pembayaran', '1')
-            ->whereYear('created_at', $tahun);
+        $data = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($tahun, $idSales) {
+            $query = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
+                ->where('status_pembayaran', '1')
+                ->whereYear('created_at', $tahun);
 
-        if ($idSales) {
-            $query->whereHas('rkm', function ($q) use ($idSales) {
-                $q->where('sales_key', $idSales);
-            });
-        }
+            if ($idSales) {
+                $query->whereHas('rkm', function ($q) use ($idSales) {
+                    $q->where('sales_key', $idSales);
+                });
+            }
 
-        $data = $query->get();
+            return $query->get();
+        });
 
+        // Ambil sekali, bukan per-item (fix N+1)
         $existingPicRkms = PicPenagihanInvoice::pluck('id_rkm')->toArray();
 
         $data->map(function ($item) use ($existingPicRkms) {
@@ -239,16 +244,23 @@ class OutstandingController extends Controller
         $tahun = $request->input('tahun', date('Y'));
         $user = auth()->user();
         $idSales = $user->jabatan == 'SPV Sales' ? '' : $user->id_sales;
+        $cacheKey = 'outstanding_hutang_' . $tahun . '_' . $user->id;
 
-        $query = outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')->where('status_pembayaran', '0')->whereYear('created_at', $tahun);
+        $data = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($tahun, $idSales) {
+            $query = outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
+                ->where('status_pembayaran', '0')
+                ->whereYear('created_at', $tahun);
 
-        if ($idSales) {
-            $query->whereHas('rkm', function ($q) use ($idSales) {
-                $q->where('sales_key', $idSales);
-            });
-        }
+            if ($idSales) {
+                $query->whereHas('rkm', function ($q) use ($idSales) {
+                    $q->where('sales_key', $idSales);
+                });
+            }
 
-        return response()->json(['data' => $query->get()]);
+            return $query->get();
+        });
+
+        return response()->json(['data' => $data]);
     }
 
     public function getOutstandingRKM($year, $month)
@@ -296,15 +308,18 @@ class OutstandingController extends Controller
         // Ambil input bulan (format: 2026-02)
         $bulanInput = $request->input('bulan', date('Y-m'));
         $carbonDate = Carbon::parse($bulanInput);
+        $cacheKey = 'outstanding_pa_' . $bulanInput;
 
-        $rkm = RKM::with(['perhitunganNetSales', 'outstanding', 'perusahaan', 'materi'])
-            ->whereYear('tanggal_akhir', $carbonDate->year)
-            ->whereMonth('tanggal_akhir', $carbonDate->month)
-            ->whereHas('outstanding', function ($query) {
-                $query->where('status_pembayaran', '1');
-            })
-            ->whereHas('perhitunganNetSales')
-            ->get();
+        $rkm = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($carbonDate) {
+            return RKM::with(['perhitunganNetSales', 'outstanding', 'perusahaan', 'materi'])
+                ->whereYear('tanggal_akhir', $carbonDate->year)
+                ->whereMonth('tanggal_akhir', $carbonDate->month)
+                ->whereHas('outstanding', function ($query) {
+                    $query->where('status_pembayaran', '1');
+                })
+                ->whereHas('perhitunganNetSales')
+                ->get();
+        });
 
         return response()->json(['data' => $rkm]);
     }
@@ -458,6 +473,9 @@ class OutstandingController extends Controller
                 NotificationFacade::send($user, new OutstandingNotification($data, $path, $receiverId));
             }
         }
+
+        // Invalidasi cache setelah data baru disimpan
+        Cache::flush(); // Flush cache outstanding (semua key per-user/tahun)
 
         return redirect()
             ->route('outstanding.index')
@@ -869,6 +887,9 @@ class OutstandingController extends Controller
             'status_pembayaran' => $request->status_pembayaran
         ]);
 
+        // Invalidasi cache setelah update
+        Cache::flush();
+
         return redirect()
             ->route('outstanding.index')
             ->with(['success' => 'Data Berhasil Disimpan!']);
@@ -1078,6 +1099,9 @@ class OutstandingController extends Controller
         $post = outstanding::findOrFail($id);
 
         $post->delete();
+
+        // Invalidasi cache setelah hapus
+        Cache::flush();
 
         return redirect()
             ->route('outstanding.index')

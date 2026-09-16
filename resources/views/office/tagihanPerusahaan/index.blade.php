@@ -1,17 +1,8 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
-    <div class="container-fluid py-4">
-        <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="cube">
-                    <div class="cube_item cube_x"></div>
-                    <div class="cube_item cube_y"></div>
-                    <div class="cube_item cube_x"></div>
-                    <div class="cube_item cube_z"></div>
-                </div>
-            </div>
-        </div>
+    @include('layouts_office.skeleton_table')
+    <div id="real-dashboard" class="container-fluid py-4 d-none">
         
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
@@ -349,7 +340,7 @@
     }
 </style>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // pengajuan tagihan perusahaan ke pengajuan barang
@@ -459,4 +450,5 @@
         });
     });
 </script>
+</div> <!-- End of real-dashboard -->
 @endsection

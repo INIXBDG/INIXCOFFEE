@@ -16,11 +16,7 @@
     <link rel="manifest" href="/site.webmanifest">
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap"
-        rel="stylesheet" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/public-sans.css') }}" />
 
     <!-- Vendor CSS -->
     <link rel="stylesheet" href="{{ asset('assets/vendor/fonts/iconify-icons.css') }}" />
@@ -32,12 +28,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- DataTables -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/datatables.min.css') }}">
 
     <!-- Select2 -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
-        rel="stylesheet" />
+    <link href="{{ asset('assets/vendor/css/select2.min.css') }}" rel="stylesheet" />
+    <link href="{{ asset('assets/vendor/css/select2-bootstrap.min.css') }}" rel="stylesheet" />
 
     <!-- Theme CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
@@ -224,6 +219,7 @@
             z-index: 999999 !important;
         }
     </style>
+    @yield('css')
 </head>
 
 <body>
@@ -302,30 +298,26 @@
     <!-- / Layout wrapper -->
 
     <!-- Core JS -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('assets/vendor/js/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/js/bootstrap.bundle.min.js') }}" defer></script>
 
-    <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
-    <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}" defer></script>
 
     <!-- Vendor JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="{{ asset('assets/vendor/js/select2.min.js') }}" defer></script>
+    <script src="{{ asset('assets/vendor/js/datatables.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/js/datatables.bootstrap5.min.js') }}"></script>
 
     <!-- Template JS -->
-    <script src="{{ asset('assets/vendor/js/menu.js') }}"></script>
-    <script src="{{ asset('assets/js/main.js') }}"></script>
+    <script src="{{ asset('assets/vendor/js/menu.js') }}" defer></script>
+    <script src="{{ asset('assets/js/main.js') }}" defer></script>
 
     <!-- Iconify -->
-    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <script src="{{ asset('assets/vendor/js/iconify.min.js') }}" defer></script>
 
 
-    <script src="{{ asset('js/global-validator.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('js/global-validator.js') }}" defer></script>
+    <script src="{{ asset('assets/vendor/js/sweetalert2.min.js') }}" defer></script>
 
 
     <!-- Mobile menu toggle logic -->
@@ -519,6 +511,8 @@
             }
         });
     </script>
+
+
 </body>
 
 </html>

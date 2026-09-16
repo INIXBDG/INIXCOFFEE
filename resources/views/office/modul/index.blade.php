@@ -1,7 +1,8 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
-    <div class="container mt-3">
+    @include('layouts_office.skeleton_table')
+    <div id="real-dashboard" class="container mt-3 d-none">
 
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -521,7 +522,7 @@
         rel="stylesheet" />
 
     {{-- Script Select2 & Logic --}}
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 
@@ -691,4 +692,5 @@
 
         });
     </script>
+    </div> <!-- End of real-dashboard -->
 @endsection

@@ -1,7 +1,8 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
-    <div class="container-fluid py-4">
+    @include('layouts_office.skeleton_stats')
+    <div id="real-dashboard" class="container-fluid py-4 d-none">
         <div class="d-flex justify-content-between align-items-center mb-5">
             <div>
                 <h4 class="mb-0 fw-bold text-dark">Dashboard Souvenir & Merchandise</h4>
@@ -355,7 +356,7 @@
     </style>
 
     {{-- Script Chart.js --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // ================= CHART PENUKARAN =================
@@ -418,4 +419,5 @@
             }
         });
     </script>
+    </div> <!-- End of real-dashboard -->
 @endsection

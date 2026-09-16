@@ -1,5 +1,29 @@
 @extends('layouts_office.app')
 
+@section('css')
+    <!-- Preload library berat -->
+    <link rel="preload" href="{{ asset('assets/vendor/js/fullcalendar.min.js') }}" as="script">
+    <link rel="preload" href="{{ asset('assets/vendor/js/moment.min.js') }}" as="script">
+    
+    <style>
+        /* CSS minimal untuk calendar header agar LCP cepat */
+        .fc-toolbar-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+        .fc-header-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5em;
+        }
+        .fc-daygrid-skeleton { background: #eee; min-height: 400px; border-radius: 8px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+@endsection
+
 @section('office_contents')
     <div class="container-fluid py-4">
         <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
@@ -13,11 +37,147 @@
             </div>
         </div>
 
-        <!-- Page Header -->
-        <div class="d-flex justify-content-between align-items-center mb-5">
-            <h4 class="mb-0 fw-bold text-dark">Dashboard Office</h4>
-            <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
+        <!-- MULAI SKELETON DASHBOARD -->
+<style>
+.skeleton-box {
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+    background-color: #e6e8eb;
+    border-radius: 4px;
+}
+
+.skeleton-box::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0,
+        rgba(255, 255, 255, 0.5) 20%,
+        rgba(255, 255, 255, 0.8) 60%,
+        rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+</style>
+<div id="skeleton-dashboard" class="w-100 d-none">
+  <!-- Page Header Skeleton -->
+  <div class="d-flex justify-content-between align-items-center mb-5">
+    <div class="skeleton-box" style="width: 250px; height: 30px;"></div>
+    <div class="skeleton-box" style="width: 150px; height: 20px;"></div>
+  </div>
+
+  <!-- Total Karyawan Card Skeleton -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden glass-force">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+              <div class="skeleton-box rounded-circle" style="width: 80px; height: 80px;"></div>
+            </div>
+            <div class="flex-grow-1 ms-4">
+              <div class="skeleton-box mb-3" style="width: 140px; height: 18px;"></div>
+              <div class="skeleton-box" style="width: 80px; height: 36px;"></div>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Divisi Stats Cards Skeleton -->
+  <div class="row mb-5 g-4">
+    @for($i = 0; $i < 4; $i++)
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm h-100 rounded-3 overflow-hidden glass-force">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center mb-3">
+            <div class="flex-shrink-0">
+              <div class="skeleton-box rounded-pill" style="width: 48px; height: 48px;"></div>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <div class="skeleton-box mb-2" style="width: 100px; height: 14px;"></div>
+              <div class="skeleton-box" style="width: 60px; height: 28px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    @endfor
+  </div>
+
+  <!-- Tagihan Perusahaan Skeleton -->
+  <div class="row g-4 mb-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+        <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between align-items-center">
+          <div class="skeleton-box" style="width: 200px; height: 24px;"></div>
+          <div class="skeleton-box" style="width: 120px; height: 38px;"></div>
+        </div>
+        <div class="card-body p-4 mb-4" style="height: 320px;">
+          <div class="skeleton-box w-100 mb-3" style="height: 36px;"></div>
+          <div class="skeleton-box w-100 mb-3" style="height: 36px;"></div>
+          <div class="skeleton-box w-100 mb-3" style="height: 36px;"></div>
+          <div class="skeleton-box w-100" style="height: 36px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grafik Outstanding & Ketepatan Skeleton -->
+  <div class="row g-4 mb-5">
+    @for($i = 0; $i < 2; $i++)
+    <div class="col-12">
+      <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden mb-4 glass-force">
+        <div class="card-header border-bottom-0 pb-3">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="skeleton-box" style="width: 280px; height: 24px;"></div>
+            <div class="skeleton-box" style="width: 140px; height: 38px;"></div>
+          </div>
+        </div>
+        <div class="card-body p-4">
+          <div class="row h-100">
+            <div class="col-lg-8">
+              <div class="skeleton-box w-100 rounded" style="height: 380px;"></div>
+            </div>
+            <div class="col-lg-4 d-flex flex-column gap-3 mt-4 mt-lg-0">
+              <div class="p-3 rounded-3 shadow-sm border">
+                <div class="skeleton-box mb-3" style="width: 150px; height: 18px;"></div>
+                <div class="skeleton-box w-100 rounded" style="height: 100px;"></div>
+              </div>
+              <div class="p-3 rounded-3 shadow-sm border">
+                <div class="skeleton-box mb-3" style="width: 150px; height: 18px;"></div>
+                <div class="skeleton-box w-100 rounded" style="height: 100px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    @endfor
+  </div>
+</div>
+<!-- AKHIR SKELETON DASHBOARD -->
+
+        <!-- MULAI REAL DASHBOARD -->
+        <div id="real-dashboard" class="w-100">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-5">
+                <h4 class="mb-0 fw-bold text-dark">Dashboard Office</h4>
+                <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
+            </div>
 
         <!-- Total Karyawan Card -->
         <div class="row mb-5">
@@ -250,7 +410,7 @@
 
 
                             {{-- Table Tagihan --}}
-                            <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
+                            <div class="table-responsive mb-4" style="max-height: 250px; overflow-y: auto;">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light sticky-top">
                                         <tr>
@@ -263,170 +423,18 @@
                                             <th class="border-0 text-center pe-4" style="min-width: 120px;">Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        @forelse($trackingTagihanPerusahaans as $tagihan)
-                                            <tr class="border-bottom ">
-                                                @if ($tagihan->status === 'selesai')
-                                                    <td class="text-center ps-4"><input class="custom-check"
-                                                            type="checkbox" checked disabled></td>
-                                                @elseif ($tagihan->status === 'telat')
-                                                    <td class="text-center ps-4"><input class="custom-fail"
-                                                            type="checkbox" checked disabled></td>
-                                                @else
-                                                    <td class="text-center ps-4"><input class="check-blue"
-                                                            data-id="{{ $tagihan->id }}" type="checkbox"
-                                                            id="edit-tagihan"></td>
-                                                @endif
-                                                <td>
-                                                    @if (
-                                                        $tagihan->tanggal_perkiraan_mulai === $tagihan->tanggal_perkiraan_selesai ||
-                                                            $tagihan->tanggal_perkiraan_selesai === null)
-                                                        <div class="small">
-                                                            {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_mulai)->format('d F') }}
-                                                        </div>
-                                                    @else
-                                                        <div class="small">
-                                                            {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_selesai)->format('d M') }}
-                                                        </div>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="text-truncate" style="max-width: 150px;">
-                                                            {{ $tagihan->tagihanPerusahaan?->kegiatan ?? $tagihan->kegiatan }}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span class="">
-                                                        {{ $tagihan->nominal ? 'Rp. ' . number_format($tagihan->nominal, 0, ',', '.') : '-' }}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div class="text-truncate" style="max-width: 300px;">
-                                                        {{ $tagihan->tracking ?? '-' }}
-                                                    </div>
-                                                </td>
-                                                <td class="text-center pe-4">
-                                                    @php
-                                                        $statusConfig = [
-                                                            'pending' => [
-                                                                'color' => 'warning',
-                                                                'icon' => 'bx-time-five',
-                                                            ],
-                                                            'proses' => [
-                                                                'color' => 'primary',
-                                                                'icon' => 'bx-loader-circle',
-                                                            ],
-                                                            'selesai' => [
-                                                                'color' => 'success',
-                                                                'icon' => 'bx-check-circle',
-                                                            ],
-                                                            'telat' => [
-                                                                'color' => 'danger',
-                                                                'icon' => 'bx-info-circle',
-                                                            ],
-                                                        ];
-                                                        $config = $statusConfig[$tagihan->status] ?? [
-                                                            'color' => 'secondary',
-                                                            'icon' => 'bx-info-circle',
-                                                        ];
-                                                    @endphp
-                                                    <span
-                                                        class="badge bg-{{ $config['color'] }}-subtle text-{{ $config['color'] }} px-3 py-text-capitalize2 ">
-                                                        <i class="bx {{ $config['icon'] }} me-1"></i>
-                                                        {{ $tagihan->status }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-center pe-4 position-relative">
-                                                    <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle"
-                                                            type="button" data-bs-toggle="dropdown"
-                                                            data-bs-boundary="viewport" aria-expanded="false">
-                                                            Aksi
-                                                        </button>
-
-                                                        <ul class="dropdown-menu dropdown-menu-end">
-                                                            <li>
-                                                                <button class="dropdown-item"
-                                                                    data-id="{{ $tagihan->id }}" data-bs-toggle="modal"
-                                                                    id="edit-tagihan" data-bs-target="#modalEditTagihan">
-                                                                    Edit
-                                                                </button>
-                                                            </li>
-
-                                                            <li>
-                                                                <button
-                                                                    class="dropdown-item text-success btn-ajukan-tagihan"
-                                                                    data-id="{{ $tagihan->id }}">
-                                                                    Ajukan Tagihan
-                                                                </button>
-
-                                                                <form id="form-ajukan-{{ $tagihan->id }}" method="POST"
-                                                                    style="display:none;">
-                                                                    @csrf
-                                                                    @php
-                                                                        $user = auth()->user();
-                                                                        $karyawan = $user->karyawan;
-                                                                    @endphp
-                                                                    <input type="hidden" name="id_tagihan"
-                                                                        value="{{ $tagihan->id }}">
-                                                                    <input name="id_karyawan"
-                                                                        value="{{ $karyawan->id }}">
-                                                                    <input id="nama_karyawan" type="text"
-                                                                        name="nama_karyawan"
-                                                                        value="{{ $karyawan->nama_lengkap }}">
-                                                                    <input id="divisi" type="text" name="divisi"
-                                                                        value="{{ $karyawan->divisi }}">
-                                                                    <input type="text" name="tipe"
-                                                                        value="Tagihan Perusahaan">
-                                                                    <input type="text" name="barang[nama_barang][]"
-                                                                        value="{{ $tagihan->kegiatan ?? $tagihan->tagihanPerusahaan?->kegiatan }}">
-                                                                    <input type="number" name="barang[qty][]"
-                                                                        value="1">
-                                                                    <input type="text" name="barang[harga_barang][]"
-                                                                        value="{{ $tagihan->nominal ?? null }}">
-                                                                    <input type="text" name="barang[keterangan][]"
-                                                                        value="{{ $tagihan->keterangan ?? null }}">
-                                                                </form>
-                                                            </li>
-
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                    href="{{ route('detailTagihanPerusahaan', $tagihan->id) }}">
-                                                                    Detail
-                                                                </a>
-                                                            </li>
-
-                                                            <li>
-                                                                <form
-                                                                    action="{{ route('hapusTagihanPerusahaan', $tagihan->id) }}"
-                                                                    method="POST"
-                                                                    onsubmit="return confirm('Yakin ingin menghapus?')">
-                                                                    @csrf
-                                                                    <button type="submit"
-                                                                        class="dropdown-item text-danger">
-                                                                        Hapus
-                                                                    </button>
-                                                                </form>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="8" class="text-center py-5">
-                                                    <div class="d-flex flex-column align-items-center">
-                                                        <i class="bx bx-message-square-x text-muted"
-                                                            style="font-size: 3rem;"></i>
-                                                        <p class="text-muted mt-3 mb-0">Tidak ada tagihan untuk
-                                                            ditampilkan
-                                                        </p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforelse
+                                    <tbody id="tagihan-container">
+                                        @for($s = 0; $s < 3; $s++)
+                                        <tr class="border-bottom">
+                                            <td class="ps-4"><div class="skeleton-box" style="width: 20px; height: 20px;"></div></td>
+                                            <td><div class="skeleton-box" style="width: 120px; height: 18px;"></div></td>
+                                            <td><div class="skeleton-box" style="width: 150px; height: 18px;"></div></td>
+                                            <td><div class="skeleton-box" style="width: 100px; height: 18px;"></div></td>
+                                            <td><div class="skeleton-box" style="width: 90px; height: 18px;"></div></td>
+                                            <td class="text-center pe-4"><div class="skeleton-box" style="width: 70px; height: 24px; border-radius: 12px;"></div></td>
+                                            <td class="text-center pe-4"><div class="skeleton-box" style="width: 60px; height: 24px; border-radius: 6px;"></div></td>
+                                        </tr>
+                                        @endfor
                                     </tbody>
                                 </table>
                             </div>
@@ -460,7 +468,7 @@
                                 </div>
                             </div>
 
-                            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light sticky-top">
                                         <tr>
@@ -768,7 +776,7 @@
                             <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
     
                                 {{-- Table Exam --}}
-                                <div class="table-responsive mb-4" style="max-height: 800px; overflow-y: auto;">
+                                <div class="table-responsive mb-4" style="max-height: 250px; overflow-y: auto;">
                                     <table id="tabelEksam" class="table table-hover align-middle mb-0">
                                         <thead class="table-light sticky-top">
                                             <tr>
@@ -900,8 +908,24 @@
                             <!-- Kalender -->
                             <div class="col-xl-8">
                                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
-                                    <div class="card-body p-4">
-                                        <div id="calendar" class="fc-custom"></div>
+                                    <div class="card-body p-4 position-relative">
+                                        <div id="calendar" class="fc-custom">
+                                            <!-- SSR Header for LCP Optimization -->
+                                            <div class="fc-header-toolbar fc-toolbar fc-theme-standard mb-3" style="display: flex; justify-content: space-between; align-items: center;">
+                                                <div class="fc-toolbar-chunk">
+                                                    <div class="btn-group">
+                                                        <button class="btn btn-primary btn-sm disabled">&lt;&lt; Prev</button>
+                                                        <button class="btn btn-primary btn-sm disabled">Next &gt;&gt;</button>
+                                                    </div>
+                                                </div>
+                                                <div class="fc-toolbar-chunk">
+                                                    <h2 class="fc-toolbar-title" id="fc-dom-1">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</h2>
+                                                </div>
+                                                <div class="fc-toolbar-chunk"></div>
+                                            </div>
+                                            <!-- Grid Skeleton -->
+                                            <div class="fc-daygrid-skeleton"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -919,7 +943,7 @@
                                     </div>
                                     <div class="card-body p-4 flex-grow-1 d-flex flex-column"
                                         style="height: auto; gap: 12px;">
-                                        <div id="holiday-list" style="flex: 1; min-height: 200px; overflow-y: auto;">
+                                        <div id="holiday-list" style="flex: 1;">
                                             <div class="text-center py-4">
                                                 <div class="spinner-border spinner-border-sm text-primary" role="status">
                                                     <span class="visually-hidden">Loading...</span>
@@ -1178,10 +1202,10 @@
                         @if (session('success_administrasi'))
                             <div class="alert alert-success">{{ session('success_administrasi') }}</div>
                         @endif
-                        <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
+                        <div class="card-body p-4 mb-4 h-100 " style="height: 400px;">
 
                             {{-- Table administrasi --}}
-                            <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
+                            <div class="table-responsive mb-4" style="max-height: 340px; overflow-y: auto;">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light sticky-top">
                                         <tr>
@@ -1194,159 +1218,18 @@
                                             <th class="border-0 text-center pe-4" style="min-width: 120px;">Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        @forelse($administrasis as $administrasi)
-                                            <tr class="border-bottom ">
-                                                @if ($administrasi->status === 'selesai')
-                                                    <td class="text-center ps-4"><input class="custom-check"
-                                                            type="checkbox" checked disabled></td>
-                                                @elseif ($administrasi->status === 'terlambat')
-                                                    <td class="text-center ps-4"><input class="custom-fail"
-                                                            type="checkbox" checked disabled></td>
-                                                @else
-                                                    <td class="text-center ps-4"><input
-                                                            class="check-blue edit-administrasi"
-                                                            data-id="{{ $administrasi->id }}" type="checkbox"></td>
-                                                @endif
-                                                <td>
-                                                    {{ $administrasi->nama_administrasi }}
-                                                </td>
-                                                <td>
-                                                    {{ \Carbon\Carbon::parse($administrasi->dateline)->format('l, d F Y') }}
-                                                </td>
-                                                <td>
-                                                    {{ $administrasi->tanggal_selesai ? \Carbon\Carbon::parse($administrasi->tanggal_selesai)->format('l, d F Y') : '-' }}
-                                                </td>
-                                                <td class="text-center pe-4">
-                                                    @php
-                                                        $statusConfig = [
-                                                            'pending' => [
-                                                                'color' => 'warning',
-                                                                'icon' => 'bx-time-five',
-                                                            ],
-                                                            'proses' => [
-                                                                'color' => 'primary',
-                                                                'icon' => 'bx-loader-circle',
-                                                            ],
-                                                            'selesai' => [
-                                                                'color' => 'success',
-                                                                'icon' => 'bx-check-circle',
-                                                            ],
-                                                            'terlambat' => [
-                                                                'color' => 'danger',
-                                                                'icon' => 'bx-info-circle',
-                                                            ],
-                                                        ];
-                                                        $config = $statusConfig[$administrasi->status] ?? [
-                                                            'color' => 'secondary',
-                                                            'icon' => 'bx-info-circle',
-                                                        ];
-                                                    @endphp
-                                                    <span
-                                                        class="badge bg-{{ $config['color'] }}-subtle text-{{ $config['color'] }} px-3 py-2 text-capitalize">
-                                                        <i class="bx {{ $config['icon'] }} me-1"></i>
-                                                        {{ $administrasi->status }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-center pe-4">
-                                                    @php
-                                                        if ($administrasi->tanggal_selesai) {
-                                                            $diff = \Carbon\Carbon::parse(
-                                                                $administrasi->dateline,
-                                                            )->diffInDays(
-                                                                \Carbon\Carbon::parse($administrasi->tanggal_selesai),
-                                                                false,
-                                                            );
-
-                                                            if ($diff <= 0 || $administrasi->status === 'selesai') {
-                                                                $progress = 100;
-                                                                $color = 'success';
-                                                            } elseif ($diff <= 3) {
-                                                                $progress = 80;
-                                                                $color = 'warning';
-                                                            } elseif ($diff <= 7) {
-                                                                $progress = 60;
-                                                                $color = 'warning';
-                                                            } else {
-                                                                $progress = 0;
-                                                                $color = 'danger';
-                                                            }
-                                                        } else {
-                                                            $progress = 0;
-                                                            $color = 'danger';
-                                                        }
-                                                    @endphp
-
-                                                    <span
-                                                        class="badge bg-{{ $color }}-subtle text-{{ $color }}">
-                                                        {{ $progress }}%
-                                                    </span>
-                                                </td>
-                                                <td class="text-center pe-4 position-relative">
-                                                    <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle"
-                                                            type="button" data-bs-toggle="dropdown"
-                                                            data-bs-boundary="viewport" aria-expanded="false">
-                                                            Aksi
-                                                        </button>
-
-                                                        <ul class="dropdown-menu dropdown-menu-end">
-                                                            <li>
-                                                                <button class="dropdown-item edit-administrasi"
-                                                                    data-id="{{ $administrasi->id }}"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#modalEditAdministrasi">
-                                                                    Edit
-                                                                </button>
-                                                            </li>
-
-                                                            <li>
-                                                                @if ($administrasi->bukti_transfer)
-                                                                    <a class="dropdown-item"
-                                                                        href="{{ asset('storage/' . $administrasi->bukti_transfer) }}"
-                                                                        target="_blank">
-                                                                        Lihat Bukti Transfer
-                                                                    </a>
-                                                                @endif
-                                                            </li>
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                    href="{{ route('administrasi.karyawan.edit', $administrasi->id) }}">
-                                                                    Detail
-                                                                </a>
-                                                            </li>
-                                                            <li>
-                                                                <form
-                                                                    action="{{ route('administrasi.karyawan.destroy', $administrasi->id) }}"
-                                                                    method="POST"
-                                                                    onsubmit="return confirm('Yakin ingin menghapus administrasi ini?')">
-                                                                    @csrf
-                                                                    @method('DELETE')
-
-                                                                    <button type="submit"
-                                                                        class="dropdown-item text-danger">
-                                                                        <i class="bx bx-trash me-2"></i> Hapus
-                                                                    </button>
-                                                                </form>
-                                                            </li>
-
-                                                        </ul>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="8" class="text-center py-5">
-                                                    <div class="d-flex flex-column align-items-center">
-                                                        <i class="bx bx-message-square-x text-muted"
-                                                            style="font-size: 3rem;"></i>
-                                                        <p class="text-muted mt-3 mb-0">Tidak ada administrasi untuk
-                                                            ditampilkan
-                                                        </p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforelse
+                                    <tbody id="administrasi-container">
+                                        @for($s = 0; $s < 3; $s++)
+                                        <tr class="border-bottom">
+                                            <td class="ps-4"><div class="skeleton-box" style="width: 20px; height: 20px;"></div></td>
+                                            <td><div class="skeleton-box" style="width: 140px; height: 18px;"></div></td>
+                                            <td><div class="skeleton-box" style="width: 130px; height: 18px;"></div></td>
+                                            <td><div class="skeleton-box" style="width: 110px; height: 18px;"></div></td>
+                                            <td class="text-center pe-4"><div class="skeleton-box" style="width: 70px; height: 24px; border-radius: 12px;"></div></td>
+                                            <td><div class="skeleton-box" style="width: 60px; height: 18px;"></div></td>
+                                            <td class="text-center pe-4"><div class="skeleton-box" style="width: 60px; height: 24px; border-radius: 6px;"></div></td>
+                                        </tr>
+                                        @endfor
                                     </tbody>
                                 </table>
                             </div>
@@ -1392,7 +1275,7 @@
                             Tidak Hadir Hari Ini
                         </h5>
                     </div>
-                    <div class="card-body p-4 scrollbar-custom" style="max-height: 480px; overflow-y: auto;">
+                    <div class="card-body p-4 scrollbar-custom" style="max-height: 320px; overflow-y: auto;">
                         @if (count($tidakHadirList) > 0)
                             <div class="list-group list-group-flush">
                                 @foreach ($tidakHadirList as $item)
@@ -1603,7 +1486,7 @@
                         </div>
                     </div>
                     <div class="card-body p-0 mt-2">
-                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
                             <table class="table table-hover align-middle mb-0" id="tabelTotalMengajar">
                                 <thead class="table-light sticky-top">
                                     <tr>
@@ -1745,7 +1628,7 @@
                             </div>
 
                             <div class="card-body p-0">
-                                <div class="table-responsive" style="max-height: 1000px; overflow-y: auto;">
+                                <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
                                     <table class="table table-hover align-middle mb-0" style="table-layout: auto;">
                                         <thead class="table-light sticky-top">
                                             <tr>
@@ -1809,249 +1692,21 @@
                                                     Status</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            @forelse ($rkms as $detail_rkm)
-                                                @php
-                                                    $checklists = $detail_rkm->checklists ?? [];
-                                                    $rowspan = count($checklists) > 0 ? count($checklists) : 1;
-                                                @endphp
-                                                @if (count($checklists) > 0)
-                                                    @foreach ($checklists as $tanggal => $item)
-                                                        <tr class="border-bottom">
-
-                                                            @if ($loop->first)
-                                                                <td class="ps-4" rowspan="{{ $rowspan }}">
-                                                                    {{ $loop->parent->iteration }}
-                                                                </td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    {{ $detail_rkm->materi->nama_materi }}
-                                                                </td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    <span class="text-success fw-semibold">
-                                                                        Rp
-                                                                        {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
-                                                                    </span>
-                                                                </td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    @if ($detail_rkm->tanggal_awal == $detail_rkm->tanggal_akhir)
-                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
-                                                                    @else
-                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
-                                                                        -
-                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_akhir)->translatedFormat('d M Y') }}
-                                                                    @endif
-                                                                </td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    @foreach ($detail_rkm->perusahaan as $perusahaan)
-                                                                        {{ $perusahaan->nama_perusahaan }},
-                                                                    @endforeach
-                                                                </td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    {{ $detail_rkm->sales_all }}</td>
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    {{ implode(', ', array_filter([$detail_rkm->instruktur_key, $detail_rkm->instruktur_key2, $detail_rkm->asisten_key])) }}
-                                                                </td>
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    {{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}
-                                                                </td>
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    <span
-                                                                        class="badge bg-info-subtle text-info px-3 py-2">
-                                                                        {{ number_format($detail_rkm->total_pax, 0, ',', '.') }}
-                                                                    </span>
-                                                                </td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    @if ($detail_rkm->exam == '1')
-                                                                        <span
-                                                                            class="badge bg-success-subtle text-success px-3 py-2">
-                                                                            Ya
-                                                                        </span>
-                                                                    @else
-                                                                        <span
-                                                                            class="badge bg-secondary-subtle text-secondary px-3 py-2">
-                                                                            Tidak
-                                                                        </span>
-                                                                    @endif
-                                                                </td>
-
-                                                                <td rowspan="{{ $rowspan }}">
-                                                                    @php
-                                                                        $makananList = $detail_rkm->makanan
-                                                                            ? explode(', ', $detail_rkm->makanan)
-                                                                            : [];
-                                                                        $makananValue =
-                                                                            count($makananList) > 0
-                                                                                ? $makananList[0]
-                                                                                : 'Tidak Ada';
-                                                                    @endphp
-
-                                                                    @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
-                                                                        Tidak Ada
-                                                                    @elseif ($makananValue == '1' || $makananValue == 'Nasi Box')
-                                                                        Nasi Box
-                                                                    @elseif ($makananValue == '2' || $makananValue == 'Prasmanan')
-                                                                        Prasmanan
-                                                                    @else
-                                                                        Belum Ditentukan
-                                                                    @endif
-                                                                </td>
-                                                            @endif
-
-                                                            <td class="text-center">
-                                                                {{ \Carbon\Carbon::parse($tanggal)->format('d M') }}
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                <input type="checkbox" class="custom-check"
-                                                                    {{ $item->materi ? 'checked' : '' }} disabled>
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                @if ($detail_rkm->metode_kelas === 'Offline')
-                                                                    <input type="checkbox" class="custom-check"
-                                                                        {{ $item->kelas ? 'checked' : '' }} disabled>
-                                                                @else
-                                                                    -
-                                                                @endif
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                <input type="checkbox" class="custom-check"
-                                                                    {{ $item->cb ? 'checked' : '' }} disabled>
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                <input type="checkbox" class="custom-check"
-                                                                    {{ $item->maksi ? 'checked' : '' }} disabled>
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                @if ($detail_rkm->metode_kelas === 'Offline')
-                                                                    <input type="checkbox" class="custom-check"
-                                                                        {{ $item->keperluan_kelas ? 'checked' : '' }}
-                                                                        disabled>
-                                                                @else
-                                                                    -
-                                                                @endif
-                                                            </td>
-
-                                                            <td class="text-center">
-                                                                {{ $item->progress ?? 0 }}%
-                                                            </td>
-                                                            @if ($loop->first)
-                                                                <td rowspan="{{ $rowspan }}"
-                                                                    class="text-center align-middle">
-                                                                    <a href="{{ route('export.pdf.checklist', $detail_rkm->id) }}"
-                                                                        id="exportPdfRkm"
-                                                                        class="btn btn-outline-danger btn-sm mb-1">
-                                                                        PDF
-                                                                    </a>
-                                                                    <a href="{{ route('export.excel.checklist', $detail_rkm->id) }}"
-                                                                        id="exportExcelRkm"
-                                                                        class="btn btn-outline-success btn-sm">
-                                                                        Excel
-                                                                    </a>
-                                                                </td>
-                                                            @endif
-                                                        </tr>
-                                                    @endforeach
-                                                @else
-                                                    <tr class="border-bottom">
-                                                        <td class="ps-4">{{ $loop->iteration }}</td>
-
-                                                        <td>
-                                                            {{ $detail_rkm->materi->nama_materi }}
-                                                        </td>
-
-                                                        <td>
-                                                            <span class="text-success fw-semibold">
-                                                                Rp
-                                                                {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
-                                                            </span>
-                                                        </td>
-
-                                                        <td>
-                                                            @if ($detail_rkm->tanggal_awal == $detail_rkm->tanggal_akhir)
-                                                                {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
-                                                            @else
-                                                                {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
-                                                                -
-                                                                {{ \Carbon\Carbon::parse($detail_rkm->tanggal_akhir)->translatedFormat('d M Y') }}
-                                                            @endif
-                                                        </td>
-
-                                                        <td>
-                                                            @foreach ($detail_rkm->perusahaan as $perusahaan)
-                                                                {{ $perusahaan->nama_perusahaan }},
-                                                            @endforeach
-                                                        </td>
-
-                                                        <td>{{ $detail_rkm->sales_all }}</td>
-                                                        <td> {{ implode(', ', array_filter([$detail_rkm->instruktur_key, $detail_rkm->instruktur_key2, $detail_rkm->asisten_key])) }}
-                                                        </td>
-                                                        <td>{{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}</td>
-                                                        <td>
-                                                            <span class="badge bg-info-subtle text-info px-3 py-2">
-                                                                {{ number_format($detail_rkm->total_pax, 0, ',', '.') }}
-                                                            </span>
-                                                        </td>
-
-                                                        <td>
-                                                            @if ($detail_rkm->exam == '1')
-                                                                <span
-                                                                    class="badge bg-success-subtle text-success px-3 py-2">
-                                                                    Ya
-                                                                </span>
-                                                            @else
-                                                                <span
-                                                                    class="badge bg-secondary-subtle text-secondary px-3 py-2">
-                                                                    Tidak
-                                                                </span>
-                                                            @endif
-                                                        </td>
-
-                                                        <td>
-                                                            @php
-                                                                $makananList = $detail_rkm->makanan
-                                                                    ? explode(', ', $detail_rkm->makanan)
-                                                                    : [];
-                                                                $makananValue =
-                                                                    count($makananList) > 0
-                                                                        ? $makananList[0]
-                                                                        : 'Tidak Ada';
-                                                            @endphp
-
-                                                            @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
-                                                                Tidak Ada
-                                                            @elseif ($makananValue == '1' || $makananValue == 'Nasi Box')
-                                                                Nasi Box
-                                                            @elseif ($makananValue == '2' || $makananValue == 'Prasmanan')
-                                                                Prasmanan
-                                                            @else
-                                                                Belum Ditentukan
-                                                            @endif
-                                                        </td>
-
-                                                        {{-- Kolom checklist kosong --}}
-                                                        <td colspan="8" class="text-center text-muted">
-                                                            Tidak ada checklist
-                                                        </td>
-                                                    </tr>
-                                                @endif
-
-                                            @empty
-                                                <tr>
-                                                    <td colspan="12" class="text-center py-5">
-                                                        Tidak ada data
-                                                    </td>
-                                                </tr>
-                                            @endforelse
+                                        <tbody id="rkm-container">
+                                            @for($s = 0; $s < 3; $s++)
+                                            <tr class="border-bottom">
+                                                <td class="ps-4"><div class="skeleton-box" style="width: 20px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 150px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 100px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 120px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 130px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 90px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 110px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 80px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 40px; height: 18px;"></div></td>
+                                                <td class="text-center pe-4"><div class="skeleton-box" style="width: 60px; height: 24px; border-radius: 12px;"></div></td>
+                                            </tr>
+                                            @endfor
                                         </tbody>
                                     </table>
                                 </div>
@@ -2129,7 +1784,7 @@
                                 <div class="mt-4">
                                     <h6 class="text-muted mb-3">Daftar Data RKM :</h6>
 
-                                    <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
+                                    <div class="table-responsive mb-4" style="max-height: 250px; overflow-y: auto;">
                                         <table id="tabelExportChecklistRkm" class="table table-hover align-middle mb-0">
                                             <thead class="table-light sticky-top">
                                                 <tr>
@@ -2158,12 +1813,12 @@
                                         <i class="bx bx-support text-primary me-2"></i>
                                         Ticketing
                                     </h5>
-                                    <span class="badge bg-primary-subtle text-primary">{{ count($ticket) }}
+                                    <span class="badge bg-primary-subtle text-primary">{{ $ticket }}
                                         Ticket</span>
                                 </div>
                             </div>
                             <div class="card-body p-0">
-                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
                                     <table class="table table-hover align-middle mb-0">
                                         <thead class="table-light sticky-top">
                                             <tr>
@@ -2178,101 +1833,19 @@
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            @forelse($ticket as $item)
-                                                <tr class="border-bottom">
-                                                    <td class="ps-4">
-                                                        <div class="small">
-                                                            {{ \Carbon\Carbon::parse($item->timestamp)->format('d M Y, H:i') }}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="d-flex align-items-center">
-                                                            <div class="text-truncate" style="max-width: 150px;"
-                                                                data-bs-toggle="tooltip"
-                                                                title="{{ $item->nama_karyawan }}">
-                                                                {{ $item->nama_karyawan }}
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge bg-secondary-subtle text-secondary">
-                                                            {{ $item->divisi }}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <div class="text-truncate" style="max-width: 120px;"
-                                                            data-bs-toggle="tooltip" title="{{ $item->kategori }}">
-                                                            <i class="bx bx-category text-muted me-1"></i>
-                                                            {{ $item->kategori }}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="text-truncate" style="max-width: 200px;"
-                                                            data-bs-toggle="tooltip" title="{{ $item->keperluan }}">
-                                                            {{ $item->keperluan }}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="text-truncate" style="max-width: 250px;"
-                                                            data-bs-toggle="tooltip"
-                                                            title="{{ $item->detail_kendala }}">
-                                                            {{ $item->detail_kendala }}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="d-flex align-items-center">
-                                                            <div class="text-truncate" style="max-width: 100px;"
-                                                                data-bs-toggle="tooltip" title="{{ $item->pic }}">
-                                                                {{ $item->pic ?? '-' }}
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center pe-4">
-                                                        @php
-                                                            $statusConfig = [
-                                                                'Menunggu' => [
-                                                                    'color' => 'warning',
-                                                                    'icon' => 'bx-time-five',
-                                                                ],
-                                                                'Di Proses' => [
-                                                                    'color' => 'primary',
-                                                                    'icon' => 'bx-loader-circle',
-                                                                ],
-                                                                'Selesai' => [
-                                                                    'color' => 'success',
-                                                                    'icon' => 'bx-check-circle',
-                                                                ],
-                                                                'Terkendala' => [
-                                                                    'color' => 'danger',
-                                                                    'icon' => 'bx-error-circle',
-                                                                ],
-                                                            ];
-                                                            $config = $statusConfig[$item->status] ?? [
-                                                                'color' => 'secondary',
-                                                                'icon' => 'bx-info-circle',
-                                                            ];
-                                                        @endphp
-                                                        <span
-                                                            class="badge bg-{{ $config['color'] }}-subtle text-{{ $config['color'] }} px-3 py-2">
-                                                            <i class="bx {{ $config['icon'] }} me-1"></i>
-                                                            {{ $item->status }}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="8" class="text-center py-5">
-                                                        <div class="d-flex flex-column align-items-center">
-                                                            <i class="bx bx-message-square-x text-muted"
-                                                                style="font-size: 3rem;"></i>
-                                                            <p class="text-muted mt-3 mb-0">Tidak ada ticket untuk
-                                                                ditampilkan
-                                                            </p>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            @endforelse
+                                        <tbody id="ticket-container">
+                                            @for($s = 0; $s < 3; $s++)
+                                            <tr class="border-bottom">
+                                                <td class="ps-4"><div class="skeleton-box" style="width: 120px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 140px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 100px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 90px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 150px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 180px; height: 18px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 100px; height: 18px;"></div></td>
+                                                <td class="text-center pe-4"><div class="skeleton-box" style="width: 60px; height: 24px; border-radius: 12px;"></div></td>
+                                            </tr>
+                                            @endfor
                                         </tbody>
                                     </table>
                                 </div>
@@ -2699,15 +2272,53 @@
                 z-index: 1050 !important;
             }
         </style>
+    @endsection
 
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
+    @section('scripts')
+        <script src="{{ asset('assets/vendor/js/chart.min.js') }}" defer></script>
+        <script src="{{ asset('assets/vendor/js/fullcalendar.min.js') }}"></script>
+        <script src="{{ asset('assets/vendor/js/moment.min.js') }}" defer></script>
+        <script src="{{ asset('assets/vendor/js/moment-id.min.js') }}" defer></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                function formatRupiah(angka, emptyValue = '-') {
+                    if (angka === null || angka === undefined || angka === '' || angka === '-') {
+                        return emptyValue;
+                    }
+
+                    const number = angka.toString().replace(/\D/g, '');
+                    return number ? number.replace(/\B(?=(\d{3})+(?!\d))/g, ".") : emptyValue;
+                }
+
+                function formatDate(date) {
+                    if (!date || date === '-') return '-';
+
+                    return new Date(date).toLocaleDateString('id-ID', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                }
+
+                window.formatRupiah = formatRupiah;
+                window.formatDate = formatDate;
+
+                function observeOnce(element, callback) {
+                    if (!element || !('IntersectionObserver' in window)) {
+                        callback();
+                        return;
+                    }
+
+                    const observer = new IntersectionObserver(function(entries, instance) {
+                        if (entries.some(entry => entry.isIntersecting)) {
+                            instance.disconnect();
+                            callback();
+                        }
+                    }, { rootMargin: '200px 0px' });
+
+                    observer.observe(element);
+                }
+
                 const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
                 if (!ctx) return;
 
@@ -3344,27 +2955,6 @@
                         }, 400);
                     });
 
-                    function formatRupiah(angka) {
-                        if (!angka || angka === '-' || isNaN(Number(angka))) {
-                            return '-';
-                        }
-
-                        const num = Number(angka);
-                        const clean = Math.round(num);
-                        return clean.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                    }
-
-                    function formatDate(date) {
-                        if (!date || date === '-') return '-';
-
-                        let d = new Date(date);
-                        return d.toLocaleDateString('id-ID', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric'
-                        });
-                    }
-
                     function renderPotongan(jenis, jumlah) {
                         if (!jenis || jenis === '-' || !jumlah || jumlah === '-') {
                             return '-';
@@ -3614,7 +3204,9 @@
                             });
                     }
 
-                    loadChartOutstanding(new Date().getFullYear());
+                    observeOnce(document.getElementById('grafikOutstanding'), function() {
+                        loadChartOutstanding(new Date().getFullYear());
+                    });
 
                     document.getElementById('filterTahun').addEventListener('change', function() {
                         loadChartOutstanding(this.value);
@@ -3723,7 +3315,9 @@
                     }
 
 
-                    loadChartKetepatan(new Date().getFullYear());
+                    observeOnce(document.getElementById('grafikKetepatanWaktu'), function() {
+                        loadChartKetepatan(new Date().getFullYear());
+                    });
 
                     document.getElementById('filterTahunKetepatan').addEventListener('change', function() {
                         loadChartKetepatan(this.value);
@@ -3798,9 +3392,17 @@
 
                 // Load semua AJAX
                 $(document).ready(function() {
-                    loadDataCuti('bulan', new Date().getMonth() + 1);
-                    loadDataMengajar('bulan', new Date().getMonth() + 1);
                     loadOutstanding();
+
+                    setTimeout(function() {
+                        loadDataMengajar('bulan', new Date().getMonth() + 1);
+                    }, 500);
+
+                    observeOnce(document.getElementById('dataCuti'), function() {
+                        setTimeout(function() {
+                            loadDataCuti('bulan', new Date().getMonth() + 1);
+                        }, 500);
+                    });
                 });
 
                 //-------------- FEEDBACK INSTRUKTUR --------------//
@@ -3808,8 +3410,12 @@
                 let feedbackChart = null;
 
                 $(document).ready(function() {
-                    initFeedbackChart();
-                    loadFeedback();
+                    observeOnce(document.getElementById('feedbackChart'), function() {
+                        setTimeout(function() {
+                            initFeedbackChart();
+                            loadFeedback();
+                        }, 500);
+                    });
 
                     // Event listener untuk filter
                     $('#filterFeedbackTahun').change(function() {
@@ -4031,15 +3637,6 @@
                 // End Script Chart Feedback
                 // End Script Chart Feedback
 
-                function formatRupiah(angka) {
-                    if (!angka) return '';
-
-                    let number = angka.toString().replace(/\D/g, '');
-                    if (number === '') return '';
-
-                    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                }
-
                 function unformatRupiah(angka) {
                     return (angka || '').toString().replace(/\D/g, '');
                 }
@@ -4050,7 +3647,7 @@
                     let value = this.value;
 
                     let raw = unformatRupiah(value);
-                    let formatted = formatRupiah(raw);
+                    let formatted = formatRupiah(raw, '');
 
                     this.value = formatted;
 
@@ -4188,118 +3785,138 @@
 
 
                 // Calendar Hari Libur
-                $.ajax({
-                    url: '/office/data-hari-libur/' + new Date().getFullYear(),
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(holidays) {
-                        let currentDisplayMonth = new Date().getMonth();
-                        let currentDisplayYear = new Date().getFullYear();
+                let currentDisplayMonth = new Date().getMonth();
+                let currentDisplayYear = new Date().getFullYear();
+                let globalHolidays = [];
 
-                        const typeClassMap = {
-                            nasional: {
-                                bg: '#e74c3c',
-                                br: '#c0392b',
-                                badge: 'bg-danger-subtle text-danger',
-                                border: 'border-danger'
-                            },
-                            perusahaan: {
-                                bg: '#3498db',
-                                br: '#2c80b4',
-                                badge: 'bg-primary-subtle text-primary',
-                                border: 'border-primary'
-                            }
-                        };
-                        // Mapping data ke format FullCalendar
-                        const events = holidays.map(h => {
-                            const color = typeClassMap[h.tipe] || {
-                                bg: '#95a5a6',
-                                border: '#7f8c8d',
-                            };
+                const typeClassMap = {
+                    nasional: {
+                        bg: '#e74c3c',
+                        br: '#c0392b',
+                        badge: 'bg-danger-subtle text-danger',
+                        border: 'border-danger'
+                    },
+                    perusahaan: {
+                        bg: '#3498db',
+                        br: '#2c80b4',
+                        badge: 'bg-primary-subtle text-primary',
+                        border: 'border-primary'
+                    }
+                };
 
-                            return {
-                                title: h.nama,
-                                start: h.tanggal,
-                                display: 'block',
-                                backgroundColor: color.bg,
-                                borderColor: color.br,
-                                textColor: '#fff',
-                                extendedProps: {
-                                    description: h.nama,
-                                    date: h.tanggal,
-                                    fullDate: new Date(h.tanggal),
-                                    type: h.tipe
-                                }
-                            }
-                        });
+                function initCalendar() {
+                    let calendar = new FullCalendar.Calendar($('#calendar')[0], {
+                        initialView: 'dayGridMonth',
+                    locale: 'id',
+                    height: 'auto',
+                    contentHeight: 'auto',
+                    headerToolbar: {
+                        left: 'prev,next',
+                        center: 'title',
+                        right: ''
+                    },
+                    buttonText: {
+                        prev: '<< Prev',
+                        next: 'Next >>',
+                    },
+                    events: function(fetchInfo, successCallback, failureCallback) {
+                        const year = fetchInfo.start.getFullYear();
+                        $.ajax({
+                            url: '/office/data-hari-libur/' + year,
+                            type: 'GET',
+                            dataType: 'json',
+                            success: function(holidays) {
+                                globalHolidays = holidays;
+                                const events = holidays.map(h => {
+                                    const color = typeClassMap[h.tipe] || {
+                                        bg: '#95a5a6',
+                                        border: '#7f8c8d',
+                                    };
 
-                        let calendar = new FullCalendar.Calendar($('#calendar')[0], {
-                            initialView: 'dayGridMonth',
-                            locale: 'id',
-                            height: 'auto',
-                            contentHeight: 'auto',
-                            headerToolbar: {
-                                left: 'prev,next',
-                                center: 'title',
-                                right: ''
-                            },
-                            buttonText: {
-                                prev: '<< Prev',
-                                next: 'Next >>',
-                            },
-                            events: events,
-                            eventClick: function(info) {
-                                let data = info.event.extendedProps;
-                                const dateObj = new Date(data.date);
-                                const dayName = dateObj.toLocaleDateString('id-ID', {
-                                    weekday: 'long'
+                                    return {
+                                        title: h.nama,
+                                        start: h.tanggal,
+                                        display: 'block',
+                                        backgroundColor: color.bg,
+                                        borderColor: color.br,
+                                        textColor: '#fff',
+                                        extendedProps: {
+                                            description: h.nama,
+                                            date: h.tanggal,
+                                            fullDate: new Date(h.tanggal),
+                                            type: h.tipe
+                                        }
+                                    }
                                 });
-                                const formattedDate = dateObj.toLocaleDateString('id-ID', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                });
+                                successCallback(events);
 
-                                const typeClass = typeClassMap[data.type] || {
-                                    badge: 'bg-secondary-subtle text-secondary',
-                                    border: 'border-secondary'
-                                };
+                                // Skeleton otomatis tertimpa oleh kalender render
+                                // Hapus fadeOut agar tidak menyebabkan layout shift atau delay
 
-                                const detailHtml = `
-                                        <div class="holiday-detail-card">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="badge ${typeClass.badge} px-3 py-2 d-flex align-items-center justify-content-center" style="min-width: 50px; font-size: 1.2rem; height: 50px;">
-                                                    ${dateObj.getDate()}
-                                                </div>
-                                                <div class="ms-3">
-                                                    <small class="text-muted d-block text-capitalize">Hari Libur ${data.type}</small>
-                                                    <small class="text-muted fw-medium">${dayName}</small>
-                                                </div>
-                                            </div>
-                                            <div class="bg-light rounded-3 p-3 border-start border-4 ${typeClass.border}">
-                                                <h6 class="mb-2 fw-bold text-dark">${data.description}</h6>
-                                                <small class="text-muted d-block">${formattedDate}</small>
-                                            </div>
-                                        </div>
-                                    `;
-                                $('#holiday-detail').html(detailHtml);
-                            },
-                            datesSet: function(info) {
-                                const currentDate = info.view.currentStart;
-
-                                currentDisplayMonth = currentDate.getMonth();
-                                currentDisplayYear = currentDate.getFullYear();
-
+                                
                                 updateHolidayList();
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Error loading holidays:', error);
+                                $('#holiday-list').html('<p class="text-danger small">Gagal memuat data libur</p>');
+                                failureCallback(error);
                             }
                         });
+                    },
+                    eventClick: function(info) {
+                        let data = info.event.extendedProps;
+                        const dateObj = new Date(data.date);
+                        const dayName = dateObj.toLocaleDateString('id-ID', {
+                            weekday: 'long'
+                        });
+                        const formattedDate = dateObj.toLocaleDateString('id-ID', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
 
-                        function updateHolidayList() {
-                            const monthHolidays = holidays.filter(h => {
-                                const date = new Date(h.tanggal);
-                                return date.getMonth() === currentDisplayMonth && date
-                                    .getFullYear() === currentDisplayYear;
-                            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+                        const typeClass = typeClassMap[data.type] || {
+                            badge: 'bg-secondary-subtle text-secondary',
+                            border: 'border-secondary'
+                        };
+
+                        const detailHtml = `
+                                <div class="holiday-detail-card">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="badge ${typeClass.badge} px-3 py-2 d-flex align-items-center justify-content-center" style="min-width: 50px; font-size: 1.2rem; height: 50px;">
+                                            ${dateObj.getDate()}
+                                        </div>
+                                        <div class="ms-3">
+                                            <small class="text-muted d-block text-capitalize">Hari Libur ${data.type}</small>
+                                            <small class="text-muted fw-medium">${dayName}</small>
+                                        </div>
+                                    </div>
+                                    <div class="bg-light rounded-3 p-3 border-start border-4 ${typeClass.border}">
+                                        <h6 class="mb-2 fw-bold text-dark">${data.description}</h6>
+                                        <small class="text-muted d-block">${formattedDate}</small>
+                                    </div>
+                                </div>
+                            `;
+                        $('#holiday-detail').html(detailHtml);
+                    },
+                    datesSet: function(info) {
+                        const currentDate = info.view.currentStart;
+
+                        currentDisplayMonth = currentDate.getMonth();
+                        currentDisplayYear = currentDate.getFullYear();
+
+                        updateHolidayList();
+                    }
+                });
+
+                function updateHolidayList() {
+                    if (!globalHolidays || globalHolidays.length === 0) return;
+                    
+                    const monthHolidays = globalHolidays.filter(h => {
+                        const date = new Date(h.tanggal);
+                        return date.getMonth() === currentDisplayMonth && date
+                            .getFullYear() === currentDisplayYear;
+                    }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
                             const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
                                 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -4440,13 +4057,22 @@
                         });
 
                         calendar.render();
-                        updateHolidayList();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error loading holidays:', error);
-                        $('#holiday-list').html('<p class="text-danger small">Gagal memuat data libur</p>');
-                    }
-                });
+                }
+
+                const calendarEl = document.getElementById('calendar');
+                if ('IntersectionObserver' in window) {
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                initCalendar();
+                                observer.disconnect();
+                            }
+                        });
+                    }, { rootMargin: '200px' });
+                    observer.observe(calendarEl);
+                } else {
+                    initCalendar();
+                }
 
                 // Filter eksport administrasi
                 function resetAll() {
@@ -4985,5 +4611,258 @@
                 $('#modalDetailKaryawan').modal('show');
                 window.loadDetailKaryawan(status, 1);
             };
+
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('skeleton-dashboard')?.classList.add('d-none');
+                document.getElementById('real-dashboard')?.classList.remove('d-none');
+                window.requestAnimationFrame(function() {
+                    window.dispatchEvent(new Event('resize'));
+                });
+            });
+
+            $(document).ready(function() {
+                // Helper: reinitialize Bootstrap dropdowns setelah AJAX inject
+                // pakai strategy: fixed agar tidak terpotong overflow container
+                function reinitBootstrap(container) {
+                    container.find('[data-bs-toggle="dropdown"]').each(function() {
+                        var existing = bootstrap.Dropdown.getInstance(this);
+                        if (existing) { existing.dispose(); }
+                        new bootstrap.Dropdown(this);
+                    });
+                    container.find('[data-bs-toggle="tooltip"]').each(function() {
+                        var existing = bootstrap.Tooltip.getInstance(this);
+                        if (existing) { existing.dispose(); }
+                        new bootstrap.Tooltip(this);
+                    });
+                }
+
+                const fmtDate = function(d) {
+                    if (!d || d === '-') return '-';
+                    if (typeof window.formatDate === 'function') return window.formatDate(d);
+                    try {
+                        return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                    } catch (e) { return d; }
+                };
+
+                const fmtRupiah = function(n) {
+                    if (n === null || n === undefined || n === '' || n === '-') return '-';
+                    if (typeof window.formatRupiah === 'function') return window.formatRupiah(n);
+                    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                };
+
+                function renderTagihanTable(data) {
+                    if (!data || data.length === 0) {
+                        return '<tr><td colspan="7" class="text-center py-4 text-muted"><i class="bx bx-message-square-x d-block mb-2" style="font-size:2rem;"></i>Tidak ada tagihan untuk ditampilkan</td></tr>';
+                    }
+                    const statusConfig = {
+                        pending: { color: 'warning', icon: 'bx-time-five' },
+                        proses: { color: 'primary', icon: 'bx-loader-circle' },
+                        selesai: { color: 'success', icon: 'bx-check-circle' },
+                        telat: { color: 'danger', icon: 'bx-info-circle' }
+                    };
+                    return data.map(item => {
+                        let chk = '';
+                        if (item.status === 'selesai') {
+                            chk = '<input class="custom-check" type="checkbox" checked disabled>';
+                        } else if (item.status === 'telat') {
+                            chk = '<input class="custom-fail" type="checkbox" checked disabled>';
+                        } else {
+                            chk = `<input class="check-blue" data-id="${item.id}" type="checkbox" id="edit-tagihan">`;
+                        }
+                        const tglMulai = item.tanggal_perkiraan_mulai ? fmtDate(item.tanggal_perkiraan_mulai) : '-';
+                        const kegiatan = item.tagihan_perusahaan?.kegiatan || item.kegiatan || '-';
+                        const nominal = item.nominal ? 'Rp. ' + fmtRupiah(item.nominal) : '-';
+                        const tracking = item.tracking || '-';
+                        const st = statusConfig[item.status] || { color: 'secondary', icon: 'bx-info-circle' };
+                        const detailUrl = `/office/detail-tagihan-perusahaan/${item.id}`;
+
+                        return `<tr class="border-bottom">
+                            <td class="text-center ps-4">${chk}</td>
+                            <td><div class="small">${tglMulai}</div></td>
+                            <td><div class="d-flex align-items-center"><div class="text-truncate" style="max-width: 150px;">${kegiatan}</div></div></td>
+                            <td><span>${nominal}</span></td>
+                            <td><div class="text-truncate" style="max-width: 300px;">${tracking}</div></td>
+                            <td class="text-center pe-4">
+                                <span class="badge bg-${st.color}-subtle text-${st.color} px-3 py-2 text-capitalize">
+                                    <i class="bx ${st.icon} me-1"></i>${item.status}
+                                </span>
+                            </td>
+                            <td class="text-center pe-4 position-relative">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">Aksi</button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><button class="dropdown-item" data-id="${item.id}" data-bs-toggle="modal" id="edit-tagihan" data-bs-target="#modalEditTagihan">Edit</button></li>
+                                        <li><a class="dropdown-item" href="${detailUrl}">Detail</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
+
+                function renderAdministrasiTable(data) {
+                    if (!data || data.length === 0) {
+                        return '<tr><td colspan="8" class="text-center py-4 text-muted"><i class="bx bx-message-square-x d-block mb-2" style="font-size:2rem;"></i>Tidak ada administrasi untuk ditampilkan</td></tr>';
+                    }
+                    const statusConfig = {
+                        pending: { color: 'warning', icon: 'bx-time-five' },
+                        proses: { color: 'primary', icon: 'bx-loader-circle' },
+                        selesai: { color: 'success', icon: 'bx-check-circle' },
+                        terlambat: { color: 'danger', icon: 'bx-info-circle' }
+                    };
+                    return data.map(item => {
+                        let chk = '';
+                        if (item.status === 'selesai') {
+                            chk = '<input class="custom-check" type="checkbox" checked disabled>';
+                        } else if (item.status === 'terlambat') {
+                            chk = '<input class="custom-fail" type="checkbox" checked disabled>';
+                        } else {
+                            chk = `<input class="check-blue edit-administrasi" data-id="${item.id}" type="checkbox">`;
+                        }
+                        const dateline = item.dateline ? fmtDate(item.dateline) : '-';
+                        const tglSelesai = item.tanggal_selesai ? fmtDate(item.tanggal_selesai) : '-';
+                        const st = statusConfig[item.status] || { color: 'secondary', icon: 'bx-info-circle' };
+                        const editUrl = `/office/administrasi-karyawan/${item.id}/edit`;
+                        let bukti = '';
+                        if (item.bukti_transfer) {
+                            bukti = `<li><a class="dropdown-item" href="/storage/${item.bukti_transfer}" target="_blank">Lihat Bukti Transfer</a></li>`;
+                        }
+
+                        return `<tr class="border-bottom">
+                            <td class="text-center ps-4">${chk}</td>
+                            <td>${item.nama_administrasi || '-'}</td>
+                            <td>${dateline}</td>
+                            <td>${tglSelesai}</td>
+                            <td class="text-center pe-4">
+                                <span class="badge bg-${st.color}-subtle text-${st.color} px-3 py-2 text-capitalize">
+                                    <i class="bx ${st.icon} me-1"></i>${item.status}
+                                </span>
+                            </td>
+                            <td class="text-center pe-4">
+                                <span class="badge bg-${item.status === 'selesai' ? 'success' : 'secondary'}-subtle text-${item.status === 'selesai' ? 'success' : 'secondary'}">
+                                    ${item.status === 'selesai' ? '100%' : '0%'}
+                                </span>
+                            </td>
+                            <td class="text-center pe-4 position-relative">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">Aksi</button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><button class="dropdown-item edit-administrasi" data-id="${item.id}" data-bs-toggle="modal" data-bs-target="#modalEditAdministrasi">Edit</button></li>
+                                        ${bukti}
+                                        <li><a class="dropdown-item" href="${editUrl}">Detail</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
+
+                function renderRKMTable(data) {
+                    if (!data || data.length === 0) {
+                        return '<tr><td colspan="10" class="text-center py-4 text-muted"><i class="bx bx-message-square-x d-block mb-2" style="font-size:2rem;"></i>Tidak ada RKM untuk ditampilkan</td></tr>';
+                    }
+                    return data.map((item, idx) => {
+                        const namaMateri = item.materi?.nama_materi || '-';
+                        const harga = item.harga_jual ? 'Rp ' + fmtRupiah(item.harga_jual) : '-';
+                        const tglAwal = item.tanggal_awal ? fmtDate(item.tanggal_awal) : '-';
+                        const tglAkhir = item.tanggal_akhir ? fmtDate(item.tanggal_akhir) : '-';
+                        const tglStr = tglAwal === tglAkhir ? tglAwal : `${tglAwal} - ${tglAkhir}`;
+                        const perusahaanList = (item.perusahaan || []).map(p => p.nama_perusahaan).join(', ') || '-';
+                        const sales = item.sales_key || '-';
+                        const instruktur = [item.instruktur_key, item.instruktur_key2, item.asisten_key].filter(x => x && x !== '-').join(', ') || '-';
+                        const ruang = item.ruang || 'Belum Ditentukan';
+                        const pax = item.pax ? fmtRupiah(item.pax) : '0';
+                        const examBadge = item.exam === '1' ? '<span class="badge bg-success-subtle text-success px-3 py-2">Ya</span>' : '<span class="badge bg-secondary-subtle text-secondary px-3 py-2">Tidak</span>';
+
+                        return `<tr class="border-bottom">
+                            <td class="ps-4">${idx + 1}</td>
+                            <td>${namaMateri}</td>
+                            <td><span class="text-success fw-semibold">${harga}</span></td>
+                            <td>${tglStr}</td>
+                            <td>${perusahaanList}</td>
+                            <td>${sales}</td>
+                            <td>${instruktur}</td>
+                            <td>${ruang}</td>
+                            <td><span class="badge bg-info-subtle text-info px-3 py-2">${pax}</span></td>
+                            <td>${examBadge}</td>
+                        </tr>`;
+                    }).join('');
+                }
+
+                function renderTicketTable(data) {
+                    if (!data || data.length === 0) {
+                        return '<tr><td colspan="8" class="text-center py-4 text-muted"><i class="bx bx-message-square-x d-block mb-2" style="font-size:2rem;"></i>Tidak ada ticket untuk ditampilkan</td></tr>';
+                    }
+                    return data.map(item => {
+                        const statusBadge = item.status === 'Selesai'
+                            ? '<span class="badge bg-success-subtle text-success px-3 py-2">Selesai</span>'
+                            : '<span class="badge bg-warning-subtle text-warning px-3 py-2">Proses</span>';
+                        const created = item.created_at ? fmtDate(item.created_at) : '-';
+
+                        return `<tr class="border-bottom">
+                            <td class="ps-4">${created}</td>
+                            <td>${item.nama_karyawan || '-'}</td>
+                            <td>${item.divisi || '-'}</td>
+                            <td>${item.kategori || '-'}</td>
+                            <td>${item.keperluan || '-'}</td>
+                            <td>${item.detail_kendala || '-'}</td>
+                            <td>${item.pic || '-'}</td>
+                            <td class="text-center pe-4">${statusBadge}</td>
+                        </tr>`;
+                    }).join('');
+                }
+
+                // Tagihan
+                $.get("/office/api/dashboard/tagihan", function(res) {
+                    if (res) {
+                        try {
+                            var cTagihan = $('#tagihan-container');
+                            cTagihan.html(renderTagihanTable(res));
+                            reinitBootstrap(cTagihan.closest('table'));
+                        } catch(e) { console.error(e); $('#tagihan-container').html('<tr><td colspan="7" class="text-center text-danger">Gagal memuat data (Error UI)</td></tr>'); }
+                    }
+                }).fail(function() {
+                    $('#tagihan-container').html('<tr><td colspan="7" class="text-center text-danger">Gagal memuat data server</td></tr>');
+                });
+
+                // Administrasi
+                $.get("/office/api/dashboard/administrasi", function(res) {
+                    if (res) {
+                        try {
+                            var cAdmin = $('#administrasi-container');
+                            cAdmin.html(renderAdministrasiTable(res));
+                            reinitBootstrap(cAdmin.closest('table'));
+                        } catch(e) { console.error(e); $('#administrasi-container').html('<tr><td colspan="8" class="text-center text-danger">Gagal memuat data (Error UI)</td></tr>'); }
+                    }
+                }).fail(function() {
+                    $('#administrasi-container').html('<tr><td colspan="8" class="text-center text-danger">Gagal memuat data server</td></tr>');
+                });
+
+                // RKM
+                $.get("/office/api/dashboard/rkm", function(res) {
+                    if (res) {
+                        try {
+                            var cRkm = $('#rkm-container');
+                            cRkm.html(renderRKMTable(res));
+                            reinitBootstrap(cRkm.closest('table'));
+                        } catch(e) { console.error(e); $('#rkm-container').html('<tr><td colspan="10" class="text-center text-danger">Gagal memuat data (Error UI)</td></tr>'); }
+                    }
+                }).fail(function() {
+                    $('#rkm-container').html('<tr><td colspan="10" class="text-center text-danger">Gagal memuat data server</td></tr>');
+                });
+
+                // Ticket
+                $.get("/office/api/dashboard/ticket", function(res) {
+                    if (res) {
+                        try {
+                            var cTicket = $('#ticket-container');
+                            cTicket.html(renderTicketTable(res));
+                            reinitBootstrap(cTicket.closest('table'));
+                        } catch(e) { console.error(e); $('#ticket-container').html('<tr><td colspan="8" class="text-center text-danger">Gagal memuat data (Error UI)</td></tr>'); }
+                    }
+                }).fail(function() {
+                    $('#ticket-container').html('<tr><td colspan="8" class="text-center text-danger">Gagal memuat data server</td></tr>');
+                });
+            });
         </script>
     @endsection

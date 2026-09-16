@@ -1,22 +1,18 @@
 <?php
-require __DIR__.'/vendor/autoload.php';
-$app = require_once __DIR__.'/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
+require 'vendor/autoload.php';
+$app = require_once 'bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+$response = $kernel->handle(
+    $request = Illuminate\Http\Request::capture()
+);
 
 try {
-    $request = new \Illuminate\Http\Request();
-    
-    $controller = new \App\Http\Controllers\JurnalAkuntansiController();
-    $response = $controller->getData($request);
-    
-    $content = $response->getContent();
-    if (json_decode($content) === null) {
-        echo "JSON Encode failed: " . json_last_error_msg() . "\n";
-    } else {
-        echo "JSON is valid! Length: " . strlen($content) . "\n";
-    }
+    $controller = app()->make('App\Http\Controllers\office\OfficeController');
+    $output = $controller->apiDashboardAdministrasi();
+    echo "SUCCESS\n";
 } catch (\Exception $e) {
     echo "ERROR: " . $e->getMessage() . "\n";
     echo $e->getTraceAsString();
+} catch (\Error $e) {
+    echo "ERROR: " . $e->getMessage() . "\n";
 }

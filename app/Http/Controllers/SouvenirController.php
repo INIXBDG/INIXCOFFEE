@@ -9,9 +9,9 @@ use App\Models\souvenirinhouse;
 use App\Models\souvenirpeserta;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 // use Intervention\Image\Laravel\Facades\Image;
 use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Cache;
 
 class SouvenirController extends Controller
 {
@@ -167,6 +167,8 @@ class SouvenirController extends Controller
             'max_harga_pelatihan' => $max_harga_pelatihan,
         ]);
 
+        Cache::forget('office_dashboard_souvenir_' . date('Y'));
+        
         return redirect()->route('souvenir.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
 
@@ -300,6 +302,8 @@ class SouvenirController extends Controller
 
 
 
+        Cache::forget('office_dashboard_souvenir_' . date('Y'));
+        
         return redirect()->route('souvenir.index')->with(['success' => 'Data Berhasil Diperbarui!']);
     }
 
@@ -318,6 +322,8 @@ class SouvenirController extends Controller
 
         $post->delete();
 
+        Cache::forget('office_dashboard_souvenir_' . date('Y'));
+
         return redirect()
             ->route('souvenir.index')
             ->with(['success' => 'Data Berhasil dinonaktifkan!']);
@@ -331,6 +337,8 @@ class SouvenirController extends Controller
 
         $post->deleted_by = null;
         $post->save();
+
+        Cache::forget('office_dashboard_souvenir_' . date('Y'));
 
         return redirect()
             ->route('souvenir.index')
@@ -385,6 +393,8 @@ class SouvenirController extends Controller
             }
         }
 
+        Cache::forget('office_dashboard_souvenir_' . date('Y'));
+
         return redirect()
             ->route('rkm.index')
             ->with(['success' => 'Data Berhasil Disimpan!']);
@@ -411,6 +421,8 @@ class SouvenirController extends Controller
                 'nama_souvenir'  => $souvenir->nama_souvenir,
             ]);
         }
+
+        Cache::forget('office_dashboard_souvenir_' . date('Y'));
 
         return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diperbarui!']);
     }
