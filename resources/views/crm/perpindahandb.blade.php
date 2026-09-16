@@ -1,7 +1,8 @@
 @extends('layouts_crm.app')
 
 @section('crm_contents')
-    <div class="container-fluid">
+    <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
 
         <div class="modal fade" id="loadingModal" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
@@ -98,8 +99,8 @@
                 </div>
             </div>
         </div>
-
     </div>
+</div>
 @endsection
 
 <style>

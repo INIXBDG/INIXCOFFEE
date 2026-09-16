@@ -85,6 +85,9 @@ class RegistrasiController extends Controller
                 })
                 ->orWhereHas('materi', function($q2) use ($searchValue) {
                     $q2->where('nama_materi', 'like', "%{$searchValue}%");
+                })
+                ->orWhereHas('souvenirpeserta.souvenir', function($q2) use ($searchValue) {
+                    $q2->where('nama_souvenir', 'like', "%{$searchValue}%");
                 });
             });
             $recordsFiltered = $query->count();

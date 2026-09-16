@@ -228,6 +228,34 @@
 
 <body>
 
+    <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable" style="max-width: 550px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notificationModalLabel">Alert Pemberitahuan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @include('partials.notifications')
+                </div>
+                <div class="modal-footer">
+                    @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
+                        <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-4">
+                                Tandai Semua sebagai Dibaca
+                            </button>
+                        </form>
+                    @endif
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @if (app()->environment('staging'))
         <div aria-hidden="true" style="position: fixed; top: 50%; left: 50%; z-index: 999998; color: rgba(220, 38, 38, 0.18); font-size: clamp(4rem, 12vw, 10rem); font-weight: 800; letter-spacing: 0.2em; pointer-events: none; transform: translate(-50%, -50%) rotate(-25deg); user-select: none; white-space: nowrap;">STAGING</div>
     @endif
