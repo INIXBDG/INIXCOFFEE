@@ -103,16 +103,21 @@
                                     <input type="checkbox"
                                            class="chk-hide"
                                            data-id="{{ $item->id }}"
-                                           {{ optional($item->rkm)->hide ? 'checked' : '' }}>
+                                           {{ $item->hide ? 'checked' : '' }}>
                                 </td>
                                 <td>{{ $peluang->firstItem() + $loop->index }}</td>
-                                <td>{{ $item->periode_mulai ?? '-' }}</td>
-                                <td>{{ $item->periode_selesai ?? '-' }}</td>
-                                <td>{{ optional(optional($item->rkm)->materi)->nama_materi ?? '-' }}</td>
-                                <td>{{ optional(optional($item->rkm)->perusahaan)->nama_perusahaan ?? '-' }}</td>
                                 <td>
-                                    <span class="badge status-badge {{ optional($item->rkm)->hide ? 'bg-secondary' : 'bg-success' }}">
-                                        {{ optional($item->rkm)->hide ? 'Hide' : 'Show' }}
+                                    {{ optional($item->peluang)->periode_mulai ? \Carbon\Carbon::parse($item->peluang->periode_mulai)->format('d/m/Y') : ($item->tanggal_awal ? \Carbon\Carbon::parse($item->tanggal_awal)->format('d/m/Y') : '-') }}
+                                </td>
+
+                                <td>
+                                    {{ optional($item->peluang)->periode_selesai ? \Carbon\Carbon::parse($item->peluang->periode_selesai)->format('d/m/Y') : ($item->tanggal_akhir ? \Carbon\Carbon::parse($item->tanggal_akhir)->format('d/m/Y') : '-') }}
+                                </td>
+                                <td>{{ optional($item->materi)->nama_materi ?? '-' }}</td>
+                                <td>{{ optional($item->perusahaan)->nama_perusahaan ?? '-' }}</td>
+                                <td>
+                                    <span class="badge status-badge {{ $item->hide ? 'bg-secondary' : 'bg-success' }}">
+                                        {{ $item->hide ? 'Hide' : 'Show' }}
                                     </span>
                                 </td>
                             </tr>
@@ -141,7 +146,6 @@
 document.addEventListener('DOMContentLoaded', function () {
     const csrfToken = '{{ csrf_token() }}';
 
-    // Toggle field bulan/triwulan sesuai filter_type dipilih
     const filterType = document.getElementById('filter_type');
     const wrapperBulan = document.getElementById('wrapper_bulan');
     const wrapperTriwulan = document.getElementById('wrapper_triwulan');
@@ -179,7 +183,6 @@ document.addEventListener('DOMContentLoaded', function () {
         badge.classList.add(hide ? 'bg-secondary' : 'bg-success');
     }
 
-    // Toggle satu baris via AJAX, langsung tersimpan
     document.querySelectorAll('.chk-hide').forEach(function (chk) {
         chk.addEventListener('change', function () {
             const id = this.dataset.id;
@@ -192,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ peluang_id: id, hide: hide }),
+                body: JSON.stringify({ rkm_id: id, hide: hide }),
             })
             .then(res => res.json())
             .then(data => {
@@ -211,7 +214,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Pilih Semua / Batal Semua — hanya untuk baris di halaman yang sedang tampil
     function bulkToggle(hide) {
         const checkboxes = document.querySelectorAll('.chk-hide');
         const ids = Array.from(checkboxes).map(cb => cb.dataset.id);
