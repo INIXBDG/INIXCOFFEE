@@ -431,7 +431,7 @@ class DatabaseKPIController extends Controller
         $dataAbsen = $this->getDataAbsen($form->id_karyawan, $year);
 
         $kodeKategoris = $formPenilaians->pluck('kode_kategori')->unique();
-        $allKategoriKPIs = kategoriKPI::whereIn('kode_kategori', $kodeKategoris)->get()->unique('judul_kategori')->values();
+        $allKategoriKPIs = kategoriKPI::whereIn('kode_kategori', $kodeKategoris)->orderBy('id')->get()->values();
         $allTipeKategori = tipeKategoriTabel::whereIn('id_kategori', $allKategoriKPIs->pluck('id'))->get()->groupBy('id_kategori');
 
         $allEvaluatorData = shareForm::with('evaluator:id,nama_lengkap,divisi')
@@ -455,6 +455,7 @@ class DatabaseKPIController extends Controller
                 );
 
                 $listNilaiEvaluator[] = [
+                    'sub_kriteria' => $kategori->judul_kategori,
                     'pesan' => $item?->pesan ?? '-',
                     'nilai' => $item?->nilai ?? 0,
                 ];
