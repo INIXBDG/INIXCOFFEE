@@ -17,6 +17,7 @@ use App\Models\karyawan;
 use App\Models\LogGaji;
 use App\Models\Nilaifeedback;
 use App\Models\outstanding;
+use App\Models\Peluang;
 use App\Models\pengajuancuti;
 use App\Models\Perusahaan;
 use App\Models\RKM;
@@ -42,6 +43,9 @@ class OfficeController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('permission:Fitur Menu Office', ['only' => ['dashboard']]);
+        
+        $this->middleware('permission:View RekapRKM Office', ['only' => ['rekapRkm', 'rekapRkmJson']]);
+        $this->middleware('permission:Update RekapRKM Office', ['only' => ['selectHide', 'toggleHide', 'bulkToggleHide']]);
     }
 
     public function dashboard(Request $request)

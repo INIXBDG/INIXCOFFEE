@@ -386,8 +386,19 @@ class TargetKPIController extends Controller
 
     public function getProgressDashboard(Request $request, OverviewDashboardService $overviewService)
     {
+        $totalStart = microtime(true);
+
         $user = auth()->user();
-        $data = $overviewService->getProgressDashboardData($user, $request->idUser, $request->typeGet);
+        $cacheKey = "progress_dashboard_{$user->id}_{$request->idUser}_{$request->typeGet}_" . now()->year;
+
+        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 120, function () use ($overviewService, $user, $request) {
+            return $overviewService->getProgressDashboardData($user, $request->idUser, $request->typeGet);
+        });
+
+        $executionTime = round((microtime(true) - $totalStart) * 1000, 2);
+        Log::info("Waktu Proses getProgressDashboard: {$executionTime} ms | user_id: {$user->id}");
+
+        $data['execution_time_ms'] = $executionTime;
         return response()->json($data);
     }
 

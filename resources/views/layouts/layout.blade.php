@@ -18,7 +18,7 @@
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-    <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     {{-- <link rel="stylesheet" href="css/app.css"> --}}
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
@@ -132,33 +132,29 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @if(session('success') || session('error') || $errors->any())
     @php
-        $swalType  = ''; $swalTitle = ''; $swalText = ''; $swalHtml = '';
-        if (session('success')) {
-            $swalType = 'success'; $swalTitle = 'Berhasil!'; $swalText = session('success');
-        } elseif (session('error')) {
-            $swalType = 'error'; $swalTitle = 'Gagal!'; $swalText = session('error');
-        } elseif ($errors->any()) {
-            $swalType = 'error'; $swalTitle = 'Terjadi Kesalahan!';
-            $errorItems = implode('', array_map(fn($e) => '<li>'.$e.'</li>', $errors->all()));
-            $swalHtml = '<ul style="text-align:left;margin:0;padding-left:20px;">'.$errorItems.'</ul>';
-        }
+        $toastType = session('success') ? 'success' : 'error';
+        $toastTitle = session('success') ? 'Berhasil!' : 'Gagal!';
     @endphp
+    <div id="server-toast" role="alert" style="position:fixed;top:24px;right:24px;z-index:99999;min-width:320px;max-width:calc(100vw - 48px);padding:16px 20px;color:#fff;background:{{ $toastType === 'success' ? '#10b981' : '#dc2626' }};border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-family:system-ui,sans-serif;">
+        <strong style="display:block;margin-bottom:6px;">{{ $toastTitle }}</strong>
+        @if(session('success'))
+            <div>{{ session('success') }}</div>
+        @elseif(session('error'))
+            <div>{{ session('error') }}</div>
+        @else
+            @foreach($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        @endif
+    </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const toast = document.getElementById('server-toast');
             setTimeout(function() {
-                Swal.fire({
-                    icon:  @json($swalType),
-                    title: @json($swalTitle),
-                    @if($swalHtml)
-                    html:  @json($swalHtml),
-                    @else
-                    text:  @json($swalText),
-                    @endif
-                    showConfirmButton: true,
-                    confirmButtonText: 'OK',
-                    allowOutsideClick: false
-                });
-            }, 300);
+                toast.style.transition = 'opacity .4s ease';
+                toast.style.opacity = '0';
+                setTimeout(function() { toast.remove(); }, 400);
+            }, 4000);
         });
     </script>
     @endif

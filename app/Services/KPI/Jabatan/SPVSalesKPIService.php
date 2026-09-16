@@ -409,11 +409,11 @@ class SPVSalesKPIService
 
         $period = CarbonPeriod::create($startDate, $endDate);
 
-        $activities = Aktivitas::select('user_id', 'created_at')
+        $activities = Aktivitas::select('id_sales', 'created_at')
             ->whereYear('created_at', $tahun)
             ->get()
             ->groupBy(function ($item) {
-                return $item->user_id . '_' . Carbon::parse($item->created_at)->format('Y-m-d');
+                return $item->id_sales . '_' . Carbon::parse($item->created_at)->format('Y-m-d');
             });
 
         $totalHariKerja = 0;

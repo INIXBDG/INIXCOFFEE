@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="UTF-8">
     <style>
         body {
             font-family: Arial, sans-serif !important;
+            font-size: 12px;
         }
 
-        h3,
-        p {
+        h3, p {
             margin: 0 0 10px 0 !important;
         }
 
@@ -17,10 +16,15 @@
             border-collapse: collapse !important;
             width: 100% !important;
             margin-bottom: 40px !important;
+            page-break-inside: auto !important;
         }
 
-        th,
-        td {
+        tr {
+            page-break-inside: avoid !important;
+            page-break-after: auto !important;
+        }
+
+        th, td {
             border: 1px solid #ccc !important;
             padding: 6px 10px !important;
             text-align: left !important;
@@ -100,237 +104,235 @@
             font-size: 18px !important;
             font-weight: normal !important;
             color: white !important;
+            cursor: pointer;
         }
     </style>
 </head>
-
 <body>
     <button id="button" class="button" onclick="window.print();">Print</button>
+
     @foreach ($data as $formGroup)
     <div class="section">
         <h3>Rekap Penilaian - {{ $formGroup['evaluated']['nama'] ?? '-' }}</h3>
+        
         @php
-        $quartal = $formGroup['evaluated']['quartal'] ?? '-';
-        if (in_array($quartal, ['Q1', 'Q2'])) {
-        $quartalLabel = 'S1';
-        } elseif (in_array($quartal, ['Q3', 'Q4'])) {
-        $quartalLabel = 'S2';
-        } else {
-        $quartalLabel = $quartal;
-        }
-        @endphp
+            $quartal = $formGroup['evaluated']['quartal'] ?? '-';
+            $quartalLabel = in_array($quartal, ['Q1', 'Q2']) ? 'S1' : (in_array($quartal, ['Q3', 'Q4']) ? 'S2' : $quartal);
+            
+            $persentaseJenis = [
+                'General Manager' => 35,
+                'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
+                'Rekan Kerja (Satu Divisi)' => 20,
+                'Pekerja (Beda Divisi)' => 10,
+                'Self Apprisial' => 5
+            ];
 
-        <p>Semester: {{ $quartalLabel }} | Tahun: {{ $formGroup['evaluated']['tahun'] ?? '-' }}</p>
+            $groupNilai = [];
+            $groupPesan = [];
+            foreach ($formGroup['data']['evaluator'] ?? [] as $ev) {
+                $nilaiIndex = 0;
+                foreach ($formGroup['data']['dataKriteria'] ?? [] as $kriteria) {
+                    foreach ($kriteria['detailKriteria'] as $sub) {
+                        $nilaiData = $ev['nilai'][$nilaiIndex++] ?? ['nilai' => null, 'pesan' => '-'];
+                        $jenis = $ev['jenis_penilaian'];
+                        $kriteriaNama = $kriteria['kriteria'];
+                        $subNama = $sub['sub_kriteria'];
 
-        @php
-        $persentaseJenis = [
-        'General Manager' => 35,
-        'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
-        'Rekan Kerja (Satu Divisi)' => 20,
-        'Pekerja (Beda Divisi)' => 10,
-        'Self Apprisial' => 5
-        ];
+                        if (is_numeric($nilaiData['nilai'])) {
+                            $groupNilai[$jenis][$kriteriaNama][$subNama][] = floatval($nilaiData['nilai']);
+                        }
 
-        $groupNilai = [];
-        $groupPesan = [];
-        foreach ($formGroup['data']['evaluator'] ?? [] as $ev) {
-        $nilaiIndex = 0;
-        foreach ($formGroup['data']['dataKriteria'] ?? [] as $kriteria) {
-        foreach ($kriteria['detailKriteria'] as $sub) {
-        $nilaiData = $ev['nilai'][$nilaiIndex++] ?? ['nilai' => null, 'pesan' => '-'];
-        $jenis = $ev['jenis_penilaian'];
-        $kriteriaNama = $kriteria['kriteria'];
-        $subNama = $sub['sub_kriteria'];
+                        $pesan = trim($nilaiData['pesan'] ?? '');
+                        if (!empty($pesan) && $pesan !== '-') {
+                            if (!isset($groupPesan[$jenis][$kriteriaNama][$subNama])) {
+                                $groupPesan[$jenis][$kriteriaNama][$subNama] = $pesan;
+                            }
+                        }
+                    }
+                }
+            }
 
-        if (is_numeric($nilaiData['nilai'])) {
-        $groupNilai[$jenis][$kriteriaNama][$subNama][] = floatval($nilaiData['nilai']);
-        }
+            $rata2Hasil = [];
+            foreach ($groupNilai as $jenis => $kriteriaArr) {
+                foreach ($kriteriaArr as $kriteria => $subArr) {
+                    foreach ($subArr as $sub => $arrNilai) {
+                        $rata2Hasil[$jenis][$kriteria][$sub] = array_sum($arrNilai) / count($arrNilai);
+                    }
+                }
+            }
 
-        $pesan = trim($nilaiData['pesan'] ?? '');
-        if (!empty($pesan) && $pesan !== '-') {
-        if (!isset($groupPesan[$jenis][$kriteriaNama][$subNama])) {
-        $groupPesan[$jenis][$kriteriaNama][$subNama] = $pesan;
-        }
-        }
-        }
-        }
-        }
+            $bobotMap = [];
+            foreach ($formGroup['data']['dataKriteria'] ?? [] as $kriteria) {
+                foreach ($kriteria['detailKriteria'] as $sub) {
+                    $bobotMap[$kriteria['kriteria']][$sub['sub_kriteria']] = $sub['bobot'] ?? 0;
+                }
+            }
 
-        $rata2Hasil = [];
-        foreach ($groupNilai as $jenis => $kriteriaArr) {
-        foreach ($kriteriaArr as $kriteria => $subArr) {
-        foreach ($subArr as $sub => $arrNilai) {
-        $rata2Hasil[$jenis][$kriteria][$sub] = array_sum($arrNilai) / count($arrNilai);
-        }
-        }
-        }
-
-        $bobotMap = [];
-        foreach ($formGroup['data']['dataKriteria'] ?? [] as $kriteria) {
-        foreach ($kriteria['detailKriteria'] as $sub) {
-        $bobotMap[$kriteria['kriteria']][$sub['sub_kriteria']] = $sub['bobot'] ?? 0;
-        }
-        }
-
-        $jenisTotalRaw = [];
-        $mode = $formGroup['tipe_pdf'] ?? ($formGroup['evaluated']['mode'] ?? 'office');
+            $jenisTotalRaw = [];
+            $mode = $formGroup['tipe_pdf'] ?? ($formGroup['evaluated']['mode'] ?? 'office');
         @endphp
 
         @if ($mode === 'office')
-        @foreach ($formGroup['data']['evaluator'] ?? [] as $ev)
-        @php
-        $nilaiList = $ev['nilai'];
-        $nilaiIndex = 0;
-        $totalSkorEvaluator = 0;
-        $validNilaiCount = 0;
-        @endphp
-
-        <table>
-            <thead>
-                <tr style="background-color: #e0e0e0;">
-                    <th colspan="5">
-                        Evaluator: {{ $ev['nama'] ?? '-' }} - Penilaian {{ $ev['jenis_penilaian'] }}
-                    </th>
-                </tr>
-                <tr style="background-color: #f5f5f5;">
-                    <th>Kriteria</th>
-                    <th>Sub Kriteria</th>
-                    <th>Bobot</th>
-                    <th>Nilai</th>
-                    <th>Skor</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($formGroup['data']['dataKriteria'] ?? [] as $kriteria)
-                @php $jumlahSub = count($kriteria['detailKriteria']); @endphp
-                @foreach ($kriteria['detailKriteria'] as $iDetail => $sub)
+            @foreach ($formGroup['data']['evaluator'] ?? [] as $ev)
                 @php
-                $nilaiData = $nilaiList[$nilaiIndex] ?? ['nilai' => null, 'pesan' => '-'];
-                $nilaiRaw = $nilaiData['nilai'];
-                $nilai = is_numeric($nilaiRaw) ? floatval($nilaiRaw) : 0;
-                $tampilkanNilai = is_numeric($nilaiRaw) ? number_format($nilai, 2, ',', '.') : '-';
-                $skor = is_numeric($nilaiRaw) ? ($nilai * $sub['bobot']) / 100 : 0;
-                if (is_numeric($nilaiRaw)) {
-                $totalSkorEvaluator += $skor;
-                $validNilaiCount++;
-                }
-                $nilaiIndex++;
-                $tipeKategori = $sub['tipe_kriteria'];
+                    $totalSkorEvaluator = 0;
                 @endphp
-                <tr>
-                    @if ($iDetail === 0)
-                    <td rowspan="{{ $jumlahSub }}">{{ $kriteria['kriteria'] }}</td>
-                    @endif
-                    <td>{{ $sub['sub_kriteria'] }}</td>
-                    @if ($tipeKategori === 'textarea')
-                    <td colspan="3" class="text-center">{{ $nilaiData['pesan'] }}</td>
-                    @else
-                    <td>{{ $sub['bobot'] }}%</td>
-                    <td>{{ $tampilkanNilai }}</td>
-                    <td>{{ is_numeric($nilaiRaw) ? number_format($skor, 2, ',', '.') : '-' }}</td>
-                    @endif
-                </tr>
-                @endforeach
-                @endforeach
 
-                <tr class="summary-row">
-                    <td colspan="4" class="text-right">Total {{ $ev['nama'] }}</td>
-                    <td>{{ number_format($totalSkorEvaluator, 2, ',', '.') }}</td>
-                </tr>
-            </tbody>
-        </table>
-        <br>
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="5" style="background-color: #e0e0e0;">
+                                Evaluator: {{ $ev['nama'] ?? '-' }} - Penilaian {{ $ev['jenis_penilaian'] }}
+                            </th>
+                        </tr>
+                        <tr>
+                            <th style="width: 20%;">Kriteria</th>
+                            <th style="width: 40%;">Sub Kriteria</th>
+                            <th style="width: 10%;">Bobot</th>
+                            <th style="width: 15%;">Nilai</th>
+                            <th style="width: 15%;">Skor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($formGroup['data']['dataKriteria'] ?? [] as $kriteria)
+                            @php 
+                                $jumlahSub = max(1, count($kriteria['detailKriteria'] ?? [])); 
+                            @endphp
+                            
+                            @foreach ($kriteria['detailKriteria'] ?? [] as $iDetail => $sub)
+                                @php
+                                    $nilaiData = collect($ev['nilai'])->firstWhere('sub_kriteria', $sub['sub_kriteria']) ?? ['nilai' => null, 'pesan' => '-'];
+                                    
+                                    $nilaiRaw = $nilaiData['nilai'];
+                                    $nilai = is_numeric($nilaiRaw) ? floatval($nilaiRaw) : 0;
+                                    $skor = is_numeric($nilaiRaw) ? ($nilai * $sub['bobot']) / 100 : 0;
+                                    
+                                    if (is_numeric($nilaiRaw)) {
+                                        $totalSkorEvaluator += $skor;
+                                    }
+                                    $tipeKategori = $sub['tipe_kriteria'] ?? 'number';
+                                @endphp
+                                
+                                <tr>
+                                    @if ($loop->first)
+                                        <td rowspan="{{ $jumlahSub }}">{{ $kriteria['kriteria'] }}</td>
+                                    @endif
+                                    <td>{{ $sub['sub_kriteria'] }}</td>
+                                    
+                                    @if ($tipeKategori === 'textarea')
+                                        <td colspan="3" class="text-center">{{ $nilaiData['pesan'] }}</td>
+                                    @else
+                                        <td>{{ $sub['bobot'] }}%</td>
+                                        <td>{{ is_numeric($nilaiRaw) ? number_format($nilai, 2, ',', '.') : '-' }}</td>
+                                        <td>{{ is_numeric($nilaiRaw) ? number_format($skor, 2, ',', '.') : '-' }}</td>
+                                    @endif
+                                </tr>
+                            @endforeach
+                        @endforeach
 
-        @php
-        $jenis = $ev['jenis_penilaian'];
-        if (!isset($jenisTotalRaw[$jenis])) $jenisTotalRaw[$jenis] = 0;
-        $jenisTotalRaw[$jenis] = max($jenisTotalRaw[$jenis], $totalSkorEvaluator);
-        @endphp
-        @endforeach
+                        <tr class="summary-row">
+                            <td colspan="4" class="text-right">Total {{ $ev['nama'] }}</td>
+                            <td class="text-center">{{ number_format($totalSkorEvaluator, 2, ',', '.') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
 
+                @php
+                    $jenis = $ev['jenis_penilaian'];
+                    if (!isset($jenisTotalRaw[$jenis])) $jenisTotalRaw[$jenis] = 0;
+                    $jenisTotalRaw[$jenis] = max($jenisTotalRaw[$jenis], $totalSkorEvaluator);
+                @endphp
+            @endforeach
         @else
-        @foreach ($rata2Hasil as $jenis => $kriteriaArr)
-        @php $totalSkorJenis = 0; @endphp
-        <table>
-            <thead>
-                <tr style="background-color: #e0e0e0;">
-                    <th colspan="5">Penilaian {{ $jenis }}</th>
-                </tr>
-                <tr style="background-color: #f5f5f5;">
-                    <th>Kriteria</th>
-                    <th>Sub Kriteria</th>
-                    <th>Bobot</th>
-                    <th>Nilai</th>
-                    <th>Skor</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($kriteriaArr as $kriteria => $subArr)
-                @php $jumlahSub = count($subArr); @endphp
-                @foreach ($subArr as $sub => $rata)
-                @php
-                $bobot = $bobotMap[$kriteria][$sub] ?? 0;
-                $skor = ($rata * $bobot) / 100;
-                $totalSkorJenis += $skor;
-                $pesanTampil = $groupPesan[$jenis][$kriteria][$sub] ?? '-';
-                $tipeKategori = null;
-                foreach ($formGroup['data']['dataKriteria'] ?? [] as $k) {
-                foreach ($k['detailKriteria'] as $s) {
-                if ($k['kriteria'] === $kriteria && $s['sub_kriteria'] === $sub) {
-                $tipeKategori = $s['tipe_kriteria'];
-                break 2;
-                }
-                }
-                }
-                @endphp
-                <tr>
-                    @if ($loop->first)
-                    <td rowspan="{{ $jumlahSub }}">{{ $kriteria }}</td>
-                    @endif
-                    <td>{{ $sub }}</td>
-                    @if ($tipeKategori === 'textarea')
-                    <td colspan="3" class="text-center">{{ $pesanTampil }}</td>
-                    @else
-                    <td>{{ $bobot }}%</td>
-                    <td>{{ number_format($rata, 2, ',', '.') }}</td>
-                    <td>{{ number_format($skor, 2, ',', '.') }}</td>
-                    @endif
-                </tr>
-                @endforeach
-                @endforeach
-
-                <tr class="summary-row">
-                    <td colspan="4" class="text-right">Total Penilaian {{ $jenis }}</td>
-                    <td>{{ number_format($totalSkorJenis, 2, ',', '.') }}</td>
-                </tr>
-            </tbody>
-        </table>
-        <br>
-
-        @php
-        if (!isset($jenisTotalRaw[$jenis])) $jenisTotalRaw[$jenis] = 0;
-        $jenisTotalRaw[$jenis] = max($jenisTotalRaw[$jenis], $totalSkorJenis);
-        @endphp
-        @endforeach
+            @foreach ($rata2Hasil as $jenis => $kriteriaArr)
+                @php $totalSkorJenis = 0; @endphp
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="5" style="background-color: #e0e0e0;">Penilaian {{ $jenis }}</th>
+                        </tr>
+                        <tr>
+                            <th>Kriteria</th>
+                            <th>Sub Kriteria</th>
+                            <th>Bobot</th>
+                            <th>Nilai</th>
+                            <th>Skor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($kriteriaArr as $kriteria => $subArr)
+                            @php $jumlahSub = count($subArr); @endphp
+                            @foreach ($subArr as $sub => $rata)
+                                @php
+                                    $bobot = $bobotMap[$kriteria][$sub] ?? 0;
+                                    $skor = ($rata * $bobot) / 100;
+                                    $totalSkorJenis += $skor;
+                                    $pesanTampil = $groupPesan[$jenis][$kriteria][$sub] ?? '-';
+                                    
+                                    $tipeKategori = 'number';
+                                    foreach ($formGroup['data']['dataKriteria'] ?? [] as $k) {
+                                        if ($k['kriteria'] === $kriteria) {
+                                            foreach ($k['detailKriteria'] as $s) {
+                                                if ($s['sub_kriteria'] === $sub) {
+                                                    $tipeKategori = $s['tipe_kriteria'];
+                                                    break 2;
+                                                }
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                <tr>
+                                    @if ($loop->first)
+                                        <td rowspan="{{ $jumlahSub }}">{{ $kriteria }}</td>
+                                    @endif
+                                    <td>{{ $sub }}</td>
+                                    @if ($tipeKategori === 'textarea')
+                                        <td colspan="3" class="text-center">{{ $pesanTampil }}</td>
+                                    @else
+                                        <td>{{ $bobot }}%</td>
+                                        <td>{{ number_format($rata, 2, ',', '.') }}</td>
+                                        <td>{{ number_format($skor, 2, ',', '.') }}</td>
+                                    @endif
+                                </tr>
+                            @endforeach
+                        @endforeach
+                        <tr class="summary-row">
+                            <td colspan="4" class="text-right">Total Penilaian {{ $jenis }}</td>
+                            <td class="text-center">{{ number_format($totalSkorJenis, 2, ',', '.') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            @endforeach
         @endif
 
         @php
-        $jenisTotalPost = [];
-        $totalSemuaSkor = 0;
-        foreach ($jenisTotalRaw as $jenis => $total) {
-        $bobot = $persentaseJenis[$jenis] ?? 0;
-        $jenisTotalPost[$jenis] = ($total * $bobot) / 100;
-        $totalSemuaSkor += $jenisTotalPost[$jenis];
-        }
+            $jenisTotalPost = [];
+            $totalSemuaSkor = 0;
+            foreach ($jenisTotalRaw as $jenis => $total) {
+                $bobot = $persentaseJenis[$jenis] ?? 0;
+                $jenisTotalPost[$jenis] = ($total * $bobot) / 100;
+                $totalSemuaSkor += $jenisTotalPost[$jenis];
+            }
 
-        if ($totalSemuaSkor >= 90) { $grade='A'; $keterangan='Sangat Baik'; }
-        elseif ($totalSemuaSkor >= 80) { $grade='B'; $keterangan='Baik'; }
-        elseif ($totalSemuaSkor >= 70) { $grade='C'; $keterangan='Cukup'; }
-        elseif ($totalSemuaSkor >= 60) { $grade='D'; $keterangan='Kurang'; }
-        else { $grade='E'; $keterangan='Sangat Kurang'; }
+            if ($totalSemuaSkor >= 90) { 
+                $grade = 'A'; 
+                $keterangan = 'Sangat Baik'; 
+            } elseif ($totalSemuaSkor >= 80) { 
+                $grade = 'B'; 
+                $keterangan = 'Baik'; 
+            } elseif ($totalSemuaSkor >= 70) { 
+                $grade = 'C'; 
+                $keterangan = 'Cukup'; 
+            } elseif ($totalSemuaSkor >= 60) { 
+                $grade = 'D'; 
+                $keterangan = 'Kurang'; 
+            } else { 
+                $grade = 'E'; 
+                $keterangan = 'Sangat Kurang'; 
+            }
         @endphp
 
-        <table>
+        <table style="width: 50%;">
             <thead>
                 <tr>
                     <th>Jenis Penilaian</th>
@@ -341,12 +343,12 @@
                 @foreach ($jenisTotalPost as $jenis => $final)
                 <tr>
                     <td>{{ $jenis }}</td>
-                    <td class="text-center">{{ number_format($final,2,',','.') }}</td>
+                    <td class="text-center">{{ number_format($final, 2, ',', '.') }}</td>
                 </tr>
                 @endforeach
                 <tr class="summary-row">
                     <td class="text-right">Total Semua Skor</td>
-                    <td class="text-center">{{ number_format($totalSemuaSkor,2,',','.') }}</td>
+                    <td class="text-center">{{ number_format($totalSemuaSkor, 2, ',', '.') }}</td>
                 </tr>
                 <tr class="summary-row">
                     <td class="text-right">Keterangan</td>
@@ -359,24 +361,16 @@
             </tbody>
         </table>
 
-        <div class="title" style="margin-top: 20px;">Data Jumlah Absen</div>
-        <table width="50%">
-            <tr>
-                <th>Telat</th>
-                <th>Sakit</th>
-                <th>Izin</th>
-            </tr>
-            <tr>
-                <td>{{ $formGroup['dataAbsen']['telat'] ?? 0 }}</td>
-                <td>{{ $formGroup['dataAbsen']['sakit'] ?? 0 }}</td>
-                <td>{{ $formGroup['dataAbsen']['izin'] ?? 0 }}</td>
-            </tr>
-        </table>
-
-        <label for="catatan">Catatan :
-            <br><span style="width: 200px;">{{ $formGroup['evaluated']['catatan'] ?? '-' }}</span></label>
+        <div class="title" style="margin-top: 20px;">
+            <strong>Data Jumlah Absen</strong><br>
+            Telat: {{ $formGroup['dataAbsen']['telat'] ?? 0 }} | 
+            Sakit: {{ $formGroup['dataAbsen']['sakit'] ?? 0 }} | 
+            Izin: {{ $formGroup['dataAbsen']['izin'] ?? 0 }}
+            <br><br>
+            <strong>Catatan:</strong><br>
+            <span style="width: 200px; display: inline-block;">{{ $formGroup['evaluated']['catatan'] ?? '-' }}</span>
+        </div>
     </div>
     @endforeach
 </body>
-
 </html>

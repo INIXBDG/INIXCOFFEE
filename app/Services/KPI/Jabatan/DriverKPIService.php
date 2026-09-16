@@ -329,15 +329,15 @@ class DriverKPIService
             return 0;
         }
 
-        $response = Http::get("https://libur.deno.dev/api", ['year' => $tahun]);
-        if ($response->successful()) {
-            foreach ($response->json() as $libur) {
-                HariLibur::updateOrCreate(
-                    ['tanggal' => $libur['date']],
-                    ['nama' => $libur['name'], 'year' => $tahun]
-                );
-            }
-        }
+        // $response = Http::get("https://libur.deno.dev/api", ['year' => $tahun]);
+        // if ($response->successful()) {
+        //     foreach ($response->json() as $libur) {
+        //         HariLibur::updateOrCreate(
+        //             ['tanggal' => $libur['date']],
+        //             ['nama' => $libur['name'], 'year' => $tahun]
+        //         );
+        //     }
+        // }
 
         $startPeriode = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $endPeriode = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
@@ -434,15 +434,15 @@ class DriverKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $response = Http::get("https://libur.deno.dev/api", ['year' => $tahun]);
-        if ($response->successful()) {
-            foreach ($response->json() as $libur) {
-                HariLibur::updateOrCreate(
-                    ['tanggal' => $libur['date']],
-                    ['nama' => $libur['name'], 'year' => $tahun]
-                );
-            }
-        }
+        // $response = Http::get("https://libur.deno.dev/api", ['year' => $tahun]);
+        // if ($response->successful()) {
+        //     foreach ($response->json() as $libur) {
+        //         HariLibur::updateOrCreate(
+        //             ['tanggal' => $libur['date']],
+        //             ['nama' => $libur['name'], 'year' => $tahun]
+        //         );
+        //     }
+        // }
 
         $startPeriode = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $endPeriode = Carbon::createFromDate($tahun, 12, 31)->endOfDay();

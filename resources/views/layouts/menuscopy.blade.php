@@ -266,66 +266,15 @@
             justify-content: space-between;
             width: auto;
             height: auto;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            border-radius: 18px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.42) 0%, rgba(240,245,255,0.28) 100%);
-            box-shadow: 0 10px 22px rgba(24, 47, 81, 0.06);
+            border: 1px solid rgba(255, 255, 255, .25);
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.45);
+            box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.25);
             backdrop-filter: blur(2px);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 16px 30px rgba(24, 47, 81, 0.12);
-            border-color: rgba(24, 47, 81, 0.15);
         }
 
         .card img {
             height: 60%;
-        }
-
-        #card-hover {
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            border-radius: 18px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(240,245,252,0.24) 100%);
-            box-shadow: 0 12px 26px rgba(24, 47, 81, 0.05);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-            overflow: hidden;
-        }
-
-        #card-hover:hover {
-            transform: translateY(-3px);
-            border-color: rgba(24, 47, 81, 0.18);
-            box-shadow: 0 18px 34px rgba(24, 47, 81, 0.12);
-        }
-
-        #card-hover .card-body {
-            padding: 1rem 1rem 0.9rem;
-        }
-
-        #card-hover .card-title {
-            color: #182F51;
-            font-weight: 700;
-            margin-bottom: 0.35rem;
-        }
-
-        #card-hover .card-text {
-            color: #4b5b74;
-            font-size: 0.88rem;
-            line-height: 1.5;
-            margin-bottom: 0;
-        }
-
-        #card-hover .card-body .col-md-2 {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #card-hover .card-body img {
-            width: 30px;
-            height: 30px;
-            opacity: 0.95;
         }
 
 
@@ -711,20 +660,17 @@
             /* Reorder the columns for mobile */
             #navbarkanan {
                 order: 2;
+                /* Move navbarkanan after navbarpalingkanan */
+                /* padding: 10px; */
             }
 
             #btngroupnavbar {
-                padding: 6px;
-                width: 100%;
-            }
-
-            #btngroupnavbar .btn-primary {
-                font-size: 0.72rem;
-                padding: 0.45rem 0.6rem;
+                padding: 10px;
             }
 
             #navbarpalingkanan {
                 order: 0;
+                /* Move navbarpalingkanan before navbarkanan */
             }
 
             body {
@@ -734,12 +680,11 @@
             #bgsvg {
                 background-image: url('/css/background inix office-02.svg') repeat-y;
                 overflow-y: scroll;
-                padding: 12px 14px;
             }
 
             .navbar-nav {
                 flex-direction: row;
-                padding-top: 4px;
+                padding-top: 10px;
             }
 
             #auth {
@@ -748,14 +693,14 @@
 
             .nav-item {
                 text-align: center;
-                width: auto;
-                margin: 0;
+                width: 100%;
+                margin: 5px 0;
             }
 
             .navbar-brand {
                 text-align: center;
                 width: 100%;
-                margin: 0;
+                margin: 5px 0;
             }
 
             .navbar-brand img {
@@ -763,29 +708,7 @@
             }
 
             #logoinix {
-                width: 180px;
-            }
-
-            .card,
-            #card-hover {
-                border-radius: 14px;
-            }
-
-            #card-hover .card-body {
-                padding: 0.7rem;
-            }
-
-            #card-hover .card-title {
-                font-size: 0.9rem;
-            }
-
-            #card-hover .card-text {
-                font-size: 0.76rem;
-            }
-
-            .row > [class*='col-'] {
-                padding-left: 0.55rem;
-                padding-right: 0.55rem;
+                width: 250px;
             }
         }
 
@@ -832,7 +755,6 @@
             #bgsvg {
                 background-image: url('/css/background inix office-02.svg') repeat-y;
                 overflow-y: scroll;
-                padding: 10px 12px;
             }
 
             .navbar-nav {
@@ -847,45 +769,26 @@
             .nav-item {
                 text-align: center;
                 width: 100%;
-                margin: 2px 0;
+                margin: 5px 0;
             }
 
             .navbar-brand {
                 text-align: center;
                 width: 100%;
-                margin: 0;
+                margin: 5px 0;
             }
 
             .navbar-brand img {
                 margin-right: 0;
-                max-width: 180px;
+                max-width: 200px;
+                /* Lebih kecil untuk layar kecil */
             }
 
             #logoinix {
-                width: 180px;
+                width: 250px;
             }
 
-            #btngroupnavbar {
-                padding: 4px;
-            }
-
-            #btngroupnavbar .btn-primary {
-                font-size: 0.68rem;
-                padding: 0.4rem 0.5rem;
-            }
-
-            #card-hover .card-body {
-                padding: 0.6rem;
-            }
-
-            #card-hover .card-title {
-                font-size: 0.85rem;
-            }
-
-            #card-hover .card-text {
-                font-size: 0.72rem;
-            }
-
+            /* Tambahan styling untuk teks atau elemen kecil */
             h1,
             h2,
             h3,
@@ -896,11 +799,11 @@
             }
 
             p {
-                font-size: 13px;
+                font-size: 14px;
             }
 
             button {
-                font-size: 11px;
+                font-size: 12px;
             }
         }
 
@@ -2384,7 +2287,7 @@
                                                                         <a href="{{ route('berandaKPI.get') }}" class="link stretched-link text-decoration-none">
                                                                             <h5 class="card-title">Penilaian</h5>
                                                                         </a>
-                                                                        <p class="card-text">Dashboard Database Penilaian.</p>
+                                                                        <p class="card-text">Data Penilaian Semua Karyawan.</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -2445,7 +2348,17 @@
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
 
+                                        <!-- Section Penilaian 360 (Baru) -->
+                                        <div class="col-md-12 mt-1">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h5 class="text-center card-title">Penilaian 360</h5>
+                                                    <div class="row">
                                                         <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
@@ -2471,7 +2384,7 @@
                                                                         <a href="{{ url('/getFormPenilaianUser/' . $id_karyawan) }}" class="link stretched-link text-decoration-none">
                                                                             <h5 class="card-title">Form Penilaian</h5>
                                                                         </a>
-                                                                        <p class="card-text">Form  penilaian untuk anda.</p>
+                                                                        <p class="card-text">untuk menilai kinerja rekan kerja Anda.</p>
                                                                     </div>
                                                                 </div>
                                                             </div>

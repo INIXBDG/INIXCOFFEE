@@ -15,60 +15,58 @@ class AdminHoldingKPIService
 {
     use KPIDefaultResponseTrait;
 
+    private function skorDariKeterlambatan($actual, $deadline)
+    {
+        if (!$actual || !$deadline) return 0;
+    
+        if ($actual->lte($deadline)) {
+            return 100;
+        }
+    
+        $daysLate = $deadline->diffInDays($actual);
+    
+        if ($daysLate <= 3) {
+            return 80;
+        } elseif ($daysLate <= 7) {
+            return 60;
+        }
+    
+        return 0;
+    }
+    
     private function hitungSkorKetepatan($po, $awalTrainingDate, $holidaySet)
     {
         if (!$po->uploaded) return 0;
-
+    
         $uploaded = Carbon::parse($po->uploaded)->startOfDay();
-
+    
         if ($po->type !== 'Authorize') {
             if (!$po->created_at) return 0;
-
+    
             $tenggat = Carbon::parse($po->created_at)->startOfWeek()->addWeek();
-
+    
             while (isset($holidaySet[$tenggat->toDateString()])) {
                 $tenggat = $tenggat->copy()->addDay();
             }
-
-            return $uploaded->lte($tenggat) ? 100 : 0;
+    
+            return $this->skorDariKeterlambatan($uploaded, $tenggat);
         }
-
+    
         if (!$awalTrainingDate) return 0;
-
+    
         $awalTraining = Carbon::parse($awalTrainingDate)->startOfDay();
-
-        $daysBefore = $awalTraining->diffInDays($uploaded);
-        $poScore = 0;
-
-        if ($uploaded->gt($awalTraining)) {
-            $poScore = 0;
-        } elseif ($daysBefore >= 7) {
-            $poScore = 100;
-        } elseif ($daysBefore > 0) {
-            $poScore = ($po->delay !== null && $po->delay !== 'Admin')
-                ? min(100, ($daysBefore * 150) / 7)
-                : ($daysBefore * 100) / 7;
-        }
-
+    
+        $poScore = $this->skorDariKeterlambatan($uploaded, $awalTraining);
+    
         $subscodeScore = 0;
-
         if ($po->tanggal_subscode_masuk) {
             $subscode = Carbon::parse($po->tanggal_subscode_masuk)->startOfDay();
-
-            $dayOfWeek = $awalTraining->dayOfWeekIso;
-            $seninDeadline = $awalTraining->copy()->subDays($dayOfWeek - 1);
-
-            if ($subscode->lte($seninDeadline)) {
-                $subscodeScore = 100;
-            } else {
-                $daysLate = $seninDeadline->diffInDays($subscode);
-                $subscodeScore = max(0, 100 - ($daysLate * 25));
-            }
+            $subscodeScore = $this->skorDariKeterlambatan($subscode, $awalTraining);
         }
-
+    
         return ($poScore + $subscodeScore) / 2;
     }
-
+    
     public function calculateKetepatanWaktuPo($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
@@ -76,34 +74,34 @@ class AdminHoldingKPIService
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
             return 0;
         }
-
+    
         $tahun = (int) $detail->detail_jangka;
         if ($tahun < 2000 || $tahun > now()->year + 5) return 0;
-
+    
         $pos = NomorModul::with('moduls')->whereYear('created_at', $tahun)->get();
         if ($pos->isEmpty()) return 0.0;
-
+    
         $holidaySet = HariLibur::pluck('tanggal')->mapWithKeys(fn ($t) => [Carbon::parse($t)->toDateString() => true]);
-
+    
         $totalPercent = 0;
         $count = 0;
-
+    
         foreach ($pos as $po) {
             if (!$po->uploaded) continue;
-
+    
             $tenggatEfektif = $po->moduls->min('awal_training');
             if (!$tenggatEfektif) continue;
-
-            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif, $holidaySet); // 1x per po
+    
+            $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif, $holidaySet);
             $totalPercent += $percent;
             $count++;
         }
-
+    
         if ($count === 0) return 0.0;
-
+    
         return round($totalPercent / $count, 1);
     }
-
+    
     public function calculateKetepatanWaktuPoDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
@@ -112,76 +110,76 @@ class AdminHoldingKPIService
             'monthly_data' => [], 'daily_breakdown_per_month' => [],
             'monthly_progress' => [], 'daily_progress_per_month' => [],
         ];
-
+    
         if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
             return $emptyResponse;
         }
-
+    
         $tahun = (int) $detail->detail_jangka;
         $nilaiTarget = (float) $detail->nilai_target;
-
+    
         if ($tahun < 2000 || $tahun > now()->year + 5 || $nilaiTarget <= 0) return $emptyResponse;
-
+    
         $pos = NomorModul::with('moduls')->whereYear('created_at', $tahun)->get();
         if ($pos->isEmpty()) return $emptyResponse;
-
+    
         $holidaySet = HariLibur::pluck('tanggal')->mapWithKeys(fn ($t) => [Carbon::parse($t)->toDateString() => true]);
-
+    
         $totalPercent = 0;
         $count = 0;
         $aboveTarget = 0;
-
+    
         $monthlyDataRaw = [];
         $dailyDataRaw = [];
-
+    
         foreach ($pos as $po) {
             if (!$po->uploaded) continue;
-
+    
             $tenggatEfektif = $po->moduls->min('awal_training');
             if (!$tenggatEfektif) continue;
-
+    
             $percent = $this->hitungSkorKetepatan($po, $tenggatEfektif, $holidaySet);
-
+    
             $date = Carbon::parse($po->uploaded);
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
-
+    
             $totalPercent += $percent;
             $count++;
-
+    
             if ($percent >= $nilaiTarget) {
                 $aboveTarget++;
             }
-
+    
             $monthlyDataRaw[$monthKey][] = $percent;
             $dailyDataRaw[$monthKey][$dayKey][] = $percent;
         }
-
+    
         if ($count === 0) return $emptyResponse;
-
+    
         $progress = round($totalPercent / $count, 1);
-
+    
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
         if ($gap === '') $gap = '0';
-
+    
         $monthlyAverages = [];
         $dailyBreakdownPerMonth = [];
-
+    
         foreach ($monthlyDataRaw as $month => $values) {
             $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
         }
-
+    
         foreach ($dailyDataRaw as $month => $days) {
             foreach ($days as $day => $values) {
                 $dailyBreakdownPerMonth[$month][$day] = round(array_sum($values) / count($values), 1);
             }
             ksort($dailyBreakdownPerMonth[$month]);
         }
-
+    
         ksort($monthlyAverages);
         ksort($dailyBreakdownPerMonth);
-
+    
         return [
             'progress' => $progress,
             'gap' => $gap,

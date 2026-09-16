@@ -6,19 +6,15 @@ use App\Exports\RegistrasiExport;
 use App\Exports\RegistrasiPerSalesExport;
 use App\Models\karyawan;
 use App\Models\Nilaifeedback;
-use App\Models\Registrasi;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 use App\Models\Peserta;
-use App\Models\souvenirpeserta;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
+use App\Models\Registrasi;
 use App\Models\RKM;
-use \App\Models\souvenir;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Gate;
 
@@ -28,8 +24,8 @@ class RegistrasiController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('permission:View Registrasi', ['only' => ['index']]);
-        $this->middleware('permission:Create Registrasi', ['only' => ['create','store']]);
-        $this->middleware('permission:Edit Registrasi', ['only' => ['update','edit']]);
+        $this->middleware('permission:Create Registrasi', ['only' => ['create', 'store']]);
+        $this->middleware('permission:Edit Registrasi', ['only' => ['update', 'edit']]);
         $this->middleware('permission:Delete Registrasi', ['only' => ['destroy']]);
     }
 
@@ -89,6 +85,9 @@ class RegistrasiController extends Controller
                 })
                 ->orWhereHas('materi', function($q2) use ($searchValue) {
                     $q2->where('nama_materi', 'like', "%{$searchValue}%");
+                })
+                ->orWhereHas('souvenirpeserta.souvenir', function($q2) use ($searchValue) {
+                    $q2->where('nama_souvenir', 'like', "%{$searchValue}%");
                 });
             });
             $recordsFiltered = $query->count();
@@ -134,22 +133,22 @@ class RegistrasiController extends Controller
     }
 
     /**
-     * create
+     * create.
      *
      * @return View
      */
     public function create()
     {
-            // Get the maximum id from the Peserta table
+        // Get the maximum id from the Peserta table
         $maxId = Peserta::max('id');
 
         // Increment the maxId by 1 to get the next id
         $countPeserta = $maxId ? $maxId + 1 : 1;
         // return $nextId;
 
-
         return view('registrasi.create', compact('countPeserta'));
     }
+
 
 
     /**
@@ -206,7 +205,7 @@ class RegistrasiController extends Controller
      */
     public function store(Request $request)
     {
-        //validate form
+        // validate form
         // dd($request->all());
         $rkms = RKM::where('id', $request->id_rkm)->where('perusahaan_key', $request->perusahaan_key)->first();
         $peserta = Peserta::where('id', $request->id_peserta)->first();
@@ -215,13 +214,13 @@ class RegistrasiController extends Controller
         if ($registrasi === null) {
             if ($peserta === null) {
                 $peserta = Peserta::create([
-                    'nama'            => $request->nama,
-                    'jenis_kelamin'   => $request->jenis_kelamin,
-                    'email'           => $request->email,
-                    'no_hp'           => $request->no_hp,
-                    'alamat'          => $request->alamat,
-                    'perusahaan_key'  => $request->perusahaan_key,
-                    'tanggal_lahir'   => $request->tanggal_lahir
+                    'nama' => $request->nama,
+                    'jenis_kelamin' => $request->jenis_kelamin,
+                    'email' => $request->email,
+                    'no_hp' => $request->no_hp,
+                    'alamat' => $request->alamat,
+                    'perusahaan_key' => $request->perusahaan_key,
+                    'tanggal_lahir' => $request->tanggal_lahir,
                 ]);
             }
             if ($rkms === null) {
@@ -229,13 +228,13 @@ class RegistrasiController extends Controller
             }
             if ($rkms->isi_pax === '0') {
                 return redirect()->route('registrasi.index')->with(['error' => 'Mohon maaf kapasitas kelas sudah penuh!']);
-            }else{
+            } else {
                 Registrasi::create([
-                    'id_rkm'        => $request->id_rkm,
-                    'id_peserta'    => $peserta->id,
-                    'id_materi'     => $rkms->materi_key,
+                    'id_rkm' => $request->id_rkm,
+                    'id_peserta' => $peserta->id,
+                    'id_materi' => $rkms->materi_key,
                     'id_instruktur' => $rkms->instruktur_key,
-                    'id_sales'      => $rkms->sales_key,
+                    'id_sales' => $rkms->sales_key,
                 ]);
 
                 $rkms->update([
@@ -250,10 +249,9 @@ class RegistrasiController extends Controller
     }
 
     /**
-     * show
+     * show.
      *
-     * @param  mixed $id
-     * @return View
+     * @param mixed $id
      */
     public function show(string $id): View
     {
@@ -263,49 +261,47 @@ class RegistrasiController extends Controller
     }
 
     /**
-     * edit
+     * edit.
      *
-     * @param  mixed $id
+     * @param mixed $id
+     *
      * @return View
      */
     public function edit(string $id)
     {
-
         $peserta = Registrasi::with('peserta', 'rkm')->findOrFail($id);
         $rkm = RKM::where('perusahaan_key', $peserta->rkm->perusahaan_key)->where('materi_key', $peserta->rkm->materi_key)->whereBetween('tanggal_awal', [$peserta->rkm->tanggal_awal, $peserta->rkm->tanggal_akhir])->get();
+
         // return $rkm;
         return view('registrasi.edit', compact('peserta', 'rkm'));
     }
 
     /**
-     * update
+     * update.
      *
-     * @param  mixed $request
-     * @param  mixed $id
-     * @return RedirectResponse
+     * @param mixed $request
      */
     public function update(Request $request, $id): RedirectResponse
     {
         // dd($request->all());
         $this->validate($request, [
-            'id_rkm'     => 'required',
-            'id_peserta'   => 'required',
+            'id_rkm' => 'required',
+            'id_peserta' => 'required',
         ]);
 
         $post = Registrasi::findOrFail($id);
 
-            $post->update([
-                'id_rkm'     => $request->id_rkm,
-                'id_peserta'     => $request->id_peserta,
-            ]);
+        $post->update([
+            'id_rkm' => $request->id_rkm,
+            'id_peserta' => $request->id_peserta,
+        ]);
 
         return redirect()->route('registrasi.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
 
     /**
-     * destroy
+     * destroy.
      *
-     * @param  mixed $post
      * @return void
      */
     public function destroy($id)
@@ -315,9 +311,11 @@ class RegistrasiController extends Controller
         $rkm = RKM::where('id', $post->id_rkm)->first();
 
         // Increment isi_pax by 1
-        $rkm->increment('isi_pax');
+        if ($rkm) {
+            $rkm->increment('isi_pax');
+        }
 
-        if(!$feedback){
+        if (!$feedback) {
             $post->delete();
         } else {
             $feedback->delete();
@@ -338,7 +336,7 @@ class RegistrasiController extends Controller
                 'Nama Peserta' => $data->peserta->nama,
                 'Perusahaan' => $data->peserta->perusahaan->nama_perusahaan,
                 'Materi Pelatihan' => $data->materi->nama_materi,
-                'Periode Pelatihan' => $data->rkm->tanggal_awal . 's/d' . $data->rkm->tanggal_akhir,
+                'Periode Pelatihan' => $data->rkm->tanggal_awal.'s/d'.$data->rkm->tanggal_akhir,
                 'Instruktur' => $data->karyawan?->kode_karyawan ?? '-',
                 'Sales' => $data->sales?->kode_karyawan ?? '-',
                 'Souvenir' => is_null($data->souvenirpeserta) || is_null($data->souvenirpeserta->first()) || is_null($data->souvenirpeserta->first()->souvenir)
@@ -352,7 +350,6 @@ class RegistrasiController extends Controller
         return Excel::download(new RegistrasiExport($data), 'Data_Registrasi.xlsx');
     }
 
-
     public function exportPDF()
     {
         $registrasi = Registrasi::with(['rkm', 'peserta.perusahaan', 'materi', 'karyawan', 'sales', 'souvenirpeserta.souvenir'])->latest()->get();
@@ -364,7 +361,7 @@ class RegistrasiController extends Controller
         //     return $item;
         // });
         // Buat file PDF dari tampilan yang berisi data
-        $pdf = PDF::loadView('exports.registrasi-pdf', compact('registrasi'));
+        $pdf = Pdf::loadView('exports.registrasi-pdf', compact('registrasi'));
 
         return $pdf->download('Data_Registrasi.pdf');
     }
@@ -386,7 +383,7 @@ class RegistrasiController extends Controller
                 'Nama Peserta' => $data->peserta->nama,
                 'Perusahaan' => $data->peserta->perusahaan->nama_perusahaan,
                 'Materi Pelatihan' => $data->materi->nama_materi,
-                'Periode Pelatihan' => $data->rkm->tanggal_awal . 's/d' . $data->rkm->tanggal_akhir,
+                'Periode Pelatihan' => $data->rkm->tanggal_awal.'s/d'.$data->rkm->tanggal_akhir,
                 'Instruktur' => $data->karyawan?->kode_karyawan ?? '-',
                 'Sales' => $data->sales?->kode_karyawan ?? '-',
                 'Souvenir' => is_null($data->souvenirpeserta) || is_null($data->souvenirpeserta->first()) || is_null($data->souvenirpeserta->first()->souvenir)
@@ -413,15 +410,16 @@ class RegistrasiController extends Controller
                         ->get();
 
         // Memproses souvenirpeserta untuk menghapus blob_foto
-        $registrasi = $registrasi->map(function($item) {
-            $item->souvenirpeserta->each(function($souvenirPeserta) {
+        $registrasi = $registrasi->map(function ($item) {
+            $item->souvenirpeserta->each(function ($souvenirPeserta) {
                 $souvenirPeserta->souvenir->makeHidden('blob_foto');
             });
+
             return $item;
         });
 
         // Buat file PDF dari tampilan yang berisi data registrasi
-        $pdf = PDF::loadView('exports.registrasi-pdf', compact('registrasi'));
+        $pdf = Pdf::loadView('exports.registrasi-pdf', compact('registrasi'));
 
         return $pdf->download('Data_Registrasi.pdf');
     }
