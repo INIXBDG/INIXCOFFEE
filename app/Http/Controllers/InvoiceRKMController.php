@@ -70,6 +70,12 @@ class InvoiceRKMController extends Controller
      *
      * @return \Illuminate\View\View
      */
+
+public function __construct()
+{
+    $this->middleware('permission:View Invoice', ['only' => ['index']]);
+    $this->middleware('auth');
+}
 public function index(): View
 {
     // Ambil semua ID RKM yang sudah ada di tabel invoices
@@ -78,11 +84,59 @@ public function index(): View
     // Ambil semua ID RKM yang sudah ada di tabel kwitansi
     $receiptedRKMs = Kwitansi::pluck('id_rkm')->toArray();
 
-    // Data untuk tabel 'Belum di-Invoice'
-    $notInvoicedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan'])
+    $notInvoicedRkms = RKM::with([
+            'sales',
+            'materi',
+            'instruktur',
+            'perusahaan',
+            'registrasi',
+        ])
         ->whereNotIn('id', $existingRKMs)
+        ->whereNull('deleted_at')
+        ->where('status', '0')
         ->orderBy('tanggal_awal', 'desc')
         ->get();
+
+    $duplicateRkms = collect();
+
+    $notInvoicedRkms = $notInvoicedRkms
+        ->groupBy(function ($rkm) {
+            return implode('|', [
+                $rkm->materi_key,
+                $rkm->perusahaan_key,
+                $rkm->harga_jual,
+                $rkm->tanggal_awal,
+                $rkm->tanggal_akhir,
+                $rkm->sales_key,
+            ]);
+        })
+        ->map(function ($group) use (&$duplicateRkms) {
+
+            if ($group->count() <= 1) {
+                return $group;
+            }
+
+            $usedRkm = $group->first(function ($rkm) {
+                return $rkm->isi_pax == 0
+                    && $rkm->registrasi->count() > 0;
+            });
+
+            if ($usedRkm) {
+                $sisaKembaran = $group->reject(function ($rkm) use ($usedRkm) {
+                    return $rkm->id === $usedRkm->id;
+                });
+
+                $duplicateRkms = $duplicateRkms->merge($sisaKembaran);
+
+                return collect([$usedRkm]);
+            }
+
+            return $group;
+        })
+        ->flatten(1)
+        ->values();
+
+    $duplicateRkms = $duplicateRkms->values();
 
     // Data untuk tabel 'Sudah di-Invoice'
     $invoicedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'invoice', 'registrasi.peserta'])
@@ -92,8 +146,8 @@ public function index(): View
 
     // Data untuk tabel 'Sudah Invoice tapi Belum Kwitansi'
     $notReceiptedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'invoice'])
-        ->whereIn('id', $existingRKMs) // sudah ada invoice
-        ->whereNotIn('id', $receiptedRKMs) // tapi belum ada kwitansi
+        ->whereIn('id', $existingRKMs)
+        ->whereNotIn('id', $receiptedRKMs)
         ->orderBy('tanggal_awal', 'desc')
         ->get();
 
@@ -107,7 +161,8 @@ public function index(): View
         'notInvoicedRkms',
         'invoicedRkms',
         'notReceiptedRkms',
-        'receiptedRkms'
+        'receiptedRkms',
+        'duplicateRkms'
     ));
 }
 
