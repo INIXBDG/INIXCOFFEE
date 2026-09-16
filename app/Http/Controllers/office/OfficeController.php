@@ -17,6 +17,7 @@ use App\Models\karyawan;
 use App\Models\LogGaji;
 use App\Models\Nilaifeedback;
 use App\Models\outstanding;
+use App\Models\Peluang;
 use App\Models\pengajuancuti;
 use App\Models\Perusahaan;
 use App\Models\RKM;
@@ -41,6 +42,9 @@ class OfficeController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('permission:Fitur Menu Office', ['only' => ['dashboard']]);
+        
+        $this->middleware('permission:View RekapRKM Office', ['only' => ['rekapRkm', 'rekapRkmJson']]);
+        $this->middleware('permission:Update RekapRKM Office', ['only' => ['selectHide', 'toggleHide', 'bulkToggleHide']]);
     }
 
     public function dashboard(Request $request)
@@ -1479,5 +1483,196 @@ class OfficeController extends Controller
             'data' => $materiData,
             'nama_instruktur' => $instruktur
         ]);
+    }
+
+    public function rekapRkmJson(Request $request)
+    {
+        $tahun      = $request->input('tahun', now()->year);
+        $filterType = $request->input('filter_type', 'bulan');
+        $bulan      = $request->input('bulan', now()->month);
+        $triwulan   = $request->input('triwulan', ceil(now()->month / 3));
+
+        $query = Peluang::with([
+                'rkm.materi:id,nama_materi',
+                'rkm.perusahaan:id,nama_perusahaan',
+            ])
+            ->where('tentatif', false)
+            ->where('tahap', 'merah')
+            ->whereHas('rkm', function ($q) {
+                $q->where('status', '0')
+                ->where('metode_kelas', '!=', 'Exam Only');
+            });
+
+        switch ($filterType) {
+            case 'triwulan':
+                $startMonth = ($triwulan - 1) * 3 + 1;
+                $endMonth   = $startMonth + 2;
+                $query->whereYear('periode_mulai', $tahun)
+                    ->whereMonth('periode_mulai', '>=', $startMonth)
+                    ->whereMonth('periode_mulai', '<=', $endMonth);
+                break;
+
+            case 'tahun':
+                $query->whereYear('periode_mulai', $tahun);
+                break;
+
+            case 'bulan':
+            default:
+                $query->whereYear('periode_mulai', $tahun)
+                    ->whereMonth('periode_mulai', $bulan);
+                break;
+        }
+
+        $data = $query->get();
+        // dd($data->count(), $data->pluck('rkm.metode_kelas', 'id'));
+        $peluang = $data->map(function ($item) {
+            return [
+                'id'              => $item->id,
+                'periode_mulai'   => $item->periode_mulai,
+                'periode_selesai' => $item->periode_selesai,
+                'nama_materi'     => optional(optional($item->rkm)->materi)->nama_materi,
+                'nama_perusahaan' => optional(optional($item->rkm)->perusahaan)->nama_perusahaan,
+                'hide'            => optional($item->rkm)->hide,
+                'sales'           => optional($item->rkm)->sales_key,
+            ];
+        });
+
+        $materiCount = $data
+            ->map(fn($item) => optional(optional($item->rkm)->materi)->nama_materi)
+            ->filter()
+            ->countBy()
+            ->sortDesc();
+
+        $materiTerbanyak = $materiCount->map(function ($jumlah, $namaMateri) {
+            return [
+                'nama_materi' => $namaMateri,
+                'jumlah'      => $jumlah,
+            ];
+        })->values();
+
+        $rkmPerMinggu = $data
+            ->filter(fn($item) => !empty($item->periode_mulai))
+            ->groupBy(function ($item) {
+                return Carbon::parse($item->periode_mulai)->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
+            })
+            ->map(function ($items, $weekStart) {
+                $start = Carbon::parse($weekStart);
+                $end   = $start->copy()->endOfWeek(Carbon::SUNDAY);
+
+                return [
+                    'week_start' => $start->format('Y-m-d'),
+                    'week_end'   => $end->format('Y-m-d'),
+                    'label'      => $start->translatedFormat('d M') . ' - ' . $end->translatedFormat('d M Y'),
+                    'jumlah'     => $items->count(),
+                ];
+            })
+            ->sortBy('week_start')
+            ->values();
+
+        $mingguTerbanyak = $rkmPerMinggu->sortByDesc('jumlah')->first();
+
+        return response()->json([
+            'peluang'          => $peluang,
+            'materi_terbanyak' => $materiTerbanyak,
+            'top_materi'       => $materiTerbanyak->first(),
+            'rkm_per_minggu'   => $rkmPerMinggu,
+            'top_minggu'       => $mingguTerbanyak,
+        ]);
+    }
+
+    public function rekapRkm(){
+        return view('office.rekapRkm.index');
+    }
+
+    public function selectHide(Request $request)
+    {
+        $tahun      = $request->input('tahun', now()->year);
+        $filterType = $request->input('filter_type', 'bulan'); // bulan | triwulan | tahun
+        $bulan      = $request->input('bulan', now()->month);
+        $triwulan   = $request->input('triwulan', ceil(now()->month / 3));
+        $search     = $request->input('search');
+
+        $query = Peluang::with([
+                'rkm.materi:id,nama_materi',
+                'rkm.perusahaan:id,nama_perusahaan',
+            ])
+            ->whereHas('rkm', function ($q) {
+                $q->where('status', '0');
+            })
+            ->where('tentatif', false)
+            ->where('tahap', 'merah');
+
+        switch ($filterType) {
+            case 'triwulan':
+                $startMonth = ($triwulan - 1) * 3 + 1;
+                $endMonth   = $startMonth + 2;
+                $query->whereYear('periode_mulai', $tahun)
+                    ->whereMonth('periode_mulai', '>=', $startMonth)
+                    ->whereMonth('periode_mulai', '<=', $endMonth);
+                break;
+
+            case 'tahun':
+                $query->whereYear('periode_mulai', $tahun);
+                break;
+
+            case 'bulan':
+            default:
+                $query->whereYear('periode_mulai', $tahun)
+                    ->whereMonth('periode_mulai', $bulan);
+                break;
+        }
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('rkm.materi', function ($q2) use ($search) {
+                    $q2->where('nama_materi', 'like', "%{$search}%");
+                })->orWhereHas('rkm.perusahaan', function ($q2) use ($search) {
+                    $q2->where('nama_perusahaan', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $peluang = $query->orderBy('periode_mulai', 'desc')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('office.rekapRkm.select', compact(
+            'peluang', 'tahun', 'filterType', 'bulan', 'triwulan', 'search'
+        ));
+    }
+
+    public function toggleHide(Request $request)
+    {
+        $request->validate([
+            'peluang_id' => 'required|integer',
+            'hide'       => 'required|boolean',
+        ]);
+
+        $peluang = Peluang::with('rkm')->findOrFail($request->peluang_id);
+
+        if ($peluang->rkm) {
+            $peluang->rkm->update(['hide' => $request->hide]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function bulkToggleHide(Request $request)
+    {
+        $request->validate([
+            'ids'   => 'required|array',
+            'ids.*' => 'integer',
+            'hide'  => 'required|boolean',
+        ]);
+
+        $peluangList = Peluang::with('rkm')->whereIn('id', $request->ids)->get();
+
+        foreach ($peluangList as $item) {
+            if ($item->rkm) {
+                $item->rkm->update(['hide' => $request->hide]);
+            }
+        }
+
+        return response()->json(['success' => true, 'count' => $peluangList->count()]);
     }
 }
