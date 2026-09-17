@@ -298,7 +298,7 @@
     <!-- / Layout wrapper -->
 
     <!-- Core JS -->
-    <script src="{{ asset('assets/vendor/js/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/js/jquery.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.bundle.min.js') }}" defer></script>
 
     <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}" defer></script>
