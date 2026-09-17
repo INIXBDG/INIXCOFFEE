@@ -413,6 +413,15 @@ class OverviewDashboardService
         ];
     }
 
+    public function getCompanyProgress($currentYear)
+    {
+        return \Illuminate\Support\Facades\Cache::remember(
+            "company_progress_overview_{$currentYear}",
+            300,
+            fn() => $this->getCompanyProgressOverview($currentYear)
+        );
+    }
+
     public function getDivisiDrilldownData($divisi, $currentYear)
     {
         $targets = targetKPI::with(['karyawan', 'detailTargetKPI.dataTarget', 'detailTargetKPI.detailPersonKPI.karyawan'])

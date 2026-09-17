@@ -22,9 +22,112 @@ class LaporanHarianSalesController extends Controller
 
     public function index()
     {
-        $laporans = LaporanHarianSales::with('catatanSales', 'catatanClient')->orderBy('created_at', 'desc')->paginate(10);
+        return view('crm.laporanHarian.index');
+    }
 
-        return view('crm.laporanHarian.index', compact('laporans'));
+    public function getDataTables(Request $request)
+    {
+        $query = LaporanHarianSales::select([
+                'id', 
+                'is_draft', 
+                'jenis_meeting', 
+                'waktu_pelaksanaan', 
+                'tanggal_pelaksanaan', 
+                'topic', 
+                'created_at'
+            ])
+            ->with(['catatanClient:id,laporan_id,nama_perusahaan'])
+            ->withExists('catatanSales');
+
+        $recordsTotal = $query->count();
+
+        // Pencarian (Search)
+        $searchValue = $request->input('search.value');
+        if (!empty($searchValue)) {
+            $query->where(function($q) use ($searchValue) {
+                $q->where('topic', 'like', "%{$searchValue}%")
+                  ->orWhere('jenis_meeting', 'like', "%{$searchValue}%")
+                  ->orWhereHas('catatanClient', function($q2) use ($searchValue) {
+                      $q2->where('nama_perusahaan', 'like', "%{$searchValue}%");
+                  });
+            });
+            $recordsFiltered = $query->count();
+        } else {
+            $recordsFiltered = $recordsTotal;
+        }
+
+        // Paginasi & Pengurutan
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        $query->orderBy('created_at', 'desc');
+
+        $data = $query->skip($start)->take($length)->get();
+
+        // Formatting data untuk DataTables
+        $startNumber = $start + 1;
+        $responseData = $data->map(function ($row) use (&$startNumber) {
+            
+            // Format Jenis Meeting
+            $clientList = '';
+            if ($row->catatanClient->isNotEmpty()) {
+                $clientList = '<ul>';
+                foreach ($row->catatanClient as $client) {
+                    $clientList .= "<li>{$client->nama_perusahaan}</li>";
+                }
+                $clientList .= '</ul>';
+            }
+            $jenisHtml = "<div class='ps-3'>{$row->jenis_meeting}{$clientList}</div>";
+
+            // Format Jenis Catatan
+            $catatanHtml = '<div class="d-flex flex-column gap-1">';
+            if ($row->catatanClient->isNotEmpty()) {
+                $catatanHtml .= '<span class="badge bg-info">Catatan Client</span>';
+                if ($row->catatan_sales_exists) {
+                    $catatanHtml .= '<span class="badge bg-secondary">Catatan Sales</span>';
+                }
+            } elseif ($row->catatan_sales_exists) {
+                $catatanHtml .= '<span class="badge bg-secondary">Catatan Sales</span>';
+            } else {
+                $catatanHtml .= '<span>-</span>';
+            }
+            $catatanHtml .= '</div>';
+
+            // Format Aksi
+            $editUrl = route('laporan.harian.edit', $row->id);
+            $deleteUrl = route('laporan.harian.delete', $row->id);
+            
+            $aksiHtml = "<a href='{$editUrl}' class='btn btn-sm btn-warning mb-1 me-1'><i class='bx bx-edit'></i> Edit</a>";
+            $aksiHtml .= '<form method="POST" action="'.$deleteUrl.'" style="display: inline;" class="delete-form">' 
+                         . csrf_field() 
+                         . method_field("DELETE") 
+                         . '<button type="button" class="btn btn-sm btn-danger mb-1 me-1" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-action="'.$deleteUrl.'"><i class="bx bx-trash"></i> Hapus</button></form>';
+
+            if (!$row->is_draft) {
+                if ($row->catatanClient->isNotEmpty()) {
+                    $aksiHtml .= "<a href='".route('laporan.harian.pdf', ['id'=>$row->id,'type'=>'client'])."' class='btn btn-sm btn-success mb-1'><i class='bx bx-file'></i> PDF</a>";
+                } else {
+                    $aksiHtml .= "<a href='".route('laporan.harian.pdf', ['id'=>$row->id,'type'=>'sales'])."' class='btn btn-sm btn-success mb-1'><i class='bx bx-file'></i> PDF</a>";
+                }
+            }
+
+            return [
+                'no' => $startNumber++,
+                'jenis' => $jenisHtml,
+                'waktu_pelaksanaan' => \Carbon\Carbon::parse($row->waktu_pelaksanaan)->format('H:i'),
+                'tanggal_pelaksanaan' => \Carbon\Carbon::parse($row->tanggal_pelaksanaan)->translatedFormat('l, d F Y'),
+                'topic' => $row->topic,
+                'jenis_catatan' => $catatanHtml,
+                'aksi' => $aksiHtml,
+                'is_draft' => $row->is_draft // Dipakai untuk indikator baris kuning
+            ];
+        });
+
+        return response()->json([
+            'draw' => intval($request->input('draw', 1)),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $responseData
+        ]);
     }
 
     /**

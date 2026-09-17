@@ -112,35 +112,35 @@
                 <td class="indent-1">Biaya-Biaya Training</td>
                 <td class="col-currency">Rp</td>
                 <td class="col-value">{{ number_format($biaya_biaya_training, 2, '.', ',') }}</td>
-                <td class="col-percent text-left">{{ number_format($pct_biaya_training, 1, '.', '') }}%</td>
+                <td class="col-percent text-left" style="background-color: #fce4d6;">{{ number_format($pct_biaya_training, 1, '.', '') }}%</td>
                 <td colspan="6">HPP</td>
             </tr>
             <tr>
                 <td class="indent-1">Biaya Tunjangan Komisi Sales</td>
                 <td class="col-currency">Rp</td>
                 <td class="col-value">{{ number_format($tunjangan_sales, 2, '.', ',') }}</td>
-                <td class="col-percent text-left">{{ number_format($pct_tunjangan_sales, 1, '.', '') }}%</td>
+                <td class="col-percent text-left" style="background-color: #fce4d6;">{{ number_format($pct_tunjangan_sales, 1, '.', '') }}%</td>
                 <td colspan="6"></td>
             </tr>
             <tr>
                 <td class="indent-1">Biaya Tunjangan Komisi Instruktur</td>
                 <td class="col-currency">Rp</td>
                 <td class="col-value">{{ number_format($tunjangan_instruktur, 2, '.', ',') }}</td>
-                <td class="col-percent text-left">{{ number_format($pct_tunjangan_instruktur, 1, '.', '') }}%</td>
+                <td class="col-percent text-left" style="background-color: #fce4d6;">{{ number_format($pct_tunjangan_instruktur, 1, '.', '') }}%</td>
                 <td colspan="6"></td>
             </tr>
             <tr>
                 <td class="indent-1">Biaya Bonus Tahunan u/Sales</td>
                 <td class="col-currency">Rp</td>
                 <td class="col-value">{{ number_format($bonus_tahunan_sales, 2, '.', ',') }}</td>
-                <td class="col-percent text-left">{{ number_format($pct_bonus_sales, 1, '.', '') }}%</td>
+                <td class="col-percent text-left" style="background-color: #fce4d6;">{{ number_format($pct_bonus_sales, 1, '.', '') }}%</td>
                 <td colspan="6"></td>
             </tr>
             <tr>
                 <td class="indent-1">Biaya FEE Proyek</td>
                 <td class="col-currency border-bottom">Rp</td>
                 <td class="col-value border-bottom">{{ number_format($fee_proyek, 2, '.', ',') }}</td>
-                <td class="col-percent text-left border-bottom">{{ number_format($pct_fee_proyek, 1, '.', '') }}%</td>
+                <td class="col-percent text-left border-bottom" style="background-color: #fce4d6;">{{ number_format($pct_fee_proyek, 1, '.', '') }}%</td>
                 <td colspan="6"></td>
             </tr>
             <tr>
@@ -148,7 +148,7 @@
                 <td colspan="3"></td>
                 <td class="col-currency">Rp</td>
                 <td class="col-value border-bottom">{{ number_format($total_beban_biaya_penjualan, 2, '.', ',') }}</td>
-                <td class="col-percent">{{ number_format($pct_total_beban_penjualan, 1, '.', '') }}%</td>
+                <td class="col-percent" style="background-color: #fce4d6;">{{ number_format($pct_total_beban_penjualan, 1, '.', '') }}%</td>
                 <td colspan="3"></td>
             </tr>
 
@@ -159,28 +159,28 @@
                 <td class="indent-1">Biaya Inventaris</td>
                 <td class="col-currency">Rp</td>
                 <td class="col-value">{{ number_format($biaya_inventaris, 2, '.', ',') }}</td>
-                <td class="col-percent text-left">{{ number_format($pct_biaya_inventaris, 1, '.', '') }}%</td>
+                <td class="col-percent text-left" style="background-color: #fce4d6;">{{ number_format($pct_biaya_inventaris, 1, '.', '') }}%</td>
                 <td colspan="6"></td>
             </tr>
             <tr>
                 <td class="indent-1">Biaya Gaji & Tunjangan Karyawan</td>
                 <td class="col-currency">Rp</td>
                 <td class="col-value">{{ number_format($biaya_tunjangan_karyawan, 2, '.', ',') }}</td>
-                <td class="col-percent text-left">{{ number_format($pct_tunjangan_karyawan, 1, '.', '') }}%</td>
+                <td class="col-percent text-left" style="background-color: #fce4d6;">{{ number_format($pct_tunjangan_karyawan, 1, '.', '') }}%</td>
                 <td colspan="6"></td>
             </tr>
             <tr>
                 <td class="indent-1">Biaya Tugas Luar Kota (SPJ)</td>
                 <td class="col-currency">Rp</td>
                 <td class="col-value">{{ number_format($biaya_spj, 2, '.', ',') }}</td>
-                <td class="col-percent text-left">{{ number_format($pct_spj, 1, '.', '') }}%</td>
+                <td class="col-percent text-left" style="background-color: #fce4d6;">{{ number_format($pct_spj, 1, '.', '') }}%</td>
                 <td colspan="6"></td>
             </tr>
             <tr>
                 <td class="indent-1">Biaya Operasional</td>
                 <td class="col-currency border-bottom">Rp</td>
                 <td class="col-value border-bottom">{{ number_format($biaya_operasional, 2, '.', ',') }}</td>
-                <td class="col-percent text-left border-bottom">{{ number_format($pct_operasional, 1, '.', '') }}%</td>
+                <td class="col-percent text-left border-bottom" style="background-color: #fce4d6;">{{ number_format($pct_operasional, 1, '.', '') }}%</td>
                 <td colspan="6"></td>
             </tr>
             <tr>
@@ -188,7 +188,7 @@
                 <td colspan="3"></td>
                 <td class="col-currency">Rp</td>
                 <td class="col-value border-bottom">{{ number_format($total_biaya_operasional, 2, '.', ',') }}</td>
-                <td class="col-percent">{{ number_format($pct_total_biaya_operasional, 1, '.', '') }}%</td>
+                <td class="col-percent text-left" style="background-color: #fce4d6;">{{ number_format($pct_total_biaya_operasional, 1, '.', '') }}%</td>
                 <td colspan="3"></td>
             </tr>
 
@@ -196,7 +196,7 @@
                 <td>Total Beban Biaya</td>
                 <td class="col-currency"></td>
                 <td class="col-value text-left">HPP</td>
-                <td class="col-percent text-left">{{ number_format($pct_total_beban_biaya, 1, '.', '') }}%</td>
+                <td class="col-percent text-left" style="background-color: #fce4d6;">{{ number_format($pct_total_beban_biaya, 1, '.', '') }}%</td>
                 <td colspan="3"></td>
                 <td class="col-currency border-bottom">Rp</td>
                 <td class="col-value border-bottom">{{ number_format($total_beban_biaya, 2, '.', ',') }}</td>

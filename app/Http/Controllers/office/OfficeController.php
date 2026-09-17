@@ -17,6 +17,7 @@ use App\Models\karyawan;
 use App\Models\LogGaji;
 use App\Models\Nilaifeedback;
 use App\Models\outstanding;
+use App\Models\Peluang;
 use App\Models\pengajuancuti;
 use App\Models\Perusahaan;
 use App\Models\RKM;
@@ -27,6 +28,7 @@ use App\Models\TunjanganKaryawan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
@@ -41,23 +43,25 @@ class OfficeController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('permission:Fitur Menu Office', ['only' => ['dashboard']]);
+        
+        $this->middleware('permission:View RekapRKM Office', ['only' => ['rekapRkm', 'rekapRkmJson']]);
+        $this->middleware('permission:Update RekapRKM Office', ['only' => ['selectHide', 'toggleHide', 'bulkToggleHide']]);
     }
 
     public function dashboard(Request $request)
     {
-        // 1. Total Karyawan & Divisi Stats
-        $total_karyawan = karyawan::where('status_aktif', '1')
-            ->where('divisi', '!=', 'Direksi')
-            ->where('jabatan', '!=', 'GM')
-            ->where('id', '!=', ['36', '38', '45', '46', '47', '48', '49', '52', '53', '54'])
-            ->count();
+        // 1. Total Karyawan & Divisi Stats (cached 30 menit)
+        $karyawan = Cache::remember('office_karyawan_aktif', now()->addMinutes(30), function () {
+            return karyawan::where('status_aktif', '1')
+                ->select(['id', 'nama_lengkap', 'nip', 'jabatan', 'email', 'divisi', 'kode_karyawan'])
+                ->whereRaw("UPPER(kode_karyawan) NOT LIKE '%OL%'")
+                ->where('divisi', '!=', 'Direksi')
+                ->where('jabatan', '!=', 'GM')
+                ->whereNotIn('id', [36, 38, 45, 46, 47, 48, 49, 52, 53, 54])
+                ->get();
+        });
 
-        $karyawan = karyawan::where('status_aktif', '1')
-            ->whereRaw("UPPER(kode_karyawan) NOT LIKE '%OL%'")
-            ->where('divisi', '!=', 'Direksi')
-            ->where('jabatan', '!=', 'GM')
-            ->where('id', '!=', ['36', '38', '45', '46', '47', '48', '49', '52', '53', '54'])
-            ->get();
+        $total_karyawan = $karyawan->count();
 
         $statsFromDB = $karyawan->groupBy('divisi')->map(function ($items) {
             return [
@@ -84,15 +88,19 @@ class OfficeController extends Controller
             ];
         }
 
-        // 2. Grafik Kehadiran + Karyawan Tidak Hadir
+        // 2. Grafik Kehadiran + Karyawan Tidak Hadir (cached 10 menit per hari)
         $today = Carbon::today();
         $sevenDaysAgo = Carbon::today()->subDays(7);
+        $todayStr = $today->format('Y-m-d');
+        $karyawanIds = $karyawan->pluck('id')->toArray();
 
-        // Ambil data absensi 7 hari terakhir
-        $absensi7Hari = AbsensiKaryawan::whereBetween('tanggal', [$sevenDaysAgo, $today])
-            ->whereIn('id_karyawan', $karyawan->pluck('id'))
-            ->get()
-            ->groupBy('tanggal');
+        $absensiCacheKey = 'office_absensi_7hari_' . $todayStr;
+        $absensi7Hari = Cache::remember($absensiCacheKey, now()->addMinutes(10), function () use ($sevenDaysAgo, $today, $karyawanIds) {
+            return AbsensiKaryawan::whereBetween('tanggal', [$sevenDaysAgo, $today])
+                ->whereIn('id_karyawan', $karyawanIds)
+                ->get()
+                ->groupBy('tanggal');
+        });
 
         // Hitung hadir per hari
         $kehadiranData = [];
@@ -129,216 +137,72 @@ class OfficeController extends Controller
             'data' => $kehadiranData,
         ];
 
-        // 3. Laporan Ticketing
-        $ticket = Tickets::where('status', '!=', 'Selesai')
-            ->latest()
-            ->take(7)
-            ->get();
+        // 3. Laporan Ticketing (cached 5 menit)
+        $ticket = Cache::remember('office_ticket_count', now()->addMinutes(5), function () {
+            return Tickets::where('status', '!=', 'Selesai')->count();
+        });
 
 
-        // detail rkm
+        // detail rkm summary (cached 10 menit per minggu)
         $now = Carbon::now();
-        $startOfThisWeek = $now->copy()->startOfWeek();
-        $endOfThisWeek = $now->copy()->endOfWeek();
         $startOfLastWeek = $now->copy()->subWeek()->startOfWeek();
-        $endOfLastWeek = $now->copy()->subWeek()->endOfWeek();
+        $endOfThisWeek   = $now->copy()->endOfWeek();
+        $weekKey = $startOfLastWeek->format('Y-W');
 
-        $startDate = $startOfLastWeek;
-        $endDate = $endOfThisWeek;
+        $rkmSummary = Cache::remember("office_dashboard_rkms_summary_{$weekKey}", now()->addMinutes(10), function () use ($startOfLastWeek, $endOfThisWeek) {
+            $rawRkms = RKM::select([
+                'id', 'materi_key', 'ruang', 'metode_kelas', 'event',
+                'tanggal_awal', 'tanggal_akhir', 'harga_jual', 'pax', 'exam',
+                'instruktur_key', 'instruktur_key2', 'asisten_key',
+                'makanan', 'perusahaan_key', 'sales_key', 'status',
+            ])
+                ->whereBetween('tanggal_awal', [$startOfLastWeek, $endOfThisWeek])
+                ->whereDoesntHave('peluang', function ($query) {
+                    $query->where('tentatif', 1);
+                })
+                ->where('status', '0')
+                ->orderBy('tanggal_awal', 'asc')
+                ->get();
 
-        $rkms = RKM::with([
-            'materi',
-            'peluang',
-            'rekomendasilanjutan',
-            'perusahaan',
-            'instruktur',
-            'sales'
-        ])
-            ->whereBetween('tanggal_awal', [$startDate, $endDate])
-            ->whereDoesntHave('peluang', function ($query) {
-                $query->where('tentatif', 1);
-            })
-            ->where('status', '0')
-            ->orderBy('tanggal_awal', 'asc')
-            ->get()
-            ->groupBy(function ($item) {
-                return $item->materi_key . '|' .
-                    $item->ruang . '|' .
-                    $item->metode_kelas . '|' .
-                    $item->event . '|' .
-                    $item->tanggal_awal;
-            })
-            ->map(function ($items) {
-                $first = $items->first();
+            $grouped = $rawRkms->groupBy(function ($item) {
+                return $item->materi_key . '|' . $item->ruang . '|' .
+                    $item->metode_kelas . '|' . $item->event . '|' . $item->tanggal_awal;
+            });
 
-                return (object) [
-                    'id' => $items->pluck('id')->implode(', '),
-                    'id_all' => $items->sortBy('id')->pluck('id')->implode(', '),
-                    'materi_key' => $first->materi_key,
-                    'ruang' => $first->ruang,
-                    'metode_kelas' => $first->metode_kelas,
-                    'event' => $first->event,
-                    'harga_jual' => $first->harga_jual,
-                    'pax' => $first->pax,
-                    'exam' => $first->exam,
-                    'instruktur_key' => $first->instruktur_key,
-                    'instruktur_key2' => $first->instruktur_key2,
-                    'asisten_key' => $first->asisten_key,
-                    'makanan' => $items->pluck('makanan')->implode(', '),
-                    'perusahaan_all' => $items->pluck('perusahaan_key')->implode(', '),
-                    'sales_all' => $items->pluck('sales_key')->implode(', '),
-                    'status' => $items->contains('status', 0) ? 0 : $items->min('status'),
-                    'total_pax' => $items->sum('pax'),
-                    'tanggal_awal' => $first->tanggal_awal,
-                    'tanggal_akhir' => $items->max('tanggal_akhir'),
-                    'materi' => $first->materi,
-                    'peluang' => $first->peluang,
-                    'rekomendasilanjutan' => $first->rekomendasilanjutan,
-                    'perusahaan' => $items->pluck('perusahaan')
-                        ->filter()
-                        ->unique('id')
-                        ->values(),
-                ];
-            })
-            ->values();
+            $totalPax = 0;
+            $instrukturSet = [];
 
-        foreach ($rkms as $detail_rkm) {
-            $rkmIds = collect(explode(',', $detail_rkm->id_all))
-                ->map(fn($id) => trim($id))
-                ->filter()
-                ->values()
-                ->toArray();
-
-            $checklists = ChecklistKeperluan::whereIn('id_rkm', $rkmIds)
-                ->with('subChecklistKeperluans')
-                ->whereNotNull('tanggal_keperluan')
-                ->orderBy('tanggal_keperluan', 'asc')
-                ->get()
-                ->groupBy('tanggal_keperluan')
-                ->map(function ($items) {
-                    return $items->first();
-                });
-
-            $detail_rkm->checklists = $checklists;
-
-            foreach ($checklists as $checklist => $item) {
-                $progress = 0;
-
-                if ($detail_rkm->metode_kelas === 'Offline') {
-                    $materiChecked =
-                        ($item->subChecklistKeperluans?->materi_module ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
-
-                    $progress += ($materiChecked / 2) * 20;
-
-                    if ($item->kelas) {
-                        $progress += 20;
+            foreach ($rawRkms as $item) {
+                $totalPax += (int)$item->pax;
+                foreach ([$item->instruktur_key, $item->instruktur_key2, $item->asisten_key] as $inst) {
+                    if ($inst && $inst !== '-') {
+                        $instrukturSet[$inst] = true;
                     }
-
-                    $cbChecked =
-                        ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->cb_peserta ? 1 : 0);
-
-                    $progress += ($cbChecked / 2) * 20;
-
-                    $maksiChecked =
-                        ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->maksi_peserta ? 1 : 0);
-
-                    $progress += ($maksiChecked / 2) * 20;
-
-                    $kelasChecked =
-                        ($item->subChecklistKeperluans?->kelas_ac ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->kelas_jam ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->kelas_buku ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->kelas_pulpen ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->kelas_permen ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->kelas_camilan ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->kelas_minuman ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->kelas_lampu ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->kelas_kondisi_kebersihan ? 1 : 0);
-
-                    $progress += ($kelasChecked / 9) * 20;
-
-                    $item->progress = round($progress);
-                } else {
-                    $totalKategori = 3;
-                    $kategoriSelesai = 0;
-
-                    $totalMateri = 2;
-                    $materiChecked =
-                        ($item->subChecklistKeperluans?->materi_module ? 1 : 0) +
-                        ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
-
-                    $kategoriSelesai += $materiChecked / $totalMateri;
-                    $kategoriSelesai += ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0);
-                    $kategoriSelesai += ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0);
-
-                    $item->progress = round(($kategoriSelesai / $totalKategori) * 100);
                 }
             }
-        }
 
-        // Jumlah Peserta
-        $jumlahPeserta = $rkms
-            ->where('status', '0')
-            ->sum('pax');
+            return [
+                'count' => $grouped->count(),
+                'jumlahPeserta' => $totalPax,
+                'jumlahInstruktur' => count($instrukturSet),
+            ];
+        });
 
-        // Jumlah Instruktur
-        $jumlahInstruktur = $rkms
-            ->where('status', '0')
-            ->sum(
-                fn($rkms) =>
-                collect([
-                    $rkms->instruktur_key,
-                    $rkms->instruktur_key2,
-                    $rkms->asisten_key,
-                ])
-                    ->filter(fn($v) => $v !== '-' && !is_null($v))
-                    ->count()
-            );
+        $rkms = array_fill(0, $rkmSummary['count'], null);
+        $jumlahPeserta = $rkmSummary['jumlahPeserta'];
+        $jumlahInstruktur = $rkmSummary['jumlahInstruktur'];
 
-        $endOfNextWeek = $now->copy()->addWeek()->endOfWeek();
-
-        // Tagihan Perusaaan
-        $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')
-            ->orderByDesc('created_at')
-            ->get();
-            // dd($trackingTagihanPerusahaans);
-
-        $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')
-            ->get();
-
-
-        // get data exam
-        $exams = eksam::with([
-            'materi',
-            'perusahaan',
-            'rkm.materi',
-            'rkm.perusahaan',
-            'approvalexam',
-            'checklistEksam'
-        ])
-        ->whereHas('approvalexam', function ($q) {
-            $q->where('office_manager', '1');
-        })
-        ->orderBy('created_at', 'desc')->get();
 
         return view('office.dashboard', compact(
             'total_karyawan',
             'divisiStats',
             'kehadiranChart',
             'tidakHadirList',
-            'ticket',
             'jumlahPeserta',
             'jumlahInstruktur',
-            'rkms',
-            'trackingTagihanPerusahaans',
-            'administrasis',
-            'exams'
+            'rkms', 'ticket',
         ));
     }
-
     public function TableOutstanding(Request $request)
     {
         $query = outstanding::with('rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice')
@@ -476,7 +340,30 @@ class OfficeController extends Controller
     {
         $year = $request->year ?? Carbon::now()->year;
 
-        $data = outstanding::whereYear('created_at', $year)->get();
+        // Cache data outstanding per tahun selama 5 menit
+        $data = Cache::remember("grafik_outstanding_v2_{$year}", now()->addMinutes(5), function () use ($year) {
+            return outstanding::select([
+                'id',
+                'id_rkm',
+                'sales_key',
+                'status_pembayaran',
+                'tanggal_bayar',
+                'due_date',
+                'created_at',
+            ])
+                ->with([
+                    'rkm' => function ($query) {
+                        $query->select(['id', 'perusahaan_key', 'materi_key', 'tanggal_akhir'])
+                            ->with([
+                                'perusahaan:id,nama_perusahaan',
+                                'materi:id,nama_materi',
+                                'invoice:id,id_rkm,amount',
+                            ]);
+                    },
+                ])
+                ->whereYear('created_at', $year)
+                ->get();
+        });
 
         $belum_bayar = 0;
         $tepat_waktu = 0;
@@ -523,7 +410,30 @@ class OfficeController extends Controller
         $startOfYear = Carbon::create($year, 1, 1)->startOfDay();
         $endDate = Carbon::create($year, Carbon::now()->month, Carbon::now()->daysInMonth)->endOfDay();
 
-        $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$startOfYear, $endDate])->get();
+        // Cache data ketepatan waktu per tahun selama 5 menit
+        $data = Cache::remember("grafik_ketepatan_waktu_v2_{$year}", now()->addMinutes(5), function () use ($startOfYear, $endDate) {
+            return ApprovalPendapatan::select([
+                'id',
+                'id_rkm',
+                'jumlah_pembayaran',
+                'PPN',
+                'PPH',
+                'tanggal_mulai',
+                'tanggal_pembayaran',
+            ])
+                ->with([
+                    'rkm' => function ($query) {
+                        $query->select(['id', 'perusahaan_key', 'materi_key', 'tanggal_akhir'])
+                            ->with([
+                                'perusahaan:id,nama_perusahaan',
+                                'materi:id,nama_materi',
+                                'invoice:id,id_rkm,amount',
+                            ]);
+                    },
+                ])
+                ->whereBetween('tanggal_mulai', [$startOfYear, $endDate])
+                ->get();
+        });
 
         $total = $data->count();
 
@@ -582,8 +492,14 @@ class OfficeController extends Controller
     public function getNilaiInstruktur(Request $request)
     {
         $filter = $request->filter;
-        $value = $request->value;
-        $tahun = $request->tahun ?? now()->year;
+        $value  = $request->value;
+        $tahun  = $request->tahun ?? now()->year;
+
+        // Cache 15 menit per filter
+        $cacheKey = "office_nilai_instruktur_{$filter}_{$value}_{$tahun}";
+        if (Cache::has($cacheKey)) {
+            return response()->json(Cache::get($cacheKey));
+        }
 
         $query = Nilaifeedback::with('rkm.instruktur', 'rkm.instruktur2', 'rkm.asisten');
 
@@ -647,8 +563,11 @@ class OfficeController extends Controller
             ];
         }
 
+        Cache::put($cacheKey, $result, now()->addMinutes(15));
+
         return response()->json($result);
     }
+
 
     public function exportPdf(Request $request)
     {
@@ -852,25 +771,39 @@ class OfficeController extends Controller
             $rentangWaktu = "Triwulan $value Tahun $tahun";
         }
 
-        $dataCuti = $query->select(
-            'karyawans.id',
-            'karyawans.nama_lengkap',
-            DB::raw('COUNT(*) as total_cuti')
-        )
-            ->groupBy('karyawans.id', 'karyawans.nama_lengkap')
-            ->orderByDesc('total_cuti')
-            ->get();
-
         if ($request->boolean('export')) {
+            $dataCuti = $query->select(
+                'karyawans.id',
+                'karyawans.nama_lengkap',
+                DB::raw('COUNT(*) as total_cuti')
+            )
+                ->groupBy('karyawans.id', 'karyawans.nama_lengkap')
+                ->orderByDesc('total_cuti')
+                ->get();
+
             $pdf = Pdf::loadView('office.daftarCutiPdf', compact('dataCuti', 'rentangWaktu'));
             return $pdf->download('Laporan_Cuti.pdf');
         }
 
-        return response()->json([
-            'labelCuti' => $dataCuti->pluck('nama_lengkap'),
-            'totalCuti' => $dataCuti->pluck('total_cuti'),
-            'rentangWaktu' => $rentangWaktu ?: 'Semua Data'
-        ]);
+        $cacheKey = "office_data_cuti_{$filter}_{$value}_{$tahun}";
+        $cached = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query, $rentangWaktu) {
+            $dataCuti = $query->select(
+                'karyawans.id',
+                'karyawans.nama_lengkap',
+                DB::raw('COUNT(*) as total_cuti')
+            )
+                ->groupBy('karyawans.id', 'karyawans.nama_lengkap')
+                ->orderByDesc('total_cuti')
+                ->get();
+
+            return [
+                'labelCuti'    => $dataCuti->pluck('nama_lengkap'),
+                'totalCuti'    => $dataCuti->pluck('total_cuti'),
+                'rentangWaktu' => $rentangWaktu ?: 'Semua Data',
+            ];
+        });
+
+        return response()->json($cached);
     }
 
     public function dataMengajar(Request $request)
@@ -878,8 +811,16 @@ class OfficeController extends Controller
         Carbon::setLocale('id');
 
         $filter = $request->filter;
-        $value = $request->value;
-        $tahun = is_numeric($request->tahun) ? (int) $request->tahun : now()->year;
+        $value  = $request->value;
+        $tahun  = is_numeric($request->tahun) ? (int) $request->tahun : now()->year;
+
+        // Skip cache jika export PDF
+        if (!$request->boolean('exportTotalMengajar')) {
+            $cacheKey = "office_data_mengajar_{$filter}_{$value}_{$tahun}";
+            if (Cache::has($cacheKey)) {
+                return response()->json(Cache::get($cacheKey));
+            }
+        }
 
         $baseQuery = DB::table('r_k_m_s')
             ->select('instruktur_key as kode_karyawan', 'tanggal_awal', 'materi_key', 'perusahaan_key', 'id as rkm_id', 'metode_kelas')
@@ -927,6 +868,9 @@ class OfficeController extends Controller
         $groupedByKaryawan = $results->groupBy('kode_karyawan');
         $finalData = [];
         $totalKelas = $results->count();
+        $feedbackByRkm = Nilaifeedback::whereIn('id_rkm', $results->pluck('rkm_id')->filter()->unique())
+            ->get()
+            ->groupBy('id_rkm');
 
         foreach ($groupedByKaryawan as $kode => $sessions) {
             $namaKaryawan = $sessions->first()->nama_lengkap;
@@ -961,7 +905,8 @@ class OfficeController extends Controller
                 $feedbackAvg = 0;
 
                 if (!empty($rkmIds)) {
-                    $feedbacks = Nilaifeedback::whereIn('id_rkm', $rkmIds)->get();
+                    $feedbacks = collect($rkmIds)
+                        ->flatMap(fn($rkmId) => $feedbackByRkm->get($rkmId, collect()));
 
                     if (!$feedbacks->isEmpty()) {
                         $allScores = [];
@@ -1042,18 +987,29 @@ class OfficeController extends Controller
             return $pdf->download('Laporan_Total_Mengajar.pdf');
         }
 
-        return response()->json([
+        $responseData = [
             'dataMengajar' => $finalData,
             'rentangWaktu' => $rentangWaktu,
-            'totalKelas' => $totalKelas
-        ]);
+            'totalKelas'   => $totalKelas,
+        ];
+
+        // Simpan ke cache selama 15 menit
+        $cacheKey = "office_data_mengajar_{$filter}_{$value}_{$tahun}";
+        Cache::put($cacheKey, $responseData, now()->addMinutes(15));
+
+        return response()->json($responseData);
     }
 
     // Function hari Libur
 
     public function dataHariLibur($year)
     {
-        $response = HariLibur::where('year', $year)->get();
+        // Cached 60 menit per tahun (data hari libur jarang berubah)
+        $response = Cache::remember("office_hari_libur_{$year}", now()->addMinutes(60), function () use ($year) {
+            return HariLibur::where('year', $year)
+                ->select('id', 'nama', 'tanggal', 'tipe')
+                ->get();
+        });
 
         return response()->json($response);
     }
@@ -1065,12 +1021,14 @@ class OfficeController extends Controller
             'tanggal' => 'required|date',
         ]);
 
+        $year = Carbon::parse($request->tanggal)->year;
         HariLibur::create([
             'nama' => $request->nama,
             'tanggal' => $request->tanggal,
-            'year' => Carbon::parse($request->tanggal)->year,
+            'year' => $year,
             'tipe' => 'perusahaan',
         ]);
+        Cache::forget("office_hari_libur_{$year}"); // Invalidate cache
 
         return redirect()->back()->with('success_libur', 'Hari libur berhasil ditambahkan.');
     }
@@ -1078,7 +1036,9 @@ class OfficeController extends Controller
     public function deleteHariLibur($id)
     {
         $hariLibur = HariLibur::findOrFail($id);
+        $year = $hariLibur->year;
         $hariLibur->delete();
+        Cache::forget("office_hari_libur_{$year}"); // Invalidate cache
 
         return redirect()->back()->with('success_libur', 'Hari libur berhasil dihapus.');
     }
@@ -1098,11 +1058,15 @@ class OfficeController extends Controller
         ]);
 
         $hariLibur = HariLibur::findOrFail($id);
+        $oldYear = $hariLibur->year;
+        $newYear = Carbon::parse($request->tanggal)->year;
         $hariLibur->update([
             'nama' => $request->nama ?? $hariLibur->nama,
             'tanggal' => $request->tanggal ?? $hariLibur->tanggal,
-            'year' => Carbon::parse($request->tanggal)->year ?? $hariLibur->year,
+            'year' => $newYear,
         ]);
+        Cache::forget("office_hari_libur_{$oldYear}"); // Invalidate old year cache
+        if ($oldYear !== $newYear) Cache::forget("office_hari_libur_{$newYear}"); // Invalidate new year if changed
 
         return redirect()->back()->with('success_libur', 'Hari libur berhasil diperbarui.');
     }
@@ -1479,5 +1443,149 @@ class OfficeController extends Controller
             'data' => $materiData,
             'nama_instruktur' => $instruktur
         ]);
+    }
+
+    public function apiDashboardTagihan()
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) { session_write_close(); }
+        return \Illuminate\Support\Facades\Cache::remember('office_dashboard_tagihan_json', 60 * 5, function () {
+            return \App\Models\trackingTagihanPerusahaan::with('tagihanPerusahaan')
+                ->orderByDesc('created_at')
+                ->limit(15)
+                ->get();
+        });
+    }
+
+    public function apiDashboardAdministrasi()
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) { session_write_close(); }
+        return \Illuminate\Support\Facades\Cache::remember('office_dashboard_administrasi_json', 60 * 5, function () {
+            return \App\Models\AdministrasiKaryawan::orderBy('dateline', 'desc')
+                ->limit(15)
+                ->get();
+        });
+    }
+
+    public function apiDashboardRKM()
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) { session_write_close(); }
+        return \Illuminate\Support\Facades\Cache::remember('office_dashboard_rkm_json', 60 * 5, function () {
+            $now = \Carbon\Carbon::now();
+            $startOfLastWeek = $now->copy()->subWeek()->startOfWeek();
+            $endOfNextWeek   = $now->copy()->addWeek()->endOfWeek();
+
+            $rkms = \App\Models\RKM::with([
+                'materi',
+                'perusahaan',
+                'instruktur',
+                'sales',
+            ])
+            ->whereBetween('tanggal_awal', [$startOfLastWeek, $endOfNextWeek])
+            ->where('status', '0')
+            ->orderBy('tanggal_awal', 'asc')
+            ->limit(15)
+            ->get();
+
+            $allRkmIds = $rkms->pluck('id')->toArray();
+
+            $allChecklists = \App\Models\ChecklistKeperluan::whereIn('id_rkm', $allRkmIds)
+                ->with('subChecklistKeperluans')
+                ->whereNotNull('tanggal_keperluan')
+                ->orderBy('tanggal_keperluan', 'asc')
+                ->get()
+                ->groupBy('id_rkm');
+
+            foreach ($rkms as $detail_rkm) {
+                $checklists = ($allChecklists[$detail_rkm->id] ?? collect())
+                    ->groupBy('tanggal_keperluan')
+                    ->map(fn($items) => $items->first());
+
+                $detail_rkm->checklists_data = $checklists;
+
+                foreach ($checklists as $item) {
+                    $progress = 0;
+                    if ($detail_rkm->metode_kelas === 'Offline') {
+                        $materiChecked = ($item->subChecklistKeperluans?->materi_module ? 1 : 0)
+                                       + ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
+                        $progress += ($materiChecked / 2) * 20;
+                        if ($item->kelas) $progress += 20;
+                        if ($item->keperluan_instruktur) $progress += 20;
+                        $kelasChecked = ($item->subChecklistKeperluans?->kelas_meja_kursi ? 1 : 0)
+                            + ($item->subChecklistKeperluans?->kelas_atk ? 1 : 0)
+                            + ($item->subChecklistKeperluans?->kelas_lcd ? 1 : 0)
+                            + ($item->subChecklistKeperluans?->kelas_pc_laptop ? 1 : 0)
+                            + ($item->subChecklistKeperluans?->kelas_sovenier ? 1 : 0)
+                            + ($item->subChecklistKeperluans?->kelas_spanduk ? 1 : 0)
+                            + ($item->subChecklistKeperluans?->kelas_minuman ? 1 : 0)
+                            + ($item->subChecklistKeperluans?->kelas_lampu ? 1 : 0)
+                            + ($item->subChecklistKeperluans?->kelas_kondisi_kebersihan ? 1 : 0);
+                        $progress += ($kelasChecked / 9) * 20;
+                    } else {
+                        $kategoriSelesai  = 0;
+                        $materiChecked    = ($item->subChecklistKeperluans?->materi_module ? 1 : 0)
+                                           + ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
+                        $kategoriSelesai += $materiChecked / 2;
+                        $kategoriSelesai += ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0);
+                        $kategoriSelesai += ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0);
+                        $progress = ($kategoriSelesai / 3) * 100;
+                    }
+                    $detail_rkm->progress = round($progress);
+                }
+            }
+
+            return $rkms;
+        });
+    }
+
+    public function apiDashboardTicket()
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) { session_write_close(); }
+        return \Illuminate\Support\Facades\Cache::remember('office_dashboard_ticket_json', 60 * 5, function () {
+            return \App\Models\Tickets::orderBy('created_at', 'desc')
+                ->limit(15)
+                ->get();
+        });
+    }
+
+    public function apiDashboardAllData()
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) { session_write_close(); }
+        return \Illuminate\Support\Facades\Cache::remember('office_dashboard_all_data_v3', 60 * 5, function () {
+            $tagihan = \App\Models\trackingTagihanPerusahaan::with('tagihanPerusahaan')
+                ->orderByDesc('created_at')
+                ->limit(15)
+                ->get();
+
+            $administrasi = \App\Models\AdministrasiKaryawan::orderBy('dateline', 'desc')
+                ->limit(15)
+                ->get();
+
+            $now = \Carbon\Carbon::now();
+            $startOfLastWeek = $now->copy()->subWeek()->startOfWeek();
+            $endOfNextWeek   = $now->copy()->addWeek()->endOfWeek();
+
+            $rkms = \App\Models\RKM::with([
+                'materi',
+                'perusahaan',
+                'instruktur',
+                'sales',
+            ])
+            ->whereBetween('tanggal_awal', [$startOfLastWeek, $endOfNextWeek])
+            ->where('status', '0')
+            ->orderBy('tanggal_awal', 'asc')
+            ->limit(15)
+            ->get();
+
+            $ticket = \App\Models\Tickets::orderBy('created_at', 'desc')
+                ->limit(15)
+                ->get();
+
+            return [
+                'tagihan'      => $tagihan,
+                'administrasi' => $administrasi,
+                'rkm'          => $rkms,
+                'ticket'       => $ticket,
+            ];
+        });
     }
 }

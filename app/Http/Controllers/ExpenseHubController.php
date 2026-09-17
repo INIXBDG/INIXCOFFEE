@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Illuminate\Support\Facades\Cache;
 
 class ExpenseHubController extends Controller
 {
@@ -326,14 +327,18 @@ class ExpenseHubController extends Controller
             NotificationFacade::send($user, new ExpanseHubNotification($data, $path, $type, $receiverId));
         }
 
+        Cache::forget('expensehub_all');
+
         return redirect()->route('expensehub.index')->with('success', 'berhasil mengajukan!');
     }
 
     public function get()
     {
-        $dataExpenseHub = expenseHub::with(['karyawan', 'detailExpenseHub', 'trackingExpenseHub' => function ($q) {
-            $q->latest();
-        }])->get();
+        $dataExpenseHub = Cache::remember('expensehub_all', now()->addMinutes(30), function () {
+            return expenseHub::with(['karyawan', 'detailExpenseHub', 'trackingExpenseHub' => function ($q) {
+                $q->latest();
+            }])->get();
+        });
 
         $data = $dataExpenseHub->map(function ($item) {
             $latestTracking = $item->trackingExpenseHub->first();
@@ -372,6 +377,8 @@ class ExpenseHubController extends Controller
         trackingExpenseHub::where('id_expenseHub', $dataExpenseHub->id)->delete();
 
         $dataExpenseHub->delete();
+
+        Cache::forget('expensehub_all');
 
         return redirect()->back()->with('success', 'Berhasil menghapus data!');
     }
@@ -482,6 +489,8 @@ class ExpenseHubController extends Controller
             'tracking' => $status,
             'tanggal' => now()
         ]);
+
+        Cache::forget('expensehub_all');
 
         return redirect()->route('expensehub.show', $id)->with('success', 'Data Berhasil diperbarui.');
     }

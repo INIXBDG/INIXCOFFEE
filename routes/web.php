@@ -546,6 +546,11 @@ Route::prefix('kpi-data/')
                 route::post('/update-target-per-sales', [TargetKPIController::class, 'updateTargetPerSales'])->name('updateTargetPerSales');
             });
 
+        Route::get('/deadline-detail', [KPIDatabaseKPIController::class, 'getDeadlineDetail'])->name('deadlineDetail');
+        Route::get('/activity-detail', [KPIDatabaseKPIController::class, 'getActivityDetail'])->name('activityDetail');
+        Route::get('/achievement-detail', [KPIDatabaseKPIController::class, 'getAchievementDetail'])->name('achievementDetail');
+        Route::get('/news-detail', [KPIDatabaseKPIController::class, 'getNewsDetail'])->name('newsDetail');
+
         Route::get('/monitoring/export/pdf',   [TargetKPIController::class, 'exportMonitoringPdf'])
             ->name('monitoring.export.pdf');
 
@@ -881,6 +886,7 @@ Route::prefix('crm')->group(function () {
     Route::delete('laporan-harian/delete/{id}', [LaporanHarianSalesController::class, 'delete'])->name('laporan.harian.delete');
     Route::get('laporan-harian/export/{id}/{type}', [LaporanHarianSalesController::class, 'exportPdf'])->name('laporan.harian.pdf');
     Route::post('laporan-harian/autosave', [LaporanHarianSalesController::class, 'autoSave'])->name('laporan.harian.autosave');
+    Route::get('/laporan-harian-data', [LaporanHarianSalesController::class, 'getDataTables'])->name('laporan.harian.data');
 
     // Todo admin sales
     Route::get('todo-administrasi', [TodoAdministrasiController::class, 'index'])->name('todo-administrasi.index');
@@ -1040,6 +1046,13 @@ Route::put('/expense-hub/update/{id}', [App\Http\Controllers\ExpenseHubControlle
 
 Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
+    Route::get('/api/dashboard/karyawan', [OfficeController::class, 'apiDashboardKaryawan'])->name('office.api.karyawan');
+    Route::get('/api/dashboard/kehadiran', [OfficeController::class, 'apiDashboardKehadiran'])->name('office.api.kehadiran');
+    Route::get('/api/dashboard/ticket', [OfficeController::class, 'apiDashboardTicket'])->name('office.api.ticket');
+    Route::get('/api/dashboard/rkm', [OfficeController::class, 'apiDashboardRKM'])->name('office.api.rkm');
+    Route::get('/api/dashboard/tagihan', [OfficeController::class, 'apiDashboardTagihan'])->name('office.api.tagihan');
+    Route::get('/api/dashboard/administrasi', [OfficeController::class, 'apiDashboardAdministrasi'])->name('office.api.administrasi');
+    Route::get('/api/dashboard/all-data', [OfficeController::class, 'apiDashboardAllData'])->name('office.api.all-data');
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
     Route::get('/detail-data-mengajar/{id}', [OfficeController::class, 'detailMengajar']);
@@ -1402,7 +1415,7 @@ Route::prefix('office')
             Route::delete('/rekap/certif/delete/{id}', [CertificateController::class, 'deleteSummary'])->name('deleteSummary');
         });
 
-    Route::prefix('vendor')->name('vendor.')->group(function () {
+        Route::prefix('vendor')->name('vendor.')->group(function () {
             Route::resource('/souvenir', vendorOfficeController::class);
             Route::resource('/makansiang', vendorOfficeController::class);
             Route::resource('/coffeebreak', vendorOfficeController::class);
@@ -1428,6 +1441,12 @@ Route::prefix('office')
             Route::get('/download/pdf', [KendaraanController::class, 'pdfExport'])->name('pdfExportPerbaikan');
             Route::get('/download/excel', [KendaraanController::class, 'excelExport'])->name('excelExportPerbaikan');
         });
+
+        Route::get('/rekap/rkm/json', [OfficeController::class, 'rekapRkmJson'])->name('rekapRkmJson');
+        Route::get('/rekap/rkm', [OfficeController::class, 'rekapRkm'])->name('rekapRkm');
+        Route::get('/rekap/rkm/select', [OfficeController::class, 'selectHide'])->name('rekapRkm.select');
+        Route::post('/rekap/rkm/toggle-hide', [OfficeController::class, 'toggleHide'])->name('rekapRkm.toggleHide');
+        Route::post('/rekap/rkm/bulk-toggle-hide', [OfficeController::class, 'bulkToggleHide'])->name('rekapRkm.bulkToggleHide');
     });
 
 Route::prefix('/rekomendasi-lanjutan')->name('rekomendasiLanjutan.')->group(function () {
@@ -1683,7 +1702,9 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
         Route::post('/{template}/preview-generate', [ReportController::class, 'previewGenerate'])->name('preview.generate');
 
+        Route::get('/{template}/edit-data', [ReportController::class, 'getEditData'])->name('.edit.data');
 
+        Route::get('{template}/generate-modal', [ReportController::class, 'generateFormModal'])->name('.generate.modal');
     });
 
     Route::prefix('hire')->name('hire.')->group(function() {

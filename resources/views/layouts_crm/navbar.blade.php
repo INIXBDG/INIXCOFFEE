@@ -10,24 +10,39 @@
         <div class="navbar-nav align-items-center me-auto">
             <div class="nav-item d-flex align-items-center">
                 <span class="w-px-22 h-px-22"><i class="icon-base bx bx-search icon-md"></i></span>
-                <input
-                    type="text"
-                    class="form-control border-0 shadow-none ps-1 ps-sm-2 d-md-block d-none"
-                    placeholder="Search..."
-                    aria-label="Search..." />
+                <input type="text" class="form-control border-0 shadow-none ps-1 ps-sm-2 d-md-block d-none" placeholder="Search..." aria-label="Search..." />
             </div>
         </div>
         <!-- /Search -->
 
         <ul class="navbar-nav flex-row align-items-center ms-md-auto">
+
+            <!-- Notification Icon -->
+            <li class="nav-item me-3">
+                <a class="nav-link hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#notificationModal">
+                    <div class="position-relative d-flex justify-content-center align-items-center rounded-circle hover-bg-light" style="width: 40px; height: 40px;">
+                        <i class="bx bx-bell" style="font-size: 1.6rem;"></i>
+
+                        @php
+                            $unreadCount = auth()->check() ? auth()->user()->unreadNotifications->count() : 0;
+                        @endphp
+
+                        @if($unreadCount > 0)
+                            <!-- Tampilan Badge Angka -->
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                style="font-size: 0.7rem; padding: 0.35em 0.5em; margin-top: 5px; margin-left: -5px;">
+                                {{ $unreadCount > 99 ? '99+' : $unreadCount }}
+                                <span class="visually-hidden">New alerts</span>
+                            </span>
+                        @endif
+                    </div>
+                </a>
+            </li>
+            <!--/ Notification Icon -->
+
             <!-- User Dropdown -->
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
-                <a
-                    class="nav-link dropdown-toggle hide-arrow p-0"
-                    href="javascript:void(0);"
-                    data-bs-toggle="dropdown"
-                    id="userDropdownToggle"
-                    aria-expanded="false">
+                <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown" id="userDropdownToggle" aria-expanded="false">
                     <div class="avatar avatar-online">
                         <img id="userAvatar" src="{{ asset('assets/img/avatars/1.png') }}" alt="User Avatar" class="w-px-40 h-auto rounded-circle" />
                     </div>
@@ -48,9 +63,7 @@
                             </div>
                         </a>
                     </li>
-                    <li>
-                        <div class="dropdown-divider my-1"></div>
-                    </li>
+                    <li><div class="dropdown-divider my-1"></div></li>
                     <li>
                         <a class="dropdown-item" href="javascript:void(0);" id="logoutButton">
                             <i class="icon-base bx bx-power-off icon-md me-3"></i>
@@ -67,5 +80,3 @@
 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
     @csrf
 </form>
-
-

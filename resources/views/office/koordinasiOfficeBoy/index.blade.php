@@ -248,9 +248,22 @@
             </div>
         </div>
 
-        <div class="card-body m-4">
+        <div class="card-body m-4 position-relative">
+            <div id="skeletonLoader" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: #ffffff; padding: 1.5rem;">
+                <div class="skeleton mb-3" style="width: 100%; height: 40px; border-radius: 8px; background: #eee; animation: pulse 1.5s infinite;"></div>
+                <div class="skeleton mb-2" style="width: 100%; height: 30px; border-radius: 8px; background: #eee; animation: pulse 1.5s infinite;"></div>
+                <div class="skeleton mb-2" style="width: 100%; height: 30px; border-radius: 8px; background: #eee; animation: pulse 1.5s infinite;"></div>
+                <div class="skeleton mb-2" style="width: 100%; height: 30px; border-radius: 8px; background: #eee; animation: pulse 1.5s infinite;"></div>
+                <style>
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.5; }
+                        100% { opacity: 1; }
+                    }
+                </style>
+            </div>
             <div class="table-responsive">
-                <table id="dataTable" class="table table-hover table-sm align-middle mb-0">
+                <table id="dataTable" class="table table-hover table-sm align-middle mb-0" style="display: none; width: 100%;">
                     <thead class="table-light">
                         <tr>
                             <th>Tugas</th>
@@ -265,17 +278,38 @@
             </div>
         </div>
     </div>
+@endsection
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+@section('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/id.min.js"></script>
 
     <script>
+        function hideSkeletonLoader() {
+            try {
+                const $skeleton = $('#skeletonLoader');
+                const $table = $('#dataTable');
+
+                if ($skeleton.length) {
+                    $skeleton.hide();
+                }
+
+                if ($table.length) {
+                    $table.show();
+                }
+            } catch (error) {
+                console.error('Error hiding skeleton:', error);
+            }
+        }
+
         $(document).ready(function() {
             loadTable();
+
+            setTimeout(function () {
+                if ($('#skeletonLoader').is(':visible')) {
+                    hideSkeletonLoader();
+                }
+            }, 2500);
 
             $(document).on('click', '#refreshBtn', function() {
                 loadTable();
@@ -499,14 +533,30 @@
                 ajax: {
                     url: "{{ route('office.KoordinasiOb.getData') }}",
                     type: "GET",
-                    dataSrc: 'data'
+                    dataSrc: 'data',
+                    error: function(xhr, status, error) {
+                        console.error('DataTable AJAX Error:', {
+                            xhr: xhr,
+                            status: status,
+                            error: error
+                        });
+                        hideSkeletonLoader();
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Memuat Data',
+                                text: 'Terjadi kesalahan Server / Data saat mengambil data'
+                            });
+                        }
+                    }
                 },
                 columns: [
                     {
                         data: 'nama_tugas'
                     },
                     {
-                        data: 'karyawan.nama_lengkap'
+                        data: 'karyawan.nama_lengkap',
+                        defaultContent: '-'
                     },
                     {
                         data: 'deadline',
@@ -517,7 +567,8 @@
                         }
                     },
                     {
-                        data: 'pembuat.nama_lengkap'
+                        data: 'pembuat.nama_lengkap',
+                        defaultContent: '-'
                     },
                     {
                         data: null,
@@ -581,14 +632,20 @@
                 ],
                 order: [
                     [0, 'desc']
-                ]
+                ],
+                initComplete: function(settings, json) {
+                    hideSkeletonLoader();
+                },
+                drawCallback: function() {
+                    hideSkeletonLoader();
+                }
             });
         };
 
         function edit(id, data) {
             $('#editModal [name="id"]').val(id);
             $('#editModal [name="nama_tugas"]').val(data.nama_tugas);
-            $('#editModal [name="karyawan"]').val(data.karyawan.id);
+            $('#editModal [name="karyawan"]').val(data.karyawan?.id || '');
             $('#editModal [name="deadline"]').val(data.deadline);
             $('#editModal [name="catatan"]').val(data.catatan);
 

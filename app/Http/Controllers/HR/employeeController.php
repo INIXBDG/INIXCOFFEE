@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\karyawan;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class employeeController extends Controller
 {
-    //Karyawan Infomasi Function
     public function index()
     {
         return view('HR/employee/newActive');
@@ -31,7 +31,13 @@ class employeeController extends Controller
             $search = $validated['search'] ?? null;
             $dateRange = $periode !== 'all' ? $this->calculateDateRange($periode, $year) : null;
 
-            $baseQuery = karyawan::query()->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi');
+            $baseQuery = karyawan::query()
+                ->whereNot('jabatan', 'Outsource')
+                ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+                ->whereNot('jabatan', 'Pilih Jabatan')
+                ->whereNotNull('nip')
+                ->whereNot('divisi', 'Direksi');
+                
             $totalEmployees = (clone $baseQuery)->count();
 
             $activeQuery = clone $baseQuery;
@@ -97,75 +103,65 @@ class employeeController extends Controller
 
     public function getResignedEmployees(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'search' => 'nullable|string|max:100',
-                'page' => 'nullable|integer|min:1',
-                'per_page' => 'nullable|integer|min:1|max:100',
-            ]);
+        $totalStart = microtime(true);
+        
+        $draw = $request->input('draw', 1);
+        $search = $request->input('search.value') ?? $request->input('search');
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
 
-            $search = $validated['search'] ?? null;
-            $page = $validated['page'] ?? 1;
-            $perPage = $validated['per_page'] ?? 10;
-
-            $query = karyawan::query()
-                ->whereNot('jabatan', 'Outsource')
-                ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-                ->whereNot('jabatan', 'Pilih Jabatan')
-                ->where('nip', '!=', null)
-                ->whereNot('divisi', 'Direksi')
-                ->where(function ($q) {
-                    $q->where('status_aktif', '0')->orWhereNotNull('resigned_at');
-                });
-
-            if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('nama', 'LIKE', "%{$search}%")
-                        ->orWhere('nip', 'LIKE', "%{$search}%")
-                        ->orWhere('jabatan', 'LIKE', "%{$search}%")
-                        ->orWhere('divisi', 'LIKE', "%{$search}%");
-                });
-            }
-
-            $totalResign = (clone $query)->count();
-
-            $employees = $query->orderByDesc('resigned_at')->paginate($perPage, ['*'], 'page', $page);
-
-            $data = $employees->getCollection()->map(function ($emp) {
-                return [
-                    'id' => $emp->id,
-                    'nama_lengkap' => $emp->nama_lengkap ?? $emp->nama,
-                    'nip' => $emp->nip,
-                    'jabatan' => $emp->jabatan,
-                    'divisi' => $emp->divisi,
-                    'resigned_at' => $emp->resigned_at ? \Carbon\Carbon::parse($emp->resigned_at)->format('d M Y') : '-',
-                    'resigned_at_raw' => $emp->resigned_at ? \Carbon\Carbon::parse($emp->resigned_at)->format('Y-m-d') : '',
-                    'alasan_resign' => $emp->alasan_resign ?: '-',
-                ];
+        $baseQuery = karyawan::query()
+            ->whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi')
+            ->where(function ($q) {
+                $q->where('status_aktif', '0')->orWhereNotNull('resigned_at');
             });
 
-            return response()->json(
-                [
-                    'data' => $data,
-                    'total_resign' => $totalResign,
-                    'pagination' => [
-                        'current_page' => $employees->currentPage(),
-                        'last_page' => $employees->lastPage(),
-                        'total' => $employees->total(),
-                    ],
-                ],
-                200,
-            );
-        } catch (\Exception $e) {
-            Log::error('HR Resigned Employees Error: ' . $e->getMessage());
-            return response()->json(
-                [
-                    'error' => 'Gagal memuat data karyawan resign',
-                    'message' => config('app.debug') ? $e->getMessage() : 'Silakan coba beberapa saat lagi',
-                ],
-                500,
-            );
+        $recordsTotal = (clone $baseQuery)->count();
+        $recordsFiltered = $recordsTotal;
+        $query = clone $baseQuery;
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama', 'LIKE', "%{$search}%")
+                  ->orWhere('nama_lengkap', 'LIKE', "%{$search}%")
+                  ->orWhere('nip', 'LIKE', "%{$search}%")
+                  ->orWhere('jabatan', 'LIKE', "%{$search}%")
+                  ->orWhere('divisi', 'LIKE', "%{$search}%");
+            });
+            $recordsFiltered = (clone $query)->count();
         }
+
+        $employees = $query->orderByDesc('resigned_at')
+            ->offset($start)
+            ->limit($length)
+            ->get();
+
+        $data = $employees->map(function ($emp) {
+            return [
+                'id' => $emp->id,
+                'nama_lengkap' => $emp->nama_lengkap ?? $emp->nama ?? 'Tidak Diketahui',
+                'nip' => $emp->nip ?? '-',
+                'jabatan' => $emp->jabatan ?? '-',
+                'divisi' => $emp->divisi ?? '-',
+                'resigned_at' => $emp->resigned_at ? Carbon::parse($emp->resigned_at)->format('d M Y') : '-',
+                'resigned_at_raw' => $emp->resigned_at ? Carbon::parse($emp->resigned_at)->format('Y-m-d') : '',
+                'alasan_resign' => $emp->alasan_resign ?: '-',
+            ];
+        })->toArray();
+
+        Log::info('Waktu Proses DataTables Resigned: ' . (microtime(true) - $totalStart) . 's');
+
+        return response()->json([
+            'draw' => intval($draw),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+            'total_resign' => $recordsTotal,
+        ], 200);
     }
 
     public function updateResignData(Request $request, $id)
@@ -185,7 +181,7 @@ class employeeController extends Controller
                 'message' => 'Data resign berhasil diperbarui',
                 'data' => [
                     'id' => $employee->id,
-                    'resigned_at' => \Carbon\Carbon::parse($employee->resigned_at)->format('d M Y'),
+                    'resigned_at' => Carbon::parse($employee->resigned_at)->format('d M Y'),
                     'alasan_resign' => $employee->alasan_resign ?: '-',
                 ],
             ], 200);
@@ -218,6 +214,7 @@ class employeeController extends Controller
             $employee->resigned_at = $validated['resigned_at'];
             $employee->alasan_resign = $validated['alasan_resign'] ?? null;
             $employee->save();
+            Cache::forget('office_karyawan_aktif'); // Invalidate cache
 
             return response()->json([
                 'message' => 'Karyawan berhasil dipindahkan ke status resign',
@@ -246,6 +243,7 @@ class employeeController extends Controller
             $employee->resigned_at = null;
             $employee->alasan_resign = null;
             $employee->save();
+            Cache::forget('office_karyawan_aktif'); // Invalidate cache
 
             return response()->json([
                 'message' => 'Karyawan berhasil dipulihkan menjadi aktif',
@@ -284,7 +282,12 @@ class employeeController extends Controller
             $endDate = $validated['end_date'] ? Carbon::parse($validated['end_date'])->endOfMonth() : Carbon::now()->endOfMonth();
         }
 
-        $baseQuery = karyawan::query()->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi');
+        $baseQuery = karyawan::query()
+            ->whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi');
 
         $labels = [];
         $activeData = [];
@@ -336,13 +339,17 @@ class employeeController extends Controller
         return response()->json(
             [
                 'labels' => $labels,
-                'datasets' => [['label' => 'Active', 'data' => $activeData, 'borderColor' => '#198754', 'backgroundColor' => 'rgba(25,135,84,0.1)', 'fill' => true], ['label' => 'New Hire', 'data' => $newData, 'borderColor' => '#0d6efd', 'backgroundColor' => 'rgba(13,110,253,0.1)', 'fill' => true], ['label' => 'Resign', 'data' => $resignData, 'borderColor' => '#dc3545', 'backgroundColor' => 'rgba(220,53,69,0.1)', 'fill' => true]],
+                'datasets' => [
+                    ['label' => 'Active', 'data' => $activeData, 'borderColor' => '#198754', 'backgroundColor' => 'rgba(25,135,84,0.1)', 'fill' => true], 
+                    ['label' => 'New Hire', 'data' => $newData, 'borderColor' => '#0d6efd', 'backgroundColor' => 'rgba(13,110,253,0.1)', 'fill' => true], 
+                    ['label' => 'Resign', 'data' => $resignData, 'borderColor' => '#dc3545', 'backgroundColor' => 'rgba(220,53,69,0.1)', 'fill' => true]
+                ],
                 'summary' => [
                     'total_active' => array_sum($activeData),
                     'total_new' => array_sum($newData),
                     'total_resign' => array_sum($resignData),
-                    'avg_monthly_new' => round(array_sum($newData) / count($newData), 1),
-                    'avg_monthly_resign' => round(array_sum($resignData) / count($resignData), 1),
+                    'avg_monthly_new' => count($newData) > 0 ? round(array_sum($newData) / count($newData), 1) : 0,
+                    'avg_monthly_resign' => count($resignData) > 0 ? round(array_sum($resignData) / count($resignData), 1) : 0,
                 ],
             ],
             200,
@@ -362,7 +369,12 @@ class employeeController extends Controller
             $status = $validated['status'] ?? 'all';
             $minTenure = $validated['min_tenure'] ?? 0;
 
-            $baseQuery = karyawan::query()->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi');
+            $baseQuery = karyawan::query()
+                ->whereNot('jabatan', 'Outsource')
+                ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+                ->whereNot('jabatan', 'Pilih Jabatan')
+                ->whereNotNull('nip')
+                ->whereNot('divisi', 'Direksi');
 
             if ($status === 'active') {
                 $baseQuery->where('status_aktif', '1');
@@ -384,12 +396,10 @@ class employeeController extends Controller
 
             $breakdown = $baseQuery
                 ->selectRaw(
-                    "
-                    $field as label,
+                    "$field as label,
                     COUNT(*) as total,
                     SUM(CASE WHEN status_aktif = '1' THEN 1 ELSE 0 END) as active_count,
-                    SUM(CASE WHEN status_aktif = '0' THEN 1 ELSE 0 END) as resign_count
-                ",
+                    SUM(CASE WHEN status_aktif = '0' THEN 1 ELSE 0 END) as resign_count"
                 )
                 ->groupBy($field)
                 ->orderByDesc('total')
@@ -434,94 +444,100 @@ class employeeController extends Controller
 
     public function getEmployeesByCategory(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'category' => 'required|in:active,new,resign,all',
-                'periode' => 'nullable|in:3,6,12,year,all',
-                'year' => 'nullable|integer|min:2000|max:' . date('Y'),
-                'search' => 'nullable|string|max:100',
-                'page' => 'nullable|integer|min:1',
-            ]);
+        $totalStart = microtime(true);
+        
+        $draw = $request->input('draw', 1);
+        $category = $request->input('category', 'all');
+        $search = $request->input('search.value') ?? $request->input('search');
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        $periode = $request->input('periode', 'all');
+        $year = $request->input('year');
+        
+        $dateRange = $periode !== 'all' ? $this->calculateDateRange($periode, $year) : null;
 
-            $category = $validated['category'];
-            $periode = $validated['periode'] ?? 'all';
-            $year = $validated['year'] ?? null;
-            $search = $validated['search'] ?? null;
-            $page = $validated['page'] ?? 1;
-            $perPage = 10;
-            $dateRange = $periode !== 'all' ? $this->calculateDateRange($periode, $year) : null;
+        $baseQuery = karyawan::query()
+            ->whereNot('jabatan', 'Outsource')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->whereNot('divisi', 'Direksi');
 
-            $query = karyawan::query()->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi');
-
-            if ($category === 'active') {
-                $query->where('status_aktif', '1');
-            } elseif ($category === 'new') {
-                $query->where('status_aktif', '1');
-                if ($dateRange) {
-                    $query->whereBetween('awal_probation', [$dateRange['start'], $dateRange['end']]);
-                } else {
-                    $query->whereNotNull('awal_probation');
-                }
-            } elseif ($category === 'resign') {
-                $query->where('status_aktif', '0');
-                if ($dateRange) {
-                    $query->whereBetween('resigned_at', [$dateRange['start'], $dateRange['end']]);
-                } else {
-                    $query->whereNotNull('resigned_at');
-                }
+        if ($category === 'active') {
+            $baseQuery->where('status_aktif', '1');
+        } elseif ($category === 'new') {
+            $baseQuery->where('status_aktif', '1');
+            if ($dateRange) {
+                $baseQuery->whereBetween('awal_probation', [$dateRange['start'], $dateRange['end']]);
+            } else {
+                $baseQuery->whereNotNull('awal_probation');
             }
-
-            if (!empty($search)) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('nama_lengkap', 'LIKE', "%{$search}%")
-                        ->orWhere('nip', 'LIKE', "%{$search}%")
-                        ->orWhere('jabatan', 'LIKE', "%{$search}%")
-                        ->orWhere('divisi', 'LIKE', "%{$search}%");
-                });
+        } elseif ($category === 'resign') {
+            $baseQuery->where('status_aktif', '0');
+            if ($dateRange) {
+                $baseQuery->whereBetween('resigned_at', [$dateRange['start'], $dateRange['end']]);
+            } else {
+                $baseQuery->whereNotNull('resigned_at');
             }
-
-            $total = $query->count();
-            $employees = $query
-                ->orderBy('nama_lengkap', 'asc')
-                ->offset(($page - 1) * $perPage)
-                ->limit($perPage)
-                ->get()
-                ->map(function ($emp) {
-                    $namaDepan = explode(' ', trim($emp->nama_lengkap))[0];
-                    return [
-                        'id' => $emp->id,
-                        'nama' => $namaDepan,
-                        'nama_lengkap' => $emp->nama_lengkap,
-                        'nip' => $emp->nip,
-                        'jabatan' => $emp->jabatan,
-                        'divisi' => $emp->divisi,
-                        'tanggal_join' => $this->formatJoinDate($emp),
-                        'status' => $emp->status_aktif == '1' ? 'Aktif' : 'Resign',
-                        'resigned_at' => $emp->resigned_at ? Carbon::parse($emp->resigned_at)->format('d M Y') : null,
-                    ];
-                });
-
-            return response()->json(
-                [
-                    'data' => $employees,
-                    'pagination' => [
-                        'current_page' => $page,
-                        'per_page' => $perPage,
-                        'total' => $total,
-                        'last_page' => ceil($total / $perPage),
-                    ],
-                    'filters' => [
-                        'periode' => $periode,
-                        'year' => $year,
-                        'search' => $search,
-                    ],
-                ],
-                200,
-            );
-        } catch (\Exception $e) {
-            Log::error('HR Category Data Error: ' . $e->getMessage());
-            return response()->json(['error' => 'Gagal memuat data'], 500);
         }
+
+        $recordsTotal = (clone $baseQuery)->count();
+        $recordsFiltered = $recordsTotal;
+        $query = clone $baseQuery;
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_lengkap', 'LIKE', "%{$search}%")
+                  ->orWhere('nama', 'LIKE', "%{$search}%")
+                  ->orWhere('nip', 'LIKE', "%{$search}%")
+                  ->orWhere('jabatan', 'LIKE', "%{$search}%")
+                  ->orWhere('divisi', 'LIKE', "%{$search}%");
+            });
+            $recordsFiltered = (clone $query)->count();
+        }
+
+        $employees = $query->orderBy('nama_lengkap', 'asc')
+            ->offset($start)
+            ->limit($length)
+            ->get();
+
+        $data = $employees->map(function ($emp) {
+            $namaDepan = explode(' ', trim($emp->nama_lengkap ?? $emp->nama ?? ''))[0] ?? 'Tidak Diketahui';
+            return [
+                'id' => $emp->id,
+                'nama' => $namaDepan,
+                'nama_lengkap' => $emp->nama_lengkap ?? $emp->nama ?? '-',
+                'nip' => $emp->nip ?? '-',
+                'jabatan' => $emp->jabatan ?? '-',
+                'divisi' => $emp->divisi ?? '-',
+                'tanggal_join' => $this->formatJoinDate($emp),
+                'status' => $emp->status_aktif == '1' ? 'Aktif' : 'Resign',
+                'resigned_at' => $emp->resigned_at ? Carbon::parse($emp->resigned_at)->format('d M Y') : null,
+            ];
+        })->toArray();
+
+        Log::info('Waktu Proses DataTables Category: ' . (microtime(true) - $totalStart) . 's');
+
+        return response()->json(
+            [
+                'draw' => intval($draw),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $data,
+                'pagination' => [
+                    'current_page' => floor($start / $length) + 1,
+                    'per_page' => $length,
+                    'total' => $recordsFiltered,
+                    'last_page' => ceil($recordsFiltered / $length),
+                ],
+                'filters' => [
+                    'periode' => $periode,
+                    'year' => $year,
+                    'search' => $search,
+                ],
+            ],
+            200,
+        );
     }
 
     public function exportHeadcountTrendCsv(Request $request)
@@ -688,52 +704,159 @@ class employeeController extends Controller
 
     private function generateRetentionInsights($active, $resign, $total)
     {
-        $rate = $total > 0 ? ($active / $total) * 100 : 0;
-        $status = $rate >= 90 ? 'excellent' : ($rate >= 75 ? 'good' : ($rate >= 60 ? 'moderate' : 'needs_attention'));
-        $opportunities = [];
-        if ($resign > 0) {
-            $opportunities[] = 'Lakukan exit interview untuk memahami alasan resign';
-            $opportunities[] = 'Tingkatkan program onboarding untuk karyawan baru';
-        }
-        if ($rate < 80) {
-            $opportunities[] = 'Evaluasi kompensasi dan benefit secara berkala';
-            $opportunities[] = 'Kembangkan program career path yang jelas';
-        }
+        $rate = $total > 0 ? round(($active / $total) * 100, 1) : 100.0;
+        $turnoverRate = round(100 - $rate, 1);
+        
+        // Penentuan Status & Level Risiko
         if ($rate >= 90) {
-            $opportunities[] = 'Pertahankan budaya kerja positif yang sudah terbangun';
-            $opportunities[] = 'Kembangkan program employee engagement lanjutan';
+            $status = 'excellent';
+            $riskLevel = 'low';
+        } elseif ($rate >= 75) {
+            $status = 'good';
+            $riskLevel = 'moderate';
+        } elseif ($rate >= 60) {
+            $status = 'moderate';
+            $riskLevel = 'high';
+        } else {
+            $status = 'needs_attention';
+            $riskLevel = 'critical';
         }
+
+        // 1. Analisis Peluang (Dinamis berdasarkan kondisi data)
+        $opportunities = [];
+        
+        if ($resign > 0) {
+            $opportunities[] = [
+                'icon' => 'fa-magnifying-glass-chart',
+                'title' => 'Analisis Akar Penyebab (Root Cause)',
+                'desc' => 'Lakukan exit interview terstruktur dan kategorikan alasan resign (kompensasi, atasan, karir) untuk menemukan pola.'
+            ];
+            $opportunities[] = [
+                'icon' => 'fa-user-clock',
+                'title' => 'Evaluasi Masa Kritis Karyawan Baru',
+                'desc' => 'Cek apakah resign terjadi di bawah 6 bulan. Jika ya, perbaiki proses onboarding dan ekspektasi pekerjaan.'
+            ];
+        }
+
+        if ($turnoverRate > 15) {
+            $opportunities[] = [
+                'icon' => 'fa-scale-unbalanced',
+                'title' => 'Audit Kompensasi & Benefit',
+                'desc' => 'Bandingkan struktur gaji dan benefit dengan rata-rata industri. Ketertinggalan kompetitif adalah pemicu utama turnover.'
+            ];
+            $opportunities[] = [
+                'icon' => 'fa-route',
+                'title' => 'Pemetaan Jalur Karir (Career Pathing)',
+                'desc' => 'Karyawan sering resign karena merasa stagnan. Buat peta karir yang jelas untuk 1-3 tahun ke depan.'
+            ];
+        }
+
+        if ($rate >= 90) {
+            $opportunities[] = [
+                'icon' => 'fa-shield-halved',
+                'title' => 'Pencegahan Komplaisensi (Complacency)',
+                'desc' => 'Pertahankan momentum dengan program employee engagement lanjutan dan identifikasi "High Potential Talent" untuk dipertahankan.'
+            ];
+        }
+
+        // 2. Rekomendasi Strategis (Dikelompokkan agar masif dan terstruktur)
+        $recommendations = $this->getStrategicRecommendations($status, $active, $resign, $total);
+
+        // 3. Proyeksi Cerdas (Memperhitungkan volume data untuk confidence level)
+        $dataConfidence = $total >= 50 ? 'high' : ($total >= 20 ? 'medium' : 'low');
+        $turnoverTrend = $turnoverRate > 15 ? 1.05 : 0.98; // Faktor penyesuaian berdasarkan risiko
+
         $projections = [
             'next_quarter' => [
-                'estimated_active' => $active + round($active * 0.02),
-                'estimated_resign' => max(0, $resign - 1),
-                'confidence' => 'medium',
+                'period' => 'Kuartal Depan',
+                'estimated_active' => max(0, $active - round($resign * 0.25 * $turnoverTrend)), 
+                'estimated_resign' => max(0, round($resign * 0.25 * $turnoverTrend)),
+                'confidence' => $dataConfidence,
+                'action_required' => $turnoverRate > 15 ? 'Intervensi Segera' : 'Monitoring Rutin'
             ],
             'next_year' => [
-                'estimated_active' => $active + round($active * 0.08),
-                'estimated_resign' => max(0, $resign - 3),
-                'confidence' => 'low',
-            ],
+                'period' => 'Tahun Depan',
+                'estimated_active' => max(0, round($active * 0.95)), 
+                'estimated_resign' => max(0, round($total * 0.05 * $turnoverTrend)),
+                'confidence' => $dataConfidence === 'high' ? 'medium' : 'low',
+                'action_required' => $turnoverRate > 15 ? 'Restrukturisasi Strategi HR' : 'Pemeliharaan Budaya Kerja'
+            ]
         ];
+
         return [
+            'metrics' => [
+                'retention_rate' => $rate,
+                'turnover_rate' => $turnoverRate,
+                'risk_level' => $riskLevel,
+            ],
             'status' => $status,
-            'status_label' => ['excellent' => 'Sangat Baik', 'good' => 'Baik', 'moderate' => 'Cukup', 'needs_attention' => 'Perlu Perhatian'][$status],
+            'status_label' => [
+                'excellent' => 'Sangat Baik (Stabil)', 
+                'good' => 'Baik (Perlu Pemeliharaan)', 
+                'moderate' => 'Cukup (Waspada)', 
+                'needs_attention' => 'Kritis (Perlu Intervensi Segera)'
+            ][$status],
             'opportunities' => $opportunities,
+            'recommendations' => $recommendations,
             'projections' => $projections,
-            'recommendations' => $this->getRecommendations($status, $active, $resign),
         ];
     }
 
-    private function getRecommendations($status, $active, $resign)
+    private function getStrategicRecommendations($status, $active, $resign, $total)
     {
-        $base = ['Lakukan survey kepuasan karyawan setiap 6 bulan', 'Bangun program mentorship untuk karyawan baru', 'Sediakan jalur komunikasi terbuka antara staff dan manajemen'];
+        // Struktur array multidimensi untuk tampilan UI yang lebih kaya (misal: Accordion/Tabs)
+        $recommendations = [
+            'retensi_kompensasi' => [
+                'title' => 'Retensi & Kompensasi',
+                'icon' => 'fa-coins',
+                'color' => 'var(--warning)',
+                'items' => []
+            ],
+            'budaya_engagement' => [
+                'title' => 'Budaya & Employee Engagement',
+                'icon' => 'fa-people-group',
+                'color' => 'var(--pri)',
+                'items' => []
+            ],
+            'pengembangan_karir' => [
+                'title' => 'Pengembangan & Karir',
+                'icon' => 'fa-chart-line',
+                'color' => 'var(--success)',
+                'items' => []
+            ],
+            'manajemen_kepemimpinan' => [
+                'title' => 'Manajemen & Kepemimpinan',
+                'icon' => 'fa-user-tie',
+                'color' => 'var(--info)',
+                'items' => []
+            ]
+        ];
+
+        // Logika pengisian rekomendasi berdasarkan status
         if ($status === 'needs_attention') {
-            return array_merge(['Prioritaskan retensi dengan review kompensasi', 'Identifikasi faktor penyebab turnover tinggi', 'Buat program recognition untuk apresiasi karyawan'], $base);
+            $recommendations['retensi_kompensasi']['items'][] = 'Lakukan audit gaji mendesak (salary benchmarking) terhadap pasar industri.';
+            $recommendations['retensi_kompensasi']['items'][] = 'Evaluasi ulang paket benefit non-tunai (asuransi, bonus, cuti).';
+            $recommendations['budaya_engagement']['items'][] = 'Adakan "Stay Interview" dengan karyawan kunci (key persons) sebelum mereka memutuskan resign.';
+            $recommendations['pengembangan_karir']['items'][] = 'Identifikasi 10-20% karyawan berkinerja tinggi dan buat rencana retensi khusus.';
+            $recommendations['manajemen_kepemimpinan']['items'][] = 'Evaluasi gaya manajemen di divisi dengan tingkat resign tertinggi (toxic leadership check).';
+        } 
+        elseif ($status === 'moderate') {
+            $recommendations['retensi_kompensasi']['items'][] = 'Tinjau ulang struktur kenaikan gaji tahunan agar lebih kompetitif.';
+            $recommendations['budaya_engagement']['items'][] = 'Implementasikan program pengakuan karyawan (Employee Recognition Program) bulanan.';
+            $recommendations['pengembangan_karir']['items'][] = 'Buat program mentoring formal antara senior dan karyawan baru (0-1 tahun).';
+            $recommendations['manajemen_kepemimpinan']['items'][] = 'Berikan pelatihan "People Management" untuk para Supervisor/Manager.';
+        } 
+        else { // excellent atau good
+            $recommendations['retensi_kompensasi']['items'][] = 'Pertahankan daya saing kompensasi dengan review pasar tahunan.';
+            $recommendations['budaya_engagement']['items'][] = 'Kembangkan program Employer Branding untuk menarik talenta terbaik dari luar.';
+            $recommendations['pengembangan_karir']['items'][] = 'Bangun program "Succession Planning" untuk posisi-posisi kritis.';
+            $recommendations['manajemen_kepemimpinan']['items'][] = 'Dorong inovasi dan otonomi kerja untuk menjaga motivasi karyawan senior.';
         }
-        if ($status === 'moderate') {
-            return array_merge(['Fokus pada pengembangan karir karyawan', 'Tingkatkan work-life balance melalui kebijakan fleksibel'], $base);
-        }
-        return array_merge(['Kembangkan program leadership untuk talenta potensial', 'Ekspansi benefit non-finansial untuk meningkatkan engagement'], $base);
+
+        $recommendations['budaya_engagement']['items'][] = 'Pastikan saluran komunikasi dua arah (feedback) antara staf dan manajemen tetap terbuka.';
+        $recommendations['pengembangan_karir']['items'][] = 'Sediakan akses pelatihan/kursus online untuk peningkatan skill (upskilling).';
+
+        return $recommendations;
     }
 
     private function formatJoinDate($emp)

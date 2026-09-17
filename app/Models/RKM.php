@@ -37,6 +37,7 @@ class RKM extends Model
         'pdf_peserta',
         'deleted_at',
         'deleted_by',
+        'hide',
     ];
     protected $casts = [
         'tanggal_awal' => 'date',

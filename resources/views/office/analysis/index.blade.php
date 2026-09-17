@@ -1,7 +1,8 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
-    <div class="container-fluid py-4">
+    @include('layouts_office.skeleton_table')
+    <div id="real-dashboard" class="container-fluid py-4 d-none">
         <div
             class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
             <h4 class="mb-0 fw-bold text-dark">Data Laporan Analisis</h4>
@@ -619,8 +620,8 @@
             </div>
         </div>
 
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        
+        
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
         <script>
             const inputDisplay = document.getElementById('nilaiDisplay');
@@ -757,4 +758,5 @@
                 @endforelse
             });
         </script>
+    </div> <!-- End of real-dashboard -->
     @endsection

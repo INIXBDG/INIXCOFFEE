@@ -142,16 +142,21 @@ class pickupDriverController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal membuat koordinasi driver. Silakan coba lagi.'], 500);
         }
 
+        $detailsData = [];
+        $now = now();
         foreach ($request->jenis as $index => $jenis) {
-            DetailPickupDriver::create([
+            $detailsData[] = [
                 'pickup_driver_id' => $send->id,
                 'tipe' => $jenis,
                 'lokasi' => $request->lokasi[$index],
                 'tanggal_keberangkatan' => $request->tanggal[$index],
                 'waktu_keberangkatan' => $request->waktu[$index],
                 'detail' => $request->detail[$index] ?? null,
-            ]);
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
         }
+        DetailPickupDriver::insert($detailsData);
 
         TrackingPickupDriver::create([
             'pickup_driver_id' => $send->id,
@@ -215,6 +220,8 @@ class pickupDriverController extends Controller
 
         $this->telegram->sendTelegramNotification($telegramData);
 
+        Cache::forget('office_pickup_driver_all');
+
         return response()->json([
             'success' => true,
             'message' => 'Koordinasi pickup driver berhasil dibuat.',
@@ -224,16 +231,18 @@ class pickupDriverController extends Controller
 
     public function get()
     {
-        $data = pickupDriver::with(['karyawan', 'detailPickupDriver', 'pembuat', 'Tracking'])
-            ->orderByRaw('status_apply = 0 DESC')
-            ->orderBy('created_at', 'DESC')
-            ->get();
-
-        $data->transform(function ($item) {
-            $uangKepakai = BiayaTransportasiDriver::where('id_pickup_driver', $item->id)->sum('harga');
-            $item->uang_kepakai = $uangKepakai;
-            $item->sisa_budget = $item->budget - $uangKepakai;
-            return $item;
+        $data = Cache::remember('office_pickup_driver_all', now()->addMinutes(5), function () {
+            return pickupDriver::with(['karyawan', 'detailPickupDriver', 'pembuat', 'Tracking'])
+                ->withSum('biayaTransportasi as uang_kepakai', 'harga')
+                ->orderByRaw('status_apply = 0 DESC')
+                ->orderBy('created_at', 'DESC')
+                ->get()
+                ->map(function ($item) {
+                    $uangKepakai = (float) ($item->uang_kepakai ?? 0);
+                    $item->uang_kepakai = $uangKepakai;
+                    $item->sisa_budget = $item->budget - $uangKepakai;
+                    return $item;
+                });
         });
 
         return response()->json($data);
@@ -358,6 +367,8 @@ class pickupDriverController extends Controller
 
         $this->telegram->sendTelegramNotification($telegramPayload);
 
+        Cache::forget('office_pickup_driver_all');
+
         return response()->json([
             'success' => true,
             'message' => 'Koordinasi diterima. Selamat bertugas!',
@@ -455,6 +466,8 @@ class pickupDriverController extends Controller
 
         $this->telegram->sendTelegramNotification($telegramPayload);
 
+        Cache::forget('office_pickup_driver_all');
+
         return response()->json([
             'success' => true,
             'message' => 'Waktu kepulangan dan data KM berhasil disimpan.',
@@ -537,6 +550,7 @@ class pickupDriverController extends Controller
         $this->telegram->sendTelegramNotification($telegramPayload);
 
         $data->delete();
+        Cache::forget('office_pickup_driver_all');
         return response()->json(['message' => 'Data berhasil dihapus']);
     }
 
@@ -623,15 +637,20 @@ class pickupDriverController extends Controller
 
         DetailPickupDriver::where('pickup_driver_id', $pickup->id)->delete();
 
+        $detailsData = [];
+        $now = now();
         foreach ($request->details as $detail) {
-            DetailPickupDriver::create([
+            $detailsData[] = [
                 'pickup_driver_id' => $pickup->id,
                 'tipe' => $detail['tipe'],
                 'lokasi' => $detail['lokasi'],
                 'tanggal_keberangkatan' => $detail['tanggal'],
                 'waktu_keberangkatan' => $detail['waktu'] . ':00',
-            ]);
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
         }
+        DetailPickupDriver::insert($detailsData);
 
         $user = auth()->user()->username;
         $logParts = array_merge($changes, $deleted, $added);
@@ -701,6 +720,8 @@ class pickupDriverController extends Controller
         ];
 
         $this->telegram->sendTelegramNotification($telegramPayload);
+
+        Cache::forget('office_pickup_driver_all');
 
         return response()->json(['success' => true, 'message' => 'Koordinasi berhasil diperbarui.']);
     }

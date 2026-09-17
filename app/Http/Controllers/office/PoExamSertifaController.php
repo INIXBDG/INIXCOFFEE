@@ -8,6 +8,7 @@ use App\Models\Materi;
 use App\Models\RKM;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PoExamSertifaController extends Controller
 {
@@ -37,17 +38,16 @@ class PoExamSertifaController extends Controller
 
     public function getData()
     {
-        $items = PoExamSertifa::with(['materi', 'rkm', 'perusahaan'])->latest()->get();
-        $materis = Materi::orderBy('nama_materi')->get();
-        $rkms = RKM::orderBy('id')->get();
-        $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+        $data = Cache::remember('office_certifa_getdata', now()->addMinutes(10), function () {
+            return [
+                'items' => PoExamSertifa::with(['materi', 'rkm', 'perusahaan'])->latest()->get(),
+                'materis' => Materi::orderBy('nama_materi')->get(),
+                'rkms' => RKM::orderBy('id')->get(),
+                'perusahaans' => Perusahaan::orderBy('nama_perusahaan')->get()
+            ];
+        });
 
-        return response()->json([
-            'items' => $items,
-            'materis' => $materis,
-            'rkms' => $rkms,
-            'perusahaans' => $perusahaans
-        ]);
+        return response()->json($data);
     }
 
     public function store(Request $request)
@@ -63,6 +63,8 @@ class PoExamSertifaController extends Controller
         ]);
 
         PoExamSertifa::create($validatedData);
+
+        Cache::forget('office_certifa_getdata');
 
         return redirect()
             ->route('office.certifa.index')
@@ -85,6 +87,8 @@ class PoExamSertifaController extends Controller
 
         $item->update($validatedData);
 
+        Cache::forget('office_certifa_getdata');
+
         return redirect()
             ->route('office.certifa.index')
             ->with('success', 'Data PO Exam Sertifa berhasil diperbarui.');
@@ -94,6 +98,8 @@ class PoExamSertifaController extends Controller
     {
         $item = PoExamSertifa::findOrFail($id);
         $item->delete();
+
+        Cache::forget('office_certifa_getdata');
 
         return redirect()
             ->route('office.certifa.index')

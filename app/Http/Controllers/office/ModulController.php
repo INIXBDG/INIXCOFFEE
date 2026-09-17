@@ -27,7 +27,7 @@ class ModulController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:View PO Modul', ['only' => ['indexNomor', 'indexModul']]);
+        $this->middleware('permission:View PO Modul', ['only' => ['indexNomor', 'indexModul', 'rekapJson', 'rekapIndex']]);
         $this->middleware('permission:Store PO Modul', ['only' => ['storeModul', 'storeNomor', 'storePeserta']]);
         $this->middleware('permission:Update PO Modul', ['only' => ['updateModul', 'updateNomor', 'updatePeserta']]);
         $this->middleware('permission:Delete PO Modul', ['only' => ['deleteModul', 'deleteNomor', 'deletePeserta']]);
@@ -65,7 +65,7 @@ class ModulController extends Controller
     public function indexModul($id)
     {
         $nomor = NomorModul::findOrFail($id);
-        $modul = Modul::where('no_modul', $id)->get();
+        $modul = Modul::with('detail_materi')->where('no_modul', $id)->get();
         $materi = Materi::all();
         $perusahaan = Perusahaan::all();
         $peserta = PesertaModul::with('perusahaan')->where('no_modul', $id)->get();

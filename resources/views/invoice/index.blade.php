@@ -1,4 +1,3 @@
-
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <head>
@@ -32,6 +31,12 @@
                 <button class="nav-link fw-bold" id="kwitansi-tab" data-bs-toggle="tab"
                     data-bs-target="#kwitansiTab" type="button" role="tab">
                     Kwitansi
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="duplikat-tab" data-bs-toggle="tab"
+                    data-bs-target="#duplikatTab" type="button" role="tab">
+                    Duplikat
                 </button>
             </li>
         </ul>
@@ -206,11 +211,74 @@
                 </div>
             </div>
 
+            <!-- =================== DUPLIKAT =================== -->
+            <div class="tab-pane fade" id="duplikatTab" role="tabpanel">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header text-center bg-light">
+                        <h5 class="mb-0 fw-bold">Data Duplikat</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            Data RKM di bawah ini terdeteksi identik (materi, perusahaan, harga, tanggal, sales)
+                            dengan RKM lain yang sudah terpakai, sehingga tidak muncul di tab "Belum di-Invoice".
+                        </p>
+                        <div class="table-responsive">
+                            <table id="duplicateTable" class="table table-striped table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>No.</th>
+                                        <th>Nama Materi</th>
+                                        <th>Tanggal Periode</th>
+                                        <th>Nama Perusahaan</th>
+                                        <th>Pax</th>
+                                        <th>Sales</th>
+                                        <th>ID RKM</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($duplicateRkms as $rkm)
+                                    @php
+                                        $tglAwal = \Carbon\Carbon::parse($rkm->tanggal_awal);
+
+                                        $tanggal = $tglAwal->format('j'); // day, tanpa leading zero (setara moment 'D')
+                                        $lanbu   = $tglAwal->format('n'); // month, tanpa leading zero (setara moment 'M')
+                                        $hunta   = $tglAwal->format('Y'); // year (setara moment 'Y')
+
+                                        $kelas = $rkm->metode_kelas == 'Offline' ? 'off'
+                                            : ($rkm->metode_kelas == 'Inhouse Bandung' ? 'inhb'
+                                            : ($rkm->metode_kelas == 'Inhouse Luar Bandung' ? 'inhlb'
+                                            : ($rkm->metode_kelas == 'Exam Only' ? 'exam' : 'vir')));
+
+                                        $rkmDetailUrl = '/rkm/' . $rkm->materi_key . 'ixb' . $tanggal . 'ie' . $hunta . 'ie' . $lanbu . 'ixb' . $kelas;
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $rkm->materi->nama_materi ?? '-' }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($rkm->tanggal_awal)->format('d F Y') }} s/d {{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('d F Y') }}</td>
+                                        <td>{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                        <td>{{ $rkm->pax ?? '-' }}</td>
+                                        <td>{{ $rkm->sales->kode_karyawan ?? '-' }}</td>
+                                        <td>{{ $rkm->id }}</td>
+                                        <td>
+                                            <a href="{{ $rkmDetailUrl }}" class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="Detail RKM">
+                                                Detail RKM
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
 
-    <script src="{{ asset('assets/js/jquery/jquery-3.6.0.mis.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -329,6 +397,7 @@
         initTableWithFilter('invoicedTable',     3);
         initTableWithFilter('notReceiptedTable', 2);
         initTableWithFilter('receiptedTable',    3);
+        initTableWithFilter('duplicateTable',    2);
     });
     </script>
 

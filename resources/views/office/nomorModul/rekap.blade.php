@@ -1,7 +1,8 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
-    <div class="container-fluid py-4">
+    @include('layouts_office.skeleton_stats')
+    <div id="real-dashboard" class="container-fluid py-4 d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="mb-0 fw-bold">Rekap Modul</h4>
         </div>
@@ -176,7 +177,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    
     <script>
         const URL_REKAP = "{{ route('office.modul.rekap.json') }}";
         const PER_PAGE = 20;
@@ -438,4 +439,5 @@
 
         loadRekap();
     </script>
+    </div> <!-- End of real-dashboard -->
 @endsection

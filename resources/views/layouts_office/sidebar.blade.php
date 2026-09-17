@@ -122,6 +122,19 @@
         </li>
         @endcan
 
+    @can('View RekapRKM Office')
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Rekap RKM</span>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('office.rekapRkm') ? 'active open' : '' }}">
+            <a href="{{ route('office.rekapRkm') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-clipboard"></i>
+                <div class="text-truncate" data-i18n="contact">Rekap RKM</div>
+            </a>
+        </li>
+    @endcan
+
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">EXAM</span>
         </li>

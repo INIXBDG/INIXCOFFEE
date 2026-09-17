@@ -9,6 +9,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class AdministrasiKaryawanController extends Controller
 {
@@ -25,35 +26,31 @@ class AdministrasiKaryawanController extends Controller
     public function index()
     {
         $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')->paginate(10);
-        $data = AdministrasiKaryawan::orderBy('dateline', 'desc')->get();
-
-        $labels = [];
-        $progressData = [];
-
-        foreach ($data as $item) {
-            $labels[] = $item->nama_administrasi;
-
-            if ($item->tanggal_selesai) {
-                $diff = Carbon::parse($item->dateline)
-                    ->diffInDays(Carbon::parse($item->tanggal_selesai), false);
-
-                if ($diff <= 0 || $item->status === 'selesai') {
-                    $progress = 100;
-                } elseif ($diff <= 3) {
-                    $progress = 80;
-                } elseif ($diff <= 7) {
-                    $progress = 60;
+        $progressData = Cache::remember('administrasi_karyawan_progress', now()->addMinutes(15), function () {
+            $data = AdministrasiKaryawan::query()
+                ->select(['dateline', 'tanggal_selesai', 'status'])
+                ->get();
+            $progressDataArr = [];
+            foreach ($data as $item) {
+                if ($item->tanggal_selesai) {
+                    $diff = Carbon::parse($item->dateline)->diffInDays(Carbon::parse($item->tanggal_selesai), false);
+                    if ($diff <= 0 || $item->status === 'selesai') {
+                        $progressDataArr[] = 100;
+                    } elseif ($diff <= 3) {
+                        $progressDataArr[] = 80;
+                    } elseif ($diff <= 7) {
+                        $progressDataArr[] = 60;
+                    } else {
+                        $progressDataArr[] = 0;
+                    }
                 } else {
-                    $progress = 0;
+                    $progressDataArr[] = 0;
                 }
-            } else {
-                $progress = 0;
             }
+            return $progressDataArr;
+        });
 
-            $progressData[] = $progress;
-        }
-
-        return view( 'office.administrasiKaryawan.index', compact('administrasis', 'labels', 'progressData'));
+        return view('office.administrasiKaryawan.index', compact('administrasis', 'progressData'));
     }
 
     public function store(Request $request)
@@ -65,6 +62,8 @@ class AdministrasiKaryawanController extends Controller
         ]);
     
         AdministrasiKaryawan::create($validasi);
+        Cache::forget('administrasi_karyawan_progress');
+        Cache::forget('office_dashboard_administrasi');
 
         return back()->with('success_administrasi', 'Administrasi Karyawan berhasil dibuat.');
     }
@@ -96,13 +95,18 @@ class AdministrasiKaryawanController extends Controller
             $administrasi->status = 'selesai';
             $administrasi->save();
         }
+        
+        Cache::forget('administrasi_karyawan_progress');
+        Cache::forget('office_dashboard_administrasi');
 
         return back()->with('success_administrasi', 'Administrasi Karyawan berhasil diperbaharui.');
     }
 
     public function destroy(string $id)
     {
-        $administrasi = AdministrasiKaryawan::findOrFail($id)->delete();
+        AdministrasiKaryawan::findOrFail($id)->delete();
+        Cache::forget('administrasi_karyawan_progress');
+        Cache::forget('office_dashboard_administrasi');
 
         return back()->with('success_administrasi', 'Administrasi Karyawan berhasil dihapus.');
     }

@@ -179,6 +179,37 @@
         </div>
     </div>
 
+    <!-- Notification Modal -->
+    <div id="app">
+        <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable" style="max-width: 550px;"> {{-- default 500-600px --}}
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="notificationModalLabel">Alert Pemberitahuan</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        @include('partials.notifications')
+                    </div>
+                    <div class="modal-footer">
+                        @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
+                        <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-4">
+                                Tandai Semua sebagai Dibaca
+                            </button>
+                        </form>
+                        @endif
+                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="importExcelModalContact" tabindex="-1" aria-labelledby="importExcelModalContactLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">

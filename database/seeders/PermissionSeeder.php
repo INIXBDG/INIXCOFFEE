@@ -146,6 +146,8 @@ class PermissionSeeder extends Seeder
         'Store SOP Perusahaan',
         'Update SOP Perusahaan',
         'Delete SOP Perusahaan',
+        'View RekapRKM Office',
+        'Update RekapRKM Office',
     ];
 
     public function run(): void

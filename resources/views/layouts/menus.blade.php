@@ -272,15 +272,66 @@
             justify-content: space-between;
             width: auto;
             height: auto;
-            border: 1px solid rgba(255, 255, 255, .25);
-            border-radius: 20px;
-            background-color: rgba(255, 255, 255, 0.45);
-            box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.42) 0%, rgba(240,245,255,0.28) 100%);
+            box-shadow: 0 10px 22px rgba(24, 47, 81, 0.06);
             backdrop-filter: blur(2px);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px rgba(24, 47, 81, 0.12);
+            border-color: rgba(24, 47, 81, 0.15);
         }
 
         .card img {
             height: 60%;
+        }
+
+        #card-hover {
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(240,245,252,0.24) 100%);
+            box-shadow: 0 12px 26px rgba(24, 47, 81, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            overflow: hidden;
+        }
+
+        #card-hover:hover {
+            transform: translateY(-3px);
+            border-color: rgba(24, 47, 81, 0.18);
+            box-shadow: 0 18px 34px rgba(24, 47, 81, 0.12);
+        }
+
+        #card-hover .card-body {
+            padding: 1rem 1rem 0.9rem;
+        }
+
+        #card-hover .card-title {
+            color: #182F51;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+        }
+
+        #card-hover .card-text {
+            color: #4b5b74;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            margin-bottom: 0;
+        }
+
+        #card-hover .card-body .col-md-2 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #card-hover .card-body img {
+            width: 30px;
+            height: 30px;
+            opacity: 0.95;
         }
 
 
@@ -667,17 +718,20 @@
             /* Reorder the columns for mobile */
             #navbarkanan {
                 order: 2;
-                /* Move navbarkanan after navbarpalingkanan */
-                /* padding: 10px; */
             }
 
             #btngroupnavbar {
-                padding: 10px;
+                padding: 6px;
+                width: 100%;
+            }
+
+            #btngroupnavbar .btn-primary {
+                font-size: 0.72rem;
+                padding: 0.45rem 0.6rem;
             }
 
             #navbarpalingkanan {
                 order: 0;
-                /* Move navbarpalingkanan before navbarkanan */
             }
 
             body {
@@ -687,11 +741,12 @@
             #bgsvg {
                 background-image: url('/css/background inix office-02.svg') repeat-y;
                 overflow-y: scroll;
+                padding: 12px 14px;
             }
 
             .navbar-nav {
                 flex-direction: row;
-                padding-top: 10px;
+                padding-top: 4px;
             }
 
             #auth {
@@ -700,14 +755,14 @@
 
             .nav-item {
                 text-align: center;
-                width: 100%;
-                margin: 5px 0;
+                width: auto;
+                margin: 0;
             }
 
             .navbar-brand {
                 text-align: center;
                 width: 100%;
-                margin: 5px 0;
+                margin: 0;
             }
 
             .navbar-brand img {
@@ -715,7 +770,29 @@
             }
 
             #logoinix {
-                width: 250px;
+                width: 180px;
+            }
+
+            .card,
+            #card-hover {
+                border-radius: 14px;
+            }
+
+            #card-hover .card-body {
+                padding: 0.7rem;
+            }
+
+            #card-hover .card-title {
+                font-size: 0.9rem;
+            }
+
+            #card-hover .card-text {
+                font-size: 0.76rem;
+            }
+
+            .row > [class*='col-'] {
+                padding-left: 0.55rem;
+                padding-right: 0.55rem;
             }
         }
 
@@ -762,6 +839,7 @@
             #bgsvg {
                 background-image: url('/css/background inix office-02.svg') repeat-y;
                 overflow-y: scroll;
+                padding: 10px 12px;
             }
 
             .navbar-nav {
@@ -776,26 +854,45 @@
             .nav-item {
                 text-align: center;
                 width: 100%;
-                margin: 5px 0;
+                margin: 2px 0;
             }
 
             .navbar-brand {
                 text-align: center;
                 width: 100%;
-                margin: 5px 0;
+                margin: 0;
             }
 
             .navbar-brand img {
                 margin-right: 0;
-                max-width: 200px;
-                /* Lebih kecil untuk layar kecil */
+                max-width: 180px;
             }
 
             #logoinix {
-                width: 250px;
+                width: 180px;
             }
 
-            /* Tambahan styling untuk teks atau elemen kecil */
+            #btngroupnavbar {
+                padding: 4px;
+            }
+
+            #btngroupnavbar .btn-primary {
+                font-size: 0.68rem;
+                padding: 0.4rem 0.5rem;
+            }
+
+            #card-hover .card-body {
+                padding: 0.6rem;
+            }
+
+            #card-hover .card-title {
+                font-size: 0.85rem;
+            }
+
+            #card-hover .card-text {
+                font-size: 0.72rem;
+            }
+
             h1,
             h2,
             h3,
@@ -806,11 +903,11 @@
             }
 
             p {
-                font-size: 14px;
+                font-size: 13px;
             }
 
             button {
-                font-size: 12px;
+                font-size: 11px;
             }
         }
 
@@ -924,30 +1021,6 @@
         style="position: fixed; top: 50%; left: 50%; z-index: 999998; color: rgba(220, 38, 38, 0.18); font-size: clamp(4rem, 12vw, 10rem); font-weight: 800; letter-spacing: 0.2em; pointer-events: none; transform: translate(-50%, -50%) rotate(-25deg); user-select: none; white-space: nowrap;">
         STAGING</div>
     @endif
-    {{--
-    @if (session('success'))
-    <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
-    @if (session('error'))
-    <div class="alert alert-danger alert-dismissible fade show m-0 alert-custom" role="alert">
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
-    @if ($errors->any())
-    <div class="alert alert-danger alert-dismissible fade show m-0 alert-custom" role="alert">
-        @foreach ($errors->all() as $error)
-        <li>{{ $error }}</li>
-        @endforeach
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
-    --}}
-
-
     <div id="app">
         <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel"
             aria-hidden="true">
@@ -980,126 +1053,121 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalPemberitahuan" tabindex="-1" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="modalPemberitahuan" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <div class="col-md-12 d-flex justify-content-between">
                         <h5 class="modal-title" id="exampleModalLabel">Pengumuman</h5>
-                        @if (auth()->user()->jabatan == 'HRD' ||
-                        auth()->user()->jabatan === 'Koordinator Office' ||
-                        auth()->user()->jabatan == 'Office Manager')
-                        <a href="{{ route('notif.create') }}" class="btn btn-sm btn-custom mx-4"><img
-                                src="{{ asset('icon/plus.svg') }}" class="" width="20px"></a>
+
+                        @php
+                            // Amankan pengecekan jabatan ke dalam variabel
+                            $jabatanUser = auth()->user()?->jabatan;
+                            $canManageNotif = in_array($jabatanUser, ['HRD', 'Koordinator Office', 'Office Manager']);
+                        @endphp
+
+                        @if ($canManageNotif)
+                            <a href="{{ route('notif.create') }}" class="btn btn-sm btn-custom mx-4">
+                                <img src="{{ asset('icon/plus.svg') }}" width="20px">
+                            </a>
                         @endif
                     </div>
                 </div>
                 <div class="modal-body" style="overflow-y: scroll; height:400px">
-                    {{-- {{$notifikasi}} --}}
-                    @if (
-                    $notifikasi->sortByDesc('created_at')->filter(function ($notif) {
-                    return \Carbon\Carbon::parse($notif->tanggal_akhir)->lt(
-                    \Carbon\Carbon::parse($notif->tanggal_akhir)->addWeek());
-                    })->isEmpty())
-                    <p>Tidak ada notifikasi</p>
+
+                    @php
+                        // 1. PINDAHKAN FILTER CLOSURE KE BLOK PHP MURNI AGAR BLADE TIDAK ERROR
+                        $filteredNotif = collect($notifikasi ?? [])->sortByDesc('created_at')->filter(function ($notif) {
+                            return \Carbon\Carbon::parse($notif->tanggal_akhir)->lt(
+                                \Carbon\Carbon::parse($notif->tanggal_akhir)->addWeek()
+                            );
+                        });
+
+                        // 2. PINDAHKAN PENGECEKAN ABSENSI KE BLOK PHP
+                        $isEvening = \Carbon\Carbon::now()->between(
+                            \Carbon\Carbon::createFromTimeString('17:00:00'),
+                            \Carbon\Carbon::createFromTimeString('23:59:59')
+                        );
+                        $hasAbsenPulang = !empty($absenHariIni) ? !empty($absenHariIni->jam_keluar) : false;
+                    @endphp
+
+                    <!-- Logika Notifikasi Kini Menjadi Sangat Sederhana -->
+                    @if ($filteredNotif->isEmpty())
+                        <p>Tidak ada notifikasi</p>
                     @else
-                    @foreach ($notifikasi as $notif)
-                    @if(\Carbon\Carbon::parse($notif->tanggal_akhir)->lt(\Carbon\Carbon::parse($notif->tanggal_akhir)->addWeek()))
-                    <div class="card-body" id="notif">
-                        <table>
-                            <tr>
-                                <td style="width:80%">
-                                    @if ($notif->tipe_notifikasi == 'Libur')
-                                    <div class="card-title" style="text-transform: capitalize">
-                                        Pengumuman <strong>{{ $notif->tipe_notifikasi }}</strong>
-                                        Dari {{ $notif->id_user }}
-                                        <b>{{ $notif->users->jabatan }}</b>
-                                        <p>{{ $notif->isi_notifikasi }}<br>
-                                            {{-- {{\Carbon\Carbon::parse($notif->tanggal_akhir)->addWeek()}} --}}
-                                            @if ($notif->tanggal_awal == $notif->tanggal_akhir)
-                                            Pada Tanggal
-                                            {{ \Carbon\Carbon::parse($notif->tanggal_awal)->translatedFormat('d F Y') }}
+                        @foreach ($filteredNotif as $notif)
+                            <div class="card-body" id="notif">
+                                <table>
+                                    <tr>
+                                        <td style="width:80%">
+                                            @if ($notif->tipe_notifikasi == 'Libur')
+                                                <div class="card-title" style="text-transform: capitalize">
+                                                    Pengumuman <strong>{{ $notif->tipe_notifikasi }}</strong>
+                                                    Dari {{ $notif->id_user }}
+                                                    <b>{{ $notif->users->jabatan ?? '' }}</b>
+                                                    <p>{{ $notif->isi_notifikasi }}<br>
+                                                        @if ($notif->tanggal_awal == $notif->tanggal_akhir)
+                                                            Pada Tanggal {{ \Carbon\Carbon::parse($notif->tanggal_awal)->translatedFormat('d F Y') }}
+                                                        @else
+                                                            Pada Tanggal {{ \Carbon\Carbon::parse($notif->tanggal_awal)->translatedFormat('d F Y') }}
+                                                            Sampai Tanggal {{ \Carbon\Carbon::parse($notif->tanggal_akhir)->translatedFormat('d F Y') }}
+                                                        @endif
+                                                    </p>
+                                                    <p class="m-0">
+                                                        {{ \Carbon\Carbon::parse($notif->created_at)->translatedFormat('d F Y \J\a\m H:i:s') }}
+                                                    </p>
+                                                </div>
                                             @else
-                                            Pada Tanggal
-                                            {{ \Carbon\Carbon::parse($notif->tanggal_awal)->translatedFormat('d F Y') }}
-                                            Sampai Tanggal
-                                            {{ \Carbon\Carbon::parse($notif->tanggal_akhir)->translatedFormat('d F Y')
-                                            }}
+                                                <div class="card-title" style="text-transform: capitalize">
+                                                    Pengumuman <strong>{{ $notif->tipe_notifikasi }}</strong>
+                                                    Dari {{ $notif->id_user }}
+                                                    <b>{{ $notif->users->jabatan ?? '' }}</b>
+                                                    <p>{{ $notif->isi_notifikasi }}</p>
+                                                    <p class="m-0">
+                                                        {{ \Carbon\Carbon::parse($notif->created_at)->translatedFormat('d F Y \J\a\m H:i:s') }}
+                                                    </p>
+                                                </div>
                                             @endif
-                                        </p>
-                                        <p class="m-0">
-                                            {{ \Carbon\Carbon::parse($notif->created_at)->translatedFormat('d F Y \J\a\m
-                                            H:i:s') }}
-                                        </p>
-                                    </div>
-                                    @else
-                                    <div class="card-title" style="text-transform: capitalize">
-                                        Pengumuman <strong>{{ $notif->tipe_notifikasi }}</strong>
-                                        Dari {{ $notif->id_user }}
-                                        <b>{{ $notif->users->jabatan }}</b>
-                                        <p>{{ $notif->isi_notifikasi }}</p>
-                                        <p class="m-0">
-                                            {{ \Carbon\Carbon::parse($notif->created_at)->translatedFormat('d F Y \J\a\m
-                                            H:i:s') }}
-                                        </p>
-                                    </div>
-                                    @endif
-                                </td>
-                                <td style="width: 20%">
-                                    <div class="d-flex gap-2 align-items-center">
-                                        @if (auth()->user()->jabatan == 'HRD' ||
-                                        auth()->user()->jabatan == 'Office Manager' ||
-                                        auth()->user()->jabatan === 'Koordinator Office')
-                                        <a href="{{ route('notif.edit', $notif->id) }}" class="btn btn-warning"
-                                            id="dismiss-notification">
-                                            <img src="{{ asset('icon/edit.svg') }}" width="20px">
-                                        </a>
-                                        @endif
+                                        </td>
+                                        <td style="width: 20%">
+                                            <div class="d-flex gap-2 align-items-center">
+                                                @if ($canManageNotif)
+                                                    <a href="{{ route('notif.edit', $notif->id) }}" class="btn btn-warning" id="dismiss-notification">
+                                                        <img src="{{ asset('icon/edit.svg') }}" width="20px">
+                                                    </a>
+                                                @endif
 
-                                        <form action="{{ route('notif.destroy', $notif->id) }}" method="POST"
-                                            style="display:inline;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger" id="dismiss-notification"
-                                                style="padding: 0 7px;">
-                                                <img src="{{ asset('icon/trash.svg') }}" width="20px" alt="delete">
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    <hr class="m-0" id="hr">
-                    @endif
-                    @endforeach
+                                                <form action="{{ route('notif.destroy', $notif->id) }}" method="POST" style="display:inline;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-danger" id="dismiss-notification" style="padding: 0 7px;">
+                                                        <img src="{{ asset('icon/trash.svg') }}" width="20px" alt="delete">
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <hr class="m-0" id="hr">
+                        @endforeach
                     @endif
 
+                    <!-- Pengecekan Absensi Menjadi Lebih Aman -->
                     @if (!$absenHariIni)
                     Anda belum absensi hari ini, harap segera melakukan absensi.
                     @else
-                    Anda sudah absensi hari ini pada tanggal
-                    {{ \Carbon\Carbon::parse($absenHariIni->tanggal)->translatedFormat('d F Y') }} di jam
-                    {{ $absenHariIni->jam_masuk }}
-                    @endif
-                    @if (
-                    !empty($absenHariIni->jam_keluar) &
-                    \Carbon\Carbon::now()->between(
-                    \Carbon\Carbon::createFromTimeString('17:00:00'),
-                    \Carbon\Carbon::createFromTimeString('23:59:59')))
-                    Terimakasih telah melakukan absensi pulang, hati hati dijalan!
-                    @elseif (
-                    \Carbon\Carbon::now()->between(
-                    \Carbon\Carbon::createFromTimeString('17:00:00'),
-                    \Carbon\Carbon::createFromTimeString('23:59:59')))
-                    Harap melakukan absensi pulang ya!
+                        Anda sudah absensi hari ini pada tanggal {{ \Carbon\Carbon::parse($absenHariIni->tanggal)->translatedFormat('d F Y') }} di jam {{ $absenHariIni->jam_masuk }}
                     @endif
 
+                    @if ($hasAbsenPulang && $isEvening)
+                        Terimakasih telah melakukan absensi pulang, hati hati dijalan!
+                    @elseif ($isEvening)
+                        Harap melakukan absensi pulang ya!
+                    @endif
 
-
-                    @if (auth()->user()->jabatan == 'Programmer')
-                    Diupdate pada tanggal 2 Juli 2025
+                    @if ($jabatanUser == 'Programmer')
+                        Diupdate pada tanggal 2 Juli 2025
                     @endif
                 </div>
                 <div class="modal-footer">
@@ -1108,6 +1176,7 @@
             </div>
         </div>
     </div>
+
     <div class="modal fade" id="modalAbsen" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">

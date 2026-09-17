@@ -3,7 +3,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
         :root {
             --pri: #4f46e5;
@@ -29,13 +28,10 @@
             --shadow: 0 4px 6px rgba(0, 0, 0, .07), 0 2px 4px rgba(0, 0, 0, .05);
             --shadow-lg: 0 10px 25px rgba(0, 0, 0, .1), 0 4px 10px rgba(0, 0, 0, .07);
         }
-
         body { background-color: #fafbfc; }
-
         .page-header { margin-bottom: 1.5rem; }
         .page-title { font-size: 1.6rem; font-weight: 700; color: var(--gray-900); margin-bottom: .15rem; }
         .page-sub { color: var(--gray-400); font-size: .875rem; }
-
         .stat-card {
             border: none; border-radius: var(--radius); box-shadow: var(--shadow);
             transition: transform .25s, box-shadow .25s;
@@ -48,7 +44,6 @@
         }
         .stat-value { font-size: 1.45rem; font-weight: 700; color: var(--gray-900); margin: .4rem 0 .15rem; }
         .stat-label { color: var(--gray-400); font-size: .8rem; margin: 0; }
-
         .nav-tabs-custom { border-bottom: 2px solid var(--gray-200); }
         .nav-tabs-custom .nav-link {
             border: none; color: var(--gray-400); font-weight: 600;
@@ -58,10 +53,8 @@
         .nav-tabs-custom .nav-link.active {
             color: var(--pri); border-bottom: 3px solid var(--pri); background: transparent;
         }
-
         .card-shell { border: none; border-radius: var(--radius); box-shadow: var(--shadow); }
         .card-shell .card-body { padding: 1.5rem; }
-
         .btn-pri {
             background: var(--pri); border: none; color: #fff; font-weight: 600;
             padding: .5rem 1.25rem; border-radius: 8px; transition: all .25s;
@@ -70,14 +63,12 @@
             background: var(--pri-dark); transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(79, 70, 229, .35); color: #fff;
         }
-
         .status-badge {
             padding: .35rem .75rem; border-radius: 20px; font-size: .7rem;
             font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
         }
         .status-done { background: var(--success-light); color: var(--success); }
         .status-pending { background: var(--warning-light); color: var(--warning); }
-
         #payrollTable { border-collapse: separate; border-spacing: 0; width: 100%; }
         #payrollTable thead th {
             font-size: .75rem; font-weight: 700; text-transform: uppercase;
@@ -92,7 +83,6 @@
             border-bottom: 1px solid var(--gray-100) !important; border-top: none !important;
             padding: 0.75rem 1rem;
         }
-
         .pagination-custom { display: flex; gap: 0.25rem; flex-wrap: wrap; }
         .pagination-custom button {
             padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: 6px;
@@ -101,21 +91,26 @@
         }
         .pagination-custom button:hover { background: var(--pri-light); color: var(--pri); border-color: var(--pri); }
         .pagination-custom button.active { background: var(--pri); color: white; border-color: var(--pri); }
-
         .chart-wrap { position: relative; height: 260px; }
-
         .modal-header-custom {
             background: linear-gradient(135deg, var(--pri) 0%, var(--pri-dark) 100%);
             color: #fff; border-radius: 12px 12px 0 0;
         }
         .modal-header-custom .btn-close { filter: brightness(0) invert(1); }
-
-        .loading-overlay {
-            position: fixed; inset: 0; background: rgba(255, 255, 255, .6);
-            display: flex; align-items: center; justify-content: center; z-index: 9998;
+        .skeleton {
+            background: linear-gradient(90deg, #f0f2f5 25%, #e6e9ef 50%, #f0f2f5 75%);
+            background-size: 200% 100%;
+            animation: skeleton-shimmer 1.4s ease-in-out infinite;
+            border-radius: 8px;
         }
-        .loading-overlay.hidden { display: none; }
-
+        @keyframes skeleton-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-stat-value { height: 28px; width: 70%; margin: .4rem 0 .15rem; }
+        .skeleton-stat-label { height: 12px; width: 50%; }
+        .skeleton-chart { height: 260px; border-radius: 10px; }
+        .skeleton-table-row td { padding: 14px 12px; vertical-align: middle; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
@@ -158,116 +153,9 @@
 
         <div class="tab-content">
             <div class="tab-pane fade show active" id="tabDashboard">
-                {{-- BARIS CARD PERTAMA --}}
-                <div class="row g-3 mb-4">
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Total Karyawan</p><h3 class="stat-value" id="sumTotal">0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)"><i class="fa-solid fa-users"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Sudah Dihitung</p><h3 class="stat-value" id="sumDone" style="color:var(--success)">0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)"><i class="fa-solid fa-check-circle"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Belum Dihitung</p><h3 class="stat-value" id="sumPending" style="color:var(--warning)">0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i class="fa-solid fa-exclamation-circle"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Total Basic Salary</p><h3 class="stat-value" id="sumBasicSalary" style="color:var(--info)">Rp 0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#0ea5e9,#06b6d4)"><i class="fa-solid fa-sack-dollar"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- BARIS CARD KEDUA: Total Tunjangan + 3 Card Potongan --}}
-                <div class="row g-3 mb-4">
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Total Tunjangan</p><h3 class="stat-value" id="sumAllowance" style="color:var(--info)">Rp 0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i class="fa-solid fa-gift"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Potongan BPJS Tenaga Kerja</p><h3 class="stat-value" id="sumBpjsTk" style="color:var(--danger)">Rp 0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#dc2626,#f87171)"><i class="fa-solid fa-helmet-safety"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Potongan BPJS Kesehatan</p><h3 class="stat-value" id="sumBpjsKes" style="color:var(--danger)">Rp 0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#e11d48,#fb7185)"><i class="fa-solid fa-heart-pulse"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card stat-card">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div><p class="stat-label">Potongan PPh 21</p><h3 class="stat-value" id="sumPph21" style="color:var(--danger)">Rp 0</h3></div>
-                                <div class="stat-icon" style="background:linear-gradient(135deg,#b91c1c,#ef4444)"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row g-4 mb-4">
-                    <div class="col-lg-6">
-                        <div class="card card-shell">
-                            <div class="card-body">
-                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Distribusi Gaji Bersih</h6>
-                                <div class="chart-wrap"><canvas id="salaryRangeChart"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card card-shell">
-                            <div class="card-body">
-                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-chart-bar me-2 text-success"></i>Tunjangan per Divisi (Top 8)</h6>
-                                <div class="chart-wrap"><canvas id="allowanceChart"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row g-4 mb-4">
-                    <div class="col-lg-6">
-                        <div class="card card-shell">
-                            <div class="card-body">
-                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-chart-column me-2 text-danger"></i>Potongan Terbanyak (Top 8)</h6>
-                                <div class="chart-wrap"><canvas id="deductionChart"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card card-shell">
-                            <div class="card-body">
-                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-chart-line me-2 text-info"></i>Trend Payroll Bulanan (<span id="trendYear"></span>)</h6>
-                                <div class="chart-wrap" style="height:220px"><canvas id="trendChart"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div id="metricsArea"></div>
+                <div id="chartsArea"></div>
             </div>
-
             <div class="tab-pane fade" id="tabData">
                 <div class="card card-shell">
                     <div class="card-body p-0">
@@ -336,13 +224,8 @@
         </div>
     </div>
 
-    <div class="loading-overlay hidden" id="mainLoading">
-        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
-    </div>
-
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
         const formatIDR = (num) => {
             const value = typeof num === 'number' ? num : 0;
@@ -355,6 +238,107 @@
 
         let salaryChart = null, allowanceChart = null, trendChart = null, deductionChart = null;
         let currentPage = 1, allData = [], searchQuery = '';
+
+        function skeletonMetrics() {
+            return `
+            <div class="row g-3 mb-4">
+                ${[1,2,3,4].map(() => `
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div style="flex:1">
+                                <div class="skeleton skeleton-stat-label"></div>
+                                <div class="skeleton skeleton-stat-value"></div>
+                            </div>
+                            <div class="skeleton" style="width:48px;height:48px;border-radius:10px;flex-shrink:0;"></div>
+                        </div>
+                    </div>
+                </div>`).join('')}
+            </div>
+            <div class="row g-3 mb-4">
+                ${[1,2,3,4].map(() => `
+                <div class="col-xl-3 col-md-6">
+                    <div class="card stat-card">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div style="flex:1">
+                                <div class="skeleton skeleton-stat-label"></div>
+                                <div class="skeleton skeleton-stat-value"></div>
+                            </div>
+                            <div class="skeleton" style="width:48px;height:48px;border-radius:10px;flex-shrink:0;"></div>
+                        </div>
+                    </div>
+                </div>`).join('')}
+            </div>`;
+        }
+
+        function skeletonCharts() {
+            return `
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="card card-shell">
+                        <div class="card-body">
+                            <div class="skeleton mb-3" style="height:16px;width:55%;"></div>
+                            <div class="skeleton skeleton-chart"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card card-shell">
+                        <div class="card-body">
+                            <div class="skeleton mb-3" style="height:16px;width:50%;"></div>
+                            <div class="skeleton skeleton-chart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="card card-shell">
+                        <div class="card-body">
+                            <div class="skeleton mb-3" style="height:16px;width:55%;"></div>
+                            <div class="skeleton skeleton-chart"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card card-shell">
+                        <div class="card-body">
+                            <div class="skeleton mb-3" style="height:16px;width:60%;"></div>
+                            <div class="skeleton" style="height:220px;border-radius:10px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function skeletonTableRows(rows = 8) {
+            let html = '';
+            for (let r = 0; r < rows; r++) {
+                html += `<tr class="skeleton-table-row">
+                    <td><div class="skeleton" style="height:14px;width:24px;"></div></td>
+                    <td><div class="skeleton mb-1" style="height:14px;width:70%;"></div><div class="skeleton" style="height:11px;width:40%;"></div></td>
+                    <td><div class="skeleton mb-1" style="height:14px;width:60%;"></div><div class="skeleton" style="height:11px;width:45%;"></div></td>
+                    <td class="text-end"><div class="skeleton ms-auto" style="height:14px;width:80px;"></div></td>
+                    <td class="text-end"><div class="skeleton ms-auto" style="height:14px;width:70px;"></div></td>
+                    <td class="text-end"><div class="skeleton ms-auto" style="height:14px;width:70px;"></div></td>
+                    <td class="text-end"><div class="skeleton ms-auto" style="height:14px;width:90px;"></div></td>
+                    <td class="text-center"><div class="skeleton mx-auto" style="height:24px;width:60px;border-radius:20px;"></div></td>
+                    <td class="text-center"><div class="skeleton mx-auto" style="height:30px;width:36px;border-radius:6px;"></div></td>
+                </tr>`;
+            }
+            return html;
+        }
+
+        function skeletonModalDetail() {
+            return `
+            <div class="row g-2 mb-4">
+                ${[1,2,3,4].map(() => `
+                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
+                `).join('')}
+            </div>
+            <div class="skeleton mb-3" style="height:14px;width:140px;"></div>
+            <div class="skeleton" style="height:200px;border-radius:8px;"></div>`;
+        }
 
         $(document).ready(function() {
             for (let i = 1; i <= 12; i++) {
@@ -370,40 +354,175 @@
 
             window.loadData = function(page = 1) {
                 currentPage = page;
-                $('#mainLoading').removeClass('hidden');
+                $('#metricsArea').html(skeletonMetrics());
+                $('#chartsArea').html(skeletonCharts());
+                $('#payrollBody').html(skeletonTableRows(8));
+                $('#periodLabel').text('...');
+                $('#showingStart, #showingEnd, #totalItems').text('0');
+                $('#paginationContainer').html('');
+
                 const params = { month: $('#filterBulan').val(), year: $('#filterTahun').val(), search: searchQuery, page: page };
 
                 $.get("{{ route('HR.payroll.dashboard') }}", params, function(res) {
-                    if (!res.success) { alert(res.message); $('#mainLoading').addClass('hidden'); return; }
+                    if (!res.success) {
+                        alert(res.message);
+                        $('#metricsArea').html('');
+                        $('#chartsArea').html('<div class="text-center py-5 text-danger">Gagal memuat data</div>');
+                        $('#payrollBody').html('<tr><td colspan="9" class="text-center text-danger py-5">Gagal memuat data</td></tr>');
+                        return;
+                    }
                     allData = res.data;
                     $('#periodLabel').text(res.period.display);
-                    $('#sumTotal').text(res.summary.total_karyawan);
-                    $('#sumDone').text(res.summary.sudah_dihitung);
-                    $('#sumPending').text(res.summary.belum_dihitung);
-                    $('#sumBasicSalary').text(formatIDR(res.summary.total_basic_salary));
-                    $('#sumAllowance').text(formatIDR(res.summary.total_tunjangan));
-                    $('#sumBpjsTk').text(formatIDR(res.summary.total_potongan_bpjs_tk));
-                    $('#sumBpjsKes').text(formatIDR(res.summary.total_potongan_bpjs_kes));
-                    $('#sumPph21').text(formatIDR(res.summary.total_potongan_pph21));
+                    renderMetrics(res.summary);
                     renderChartsSafe(res.charts);
                     renderTable(res);
-                    $('#mainLoading').addClass('hidden');
                 }).fail(function(xhr, status, error) {
-                    console.error('Error:', error); alert('Gagal memuat data: ' + error); $('#mainLoading').addClass('hidden');
+                    console.error('Error:', error);
+                    $('#metricsArea').html('');
+                    $('#chartsArea').html('<div class="text-center py-5 text-danger">Gagal memuat data: ' + error + '</div>');
+                    $('#payrollBody').html('<tr><td colspan="9" class="text-center text-danger py-5">Gagal memuat data</td></tr>');
                 });
             };
 
+            function renderMetrics(summary) {
+                $('#metricsArea').html(`
+                <div class="row g-3 mb-4">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Total Karyawan</p><h3 class="stat-value" id="sumTotal">${summary.total_karyawan || 0}</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)"><i class="fa-solid fa-users"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Sudah Dihitung</p><h3 class="stat-value" id="sumDone" style="color:var(--success)">${summary.sudah_dihitung || 0}</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)"><i class="fa-solid fa-check-circle"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Belum Dihitung</p><h3 class="stat-value" id="sumPending" style="color:var(--warning)">${summary.belum_dihitung || 0}</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i class="fa-solid fa-exclamation-circle"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Total Basic Salary</p><h3 class="stat-value" id="sumBasicSalary" style="color:var(--info)">${formatIDR(summary.total_basic_salary)}</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#0ea5e9,#06b6d4)"><i class="fa-solid fa-sack-dollar"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Total Tunjangan</p><h3 class="stat-value" id="sumAllowance" style="color:var(--info)">${formatIDR(summary.total_tunjangan)}</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i class="fa-solid fa-gift"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Potongan BPJS Tenaga Kerja</p><h3 class="stat-value" id="sumBpjsTk" style="color:var(--danger)">${formatIDR(summary.total_potongan_bpjs_tk)}</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#dc2626,#f87171)"><i class="fa-solid fa-helmet-safety"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Potongan BPJS Kesehatan</p><h3 class="stat-value" id="sumBpjsKes" style="color:var(--danger)">${formatIDR(summary.total_potongan_bpjs_kes)}</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#e11d48,#fb7185)"><i class="fa-solid fa-heart-pulse"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div><p class="stat-label">Potongan PPh 21</p><h3 class="stat-value" id="sumPph21" style="color:var(--danger)">${formatIDR(summary.total_potongan_pph21)}</h3></div>
+                                <div class="stat-icon" style="background:linear-gradient(135deg,#b91c1c,#ef4444)"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`);
+            }
+
             function renderCharts(charts) {
+                $('#chartsArea').html(`
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="card card-shell">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Distribusi Gaji Bersih</h6>
+                                <div class="chart-wrap"><canvas id="salaryRangeChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card card-shell">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-chart-bar me-2 text-success"></i>Tunjangan per Divisi (Top 8)</h6>
+                                <div class="chart-wrap"><canvas id="allowanceChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="card card-shell">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-chart-column me-2 text-danger"></i>Potongan Terbanyak (Top 8)</h6>
+                                <div class="chart-wrap"><canvas id="deductionChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card card-shell">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-chart-line me-2 text-info"></i>Trend Payroll Bulanan (<span id="trendYear">${$('#filterTahun').val()}</span>)</h6>
+                                <div class="chart-wrap" style="height:220px"><canvas id="trendChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`);
+
                 ['salaryRangeChart', 'allowanceChart', 'trendChart', 'deductionChart'].forEach(id => {
-                    const existing = Chart.getChart(id); if (existing) existing.destroy();
+                    const existing = Chart.getChart(id);
+                    if (existing) existing.destroy();
                 });
 
                 const ctx1 = document.getElementById('salaryRangeChart');
                 if (ctx1 && charts?.salary_ranges?.labels?.length > 0) {
                     salaryChart = new Chart(ctx1, {
                         type: 'doughnut',
-                        data: { labels: charts.salary_ranges.labels.filter(l => l), datasets: [{ data: charts.salary_ranges.counts.map(c => c || 0), backgroundColor: ['#4f46e5', '#059669', '#d97706', '#dc2626', '#9ca3af'], borderWidth: 0 }] },
-                        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 }, padding: 15, usePointStyle: true } } } }
+                        data: {
+                            labels: charts.salary_ranges.labels.filter(l => l),
+                            datasets: [{
+                                data: charts.salary_ranges.counts.map(c => c || 0),
+                                backgroundColor: ['#4f46e5', '#059669', '#d97706', '#dc2626', '#9ca3af'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '70%',
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { boxWidth: 12, font: { size: 11 }, padding: 15, usePointStyle: true }
+                                }
+                            }
+                        }
                     });
                 }
 
@@ -411,8 +530,27 @@
                 if (ctx2 && charts?.allowance_by_divisi?.labels?.length > 0) {
                     allowanceChart = new Chart(ctx2, {
                         type: 'bar',
-                        data: { labels: charts.allowance_by_divisi.labels.filter(l => l), datasets: [{ label: 'Total Tunjangan', data: charts.allowance_by_divisi.allowance?.map(v => v || 0) || [], backgroundColor: 'rgba(5, 150, 105, 0.8)', borderRadius: 6 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => 'Rp ' + ((v || 0) / 1000000).toFixed(1) + 'J' } }, x: { grid: { display: false } } } }
+                        data: {
+                            labels: charts.allowance_by_divisi.labels.filter(l => l),
+                            datasets: [{
+                                label: 'Total Tunjangan',
+                                data: charts.allowance_by_divisi.allowance?.map(v => v || 0) || [],
+                                backgroundColor: 'rgba(5, 150, 105, 0.8)',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { callback: v => 'Rp ' + ((v || 0) / 1000000).toFixed(1) + 'J' }
+                                },
+                                x: { grid: { display: false } }
+                            }
+                        }
                     });
                 }
 
@@ -420,8 +558,28 @@
                 if (ctx3 && charts?.top_deductions?.labels?.length > 0) {
                     deductionChart = new Chart(ctx3, {
                         type: 'bar',
-                        data: { labels: charts.top_deductions.labels.filter(l => l), datasets: [{ label: 'Total Potongan', data: charts.top_deductions.total_values?.map(v => v || 0) || [], backgroundColor: 'rgba(220, 38, 38, 0.8)', borderRadius: 6 }] },
-                        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => 'Rp ' + ((v || 0) / 1000000).toFixed(1) + 'J' } }, y: { grid: { display: false } } } }
+                        data: {
+                            labels: charts.top_deductions.labels.filter(l => l),
+                            datasets: [{
+                                label: 'Total Potongan',
+                                data: charts.top_deductions.total_values?.map(v => v || 0) || [],
+                                backgroundColor: 'rgba(220, 38, 38, 0.8)',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            indexAxis: 'y',
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: { callback: v => 'Rp ' + ((v || 0) / 1000000).toFixed(1) + 'J' }
+                                },
+                                y: { grid: { display: false } }
+                            }
+                        }
                     });
                 }
 
@@ -429,8 +587,30 @@
                 if (ctx4 && charts?.monthly_trend?.length > 0) {
                     trendChart = new Chart(ctx4, {
                         type: 'line',
-                        data: { labels: charts.monthly_trend.map(t => t?.month || ''), datasets: [{ label: 'Total Gaji', data: charts.monthly_trend.map(t => t?.total_gaji || 0), borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => 'Rp ' + ((v || 0) / 1000000).toFixed(1) + 'J' } }, x: { grid: { display: false } } } }
+                        data: {
+                            labels: charts.monthly_trend.map(t => t?.month || ''),
+                            datasets: [{
+                                label: 'Total Gaji',
+                                data: charts.monthly_trend.map(t => t?.total_gaji || 0),
+                                borderColor: '#0284c7',
+                                backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { callback: v => 'Rp ' + ((v || 0) / 1000000).toFixed(1) + 'J' }
+                                },
+                                x: { grid: { display: false } }
+                            }
+                        }
                     });
                 }
             }
@@ -501,7 +681,7 @@
                 if ((row.tunjangan_jabatan || 0) > 0) {
                     html += `<tr><td>Tunjangan Jabatan</td><td><small class="text-muted">Tunjangan</small></td><td><small class="text-muted">Dari log gaji</small></td><td class="text-end text-success">${formatIDR(row.tunjangan_jabatan)}</td></tr>`;
                 }
-                row.details.forEach(d => {
+                (row.details || []).forEach(d => {
                     const valueClass = d.nilai < 0 ? 'text-danger' : 'text-success';
                     html += `<tr><td>${d.nama || '-'}</td><td><small class="text-muted">${d.tipe || '-'}</small></td><td><small class="text-muted">${d.keterangan || '-'}</small></td><td class="text-end ${valueClass}">${formatSigned(d.nilai)}</td></tr>`;
                 });
@@ -521,7 +701,8 @@
             });
             $('#searchPayroll').on('keyup', function(e) {
                 if (e.keyCode === 13 || this.value.length > 2 || this.value === '') {
-                    searchQuery = this.value; loadData(1);
+                    searchQuery = this.value;
+                    loadData(1);
                 }
             });
 

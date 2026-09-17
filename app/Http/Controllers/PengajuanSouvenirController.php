@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 use App\Notifications\PengajuanSouvenirNotification;
 use App\Notifications\ApprovalSouvenirNotification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 class PengajuanSouvenirController extends Controller
 {
@@ -216,6 +217,7 @@ class PengajuanSouvenirController extends Controller
             return redirect()->back()->with('error', 'Gagal menyimpan pengajuan: ' . $e->getMessage())->withInput();
         }
 
+        Cache::forget('office_dashboard_souvenir_' . date('Y'));
         return redirect()->route('pengajuansouvenir.index')->with('success', 'Pengajuan Souvenir berhasil dibuat.');
     }
 
@@ -356,6 +358,7 @@ class PengajuanSouvenirController extends Controller
                 }
             }
         }
+        Cache::forget('office_dashboard_souvenir_' . date('Y'));
         return redirect()->route('pengajuansouvenir.index')->with('success', 'Status Pengajuan Souvenir berhasil diperbarui.');
     }
 
@@ -478,6 +481,7 @@ class PengajuanSouvenirController extends Controller
             return redirect()->back()->with('error', 'Gagal memperbarui item: ' . $e->getMessage());
         }
 
+        Cache::forget('office_dashboard_souvenir_' . date('Y'));
         return redirect()->route('pengajuansouvenir.show', $id)->with('success', 'Detail item berhasil diperbarui.');
     }
 
@@ -526,6 +530,7 @@ class PengajuanSouvenirController extends Controller
                 ]);
             }
 
+            Cache::forget('office_dashboard_souvenir_' . date('Y'));
             return redirect()->back()->with('success', 'Invoice berhasil diunggah.');
         }
 
@@ -558,6 +563,7 @@ class PengajuanSouvenirController extends Controller
             return redirect()->route('pengajuansouvenir.index')->with('error', 'Gagal menghapus data: ' . $e->getMessage());
         }
 
+        Cache::forget('office_dashboard_souvenir_' . date('Y'));
         return redirect()->route('pengajuansouvenir.index')->with('success', 'Pengajuan Souvenir berhasil dihapus!');
     }
 
