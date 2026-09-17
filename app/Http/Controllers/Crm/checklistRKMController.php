@@ -24,7 +24,10 @@ class checklistRKMController extends Controller
 
     public function index(): View
     {
-        return view('crm.checklistRKM.index');
+        $selectedBulan = request('bulan', date('n'));
+        $selectedTahun = request('tahun', date('Y'));
+
+        return view('crm.checklistRKM.index', compact('selectedBulan', 'selectedTahun'));
     }
 
     public function getData(Request $request): JsonResponse
@@ -77,52 +80,38 @@ class checklistRKMController extends Controller
             });
         }
 
-        if ($request->filled('bulan') && $request->filled('tahun')) {
-            $startDate = Carbon::create($request->tahun, $request->bulan, 1)->startOfMonth();
-            $endDate = Carbon::create($request->tahun, $request->bulan, 1)->endOfMonth();
-            $inner->where(function ($q) use ($startDate, $endDate) {
-                $q->where('r_k_m_s.tanggal_awal', '<=', $endDate->format('Y-m-d'))
-                ->where('r_k_m_s.tanggal_akhir', '>=', $startDate->format('Y-m-d'));
-            });
-        } elseif ($request->filled('tahun')) {
-            $yearStart = Carbon::create($request->tahun, 1, 1)->startOfYear();
-            $yearEnd = Carbon::create($request->tahun, 12, 31)->endOfYear();
-            $inner->where(function ($q) use ($yearStart, $yearEnd) {
-                $q->where('r_k_m_s.tanggal_awal', '<=', $yearEnd->format('Y-m-d'))
-                ->where('r_k_m_s.tanggal_akhir', '>=', $yearStart->format('Y-m-d'));
-            });
-        }
+if ($request->filled('minggu') && $request->filled('bulan') && $request->filled('tahun')) {
+    $minggu = (int) $request->minggu;
+    $tahun = (int) $request->tahun;
+    $bulan = (int) $request->bulan;
 
-        if ($request->filled('minggu') && $request->filled('bulan') && $request->filled('tahun')) {
-            $minggu = (int) $request->minggu;
-            $tahun = (int) $request->tahun;
-            $bulan = (int) $request->bulan;
+    $startOfMonth = Carbon::create($tahun, $bulan, 1)->startOfMonth();
+    $endOfMonth = Carbon::create($tahun, $bulan, 1)->endOfMonth();
 
-            $startDay = ($minggu - 1) * 7 + 1;
-            $endDay = min($minggu * 7, Carbon::create($tahun, $bulan, 1)->daysInMonth);
+    // Generate minggu persis sama seperti di Blade (Senin - Minggu)
+    $weekStart = $startOfMonth->copy()->startOfWeek(Carbon::MONDAY);
+    $weeks = [];
 
-            $firstBusinessDay = null;
-            $lastBusinessDay = null;
+    while ($weekStart->lte($endOfMonth)) {
+        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+        $weeks[] = [
+            'start' => $weekStart->copy(),
+            'end'   => $weekEnd->copy(),
+        ];
+        $weekStart->addWeek();
+    }
 
-            for ($day = $startDay; $day <= $endDay; $day++) {
-                $date = Carbon::create($tahun, $bulan, $day);
-                if ($date->isWeekday()) {
-                    if (!$firstBusinessDay) {
-                        $firstBusinessDay = $date->copy();
-                    }
-                    $lastBusinessDay = $date->copy();
-                }
-            }
+    if (isset($weeks[$minggu - 1])) {
+        $selectedWeek = $weeks[$minggu - 1];
 
-            if ($firstBusinessDay && $lastBusinessDay) {
-                $inner->where(function ($q) use ($firstBusinessDay, $lastBusinessDay) {
-                    $q->where('r_k_m_s.tanggal_awal', '<=', $lastBusinessDay->format('Y-m-d'))
-                    ->where('r_k_m_s.tanggal_akhir', '>=', $firstBusinessDay->format('Y-m-d'));
-                });
-            } else {
-                $inner->whereRaw('1 = 0');
-            }
-        }
+        $inner->where(function ($q) use ($selectedWeek) {
+            $q->where('r_k_m_s.tanggal_awal', '<=', $selectedWeek['end']->format('Y-m-d'))
+              ->where('r_k_m_s.tanggal_akhir', '>=', $selectedWeek['start']->format('Y-m-d'));
+        });
+    } else {
+        $inner->whereRaw('1 = 0');
+    }
+}
 
         $perPage = $request->input('per_page', 20);
 
