@@ -7,8 +7,8 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Checklist RKM</h4>
                 <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-light" id="periodLabel">Semua Periode</span>
-                    <span class="badge bg-light" id="recordCount">0 Records</span>
+                    <span class="badge bg-dark" style="font-size: 1.250rem;" id="periodLabel">Semua Periode</span>
+                    <span class="badge bg-dark" style="font-size: 1.250rem;" id="recordCount">0 Records</span>
                 </div>
             </div>
 
