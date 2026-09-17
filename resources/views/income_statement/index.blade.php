@@ -231,7 +231,7 @@
                     <td class="display-currency avg-total-vc">0.00</td>
                     <td class="percent-total-vc">0.00%</td>
                 </tr>
-            </tbody>s
+            </tbody>
 
             <tbody id="fixedCostContainer">
                 <tr>

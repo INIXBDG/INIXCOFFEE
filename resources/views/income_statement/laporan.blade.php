@@ -37,7 +37,7 @@
     <div class="header-title">
         PT Inixindo Amiete Mandiri<br>
         Laporan Laba/Rugi<br>
-        Januari - Desember {{ $year }}<br>
+        Januari - {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y') }}<br>
         <a href="javascript:void(0);" class="btn btn-success me-1 d-print-none" id="printInvoiceBTN"><i class="fa fa-print"></i> Print Invoice</a>
     </div>
 
