@@ -14,6 +14,7 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Storage;
 
 class PengajuancutiController extends Controller
 {
@@ -23,6 +24,7 @@ class PengajuancutiController extends Controller
     {
         $this->middleware('auth');
     }
+
     public function index()
     {
         return view('pengajuancuti.index');
@@ -214,7 +216,7 @@ class PengajuancutiController extends Controller
         foreach ($users as $user) {
             NotificationFacade::send(
                 $user,
-                new PengajuanCutiNotification($data, $path, $type, $user->id) 
+                new PengajuanCutiNotification($data, $path, $type, $user->id)
             );
         }
 
@@ -275,23 +277,81 @@ class PengajuancutiController extends Controller
         return view('pengajuancuti.form', compact('suratperjalanan', 'manager', 'hrd', 'office_manager', 'orang1', 'orang2'));
     }
 
-
-    /**
-     * update
-     *
-     * @param  mixed $request
-     * @param  mixed $id
-     * @return RedirectResponse
-     */
     public function update(Request $request, $id)
     {
+        $post = pengajuancuti::findOrFail($id);
+        $jabatan = auth()->user()->jabatan;
+        if ($request->has('jenis_update') && $request->jenis_update == 'edit_data') {
+
+            $rules = [
+                'alasan'      => 'required|string',
+                'surat_sakit' => 'nullable|mimes:jpg,jpeg,png,pdf|max:2048'
+            ];
+
+            // Validasi form lengkap DIJALANKAN JIKA: Status belum diproses (0) ATAU user merubah tipe ke 'Sakit'
+            if ($post->approval_manager == '0' || $request->tipe === 'Sakit') {
+                $rules['tipe']          = ['required', 'string', 'not_in:-,null'];
+                $rules['tanggal_awal']  = 'required|date';
+                $rules['tanggal_akhir'] = 'required|date|after_or_equal:tanggal_awal';
+                $rules['durasi']        = 'required|integer';
+            }
+
+            $this->validate($request, $rules);
+
+            $updateData = [
+                'alasan' => $request->alasan
+            ];
+
+            // LOGIKA UPDATE DATA UTAMA
+            if ($post->approval_manager == '0') {
+                // Jika belum diproses, bebas ubah semua
+                $updateData['tipe']          = $request->tipe;
+                $updateData['tanggal_awal']  = $request->tanggal_awal;
+                $updateData['tanggal_akhir'] = $request->tanggal_akhir;
+                $updateData['durasi']        = $request->durasi;
+            } elseif ($request->tipe === 'Sakit') {
+                // Jika SUDAH diproses tapi diubah susulan menjadi 'Sakit'
+                $updateData['tipe']          = 'Sakit';
+                $updateData['tanggal_awal']  = $request->tanggal_awal;
+                $updateData['tanggal_akhir'] = $request->tanggal_akhir;
+                $updateData['durasi']        = $request->durasi;
+
+                if ($post->approval_manager == '1' && $post->tipe === 'Cuti') {
+                    $karyawan = karyawan::findOrFail($post->id_karyawan);
+                    $karyawan->increment('cuti', $post->durasi);
+                }
+            }
+
+            // LOGIKA FILE UPLOAD SURAT SAKIT
+            if ($request->tipe === 'Sakit') {
+                if ($request->hasFile('surat_sakit')) {
+                    if ($post->surat_sakit && Storage::disk('public')->exists($post->surat_sakit)) {
+                        Storage::disk('public')->delete($post->surat_sakit);
+                    }
+                    $file = $request->file('surat_sakit');
+                    $updateData['surat_sakit'] = $file->store('surat_sakit', 'public');
+                }
+            } else {
+                // Jika user mengganti tipe dari "Sakit" ke yang lain (hanya bisa terjadi jika belum diproses/0)
+                if ($post->approval_manager == '0' && $post->surat_sakit) {
+                    if (Storage::disk('public')->exists($post->surat_sakit)) {
+                        Storage::disk('public')->delete($post->surat_sakit);
+                    }
+                    $updateData['surat_sakit'] = null;
+                }
+            }
+
+            $post->update($updateData);
+
+            if ($request->ajax()) {
+                return response()->json(['success' => 'Data Berhasil Diubah!']);
+            }
+            return redirect()->route('pengajuancuti.index')->with(['success' => 'Data Berhasil Diubah!']);
+        }
         $this->validate($request, [
             'approval' => 'nullable',
             'alasan' => 'nullable',
         ]);
-
-        $post = pengajuancuti::findOrFail($id);
-        $jabatan = auth()->user()->jabatan;
 
         $bolehApprove = false;
 
@@ -299,17 +359,16 @@ class PengajuancutiController extends Controller
             $bolehApprove = true;
         } elseif ($jabatan == 'GM') {
             $karyawanYangMengajukan = karyawan::findOrFail($post->id_karyawan);
-            // - divisi = Office, atau
-            // - termasuk dalam list ID khusus
-            if (
-                $karyawanYangMengajukan->divisi === 'Office' ||
-                in_array($karyawanYangMengajukan->id, $this->pengajuanCutiGM)
-            ) {
+            if ($karyawanYangMengajukan->divisi === 'Office' || in_array($karyawanYangMengajukan->id, $this->pengajuanCutiGM)) {
                 $bolehApprove = true;
             }
         }
 
+        // Jika yang klik bukan manager, tolak!
         if (!$bolehApprove) {
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Tidak Bisa mengubah Approval!'], 403);
+            }
             return redirect()->route('pengajuancuti.index')->with(['error' => 'Tidak Bisa mengubah Approval!']);
         }
 
@@ -319,7 +378,7 @@ class PengajuancutiController extends Controller
             'alasan_manager' => $request->alasan,
         ]);
 
-        // 🔁 Notifikasi seperti biasa
+        // Proses Pengurangan Kuota & Notifikasi
         $karyawan = karyawan::findOrFail($post->id_karyawan);
         $HRD = karyawan::where('jabatan', 'HRD')->first();
 
@@ -341,12 +400,12 @@ class PengajuancutiController extends Controller
             NotificationFacade::send($user, new ApprovalCutiNotification($data, $path, $to, $receiverId));
         }
 
-        // return redirect()->route('pengajuancuti.index')->with(['success' => 'Data Berhasil Diubah!']);
-        $lastPage = $request->input('last_page', 0); // default ke 0 jika kosong
-        return redirect()->route('pengajuancuti.index') . '?page=' . ($lastPage + 1); // karena DataTables 0-based
+        if ($request->ajax()) {
+            return response()->json(['success' => 'Status Approval diperbarui!']);
+        }
 
-
-
+        $lastPage = $request->input('last_page', 0);
+        return redirect()->route('pengajuancuti.index') . '?page=' . ($lastPage + 1);
     }
 
 
