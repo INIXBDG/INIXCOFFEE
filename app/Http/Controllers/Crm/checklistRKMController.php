@@ -46,8 +46,10 @@ class checklistRKMController extends Controller
 
         $inner = DB::table('r_k_m_s')
             ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+            ->join('peluangs', 'r_k_m_s.id', '=', 'peluangs.id_rkm')
             ->leftJoin('checklist_r_k_m_s', 'checklist_r_k_m_s.id_rkm', '=', 'r_k_m_s.id')
             ->whereNull('r_k_m_s.deleted_at')
+            ->where('peluangs.tentatif','!=', 1)
             ->select(
                 DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ",") AS id_all'),
                 DB::raw('MIN(r_k_m_s.id) AS id'),
