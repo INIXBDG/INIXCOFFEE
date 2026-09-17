@@ -242,12 +242,9 @@ class JurnalAkuntansiController extends Controller
     }
 
 
-    /**
-     * Menyimpan jurnal akuntansi secara manual dari Perhitungan Net Sales.
-     */
     public function storeManualNetSales($id)
     {
-        $netSales = \App\Models\perhitunganNetSales::with('rkm.materi', 'rkm.perusahaan')->findOrFail($id);
+        $netSales = perhitunganNetSales::with('rkm.materi', 'rkm.perusahaan')->findOrFail($id);
 
         $jurnalExist = JurnalAkuntansi::where('id_perhitungan_net_sales', $id)->first();
         if ($jurnalExist) {
@@ -264,7 +261,6 @@ class JurnalAkuntansiController extends Controller
         $bulan = $netSales->rkm->bulan ?? '-';
 
         $keterangan = "Pengeluaran Payment Advanced - {$materi} | {$perusahaan} | {$bulan}";
-        // return $netSales;
 
         JurnalAkuntansi::create([
             'nomor_kk' => $this->generateNomorKK(now()),
@@ -273,7 +269,7 @@ class JurnalAkuntansiController extends Controller
             'tanggal_transaksi' => now(),
             'keterangan' => $keterangan,
             'kredit' => $totalPengeluaran,
-            'debit' => 0,
+            'debit' => $totalPengeluaran,
         ]);
 
         Cache::forget('jurnal_belum_netsales_all');
@@ -309,7 +305,7 @@ class JurnalAkuntansiController extends Controller
             'tanggal_transaksi' => $tanggal_transaksi,
             'keterangan' => 'Pengeluaran untuk Pengajuan Barang dari : ' . $pengajuan->karyawan->nama_lengkap . ' (' . $pengajuan->tipe . ')',
             'kredit' => $totalPengeluaran,
-            'debit' => 0,
+            'debit' => $totalPengeluaran,
         ]);
 
         Cache::forget('jurnal_belum_jurnal_all');
@@ -362,7 +358,7 @@ class JurnalAkuntansiController extends Controller
             'tanggal_transaksi' => $tanggal_transaksi,
             'keterangan' => $keterangan,
             'kredit' => $totalPengeluaran,
-            'debit' => 0,
+            'debit' => $totalPengeluaran,
         ]);
 
         Cache::forget('jurnal_belum_spj_all');
@@ -373,9 +369,6 @@ class JurnalAkuntansiController extends Controller
         ]);
     }
 
-    /**
-     * Mengambil data spesifik jurnal akuntansi untuk form edit.
-     */
     /**
      * Mengambil data spesifik jurnal akuntansi untuk form edit beserta identifikasi jenis.
      */
@@ -426,19 +419,24 @@ class JurnalAkuntansiController extends Controller
      */
     public function storePettyCash(Request $request)
     {
+        // 1. Tambahkan 'debit_kredit' pada aturan validasi in:...
         $request->validate([
             'tanggal_transaksi' => 'required|date',
             'keterangan' => 'required|string',
-            'tipe_transaksi' => 'required|in:debit,kredit',
+            'no_akun' => 'nullable|string', // Pastikan no_akun juga ikut ditangkap jika tabel Anda butuh
+            'tipe_transaksi' => 'required|in:debit,kredit,debit_kredit',
             'nominal' => 'required|numeric|min:1',
         ]);
 
-        $debit = $request->tipe_transaksi === 'debit' ? $request->nominal : 0;
-        $kredit = $request->tipe_transaksi === 'kredit' ? $request->nominal : 0;
+        // 2. Logika: Jika tipe 'debit' atau 'debit_kredit', isi nilai debit. Begitu pula untuk kredit.
+        $debit = in_array($request->tipe_transaksi, ['debit', 'debit_kredit']) ? $request->nominal : 0;
+        $kredit = in_array($request->tipe_transaksi, ['kredit', 'debit_kredit']) ? $request->nominal : 0;
 
+        // 3. Simpan data
         JurnalAkuntansi::create([
             'nomor_kk' => $this->generateNomorKK($request->tanggal_transaksi), // GENERATE DISINI
             'id_pengajuan_barang' => null,
+            // 'no_akun' => $request->no_akun, // Uncomment jika tabel JurnalAkuntansi menyimpan relasi no_akun
             'tanggal_transaksi' => $request->tanggal_transaksi,
             'keterangan' => '[Kas Kecil] ' . $request->keterangan,
             'debit' => $debit,
@@ -698,14 +696,14 @@ class JurnalAkuntansiController extends Controller
         */
 
         $clean = preg_replace('/[^0-9.,-]/', '', $value);
-        
+
         $lastComma = strrpos($clean, ',');
         $lastDot = strrpos($clean, '.');
-        
+
         if ($lastComma !== false && $lastDot !== false) {
             if ($lastComma > $lastDot) {
                 // Comma is decimal: 294.300,00
-                $clean = str_replace('.', '', $clean); 
+                $clean = str_replace('.', '', $clean);
                 $clean = str_replace(',', '.', $clean);
             } else {
                 // Dot is decimal: 294,300.00
@@ -817,18 +815,18 @@ class JurnalAkuntansiController extends Controller
             ->where('status_aktif', "1")
             ->select('ttd')
             ->latest()
-            ->first(); 
+            ->first();
 
         $ttd_gm = karyawan::where('jabatan', 'GM')
             ->where('status_aktif', "1")
             ->select('ttd')
             ->latest()
-            ->first(); 
+            ->first();
 
         $ttd_keuangan = karyawan::where('jabatan', 'Finance & Accounting')
             ->where('status_aktif', "1")
             ->select('ttd')
-            ->oldest() 
+            ->oldest()
             ->first();
 
         if ((float) $jurnalAkuntansi->kredit === 0.0) {
