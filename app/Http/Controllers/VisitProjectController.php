@@ -13,8 +13,64 @@ class VisitProjectController extends Controller
         return view('visit_projects.index');
     }
 
-    public function get()
+    public function get(Request $request)
     {
+        if ($request->has('draw')) {
+            $query = VisitProject::query();
+
+            // Total records before filtering
+            $recordsTotal = $query->count();
+
+            // Search filter
+            if ($search = $request->input('search.value')) {
+                $query->where(function($q) use ($search) {
+                    $q->where('kegiatan', 'like', "%{$search}%")
+                      ->orWhere('lokasi', 'like', "%{$search}%")
+                      ->orWhere('pic_name', 'like', "%{$search}%")
+                      ->orWhere('desc', 'like', "%{$search}%");
+                });
+            }
+
+            // Total records after filtering
+            $recordsFiltered = $query->count();
+
+            // Order
+            $orderColumnIndex = $request->input('order.0.column');
+            $orderDir = $request->input('order.0.dir', 'desc');
+
+            $columnsMap = [
+                1 => 'kegiatan',
+                2 => 'lokasi',
+                3 => 'pic_name',
+                4 => 'tanggal',
+                5 => 'photo_path',
+                6 => 'desc'
+            ];
+
+            if (isset($columnsMap[$orderColumnIndex])) {
+                $query->orderBy($columnsMap[$orderColumnIndex], $orderDir);
+            } else {
+                $query->latest(); // Default order
+            }
+
+            // Paging
+            $start = $request->input('start', 0);
+            $length = $request->input('length', 10);
+
+            if ($length != -1) {
+                $query->offset($start)->limit($length);
+            }
+
+            $visits = $query->get();
+
+            return response()->json([
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $visits
+            ]);
+        }
+
         $visits = VisitProject::latest()->get();
 
         return response()->json([

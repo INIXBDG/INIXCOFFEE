@@ -111,6 +111,8 @@
     $(document).ready(function(){
         var tableIndex = 1;
         $('#usertable').DataTable({
+            "processing": true,
+            "serverSide": true,
             "dom": 'Bfrtip',
             "buttons": [
                         {
@@ -163,9 +165,12 @@
                 }
             },
             "columns": [
-                {   "data": null,
-                    "render": function (data){
-                        return tableIndex++
+                {
+                    "data": null,
+                    "searchable": false,
+                    "orderable": false,
+                    "render": function (data, type, row, meta) {
+                        return meta.row + meta.settings._iDisplayStart + 1;
                     }
                 },
                 {"data": "karyawan.nip"},

@@ -839,7 +839,9 @@
         }
         var tableKaryawan = $('#tablekaryawan').DataTable({
                 responsive: true,
-                 autoWidth: false,
+                autoWidth: false,
+                "processing": true,
+                "serverSide": true,
             "ajax": {
                 "url": "{{ route('getUserall') }}",
                 "type": "GET",
