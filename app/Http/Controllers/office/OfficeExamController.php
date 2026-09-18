@@ -334,14 +334,17 @@ class OfficeExamController extends Controller
 
     public function rekapJson(Request $request)
     {
-        $query = ModelsEksam::with(
+        $query = ModelsEksam::with([
             'registexam.dokumentasiExam',
+            'rkm' => function ($q) {
+                $q->withTrashed();
+            },
             'rkm.instruktur',
             'rkm.materi',
-            'approvalexam'
-        )->whereHas('approvalexam', function ($q) {
+            'approvalexam',
+        ])->whereHas('approvalexam', function ($q) {
             $q->where('technical_support', 1)
-            ->orWhere('office_manager', 1);
+                ->orWhere('office_manager', 1);
         });
 
         // ── Filter waktu ──────────────────────────────────────────
