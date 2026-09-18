@@ -137,8 +137,7 @@ class TelegramController extends Controller
     public function setWebhook(Request $request)
     {
         $token = env('TELEGRAM_BOT_TOKEN');
-        
-        
+        $targetUrl = env('TELEGRAM_WEBHOOK_URL');
 
         $response = Http::withoutVerifying()->post("https://api.telegram.org/bot{$token}/setWebhook", [
             'url' => $targetUrl,

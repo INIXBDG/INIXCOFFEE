@@ -173,7 +173,7 @@ class TicketController extends Controller
                 'chat_id'    => $groupId,
                 'text'       => $telegramMessage,
                 'parse_mode' => 'Markdown',
-                'reply_markup' => [
+                'reply_markup' => json_encode([
                     'inline_keyboard' => [
                         [
                             ['text' => '✅ Terima', 'callback_data' => "accept:{$ticket->ticket_id}"],
@@ -183,7 +183,7 @@ class TicketController extends Controller
                             ['text' => '🏁 Selesai', 'callback_data' => "finish:{$ticket->ticket_id}"]
                         ]
                     ]
-                ]
+                ])
             ]);
         } catch (\Exception $e) {
             Log::error("Gagal mengirim tiket baru ke Telegram: " . $e->getMessage());
@@ -343,9 +343,9 @@ class TicketController extends Controller
         //     'message' => $message,
         // ]);
         $this->notifyTelegram('accepted', $ticket, $request->pic);
-        if ($request->expectsJson() || $request->is('api/*')) {
+        if ($request->from_internal || $request->expectsJson() || $request->is('api/*')) {
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Ticket processed via API'
             ], 200);
         }
@@ -406,9 +406,9 @@ class TicketController extends Controller
             \Illuminate\Support\Facades\Notification::send($pembuatTiket, new \App\Notifications\SurveyReminderNotification($ticket));
         }
         $this->notifyTelegram('finished', $ticket, $ticket->pic, $request->keterangan);
-        if (request()->expectsJson() || request()->is('api/*')) {
+        if ($request->from_internal || $request->expectsJson() || $request->is('api/*')) {
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Ticket Finished via API'
             ], 200);
         }
@@ -461,9 +461,9 @@ class TicketController extends Controller
         // ]);
         $this->notifyTelegram('rejected', $ticket, null, $request->keterangan);
 
-        if (request()->expectsJson() || request()->is('api/*')) {
+        if ($request->from_internal || $request->expectsJson() || $request->is('api/*')) {
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Ticket processed via API'
             ], 200);
         }
@@ -532,9 +532,10 @@ class TicketController extends Controller
         // --- LOGIC ACCEPT ---
         if ($action === 'accept') {
             $fakeRequest = new Request([
-                'pic' => $request->pic_name,
+                'pic'              => $request->pic_name,
                 'tanggal_response' => now()->format('Y-m-d'),
-                'jam_response' => now()->format('H:i:s'),
+                'jam_response'     => now()->format('H:i:s'),
+                'from_internal'    => true,
             ]);
             return $this->accept($fakeRequest, $ticket);
         }
@@ -542,11 +543,12 @@ class TicketController extends Controller
         // --- LOGIC FINISH ---
         if ($action === 'finish') {
             $fakeRequest = new Request([
-                'penanganan' => 'Selesai via Telegram',
-                'keterangan' => $request->keterangan ?? 'Selesai', // Diambil dari pesan telegram
-                'kesulitan' => 'Normal',
-                'tanggal_selesai' => now()->format('Y-m-d'),
-                'jam_selesai' => now()->format('H:i:s'),
+                'penanganan'     => 'Selesai via Telegram',
+                'keterangan'     => $request->keterangan ?? 'Selesai',
+                'kesulitan'      => 'Normal',
+                'tanggal_selesai'=> now()->format('Y-m-d'),
+                'jam_selesai'    => now()->format('H:i:s'),
+                'from_internal'  => true,
             ]);
             return $this->finish($fakeRequest, $ticket);
         }
@@ -554,10 +556,11 @@ class TicketController extends Controller
         // --- LOGIC REJECT (BLOCK) ---
         if ($action === 'reject') {
             $fakeRequest = new Request([
-                'penanganan' => 'Terkendala/Ditolak via Telegram',
-                'keterangan' => 'Dibatalkan oleh ' . ($request->pic_name ?? 'IT'),
-                'tanggal_selesai' => now()->format('Y-m-d'),
-                'jam_selesai' => now()->format('H:i:s'),
+                'penanganan'     => 'Terkendala/Ditolak via Telegram',
+                'keterangan'     => 'Dibatalkan oleh ' . ($request->pic_name ?? 'IT'),
+                'tanggal_selesai'=> now()->format('Y-m-d'),
+                'jam_selesai'    => now()->format('H:i:s'),
+                'from_internal'  => true,
             ]);
             return $this->block($fakeRequest, $ticket);
         }
