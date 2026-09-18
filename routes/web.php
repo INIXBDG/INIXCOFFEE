@@ -467,6 +467,7 @@ Route::get('/feedbackPelayanan', [App\Http\Controllers\feedbackController::class
 Route::get('/pengajuanExam/{id}', [App\Http\Controllers\examController::class, 'create'])->name('pengajuanExam');
 Route::get('/approvalexam/{id}', [App\Http\Controllers\examController::class, 'approvalexam'])->name('approvalexam');
 Route::put('/sendapprovalexam/{id}', [App\Http\Controllers\examController::class, 'sendapprovalexam'])->name('exam.approval');
+Route::get('/exam/{id}/add-pengajuan-barang', [examController::class, 'AddPengajuanBarang'])->name('exam.addPengajuanBarang');
 Route::post('/invoice/{data}', [App\Http\Controllers\examController::class, 'invoice'])->name('exam.invoice');
 Route::get('/invoice/registexam/{id}', [App\Http\Controllers\registexamController::class, 'invoice'])->name('registexam.invoice');
 Route::get('/uploadinvoice/{id}', [App\Http\Controllers\registexamController::class, 'uploadInvoice'])->name('exam.uploadInvoice');

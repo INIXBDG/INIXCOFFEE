@@ -384,6 +384,7 @@
     </script>
 
     @yield('scripts')
+    <script src="{{ asset('assets/vendor/libs/chartjs/chart.js') }}" defer></script>
 
     @if($errors->any())
     @php
