@@ -2,7 +2,7 @@
 
 @section('office_contents')
     {{-- @include('layouts_office.skeleton_tabs') --}}
-    <div id="real-dashboard" class="container-fluid py-4 ">
+    <div id="real-dashboard" class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="mb-0 fw-bold">Rekap Certificate</h4>
             <button type="button" class="btn btn-primary hover-scale" data-bs-toggle="modal"
