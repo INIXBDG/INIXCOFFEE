@@ -171,6 +171,9 @@
             border: 2px solid var(--pri);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, .15);
         }
+        .calendar-day.skeleton-day {
+            cursor: default; border: 1px solid var(--gray-200); background: #fff;
+        }
         .calendar-legend {
             display: flex; gap: 1rem; flex-wrap: wrap;
             font-size: .78rem; color: var(--gray-600);
@@ -374,218 +377,334 @@
             .stat-value { font-size: 1.3rem; }
             .pred-value { font-size: 1.6rem; }
         }
+
+        /* ===== GENERIC SKELETON LINE ===== */
+        .skel-line {
+            background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-pulse 1.5s infinite;
+            border-radius: 6px;
+            display: block;
+            width: 100%;
+        }
+
+        @keyframes skeleton-pulse {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        #page-skeleton, #page-skeleton * {
+            pointer-events: none;
+        }
     </style>
 
     <div class="container-fluid px-4 py-4">
-        <div class="d-sm-flex align-items-center justify-content-between page-header">
-            <div>
-                <h1 class="page-title"><i class="fa-solid fa-user-check me-2" style="color:var(--pri)"></i>Attendance Intelligence</h1>
-                <p class="page-sub mb-0">Monitor dan analisis kehadiran karyawan secara real-time</p>
-            </div>
-            <div class="d-flex gap-2 mt-2 mt-sm-0">
-                <button class="btn btn-outline-sec" id="btnRefresh"><i class="fa-solid fa-arrows-rotate me-1"></i>Refresh</button>
-                <button class="btn btn-success-custom" id="btnExportCsv"><i class="fa-solid fa-file-csv me-1"></i>Excel</button>
-                <button class="btn btn-danger-custom" id="btnExportPdf"><i class="fa-solid fa-file-pdf me-1"></i>PDF</button>
-            </div>
-        </div>
 
-        <div class="card card-shell mb-4">
-            <div class="card-body py-3">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                    <span class="fw-bold" style="font-size:.875rem;color:var(--pri)"><i class="fa-solid fa-filter me-1"></i>Filter Periode</span>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <select id="filterBulan" class="form-select form-select-sm" style="width:140px"></select>
-                        <select id="filterTahun" class="form-select form-select-sm" style="width:100px"></select>
-                        <button class="btn btn-pri btn-sm" id="btnApplyFilter"><i class="fa-solid fa-check me-1"></i>Terapkan</button>
-                    </div>
+        {{-- ======================================================================
+             FULL PAGE SKELETON — tampil saat pertama kali load sebelum data siap
+        ======================================================================= --}}
+        <div id="page-skeleton">
+            {{-- Header skeleton --}}
+            <div class="d-sm-flex align-items-center justify-content-between page-header">
+                <div>
+                    <span class="skel-line" style="width:280px;height:26px;margin-bottom:8px"></span>
+                    <span class="skel-line" style="width:340px;height:14px"></span>
                 </div>
-            </div>
-        </div>
-
-        <div class="row g-3 mb-4">
-            <div class="col-xl-4 col-md-6">
-                <div class="card stat-card h-100">
-                    <div class="card-body d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="stat-label">Total Telat (Bulan Ini)</p>
-                            <h3 class="stat-value" id="metricTotalLate" style="color:var(--danger)">-</h3>
-                            <div class="stat-trend down" style="color:var(--gray-400)">Akumulasi keterlambatan</div>
-                        </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="fa-solid fa-clock"></i></div>
-                    </div>
+                <div class="d-flex gap-2 mt-2 mt-sm-0">
+                    <span class="skel-line" style="width:100px;height:38px;border-radius:8px"></span>
+                    <span class="skel-line" style="width:90px;height:38px;border-radius:8px"></span>
+                    <span class="skel-line" style="width:80px;height:38px;border-radius:8px"></span>
                 </div>
             </div>
 
-            <div class="col-xl-4 col-md-6">
-                <div class="card stat-card h-100">
-                    <div class="card-body d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="stat-label">Cuti / Sakit / Izin</p>
-                            <h3 class="stat-value" id="metricTotalLeave" style="color:var(--info)">-</h3>
-                            <div class="stat-trend up">
-                                <a href="#" id="btnViewLeaveDetails" style="color:var(--pri);text-decoration:none;font-weight:600;font-size:.75rem">
-                                    <i class="fa-solid fa-eye me-1"></i>Lihat Siapa Saja
-                                </a>
-                            </div>
-                        </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i class="fa-solid fa-umbrella-beach"></i></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-4 col-md-6">
-                <div class="card stat-card h-100">
-                    <div class="card-body d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="stat-label">Attendance Rate</p>
-                            <h3 class="stat-value" id="metricAttendanceRate" style="color:var(--success)">-</h3>
-                            <div class="stat-trend up" id="trendAttendance"><i class="fa-solid fa-arrow-up"></i> Persentase kehadiran</div>
-                        </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)"><i class="fa-solid fa-user-check"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <ul class="nav nav-tabs nav-tabs-custom mb-4" id="mainTabs">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabAnalytics"><i class="fa-solid fa-chart-line me-2"></i>Analytics</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCalendar"><i class="fa-solid fa-calendar-days me-2"></i>Kalender Kehadiran</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPrediction"><i class="fa-solid fa-crystal-ball me-2"></i>Prediksi & Target</button></li>
-        </ul>
-
-        <div class="tab-content">
-            <div class="tab-pane fade show active" id="tabAnalytics">
-                <div class="row g-4">
-                    <div class="col-lg-6">
-                        <div class="card card-shell">
-                            <div class="card-body">
-                                <div class="chart-title"><i class="fa-solid fa-chart-line"></i>Trend Keterlambatan Harian</div>
-                                <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card card-shell">
-                            <div class="card-body">
-                                <div class="chart-title"><i class="fa-solid fa-chart-column"></i>Perbandingan per Divisi</div>
-                                <div class="chart-wrap"><canvas id="deptChart"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card card-shell">
-                            <div class="card-body">
-                                <div class="chart-title"><i class="fa-solid fa-fire"></i>Attendance Heatmap (Jam Masuk)</div>
-                                <div class="chart-wrap"><canvas id="heatmapChart"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card card-shell">
-                            <div class="card-body">
-                                <div class="chart-title"><i class="fa-solid fa-shield-halved"></i>Distribusi Risk Level</div>
-                                <div class="chart-wrap"><canvas id="riskChart"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row g-4 mt-2">
-                    <div class="col-12">
-                        <div class="card card-shell">
-                            <div class="card-body">
-                                <div class="chart-title"><i class="fa-solid fa-lightbulb" style="color:var(--warning)"></i>Peluang & Rekomendasi</div>
-                                <div id="opportunitiesContainer"></div>
-                            </div>
+            {{-- Filter bar skeleton --}}
+            <div class="card card-shell mb-4">
+                <div class="card-body py-3">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <span class="skel-line" style="width:120px;height:16px"></span>
+                        <div class="d-flex gap-2">
+                            <span class="skel-line" style="width:140px;height:32px;border-radius:8px"></span>
+                            <span class="skel-line" style="width:100px;height:32px;border-radius:8px"></span>
+                            <span class="skel-line" style="width:100px;height:32px;border-radius:8px"></span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="tabCalendar">
-                <div class="row g-4">
-                    <div class="col-lg-8">
-                        <div class="card card-shell">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <button class="btn btn-outline-sec btn-sm" id="btnPrevMonth"><i class="fa-solid fa-chevron-left"></i></button>
-                                    <h5 class="mb-0 fw-bold" id="calendarMonthLabel" style="color:var(--gray-900)">-</h5>
-                                    <button class="btn btn-outline-sec btn-sm" id="btnNextMonth"><i class="fa-solid fa-chevron-right"></i></button>
+            {{-- Stat cards skeleton --}}
+            <div class="row g-3 mb-4">
+                @for ($i = 0; $i < 3; $i++)
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card stat-card h-100">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div style="flex:1">
+                                    <span class="skel-line" style="width:130px;height:10px;margin-bottom:10px"></span>
+                                    <span class="skel-line" style="width:70px;height:24px;margin-bottom:8px"></span>
+                                    <span class="skel-line" style="width:150px;height:11px"></span>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="calendar-legend">
-                                        <span><span class="legend-dot" style="background:var(--success-light);border:1px solid #4ade80"></span>Hadir</span>
-                                        <span><span class="legend-dot" style="background:var(--danger-light);border:1px solid #f87171"></span>Telat</span>
-                                        <span><span class="legend-dot" style="background:var(--warning-light);border:1px solid #fcd34d"></span>Libur/Cuti</span>
-                                        <span><span class="legend-dot" style="background:var(--gray-50);border:1px solid var(--gray-200)"></span>Weekend</span>
+                                <span class="skel-line" style="width:52px;height:52px;border-radius:12px;flex-shrink:0"></span>
+                            </div>
+                        </div>
+                    </div>
+                @endfor
+            </div>
+
+            {{-- Tabs skeleton --}}
+            <div class="d-flex gap-3 mb-4 pb-3" style="border-bottom:2px solid var(--gray-200)">
+                <span class="skel-line" style="width:130px;height:20px"></span>
+                <span class="skel-line" style="width:190px;height:20px"></span>
+                <span class="skel-line" style="width:170px;height:20px"></span>
+            </div>
+
+            {{-- Chart grid skeleton (Analytics tab) --}}
+            <div class="row g-4">
+                @for ($c = 0; $c < 4; $c++)
+                    <div class="col-lg-6">
+                        <div class="card card-shell">
+                            <div class="card-body">
+                                <span class="skel-line" style="width:200px;height:16px;margin-bottom:16px"></span>
+                                <span class="skel-line" style="height:280px;border-radius:8px"></span>
+                            </div>
+                        </div>
+                    </div>
+                @endfor
+            </div>
+
+            {{-- Opportunities skeleton --}}
+            <div class="row g-4 mt-2">
+                <div class="col-12">
+                    <div class="card card-shell">
+                        <div class="card-body">
+                            <span class="skel-line" style="width:220px;height:16px;margin-bottom:16px"></span>
+                            @for ($o = 0; $o < 3; $o++)
+                                <span class="skel-line" style="height:90px;border-radius:10px;margin-bottom:12px"></span>
+                            @endfor
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ======================================================================
+             REAL CONTENT — disembunyikan (d-none) sampai data awal siap
+        ======================================================================= --}}
+        <div id="page-real-content" class="d-none">
+
+            <div class="d-sm-flex align-items-center justify-content-between page-header">
+                <div>
+                    <h1 class="page-title"><i class="fa-solid fa-user-check me-2" style="color:var(--pri)"></i>Attendance Intelligence</h1>
+                    <p class="page-sub mb-0">Monitor dan analisis kehadiran karyawan secara real-time</p>
+                </div>
+                <div class="d-flex gap-2 mt-2 mt-sm-0">
+                    <button class="btn btn-outline-sec" id="btnRefresh"><i class="fa-solid fa-arrows-rotate me-1"></i>Refresh</button>
+                    <button class="btn btn-success-custom" id="btnExportCsv"><i class="fa-solid fa-file-csv me-1"></i>Excel</button>
+                    <button class="btn btn-danger-custom" id="btnExportPdf"><i class="fa-solid fa-file-pdf me-1"></i>PDF</button>
+                </div>
+            </div>
+
+            <div class="card card-shell mb-4">
+                <div class="card-body py-3">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <span class="fw-bold" style="font-size:.875rem;color:var(--pri)"><i class="fa-solid fa-filter me-1"></i>Filter Periode</span>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <select id="filterBulan" class="form-select form-select-sm" style="width:140px"></select>
+                            <select id="filterTahun" class="form-select form-select-sm" style="width:100px"></select>
+                            <button class="btn btn-pri btn-sm" id="btnApplyFilter"><i class="fa-solid fa-check me-1"></i>Terapkan</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-xl-4 col-md-6">
+                    <div class="card stat-card h-100">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="stat-label">Total Telat (Bulan Ini)</p>
+                                <h3 class="stat-value" id="metricTotalLate" style="color:var(--danger)">-</h3>
+                                <div class="stat-trend down" style="color:var(--gray-400)">Akumulasi keterlambatan</div>
+                            </div>
+                            <div class="stat-icon" style="background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="fa-solid fa-clock"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-4 col-md-6">
+                    <div class="card stat-card h-100">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="stat-label">Cuti / Sakit / Izin</p>
+                                <h3 class="stat-value" id="metricTotalLeave" style="color:var(--info)">-</h3>
+                                <div class="stat-trend up">
+                                    <a href="#" id="btnViewLeaveDetails" style="color:var(--pri);text-decoration:none;font-weight:600;font-size:.75rem">
+                                        <i class="fa-solid fa-eye me-1"></i>Lihat Siapa Saja
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i class="fa-solid fa-umbrella-beach"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-4 col-md-6">
+                    <div class="card stat-card h-100">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="stat-label">Attendance Rate</p>
+                                <h3 class="stat-value" id="metricAttendanceRate" style="color:var(--success)">-</h3>
+                                <div class="stat-trend up" id="trendAttendance"><i class="fa-solid fa-arrow-up"></i> Persentase kehadiran</div>
+                            </div>
+                            <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)"><i class="fa-solid fa-user-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs nav-tabs-custom mb-4" id="mainTabs">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabAnalytics"><i class="fa-solid fa-chart-line me-2"></i>Analytics</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCalendar"><i class="fa-solid fa-calendar-days me-2"></i>Kalender Kehadiran</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPrediction"><i class="fa-solid fa-crystal-ball me-2"></i>Prediksi & Target</button></li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="tabAnalytics">
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <div class="card card-shell">
+                                <div class="card-body">
+                                    <div class="chart-title"><i class="fa-solid fa-chart-line"></i>Trend Keterlambatan Harian</div>
+                                    <div id="trendChart-skel" class="chart-wrap"><span class="skel-line" style="height:100%;border-radius:8px"></span></div>
+                                    <div id="trendChart-wrap" class="chart-wrap d-none"><canvas id="trendChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card card-shell">
+                                <div class="card-body">
+                                    <div class="chart-title"><i class="fa-solid fa-chart-column"></i>Perbandingan per Divisi</div>
+                                    <div id="deptChart-skel" class="chart-wrap"><span class="skel-line" style="height:100%;border-radius:8px"></span></div>
+                                    <div id="deptChart-wrap" class="chart-wrap d-none"><canvas id="deptChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card card-shell">
+                                <div class="card-body">
+                                    <div class="chart-title"><i class="fa-solid fa-fire"></i>Attendance Heatmap (Jam Masuk)</div>
+                                    <div id="heatmapChart-skel" class="chart-wrap"><span class="skel-line" style="height:100%;border-radius:8px"></span></div>
+                                    <div id="heatmapChart-wrap" class="chart-wrap d-none"><canvas id="heatmapChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card card-shell">
+                                <div class="card-body">
+                                    <div class="chart-title"><i class="fa-solid fa-shield-halved"></i>Distribusi Risk Level</div>
+                                    <div id="riskChart-skel" class="chart-wrap"><span class="skel-line" style="height:100%;border-radius:8px"></span></div>
+                                    <div id="riskChart-wrap" class="chart-wrap d-none"><canvas id="riskChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mt-2">
+                        <div class="col-12">
+                            <div class="card card-shell">
+                                <div class="card-body">
+                                    <div class="chart-title"><i class="fa-solid fa-lightbulb" style="color:var(--warning)"></i>Peluang & Rekomendasi</div>
+                                    <div id="opportunitiesContainer"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tabCalendar">
+                    <div class="row g-4">
+                        <div class="col-lg-8">
+                            <div class="card card-shell">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <button class="btn btn-outline-sec btn-sm" id="btnPrevMonth"><i class="fa-solid fa-chevron-left"></i></button>
+                                        <h5 class="mb-0 fw-bold" id="calendarMonthLabel" style="color:var(--gray-900)">-</h5>
+                                        <button class="btn btn-outline-sec btn-sm" id="btnNextMonth"><i class="fa-solid fa-chevron-right"></i></button>
                                     </div>
-                                    <select id="calendarEmployee" class="form-select form-select-sm" style="width:200px">
-                                        <option value="">Semua Karyawan</option>
-                                    </select>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="calendar-legend">
+                                            <span><span class="legend-dot" style="background:var(--success-light);border:1px solid #4ade80"></span>Hadir</span>
+                                            <span><span class="legend-dot" style="background:var(--danger-light);border:1px solid #f87171"></span>Telat</span>
+                                            <span><span class="legend-dot" style="background:var(--warning-light);border:1px solid #fcd34d"></span>Libur/Cuti</span>
+                                            <span><span class="legend-dot" style="background:var(--gray-50);border:1px solid var(--gray-200)"></span>Weekend</span>
+                                        </div>
+                                        <select id="calendarEmployee" class="form-select form-select-sm" style="width:200px">
+                                            <option value="">Semua Karyawan</option>
+                                        </select>
+                                    </div>
+                                    <div id="attendanceCalendar" class="calendar-grid"></div>
                                 </div>
-                                <div id="attendanceCalendar" class="calendar-grid"></div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="card card-shell h-100">
-                            <div class="card-body">
-                                <div class="chart-title"><i class="fa-solid fa-circle-info" style="color:var(--info)"></i>Informasi</div>
-                                <div class="p-3 rounded mb-3" style="background:var(--success-light);border:1px solid #4ade80">
-                                    <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--success)"><i class="fa-solid fa-check me-1"></i>Hadir Tepat Waktu</div>
-                                    <small style="color:var(--gray-600)">Karyawan hadir sebelum atau tepat pada jam masuk yang ditentukan.</small>
-                                </div>
-                                <div class="p-3 rounded mb-3" style="background:var(--danger-light);border:1px solid #f87171">
-                                    <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--danger)"><i class="fa-solid fa-clock me-1"></i>Terlambat</div>
-                                    <small style="color:var(--gray-600)">Karyawan hadir setelah jam masuk. Angka menunjukkan menit keterlambatan.</small>
-                                </div>
-                                <div class="p-3 rounded mb-3" style="background:var(--warning-light);border:1px solid #fcd34d">
-                                    <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--warning)"><i class="fa-solid fa-umbrella-beach me-1"></i>Libur / Cuti</div>
-                                    <small style="color:var(--gray-600)">Hari libur nasional, cuti tahunan, atau izin resmi lainnya.</small>
-                                </div>
-                                <div class="p-3 rounded" style="background:var(--gray-50);border:1px solid var(--gray-200)">
-                                    <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--gray-700)"><i class="fa-solid fa-calendar-xmark me-1"></i>Working Day's</div>
-                                    <small style="color:var(--gray-600)">Hari kerja (working day).</small>
+                        <div class="col-lg-4">
+                            <div class="card card-shell h-100">
+                                <div class="card-body">
+                                    <div class="chart-title"><i class="fa-solid fa-circle-info" style="color:var(--info)"></i>Informasi</div>
+                                    <div class="p-3 rounded mb-3" style="background:var(--success-light);border:1px solid #4ade80">
+                                        <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--success)"><i class="fa-solid fa-check me-1"></i>Hadir Tepat Waktu</div>
+                                        <small style="color:var(--gray-600)">Karyawan hadir sebelum atau tepat pada jam masuk yang ditentukan.</small>
+                                    </div>
+                                    <div class="p-3 rounded mb-3" style="background:var(--danger-light);border:1px solid #f87171">
+                                        <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--danger)"><i class="fa-solid fa-clock me-1"></i>Terlambat</div>
+                                        <small style="color:var(--gray-600)">Karyawan hadir setelah jam masuk. Angka menunjukkan menit keterlambatan.</small>
+                                    </div>
+                                    <div class="p-3 rounded mb-3" style="background:var(--warning-light);border:1px solid #fcd34d">
+                                        <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--warning)"><i class="fa-solid fa-umbrella-beach me-1"></i>Libur / Cuti</div>
+                                        <small style="color:var(--gray-600)">Hari libur nasional, cuti tahunan, atau izin resmi lainnya.</small>
+                                    </div>
+                                    <div class="p-3 rounded" style="background:var(--gray-50);border:1px solid var(--gray-200)">
+                                        <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--gray-700)"><i class="fa-solid fa-calendar-xmark me-1"></i>Working Day's</div>
+                                        <small style="color:var(--gray-600)">Hari kerja (working day).</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="tab-pane fade" id="tabPrediction">
-                <div class="row g-3 mb-4">
-                    <div class="col-md-4">
-                        <div class="pred-card h-100">
-                            <div class="pred-label"><i class="fa-solid fa-calendar-day me-1"></i>Bulan Depan</div>
-                            <div class="pred-value" id="predNextMonth">-</div>
-                            <div class="pred-conf" id="predNextMonthConf">-</div>
+                <div class="tab-pane fade" id="tabPrediction">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="pred-card h-100">
+                                <div class="pred-label"><i class="fa-solid fa-calendar-day me-1"></i>Bulan Depan</div>
+                                <div class="pred-value" id="predNextMonth">-</div>
+                                <div class="pred-conf" id="predNextMonthConf">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="pred-card h-100">
+                                <div class="pred-label"><i class="fa-solid fa-calendar-week me-1"></i>Kuartal Depan</div>
+                                <div class="pred-value" id="predNextQuarter">-</div>
+                                <div class="pred-conf" id="predNextQuarterConf">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="pred-card h-100">
+                                <div class="pred-label"><i class="fa-solid fa-calendar me-1"></i>Tahun Depan</div>
+                                <div class="pred-value" id="predNextYear">-</div>
+                                <div class="pred-conf" id="predNextYearConf">-</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="pred-card h-100">
-                            <div class="pred-label"><i class="fa-solid fa-calendar-week me-1"></i>Kuartal Depan</div>
-                            <div class="pred-value" id="predNextQuarter">-</div>
-                            <div class="pred-conf" id="predNextQuarterConf">-</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="pred-card h-100">
-                            <div class="pred-label"><i class="fa-solid fa-calendar me-1"></i>Tahun Depan</div>
-                            <div class="pred-value" id="predNextYear">-</div>
-                            <div class="pred-conf" id="predNextYearConf">-</div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="card card-shell">
-                    <div class="card-body">
-                        <div class="chart-title"><i class="fa-solid fa-flag-checkered" style="color:var(--pri)"></i>Milestone Target</div>
-                        <div id="milestonesContainer"></div>
+                    <div class="card card-shell">
+                        <div class="card-body">
+                            <div class="chart-title"><i class="fa-solid fa-flag-checkered" style="color:var(--pri)"></i>Milestone Target</div>
+                            <div id="milestonesContainer"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        {{-- /#page-real-content --}}
     </div>
 
     <div class="modal fade" id="leaveDetailsModal" tabindex="-1" aria-hidden="true">
@@ -631,11 +750,38 @@
                 </div>
                 
                 <div class="modal-body" style="padding:1.5rem">
-                    <div id="modalLoading" class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
+                    {{-- Skeleton mockup pengganti spinner, meniru struktur konten asli --}}
+                    <div id="modalLoading">
+                        <div class="row g-3 mb-4">
+                            @for ($i = 0; $i < 4; $i++)
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="card" style="border:none;border-radius:10px;background:var(--gray-50);padding:1rem;text-align:center">
+                                        <span class="skel-line" style="width:60%;height:10px;margin:0 auto 10px"></span>
+                                        <span class="skel-line" style="width:40%;height:28px;margin:0 auto 8px"></span>
+                                        <span class="skel-line" style="width:30%;height:10px;margin:0 auto"></span>
+                                    </div>
+                                </div>
+                            @endfor
                         </div>
-                        <p class="mt-3" style="color:var(--gray-400)">Memuat data kehadiran...</p>
+                        <div class="card mb-4" style="border:none;border-radius:10px;box-shadow:var(--shadow)">
+                            <div class="card-body">
+                                <span class="skel-line" style="width:200px;height:15px;margin-bottom:16px"></span>
+                                <span class="skel-line" style="height:250px;border-radius:8px"></span>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            @for ($j = 0; $j < 4; $j++)
+                                <div class="col-md-6">
+                                    <div class="card" style="border:none;border-radius:10px;box-shadow:var(--shadow)">
+                                        <div class="card-body">
+                                            <span class="skel-line" style="width:160px;height:14px;margin-bottom:14px"></span>
+                                            <span class="skel-line" style="height:56px;border-radius:8px;margin-bottom:8px"></span>
+                                            <span class="skel-line" style="height:56px;border-radius:8px"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endfor
+                        </div>
                     </div>
 
                     <div id="modalContent" style="display:none">
@@ -764,9 +910,14 @@
 
         $(document).ready(function() {
             initFilters();
-            loadAnalytics();
+
+            // ===== FULL PAGE SKELETON: tunggu analytics + kalender awal selesai =====
+            $.when(loadAnalytics(), loadCalendar($('#filterBulan').val(), $('#filterTahun').val())).always(function() {
+                $('#page-skeleton').fadeOut(200, function() { $(this).remove(); });
+                $('#page-real-content').removeClass('d-none').hide().fadeIn(250);
+            });
+
             initCalendarControls();
-            loadCalendar($('#filterBulan').val(), $('#filterTahun').val());
 
             $('#btnApplyFilter, #btnRefresh').click(() => loadAnalytics());
             $('#btnExportCsv').click(() => exportReport('csv'));
@@ -800,8 +951,37 @@
             };
         }
 
+        // ===== Skeleton untuk tab Analytics (stat card, 4 chart, opportunities, prediksi) =====
+        function showAnalyticsSkeleton() {
+            ['#metricTotalLate', '#metricTotalLeave', '#metricAttendanceRate'].forEach(id => {
+                $(id).html('<span class="skel-line" style="width:70px;height:22px;display:inline-block"></span>');
+            });
+
+            ['trendChart', 'deptChart', 'heatmapChart', 'riskChart'].forEach(id => {
+                $(`#${id}-wrap`).addClass('d-none');
+                $(`#${id}-skel`).removeClass('d-none');
+            });
+
+            const oppSkel = $('#opportunitiesContainer').empty();
+            for (let i = 0; i < 3; i++) {
+                oppSkel.append('<span class="skel-line" style="height:90px;border-radius:10px;margin-bottom:12px"></span>');
+            }
+
+            ['#predNextMonth', '#predNextQuarter', '#predNextYear'].forEach(id => {
+                $(id).html('<span class="skel-line" style="width:60px;height:26px;margin:0 auto"></span>');
+            });
+            ['#predNextMonthConf', '#predNextQuarterConf', '#predNextYearConf'].forEach(id => {
+                $(id).html('<span class="skel-line" style="width:100px;height:11px;margin:6px auto 0"></span>');
+            });
+            const msSkel = $('#milestonesContainer').empty();
+            for (let i = 0; i < 2; i++) {
+                msSkel.append('<span class="skel-line" style="height:60px;border-radius:8px;margin-bottom:10px"></span>');
+            }
+        }
+
         function loadAnalytics() {
-            $.get("{{ route('HR.absensi.analytics') }}", getFilterParams(), function(res) {
+            showAnalyticsSkeleton();
+            return $.get("{{ route('HR.absensi.analytics') }}", getFilterParams(), function(res) {
                 if (!res.success) { alert(res.message); return; }
                 renderSummary(res.summary);
                 renderCharts(res.charts);
@@ -860,6 +1040,9 @@
             const chartFont = { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto", size: 11 };
             const gridColor = 'rgba(0,0,0,0.05)';
 
+            $('#trendChart-skel').addClass('d-none');
+            $('#trendChart-wrap').removeClass('d-none');
+
             trendChart = new Chart(document.getElementById('trendChart'), {
                 type: 'line',
                 data: {
@@ -883,6 +1066,9 @@
                     }
                 }
             });
+
+            $('#deptChart-skel').addClass('d-none');
+            $('#deptChart-wrap').removeClass('d-none');
 
             deptChart = new Chart(document.getElementById('deptChart'), {
                 type: 'bar',
@@ -926,6 +1112,9 @@
             
             const barColors = heatmapLabels.map(getBarColor);
             const cutoffIndex = heatmapLabels.findIndex(l => l === '08:00');
+
+            $('#heatmapChart-skel').addClass('d-none');
+            $('#heatmapChart-wrap').removeClass('d-none');
 
             heatmapChart = new Chart(document.getElementById('heatmapChart'), {
                 type: 'bar',
@@ -1027,6 +1216,9 @@
                 }]
             });
 
+            $('#riskChart-skel').addClass('d-none');
+            $('#riskChart-wrap').removeClass('d-none');
+
             riskChart = new Chart(document.getElementById('riskChart'), {
                 type: 'doughnut',
                 data: {
@@ -1107,12 +1299,29 @@
             window.location.href = `{{ route('HR.absensi.export') }}?${params.toString()}`;
         }
 
+        // ===== Skeleton grid kalender (35 sel + header hari) =====
+        function renderCalendarSkeleton() {
+            const container = $('#attendanceCalendar').empty();
+            ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].forEach(d => {
+                container.append(`<div class="calendar-header">${d}</div>`);
+            });
+            for (let i = 0; i < 35; i++) {
+                container.append(`
+                    <div class="calendar-day skeleton-day">
+                        <span class="skel-line" style="width:60%;height:12px;margin-bottom:6px"></span>
+                        <span class="skel-line" style="width:40%;height:9px"></span>
+                    </div>
+                `);
+            }
+        }
+
         function loadCalendar(month, year) {
             currentCalMonth = month;
             currentCalYear = year;
             const monthName = new Date(year, month - 1).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
             $('#calendarMonthLabel').text(monthName.charAt(0).toUpperCase() + monthName.slice(1));
-            $.get("{{ route('HR.absensi.calendar') }}", {
+            renderCalendarSkeleton();
+            return $.get("{{ route('HR.absensi.calendar') }}", {
                 month, year, id_karyawan: $('#calendarEmployee').val()
             }, function(res) {
                 if (!res.success) return;
