@@ -31,7 +31,6 @@ class PengajuanBarang extends Model
         'tanggal_pencairan',
         'tanggal_terima_finance',
         'bukti',
-        'id_exam'
     ];
 
     /**
@@ -68,6 +67,11 @@ class PengajuanBarang extends Model
     public function pelatihan()
     {
         return $this->hasOne(Pelatihan::class, 'id_pengajuan_barang');
+    }
+
+    public function exam()
+    {
+        return $this->hasOne(eksam::class, 'id_pengajuan_barang');
     }
 
     public function sertifikasi()
