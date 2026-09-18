@@ -164,10 +164,6 @@
   </div>
 </div>
 
-
-
-
-
 <script>
 const URL_REKAP  = "{{ route('office.exam.rekap.json') }}";
 const ROW_H      = 44;    // tinggi per baris chart

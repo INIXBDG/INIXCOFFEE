@@ -327,9 +327,23 @@
 
                                                                 @if (auth()->user()->jabatan == 'Finance & Accounting')
                                                                     @if ($approvalexam->spv_sales == '1' && $approvalexam->office_manager == '0')
-                                                                        <td><a href="{{ route('approvalexam', $approvalexam->id_exam) }}" class="btn btn-primary">Konfirmasi</a></td>
+                                                                        <td>
+                                                                            <a href="{{ route('approvalexam', $approvalexam->id_exam) }}" class="btn btn-primary">
+                                                                                Konfirmasi
+                                                                            </a>
+                                                                        </td>
                                                                     @elseif ($approvalexam->office_manager == '1')
-                                                                        <td>Dikonfirmasi</td>
+                                                                        <td>
+                                                                            @if (!$hasPengajuanBarang)
+                                                                                <a href="{{ route('exam.addPengajuanBarang', $approvalexam->id_exam) }}" 
+                                                                                class="btn btn-success btn-sm"
+                                                                                onclick="return confirm('Buat Pengajuan Barang untuk Exam ini?')">
+                                                                                    <i class="fas fa-plus"></i> Add Pengajuan Barang
+                                                                                </a>
+                                                                            @else
+                                                                                <span class="badge bg-secondary">Sudah Diajukan</span>
+                                                                            @endif
+                                                                        </td>
                                                                     @else
                                                                         <td>Belum</td>
                                                                     @endif

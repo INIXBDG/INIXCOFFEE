@@ -672,3 +672,5 @@ class TicketController extends Controller
         return $userMap[$telegramId] ?? $defaultName;
     }
 }
+
+//

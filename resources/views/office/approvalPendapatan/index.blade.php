@@ -23,8 +23,14 @@
             <div id="unlockForm" class="d-none">
                 <div class="mb-3">
                     <label class="form-label fw-semibold small">Password</label>
-                    <input type="password" id="unlockPassword" class="form-control form-control-lg text-center"
-                        placeholder="••••••" autofocus>
+                    <div class="input-group">
+                        <input type="password" id="unlockPassword" class="form-control form-control-lg text-center"
+                            placeholder="••••••" autofocus>
+                        <button class="btn btn-outline-secondary" type="button"
+                            onclick="togglePasswordVisibility('unlockPassword', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                     <div id="unlockError" class="text-danger small mt-1 d-none"></div>
                 </div>
                 <button class="btn btn-primary w-100 py-2 fw-semibold" id="btnUnlockApproval"
@@ -42,8 +48,14 @@
             <div id="fallbackForm" class="d-none">
                 <div class="mb-3">
                     <label class="form-label fw-semibold small">Password Login</label>
-                    <input type="password" id="fallbackPassword" class="form-control form-control-lg text-center"
-                        placeholder="••••••">
+                    <div class="input-group">
+                        <input type="password" id="fallbackPassword" class="form-control form-control-lg text-center"
+                            placeholder="••••••">
+                        <button class="btn btn-outline-secondary" type="button"
+                            onclick="togglePasswordVisibility('fallbackPassword', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                     <div id="fallbackError" class="text-danger small mt-1 d-none"></div>
                 </div>
                 <button class="btn btn-primary w-100 py-2 fw-semibold" id="btnUnlockLogin" onclick="attemptUnlock('login')">
@@ -79,19 +91,37 @@
                         konfirmasi identitas.</p>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Password Login Sistem</label>
-                        <input type="password" id="setupLoginPass" class="form-control"
-                            placeholder="Masukkan password login Anda">
+                        <div class="input-group">
+                            <input type="password" id="setupLoginPass" class="form-control"
+                                placeholder="Masukkan password login Anda">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePasswordVisibility('setupLoginPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                         <div id="setupLoginError" class="text-danger small mt-1 d-none"></div>
                     </div>
                     <hr class="my-4">
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Buat Password Approval Baru</label>
-                        <input type="password" id="setupNewPass" class="form-control" placeholder="Minimal 4 karakter">
+                        <div class="input-group">
+                            <input type="password" id="setupNewPass" class="form-control" placeholder="Minimal 4 karakter">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePasswordVisibility('setupNewPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Konfirmasi Password Approval Baru</label>
-                        <input type="password" id="setupConfirmPass" class="form-control"
-                            placeholder="Ulangi password baru">
+                        <div class="input-group">
+                            <input type="password" id="setupConfirmPass" class="form-control"
+                                placeholder="Ulangi password baru">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePasswordVisibility('setupConfirmPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                         <div id="setupNewError" class="text-danger small mt-1 d-none"></div>
                     </div>
                 </div>
@@ -118,20 +148,38 @@
                         konfirmasi identitas, lalu buat Password Accounting yang akan digunakan ke depannya.</p>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Password Login Sistem</label>
-                        <input type="password" id="accSetupLoginPass" class="form-control"
-                            placeholder="Password login Anda">
+                        <div class="input-group">
+                            <input type="password" id="accSetupLoginPass" class="form-control"
+                                placeholder="Password login Anda">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePasswordVisibility('accSetupLoginPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                         <div id="accSetupLoginError" class="text-danger small mt-1 d-none"></div>
                     </div>
                     <hr class="my-4">
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Buat Password Accounting Baru</label>
-                        <input type="password" id="accSetupNewPass" class="form-control"
-                            placeholder="Minimal 4 karakter">
+                        <div class="input-group">
+                            <input type="password" id="accSetupNewPass" class="form-control"
+                                placeholder="Minimal 4 karakter">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePasswordVisibility('accSetupNewPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Konfirmasi Password Accounting</label>
-                        <input type="password" id="accSetupConfirmPass" class="form-control"
-                            placeholder="Ulangi password">
+                        <div class="input-group">
+                            <input type="password" id="accSetupConfirmPass" class="form-control"
+                                placeholder="Ulangi password">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePasswordVisibility('accSetupConfirmPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                         <div id="accSetupNewError" class="text-danger small mt-1 d-none"></div>
                     </div>
                 </div>
@@ -153,16 +201,34 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Password Approval Saat Ini</label>
-                        <input type="password" id="chgCurrentPass" class="form-control">
+                        <div class="input-group">
+                            <input type="password" id="chgCurrentPass" class="form-control">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePasswordVisibility('chgCurrentPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                         <div id="chgCurrentError" class="text-danger small mt-1 d-none"></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Password Approval Baru</label>
-                        <input type="password" id="chgNewPass" class="form-control">
+                        <div class="input-group">
+                            <input type="password" id="chgNewPass" class="form-control">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePasswordVisibility('chgNewPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Konfirmasi Password Approval Baru</label>
-                        <input type="password" id="chgConfirmPass" class="form-control">
+                        <div class="input-group">
+                            <input type="password" id="chgConfirmPass" class="form-control">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="togglePasswordVisibility('chgConfirmPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                         <div id="chgNewError" class="text-danger small mt-1 d-none"></div>
                     </div>
                 </div>
@@ -212,6 +278,22 @@
                         <i class="bi bi-key-fill me-1"></i>Ubah Password
                     </button>
                 </div>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-3 px-1 vlk-legend">
+                <span class="small text-muted fw-semibold">Keterangan warna:</span>
+                <span class="vlk-legend-item">
+                    <span class="vlk-legend-swatch" style="background:#FBEEE9;border-left:3px solid #E89B7C;"></span>
+                    Belum tervalidasi
+                </span>
+                <span class="vlk-legend-item">
+                    <span class="vlk-legend-swatch" style="background:#EDE7F6;border-left:4px solid #7E57C2;"></span>
+                    Data di luar bulan filter
+                </span>
+                <span class="vlk-legend-item">
+                    <span class="vlk-legend-swatch" style="background:#F8EDE8;border-left:3px solid #E89B7C;"></span>
+                    Belum valid + di luar bulan
+                </span>
             </div>
 
             <div class="card shadow-sm mb-4 border-0 vlk-filter-card">
@@ -885,6 +967,18 @@
                                             class="bi bi-clipboard2-check me-2"></i><span>Tracking Outstanding</span>
                                     </div>
                                 </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <label class="form-label fw-semibold mb-0">Tracking Outstanding</label>
+                                        <div class="text-muted small">Pilih item tracking yang sudah selesai</div>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="tracking_select_all">
+                                        <label class="form-check-label fw-semibold" for="tracking_select_all">
+                                            Pilih Semua
+                                        </label>
+                                    </div>
+                                </div>
                                 <div class="col-12">
                                     <div class="tracking-grid">
                                         <div class="tracking-item disabled">
@@ -1180,6 +1274,21 @@
         .vlk-card .card-body.text-center .bi-inbox {
             color: var(--vlk-lavender) !important;
         }
+        .vlk-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: var(--vlk-muted);
+        }
+        .vlk-legend-swatch {
+            display: inline-block;
+            width: 22px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid var(--vlk-border);
+        }
+                
 
         @keyframes vlkFadeIn {
             from {
@@ -1862,6 +1971,67 @@
             background: var(--vlk-primary-light);
             border-radius: 3px;
         }
+
+        .vlk-fixed-table {
+            table-layout: fixed !important;
+        }
+
+        .vlk-fixed-table th,
+        .vlk-fixed-table td {
+            vertical-align: middle;
+            line-height: 1.35;
+            padding: 0.45rem 0.5rem;
+            text-align: center !important;
+            /* Teks boleh turun ke baris berikutnya, tidak pernah dipotong/ellipsis */
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: anywhere;
+            overflow: visible;
+        }
+
+        /* Header: boleh 2-3 baris, tidak pernah terpotong */
+        .vlk-fixed-table thead th {
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.25;
+            font-size: 0.68rem;
+            text-align: center !important;
+            vertical-align: middle;
+        }
+
+        /* Body: nilai boleh wrap ke baris baru, tidak pernah ellipsis/terpotong */
+        .vlk-fixed-table tbody td {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            text-align: center !important;
+        }
+
+        /* FOOTER: tetap tidak boleh terpotong, dan rata tengah */
+        .vlk-fixed-table tfoot td {
+            white-space: normal;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            vertical-align: middle;
+            font-size: 0.78rem;
+            text-align: center !important;
+        }
+
+        .vlk-theme tr.row-out-of-period > td {
+            background-color: #EDE7F6 !important;
+            color: #4A3F6B;
+        }
+        .vlk-theme tr.row-out-of-period > td:first-child {
+            box-shadow: inset 4px 0 0 #7E57C2;
+        }
+
+        .vlk-theme tr.table-warning.row-out-of-period > td {
+            background-color: #F5E6E0 !important;
+            color: #5C4033;
+        }
+        .vlk-theme tr.table-warning.row-out-of-period > td:first-child {
+            box-shadow: inset 4px 0 0 #E89B7C;
+        }
     </style>
 
     
@@ -2071,6 +2241,20 @@
         $(document).ready(function() {
             checkAndInitLock();
         });
+
+        function togglePasswordVisibility(inputId, btnEl) {
+            const input = document.getElementById(inputId);
+            const icon = btnEl.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
 
         function checkAndInitLock() {
             $('#unlockLoadingState').removeClass('d-none');
@@ -2944,6 +3128,35 @@
             }
             moment.locale('id');
             let visibleCols = filterState.visibleColumns;
+
+            const COL_WIDTHS = {
+                '_no': 48,
+                'no_faktur': 130, 'no_invoice': 150, 'materi': 210, 'tanggal_training': 180,
+                'perusahaan': 160, 'nama_sales': 140, 'instruktur': 140,
+                'harga': 120, 'pax': 70, 'total_penjualan_kotor': 160,
+                'diskon': 120, 'total_diskon': 130, 'total_pa': 120,
+                'total_cashback': 120, 'total_uang_saku': 120, 'total_akomodasi': 120,
+                'oleh_oleh': 130, 'biaya_lain_lain': 140, 'entertainment': 140,
+                'jenis_transport': 140, 'biaya_transport': 140, 'pengurangan_pph': 150,
+                'exam': 110, 'total_penjualan_sales': 190,
+                'PPN': 130, 'PPH': 130, 'jumlah_pembayaran': 160,
+                'tanggal_pembayaran': 170, 'biaya_admin': 130, 'total_piutang': 150,
+                'tanggal_mulai': 140, 'tanggal_selesai': 140
+            };
+
+            function buildColgroup() {
+                let html = '<colgroup><col style="width:' + COL_WIDTHS['_no'] + 'px">';
+                visibleCols.forEach(function (k) {
+                    html += '<col style="width:' + (COL_WIDTHS[k] || 110) + 'px">';
+                });
+                return html + '</colgroup>';
+            }
+
+            let tableMinWidth = COL_WIDTHS['_no'];
+            visibleCols.forEach(function (k) {
+                tableMinWidth += (COL_WIDTHS[k] || 110);
+            });
+
             let totalWeeks = rawWeeksStore.length;
             rawWeeksStore.forEach((weekInfo, idx) => {
                 let weekKey = weekInfo.week_key;
@@ -2959,6 +3172,20 @@
                 } else {
                     weekItems.forEach((item, i) => {
                         let rowClass = item.valid === 'valid' ? '' : 'table-warning';
+
+                        let filterMonth = parseInt($('#month').val(), 10);
+                        let filterYear  = parseInt($('#year').val(), 10);
+                        let outOfPeriod = false;
+                        if (item.tanggal_mulai) {
+                            let d = moment(item.tanggal_mulai, 'YYYY-MM-DD');
+                            if (d.isValid() && (d.month() + 1 !== filterMonth || d.year() !== filterYear)) {
+                                outOfPeriod = true;
+                            }
+                        }
+                        if (outOfPeriod) {
+                            rowClass = (rowClass ? rowClass + ' ' : '') + 'row-out-of-period';
+                        }
+
                         let encodedItem = encodeURIComponent(JSON.stringify(item));
                         let cellsHtml = `<td class="text-center fw-bold">${i + 1}</td>`;
                         visibleCols.forEach(colKey => {
@@ -2966,11 +3193,11 @@
                             if (!colDef) return;
                             let val = item[colDef.dataProp];
                             if (colDef.type === 'currency') {
-                                cellsHtml += `<td class="text-end">${formatRupiah(val)}</td>`;
+                                cellsHtml += `<td class="text-center">${formatRupiah(val)}</td>`;
                             } else if (colDef.type === 'number') {
                                 cellsHtml += `<td class="text-center">${val ?? '-'}</td>`;
                             } else {
-                                cellsHtml += `<td>${escapeHtml(val || '-')}</td>`;
+                                cellsHtml += `<td class="text-center">${escapeHtml(val || '-')}</td>`;
                             }
                         });
                         rowsHtml +=
@@ -2988,48 +3215,156 @@
                 if (isLastWeek && (filteredData.length > 0 || rawDataStore.length > 0)) {
                     let fb = footerDataStore.bulanan || {};
                     let ft = footerDataStore.tahunan || {};
-                    let bulananCells = '<td colspan="10" class="text-end">TOTAL BULANAN</td>';
-                    let tahunanCells = '<td colspan="10" class="text-end">TOTAL TAHUNAN</td>';
-                    visibleCols.forEach(colKey => {
+
+                    const frontMergeCols = [
+                        'no_faktur', 'no_invoice', 'materi', 'tanggal_training',
+                        'perusahaan', 'nama_sales', 'instruktur'
+                    ];
+
+                    // Hanya hitung kolom depan yang consecutive dari awal
+                    let visibleFrontCount = 0;
+                    for (let i = 0; i < visibleCols.length; i++) {
+                        if (frontMergeCols.indexOf(visibleCols[i]) !== -1) {
+                            visibleFrontCount++;
+                        } else {
+                            break;
+                        }
+                    }
+                    let labelColspan = 1 + visibleFrontCount;
+
+                    // dataProp → key SUM backend (sesuaikan setelah Anda tambah SUM di controller)
+                    const totalMapping = {
+                        'harga':                 'total_harga',
+                        'pax':                   'total_pax',
+                        'total_penjualan_kotor': 'total_penjualan',
+                        'diskon':                'total_diskon_pa',
+                        'total_diskon':          'total_diskon',
+                        'total_pa':              'total_pa',
+                        'total_cashback':        'total_cashback',
+                        'total_uang_saku':       'total_uang_saku',
+                        'total_akomodasi':       'total_akomodasi',
+                        'oleh_oleh':             'oleh_oleh',
+                        'biaya_lain_lain':       'biaya_lain_lain',
+                        'entertainment':         'entertainment',
+                        'biaya_transport':       'biaya_transport',
+                        'pengurangan_pph':       'pengurangan_pph',
+                        'exam':                  'total_exam',
+                        'total_penjualan_sales': 'total_penjualan_sales',
+                        'PPN':                   'total_ppn',
+                        'PPH':                   'total_pph',
+                        'jumlah_pembayaran':     'jumlah_pembayaran',
+                        'biaya_admin':           'biaya_admin',
+                        'total_piutang':         'total_piutang'
+                    };
+
+                    const noTotalCols = frontMergeCols.concat([
+                        'jenis_transport', 'tanggal_pembayaran', 'tanggal_mulai', 'tanggal_selesai'
+                    ]);
+
+                    let bulananCells = `<td class="fw-bold text-center" colspan="${labelColspan}">TOTAL BULANAN</td>`;
+                    let tahunanCells = `<td class="fw-bold text-center" colspan="${labelColspan}">TOTAL TAHUNAN</td>`;
+
+                    visibleCols.forEach(function (colKey, colIdx) {
+                        if (colIdx < visibleFrontCount) return;
+
                         let colDef = COLUMN_DEFS[colKey];
-                        if (!colDef) {
+                        let dataProp = colDef ? colDef.dataProp : colKey;
+                        let mapKey = totalMapping[dataProp];
+
+                        if (noTotalCols.indexOf(colKey) !== -1 || !mapKey) {
                             bulananCells += '<td></td>';
                             tahunanCells += '<td></td>';
                             return;
                         }
-                        if (colDef.type === 'currency') {
-                            let dataProp = colDef.dataProp;
-                            let mapKey = dataProp === 'total_penjualan_kotor' ? 'total_penjualan' :
-                                dataProp === 'total_penjualan_sales' ? 'total_penjualan_sales' :
-                                dataProp === 'pengurangan_pph' ? 'pengurangan_pph' : dataProp ===
-                                'biaya_lain_lain' ? 'biaya_lain_lain' : dataProp === 'total_diskon' ?
-                                'total_diskon' : dataProp === 'total_pa' ? 'total_pa' : dataProp ===
-                                'total_cashback' ? 'total_cashback' : dataProp === 'total_uang_saku' ?
-                                'total_uang_saku' : dataProp === 'total_akomodasi' ? 'total_akomodasi' :
-                                dataProp === 'oleh_oleh' ? 'oleh_oleh' : dataProp === 'entertainment' ?
-                                'entertainment' : dataProp === 'biaya_transport' ? 'biaya_transport' :
-                                dataProp === 'PPN' ? 'total_ppn' : dataProp === 'PPH' ? 'total_pph' :
-                                dataProp === 'jumlah_pembayaran' ? 'jumlah_pembayaran' : dataProp ===
-                                'biaya_admin' ? 'biaya_admin' : dataProp === 'total_piutang' ?
-                                'total_piutang' : dataProp === 'exam' ? 'total_exam' : dataProp;
-                            let bulananVal = fb[mapKey] ?? 0;
-                            let tahunanVal = ft[mapKey] ?? 0;
-                            bulananCells += `<td class="text-end">${formatRupiah(bulananVal)}</td>`;
-                            tahunanCells += `<td class="text-end">${formatRupiah(tahunanVal)}</td>`;
+
+                        let bulananVal = (fb[mapKey] != null) ? fb[mapKey] : 0;
+                        let tahunanVal = (ft[mapKey] != null) ? ft[mapKey] : 0;
+
+                        if (dataProp === 'pax') {
+                            bulananCells += `<td class="text-center">${Number(bulananVal).toLocaleString('id-ID')}</td>`;
+                            tahunanCells += `<td class="text-center">${Number(tahunanVal).toLocaleString('id-ID')}</td>`;
                         } else {
-                            bulananCells += '<td></td>';
-                            tahunanCells += '<td></td>';
+                            bulananCells += `<td class="text-center">${formatRupiah(bulananVal)}</td>`;
+                            tahunanCells += `<td class="text-center">${formatRupiah(tahunanVal)}</td>`;
                         }
                     });
-                    footerHtml =
-                        `<tfoot><tr class="table-info fw-bold">${bulananCells}</tr><tr class="table-dark fw-bold">${tahunanCells}</tr></tfoot>`;
+
+                    footerHtml = `<tfoot>
+                        <tr class="table-info fw-bold">${bulananCells}</tr>
+                        <tr class="table-dark fw-bold">${tahunanCells}</tr>
+                    </tfoot>`;
                 }
-                container.append(
-                    `<div class="card my-1 vlk-card"><div class="card-body p-2"><div class="vlk-card-header px-1 pt-1"><div><h3 class="card-title my-1 fs-6"><span class="vlk-week-badge">${weekInfo.week_number}</span> Approval Penjualan</h3><p class="card-title my-1 text-muted small">Periode : ${startOfWeek.format('DD MMMM YYYY')} - ${endOfWeek.format('DD MMMM YYYY')}</p></div>${totalRows > 0 ? `<span class="vlk-status-pill"><i class="bi bi-check2-circle me-1"></i>${validCount}/${totalRows} tervalidasi</span>` : ''}</div><div class="sync-scroll-wrapper table-scroll-sync"><table class="table table-striped table-hover mb-0" style="min-width:2600px;"><thead><tr>${headerHtml}</tr></thead><tbody>${rowsHtml}</tbody>${footerHtml}</table></div></div></div>`
-                );
+                container.append(`
+                    <div class="card my-1 vlk-card">
+                        <div class="card-body p-2">
+                            <div class="vlk-card-header px-1 pt-1">
+                                <div>
+                                    <h3 class="card-title my-1 fs-6">
+                                        <span class="vlk-week-badge">${weekInfo.week_number}</span>
+                                        Approval Penjualan
+                                    </h3>
+
+                                    <p class="card-title my-1 text-muted small">
+                                        Periode :
+                                        ${startOfWeek.format('DD MMMM YYYY')}
+                                        -
+                                        ${endOfWeek.format('DD MMMM YYYY')}
+                                    </p>
+                                </div>
+
+                                ${
+                                    totalRows > 0
+                                        ? `
+                                            <span class="vlk-status-pill">
+                                                <i class="bi bi-check2-circle me-1"></i>
+                                                ${validCount}/${totalRows} tervalidasi
+                                            </span>
+                                        `
+                                        : ''
+                                }
+                            </div>
+
+                            <div class="sync-scroll-wrapper table-scroll-sync">
+                                <table
+                                    class="table table-striped table-hover mb-0 vlk-fixed-table"
+                                    style="min-width:${tableMinWidth}px; table-layout:fixed;"
+                                >
+                                    ${buildColgroup()}
+
+                                    <thead>
+                                        <tr>
+                                            ${headerHtml}
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        ${rowsHtml}
+                                    </tbody>
+
+                                    ${footerHtml}
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `);
             });
             bindSyncScroll();
         }
+
+        $('#changePassModal').on('hidden.bs.modal', function () {
+            ['chgCurrentPass', 'chgNewPass', 'chgConfirmPass'].forEach(function (id) {
+                const input = document.getElementById(id);
+                const btn = input.nextElementSibling; 
+                if (input) input.type = 'password';
+                if (btn) {
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('bi-eye-slash');
+                        icon.classList.add('bi-eye');
+                    }
+                }
+            });
+        });
 
         function calcBasic(op) {
             let n1 = parseFloat($('#calcNum1').val()) || 0;
@@ -3122,5 +3457,37 @@
             form.submit();
             form.remove();
         });
+
+        // Hapus listener DOMContentLoaded lama untuk tracking_select_all, ganti dengan:
+        $(document).on('change', '#tracking_select_all', function () {
+            const checked = this.checked;
+            $('#updateModal .tracking-check[type="checkbox"]').each(function () {
+                if (!this.disabled) {
+                    this.checked = checked;
+                }
+            });
+            this.indeterminate = false;
+        });
+
+        $(document).on('change', '#updateModal .tracking-check[type="checkbox"]', function () {
+            const $all = $('#updateModal .tracking-check[type="checkbox"]:not(:disabled)');
+            const total = $all.length;
+            const checked = $all.filter(':checked').length;
+            const selectAll = document.getElementById('tracking_select_all');
+            if (!selectAll) return;
+            selectAll.checked = total > 0 && checked === total;
+            selectAll.indeterminate = checked > 0 && checked < total;
+        });
+
+        // Saat modal dibuka, sinkronkan state Select All
+        $('#updateModal').on('shown.bs.modal', function () {
+            const $all = $('#updateModal .tracking-check[type="checkbox"]:not(:disabled)');
+            const total = $all.length;
+            const checked = $all.filter(':checked').length;
+            const selectAll = document.getElementById('tracking_select_all');
+            if (!selectAll) return;
+            selectAll.checked = total > 0 && checked === total;
+            selectAll.indeterminate = checked > 0 && checked < total;
+});
     </script>
 @endsection
