@@ -1960,3 +1960,6 @@ Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
     Route::post('/clear-all', [KelasSettingController::class, 'clearAll'])->name('clear-all');
 });
 
+Route::post('/session/keep-alive', function () {
+    return response()->json(['status' => 'alive']);
+})->name('session.keep-alive');
