@@ -877,8 +877,14 @@ class PengajuanBarangController extends Controller
     {
         $pengajuan = PengajuanBarang::with(['detail', 'tracking', 'karyawan'])->findOrFail($id);
 
-        if ($pengajuan->tipe === 'Exam' && $pengajuan->id_exam) {
-            return $this->exportPDFExam($pengajuan->id_exam);
+        if ($pengajuan->tipe === 'Exam') {
+            $exam = eksam::where('id_pengajuan_barang', $id)->first();
+
+            if (!$exam) {
+                return back()->with('error', 'Data exam terkait tidak ditemukan.');
+            }
+
+            return $this->exportPDFExam($exam->id);
         }
 
         $data = $pengajuan;
