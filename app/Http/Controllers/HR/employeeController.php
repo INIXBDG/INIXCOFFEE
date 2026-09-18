@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\karyawan;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class employeeController extends Controller
 {
@@ -22,7 +22,7 @@ class employeeController extends Controller
         try {
             $validated = $request->validate([
                 'periode' => 'nullable|in:3,6,12,year,all',
-                'year' => 'nullable|integer|min:2000|max:' . date('Y'),
+                'year' => 'nullable|integer|min:2000|max:'.date('Y'),
                 'search' => 'nullable|string|max:100',
             ]);
 
@@ -37,7 +37,7 @@ class employeeController extends Controller
                 ->whereNot('jabatan', 'Pilih Jabatan')
                 ->whereNotNull('nip')
                 ->whereNot('divisi', 'Direksi');
-                
+
             $totalEmployees = (clone $baseQuery)->count();
 
             $activeQuery = clone $baseQuery;
@@ -90,7 +90,8 @@ class employeeController extends Controller
                 200,
             );
         } catch (\Exception $e) {
-            Log::error('HR Employee Data Error: ' . $e->getMessage());
+            Log::error('HR Employee Data Error: '.$e->getMessage());
+
             return response()->json(
                 [
                     'error' => 'Gagal memuat data karyawan',
@@ -104,7 +105,7 @@ class employeeController extends Controller
     public function getResignedEmployees(Request $request)
     {
         $totalStart = microtime(true);
-        
+
         $draw = $request->input('draw', 1);
         $search = $request->input('search.value') ?? $request->input('search');
         $start = $request->input('start', 0);
@@ -153,7 +154,7 @@ class employeeController extends Controller
             ];
         })->toArray();
 
-        Log::info('Waktu Proses DataTables Resigned: ' . (microtime(true) - $totalStart) . 's');
+        Log::info('Waktu Proses DataTables Resigned: '.(microtime(true) - $totalStart).'s');
 
         return response()->json([
             'draw' => intval($draw),
@@ -193,7 +194,8 @@ class employeeController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['error' => 'Karyawan tidak ditemukan'], 404);
         } catch (\Exception $e) {
-            Log::error('HR Update Resign Data Error: ' . $e->getMessage());
+            Log::error('HR Update Resign Data Error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Gagal memperbarui data',
                 'message' => config('app.debug') ? $e->getMessage() : 'Silakan coba beberapa saat lagi',
@@ -227,7 +229,8 @@ class employeeController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['error' => 'Karyawan tidak ditemukan'], 404);
         } catch (\Exception $e) {
-            Log::error('HR Move To Resign Error: ' . $e->getMessage());
+            Log::error('HR Move To Resign Error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Gagal memindahkan data',
                 'message' => config('app.debug') ? $e->getMessage() : 'Silakan coba beberapa saat lagi',
@@ -251,7 +254,8 @@ class employeeController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['error' => 'Karyawan tidak ditemukan'], 404);
         } catch (\Exception $e) {
-            Log::error('HR Restore Employee Error: ' . $e->getMessage());
+            Log::error('HR Restore Employee Error: '.$e->getMessage());
+
             return response()->json([
                 'error' => 'Gagal memulihkan data',
                 'message' => config('app.debug') ? $e->getMessage() : 'Silakan coba beberapa saat lagi',
@@ -340,9 +344,9 @@ class employeeController extends Controller
             [
                 'labels' => $labels,
                 'datasets' => [
-                    ['label' => 'Active', 'data' => $activeData, 'borderColor' => '#198754', 'backgroundColor' => 'rgba(25,135,84,0.1)', 'fill' => true], 
-                    ['label' => 'New Hire', 'data' => $newData, 'borderColor' => '#0d6efd', 'backgroundColor' => 'rgba(13,110,253,0.1)', 'fill' => true], 
-                    ['label' => 'Resign', 'data' => $resignData, 'borderColor' => '#dc3545', 'backgroundColor' => 'rgba(220,53,69,0.1)', 'fill' => true]
+                    ['label' => 'Active', 'data' => $activeData, 'borderColor' => '#198754', 'backgroundColor' => 'rgba(25,135,84,0.1)', 'fill' => true],
+                    ['label' => 'New Hire', 'data' => $newData, 'borderColor' => '#0d6efd', 'backgroundColor' => 'rgba(13,110,253,0.1)', 'fill' => true],
+                    ['label' => 'Resign', 'data' => $resignData, 'borderColor' => '#dc3545', 'backgroundColor' => 'rgba(220,53,69,0.1)', 'fill' => true],
                 ],
                 'summary' => [
                     'total_active' => array_sum($activeData),
@@ -437,7 +441,8 @@ class employeeController extends Controller
                 200,
             );
         } catch (\Exception $e) {
-            Log::error('Headcount Breakdown Error: ' . $e->getMessage());
+            Log::error('Headcount Breakdown Error: '.$e->getMessage());
+
             return response()->json(['error' => 'Gagal memuat breakdown data'], 500);
         }
     }
@@ -445,7 +450,7 @@ class employeeController extends Controller
     public function getEmployeesByCategory(Request $request)
     {
         $totalStart = microtime(true);
-        
+
         $draw = $request->input('draw', 1);
         $category = $request->input('category', 'all');
         $search = $request->input('search.value') ?? $request->input('search');
@@ -453,7 +458,7 @@ class employeeController extends Controller
         $length = $request->input('length', 10);
         $periode = $request->input('periode', 'all');
         $year = $request->input('year');
-        
+
         $dateRange = $periode !== 'all' ? $this->calculateDateRange($periode, $year) : null;
 
         $baseQuery = karyawan::query()
@@ -503,6 +508,7 @@ class employeeController extends Controller
 
         $data = $employees->map(function ($emp) {
             $namaDepan = explode(' ', trim($emp->nama_lengkap ?? $emp->nama ?? ''))[0] ?? 'Tidak Diketahui';
+
             return [
                 'id' => $emp->id,
                 'nama' => $namaDepan,
@@ -516,7 +522,7 @@ class employeeController extends Controller
             ];
         })->toArray();
 
-        Log::info('Waktu Proses DataTables Category: ' . (microtime(true) - $totalStart) . 's');
+        Log::info('Waktu Proses DataTables Category: '.(microtime(true) - $totalStart).'s');
 
         return response()->json(
             [
@@ -545,7 +551,7 @@ class employeeController extends Controller
         $trend = $this->getHeadcountTrend($request);
         $data = $trend->original;
 
-        $filename = 'headcount_trend_' . date('Ymd') . '.csv';
+        $filename = 'headcount_trend_'.date('Ymd').'.csv';
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
@@ -554,7 +560,7 @@ class employeeController extends Controller
         $callback = function () use ($data) {
             $file = fopen('php://output', 'w');
             fputcsv($file, ['Periode', 'Active', 'New Hire', 'Resign']);
-            for ($i = 0; $i < count($data['labels']); $i++) {
+            for ($i = 0; $i < count($data['labels']); ++$i) {
                 fputcsv($file, [$data['labels'][$i], $data['datasets'][0]['data'][$i], $data['datasets'][1]['data'][$i], $data['datasets'][2]['data'][$i]]);
             }
             fputcsv($file, []);
@@ -573,7 +579,7 @@ class employeeController extends Controller
     public function exportHeadcountTrendPdf(Request $request)
     {
         $trend = $this->getHeadcountTrend($request)->original;
-        $dateRange = ($request->start_date ?? '12 bulan terakhir') . ' s/d ' . ($request->end_date ?? 'sekarang');
+        $dateRange = ($request->start_date ?? '12 bulan terakhir').' s/d '.($request->end_date ?? 'sekarang');
 
         $pdf = Pdf::loadView('HR/exports/headcount_trend_pdf', [
             'trend' => $trend,
@@ -581,7 +587,7 @@ class employeeController extends Controller
             'generated_at' => Carbon::now()->format('d M Y H:i'),
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->stream('headcount_trend_' . date('Ymd') . '.pdf');
+        return $pdf->stream('headcount_trend_'.date('Ymd').'.pdf');
     }
 
     public function exportHeadcountBreakdownCsv(Request $request)
@@ -589,7 +595,7 @@ class employeeController extends Controller
         $breakdown = $this->getHeadcountBreakdown($request);
         $data = $breakdown->original;
 
-        $filename = 'headcount_breakdown_' . date('Ymd') . '.csv';
+        $filename = 'headcount_breakdown_'.date('Ymd').'.csv';
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
@@ -623,7 +629,7 @@ class employeeController extends Controller
             'generated_at' => Carbon::now()->format('d M Y H:i'),
         ])->setPaper('a4', 'portrait');
 
-        return $pdf->stream('headcount_breakdown_' . date('Ymd') . '.pdf');
+        return $pdf->stream('headcount_breakdown_'.date('Ymd').'.pdf');
     }
 
     private function calculateDateRange($periode, $year = null)
@@ -642,6 +648,7 @@ class employeeController extends Controller
             ->copy()
             ->subMonths($monthCount - 1)
             ->startOfMonth();
+
         return [
             'start' => $startDate,
             'end' => $today->copy()->endOfMonth(),
@@ -666,8 +673,8 @@ class employeeController extends Controller
             } elseif ($groupBy === 'quarter') {
                 $quarter = $current->quarter;
                 $periods[] = [
-                    'value' => $current->year . '-Q' . $quarter,
-                    'label' => 'Q' . $quarter . ' ' . $current->format('Y'),
+                    'value' => $current->year.'-Q'.$quarter,
+                    'label' => 'Q'.$quarter.' '.$current->format('Y'),
                     'start' => $current->copy()->startOfQuarter(),
                     'end' => $current->copy()->endOfQuarter(),
                 ];
@@ -682,6 +689,7 @@ class employeeController extends Controller
                 $current->addMonth();
             }
         }
+
         return $periods;
     }
 
@@ -706,7 +714,7 @@ class employeeController extends Controller
     {
         $rate = $total > 0 ? round(($active / $total) * 100, 1) : 100.0;
         $turnoverRate = round(100 - $rate, 1);
-        
+
         // Penentuan Status & Level Risiko
         if ($rate >= 90) {
             $status = 'excellent';
@@ -724,17 +732,17 @@ class employeeController extends Controller
 
         // 1. Analisis Peluang (Dinamis berdasarkan kondisi data)
         $opportunities = [];
-        
+
         if ($resign > 0) {
             $opportunities[] = [
                 'icon' => 'fa-magnifying-glass-chart',
                 'title' => 'Analisis Akar Penyebab (Root Cause)',
-                'desc' => 'Lakukan exit interview terstruktur dan kategorikan alasan resign (kompensasi, atasan, karir) untuk menemukan pola.'
+                'desc' => 'Lakukan exit interview terstruktur dan kategorikan alasan resign (kompensasi, atasan, karir) untuk menemukan pola.',
             ];
             $opportunities[] = [
                 'icon' => 'fa-user-clock',
                 'title' => 'Evaluasi Masa Kritis Karyawan Baru',
-                'desc' => 'Cek apakah resign terjadi di bawah 6 bulan. Jika ya, perbaiki proses onboarding dan ekspektasi pekerjaan.'
+                'desc' => 'Cek apakah resign terjadi di bawah 6 bulan. Jika ya, perbaiki proses onboarding dan ekspektasi pekerjaan.',
             ];
         }
 
@@ -742,12 +750,12 @@ class employeeController extends Controller
             $opportunities[] = [
                 'icon' => 'fa-scale-unbalanced',
                 'title' => 'Audit Kompensasi & Benefit',
-                'desc' => 'Bandingkan struktur gaji dan benefit dengan rata-rata industri. Ketertinggalan kompetitif adalah pemicu utama turnover.'
+                'desc' => 'Bandingkan struktur gaji dan benefit dengan rata-rata industri. Ketertinggalan kompetitif adalah pemicu utama turnover.',
             ];
             $opportunities[] = [
                 'icon' => 'fa-route',
                 'title' => 'Pemetaan Jalur Karir (Career Pathing)',
-                'desc' => 'Karyawan sering resign karena merasa stagnan. Buat peta karir yang jelas untuk 1-3 tahun ke depan.'
+                'desc' => 'Karyawan sering resign karena merasa stagnan. Buat peta karir yang jelas untuk 1-3 tahun ke depan.',
             ];
         }
 
@@ -755,7 +763,7 @@ class employeeController extends Controller
             $opportunities[] = [
                 'icon' => 'fa-shield-halved',
                 'title' => 'Pencegahan Komplaisensi (Complacency)',
-                'desc' => 'Pertahankan momentum dengan program employee engagement lanjutan dan identifikasi "High Potential Talent" untuk dipertahankan.'
+                'desc' => 'Pertahankan momentum dengan program employee engagement lanjutan dan identifikasi "High Potential Talent" untuk dipertahankan.',
             ];
         }
 
@@ -769,18 +777,18 @@ class employeeController extends Controller
         $projections = [
             'next_quarter' => [
                 'period' => 'Kuartal Depan',
-                'estimated_active' => max(0, $active - round($resign * 0.25 * $turnoverTrend)), 
+                'estimated_active' => max(0, $active - round($resign * 0.25 * $turnoverTrend)),
                 'estimated_resign' => max(0, round($resign * 0.25 * $turnoverTrend)),
                 'confidence' => $dataConfidence,
-                'action_required' => $turnoverRate > 15 ? 'Intervensi Segera' : 'Monitoring Rutin'
+                'action_required' => $turnoverRate > 15 ? 'Intervensi Segera' : 'Monitoring Rutin',
             ],
             'next_year' => [
                 'period' => 'Tahun Depan',
-                'estimated_active' => max(0, round($active * 0.95)), 
+                'estimated_active' => max(0, round($active * 0.95)),
                 'estimated_resign' => max(0, round($total * 0.05 * $turnoverTrend)),
                 'confidence' => $dataConfidence === 'high' ? 'medium' : 'low',
-                'action_required' => $turnoverRate > 15 ? 'Restrukturisasi Strategi HR' : 'Pemeliharaan Budaya Kerja'
-            ]
+                'action_required' => $turnoverRate > 15 ? 'Restrukturisasi Strategi HR' : 'Pemeliharaan Budaya Kerja',
+            ],
         ];
 
         return [
@@ -791,10 +799,10 @@ class employeeController extends Controller
             ],
             'status' => $status,
             'status_label' => [
-                'excellent' => 'Sangat Baik (Stabil)', 
-                'good' => 'Baik (Perlu Pemeliharaan)', 
-                'moderate' => 'Cukup (Waspada)', 
-                'needs_attention' => 'Kritis (Perlu Intervensi Segera)'
+                'excellent' => 'Sangat Baik (Stabil)',
+                'good' => 'Baik (Perlu Pemeliharaan)',
+                'moderate' => 'Cukup (Waspada)',
+                'needs_attention' => 'Kritis (Perlu Intervensi Segera)',
             ][$status],
             'opportunities' => $opportunities,
             'recommendations' => $recommendations,
@@ -810,26 +818,26 @@ class employeeController extends Controller
                 'title' => 'Retensi & Kompensasi',
                 'icon' => 'fa-coins',
                 'color' => 'var(--warning)',
-                'items' => []
+                'items' => [],
             ],
             'budaya_engagement' => [
                 'title' => 'Budaya & Employee Engagement',
                 'icon' => 'fa-people-group',
                 'color' => 'var(--pri)',
-                'items' => []
+                'items' => [],
             ],
             'pengembangan_karir' => [
                 'title' => 'Pengembangan & Karir',
                 'icon' => 'fa-chart-line',
                 'color' => 'var(--success)',
-                'items' => []
+                'items' => [],
             ],
             'manajemen_kepemimpinan' => [
                 'title' => 'Manajemen & Kepemimpinan',
                 'icon' => 'fa-user-tie',
                 'color' => 'var(--info)',
-                'items' => []
-            ]
+                'items' => [],
+            ],
         ];
 
         // Logika pengisian rekomendasi berdasarkan status
@@ -839,14 +847,12 @@ class employeeController extends Controller
             $recommendations['budaya_engagement']['items'][] = 'Adakan "Stay Interview" dengan karyawan kunci (key persons) sebelum mereka memutuskan resign.';
             $recommendations['pengembangan_karir']['items'][] = 'Identifikasi 10-20% karyawan berkinerja tinggi dan buat rencana retensi khusus.';
             $recommendations['manajemen_kepemimpinan']['items'][] = 'Evaluasi gaya manajemen di divisi dengan tingkat resign tertinggi (toxic leadership check).';
-        } 
-        elseif ($status === 'moderate') {
+        } elseif ($status === 'moderate') {
             $recommendations['retensi_kompensasi']['items'][] = 'Tinjau ulang struktur kenaikan gaji tahunan agar lebih kompetitif.';
             $recommendations['budaya_engagement']['items'][] = 'Implementasikan program pengakuan karyawan (Employee Recognition Program) bulanan.';
             $recommendations['pengembangan_karir']['items'][] = 'Buat program mentoring formal antara senior dan karyawan baru (0-1 tahun).';
             $recommendations['manajemen_kepemimpinan']['items'][] = 'Berikan pelatihan "People Management" untuk para Supervisor/Manager.';
-        } 
-        else { // excellent atau good
+        } else { // excellent atau good
             $recommendations['retensi_kompensasi']['items'][] = 'Pertahankan daya saing kompensasi dengan review pasar tahunan.';
             $recommendations['budaya_engagement']['items'][] = 'Kembangkan program Employer Branding untuk menarik talenta terbaik dari luar.';
             $recommendations['pengembangan_karir']['items'][] = 'Bangun program "Succession Planning" untuk posisi-posisi kritis.';
@@ -862,6 +868,7 @@ class employeeController extends Controller
     private function formatJoinDate($emp)
     {
         $date = $emp->awal_probation ?? ($emp->awal_kontrak ?? $emp->awal_tetap);
+
         return $date ? Carbon::parse($date)->format('d M Y') : '-';
     }
 }
