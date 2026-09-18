@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\detailPengajuanBarang;
+use App\Models\eksam;
 use App\Models\jabatan;
 use Illuminate\Http\Request;
 use App\Models\PengajuanBarang;
@@ -874,8 +875,14 @@ class PengajuanBarangController extends Controller
 
     public function exportPDF($id)
     {
-        $data = PengajuanBarang::with(['detail', 'tracking', 'karyawan'])->findOrFail($id);
-        // return $data->karyawan->divisi;
+        $pengajuan = PengajuanBarang::with(['detail', 'tracking', 'karyawan'])->findOrFail($id);
+
+        if ($pengajuan->tipe === 'Exam' && $pengajuan->id_exam) {
+            return $this->exportPDFExam($pengajuan->id_exam);
+        }
+
+        $data = $pengajuan;
+
         if ($data->karyawan->divisi == 'Education') {
             $finance = karyawan::where('jabatan', 'Education Manager')->latest()->first();
         } elseif ($data->karyawan->divisi == 'Sales & Marketing') {
@@ -886,14 +893,63 @@ class PengajuanBarangController extends Controller
             $finance = karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
         }
         $gm = karyawan::where('jabatan', 'GM')->latest()->first();
-        // return $finance;
 
-        // Buat file PDF dari tampilan yang berisi data registrasi
-        // $pdf = PDF::loadView('exports.pengajuan_barang-pdf', compact('pengajuan_barang'));
         return view('exports.pengajuan_barang-pdf', compact('data', 'finance', 'gm'));
-
-        // return $pdf->download('Data_pengajuan_barang.pdf');
     }
+
+    private function exportPDFExam($idExam)
+    {
+        $data = eksam::with('rkm', 'kodeeksam', 'registexam', 'approvalexam')->findOrFail($idExam);
+
+        if (!$data->approvalexam) {
+            return back()->with('error', 'Data approval exam tidak ditemukan, invoice tidak bisa dibuat.');
+        }
+
+        if (!$data->rkm) {
+            Log::warning('Invoice Exam: RKM tidak ditemukan (kemungkinan sudah dihapus)', [
+                'id_exam' => $data->id,
+                'id_rkm' => $data->id_rkm,
+            ]);
+        }
+
+        $sales = User::with('karyawan')->where('id_sales', $data->approvalexam->sales)->first();
+
+        if (!$data->approvalexam->ttd_sales) {
+            $spv_sales = karyawan::where('jabatan', 'SPV Sales')->first();
+        } else {
+            $spv_sales = karyawan::where('kode_karyawan', $data->approvalexam->ttd_sales)->first();
+        }
+
+        if (!$data->approvalexam->ttd_off) {
+            $office_manager = karyawan::where('jabatan', 'Finance & Accounting')->first();
+        } else {
+            $office_manager = karyawan::where('kode_karyawan', $data->approvalexam->ttd_off)->first();
+        }
+
+        if (!$data->approvalexam->ttd_ts) {
+            $technical_support = karyawan::where('jabatan', 'Technical Support')->first();
+        } else {
+            $technical_support = karyawan::where('kode_karyawan', $data->approvalexam->ttd_ts)->first();
+        }
+
+        $biaya_admin = $data->biaya_admin * $data->kurs_dollar;
+        $harga = $data->harga * $data->kurs;
+        $totalharga = $harga * $data->pax;
+        $totalbiayadmin = $biaya_admin * $data->pax;
+
+        return view('exam.invoice', compact(
+            'data',
+            'spv_sales',
+            'technical_support',
+            'office_manager',
+            'sales',
+            'harga',
+            'biaya_admin',
+            'totalharga',
+            'totalbiayadmin'
+        ));
+    }
+
     public function getHold()
     {
         $data = PengajuanBarang::with(['karyawan', 'tracking'])

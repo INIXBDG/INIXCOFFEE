@@ -387,7 +387,10 @@ class ApprovalPendapatanController extends Controller
                 SUM(CAST(pengurangan_pph AS UNSIGNED)) as pengurangan_pph,
                 SUM(CAST(jumlah_pembayaran AS UNSIGNED)) as jumlah_pembayaran,
                 SUM(CAST(biaya_admin AS UNSIGNED)) as biaya_admin,
-                SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport
+                SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport,
+                SUM(CAST(harga_net AS UNSIGNED)) as total_harga,
+                SUM(CAST(pax AS UNSIGNED)) as total_pax,
+                SUM(CAST(diskon AS UNSIGNED)) as total_diskon_pa
             ")->first();
 
         $examBulanan = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
@@ -403,7 +406,7 @@ class ApprovalPendapatanController extends Controller
                 'total_uang_saku' => 0, 'total_akomodasi' => 0, 'oleh_oleh' => 0, 'biaya_lain_lain' => 0,
                 'entertainment' => 0, 'total_penjualan_sales' => 0, 'total_ppn' => 0, 'total_pph' => 0,
                 'pengurangan_pph' => 0, 'jumlah_pembayaran' => 0, 'biaya_admin' => 0, 'biaya_transport' => 0,
-                'total_exam' => $examBulanan,
+                'total_exam' => $examBulanan,'total_piutang' => 0,
             ];
         }
 
@@ -426,7 +429,10 @@ class ApprovalPendapatanController extends Controller
                 SUM(CAST(pengurangan_pph AS UNSIGNED)) as pengurangan_pph,
                 SUM(CAST(jumlah_pembayaran AS UNSIGNED)) as jumlah_pembayaran,
                 SUM(CAST(biaya_admin AS UNSIGNED)) as biaya_admin,
-                SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport
+                SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport,
+                SUM(CAST(harga_net AS UNSIGNED)) as total_harga,
+                SUM(CAST(pax AS UNSIGNED)) as total_pax,
+                SUM(CAST(diskon AS UNSIGNED)) as total_diskon_pa
             ")->first();
 
         $examTahunan = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
@@ -441,7 +447,7 @@ class ApprovalPendapatanController extends Controller
                 'total_uang_saku' => 0, 'total_akomodasi' => 0, 'oleh_oleh' => 0, 'biaya_lain_lain' => 0,
                 'entertainment' => 0, 'total_penjualan_sales' => 0, 'total_ppn' => 0, 'total_pph' => 0,
                 'pengurangan_pph' => 0, 'jumlah_pembayaran' => 0, 'biaya_admin' => 0, 'biaya_transport' => 0,
-                'total_exam' => $examTahunan,
+                'total_exam' => $examTahunan,'total_piutang' => 0,
             ];
         }
 

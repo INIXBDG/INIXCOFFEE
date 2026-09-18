@@ -31,6 +31,7 @@ class PengajuanBarang extends Model
         'tanggal_pencairan',
         'tanggal_terima_finance',
         'bukti',
+        'id_exam'
     ];
 
     /**
