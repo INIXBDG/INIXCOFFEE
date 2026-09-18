@@ -292,7 +292,7 @@
                         <th style="width:10%;">Level</th>
                         <th style="width:50%; text-align:left;">Keterangan</th>
                         <th style="width:20%;">Tanggal</th>
-                        <th style="width:20%;">Approval</th>
+                        <th style="width:20%;">Yang Mengajukan</th>
                     </tr>
                 </thead>
                 <tbody>
