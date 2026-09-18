@@ -172,10 +172,14 @@ class netSalesController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
 
-                $rkm = RKM::with(['materi', 'analisisrkm', 'perhitunganNetSales.approvedNetSales', 'analisisrkm.analisisrkmmingguan', 'perusahaan'])
+                $rkm = RKM::with(['materi', 'analisisrkm', 'perhitunganNetSales.approvedNetSales', 'analisisrkm.analisisrkmmingguan', 'perusahaan', 'outstanding'])
                     ->where('status', '0')
                     ->whereYear('tanggal_awal', $year)
                     ->whereBetween('tanggal_awal', [$start, $end])
+                    ->whereHas('outstanding', function ($query) {
+                        $query->where('status_pembayaran', '1');
+                    })
+                    ->whereHas('perhitunganNetSales')
                     ->get();
 
                 $formattedItems = $rkm->map(function ($item) {
@@ -658,7 +662,7 @@ class netSalesController extends Controller
         $pdf->setPaper('a4', 'portrait');
 
 
-        return $pdf->download("RKM_{$id}.pdf");
+        return $pdf->stream("RKM_{$id}.pdf");
     }
 
     public function detailNetSales($id)

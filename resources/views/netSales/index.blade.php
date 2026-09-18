@@ -366,7 +366,7 @@
                                         `<h3 class="card-title my-1">Rencana Kelas Mingguan ${monthName} (Minggu ke - ${weekData.minggu}) ${weekData.tanggal_awal_minggu} - ${weekData.tanggal_akhir_minggu}</h3>`;
 
                                     if (weekData.data === null) {
-                                        html += '<p class="text-center">Tidak Ada Kelas Mingguan</p>';
+                                        html += '<p class="text-center">Belum ada PA</p>';
                                     } else {
                                         // ✅ Gunakan tableId yang unik dan konsisten
                                         var tableId =
