@@ -232,8 +232,8 @@
                 {
                     "data": "approval",
                     "render": function(data, type, row) {
-                        let requesterRole = row.karyawan.jabatan;
-                        let requesterDivisi = row.karyawan.divisi;
+                        let requesterRole = row.karyawan?.jabatan ?? '';
+                        let requesterDivisi = row.karyawan?.divisi ?? '';
                         
                         // Jabatan tinggi yang langsung ke GM
                         const jabatanTinggi = ['SPV Sales', 'Koordinator ITSM'];
@@ -292,8 +292,8 @@
                     "render": function(data, type, row) {
                         let approval = row.approval;
                         let userRole = '{{ auth()->user()->jabatan }}';
-                        let requesterDivisi = row.karyawan.divisi;
-                        let requesterRole = row.karyawan.jabatan;
+                        let requesterDivisi = row.karyawan?.divisi ?? '';
+                        let requesterRole = row.karyawan?.jabatan ?? '';
                         let actions = "";
 
                         let iconBase = "{{ asset('icon') }}";
