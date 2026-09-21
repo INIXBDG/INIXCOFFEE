@@ -14,7 +14,8 @@ const DashboardKPI = (function($) {
         achievementsContainer: $('#achievementsContainer'), achievementsCount: $('#achievementsCount'), newsContainer: $('#newsContainer'),
         newsCount: $('#newsCount'), statProjects: $('#stat_projects'), statProjectsTrend: $('#stat_projects_trend'),
         statAchieved: $('#stat_achieved'), statTotalTargets: $('#stat_total_targets'), statDeadlines: $('#stat_deadlines'),
-        statEngagement: $('#stat_engagement'), statEngagementLabel: $('#stat_engagement_label')
+        statEngagement: $('#stat_engagement'), statEngagementLabel: $('#stat_engagement_label'), heatmapDivisiSelect: $('#heatmapDivisiSelect'),
+        heatmapMetricDescText: $('#heatmapMetricDescText'),heatmapDivisiSelect: $('#heatmapDivisiSelect'), heatmapMetricDescText: $('#heatmapMetricDescText'),
     };
 
     const charts = { penilaian: null, formulir: null, healthDonut: null, assessmentRadar: null, companyProgress: null, drilldown: null };
@@ -76,12 +77,21 @@ const DashboardKPI = (function($) {
         
         $('#heatmapMetricSelect').off('change');
         
-        $('#heatmapMetricSelect').on('change', function() {
+        // Event Metric berubah
+        $('#heatmapMetricSelect').off('change').on('change', function () {
             const metric = $(this).val();
-
+            const selectedDivisi = DOM.heatmapDivisiSelect.val();
             if (currentHeatmapData && currentDivisiList.length > 0) {
-                renderHeatmap(currentHeatmapData, metric, currentDivisiList);
-            } else {
+                renderHeatmap(currentHeatmapData, metric, currentDivisiList, selectedDivisi);
+            }
+        });
+
+        // Event Divisi berubah (baru)
+        $('#heatmapDivisiSelect').off('change').on('change', function () {
+            const selectedDivisi = $(this).val();
+            const metric = DOM.heatmapMetricSelect.val() || 'progress';
+            if (currentHeatmapData && currentDivisiList.length > 0 && selectedDivisi) {
+                renderHeatmap(currentHeatmapData, metric, currentDivisiList, selectedDivisi);
             }
         });
     }
@@ -103,11 +113,9 @@ const DashboardKPI = (function($) {
                     renderKPIAlerts(response.kpi_alerts);
                     renderUpcomingDeadlines(response.upcoming_deadlines);
                     
-                    // Simpan data heatmap
                     if (response.heatmap_data) {
                         currentHeatmapData = response.heatmap_data;
-                        
-                        // Filter divisi yang tidak valid
+
                         const rawDivisiList = response.divisi_list || response.dataDivisi.map(d => d.divisi);
                         currentDivisiList = rawDivisiList.filter(divisi => {
                             return divisi && 
@@ -115,10 +123,14 @@ const DashboardKPI = (function($) {
                                 divisi !== 'Pilih Divisi' && 
                                 !divisi.startsWith('Pilih');
                         });
-                        
-                        // Render heatmap pertama kali
+
                         if (currentDivisiList.length > 0) {
-                            renderHeatmap(currentHeatmapData, 'progress', currentDivisiList);
+                            // Default divisi = divisi user yang login
+                            const defaultDivisi = window.userDivisi && currentDivisiList.includes(window.userDivisi)
+                                ? window.userDivisi
+                                : currentDivisiList[0];
+
+                            renderHeatmap(currentHeatmapData, 'progress', currentDivisiList, defaultDivisi);
                         } else {
                             DOM.heatmapGrid.html('<div class="text-center text-muted py-4">Tidak ada data divisi yang valid</div>');
                         }
@@ -591,53 +603,93 @@ const DashboardKPI = (function($) {
         });
     }
 
-    function renderHeatmap(heatmapData, metric, divisiList) {
+    const METRIC_DESCRIPTIONS = {
+        progress: 'Progress menunjukkan rata-rata pencapaian target KPI divisi setiap bulan (0–100%).',
+        completion: 'Completion menunjukkan persentase target yang sudah diselesaikan di divisi tersebut setiap bulan.',
+        engagement: 'Engagement mengukur tingkat keterlibatan karyawan dalam pengisian / update KPI di divisi tersebut.'
+    };
+
+    function renderHeatmap(heatmapData, metric, divisiList, selectedDivisi = null) {
         if (!heatmapData || !divisiList || divisiList.length === 0) {
-            DOM.heatmapGrid.html('<div class="text-center text-muted py-4">Tidak ada data untuk ditampilkan</div>');
+            DOM.heatmapGrid.html('<div class="text-center text-muted py-4 w-100">Tidak ada data untuk ditampilkan</div>');
             return;
         }
 
+        // Update deskripsi
+        DOM.heatmapMetricDescText.text(METRIC_DESCRIPTIONS[metric] || 'Pilih metric untuk melihat penjelasan.');
+
+        // Tentukan divisi yang akan ditampilkan
+        let targetDivisi = selectedDivisi;
+
+        // Jika user HRD → boleh pilih
+        if (window.isHRD) {
+            const $divisiSelect = DOM.heatmapDivisiSelect;
+
+            // Isi select hanya sekali
+            if ($divisiSelect.length && $divisiSelect.find('option').length <= 1) {
+                $divisiSelect.empty().append('<option value="">Pilih Divisi</option>');
+                divisiList.forEach(d => {
+                    if (d && d.trim() && d !== 'Pilih Divisi' && !d.startsWith('Pilih')) {
+                        $divisiSelect.append(`<option value="${d}">${d}</option>`);
+                    }
+                });
+            }
+
+            // Ambil dari select, fallback ke divisi user atau pertama
+            targetDivisi = $divisiSelect.val() || window.userDivisi || divisiList[0];
+
+            if (targetDivisi && $divisiSelect.find(`option[value="${targetDivisi}"]`).length) {
+                $divisiSelect.val(targetDivisi);
+            }
+        } else {
+            // Non-HRD → paksa pakai divisi user yang login
+            targetDivisi = window.userDivisi || divisiList[0];
+        }
+
+        if (!targetDivisi) {
+            DOM.heatmapGrid.html('<div class="text-center text-muted py-4 w-100">Divisi tidak ditemukan</div>');
+            return;
+        }
+
+        const divisiData = heatmapData[targetDivisi];
+        if (!divisiData || !divisiData[metric]) {
+            DOM.heatmapGrid.html(`
+                <div class="text-center text-muted py-4 w-100">
+                    Tidak ada data <strong>${metric}</strong> untuk divisi <strong>${targetDivisi}</strong>
+                </div>
+            `);
+            return;
+        }
+
+        const values = divisiData[metric] || [];
         const monthLabels = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
         let html = '';
-        let renderedCount = 0;
+        values.forEach((val, idx) => {
+            const adjustedVal = Math.max(0, Math.min(100, parseFloat(val) || 0));
+            const displayVal = adjustedVal > 0 ? Math.round(adjustedVal) : '';
+            const cellClass = getHeatmapClass(adjustedVal);
 
-        divisiList.forEach(divisi => {
-            if (!divisi || divisi.trim() === '' || divisi === 'Pilih Divisi' || divisi.startsWith('Pilih')) return;
-
-            const divisiData = heatmapData[divisi];
-            if (!divisiData || !divisiData[metric]) return;
-
-            const values = divisiData[metric] || [];
-            const displayName = divisi.length > 15 ? divisi.substring(0, 15) + '...' : divisi;
-
-            html += `<div class="d-flex gap-1 align-items-center mb-2 heatmap-row" data-divisi="${divisi}" style="min-height:28px;">
-                <div style="width:120px;font-size:11px;font-weight:600;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="Klik baris untuk lihat detail ${divisi}">${displayName}</div>
-                <div class="d-flex gap-1 flex-grow-1">`;
-
-            values.forEach((val, idx) => {
-                const adjustedVal = Math.max(0, Math.min(100, parseFloat(val) || 0));
-                const displayVal = adjustedVal > 0 ? Math.round(adjustedVal) : '';
-                const cellClass = getHeatmapClass(adjustedVal);
-
-                html += `<div class="heatmap-cell ${cellClass}" data-divisi="${divisi}"
-                            title="${divisi} - ${monthLabels[idx]}: ${adjustedVal.toFixed(1)}%"
-                            style="flex:1;min-height:28px;display:flex;align-items:center;justify-content:center;">
-                            ${displayVal}
-                        </div>`;
-            });
-
-            html += `</div></div>`;
-            renderedCount++;
+            html += `
+                <div class="heatmap-month-col text-center" style="flex:1; min-width:48px;">
+                    <div class="heatmap-cell ${cellClass}"
+                        data-divisi="${targetDivisi}"
+                        title="${targetDivisi} - ${monthLabels[idx]}: ${adjustedVal.toFixed(1)}%"
+                        style="height:48px; display:flex; align-items:center; justify-content:center; 
+                                font-size:13px; font-weight:600; border-radius:8px; cursor:pointer;">
+                        ${displayVal}
+                    </div>
+                    <div class="small text-muted mt-1" style="font-size:11px; font-weight:500;">
+                        ${monthLabels[idx]}
+                    </div>
+                </div>
+            `;
         });
-
-        html = renderedCount === 0
-            ? '<div class="text-center text-muted py-4">Tidak ada data heatmap yang valid untuk ditampilkan</div>'
-            : html;
 
         DOM.heatmapGrid.html(html);
 
-        DOM.heatmapGrid.find('.heatmap-row, .heatmap-cell').off('click').on('click', function(e) {
-            e.stopPropagation();
+        // Click → drilldown
+        DOM.heatmapGrid.find('.heatmap-cell').off('click').on('click', function () {
             const divisi = $(this).data('divisi');
             if (divisi) openDivisiDrilldown(divisi);
         });
