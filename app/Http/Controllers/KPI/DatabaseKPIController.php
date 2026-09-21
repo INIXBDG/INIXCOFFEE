@@ -123,84 +123,106 @@ class DatabaseKPIController extends Controller
         $monthStart = $now->copy()->startOfMonth();
         $monthEnd = $now->copy()->endOfMonth();
 
+        $cctvOk = false;
+        $apkWeekPercent = 0;
+        $apkWeekDowntime = 0;
+        $apkMonthPercent = 0;
+        $apkMonthDowntime = 0;
+
         try {
             $response = Http::timeout(10)->get('http://192.168.95.173:8000/uptime.php', [
                 'password' => env('UPTIME_PASSWORD')
             ]);
 
-            if ($response->failed() || $response->body() === 'FILE_NOT_FOUND') {
-                return response()->json(['error' => 'Tidak bisa mengambil file dari Server CCTV'], 404);
+            if (!$response->failed() && $response->body() !== 'FILE_NOT_FOUND') {
+                $cctvOk = true;
+                $content = $response->body();
+                $lines   = array_filter(explode("\n", $content));
+
+                $records = [];
+                foreach ($lines as $index => $line) {
+                    if ($index === 0) continue;
+                    if (preg_match('/^(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*,\s*(.*)$/', $line, $matches)) {
+                        $records[] = [
+                            'timestamp' => $matches[1],
+                            'server'    => $matches[2],
+                            'ip'        => $matches[3],
+                            'status'    => strtoupper(trim($matches[4])),
+                            'downtime'  => trim($matches[5]),
+                        ];
+                    }
+                }
+
+                $apkRecords = array_filter($records, fn($r) => stripos($r['server'], 'APK') !== false);
+
+                $filterByRange = function($arr, $start, $end) {
+                    return array_filter($arr, function($r) use ($start, $end) {
+                        $ts = Carbon::parse($r['timestamp']);
+                        return $ts >= $start && $ts <= $end;
+                    });
+                };
+
+                $apkWeek = $filterByRange($apkRecords, $weekStart, $weekEnd);
+                $apkWeekDowntime = array_sum(array_map(function($r) {
+                    if ($r['status'] === 'RECOVERY' && preg_match('/(\d+):(\d+):(\d+)/', $r['downtime'], $m)) {
+                        return ((int)$m[1]) * 60 + (int)$m[2] + ((int)$m[3] > 0 ? 1 : 0);
+                    }
+                    return 0;
+                }, $apkWeek));
+                $totalWeekMinutes = $weekStart->diffInMinutes($weekEnd) + 1;
+                $apkWeekPercent = $totalWeekMinutes > 0 ? (($totalWeekMinutes - $apkWeekDowntime) / $totalWeekMinutes) * 100 : 0;
+
+                $apkMonth = $filterByRange($apkRecords, $monthStart, $monthEnd);
+                $apkMonthDowntime = array_sum(array_map(function($r) {
+                    if ($r['status'] === 'RECOVERY' && preg_match('/(\d+):(\d+):(\d+)/', $r['downtime'], $m)) {
+                        return ((int)$m[1]) * 60 + (int)$m[2] + ((int)$m[3] > 0 ? 1 : 0);
+                    }
+                    return 0;
+                }, $apkMonth));
+                $totalMonthMinutes = $monthStart->diffInMinutes($monthEnd) + 1;
+                $apkMonthPercent = $totalMonthMinutes > 0 ? (($totalMonthMinutes - $apkMonthDowntime) / $totalMonthMinutes) * 100 : 0;
             }
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            return response()->json(['error' => 'Koneksi ke Server CCTV timeout atau terputus'], 503);
+            $cctvOk = false;
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Terjadi kesalahan saat menghubungi Server CCTV'], 500);
+            $cctvOk = false;
         }
 
-        $content = $response->body();
-        $lines   = array_filter(explode("\n", $content));
+        $buildLogPercent = function ($url) use ($weekStart, $weekEnd, $monthStart, $monthEnd) {
+            $stats = activityLog::selectRaw("
+                COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as week_total,
+                SUM(CASE WHEN status = '200' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as week_up,
+                COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as month_total,
+                SUM(CASE WHEN status = '200' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as month_up
+            ", [
+                $weekStart, $weekEnd, $weekStart, $weekEnd,
+                $monthStart, $monthEnd, $monthStart, $monthEnd
+            ])->where('url', $url)->first();
 
-        $records = [];
-        foreach ($lines as $index => $line) {
-            if ($index === 0) continue;
-            if (preg_match('/^(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*,\s*(.*)$/', $line, $matches)) {
-                $records[] = [
-                    'timestamp' => $matches[1],
-                    'server'    => $matches[2],
-                    'ip'        => $matches[3],
-                    'status'    => strtoupper(trim($matches[4])),
-                    'downtime'  => trim($matches[5]),
-                ];
-            }
-        }
+            $weekTotal = $stats->week_total ?? 0;
+            $weekUp = $stats->week_up ?? 0;
+            $monthTotal = $stats->month_total ?? 0;
+            $monthUp = $stats->month_up ?? 0;
 
-        $apkRecords = array_filter($records, fn($r) => stripos($r['server'], 'APK') !== false);
-
-        $filterByRange = function($arr, $start, $end) {
-            return array_filter($arr, function($r) use ($start, $end) {
-                $ts = Carbon::parse($r['timestamp']);
-                return $ts >= $start && $ts <= $end;
-            });
+            return [
+                'week' => $weekTotal > 0 ? ($weekUp / $weekTotal) * 100 : 0,
+                'month' => $monthTotal > 0 ? ($monthUp / $monthTotal) * 100 : 0,
+            ];
         };
 
-        $apkWeek = $filterByRange($apkRecords, $weekStart, $weekEnd);
-        $apkWeekDowntime = array_sum(array_map(function($r) {
-            if ($r['status'] === 'RECOVERY' && preg_match('/(\d+):(\d+):(\d+)/', $r['downtime'], $m)) {
-                return ((int)$m[1]) * 60 + (int)$m[2] + ((int)$m[3] > 0 ? 1 : 0);
-            }
-            return 0;
-        }, $apkWeek));
-        $totalWeekMinutes = $weekStart->diffInMinutes($weekEnd) + 1;
-        $apkWeekPercent = $totalWeekMinutes > 0 ? (($totalWeekMinutes - $apkWeekDowntime) / $totalWeekMinutes) * 100 : 0;
+        if (!$cctvOk) {
+            $coffeeStats = $buildLogPercent('https://coffee.inixindobdg.co.id/');
+            $latteStats = $buildLogPercent('https://latte.inixindobdg.co.id/');
 
-        $apkMonth = $filterByRange($apkRecords, $monthStart, $monthEnd);
-        $apkMonthDowntime = array_sum(array_map(function($r) {
-            if ($r['status'] === 'RECOVERY' && preg_match('/(\d+):(\d+):(\d+)/', $r['downtime'], $m)) {
-                return ((int)$m[1]) * 60 + (int)$m[2] + ((int)$m[3] > 0 ? 1 : 0);
-            }
-            return 0;
-        }, $apkMonth));
-        $totalMonthMinutes = $monthStart->diffInMinutes($monthEnd) + 1;
-        $apkMonthPercent = $totalMonthMinutes > 0 ? (($totalMonthMinutes - $apkMonthDowntime) / $totalMonthMinutes) * 100 : 0;
-
-        // OPTIMASI: Menggabungkan query menjadi 2 query saja menggunakan conditional aggregation
-        $latteStats = activityLog::selectRaw("
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as week_total,
-            SUM(CASE WHEN status = '200' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as week_up,
-            COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as month_total,
-            SUM(CASE WHEN status = '200' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as month_up
-        ", [
-            $weekStart, $weekEnd, $weekStart, $weekEnd,
-            $monthStart, $monthEnd, $monthStart, $monthEnd
-        ])->where('url', 'https://192.168.95.60:8002/')->first();
-
-        $latteWeekTotal = $latteStats->week_total ?? 0;
-        $latteWeekUp = $latteStats->week_up ?? 0;
-        $latteWeekPercent = $latteWeekTotal > 0 ? ($latteWeekUp / $latteWeekTotal) * 100 : 0;
-
-        $latteMonthTotal = $latteStats->month_total ?? 0;
-        $latteMonthUp = $latteStats->month_up ?? 0;
-        $latteMonthPercent = $latteMonthTotal > 0 ? ($latteMonthUp / $latteMonthTotal) * 100 : 0;
+            $apkWeekPercent = $coffeeStats['week'];
+            $apkMonthPercent = $coffeeStats['month'];
+            $latteWeekPercent = $latteStats['week'];
+            $latteMonthPercent = $latteStats['month'];
+        } else {
+            $latteStats = $buildLogPercent('https://latte.inixindobdg.co.id/');
+            $latteWeekPercent = $latteStats['week'];
+            $latteMonthPercent = $latteStats['month'];
+        }
 
         return response()->json([
             'coffee_week' => round($apkWeekPercent, 2),
