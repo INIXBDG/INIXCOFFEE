@@ -1589,7 +1589,7 @@ class OfficeController extends Controller
         });
     }
 
-        public function rekapRkmJson(Request $request)
+    public function rekapRkmJson(Request $request)
     {
         $tahun      = $request->input('tahun', now()->year);
         $filterType = $request->input('filter_type', 'bulan');
@@ -1620,29 +1620,27 @@ class OfficeController extends Controller
         $data = $query->get();
 
         $peluang = $data->map(function ($rkm) {
-            $pel = $rkm->peluang; // null kalau belum ada peluang (data lama)
+            $pel = $rkm->peluang;
 
             return [
                 'id'              => $rkm->id,
-                'periode_mulai' => optional($pel)->periode_mulai
+                'periode_mulai'   => optional($pel)->periode_mulai
                     ? Carbon::parse($pel->periode_mulai)->format('d/m/Y')
-                    : ($rkm->tanggal_awal
-                        ? Carbon::parse($rkm->tanggal_awal)->format('d/m/Y')
-                        : '-'),
-
+                    : ($rkm->tanggal_awal ? Carbon::parse($rkm->tanggal_awal)->format('d/m/Y') : '-'),
                 'periode_selesai' => optional($pel)->periode_selesai
                     ? Carbon::parse($pel->periode_selesai)->format('d/m/Y')
-                    : ($rkm->tanggal_akhir
-                        ? Carbon::parse($rkm->tanggal_akhir)->format('d/m/Y')
-                        : '-'),
+                    : ($rkm->tanggal_akhir ? Carbon::parse($rkm->tanggal_akhir)->format('d/m/Y') : '-'),
                 'nama_materi'     => optional($rkm->materi)->nama_materi,
                 'nama_perusahaan' => optional($rkm->perusahaan)->nama_perusahaan,
                 'hide'            => $rkm->hide,
+                'hide_materi'     => $rkm->hide_materi,
+                'hide_perusahaan' => $rkm->hide_perusahaan,
                 'sales'           => $rkm->sales_key,
             ];
         });
 
         $materiCount = $data
+            ->where('hide_materi', '!=', true)
             ->map(fn($rkm) => optional($rkm->materi)->nama_materi)
             ->filter()
             ->countBy()
@@ -1655,7 +1653,7 @@ class OfficeController extends Controller
             ];
         })->values();
 
-        $rkmPerMinggu = $data
+        $rkmPerMinggu = $data->where('hide', '!=', true)
             ->map(function ($rkm) {
                 $tanggal = optional($rkm->peluang)->periode_mulai ?? $rkm->tanggal_awal;
                 return ['tanggal' => $tanggal];
@@ -1768,10 +1766,11 @@ class OfficeController extends Controller
         $request->validate([
             'rkm_id' => 'required|integer',
             'hide'   => 'required|boolean',
+            'field'  => 'required|in:hide,hide_materi,hide_perusahaan',
         ]);
 
         $rkm = RKM::findOrFail($request->rkm_id);
-        $rkm->update(['hide' => $request->hide]);
+        $rkm->update([$request->field => $request->hide]);
 
         return response()->json(['success' => true]);
     }
@@ -1782,9 +1781,10 @@ class OfficeController extends Controller
             'ids'   => 'required|array',
             'ids.*' => 'integer',
             'hide'  => 'required|boolean',
+            'field' => 'required|in:hide,hide_materi,hide_perusahaan',
         ]);
 
-        $count = RKM::whereIn('id', $request->ids)->update(['hide' => $request->hide]);
+        $count = RKM::whereIn('id', $request->ids)->update([$request->field => $request->hide]);
 
         return response()->json(['success' => true, 'count' => $count]);
     }

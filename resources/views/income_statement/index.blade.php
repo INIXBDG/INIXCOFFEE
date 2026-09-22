@@ -383,6 +383,26 @@
 
         $(document).ready(function() {
             incomeCheckAndInitLock();
+
+            // --- SESSION KEEP-ALIVE ---
+            // Mengirim request ke server setiap 15 menit untuk mencegah session timeout
+            const keepAliveInterval = 5* 60 * 1000; // 15 menit (dalam milidetik)
+            
+            setInterval(function() {
+                $.ajax({
+                    url: '{{ route("session.keep-alive") }}',
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        console.log('Session refreshed at: ' + new Date().toLocaleTimeString());
+                    },
+                    error: function() {
+                        console.warn('Gagal memperpanjang session.');
+                    }
+                });
+            }, keepAliveInterval);
         });
 
         function incomeCheckAndInitLock() {
